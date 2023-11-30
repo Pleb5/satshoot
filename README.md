@@ -38,7 +38,7 @@ Despite all this learning and training, people still often need assistance in th
 
 In spite of the number of Bitcoiners increasing every year, it is still hard to find a trusty friend who is willing to help the Bitcoiner. Even if there is one, they often lack the time to help.
 
-Fiat companies cannot properly fulfill this role because of government compliance risk. Privacy is basically impossible. Surveillance capitalism doesn't serve customers, it exploits them. They have hidden motives to spread FUD about projects that jeopardize their profits and make their clients helpless by locking them in their proprietary solutions.
+Fiat companies alone cannot fulfill this role because of government compliance risk. Privacy is basically impossible. Surveillance capitalism often leads to exploitation of customers. Lots of companies have hidden motives to spread FUD about projects that jeopardize their profits and make their clients helpless by locking them in their proprietary solutions.
 
 There is also volunteer help in different chat groups such as Telegram and Discord. These groups are filled with scammers and there are numerous scam groups lurking on newbie Bitcoiners trying to learn.
  Additionally, Telegram and other messaging apps are not properly decentralized and the user-experience is not customized to the troubleshooting use-case.
@@ -125,13 +125,13 @@ Nostr solves many problems at the same time:
 4. Nostr has a strong bitcoin integration already
 5. There are many open-source nostr clients and NDK. Easy to start building
 6. Nostr accounts are permissionless: They don't depend on the client nor the relays to use the service
-7. Nostr is great for reputation scoring, for a decentralized protocol at least
+7. Nostr is great for reputation scoring, for a decentralized protocol at least. This makes room for innovation on the web-of-trust front.
 8. As for the custom client, a Progressive Web App seems like a good solution:
     1. App cannot be censored on app stores
-    2. Cross-platform, nice native-like UI on all platforms. Bitcoiners interact with their self-custody setups mostly on desktops but the mobile experience allows for troubleshooters to work from anywhere. Also for optional group discussions it is good to have multi-device support
-    3. Easy to integrate with Alby, Mutiny and other browser-based LN wallets
-9. Being a flexible protocol used for all kinds of social use-cases, nostr allows for further features in the future, built on activity from Bitcoin Troubleshooting. E.g. Troubleshoots can become sources of further learning opportunities if a Bitcoiner chooses to share the private messages with coaches or coaching software
-
+    2. Cross-platform, nice native-like UI on all platforms. Bitcoiners interact with their self-custody setups mostly on desktops but the mobile experience allows for troubleshooters to work from anywhere.     
+    3. Easy to integrate with Alby, Mutiny and other LN wallets supporting nostr wallet connect
+    4. The biggest downside of this approach is the fact that a browser will never be as secure to store private key material as most other solutions
+9. Being a flexible protocol used for all kinds of social use-cases, nostr allows for further features in the future, built on activity from Bitcoin Troubleshooting 
 ### Relays
 Once the nostr event kinds are defined, the users just subscribe to those event kinds and connect to their preferred relays. There can be some dedicated relays handling only these kinds that are necessary to Bitcoin Troubleshoot as defaults.
 
