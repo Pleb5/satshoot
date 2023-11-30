@@ -20,6 +20,6 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@nostr-dev-kit/ndk": "^2.1.1"
+		"@nostr-dev-kit/ndk": "^2.1.3"
 	}
 }
