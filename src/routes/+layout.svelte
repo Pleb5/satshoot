@@ -31,14 +31,14 @@
 	<svelte:fragment slot="header">
         <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end">
             <svelte:fragment slot="lead">
-                <img class="w-24 h-24" src="bitcoin-troubleshoot.svg" alt="logo" />
+                <img class="" src="bitcoin-troubleshoot.svg" alt="logo" />
             </svelte:fragment>
             
-            <div class="text-center text-zinc-900 text-3xl font-semibold leading-none">BTC Troubleshoot</div> 
+            <div class=".font-heading-token text-2xl">BTC Troubleshoot</div> 
 
             <svelte:fragment slot="trail">
                 <Avatar 
-                    class="2xl:w-24 2xl:h-24 lg:w-20 lg:h-20 md:w-16 md:h-16 sm:w-14 sm:h-14 w-12 h-12 rounded-full border-white"
+                    class="rounded-full border-white"
                     src="profile-image.png"
                     border="border-4 border-surface-300-600-token hover:!border-primary-500"
                     cursor="cursor-pointer"

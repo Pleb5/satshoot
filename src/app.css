@@ -2,4 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+	/* Reference name */
+	font-family: 'Inter';
+	/* For multiple files use commas, ex: url(), url(), ... */
+	src: url('/fonts/Inter-VariableFont_slnt,wght.ttf');
+}
+
+:root [data-theme='wintry'] {
+    --theme-font-family-base: 'Inter', sans-serif;
+    --theme-font-family-heading: 'Inter', sans-serif;
+    /* ... */
+}
+
 html, body { @apply h-full overflow-hidden; }
