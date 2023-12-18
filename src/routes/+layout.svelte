@@ -31,10 +31,15 @@
 	<svelte:fragment slot="header">
         <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end">
             <svelte:fragment slot="lead">
-                <img class="" src="bitcoin-troubleshoot.svg" alt="logo" />
+                <div class="w-16 h-16">
+                    <a href="/" class="btn-icon w-full h-full object-cover">
+                        <img class="w-full h-full" src="bitcoin-troubleshoot.svg" alt="logo" />
+                    </a>
+                </div>
+                
             </svelte:fragment>
             
-            <div class=".font-heading-token text-2xl">BTC Troubleshoot</div> 
+            <h2 class="h2 text-center"><span>BTC Troubleshoot</span></h2> 
 
             <svelte:fragment slot="trail">
                 <Avatar 
@@ -46,9 +51,9 @@
             </svelte:fragment>
         </AppBar>
     </svelte:fragment>
-	<svelte:fragment slot="sidebarLeft">
-        <div id="sidebar-left" class="hidden lg:block">Sidebar</div>
-    </svelte:fragment>
+	<!-- <svelte:fragment slot="sidebarLeft"> -->
+ <!--        <div id="sidebar-left" class="sm:block">Sidebar</div> -->
+ <!--    </svelte:fragment> -->
 	<!-- (sidebarRight) -->
 	<!-- (pageHeader) -->
 	<!-- Router Slot -->
