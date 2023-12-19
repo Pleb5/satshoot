@@ -1,10 +1,16 @@
 <script lang="ts">
     import "../app.css";
+    // Font awesome
+    import '@fortawesome/fontawesome-free/css/fontawesome.css';
+	import '@fortawesome/fontawesome-free/css/solid.css';
+
     import NDK, { NDKEvent} from "@nostr-dev-kit/ndk";
     import { browser } from '$app/environment';
     import { AppShell } from '@skeletonlabs/skeleton';
     import { AppBar } from '@skeletonlabs/skeleton';
     import { Avatar } from '@skeletonlabs/skeleton';
+
+    import PopupMenu from "$lib/components/PopupMenu/PopupMenu.svelte";
 
     // Popup menu
     import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
@@ -30,9 +36,9 @@
     //     npub: 'npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw'
     // });
 
-    const popupClick: PopupSettings = {
+    const popupMenu: PopupSettings = {
         event: "click",
-        target: "popupClick",
+        target: "popupMenu",
         placement: "bottom"
     };
 
@@ -55,7 +61,7 @@
 
             <svelte:fragment slot="trail">
                 <!-- Triggers popup menu -->
-                <button use:popup={popupClick}>
+                <button use:popup={popupMenu}>
 
                     <!-- Avatar image -->
                     <Avatar 
@@ -66,8 +72,7 @@
                     /> 
                 </button>
                 <!-- Popup menu content -->
-                <div data-popup="popupClick" class="card p-4 w-60 shadow-xl "><div class="">asdf this is the popupcontnetasdf</div></div>
-            
+                <PopupMenu />            
             </svelte:fragment>
         </AppBar>
     </svelte:fragment>
