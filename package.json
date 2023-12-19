@@ -28,6 +28,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@floating-ui/dom": "^1.5.3",
 		"@fontsource/hind": "^5.0.8",
 		"@nostr-dev-kit/ndk": "^2.1.3",
 		"@nostr-dev-kit/ndk-svelte-components": "^2.2.0"

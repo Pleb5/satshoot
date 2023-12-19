@@ -6,6 +6,12 @@
     import { AppBar } from '@skeletonlabs/skeleton';
     import { Avatar } from '@skeletonlabs/skeleton';
 
+    // Popup menu
+    import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
+    
+    import { storePopup, popup, type PopupSettings } from '@skeletonlabs/skeleton';
+    storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
+
 
 
     // Create a new NDK instance with explicit relays
@@ -14,22 +20,28 @@
         explicitRelayUrls: ["wss://relay.damus.io", "wss://relay.snort.social"],
     });
 
-    if (browser) {
-        ndk.connect().then(() => {
-            console.log('Connected');
-        });
-    }
+    // if (browser) {
+    //     ndk.connect().then(() => {
+    //         console.log('Connected');
+    //     });
+    // }
 
-    const user = ndk.getUser({
-        npub: 'npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw'
-    });
+    // const user = ndk.getUser({
+    //     npub: 'npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw'
+    // });
+
+    const popupClick: PopupSettings = {
+        event: "click",
+        target: "popupClick",
+        placement: "bottom"
+    };
 
 
 </script>
 
-<AppShell regionPage="relative" slotPageHeader="sticky top-0 z-10">
+<AppShell >
 	<svelte:fragment slot="header">
-        <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end">
+        <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end ">
             <svelte:fragment slot="lead">
                 <div class="w-16 h-16">
                     <a href="/" class="btn-icon w-full h-full object-cover">
@@ -42,12 +54,20 @@
             <h2 class="h2 text-center"><span>BTC Troubleshoot</span></h2> 
 
             <svelte:fragment slot="trail">
-                <Avatar 
-                    class="rounded-full border-white"
-                    src="profile-image.png"
-                    border="border-4 border-surface-300-600-token hover:!border-primary-500"
-                    cursor="cursor-pointer"
-                /> 
+                <!-- Triggers popup menu -->
+                <button use:popup={popupClick}>
+
+                    <!-- Avatar image -->
+                    <Avatar 
+                        class="rounded-full border-white"
+                        src="profile-image.png"
+                        border="border-4 border-surface-300-600-token hover:!border-primary-500"
+                        cursor="cursor-pointer"
+                    /> 
+                </button>
+                <!-- Popup menu content -->
+                <div data-popup="popupClick" class="card p-4 w-60 shadow-xl "><div class="">asdf this is the popupcontnetasdf</div></div>
+            
             </svelte:fragment>
         </AppBar>
     </svelte:fragment>

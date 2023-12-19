@@ -2,7 +2,7 @@
 
 <!-- All cards have title, shortened description and tags -->
 
-<div class="card card-hover z-10">
+<div class="card">
     <header class="card-header">
         <a class="anchor" href="/about">Help with verification of SeedSigner OS Image Lorem Ipsum dolor sit amet</a>
     </header>

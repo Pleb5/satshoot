@@ -7,7 +7,7 @@
     
 </script>
 
-<div class="flex flex-col justify-center items-center gap-y-4">
+<div class="flex flex-col justify-center items-center gap-y-4 ">
     {#each numbers as number}
         
             <TicketCard />
