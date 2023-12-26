@@ -1,5 +1,6 @@
 <script lang="ts">
     import "../app.css";
+
     // Font awesome
     import '@fortawesome/fontawesome-free/css/fontawesome.css';
     import '@fortawesome/fontawesome-free/css/regular.css';
@@ -8,16 +9,25 @@
 
     import NDK, { NDKEvent} from "@nostr-dev-kit/ndk";
     import { browser } from '$app/environment';
+
     import { AppShell } from '@skeletonlabs/skeleton';
     import { AppBar } from '@skeletonlabs/skeleton';
     import { Avatar } from '@skeletonlabs/skeleton';
-
-    import SettingsMenu from "$lib/components/PopupMenu/SettingsMenu.svelte";
+    import { AppRail, AppRailAnchor, AppRailTile } from '@skeletonlabs/skeleton';
+    import { TabGroup, TabAnchor } from '@skeletonlabs/skeleton';
+    import { page } from '$app/stores';
 
     // Popup menu
     import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
-    
     import { storePopup, popup, type PopupSettings } from '@skeletonlabs/skeleton';
+    import SettingsMenu from "$lib/components/PopupMenu/SettingsMenu.svelte";
+
+    // Menu Items 
+    import MenuItem_1 from "$lib/components/NavBar/MenuItem_1.svelte";
+    import MenuItem_2 from "$lib/components/NavBar/MenuItem_2.svelte";
+    import MenuItem_3 from "$lib/components/NavBar/MenuItem_3.svelte";
+
+
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
 
@@ -44,17 +54,19 @@
         placement: "top"
     };
 
-
 </script>
 
-<AppShell >
+<AppShell slotSidebarLeft="bg-surface-100-800-token">
 	<svelte:fragment slot="header">
         <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end ">
             <svelte:fragment slot="lead">
-                <div class="flex items-center space-x-4">
-                    <a href="/" class="btn-icon w-16 h-16">
-                        <img class="w-16 h-16" src="bitcoin-troubleshoot.svg" alt="logo" />
-                    </a>
+                <div class="flex items-center">
+                    <!-- Triggers popup settings menu -->
+                    <button class="btn-icon w-16 h-16" use:popup={settingsMenu}>
+                        <img class="w-full h-full" src="bitcoin-troubleshoot.svg" alt="logo" />
+                    </button>
+
+                    <SettingsMenu />
                 </div>
             </svelte:fragment>
             
@@ -66,44 +78,66 @@
                     border="border-4 border-surface-300-600-token"
                 /> 
             </svelte:fragment>
+
+            <div class="flex items-center space-x-4">
+                <a href="/" class="btn-icon w-16 h-16">
+                </a>
+            </div>
+
         </AppBar>
     </svelte:fragment>
     <!-- Sidebar. Hidden on small screens -->
 	<svelte:fragment slot="sidebarLeft">
-        <div id="sidebar-left" class="hidden sm:block">Sidebar</div>
+            <AppRail 
+                class="hidden lg:block"
+                hover="hover:variant-soft-primary"
+                active="bg-primary-active-token"
+                background="bg-surface-100-800-token"
+            >
+                <svelte:fragment slot="lead">
+                    <AppRailAnchor href="/" selected={$page.url.pathname === '/'}>
+                        <MenuItem_1 />
+                    </AppRailAnchor>
+
+                    <AppRailAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>
+                        <MenuItem_2 />
+                    </AppRailAnchor>
+
+                    <AppRailAnchor href="/messages" selected={$page.url.pathname === '/messages'}>
+                        <MenuItem_3 /> 
+                    </AppRailAnchor>
+                </svelte:fragment>
+            </AppRail>
     </svelte:fragment>
 
 	<!-- Router Slot -->
 	<slot />
 
-    <!-- (footer) -->
+    <!-- Footer: Only visible on small and medium screens(sm, md) -->
 	<svelte:fragment slot="footer">
-        <div class="flex sm:hidden variant-glass-surface">
-            <a href="/">
-                <button class="btn-icon mr-3">
-                    <i class="fa-solid fa-home text-3xl"/>
-                </button>
-            </a>
-            <a href="/">
-                <button class="btn-icon mr-3">
-                    <i class="fa-brands fa-bitcoin text-3xl"/>
-                </button>
-            </a>
-            <a href="/">
-                <button class="btn-icon mr-3">
-                    <i class="fa-solid fa-message text-3xl"/>
-                </button>
-            </a>
+        <TabGroup 
+            justify="justify-center"
+            active="bg-primary-active-token"
+            hover="hover:variant-soft-primary"
+            flex="flex-1"
+            rounded=""
+            border=""
+            background="bg-surface-100-800-token"
+            class="lg:hidden w-full"
+        >
+            <TabAnchor href="/" selected={$page.url.pathname === '/'}>
+                    <MenuItem_1 />
+            </TabAnchor>
 
+            <TabAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>
+                    <MenuItem_2 />
+            </TabAnchor>
 
-            <!-- Triggers popup settings menu -->
-            <button class="btn-icon ml-auto mr-2" use:popup={settingsMenu}>
-                <i class="fa-solid fa-gear text-3xl"/>
-            </button>
-
-            <SettingsMenu />            
-
-        </div>
+            <TabAnchor href="/messages" selected={$page.url.pathname === '/messages'}>
+                    <MenuItem_3 />
+            </TabAnchor>
+            <!-- ... -->
+        </TabGroup>
     </svelte:fragment>
 </AppShell>
 
