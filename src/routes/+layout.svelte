@@ -145,11 +145,6 @@
 
 
 TODO:
-- Settings icon in footer bottom right
-- Troubleshoot button to left of header
-- Create sidebar left for footer content on large screens
-- Insert "my contracts" and "messages" icons into sidebar/footer 
 - Notifications will be icon badges on my contracts and messages
 - My contracts will handle new tickets, pending and done tickets?
 - Different views for troubleshooter/bitcoiner role?
-- 
