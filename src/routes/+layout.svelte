@@ -143,8 +143,3 @@
 
 <!-- <AppHeader /> -->
 
-
-TODO:
-- Notifications will be icon badges on my contracts and messages
-- My contracts will handle new tickets, pending and done tickets?
-- Different views for troubleshooter/bitcoiner role?
