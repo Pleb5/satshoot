@@ -60,23 +60,25 @@
 	<svelte:fragment slot="header">
         <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end ">
             <svelte:fragment slot="lead">
-                <div class="flex items-center">
-                    <!-- Triggers popup settings menu -->
-                    <button class="btn-icon w-16 h-16" use:popup={settingsMenu}>
-                        <img class="w-full h-full" src="bitcoin-troubleshoot.svg" alt="logo" />
-                    </button>
-
-                    <SettingsMenu />
+                <div class="flex items-center w-16 h-16">
+                    <img class="w-full h-full" src="bitcoin-troubleshoot.svg" alt="logo" />
                 </div>
             </svelte:fragment>
             
             <svelte:fragment slot="trail">
-                <!-- Avatar image -->
-                <Avatar 
-                    class="rounded-full border-white"
-                    src="profile-image.png"
-                    border="border-4 border-surface-300-600-token"
-                /> 
+                <!-- Triggers popup settings menu -->
+                <button use:popup={settingsMenu}>
+
+                    <!-- Avatar image -->
+                    <Avatar 
+                        class="rounded-full border-white"
+                        src="profile-image.png"
+                        border="border-4 border-surface-300-600-token hover:!border-primary-500"
+                        cursor="cursor-pointer"
+                    /> 
+                </button>
+                <!-- Popup menu content -->
+                <SettingsMenu />
             </svelte:fragment>
 
             <div class="flex items-center space-x-4">
