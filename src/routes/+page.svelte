@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Orderbook from "./orderbook/orderbook.svelte";
+    import Orderbook from "$lib/components/OrderBook/orderbook.svelte";
     import { InputChip } from "@skeletonlabs/skeleton";
 
     function postTicket() {
