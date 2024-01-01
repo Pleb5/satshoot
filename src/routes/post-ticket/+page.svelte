@@ -18,13 +18,27 @@ const tagOptions: AutocompleteOption<string>[] = [
 
     let tagList: string[] = [];
 
+    let inputChip:InputChip;
+
+    function onTagSelection(event: CustomEvent<AutocompleteOption<string>>): void {
+        let tagValue = event.detail.value;
+        // Run validation checks here(dont allow duplicates, max=5 tags) 
+        // and modify underlying data structure
+        // Cannot explicitly call submit of InputChips component without nasty workarounds
+        // Modify conditions if validity checks ever change
+        if (tagList.length < 5 && tagList.includes(tagValue) === false) {
+            tagList = [...tagList, tagValue];
+            tagInput = '';        
+        }
+    }
+			
 </script>
 
 <div class="card flex flex-col p-4 w-full text-token space-y-4 justify-start">
     <h1 class="h1 text-center m-4">Create Ticket</h1>
 
     <label class="label max-w-md">
-        <span>Ticket Title(min. 10 characters)</span>
+        <span>Ticket Title(min. 10chars)</span>
         <input 
             class="input"
             type="text"
@@ -35,7 +49,7 @@ const tagOptions: AutocompleteOption<string>[] = [
 
 
     <label class="label max-w-xl">
-        <span>Description(min. 20 characters)</span>
+        <span>Ticket Description(min. 20chars)</span>
         <textarea 
             class="textarea"
             rows="4"
@@ -46,7 +60,9 @@ const tagOptions: AutocompleteOption<string>[] = [
 
 
     <div class="text-token w-full max-w-sm space-y-2">
+        <span>Ticket Tags(max. 5pcs)</span>
         <InputChip
+            bind:this={inputChip}
             bind:input={tagInput}
             bind:value={tagList}
             name="tags"
@@ -61,6 +77,7 @@ const tagOptions: AutocompleteOption<string>[] = [
             <Autocomplete
                 bind:input={tagInput}
                 options={tagOptions}
+                on:selection={onTagSelection}
             />
         </div>
     </div>
