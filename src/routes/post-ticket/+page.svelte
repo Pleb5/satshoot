@@ -276,7 +276,7 @@ const tagOptions: AutocompleteOption<string>[] = [
 			
 </script>
 
-<div class="card grid grid-cols-1 p-4 w-full text-token gap-y-4 place-content-center">
+<div class="card flex flex-col p-4 w-full text-token space-y-4 justify-start">
     <h1 class="h1 text-center m-4">Create Ticket</h1>
 
     <label class="label max-w-md">
@@ -315,7 +315,7 @@ const tagOptions: AutocompleteOption<string>[] = [
         />
 
 
-        <div class="card max-w-sm pb-4 overflow-y-auto max-h-30" tabindex="-1">
+        <div class="card max-w-sm pb-4 overflow-y-auto max-h-32" tabindex="-1">
             <Autocomplete
                 bind:input={tagInput}
                 options={tagOptions}

@@ -7,8 +7,7 @@
     let list: string[] = ['foo', 'bar', 'fizz', 'buzz'];
 </script>
 
-<!-- Get help button needed to style position explicitly, tailwind bugs out on bottom and right properties on this one -->
-<a href="/post-ticket" class="btn fixed xl:btn-xl lg:btn-lg md:btn-md bg-gradient-to-br variant-gradient-primary-tertiary" style="bottom: 5rem; right: 2rem;">
+<a href="/post-ticket" class="btn fixed bottom-20 right-10 xl:btn-xl lg:btn-lg md:btn-md bg-gradient-to-br variant-gradient-primary-tertiary">
     <span>Get Help</span>
 </a>
 
