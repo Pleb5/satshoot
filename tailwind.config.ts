@@ -19,7 +19,7 @@ const config = {
 		extend: {},
         fontFamily: {
             sans: [
-                '"Hind", sans-serif',
+                // '"Hind", sans-serif',
             ]
         },
 	},
