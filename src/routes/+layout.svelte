@@ -27,7 +27,17 @@
     import MenuItem_2 from "$lib/components/NavBar/MenuItem_2.svelte";
     import MenuItem_3 from "$lib/components/NavBar/MenuItem_3.svelte";
 
+    // Skeleton Toast
+    import { Toast } from '@skeletonlabs/skeleton';
 
+    // Skeleton Modals
+    import { Modal } from '@skeletonlabs/skeleton';
+
+    // Skeleton stores init
+    import { initializeStores } from '@skeletonlabs/skeleton';
+    initializeStores();
+
+    // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
 
@@ -56,6 +66,8 @@
 
 </script>
 
+<Toast />
+<Modal />
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
 	<svelte:fragment slot="header">
         <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end ">
