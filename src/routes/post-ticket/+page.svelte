@@ -3,6 +3,19 @@
     import { Autocomplete } from '@skeletonlabs/skeleton';
     import type { AutocompleteOption } from '@skeletonlabs/skeleton';
 
+    import { getToastStore } from '@skeletonlabs/skeleton';
+    import type { ToastSettings, ToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent, ModalStore } from '@skeletonlabs/skeleton';
+
+    // Retrieve Toast store at the top level
+    const toastStore = getToastStore();
+
+    // Retrieve Modal Store at the top level
+    const modalStore = getModalStore();
+			
+			
+
     let tagInput = '';
     
 const tagOptions: AutocompleteOption<string>[] = [
@@ -260,17 +273,78 @@ const tagOptions: AutocompleteOption<string>[] = [
 
     let tagList: string[] = [];
 
-    let inputChip:InputChip;
+    // For form validation
+    const maxTags:number = 5;
+    const minDescriptionLength = 20;
+    const minTitleLength = 10;
 
+    // For form submission
+    let titleValid = false;
+    let descriptionValid = false;
+    // reactive values bound to user input
+    let titleText: string='';
+    let descriptionText: string='';
+    // reactive classes based on validity of user input
+    let titleState = '';
+    let descriptionState = '';
+
+    // Tag validation on tag selection from autocomplete
     function onTagSelection(event: CustomEvent<AutocompleteOption<string>>): void {
         let tagValue = event.detail.value;
         // Run validation checks here(dont allow duplicates, max=5 tags) 
         // and modify underlying data structure
         // Cannot explicitly call submit of InputChips component without nasty workarounds
         // Modify conditions if validity checks ever change
-        if (tagList.length < 5 && tagList.includes(tagValue) === false) {
+        if (tagList.length < maxTags && tagList.includes(tagValue) === false) {
             tagList = [...tagList, tagValue];
             tagInput = '';        
+        }
+    }
+
+    // Checking Title and description values on user input
+    $: {
+        if (titleText.length < minTitleLength) {
+            titleValid = false;
+            titleState = 'input-error';
+        }
+        else {
+            titleValid = true;
+            titleState = 'input-success';
+        }
+
+        if (descriptionText.length < minDescriptionLength) {
+            descriptionValid = false;
+            descriptionState = 'input-error';
+        }
+        else {
+            descriptionValid = true;
+            descriptionState = 'input-success';
+        }
+    }
+
+    function postTicket() {
+       if (titleValid && descriptionValid) {
+            // Post the ticket...
+
+            // Ticket posted Modal
+            const modal: ModalSettings = {
+                type: 'alert',
+                // Data
+                title: 'Success!',
+                body: 'Ticket posted successfully!',
+                buttonTextCancel:'Ok',
+            };
+            modalStore.trigger(modal);
+
+
+        }
+        else {
+            const t: ToastSettings = {
+                message: '<p style="text-align:center;"><strong>Invalid Ticket!</strong></p><br/>Please fill in a <strong>valid Ticket Title</strong> and <strong>Description</strong> before posting!',
+                timeout: 7000,
+                background: 'bg-error-300-600-token',
+            };
+            toastStore.trigger(t);
         }
     }
 			
@@ -282,10 +356,11 @@ const tagOptions: AutocompleteOption<string>[] = [
     <label class="label max-w-md">
         <span>Ticket Title(min. 10chars)</span>
         <input 
-            class="input"
+            class="input {titleState}"
             type="text"
             placeholder="Title of your Ticket"
-            minlength="10"
+            minlength={minTitleLength}
+            bind:value={titleText}
         />
     </label>
 
@@ -293,10 +368,11 @@ const tagOptions: AutocompleteOption<string>[] = [
     <label class="label max-w-xl">
         <span>Ticket Description(min. 20chars)</span>
         <textarea 
-            class="textarea"
+            class="textarea {descriptionState}"
             rows="4"
             placeholder="Detailed description of your issue"
-            minlength="20"
+            minlength={minDescriptionLength}
+            bind:value={descriptionText}
         />
     </label>
 
@@ -304,12 +380,11 @@ const tagOptions: AutocompleteOption<string>[] = [
     <div class="text-token max-w-sm gap-y-2 ">
         <span>Ticket Tags(max. 5pcs)</span>
         <InputChip
-            bind:this={inputChip}
             bind:input={tagInput}
             bind:value={tagList}
             name="tags"
             placeholder="Enter tag value..."
-            max={5}
+            max={maxTags}
             minlength={2}
             maxlength={20}
         />
@@ -327,7 +402,10 @@ const tagOptions: AutocompleteOption<string>[] = [
 </div>
 
 <div class="flex mx-auto my-10 justify-center">
-    <button type="button" class="btn max-w-sm bg-gradient-to-br variant-gradient-primary-tertiary">
+    <button type="button"
+        class="btn max-w-sm bg-gradient-to-br variant-gradient-primary-tertiary"
+        on:click={postTicket}
+    >
         <span>Post Ticket</span>
     </button>
 </div>
