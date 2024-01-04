@@ -41,6 +41,7 @@
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
 
+    let loggedIn:boolean;
 
     // Create a new NDK instance with explicit relays
     const ndk = new NDK({
@@ -78,19 +79,26 @@
             </svelte:fragment>
             
             <svelte:fragment slot="trail">
-                <!-- Triggers popup settings menu -->
-                <button use:popup={settingsMenu}>
+                {#if loggedIn}
+                    <!-- Triggers popup settings menu -->
+                    <button use:popup={settingsMenu}>
 
-                    <!-- Avatar image -->
-                    <Avatar 
-                        class="rounded-full border-white"
-                        src="profile-image.png"
-                        border="border-4 border-surface-300-600-token hover:!border-primary-500"
-                        cursor="cursor-pointer"
-                    /> 
-                </button>
-                <!-- Popup menu content -->
-                <SettingsMenu />
+                        <!-- Avatar image -->
+                        <Avatar 
+                            class="rounded-full border-white"
+                            src="profile-image.png"
+                            border="border-4 border-surface-300-600-token hover:!border-primary-500"
+                            cursor="cursor-pointer"
+                        /> 
+                    </button>
+                    <!-- Popup menu content -->
+                    <SettingsMenu />
+                {:else}
+                    <a href="/login" class="btn btn-md bg-primary-300-600-token ">
+                        <span>Login</span>
+                    </a>
+
+                {/if}
             </svelte:fragment>
 
             <div class="flex items-center space-x-4">
@@ -105,7 +113,7 @@
             <AppRail 
                 class="hidden lg:block"
                 hover="hover:variant-soft-primary"
-                active="bg-primary-active-token"
+                active="bg-primary-300-600-token"
                 background="bg-surface-100-800-token"
             >
                 <svelte:fragment slot="lead">
@@ -131,7 +139,7 @@
 	<svelte:fragment slot="footer">
         <TabGroup 
             justify="justify-center"
-            active="bg-primary-active-token"
+            active="bg-primary-300-600-token"
             hover="hover:variant-soft-primary"
             flex="flex-1"
             rounded=""

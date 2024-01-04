@@ -7,7 +7,7 @@
     let list: string[] = ['foo', 'bar', 'fizz', 'buzz'];
 </script>
 
-<a href="/post-ticket" class="btn fixed bottom-20 right-10 xl:btn-xl lg:btn-lg md:btn-md bg-gradient-to-br variant-gradient-primary-tertiary">
+<a href="/post-ticket" class="btn fixed bottom-20 right-10 xl:btn-xl lg:btn-lg md:btn-md bg-primary-300-600-token">
     <span>Get Help</span>
 </a>
 
