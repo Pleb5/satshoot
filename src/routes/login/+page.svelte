@@ -10,6 +10,7 @@
 
     import type { ModalSettings, ModalComponent, ModalStore } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
+    import FullscreenModal from "$lib/components/Modals/FullscreenModal.svelte";
 
     // Navigate to Home page if user is already logged in(needs to log out first)
     $: {
@@ -66,13 +67,11 @@
 
             console.log("ephemeral user npub: ", user.npub);
 
-            // Trigger Modal to show seed words
+            const modalComponent: ModalComponent = { ref: FullscreenModal, props: {seedWords: seedWords} };
+            console.log(modalComponent)
             const modal: ModalSettings = {
-                type: 'alert',
-                // Data
-                title: 'Backup your Identity!',
-                body: '<p>Write down these words in a safe place to be able to access your account later:</br></p> <strong>' + seedWords + '</strong>',
-                buttonTextCancel:'I wrote them down!',
+                type: 'component',
+                component: modalComponent,
             };
             modalStore.trigger(modal);
         });
