@@ -335,8 +335,6 @@ const tagOptions: AutocompleteOption<string>[] = [
                 buttonTextCancel:'Ok',
             };
             modalStore.trigger(modal);
-
-
         }
         else {
             const t: ToastSettings = {
