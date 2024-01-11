@@ -13,6 +13,7 @@
 		"@fortawesome/fontawesome-free": "^6.5.1",
 		"@fortawesome/free-regular-svg-icons": "^6.5.1",
 		"@fortawesome/free-solid-svg-icons": "^6.5.1",
+		"@nostr-dev-kit/ndk-svelte": "^2.2.3",
 		"@skeletonlabs/skeleton": "^2.6.0",
 		"@skeletonlabs/tw-plugin": "^0.3.0",
 		"@sveltejs/adapter-auto": "^2.0.0",

@@ -1,14 +1,22 @@
 <script lang="ts">
     import "../app.css";
 
+    import { beforeUpdate, tick } from 'svelte';
+
+
     // Font awesome
     import '@fortawesome/fontawesome-free/css/fontawesome.css';
     import '@fortawesome/fontawesome-free/css/regular.css';
 	import '@fortawesome/fontawesome-free/css/solid.css';
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
-    import NDK, { NDKEvent} from "@nostr-dev-kit/ndk";
+    
+    import ndk from "$lib/stores/ndk";
+
     import { browser } from '$app/environment';
+    import { privateKeyFromSeedWords} from "nostr-tools/nip06"
+    import type { NDKUser } from "@nostr-dev-kit/ndk";
+    import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
 
     import { AppShell } from '@skeletonlabs/skeleton';
     import { AppBar } from '@skeletonlabs/skeleton';
@@ -35,29 +43,54 @@
 
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
+    import { onMount } from "svelte";
     initializeStores();
 
     // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
+    let profileImage: string | undefined;
+    let loggedIn: boolean;
 
-    let loggedIn:boolean;
+    $: {
+        profileImage = $ndk.activeUser?.profile?.image;
+        loggedIn = !!$ndk.activeUser;
+    }
+        
+    onMount(() => {
+        if (!loggedIn) {
+            // Try to get saved user from localStorage
+            const signinMethod = localStorage.getItem("signin-method");
 
-    // Create a new NDK instance with explicit relays
-    const ndk = new NDK({
-        // signer: signer,
-        explicitRelayUrls: ["wss://relay.damus.io", "wss://relay.snort.social"],
+            if (signinMethod === "ephemeral") {
+                const seedWords = localStorage.getItem("nostr-seedwords")
+                if (seedWords) {
+                    const privateKey = privateKeyFromSeedWords(seedWords); 
+                    $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+                        
+                    // Trigger UI change in profile
+                    $ndk.activeUser = $ndk.activeUser;
+                    console.log("got seedwords from localStorage: ", seedWords);
+                    $ndk.signer?.user().then( (user:NDKUser) => {
+                        // Trigger UI change in profile when user Promise is retrieved
+                        $ndk.activeUser = $ndk.activeUser;
+                        console.log("ephemeral user npub: ", user.npub);
+                    });
+                }
+            } else if (signinMethod === "nip07") {
+                $ndk.signer = new NDKNip07Signer();
+                $ndk.signer.user().then( (user:NDKUser) => {
+                    // Trigger UI update for profile
+                    $ndk.activeUser = $ndk.activeUser;
+                    user.fetchProfile().then(() => {
+                        // Trigger UI update for profile image
+                        $ndk.activeUser = $ndk.activeUser;
+                    });
+                });
+            }
+        }
     });
 
-    // if (browser) {
-    //     ndk.connect().then(() => {
-    //         console.log('Connected');
-    //     });
-    // }
-
-    // const user = ndk.getUser({
-    //     npub: 'npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw'
-    // });
 
     const settingsMenu: PopupSettings = {
         event: "click",
@@ -65,6 +98,8 @@
         placement: "top"
     };
 
+
+    
 </script>
 
 <Toast />
@@ -85,10 +120,10 @@
 
                         <!-- Avatar image -->
                         <Avatar 
-                            class="rounded-full border-white"
-                            src="profile-image.png"
+                            class="rounded-full border-white placeholder-white"
                             border="border-4 border-surface-300-600-token hover:!border-primary-500"
                             cursor="cursor-pointer"
+                            bind:src={profileImage}
                         /> 
                     </button>
                     <!-- Popup menu content -->
