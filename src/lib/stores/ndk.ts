@@ -1,17 +1,16 @@
 import { writable } from 'svelte/store';
 import NDKSvelte from "@nostr-dev-kit/ndk-svelte";
-import type { NDKUserParams } from "@nostr-dev-kit/ndk";
 
-
+export const INITIALRELAYURLS = [
+    "wss://purplepag.es/",
+    "wss://relay.nostr.band/",
+    "wss://nos.lol/",
+    "wss://relay.snort.social/",
+    "wss://relay.damus.io/",
+]
 
 export const ndkStore = new NDKSvelte({
-    explicitRelayUrls: [
-        "wss://purplepag.es",
-        "wss://relay.nostr.band",
-        "wss://nos.lol",
-        "wss://relay.snort.social",
-        "wss://relay.damus.io",
-    ],
+    explicitRelayUrls: INITIALRELAYURLS,
     outboxRelayUrls: ["wss://purplepag.es"],
     enableOutboxModel: false,
 });

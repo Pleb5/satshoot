@@ -8,7 +8,7 @@
 
     import { goto } from '$app/navigation';
 
-    import type { ModalSettings, ModalComponent, ModalStore } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import FullscreenModal from "$lib/components/Modals/FullscreenModal.svelte";
 
@@ -27,6 +27,10 @@
                 localStorage.setItem('signin-method', "nip07");
                 $ndk.activeUser = $ndk.activeUser;
 
+                user.fetchProfile().then(() => {
+                    // Trigger UI update for profile image
+                    $ndk.activeUser = $ndk.activeUser;
+                });
                 if (user.npub) {
                     console.log("Permission granted:", user.npub)
                 }
@@ -50,6 +54,7 @@
     // Retrieve Modal Store at the top level
     const modalStore = getModalStore();
 
+    // TODO: Option to restore a backed up nostr account from nip06 words
     function onEphemeralLogin() {
         // Generate new Ephemeral private private key
         const seedWords = generateSeedWords();
@@ -100,9 +105,9 @@
             <span>Generate ephemeral Nostr identity</span>
         </button>
 
-        <button class="btn btn-lg bg-primary-300-600-token " >
-            <span>Login with nsecBunker</span>
-        </button>
+        <!-- <button class="btn btn-lg bg-primary-300-600-token " > -->
+        <!--     <span>Login with nsecBunker</span> -->
+        <!-- </button> -->
     </div>
 
 </div>
