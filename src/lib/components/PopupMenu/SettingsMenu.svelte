@@ -5,7 +5,6 @@
     import { LightSwitch } from '@skeletonlabs/skeleton';
 
     import ndk from '$lib/stores/ndk';
-    import INITIALRELAYURLS from '$lib/stores/ndk'
     import { goto } from '$app/navigation';
 
     const modalStore = getModalStore();
@@ -19,8 +18,8 @@
             if (r) {
                 localStorage.clear();
                 // remove from ndk relay pool those user relays that are non-intersecting
-                const relaysToDelete = Array.from($ndk.pool.relays.keys())
-                .filter(element => !($ndk.explicitRelayUrls?.includes(element)))
+                const relaysToDelete = $ndk.pool.urls()
+                    .filter(element => !($ndk.explicitRelayUrls?.includes(element)))
 
                 relaysToDelete.forEach((value) => {
                     $ndk.pool.removeRelay(value);
