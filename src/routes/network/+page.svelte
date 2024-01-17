@@ -27,7 +27,6 @@
     // Going to other pages and page refreshes might erase all added Relays
     // and start from scratch (onMount in layout.svelte reloads ndk and user)
     function addRelay() {
-        console.log("add relay")
         $ndk.addExplicitRelay(normalizeRelayUrl(relayInputValue));
         relayInputValue = "";
     }

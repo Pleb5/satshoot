@@ -48,7 +48,7 @@
     <nav class="list-nav">
         <ul>
             <li>
-                <a href="/">
+                <a href={ "/" + $ndk.activeUser?.npub }>
                     <span class="w-6 text-center"><i class="fa-solid fa-user" /></span>
                     <span>Profile</span>
                 </a>
