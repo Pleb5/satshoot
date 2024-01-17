@@ -72,7 +72,7 @@
 
             console.log("ephemeral user npub: ", user.npub);
 
-            const modalComponent: ModalComponent = { ref: FullscreenModal, props: {seedWords: seedWords} };
+            const modalComponent: ModalComponent = { ref: FullscreenModal, props: {seedWords: seedWords.split(' ')} };
             console.log(modalComponent)
             const modal: ModalSettings = {
                 type: 'component',
