@@ -31,25 +31,25 @@
 
 {#await user?.fetchProfile()}
     <div class="" >Loading user...</div>
-{:then value}
+{:then userProfile}
     <div class="card p-4">
         <header class="mb-8">
             <div class="grid grid-cols-3 justify-evenly">
                 <Avatar 
                     class="rounded-full border-white placeholder-white"
-                    src={user?.profile?.image}
+                    src={userProfile?.image}
                 /> 
-                <div class="text-center font-bold text-2xl">{user?.profile?.name}</div>
+                <div class="text-center font-bold text-2xl">{userProfile?.name}</div>
             </div>
         </header>
         <h4 class="h4">Bio:</h4>
         <div class="flex flex-col gap-y-2">
-            <div>{user?.profile?.bio || user?.profile?.about}</div>
+            <div>{userProfile?.bio || userProfile?.about}</div>
         </div>
         <footer class="mt-4">
             <h4 class="h4">Other:</h4>
             <div class="flex flex-col gap-y-1">
-                <div>Nip05: {user?.profile?.nip05 ?? '?'}</div>
+                <div>Nip05: {userProfile?.nip05 ?? '?'}</div>
                 <div>Npub: {npub}</div>
             </div>
         </footer>
@@ -58,24 +58,3 @@
     <div class="text-error-400-500-token">Error fetching user: {error}</div>
 {/await}
 
-
-
-
-<!-- {#await user?.fetchProfile()} -->
-<!--     <div class="userCard--loading {$$props.class}" style={$$props.style}>Loading user...</div> -->
-<!-- {:then value} -->
-<!--     <div class="userCard {$$props.class}" style={$$props.style}> -->
-<!--         <div class="userCard--avatar"> -->
-<!--             <Avatar {ndk} userProfile={user?.profile} class="userCard--avatar-img" /> -->
-<!--         </div> -->
-<!--         <div class="userCard--details"> -->
-<!--             <Name {ndk} userProfile={user?.profile} class="userCard--name" /> -->
-<!--             <Nip05 {ndk} userProfile={user?.profile} class="userCard--nip05" /> -->
-<!--             <Npub {ndk} {npub} {pubkey} {user} class="userCard--npub" /> -->
-<!--             <div class="userCard--bio">{user?.profile?.bio || user?.profile?.about}</div> -->
-<!--         </div> -->
-<!--     </div> -->
-<!-- {:catch error} -->
-<!--     <div class="userCard--error {$$props.class}" style={$$props.style}>Error fetching user</div> -->
-<!-- {/await} -->
-<!---->
