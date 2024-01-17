@@ -28,9 +28,9 @@
 
 </script>
 {#if relay}
-    <div class="flex items-center p-4 justify-between space-x-16">
-        <div class="">{ relay.url }</div>
-        <div class="badge {relayStatusColor}">{relayStatusText}</div>
+    <div class="grid grid-cols-2 w-96 justify-between p-4 ">
+        <div class="text-xl">{ relay.url.replace("wss://","").slice(0, -1) }</div>
+        <div class="badge justify-self-end {relayStatusColor}">{relayStatusText}</div>
     </div>
 
 {:else}
