@@ -1,19 +1,14 @@
 <script lang="ts">
     import "../app.css";
 
-    import { beforeUpdate, tick } from 'svelte';
-
-
     // Font awesome
     import '@fortawesome/fontawesome-free/css/fontawesome.css';
     import '@fortawesome/fontawesome-free/css/regular.css';
 	import '@fortawesome/fontawesome-free/css/solid.css';
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
-    
     import ndk from "$lib/stores/ndk";
 
-    import { browser } from '$app/environment';
     import { privateKeyFromSeedWords} from "nostr-tools/nip06"
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
@@ -36,18 +31,25 @@
     import MenuItem_3 from "$lib/components/NavBar/MenuItem_3.svelte";
 
     // Skeleton Toast
-    import { Toast } from '@skeletonlabs/skeleton';
+    import { Toast, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
 
     // Skeleton Modals
-    import { Modal } from '@skeletonlabs/skeleton';
+    import { Modal, getModalStore } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import DecryptSeedModal from "$lib/components/Modals/DecryptSeedModal.svelte";
 
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onMount } from "svelte";
+    import Page from "./+page.svelte";
+
     initializeStores();
 
     // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
+
+    const toastStore = getToastStore();
+    const modalStore = getModalStore();
 
     let profileImage: string | undefined;
     let loggedIn: boolean;
@@ -63,19 +65,49 @@
             const signinMethod = localStorage.getItem("signin-method");
 
             if (signinMethod === "ephemeral") {
-                const seedWords = localStorage.getItem("nostr-seedwords")
-                if (seedWords) {
-                    const privateKey = privateKeyFromSeedWords(seedWords); 
-                    $ndk.signer = new NDKPrivateKeySigner(privateKey); 
-                        
-                    // Trigger UI change in profile
-                    $ndk.activeUser = $ndk.activeUser;
-                    console.log("got seedwords from localStorage: ", seedWords);
-                    $ndk.signer?.user().then( (user:NDKUser) => {
-                        // Trigger UI change in profile when user Promise is retrieved
-                        $ndk.activeUser = $ndk.activeUser;
-                        console.log("ephemeral user npub: ", user.npub);
-                    });
+                try {
+                    // Get decrypted seed from a modal prompt where user enters passphrase
+                    // User can dismiss modal in which case decryptedSeed is undefined
+                    new Promise<string|undefined>((resolve) => {
+                        const modalComponent: ModalComponent = {
+                            ref: DecryptSeedModal,
+                        };
+
+                        const modal: ModalSettings = {
+                            type: 'component',
+                            component: modalComponent,
+                            response: (decryptedSeed: string|undefined) => {
+                                resolve(decryptedSeed); 
+                            },
+                        };
+                        modalStore.trigger(modal);
+                        // We got some kind of response from modal
+                    }).then((decryptedSeed: string|undefined) => {
+                            if (decryptedSeed) {
+                                // Call DecryptSeed Modal to prompt for passphrase
+                                // This can throw invalid seed words if decryption was unsuccessful
+                                console.log(decryptedSeed);
+                                const privateKey = privateKeyFromSeedWords(decryptedSeed); 
+                                $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+
+                                // Trigger UI change in profile
+                                $ndk.activeUser = $ndk.activeUser;
+                                console.log("got seedwords from localStorage: ", decryptedSeed);
+                                $ndk.signer?.user().then( (user:NDKUser) => {
+                                    // Trigger UI change in profile when user Promise is retrieved
+                                    $ndk.activeUser = $ndk.activeUser;
+                                    console.log("ephemeral user npub: ", user.npub);
+                                });
+                            }
+                        });
+
+                } catch(e) {
+                    // Todo: Errors in Toast message without timeout
+                    const t: ToastSettings = {
+                        message:`Could not create private key from seed words, error: ${e}`,
+                        autohide: false,
+                    };
+                    toastStore.trigger(t);
                 }
             } else if (signinMethod === "nip07") {
                 $ndk.signer = new NDKNip07Signer();

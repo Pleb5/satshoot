@@ -65,14 +65,14 @@
         $ndk.signer?.user().then( (user:NDKUser) => {
             $ndk.activeUser = $ndk.activeUser;
 
-            // Save private key seed words in browser localStorage
-            localStorage.setItem('nostr-seedwords', seedWords);
-            // todo: enum for signing methods
-            localStorage.setItem('signin-method', "ephemeral");
+            const modalComponent: ModalComponent = {
+                ref: FullscreenModal,
+                props: {
+                    seedWords: seedWords.split(' '), 
+                    npub: user.npub
+                }
+            };
 
-            console.log("ephemeral user npub: ", user.npub);
-
-            const modalComponent: ModalComponent = { ref: FullscreenModal, props: {seedWords: seedWords.split(' ')} };
             console.log(modalComponent)
             const modal: ModalSettings = {
                 type: 'component',
