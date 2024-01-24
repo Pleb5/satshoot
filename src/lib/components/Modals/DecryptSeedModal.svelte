@@ -43,9 +43,9 @@
                     };
                 } else {
                     statusMessage = 'Unexpected response from decryption process:' + m.data;
-                setTimeout(()=>{
-                    statusColor = 'text-red-500';
-                }, 800);            
+                    setTimeout(()=>{
+                        statusColor = 'text-red-500';
+                    }, 800);            
                 }
             };
 

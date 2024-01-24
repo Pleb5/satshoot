@@ -41,7 +41,6 @@
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onMount } from "svelte";
-    import Page from "./+page.svelte";
 
     initializeStores();
 

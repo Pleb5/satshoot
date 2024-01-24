@@ -11,6 +11,10 @@
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import FullscreenModal from "$lib/components/Modals/FullscreenModal.svelte";
+    import RestoreEphemeralKeyModal from "$lib/components/Modals/RestoreEphemeralKeyModal.svelte";
+
+    // Retrieve Modal Store at the top level
+    const modalStore = getModalStore();
 
     // Navigate to Home page if user is already logged in(needs to log out first)
     $: {
@@ -51,10 +55,7 @@
     }
 
 
-    // Retrieve Modal Store at the top level
-    const modalStore = getModalStore();
 
-    // TODO: Option to restore a backed up nostr account from nip06 words
     function onEphemeralLogin() {
         // Generate new Ephemeral private private key
         const seedWords = generateSeedWords();
@@ -83,7 +84,16 @@
     }
 
     function onRestoreEphemeralKey() {
+        // Restore Private Key from a modal prompt where user enters seed words
+        const modalComponent: ModalComponent = {
+            ref: RestoreEphemeralKeyModal,
+        };
 
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
     }
 
 </script>
@@ -93,7 +103,7 @@
     <div class="flex flex-col items-start gap-y-5 mx-auto">
         <div class="flex gap-x-4">
             <button class="btn btn-lg bg-primary-300-600-token " on:click={onNIP07Login}>
-                <span>Browser Extension </span>
+                <span>Connect NIP07 Browser Extension </span>
             </button>
 
             <a 
