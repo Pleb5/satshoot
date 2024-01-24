@@ -82,6 +82,10 @@
         });
     }
 
+    function onRestoreEphemeralKey() {
+
+    }
+
 </script>
 <h1 class="h1 text-center my-8">Bitcoin Troubleshoot Login</h1>
 
@@ -100,14 +104,16 @@
                 <span>See Alby</span>
             </a>
         </div>
-
+        <!-- Todo: Add tooltip hint '?' to explain that the ephemeral part refers to  -->
+        <!-- local storage of key. Backed up nostr identities are not lost on clearing the browser local storage -->
         <button class="btn btn-lg bg-primary-300-600-token " on:click={onEphemeralLogin}>
-            <span>Generate ephemeral Nostr identity</span>
+            <span>Generate NEW Ephemeral Nostr identity</span>
         </button>
 
-        <!-- <button class="btn btn-lg bg-primary-300-600-token " > -->
-        <!--     <span>Login with nsecBunker</span> -->
-        <!-- </button> -->
+        <button class="btn btn-lg bg-primary-300-600-token " on:click={onRestoreEphemeralKey}>
+            <span>Restore Ephemeral Nostr identity(Seed Words)</span>
+        </button>
+
     </div>
 
 </div>

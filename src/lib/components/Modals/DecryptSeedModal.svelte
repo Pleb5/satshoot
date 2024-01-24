@@ -1,41 +1,91 @@
 <script lang="ts">
-	import type { SvelteComponent } from 'svelte';
+	import { type SvelteComponent } from 'svelte';
 
 	// Modals, Toasts
 	import { getModalStore } from '@skeletonlabs/skeleton';
-    import { getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
 
-    import { decryptSeed } from '$lib/utils/crypto';
-
+    import { DataLoadError } from '$lib/utils/errors';
 	// Props
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
 
 	const modalStore = getModalStore();
-    const toastStore = getToastStore();
 
-    let seedWords: string;
     let passphrase:string;
-    let error: string='';
+    let statusMessage: string;
+    let statusColor = 'text-blue-500';
 
-    async function loadSeed() {
+    function loadSeed() {
+        statusColor = 'text-blue-500';
+        statusMessage = 'Decrypting...';
         try {
             const encrpytedSeed: string|null = localStorage.getItem("nostr-seedwords")
             const salt :string|null = localStorage.getItem("nostr-npub")
 
-            if (!encrpytedSeed || !salt) {
-                throw new Error('Could not fetch encrypted seedwords from local storage!');
+            if (!encrpytedSeed) {
+                throw new DataLoadError('Could not fetch encrypted seedwords from local storage!', 'nostr-seedwords');
+            }
+            if (!salt) {
+                throw new DataLoadError('Could not fetch npub from local storage! Npub necessary for decryption!', 'nostr-npub');
             }
 
-            seedWords = await decryptSeed(encrpytedSeed, passphrase, salt);
+            const cryptWorker = new Worker(new URL("$lib/utils/crypto.worker.ts", import.meta.url),{
+                type: 'module'
+            });
 
-            if ($modalStore[0].response) {
-                $modalStore[0].response(seedWords);
-                modalStore.close();
+            cryptWorker.onmessage = (m) => {
+                console.log("Received message from cryptWorker:", m)
+                const decryptedSeed = m.data['decryptedSeed'];
+                if (decryptedSeed) {
+                    if ($modalStore[0].response) {
+                        $modalStore[0].response(decryptedSeed);
+                        modalStore.close();
+                    };
+                } else {
+                    statusMessage = 'Unexpected response from decryption process:' + m.data;
+                setTimeout(()=>{
+                    statusColor = 'text-red-500';
+                }, 800);            
+                }
             };
+
+            cryptWorker.onerror = (e) => {
+                console.log("Error happened in cryptWorker:", e.message)
+                statusMessage = `Error while decrypting seed words! Incorrect Passphrase!`;
+                setTimeout(()=>{
+                    statusColor = 'text-red-500';
+                }, 800);            
+
+            };
+
+            cryptWorker.onmessageerror = (me) => {
+                console.log('Message error:', me);
+                statusMessage = 'Received malformed message: ' + me.data;
+
+                setTimeout(()=>{
+                    statusColor = 'text-red-500';
+                }, 800);            
+            }
+            
+            // Start worker in background and wait for decryption result in onmessage
+            cryptWorker.postMessage({
+                encrpytedSeed: encrpytedSeed,
+                passphrase: passphrase,
+                salt: salt
+            });
+
+
         } catch(e) {
-            // Show error message
-            error = `Error while decrypting seed words! Incorrect Passphrase!`;
+            if (e instanceof DataLoadError) {
+                const error = e as DataLoadError;
+               statusMessage = error.message; 
+            } else {
+                statusMessage = 'Unkown Error happened:' + e;
+            }
+            setTimeout(()=>{
+                statusColor = 'text-red-500';
+            }, 800);            
+ 
         }
     }
 
@@ -44,18 +94,16 @@
 </script>
 
 {#if $modalStore[0]}
-	<div class="card p-4 grid grid-cols-1 justify-center w-screen/2 h-screen-2 bg-surface-400-500-token">
-        <h2 class="h2">Decrypt Ephemeral Seed</h2>
-        <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it</h4>
-        <form on:submit={()=>{
-            error = 'Decrypting...';
-            loadSeed();
-        }}>
+	<div class="card p-8 grid grid-cols-1 justify-center w-screen/2 h-screen-2 bg-surface-400-500-token">
+        <h3 class="h3 text-center font-bold">Decrypt Ephemeral Seed</h3>
+        <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
+        <form 
+            on:submit|preventDefault={ loadSeed }>
             <div class="flex justify-between items-center m-4">
-                <div class="flex justify-between items-center gap-x-1">
                     <input 
-                        class="input w-60 " 
+                        class="input" 
                         title="Passphrase:" 
+                        required
                         type={ showPassword ? 'text' : 'password' }
                         placeholder="Enter Passphrase..."
                         on:input={(event) => passphrase = event.currentTarget.value}
@@ -68,7 +116,8 @@
                             <i class="fa-solid { showPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
                         </span>
                     </button>
-                </div>
+            </div>
+            <div class="flex justify-center">
                 <button 
                     type="submit"
                     class="btn btn-lg h-14 font-bold bg-primary-400-500-token"
@@ -77,9 +126,10 @@
                     Decrypt
                 </button>
             </div>
-            {#if error}
-                <h5 class="h5 font-bold text-red-500">{error}</h5>
-            {/if}
         </form>
+        {#if statusMessage}
+            <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
+        {/if}
     </div>
+
 {/if}

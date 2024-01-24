@@ -6,8 +6,6 @@
 	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
 
-    import { encryptSeed } from '$lib/utils/crypto';
-
 	// Props
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
@@ -33,6 +31,9 @@
     let passphraseValid: boolean = false;
     let confirmPassphraseValid: boolean = false;
 
+    let statusMessage: string;
+    let statusColor = 'text-blue-500';
+
     function validatePassword() {
         if (passphrase.length > 13){
             passphraseValid = true;
@@ -50,23 +51,61 @@
         }
     }
 
-    async function encryptAndSaveSeed() {
+    function encryptAndSaveSeed() {
         if (seedWords && npub) {
             // encrypt seed 
-            const encryptedSeed = await encryptSeed(seedWords.join(' '), passphrase, npub);
+            const cryptWorker = new Worker(new URL("$lib/utils/crypto.worker.ts", import.meta.url),{
+                type: 'module'
+            });
 
-            // Save encrypted seed words in browser localStorage
-            localStorage.setItem('nostr-seedwords', encryptedSeed);
-            localStorage.setItem('nostr-npub', npub);
-            // todo: enum for signing methods
-            localStorage.setItem('signin-method', "ephemeral");
+            cryptWorker.onmessage = (m) => {
+                console.log("Received message from cryptWorker:", m)
+                const encryptedSeed = m.data['encryptedSeed'];
+                if (encryptedSeed && npub) {
+                    // Save encrypted seed words in browser localStorage
+                    localStorage.setItem('nostr-seedwords', encryptedSeed);
+                    localStorage.setItem('nostr-npub', npub);
+                    // todo: enum for signing methods
+                    localStorage.setItem('signin-method', "ephemeral");
+                } else {
+                    statusMessage = 'Unexpected response from decryption process:' + m.data;
+                setTimeout(()=>{
+                    statusColor = 'text-red-500';
+                }, 800);            
+                }
+            };
+
+            cryptWorker.onerror = (e) => {
+                console.log("Error happened in cryptWorker:", e.message)
+                statusMessage = `Error while decrypting seed words! Incorrect Passphrase!`;
+                setTimeout(()=>{
+                    statusColor = 'text-red-500';
+                }, 800);            
+
+            };
+
+            cryptWorker.onmessageerror = (me) => {
+                console.log('Message error:', me);
+                statusMessage = 'Received malformed message: ' + me.data;
+
+                setTimeout(()=>{
+                    statusColor = 'text-red-500';
+                }, 800);            
+            }
+
+            // Start worker in background and wait for decryption result in onmessage
+            cryptWorker.postMessage({
+                seed: seedWords.join(' '),
+                passphrase: passphrase,
+                salt: npub
+            });
         }
 
     }
 
-    async function finish() {
+    function finish() {
         // Todo: Loading popup while encrypting
-        await encryptAndSaveSeed();
+        encryptAndSaveSeed();
         parent.onClose();
     }
 
@@ -123,6 +162,9 @@
                 >
                     Finish
                 </button>
+                {#if statusMessage}
+                    <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
+                {/if}
             {:else}
                 <p>Error! No seed words to show!</p>
             {/if}
