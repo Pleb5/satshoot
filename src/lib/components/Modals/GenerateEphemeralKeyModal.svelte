@@ -6,6 +6,10 @@
 	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
 
+    // Todo: show nsec and npub also! Let user copy
+    // passwords fields -> passphrase and smaller width
+    // gap reduce
+
 	// Props
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
