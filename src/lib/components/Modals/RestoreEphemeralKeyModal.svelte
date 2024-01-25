@@ -1,9 +1,10 @@
 <script lang="ts">
-	import type { SvelteComponent } from 'svelte';
+	import { type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
     import { NDKPrivateKeySigner, NDKUser } from "@nostr-dev-kit/ndk";
     import { privateKeyFromSeedWords, validateWords } from "nostr-tools/nip06";
-
+    import { wordlist } from '@scure/bip39/wordlists/english';
+    
 	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
 
@@ -12,15 +13,21 @@
 	export let parent: SvelteComponent;
 
 	const modalStore = getModalStore();
-
+    
     let seedWords: string[] = new Array(12).fill('');
     let passphrase:string;
     let confirmPassphrase:string;
     let passphraseValid: boolean = false;
     let confirmPassphraseValid: boolean = false;
+    let showPassword: boolean = false;
+    let showConfirmPassword: boolean = false;
 
     let statusMessage: string;
     let statusColor = 'text-blue-500';
+
+    function validateSingleSeedWord(seedWord: string):boolean {
+        return wordlist.includes(seedWord);
+    }
 
     function validateSeedWordInputs():boolean {
         // Validate all words filled in
@@ -35,7 +42,7 @@
         })
         // validate valid bip39 wordlist provided
         if (!validateWords(seedWords.join(' '))) {
-            statusMessage = "Check the seed words again! Not valid bip39 wordlist!";
+            statusMessage = "Check the seed words again! Not a valid bip39 wordlist!";
             setTimeout(()=>{
                 statusColor = 'text-red-500';
             }, 800);            
@@ -158,9 +165,14 @@ Probably incorrect Seed Words!` + e
                                 <div class="flex items-center gap-x-1">
                                     <strong class="max-w-sm">{i+1}{'. '}</strong>
                                     <input
-                                        class="input {seedWords[i] ? 'input-success' : 'input-error'}"
+                                        class="input {
+                                            validateSingleSeedWord(seedWords[i])
+                                            ? 'input-success' : 'input-error'
+                                        }"
                                         type='text'
-                                        bind:value={ seedWords[i] }
+                                        on:input={ (event) => {
+                                            seedWords[i] = event.currentTarget.value.toLowerCase();
+                                        }}
                                     />
                                 </div>
                             {/each}
@@ -171,24 +183,52 @@ Probably incorrect Seed Words!` + e
 
                 <div class="flex flex-col gap-y-2 items-center my-6">
                     <h2 class="h4 font-bold text-center">Your secret words will be stored locally in encrypted form.</h2>
-                    <h4 class="h4 text-center">Provide a strong passphrase for encryption:</h4>
-                    <input 
-                        class="input {passphraseValid ? 'input-success' : 'input-error'} w-80" 
-                        title="Passphrase(min. 14chars):" 
-                        type="password" 
-                        placeholder="Enter Passphrase..."
-                        bind:value={passphrase}
-                        on:input={validatePassphrase}
-                    />
-                    <input 
-                        class="input {confirmPassphraseValid ? 'input-success' : 'input-error'} w-80" 
-                        title="Confirm Passphrase:" 
-                        type="password" 
-                        placeholder="Confirm Passphrase..." 
-                        disabled={!passphraseValid}
-                        bind:value={confirmPassphrase}
-                        on:input={validateConfirmPassphrase}
-                    />
+                    <h4 class="h4 text-center">Provide a strong passphrase for encryption(min. 14chars):</h4>
+                    <!-- Todo: autocomplete -->
+                    <div class="flex justify-between items-center ">
+                        <input 
+                            class="input {passphraseValid ? 'input-success' : 'input-error'} w-80" 
+                            title="Passphrase(min. 14chars):" 
+                            type={ showPassword? 'text' : 'password' }
+                            placeholder="Enter Passphrase..."
+                            on:input={ (event) => {
+                                passphrase = event.currentTarget.value;
+                                validatePassphrase();
+                            }}
+                        />
+
+                        <button
+                            type="button" 
+                            class="btn btn-icon-sm"
+                            on:click={ () => showPassword = !showPassword }>
+                            <span>
+                                <i class="fa-solid { showPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                            </span>
+                        </button>
+                    </div>
+
+                    <div class="flex justify-between items-center m-4">
+                        <input 
+                            class="input {confirmPassphraseValid ? 'input-success' : 'input-error'} w-80" 
+                            title="Confirm Passphrase:" 
+                            type={ showConfirmPassword ? 'text' : 'password' }
+                            placeholder="Confirm Passphrase..." 
+                            disabled={!passphraseValid}
+                            on:input={ (event) => {
+                                confirmPassphrase = event.currentTarget.value;
+                                validateConfirmPassphrase();
+                            }}
+                        />
+
+                        <button
+                            type="button" 
+                            class="btn btn-icon-sm"
+                            on:click={ () => showConfirmPassword = !showConfirmPassword }>
+                            <span>
+                                <i class="fa-solid { showConfirmPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                            </span>
+                        </button>
+                    </div>
 
                     <button 
                         type="submit"
