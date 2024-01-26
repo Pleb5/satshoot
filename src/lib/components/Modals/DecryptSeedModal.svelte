@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { type SvelteComponent } from 'svelte';
 
-	// Modals, Toasts
+	// Modals
 	import { getModalStore } from '@skeletonlabs/skeleton';
 
     import { DataLoadError } from '$lib/utils/errors';

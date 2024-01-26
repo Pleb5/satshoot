@@ -9,7 +9,7 @@ import { scrypt} from '@noble/hashes/scrypt';
 export function encryptSeed (seed: string, passphrase: string, salt: string):string {
     const key = scrypt(passphrase, salt, { N: 2 ** 16, r: 8, p: 1, dkLen: 32,
         onProgress(percentage: number) {
-            console.log('key derivation in progress: ', percentage);
+            // console.log('key derivation in progress: ', percentage);
         },
     });
 
