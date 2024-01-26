@@ -132,7 +132,7 @@
 		<div class="flex flex-col items-center ">
 			<h2 class="h2 mb-4">Backup your Account</h2>
             {#if seedWords.length > 0 && npub && nsec}
-                <h4 class="h4 mb-4">Write down these words in a safe place to be able to access your account later:</h4>
+                <h4 class="h4 mb-4">Put these words in a safe place to be able to access your account later:</h4>
                 <div class="grid grid-cols-4 w-full space-x-2 mb-8">
                     <div class="card p-4 border-2 border-red-500 col-span-3">
                         <div class="grid grid-cols-4 gap-x-2 gap-y-2">
@@ -142,7 +142,7 @@
                         </div>
                     </div>
                     <button 
-                        class="btn btn-md w-40 self-center justify-self-center bg-red-500 font-bold"
+                        class="btn btn-md w-40 self-center justify-self-start bg-red-500 font-bold"
                         use:clipboard={seedWords.join(' ')}
                         on:click={onCopySeed}
                     >
@@ -155,7 +155,7 @@
                         <strong class="max-w-sm">{nsec}</strong>
                     </div>
                     <button 
-                        class="btn btn-md w-40 self-center justify-self-center bg-red-500 font-bold"
+                        class="btn btn-md w-40 self-center justify-self-start bg-red-500 font-bold"
                         use:clipboard={nsec}
                         on:click={onCopyNsec}
                     >
@@ -168,7 +168,7 @@
                         <strong class="max-w-sm">{npub}</strong>
                     </div>
                     <button 
-                        class="btn btn-md self-center justify-self-center bg-red-500 font-bold"
+                        class="btn btn-md self-center justify-self-start bg-red-500 font-bold"
                         use:clipboard={npub}
                         on:click={onCopyNpub}
                     >

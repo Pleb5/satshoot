@@ -4,9 +4,9 @@
     import type { AutocompleteOption } from '@skeletonlabs/skeleton';
 
     import { getToastStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings, ToastStore } from '@skeletonlabs/skeleton';
+    import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent, ModalStore } from '@skeletonlabs/skeleton';
+    import type { ModalSettings } from '@skeletonlabs/skeleton';
 
     // Retrieve Toast store at the top level
     const toastStore = getToastStore();
@@ -348,7 +348,7 @@ const tagOptions: AutocompleteOption<string>[] = [
 			
 </script>
 
-<div class="card flex flex-col p-4 w-full text-token space-y-4 justify-start">
+<div class="flex flex-col p-4 w-full text-token space-y-8 items-center">
     <h1 class="h1 text-center m-4">Create Ticket</h1>
 
     <label class="label max-w-md">
@@ -399,12 +399,11 @@ const tagOptions: AutocompleteOption<string>[] = [
 
 </div>
 
-<div class="flex mx-auto my-10 justify-center">
+<div class="flex justify-center mt-8">
     <button type="button"
-        class="btn max-w-sm bg-gradient-to-br variant-gradient-primary-tertiary"
+        class="btn btn-lg bg-gradient-to-br variant-gradient-primary-tertiary"
         on:click={postTicket}
     >
         <span>Post Ticket</span>
     </button>
 </div>
-
