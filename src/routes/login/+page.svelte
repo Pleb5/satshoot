@@ -3,6 +3,7 @@
     import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
+    import { nsecEncode } from "nostr-tools/nip19"
 
     import { browser } from "$app/environment";
 
@@ -64,7 +65,6 @@
         const privateKey = privateKeyFromSeedWords(seedWords); 
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
-        console.log("Ephemeral nostr user seed words:", seedWords);
         $ndk.signer?.user().then( (user:NDKUser) => {
             $ndk.activeUser = $ndk.activeUser;
 
@@ -72,11 +72,11 @@
                 ref: GenerateEphemeralKeyModal,
                 props: {
                     seedWords: seedWords.split(' '), 
-                    npub: user.npub
+                    npub: user.npub,
+                    nsec: nsecEncode(privateKey) 
                 }
             };
 
-            console.log(modalComponent)
             const modal: ModalSettings = {
                 type: 'component',
                 component: modalComponent,
