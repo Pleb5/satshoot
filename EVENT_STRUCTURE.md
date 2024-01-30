@@ -56,9 +56,9 @@
         ["a", 32768:<hex pubkey of Troubleshooter>:<Offer ID from a d-tag of an offer>],
     ],
     "content": {
-        "title": <title of the ticket, string, mandatory>,
-        "description": <detailed description of the ticket, string, mandatory>,
-        "status": <status of the ticket, MUST be 0(new) or 1(taken), integer, mandatory>,
+        "title": <title of the ticket | string, mandatory>,
+        "description": <detailed description of the ticket | string, mandatory>,
+        "status": <status of the ticket, MUST be 0(new) or 1(in progress) or 2(closed) | integer, mandatory>,
     },
     "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the serialized event data, which is the same as the "id" field>
 }
@@ -78,7 +78,7 @@
     ],
     "content": {
         "description": <Cover letter for the offer, string, optional>, 
-        "pricing": <pricing strategy, MUST be either 0(sats/minute), 1(sats/milestone) or 2(absolute price), integer, mandatory>,
+        "pricing": <pricing strategy, MUST be either 0(sats/minute), 1(absolute price) or 2(sats/milestone), integer, mandatory>,
 
         // Amount of the price. If more than 1 amount, then it refers to the milestones of the ticket respectively. Else refers to the sats/minute or absolute price | mandatory
         "amount": [<amount1>, <amount2>, ..., amountN>],
