@@ -2,8 +2,6 @@
     import Orderbook from "$lib/components/OrderBook/orderbook.svelte";
     import { InputChip } from "@skeletonlabs/skeleton";
 
-    function postTicket() {
-    }
     let list: string[] = ['foo', 'bar', 'fizz', 'buzz'];
 </script>
 
