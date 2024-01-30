@@ -9,8 +9,11 @@
     "created_at": <unix timestamp in seconds>,
     "kind": 32767,
     "tags": [
+        // A title for the ticket | string, mandatory
+        ["title", <title string>]
+
         // Update/Replacement is based on this. Allows for multiple replaceable tickets
-        ["d", <ticket ID, integer, mandatory>],
+        ["d", <ticket ID | integer, mandatory>],
 
         // Allows for indexing/filtering | string, optional
         ["t", <tag1>],
@@ -52,13 +55,13 @@
         // Milestones if the Bitcoiner wants to define multiple steps for the ticket | string, optional
         ["milestones", <milestone1>, <milestone2>, ...,<milestoneN> ],
 
+        ["status", <0(new) OR 1(in progress) OR 2(closed)>],
+
         // If Bitcoiner accepts an offer she MAY set this tag
         ["a", 32768:<hex pubkey of Troubleshooter>:<Offer ID from a d-tag of an offer>],
     ],
     "content": {
-        "title": <title of the ticket | string, mandatory>,
-        "description": <detailed description of the ticket | string, mandatory>,
-        "status": <status of the ticket, MUST be 0(new) or 1(in progress) or 2(closed) | integer, mandatory>,
+        <detailed description of the ticket | string, mandatory>
     },
     "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the serialized event data, which is the same as the "id" field>
 }
