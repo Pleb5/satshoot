@@ -15,7 +15,7 @@ export enum Pricing {
     MilestoneBased = 2,
 }
 
-export class TicketEvent extends NDKEvent {
+export class OfferEvent extends NDKEvent {
     private _status: OfferStatus;
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {

@@ -1,4 +1,8 @@
 <script lang="ts">
+    import ndk from '$lib/stores/ndk';
+    import { NDKRelaySet } from '@nostr-dev-kit/ndk';
+    import { TicketEvent } from '$lib/events/TicketEvent';
+
     import { InputChip } from '@skeletonlabs/skeleton';
     import { Autocomplete } from '@skeletonlabs/skeleton';
     import type { AutocompleteOption } from '@skeletonlabs/skeleton';
@@ -322,9 +326,24 @@ const tagOptions: AutocompleteOption<string>[] = [
         }
     }
 
-    function postTicket() {
+    async function postTicket() {
        if (titleValid && descriptionValid) {
             // Post the ticket...
+            if ($ndk.activeUser) {
+                const event = new TicketEvent($ndk);
+
+                event.author = $ndk.activeUser;
+                event.title = titleText;
+                event.description = descriptionText;
+                tagList.forEach((tag) => {
+                    event.tags.push(['t', tag]);
+                });
+                // Generate 'd' tag and tags from description hashtags
+                event.generateTags();
+                await event.publish(
+                    new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
+                );
+            
 
             // Ticket posted Modal
             const modal: ModalSettings = {
@@ -335,6 +354,14 @@ const tagOptions: AutocompleteOption<string>[] = [
                 buttonTextCancel:'Ok',
             };
             modalStore.trigger(modal);
+            } else {
+                const t: ToastSettings = {
+                    message: 'No Active User to post the Ticket!',
+                    timeout: 7000,
+                    background: 'bg-error-300-600-token',
+                };
+                toastStore.trigger(t);
+            }
         }
         else {
             const t: ToastSettings = {
