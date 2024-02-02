@@ -84,7 +84,7 @@
                     localStorage.setItem('nostr-seedwords', encryptedSeed);
                     localStorage.setItem('nostr-npub', npub);
                     // todo: enum for signing methods
-                    localStorage.setItem('signin-method', "ephemeral");
+                    localStorage.setItem('login-method', "ephemeral");
                 } else {
                     statusMessage = 'Unexpected response from decryption process:' + m.data;
                 setTimeout(()=>{

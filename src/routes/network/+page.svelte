@@ -1,5 +1,7 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+    import { storedPool } from "$lib/stores/ndk";
+
     import normalizeUrl from "normalize-url";
     import type { NDKRelay } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
@@ -54,6 +56,9 @@
                 // Removal confirmed, remove the relay. Only remove from pool
                 // Don't remove from user-defined relays list(nip 65)
                 $ndk.pool.removeRelay(relay.url);
+                $storedPool.filter((storedRelay:string) => storedRelay !== relay.url);
+                storedPool.set($storedPool);
+                console.log($storedPool)
                 update();
             }
         }
@@ -94,6 +99,7 @@
     function addRelay() {
         $ndk.addExplicitRelay(normalizeRelayUrl(relayInputValue));
         relayInputValue = "";
+        $storedPool.push(relayInputValue);
         update();
     }
 </script>

@@ -8,6 +8,7 @@
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
     import ndk from "$lib/stores/ndk";
+    import { storedPool, sessionPK } from "$lib/stores/ndk";
     import { LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06"
@@ -57,6 +58,8 @@
     $: {
         profileImage = $ndk.activeUser?.profile?.image;
         loggedIn = !!$ndk.activeUser;
+        if (!loggedIn) {
+        }
     }
         
     onMount(async () => {
@@ -64,6 +67,32 @@
             console.log('not logged in! Trying to log in...')
             // Try to get saved user from localStorage
             const loginMethod = localStorage.getItem("login-method");
+
+            // Change to user-defined stored relays if they exist
+            console.log($storedPool)
+            $storedPool.push('asfdsfdsdf')
+            if ($storedPool) {
+                // remove all relays and add 
+                $ndk.pool.urls().forEach((relay: string) => {
+                    let found = false;
+                    $storedPool.forEach((storedRelay: string) => {
+                        if (storedRelay === relay) {
+                            found = true;
+                        }
+                    });
+                    if (!found) {
+                        $ndk.pool.removeRelay(relay);
+                    } 
+                });
+                // This will only add if unique 
+                $storedPool.forEach((relay:string) => {
+                    $ndk.addExplicitRelay(relay);        
+                });
+            } else {
+                $storedPool = $ndk.pool.urls();
+            }
+            console.log($ndk.pool)
+            console.log($storedPool)
 
             if (loginMethod){
                 if (loginMethod === LoginMethod.Ephemeral) {
@@ -109,8 +138,11 @@
                         toastStore.trigger(t);
                     }
                 } else if (loginMethod === LoginMethod.NIP07) {
-                    $ndk.signer = new NDKNip07Signer();
-                    console.log('Trying to log in via NIP07...')
+                    if (!$ndk.signer) {
+                        console.log('No ndk signer! setting one')
+                        $ndk.signer = new NDKNip07Signer();
+                    }
+                    console.log('Trying to log in via NIP07 signer:', $ndk.signer)
                     await $ndk.signer.user();
 
                     console.log('success! user:', $ndk.activeUser)
