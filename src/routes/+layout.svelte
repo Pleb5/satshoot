@@ -8,6 +8,9 @@
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
     import ndk from "$lib/stores/ndk";
+    import currentUser from "$lib/stores/currentUser";
+    import { LoginMethod } from "$lib/stores/currentUser";
+
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06"
     import type { NDKUser } from "@nostr-dev-kit/ndk";
@@ -54,71 +57,80 @@
     let loggedIn: boolean;
 
     $: {
-        profileImage = $ndk.activeUser?.profile?.image;
-        loggedIn = !!$ndk.activeUser;
+        profileImage = $currentUser?.profile?.image;
+        loggedIn = !!$currentUser;
     }
         
-    onMount(() => {
+    onMount(async () => {
         if (!loggedIn) {
             // Try to get saved user from localStorage
-            const signinMethod = localStorage.getItem("signin-method");
+            const loginMethod = localStorage.getItem("login-method");
 
-            if (signinMethod === "ephemeral") {
-                try {
-                    // Get decrypted seed from a modal prompt where user enters passphrase
-                    // User can dismiss modal in which case decryptedSeed is undefined
-                    new Promise<string|undefined>((resolve) => {
-                        const modalComponent: ModalComponent = {
-                            ref: DecryptSeedModal,
-                        };
+            if (loginMethod){
+                if (loginMethod === LoginMethod.Ephemeral) {
+                    try {
+                        // Get decrypted seed from a modal prompt where user enters passphrase
+                        // User can dismiss modal in which case decryptedSeed is undefined
+                        new Promise<string|undefined>((resolve) => {
+                            const modalComponent: ModalComponent = {
+                                ref: DecryptSeedModal,
+                            };
 
-                        const modal: ModalSettings = {
-                            type: 'component',
-                            component: modalComponent,
-                            response: (decryptedSeed: string|undefined) => {
-                                resolve(decryptedSeed); 
-                            },
-                        };
-                        modalStore.trigger(modal);
-                        // We got some kind of response from modal
-                    }).then((decryptedSeed: string|undefined) => {
-                            if (decryptedSeed) {
-                                // Call DecryptSeed Modal to prompt for passphrase
-                                // This can throw invalid seed words if decryption was unsuccessful
-                                console.log(decryptedSeed);
-                                const privateKey = privateKeyFromSeedWords(decryptedSeed); 
-                                $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+                            const modal: ModalSettings = {
+                                type: 'component',
+                                component: modalComponent,
+                                response: (decryptedSeed: string|undefined) => {
+                                    resolve(decryptedSeed); 
+                                },
+                            };
+                            // Call DecryptSeed Modal to prompt for passphrase
+                            // This can throw invalid seed words if decryption was unsuccessful
+                            modalStore.trigger(modal);
+                            // We got some kind of response from modal
+                        }).then(async (decryptedSeed: string|undefined) => {
+                                if (decryptedSeed) {
+                                    console.log("got seedwords from localStorage: ", decryptedSeed);
+                                    const privateKey = privateKeyFromSeedWords(decryptedSeed); 
+                                    $ndk.signer = new NDKPrivateKeySigner(privateKey); 
 
-                                // Trigger UI change in profile
-                                $ndk.activeUser = $ndk.activeUser;
-                                console.log("got seedwords from localStorage: ", decryptedSeed);
-                                $ndk.signer?.user().then( (user:NDKUser) => {
+                                    // Set persistent currentUser
+                                    let user: NDKUser = await $ndk.signer.user();
+                                    currentUser.set(user);
+                                    console.log('Current user set:', $currentUser)
+                                    await $currentUser.fetchProfile();
+
                                     // Trigger UI change in profile when user Promise is retrieved
-                                    $ndk.activeUser = $ndk.activeUser;
-                                    console.log("ephemeral user npub: ", user.npub);
-                                });
-                            }
-                        });
+                                    $currentUser = $currentUser;
+                                }
+                            });
 
-                } catch(e) {
-                    // Todo: Errors in Toast message without timeout
-                    const t: ToastSettings = {
-                        message:`Could not create private key from seed words, error: ${e}`,
-                        autohide: false,
-                    };
-                    toastStore.trigger(t);
-                }
-            } else if (signinMethod === "nip07") {
-                $ndk.signer = new NDKNip07Signer();
-                $ndk.signer.user().then( (user:NDKUser) => {
+                    } catch(e) {
+                        // Todo: Errors in Toast message without timeout
+                        const t: ToastSettings = {
+                            message:`Could not create private key from seed words, error: ${e}`,
+                            autohide: false,
+                        };
+                        toastStore.trigger(t);
+                    }
+                } else if (loginMethod === LoginMethod.NIP07) {
+                    $ndk.signer = new NDKNip07Signer();
+                    let user:NDKUser = await $ndk.signer.user();
+
+                    currentUser.set(user);
+                    console.log('Current user set:', $currentUser)
+                    await $currentUser.fetchProfile();
+
+                    console.log('profile image:',$currentUser.profile.image)
                     // Trigger UI update for profile
-                    $ndk.activeUser = $ndk.activeUser;
-                    user.fetchProfile().then(() => {
-                        // Trigger UI update for profile image
-                        $ndk.activeUser = $ndk.activeUser;
-                    });
-                });
+                    $currentUser = $currentUser;
+                }
             }
+        } else {
+            // We are logged in, lets fetch profile
+            console.log('Logged in in layout.svelte')
+            console.log($currentUser.ndk)
+            await $currentUser.fetchProfile();
+            $currentUser = $currentUser;
         }
     });
 

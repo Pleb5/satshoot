@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
+    import currentUser from "$lib/stores/currentUser";
     import { NDKPrivateKeySigner, NDKUser } from "@nostr-dev-kit/ndk";
     import { privateKeyFromSeedWords, validateWords } from "nostr-tools/nip06";
     import { wordlist } from '@scure/bip39/wordlists/english';
@@ -78,9 +79,11 @@
             // Fetch user
             const user:NDKUser = await $ndk.signer.user();
 
-            user.fetchProfile().then(() => {
+            currentUser.set(user);
+            // Update UI as soon as profile arrives but start encryption in the meantime
+            $currentUser.fetchProfile().then(() => {
                 // Trigger UI change in profile
-                $ndk.activeUser = $ndk.activeUser;
+                $currentUser = $currentUser;
             });
 
             // encrypt seed 
@@ -96,7 +99,7 @@
                 if (encryptedSeed) {
                     localStorage.setItem('nostr-seedwords', encryptedSeed);
                     localStorage.setItem('nostr-npub', user.npub);
-                    localStorage.setItem('signin-method', "ephemeral");
+                    localStorage.setItem('login-method', "ephemeral");
                     modalStore.close();
                 } else {
                     statusMessage = 'Unexpected response from decryption process:' + m.data;

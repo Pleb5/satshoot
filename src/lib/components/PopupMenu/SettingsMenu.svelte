@@ -5,6 +5,7 @@
     import { LightSwitch } from '@skeletonlabs/skeleton';
 
     import ndk from '$lib/stores/ndk';
+    import currentUser from "$lib/stores/currentUser";
     import { goto } from '$app/navigation';
 
     const modalStore = getModalStore();
@@ -27,6 +28,7 @@
 
                 $ndk.activeUser = undefined;
                 $ndk.signer = undefined;
+                $currentUser = null;
                 goto('/');
             }
         }
@@ -48,7 +50,7 @@
     <nav class="list-nav">
         <ul>
             <li>
-                <a href={ "/" + $ndk.activeUser?.npub }>
+                <a href={ "/" + $currentUser?.npub }>
                     <span class="w-6 text-center"><i class="fa-solid fa-user" /></span>
                     <span>Profile</span>
                 </a>

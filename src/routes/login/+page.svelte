@@ -2,6 +2,7 @@
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
+    import currentUser from "$lib/stores/currentUser";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
     import { nsecEncode } from "nostr-tools/nip19"
 
@@ -21,27 +22,25 @@
 
     // Navigate to Home page if user is already logged in(needs to log out first)
     $: {
-        if ($ndk.activeUser) {
+        if ($currentUser) {
            goto('/'); 
         }
     }
+
 
     async function onNIP07Login() {
         if (browser && window.nostr) {
             $ndk.signer = new NDKNip07Signer();
 
-            $ndk.signer.user().then( (user:NDKUser) => {
-                localStorage.setItem('signin-method', "nip07");
-                $ndk.activeUser = $ndk.activeUser;
+            let user: NDKUser = await $ndk.signer.user();
+            localStorage.setItem('login-method', "nip07");
+            currentUser.set(user);
+            console.log($currentUser)
 
-                user.fetchProfile().then(() => {
-                    // Trigger UI update for profile image
-                    $ndk.activeUser = $ndk.activeUser;
-                });
-                if (user.npub) {
-                    console.log("Permission granted:", user.npub)
-                }
-            });
+            await $currentUser.fetchProfile();
+            // TODO: Trigger UI update for profile
+            $currentUser = $currentUser;
+
         }
 
         else if (!window.nostr) {
@@ -52,37 +51,37 @@
                 body: 'No nip07-compatible browser extension found! See Alby, nos2x or similar!',
                 buttonTextCancel:'Cancel',
             };
-
             modalStore.trigger(modal);
         }
     }
 
 
 
-    function onEphemeralLogin() {
+    async function onEphemeralLogin() {
         // Generate new Ephemeral private private key
         const seedWords = generateSeedWords();
         const privateKey = privateKeyFromSeedWords(seedWords); 
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
-        $ndk.signer?.user().then( (user:NDKUser) => {
-            $ndk.activeUser = $ndk.activeUser;
+        let user: NDKUser = await $ndk.signer?.user();
 
-            const modalComponent: ModalComponent = {
-                ref: GenerateEphemeralKeyModal,
-                props: {
-                    seedWords: seedWords.split(' '), 
-                    npub: user.npub,
-                    nsec: nsecEncode(privateKey) 
-                }
-            };
+        // TODO: update UI
+        $currentUser = $currentUser;
 
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-            };
-            modalStore.trigger(modal);
-        });
+        const modalComponent: ModalComponent = {
+            ref: GenerateEphemeralKeyModal,
+            props: {
+                seedWords: seedWords.split(' '), 
+                npub: user.npub,
+                nsec: nsecEncode(privateKey) 
+            }
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
     }
 
     function onRestoreEphemeralKey() {
