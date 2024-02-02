@@ -42,7 +42,7 @@
 
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     initializeStores();
 
@@ -67,32 +67,6 @@
             console.log('not logged in! Trying to log in...')
             // Try to get saved user from localStorage
             const loginMethod = localStorage.getItem("login-method");
-
-            // Change to user-defined stored relays if they exist
-            console.log($storedPool)
-            $storedPool.push('asfdsfdsdf')
-            if ($storedPool) {
-                // remove all relays and add 
-                $ndk.pool.urls().forEach((relay: string) => {
-                    let found = false;
-                    $storedPool.forEach((storedRelay: string) => {
-                        if (storedRelay === relay) {
-                            found = true;
-                        }
-                    });
-                    if (!found) {
-                        $ndk.pool.removeRelay(relay);
-                    } 
-                });
-                // This will only add if unique 
-                $storedPool.forEach((relay:string) => {
-                    $ndk.addExplicitRelay(relay);        
-                });
-            } else {
-                $storedPool = $ndk.pool.urls();
-            }
-            console.log($ndk.pool)
-            console.log($storedPool)
 
             if (loginMethod){
                 if (loginMethod === LoginMethod.Ephemeral) {
@@ -161,8 +135,34 @@
             await $ndk.activeUser?.fetchProfile();
             $ndk.activeUser = $ndk.activeUser;
         }
-    });
+        // Change to user-defined stored relays if they exist
+        console.log($storedPool)
+        if ($storedPool) {
+            $ndk.pool.urls().forEach((relay: string) => {
+                console.log('in foreach. relay to check:',relay)
+                let found = false;
+                $storedPool.forEach((storedRelay: string) => {
+                    if (storedRelay === relay) {
+                        found = true;
+                        console.log('found true')
+                    }
+                });
+                if (!found) {
+                    $ndk.pool.removeRelay(relay);
+                    console.log('removed relay: ', relay)
+                } 
+            });
+            // This will only add if unique 
+            $storedPool.forEach((relay:string) => {
+                $ndk.addExplicitRelay(relay);        
+            });
+        } else {
+            $storedPool = $ndk.pool.urls();
+        }
+        console.log($ndk.pool)
+        console.log($storedPool)
 
+    });
 
     const settingsMenu: PopupSettings = {
         event: "click",

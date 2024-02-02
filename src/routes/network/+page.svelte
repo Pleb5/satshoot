@@ -56,7 +56,7 @@
                 // Removal confirmed, remove the relay. Only remove from pool
                 // Don't remove from user-defined relays list(nip 65)
                 $ndk.pool.removeRelay(relay.url);
-                $storedPool.filter((storedRelay:string) => storedRelay !== relay.url);
+                $storedPool = $storedPool.filter((storedRelay:string) => storedRelay !== relay.url);
                 storedPool.set($storedPool);
                 console.log($storedPool)
                 update();
@@ -97,9 +97,11 @@
     // Going to other pages and page refreshes might erase all added Relays
     // and start from scratch (onMount in layout.svelte reloads ndk and user)
     function addRelay() {
-        $ndk.addExplicitRelay(normalizeRelayUrl(relayInputValue));
+        const url: string = normalizeRelayUrl(relayInputValue);
+        $ndk.addExplicitRelay(url);
         relayInputValue = "";
-        $storedPool.push(relayInputValue);
+        $storedPool.push(url);
+        storedPool.set($storedPool);
         update();
     }
 </script>
