@@ -2,7 +2,6 @@
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
-    import currentUser from "$lib/stores/currentUser";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
     import { nsecEncode } from "nostr-tools/nip19"
 
@@ -22,7 +21,7 @@
 
     // Navigate to Home page if user is already logged in(needs to log out first)
     $: {
-        if ($currentUser) {
+        if ($ndk.activeUser) {
            goto('/'); 
         }
     }
@@ -34,12 +33,10 @@
 
             let user: NDKUser = await $ndk.signer.user();
             localStorage.setItem('login-method', "nip07");
-            currentUser.set(user);
-            console.log($currentUser)
 
-            await $currentUser.fetchProfile();
+            await user.fetchProfile();
             // TODO: Trigger UI update for profile
-            $currentUser = $currentUser;
+            $ndk.activeUser = $ndk.activeUser;
 
         }
 
@@ -66,7 +63,7 @@
         let user: NDKUser = await $ndk.signer?.user();
 
         // TODO: update UI
-        $currentUser = $currentUser;
+        $ndk.activeUser = $ndk.activeUser;
 
         const modalComponent: ModalComponent = {
             ref: GenerateEphemeralKeyModal,

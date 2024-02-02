@@ -8,9 +8,7 @@
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
     import ndk from "$lib/stores/ndk";
-    import currentUser from "$lib/stores/currentUser";
-    import { LoginMethod } from "$lib/stores/currentUser";
-
+    import { LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06"
     import type { NDKUser } from "@nostr-dev-kit/ndk";
@@ -57,12 +55,13 @@
     let loggedIn: boolean;
 
     $: {
-        profileImage = $currentUser?.profile?.image;
-        loggedIn = !!$currentUser;
+        profileImage = $ndk.activeUser?.profile?.image;
+        loggedIn = !!$ndk.activeUser;
     }
         
     onMount(async () => {
         if (!loggedIn) {
+            console.log('not logged in! Trying to log in...')
             // Try to get saved user from localStorage
             const loginMethod = localStorage.getItem("login-method");
 
@@ -93,14 +92,11 @@
                                     const privateKey = privateKeyFromSeedWords(decryptedSeed); 
                                     $ndk.signer = new NDKPrivateKeySigner(privateKey); 
 
-                                    // Set persistent currentUser
                                     let user: NDKUser = await $ndk.signer.user();
-                                    currentUser.set(user);
-                                    console.log('Current user set:', $currentUser)
-                                    await $currentUser.fetchProfile();
+                                    await user.fetchProfile();
 
                                     // Trigger UI change in profile when user Promise is retrieved
-                                    $currentUser = $currentUser;
+                                    $ndk.activeUser = $ndk.activeUser;
                                 }
                             });
 
@@ -114,23 +110,24 @@
                     }
                 } else if (loginMethod === LoginMethod.NIP07) {
                     $ndk.signer = new NDKNip07Signer();
-                    let user:NDKUser = await $ndk.signer.user();
+                    console.log('Trying to log in via NIP07...')
+                    await $ndk.signer.user();
 
-                    currentUser.set(user);
-                    console.log('Current user set:', $currentUser)
-                    await $currentUser.fetchProfile();
+                    console.log('success! user:', $ndk.activeUser)
 
-                    console.log('profile image:',$currentUser.profile.image)
+                    await $ndk.activeUser?.fetchProfile();
+
+                    console.log('profile image:', $ndk.activeUser?.profile?.image)
                     // Trigger UI update for profile
-                    $currentUser = $currentUser;
+                    $ndk.activeUser = $ndk.activeUser;
                 }
             }
         } else {
             // We are logged in, lets fetch profile
-            console.log('Logged in in layout.svelte')
-            console.log($currentUser.ndk)
-            await $currentUser.fetchProfile();
-            $currentUser = $currentUser;
+            console.log('Logged in! layout.svelte')
+            console.log($ndk)
+            await $ndk.activeUser?.fetchProfile();
+            $ndk.activeUser = $ndk.activeUser;
         }
     });
 

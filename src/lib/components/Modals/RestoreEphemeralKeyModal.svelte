@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
-    import currentUser from "$lib/stores/currentUser";
     import { NDKPrivateKeySigner, NDKUser } from "@nostr-dev-kit/ndk";
     import { privateKeyFromSeedWords, validateWords } from "nostr-tools/nip06";
     import { wordlist } from '@scure/bip39/wordlists/english';
@@ -79,11 +78,10 @@
             // Fetch user
             const user:NDKUser = await $ndk.signer.user();
 
-            currentUser.set(user);
             // Update UI as soon as profile arrives but start encryption in the meantime
-            $currentUser.fetchProfile().then(() => {
+            user.fetchProfile().then(() => {
                 // Trigger UI change in profile
-                $currentUser = $currentUser;
+                $ndk.activeUser = $ndk.activeUser;
             });
 
             // encrypt seed 
