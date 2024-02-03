@@ -58,8 +58,6 @@
     $: {
         profileImage = $ndk.activeUser?.profile?.image;
         loggedIn = !!$ndk.activeUser;
-        if (!loggedIn) {
-        }
     }
         
     onMount(async () => {
@@ -70,46 +68,59 @@
 
             if (loginMethod){
                 if (loginMethod === LoginMethod.Ephemeral) {
-                    try {
-                        // Get decrypted seed from a modal prompt where user enters passphrase
-                        // User can dismiss modal in which case decryptedSeed is undefined
-                        new Promise<string|undefined>((resolve) => {
-                            const modalComponent: ModalComponent = {
-                                ref: DecryptSeedModal,
+                    // We either get the private key from sessionStorage or decrypt from localStorage
+                    if ($sessionPK) {
+                        console.log('sessionPK', $sessionPK)
+
+                        $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
+
+                        let user: NDKUser = await $ndk.signer.user();
+                        await user.fetchProfile();
+
+                        // Trigger UI change in profile when user Promise is retrieved
+                        $ndk.activeUser = $ndk.activeUser;
+
+                    } else {
+                        try {
+                            // Get decrypted seed from a modal prompt where user enters passphrase
+                            // User can dismiss modal in which case decryptedSeed is undefined
+                            new Promise<string|undefined>((resolve) => {
+                                const modalComponent: ModalComponent = {
+                                    ref: DecryptSeedModal,
+                                };
+
+                                const modal: ModalSettings = {
+                                    type: 'component',
+                                    component: modalComponent,
+                                    response: (decryptedSeed: string|undefined) => {
+                                        resolve(decryptedSeed); 
+                                    },
+                                };
+                                // Call DecryptSeed Modal to prompt for passphrase
+                                // This can throw invalid seed words if decryption was unsuccessful
+                                modalStore.trigger(modal);
+                                // We got some kind of response from modal
+                            }).then(async (decryptedSeed: string|undefined) => {
+                                    if (decryptedSeed) {
+                                        console.log("got seedwords from localStorage: ", decryptedSeed);
+                                        const privateKey = privateKeyFromSeedWords(decryptedSeed); 
+                                        $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+
+                                        let user: NDKUser = await $ndk.signer.user();
+                                        await user.fetchProfile();
+
+                                        // Trigger UI change in profile when user Promise is retrieved
+                                        $ndk.activeUser = $ndk.activeUser;
+                                    }
+                                });
+
+                        } catch(e) {
+                            const t: ToastSettings = {
+                                message:`Could not create private key from seed words, error: ${e}`,
+                                autohide: false,
                             };
-
-                            const modal: ModalSettings = {
-                                type: 'component',
-                                component: modalComponent,
-                                response: (decryptedSeed: string|undefined) => {
-                                    resolve(decryptedSeed); 
-                                },
-                            };
-                            // Call DecryptSeed Modal to prompt for passphrase
-                            // This can throw invalid seed words if decryption was unsuccessful
-                            modalStore.trigger(modal);
-                            // We got some kind of response from modal
-                        }).then(async (decryptedSeed: string|undefined) => {
-                                if (decryptedSeed) {
-                                    console.log("got seedwords from localStorage: ", decryptedSeed);
-                                    const privateKey = privateKeyFromSeedWords(decryptedSeed); 
-                                    $ndk.signer = new NDKPrivateKeySigner(privateKey); 
-
-                                    let user: NDKUser = await $ndk.signer.user();
-                                    await user.fetchProfile();
-
-                                    // Trigger UI change in profile when user Promise is retrieved
-                                    $ndk.activeUser = $ndk.activeUser;
-                                }
-                            });
-
-                    } catch(e) {
-                        // Todo: Errors in Toast message without timeout
-                        const t: ToastSettings = {
-                            message:`Could not create private key from seed words, error: ${e}`,
-                            autohide: false,
-                        };
-                        toastStore.trigger(t);
+                            toastStore.trigger(t);
+                        }
                     }
                 } else if (loginMethod === LoginMethod.NIP07) {
                     if (!$ndk.signer) {
@@ -135,21 +146,24 @@
             await $ndk.activeUser?.fetchProfile();
             $ndk.activeUser = $ndk.activeUser;
         }
+
+        // TODO: on relays add, check if storedpool has them. if not, remove!
+        // Async add is hard to follow. here not all unncessary relays are removed
+        // Because they are connected later
+
         // Change to user-defined stored relays if they exist
-        console.log($storedPool)
+        // console.log($storedPool)
         if ($storedPool) {
             $ndk.pool.urls().forEach((relay: string) => {
-                console.log('in foreach. relay to check:',relay)
                 let found = false;
                 $storedPool.forEach((storedRelay: string) => {
                     if (storedRelay === relay) {
                         found = true;
-                        console.log('found true')
                     }
                 });
                 if (!found) {
                     $ndk.pool.removeRelay(relay);
-                    console.log('removed relay: ', relay)
+                    // console.log('removed relay: ', relay)
                 } 
             });
             // This will only add if unique 
@@ -159,8 +173,8 @@
         } else {
             $storedPool = $ndk.pool.urls();
         }
-        console.log($ndk.pool)
-        console.log($storedPool)
+        // console.log($ndk.pool)
+        // console.log($storedPool)
 
     });
 

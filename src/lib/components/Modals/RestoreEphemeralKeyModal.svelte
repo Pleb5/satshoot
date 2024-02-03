@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
+    import { sessionPK } from "$lib/stores/ndk";
     import { NDKPrivateKeySigner, NDKUser } from "@nostr-dev-kit/ndk";
     import { privateKeyFromSeedWords, validateWords } from "nostr-tools/nip06";
     import { wordlist } from '@scure/bip39/wordlists/english';
@@ -74,6 +75,7 @@
         try {
             const privateKey = privateKeyFromSeedWords(seedWords.join(' ')); 
             $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+            $sessionPK = privateKey;
             
             // Fetch user
             const user:NDKUser = await $ndk.signer.user();
@@ -183,8 +185,8 @@ Probably incorrect Seed Words!` + e
 
 
                 <div class="flex flex-col gap-y-2 items-center my-6">
-                    <h2 class="h4 font-bold text-center">Your secret words will be stored locally in encrypted form.</h2>
-                    <h4 class="h4 text-center">Provide a strong passphrase for encryption(min. 14chars):</h4>
+                    <h2 class="h4 font-bold text-center">Your secret words will be stored locally in encrypted form and unencrypted until your session ends.</h2>
+                    <h4 class="h4 text-center">Provide a strong passphrase for encryption at rest(min. 14chars):</h4>
                     <!-- Todo: autocomplete -->
                     <div class="flex justify-between items-center ">
                         <input 

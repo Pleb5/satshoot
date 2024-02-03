@@ -2,6 +2,7 @@
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
+    import { sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
     import { nsecEncode } from "nostr-tools/nip19"
 
@@ -61,8 +62,10 @@
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
         let user: NDKUser = await $ndk.signer?.user();
+        // Store private key in session storage 
+        $sessionPK = privateKey;
 
-        // TODO: update UI
+        // Update UI
         $ndk.activeUser = $ndk.activeUser;
 
         const modalComponent: ModalComponent = {

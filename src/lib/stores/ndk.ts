@@ -33,9 +33,6 @@ export const sessionPK: Writable<string> = localStorageStore('pk', '',{ storage:
 // Always check for relays here when instantiating ndk
 export const storedPool: Writable<string[] | undefined> = localStorageStore('pool', undefined);
 
-
-
-
 // Create a singleton instance that is the default export
 const ndk = writable(ndkSvelte);
 

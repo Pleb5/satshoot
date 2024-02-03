@@ -1,10 +1,11 @@
 <script lang="ts">
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
+    import type { ModalSettings } from '@skeletonlabs/skeleton';
 
     import { LightSwitch } from '@skeletonlabs/skeleton';
 
     import ndk from '$lib/stores/ndk';
+    import { sessionPK } from "$lib/stores/ndk";
     import { goto } from '$app/navigation';
 
     const modalStore = getModalStore();
@@ -17,6 +18,8 @@
         let logoutResponse = function(r: boolean){
             if (r) {
                 localStorage.clear();
+                $sessionPK = '';
+                sessionStorage.clear();
                 // remove from ndk relay pool those user relays that are non-intersecting
                 const relaysToDelete = $ndk.pool.urls()
                     .filter(element => !($ndk.explicitRelayUrls?.includes(element)))

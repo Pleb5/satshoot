@@ -58,7 +58,7 @@
                 $ndk.pool.removeRelay(relay.url);
                 $storedPool = $storedPool.filter((storedRelay:string) => storedRelay !== relay.url);
                 storedPool.set($storedPool);
-                console.log($storedPool)
+                console.log('removed relay: ', relay.url)
                 update();
             }
         }
