@@ -116,16 +116,15 @@
     function addRelay() {
         const url: string = normalizeRelayUrl(relayInputValue);
 
-        if (!($ndk.explicitRelayUrls?.includes(url))) {
-            $ndk.addExplicitRelay(url);
-            storedPool.set($ndk.pool.urls());
-        }
-
         $ndk.pool.blacklistRelayUrls.delete(url);
 
-        blacklistedRelays.set(
-            Array.from($ndk.pool.blacklistRelayUrls.keys())
-        );
+        console.log(Array.from($ndk.pool.blacklistRelayUrls.keys()))
+
+        if (!($ndk.explicitRelayUrls?.includes(url))) {
+            console.log('add explicit relay')
+            $ndk.addExplicitRelay(url);
+        }
+
 
         relayInputValue = "";
         update();
