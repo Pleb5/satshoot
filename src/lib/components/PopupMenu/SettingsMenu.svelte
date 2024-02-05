@@ -7,6 +7,7 @@
     import ndk from '$lib/stores/ndk';
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { goto } from '$app/navigation';
+    import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 
     const modalStore = getModalStore();
 
@@ -15,7 +16,7 @@
 <p>Do really you wish to log out?</p>
 <strong class="text-error-400-500-token">If you are logged in with an ephemeral account, it will be deleted!</strong>`;
 
-        let logoutResponse = function(r: boolean){
+        let logoutResponse = async function(r: boolean){
             if (r) {
                 localStorage.clear();
                 // Reset local storage pool and blacklist
@@ -25,9 +26,14 @@
                 $sessionPK = '';
                 sessionStorage.clear();
 
-                $ndk.activeUser = undefined;
+                ndk.set(new NDKSvelte({
+                    enableOutboxModel: false,
+                    explicitRelayUrls: DEFAULTRELAYURLS,
+                }));
 
-                $ndk.signer = undefined;
+                await $ndk.connect();
+
+                console.log($ndk.explicitRelayUrls)
                 goto('/');
             }
         }
