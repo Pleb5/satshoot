@@ -75,7 +75,9 @@
         try {
             const privateKey = privateKeyFromSeedWords(seedWords.join(' ')); 
             $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+
             $sessionPK = privateKey;
+
             
             // Fetch user
             const user:NDKUser = await $ndk.signer.user();

@@ -1,10 +1,10 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
-    import { storedPool } from "$lib/stores/ndk";
+    import {blacklistedRelays, storedPool } from "$lib/stores/ndk";
 
     import normalizeUrl from "normalize-url";
     import type { NDKRelay } from '@nostr-dev-kit/ndk';
-    import { onMount } from 'svelte';
+    import { onDestroy, onMount } from 'svelte';
 
     import { type ModalSettings, getModalStore } from '@skeletonlabs/skeleton';
     import RelayListElement from '$lib/components/Relays/RelayListElement.svelte';
@@ -28,7 +28,6 @@
         $ndk.pool.on('notice', relayNotice);
     });
 
-
     function relayNotice(relay: NDKRelay, notice: string) {
         if (!notices.has(relay)) {
             notices.set(relay, []);
@@ -45,7 +44,18 @@
 
     
     function update() {
+        // update UI then sync to local storage
         relays = Array.from($ndk.pool.relays.values());
+
+        // relays are destroyed when page refreshes, we need to only sync when
+        // there are values to be synced
+        if (relays.length > 0){
+            storedPool.set($ndk.pool.urls());
+
+            blacklistedRelays.set(
+                Array.from($ndk.pool.blacklistRelayUrls.keys())
+            );
+        }
     }
 
 
@@ -53,12 +63,20 @@
 
         let removeRelayResponse = function(r: boolean){
             if (r) {
-                // Removal confirmed, remove the relay. Only remove from pool
-                // Don't remove from user-defined relays list(nip 65)
+                // Removal confirmed, remove the relay. Only remove from app
+                // Don't remove from nostr-wide relay list(nip 65)
                 $ndk.pool.removeRelay(relay.url);
-                $storedPool = $storedPool.filter((storedRelay:string) => storedRelay !== relay.url);
-                storedPool.set($storedPool);
+
+                $ndk.explicitRelayUrls = 
+                    $ndk.explicitRelayUrls?.filter((explicitRelay) => {
+                        relay.url !== explicitRelay;
+                    });
+
+
+                $ndk.pool.blacklistRelayUrls.add(relay.url);
+
                 console.log('removed relay: ', relay.url)
+
                 update();
             }
         }
@@ -93,15 +111,23 @@
         return "wss://" + url;
     }
     
-    // Todo: Check if this approach works:
-    // Going to other pages and page refreshes might erase all added Relays
-    // and start from scratch (onMount in layout.svelte reloads ndk and user)
+    // Inform users with a tooltip that this does not change the nostr-wide
+    // user relays, it just saves this preference locally which disappears on logout or browser local data clearance
     function addRelay() {
         const url: string = normalizeRelayUrl(relayInputValue);
-        $ndk.addExplicitRelay(url);
+
+        if (!($ndk.explicitRelayUrls?.includes(url))) {
+            $ndk.addExplicitRelay(url);
+            storedPool.set($ndk.pool.urls());
+        }
+
+        $ndk.pool.blacklistRelayUrls.delete(url);
+
+        blacklistedRelays.set(
+            Array.from($ndk.pool.blacklistRelayUrls.keys())
+        );
+
         relayInputValue = "";
-        $storedPool.push(url);
-        storedPool.set($storedPool);
         update();
     }
 </script>

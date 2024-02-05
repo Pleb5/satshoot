@@ -8,12 +8,12 @@
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
     import ndk from "$lib/stores/ndk";
-    import { storedPool, sessionPK } from "$lib/stores/ndk";
+    import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06"
     import type { NDKUser } from "@nostr-dev-kit/ndk";
-    import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
+    import { NDKNip07Signer, NDKPrivateKeySigner, NDKRelay, NDKRelaySet } from "@nostr-dev-kit/ndk";
 
     import { AppShell } from '@skeletonlabs/skeleton';
     import { AppBar } from '@skeletonlabs/skeleton';
@@ -61,6 +61,33 @@
     }
         
     onMount(async () => {
+        localStorage.debug = 'ndk:*'
+        
+        // -----------  Set up relays and connect -------------
+
+        // Get user-defined pool from local storage if possible
+        if ($storedPool) {
+            $storedPool.forEach((relay:string) => {
+                console.log('Add explicit relay in layout onmount')
+                $ndk.addExplicitRelay(new NDKRelay(relay));
+            })
+            // Retrieve blacklisted relay urls removed explicitly by the user
+            $blacklistedRelays.forEach((relay:string) => {
+                $ndk.pool.blacklistRelayUrls.add(relay);
+            })
+        } else {
+            // Initialize stored pool and ndk with default relays
+            $ndk.explicitRelayUrls = DEFAULTRELAYURLS; 
+            storedPool.set(DEFAULTRELAYURLS);
+
+            //init blacklist
+            blacklistedRelays.set([]);
+        }
+
+        await $ndk.connect();
+        console.log("NDK Connected");
+
+
         if (!loggedIn) {
             console.log('not logged in! Trying to log in...')
             // Try to get saved user from localStorage
@@ -105,6 +132,8 @@
                                         console.log("got seedwords from localStorage: ", decryptedSeed);
                                         const privateKey = privateKeyFromSeedWords(decryptedSeed); 
                                         $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+                                        
+                                        $sessionPK = privateKey;
 
                                         let user: NDKUser = await $ndk.signer.user();
                                         await user.fetchProfile();
@@ -153,26 +182,6 @@
 
         // Change to user-defined stored relays if they exist
         // console.log($storedPool)
-        if ($storedPool) {
-            $ndk.pool.urls().forEach((relay: string) => {
-                let found = false;
-                $storedPool.forEach((storedRelay: string) => {
-                    if (storedRelay === relay) {
-                        found = true;
-                    }
-                });
-                if (!found) {
-                    $ndk.pool.removeRelay(relay);
-                    // console.log('removed relay: ', relay)
-                } 
-            });
-            // This will only add if unique 
-            $storedPool.forEach((relay:string) => {
-                $ndk.addExplicitRelay(relay);        
-            });
-        } else {
-            $storedPool = $ndk.pool.urls();
-        }
         // console.log($ndk.pool)
         // console.log($storedPool)
 

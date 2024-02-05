@@ -35,8 +35,12 @@
             let user: NDKUser = await $ndk.signer.user();
             localStorage.setItem('login-method', "nip07");
 
+
             await user.fetchProfile();
-            // TODO: Trigger UI update for profile
+            // Add user relays to stored pool
+            console.log('fetched user:', user)
+
+            // Trigger UI update for profile
             $ndk.activeUser = $ndk.activeUser;
 
         }
