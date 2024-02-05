@@ -5,7 +5,7 @@
     import { LightSwitch } from '@skeletonlabs/skeleton';
 
     import ndk from '$lib/stores/ndk';
-    import { sessionPK } from "$lib/stores/ndk";
+    import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { goto } from '$app/navigation';
 
     const modalStore = getModalStore();
@@ -18,17 +18,15 @@
         let logoutResponse = function(r: boolean){
             if (r) {
                 localStorage.clear();
+                // Reset local storage pool and blacklist
+                blacklistedRelays.set([]);
+                storedPool.set(DEFAULTRELAYURLS);
+
                 $sessionPK = '';
                 sessionStorage.clear();
-                // remove from ndk relay pool those user relays that are non-intersecting
-                const relaysToDelete = $ndk.pool.urls()
-                    .filter(element => !($ndk.explicitRelayUrls?.includes(element)))
-
-                relaysToDelete.forEach((value) => {
-                    $ndk.pool.removeRelay(value);
-                });
 
                 $ndk.activeUser = undefined;
+
                 $ndk.signer = undefined;
                 goto('/');
             }
