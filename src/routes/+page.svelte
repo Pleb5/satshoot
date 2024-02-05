@@ -1,22 +1,9 @@
 <script lang="ts">
     import Orderbook from "$lib/components/OrderBook/orderbook.svelte";
     import { InputChip } from "@skeletonlabs/skeleton";
-    import { tickets, offers } from "$lib/stores/troubleshoot-eventstores";
     import { onDestroy, onMount } from "svelte";
 
     let list: string[] = ['foo', 'bar', 'fizz', 'buzz'];
-
-    onMount( async () => {
-        // ref/unref if lots of components start to sub/unsub!
-        tickets.startSubscription();
-        offers.startSubscription();
-    })
-
-    onDestroy( () => {
-        // ref/unref if lots of components start to sub/unsub!
-        tickets.unsubscribe();
-        offers.unsubscribe();
-    })
 
 </script>
 

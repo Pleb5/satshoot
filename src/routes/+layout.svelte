@@ -44,6 +44,9 @@
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount } from "svelte";
 
+    // Tickets and Offers
+    import { tickets, offers } from "$lib/stores/troubleshoot-eventstores";
+
     initializeStores();
 
     // Skeleton popup init
@@ -85,7 +88,12 @@
         }
 
         await $ndk.connect();
+
         console.log("NDK Connected");
+
+        // ref/unref if lots of components start to sub/unsub!
+        tickets.startSubscription();
+        offers.startSubscription();
 
 
         if (!loggedIn) {
@@ -171,21 +179,16 @@
         } else {
             // We are logged in, lets fetch profile
             console.log('Logged in! layout.svelte')
-            console.log($ndk)
             await $ndk.activeUser?.fetchProfile();
             $ndk.activeUser = $ndk.activeUser;
         }
-
-        // TODO: on relays add, check if storedpool has them. if not, remove!
-        // Async add is hard to follow. here not all unncessary relays are removed
-        // Because they are connected later
-
-        // Change to user-defined stored relays if they exist
-        // console.log($storedPool)
-        // console.log($ndk.pool)
-        // console.log($storedPool)
-
     });
+
+    onDestroy( () => {
+        // ref/unref if lots of components start to sub/unsub!
+        tickets.unsubscribe();
+        offers.unsubscribe();
+    })
 
     const settingsMenu: PopupSettings = {
         event: "click",

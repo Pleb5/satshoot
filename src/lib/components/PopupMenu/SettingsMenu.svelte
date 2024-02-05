@@ -33,7 +33,6 @@
 
                 await $ndk.connect();
 
-                console.log($ndk.explicitRelayUrls)
                 goto('/');
             }
         }
