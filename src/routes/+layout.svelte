@@ -13,12 +13,12 @@
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06"
     import type { NDKUser } from "@nostr-dev-kit/ndk";
-    import { NDKNip07Signer, NDKPrivateKeySigner, NDKRelay, NDKRelaySet } from "@nostr-dev-kit/ndk";
+    import { NDKNip07Signer, NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
 
     import { AppShell } from '@skeletonlabs/skeleton';
     import { AppBar } from '@skeletonlabs/skeleton';
     import { Avatar } from '@skeletonlabs/skeleton';
-    import { AppRail, AppRailAnchor, AppRailTile } from '@skeletonlabs/skeleton';
+    import { AppRail, AppRailAnchor } from '@skeletonlabs/skeleton';
     import { TabGroup, TabAnchor } from '@skeletonlabs/skeleton';
     import { page } from '$app/stores';
 

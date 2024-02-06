@@ -1,7 +1,6 @@
 <script lang="ts">
     import Orderbook from "$lib/components/OrderBook/orderbook.svelte";
     import { InputChip } from "@skeletonlabs/skeleton";
-    import { onDestroy, onMount } from "svelte";
 
     let list: string[] = ['foo', 'bar', 'fizz', 'buzz'];
 
