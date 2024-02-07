@@ -163,7 +163,7 @@
 {#await profilePromise}
     <div class="" >Loading user...</div>
 {:then userProfile}
-    <div class="card p-4 m-8">
+    <div class="card p-4 m-8 mt-4">
         <header class="mb-8">
             <div class="grid grid-cols-3 justify-evenly">
                 <Avatar 

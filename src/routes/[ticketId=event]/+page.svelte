@@ -78,61 +78,57 @@
     
 </script>
 
-<div class="flex flex-col justify-center gap-y-4 mt-4 p-8" >
-    {#if ticket}
-        <h2 class="text-center font-bold" >Ticket:</h2>
-        <div class="card">
+{#if ticket}
+    <div class="card m-6">
+        <header class="card-header">
+            <h2 class="text-center text-2xl font-bold" >{ticket.title ?? 'No title'}</h2>
+        </header>
 
-            <header class="card-header">
-                <h2 class="text-center text-2xl font-bold" >{ticket.title ?? 'No title'}</h2>
-            </header>
+        <section class="p-4 text-lg">{ticket.description ?? 'No description!'}</section>
 
-            <section class="p-4 text-lg">{ticket.description ?? 'No description!'}</section>
-
-            <footer class="grid grid-cols-5 card-footer">
-                <div class="grid col-span-4">
-                    <div class="items-center flex flex-wrap">
-                        {#each ticket.tTags as tag }
-                            <div class="px-2 rounded-token">
-                                <span class="text-sm badge variant-filled-surface">{ tag[1] }</span>
-                            </div>
-                        {/each}
-                    </div>
+        <footer class="grid grid-cols-5 card-footer">
+            <div class="grid col-span-4">
+                <div class="items-center flex flex-wrap">
+                    {#each ticket.tTags as tag }
+                        <div class="px-2 rounded-token">
+                            <span class="text-sm badge variant-filled-surface">{ tag[1] }</span>
+                        </div>
+                    {/each}
                 </div>
-                <div class="text-sm font-bold {offersAlreadyColor}">{'Offers on ticket: ' + offersOnTicket?.size}</div>
-            </footer>
+            </div>
+            <div class="text-sm font-bold {offersAlreadyColor}">{'Offers on ticket: ' + offersOnTicket?.size}</div>
+        </footer>
 
-        </div>
-                    <!-- Submit -->
-        <div class="flex justify-center items-center gap-x-2">
-            <button 
-                type="button"
-                on:click={ createOffer }
-                class="btn btn-2xl text-xl font-bold bg-primary-300-600-token"
-                disabled={!$ndk.activeUser}
-            >
-                Create Offer
-            </button>
-            {#if !$ndk.activeUser}
-                <i 
-                    class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
-                    [&>*]:pointer-events-none" 
-                    use:popup={popupHover}
-                />
+    </div>
+                    <!-- Create Offer -->
+    <div class="flex justify-center items-center gap-x-2">
+        <button 
+            type="button"
+            on:click={ createOffer }
+            class="btn btn-2xl text-xl font-bold bg-primary-300-600-token"
+            disabled={!$ndk.activeUser}
+        >
+            Create Offer
+        </button>
+        {#if !$ndk.activeUser}
+            <i 
+                class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
+                [&>*]:pointer-events-none" 
+                use:popup={popupHover}
+            />
 
-                <div class="card w-80 p-4 bg-primary-300-600-token" data-popup="popupHover">
-                    <p>
-                        Need to log in before creating an offer!
-                    </p>
-                    <div class="arrow bg-primary-300-600-token" />
-                </div>
-            {/if}
-        </div>
-                    <!-- User -->
-        <h2 class="text-center font-bold" >Posted by:</h2>
-        <UserCard ndk={$ndk} npub={ticket.author.npub} />
-    {:else}
-        <h2 class="text-center font-bold" >Error: Ticket not found among ticket events!</h2>
-    {/if}
-</div>
+            <div class="card w-80 p-4 bg-primary-300-600-token" data-popup="popupHover">
+                <p>
+                    Need to log in before creating an offer!
+                </p>
+                <div class="arrow bg-primary-300-600-token" />
+            </div>
+        {/if}
+    </div>
+    <!-- User -->
+    <h2 class="font-bold text-2xl ml-8" >Posted by:</h2>
+    <UserCard ndk={$ndk} npub={ticket.author.npub} />
+{:else}
+    <h2 class="text-center font-bold" >Error: Ticket not found among ticket events!</h2>
+{/if}
 
