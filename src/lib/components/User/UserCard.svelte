@@ -37,20 +37,18 @@
     $: {
         editable = ndk.activeUser?.npub === npub;
 
-        if (!user) {
-            let opts = { npub };
-            try {
-                user = ndk.getUser(opts);
-                // ndk.activeUser is undefined at this point but
-                // user.ndk.activeUser is the logged in user?!?!
-                profilePromise = user.fetchProfile();
-                profilePromise.then((profile:NDKUserProfile | null) => {
-                    aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
-                    userNameText = profile?.name ?? user?.profile?.displayName ?? "";
-                })
-            } catch (e) {
-                console.error(`error trying to get user`, { opts }, e);
-            }
+        let opts = { npub: npub };
+        try {
+            user = ndk.getUser(opts);
+            // ndk.activeUser is undefined at this point but
+            // user.ndk.activeUser is the logged in user?!?!
+            profilePromise = user.fetchProfile();
+            profilePromise.then((profile:NDKUserProfile | null) => {
+                aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
+                userNameText = profile?.name ?? user?.profile?.displayName ?? "";
+            })
+        } catch (e) {
+            console.error(`error trying to get user`, { opts }, e);
         }
     }
 
@@ -165,7 +163,7 @@
 {#await profilePromise}
     <div class="" >Loading user...</div>
 {:then userProfile}
-    <div class="card p-4">
+    <div class="card p-4 m-8">
         <header class="mb-8">
             <div class="grid grid-cols-3 justify-evenly">
                 <Avatar 
