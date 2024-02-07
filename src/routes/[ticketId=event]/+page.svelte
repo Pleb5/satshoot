@@ -21,7 +21,9 @@
 
     console.log($page.params.ticketId)
 
-    let offersForTicket: OfferEvent[] = [];
+    let offersOnTicket: OfferEvent[] = [];
+
+    let offersAlreadyColor: string = 'text-primary-300-600-token';
 
     console.log('offers: ', $offers)
 
@@ -39,13 +41,16 @@
 
         // Registering the offers on this ticket on the fly
         $offers.forEach((offer: OfferEvent) =>{
-            console.log('in offer forEach!')
-            console.log(offer)
-            if(offer.offerAddress === ticket?.acceptedOfferAddress) {
-                offersForTicket.push(offer)
+            if(offer.referencedTicketAddress === ticket?.ticketAddress) {
+                offersOnTicket.push(offer)
                 console.log('offer found on ticket!')
             }
         })
+
+        if (offersOnTicket.length > 0) {
+            offersAlreadyColor = 'text-error-500';
+        }
+
     }
 
     function createOffer() {
@@ -92,7 +97,7 @@
                         {/each}
                     </div>
                 </div>
-                <div class="text-sm font-bold">{'Offers on ticket: ' + offersForTicket?.length}</div>
+                <div class="text-sm font-bold {offersAlreadyColor}">{'Offers on ticket: ' + offersOnTicket?.length}</div>
             </footer>
 
         </div>
