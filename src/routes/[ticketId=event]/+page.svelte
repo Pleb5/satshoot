@@ -13,23 +13,27 @@
 
     import { page } from '$app/stores';
     import UserCard from "$lib/components/User/UserCard.svelte";
+    import { onMount } from "svelte";
     
     const modalStore = getModalStore();
 
     let ticket: TicketEvent | undefined = undefined;
 
-    $tickets.forEach((ticketEvent) => {
-        if (ticketEvent.encode() === $page.params.ticketId) {
-            ticket = ticketEvent;
-            console.log(ticket)
-        }
-    });
+    console.log($page.params.ticketId)
 
     let offersForTicket: OfferEvent[] = [];
 
     console.log('offers: ', $offers)
 
     $: {
+        $tickets.forEach((ticketEvent) => {
+            console.log('in foreach tickets')
+            if (ticketEvent.encode() === $page.params.ticketId) {
+                ticket = ticketEvent;
+                console.log(ticket)
+            }
+        });
+
         $offers.forEach((offer: OfferEvent) =>{
             console.log('in offer forEach!')
             console.log(offer)
@@ -122,7 +126,3 @@
     {/if}
 </div>
 
-
-<!--     TODO: -->
-<!-- - "asked b
-y" in footer -->
