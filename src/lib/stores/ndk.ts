@@ -1,11 +1,8 @@
 import NDKSvelte from "@nostr-dev-kit/ndk-svelte";
-import { get } from 'svelte/store';
 import { writable } from "svelte/store";
 
 import { localStorageStore } from '@skeletonlabs/skeleton';
 import type { Writable } from 'svelte/store';
-import { NDKPrivateKeySigner, NDKNip07Signer, NDKRelay } from "@nostr-dev-kit/ndk";
-import { browser } from "$app/environment";
 
 export const DEFAULTRELAYURLS = [
     "wss://purplepag.es/",
