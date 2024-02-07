@@ -26,14 +26,18 @@
     console.log('offers: ', $offers)
 
     $: {
-        $tickets.forEach((ticketEvent) => {
-            console.log('in foreach tickets')
-            if (ticketEvent.encode() === $page.params.ticketId) {
-                ticket = ticketEvent;
-                console.log(ticket)
-            }
-        });
+        // Setting up the ticket if page even after page refreshes
+        if (!ticket) {
+            $tickets.forEach((ticketEvent) => {
+                console.log('in foreach tickets')
+                if (ticketEvent.encode() === $page.params.ticketId) {
+                    ticket = ticketEvent;
+                    console.log(ticket)
+                }
+            });
+        }
 
+        // Registering the offers on this ticket on the fly
         $offers.forEach((offer: OfferEvent) =>{
             console.log('in offer forEach!')
             console.log(offer)
@@ -45,7 +49,6 @@
     }
 
     function createOffer() {
-
         const modalComponent: ModalComponent = {
             ref: CreateOfferModal,
             props: {ticketAddress: ticket?.ticketAddress},
