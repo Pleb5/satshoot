@@ -32,6 +32,8 @@
     import MenuItem_2 from "$lib/components/NavBar/MenuItem_2.svelte";
     import MenuItem_3 from "$lib/components/NavBar/MenuItem_3.svelte";
 
+    import { LightSwitch } from '@skeletonlabs/skeleton';
+
     // Skeleton Toast
     import { Toast, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
 
@@ -206,8 +208,11 @@
 	<svelte:fragment slot="header">
         <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end ">
             <svelte:fragment slot="lead">
-                <div class="flex items-center w-16 h-16">
+                <div class="grid grid-cols-2 w-32 h-18">
                     <img class="w-full h-full" src="bitcoin-troubleshoot.svg" alt="logo" />
+                    <div class="flex justify-center items-center">
+                        <LightSwitch />
+                    </div>
                 </div>
             </svelte:fragment>
             

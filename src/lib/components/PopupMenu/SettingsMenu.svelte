@@ -2,7 +2,6 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings } from '@skeletonlabs/skeleton';
 
-    import { LightSwitch } from '@skeletonlabs/skeleton';
 
     import ndk from '$lib/stores/ndk';
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
@@ -64,13 +63,6 @@
                     <span class="w-6 text-center"><i class="fa-solid fa-globe" /></span>
                     <span>Network</span>
                 </a>
-            </li>
-            <li>
-                <div class="flex justify-between px-4 py-2">
-                    <span class="w-6 text-center"><i class="fa-solid fa-wand-sparkles" /></span>
-                    <span>Theme</span>
-                    <LightSwitch />
-                </div>
             </li>
             <hr class="!my-4" />
             <li>
