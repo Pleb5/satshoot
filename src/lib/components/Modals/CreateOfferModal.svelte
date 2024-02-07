@@ -91,7 +91,15 @@
                             <div class="input-group-shim">
                                 <i class="fa-brands fa-bitcoin text-3xl"/>
                             </div>
-                            <input class="text-lg max-w-md" type="number" placeholder="Amount" bind:value={amount} />
+                            <input 
+                                class="text-lg max-w-md"
+                                type="number"
+                                step="500"
+                                min="0"
+                                max="2100000000000000"
+                                placeholder="Amount"
+                                bind:value={amount}
+                            />
                             <div>{pricingMethod ? 'sats' : 'sats/min'}</div>
                         </div>
                     </label>
