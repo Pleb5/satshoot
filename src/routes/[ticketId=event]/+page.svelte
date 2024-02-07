@@ -4,6 +4,8 @@
     import { tickets, offers } from "$lib/stores/troubleshoot-eventstores";
     import ndk from "$lib/stores/ndk";
 
+    import pageTitleStore from "$lib/stores/pagetitle-store";
+
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
@@ -13,7 +15,8 @@
 
     import { page } from '$app/stores';
     import UserCard from "$lib/components/User/UserCard.svelte";
-    import { onMount } from "svelte";
+
+    $pageTitleStore = 'Ticket';
     
     const modalStore = getModalStore();
 

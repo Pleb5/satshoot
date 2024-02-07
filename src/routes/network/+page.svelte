@@ -2,12 +2,16 @@
     import ndk from '$lib/stores/ndk';
     import {blacklistedRelays, storedPool } from "$lib/stores/ndk";
 
+    import pageTitleStore from "$lib/stores/pagetitle-store";
+
     import normalizeUrl from "normalize-url";
     import type { NDKRelay } from '@nostr-dev-kit/ndk';
     import { onDestroy, onMount } from 'svelte';
 
     import { type ModalSettings, getModalStore } from '@skeletonlabs/skeleton';
     import RelayListElement from '$lib/components/Relays/RelayListElement.svelte';
+
+    $pageTitleStore = 'Network';
 
     const modalStore = getModalStore();
 
@@ -131,9 +135,7 @@
     }
 </script>
 
-<div class="flex flex-col items-center space-y-16 mb-8">
-    <header class="card-header"><h2 class="h2">Network Settings</h2></header>
-
+<div class="flex flex-col items-center space-y-16 mb-8 mt-8">
     <div class="w-80">
         <form on:submit={addRelay}>
             <label class="label flex flex-col items-center">

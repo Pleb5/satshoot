@@ -9,6 +9,9 @@
 
     import ndk from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
+
+    import pageTitleStore from "$lib/stores/pagetitle-store";
+
     import { LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06"
@@ -206,7 +209,7 @@
 <Modal />
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
 	<svelte:fragment slot="header">
-        <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end ">
+        <AppBar gridColumns="grid-cols-3" slotDefault="items-center" slotTrail="place-content-end ">
             <svelte:fragment slot="lead">
                 <div class="grid grid-cols-2 w-32 h-18">
                     <img class="w-full h-full" src="bitcoin-troubleshoot.svg" alt="logo" />
@@ -215,6 +218,8 @@
                     </div>
                 </div>
             </svelte:fragment>
+
+            <h2 class="h2 lg:pl-20 text-center">{$pageTitleStore}</h2>
             
             <svelte:fragment slot="trail">
                 {#if loggedIn}
@@ -238,12 +243,6 @@
 
                 {/if}
             </svelte:fragment>
-
-            <div class="flex items-center space-x-4">
-                <a href="/" class="btn-icon w-16 h-16">
-                </a>
-            </div>
-
         </AppBar>
     </svelte:fragment>
     <!-- Sidebar. Hidden on small screens -->

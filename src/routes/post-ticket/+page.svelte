@@ -3,6 +3,8 @@
     import { NDKRelaySet } from '@nostr-dev-kit/ndk';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 
+    import pageTitleStore from "$lib/stores/pagetitle-store";
+
     import { InputChip } from '@skeletonlabs/skeleton';
     import { Autocomplete } from '@skeletonlabs/skeleton';
     import type { AutocompleteOption } from '@skeletonlabs/skeleton';
@@ -18,7 +20,7 @@
     // Retrieve Modal Store at the top level
     const modalStore = getModalStore();
 			
-			
+    $pageTitleStore = 'Post Ticket';
 
     let tagInput = '';
     
@@ -376,7 +378,6 @@ const tagOptions: AutocompleteOption<string>[] = [
 </script>
 
 <div class="flex flex-col p-4 w-full text-token space-y-8 items-center">
-    <h1 class="h1 text-center m-4">Create Ticket</h1>
 
     <label class="label max-w-md">
         <span>Ticket Title(min. 10chars)</span>

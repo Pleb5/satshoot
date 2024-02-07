@@ -2,6 +2,7 @@
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
+    import pageTitleStore from "$lib/stores/pagetitle-store";
     import { sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
     import { nsecEncode } from "nostr-tools/nip19"
@@ -16,6 +17,8 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import GenerateEphemeralKeyModal from "$lib/components/Modals/GenerateEphemeralKeyModal.svelte";
     import RestoreEphemeralKeyModal from "$lib/components/Modals/RestoreEphemeralKeyModal.svelte";
+
+    $pageTitleStore = 'Login';
 
     // Retrieve Modal Store at the top level
     const modalStore = getModalStore();
@@ -110,9 +113,8 @@
 
 
 </script>
-<h1 class="h1 text-center my-8">Bitcoin Troubleshoot Login</h1>
 
-<div class="flex items-center ">
+<div class="flex items-center mt-8">
     <div class="flex flex-col items-start gap-y-5 mx-auto">
         <div class="flex gap-x-4">
             <button class="btn btn-lg bg-primary-300-600-token " on:click={onNIP07Login}>

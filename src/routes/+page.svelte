@@ -1,8 +1,11 @@
 <script lang="ts">
     import Orderbook from "$lib/components/OrderBook/orderbook.svelte";
     import { InputChip } from "@skeletonlabs/skeleton";
+    import pageTitleStore from "$lib/stores/pagetitle-store";
 
     let list: string[] = ['foo', 'bar', 'fizz', 'buzz'];
+
+    $pageTitleStore = 'BTC Troubleshoot';
 
 </script>
 
@@ -11,7 +14,7 @@
 </a>
 
 
-<div class="flex flex-col justify-center gap-y-2 ">
+<div class="flex flex-col justify-center gap-y-2 mt-2">
     <div class="sticky top-0 mx-auto flex items-center justify-center bg-surface-100-800-token">
         <InputChip bind:value={list} name="chips" placeholder="Filter Tickets" />
     </div>
