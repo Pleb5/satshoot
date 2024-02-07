@@ -21,7 +21,7 @@
 
     console.log($page.params.ticketId)
 
-    let offersOnTicket: OfferEvent[] = [];
+    let offersOnTicket: Set<OfferEvent> = new Set();
 
     let offersAlreadyColor: string = 'text-primary-300-600-token';
 
@@ -42,12 +42,14 @@
         // Registering the offers on this ticket on the fly
         $offers.forEach((offer: OfferEvent) =>{
             if(offer.referencedTicketAddress === ticket?.ticketAddress) {
-                offersOnTicket.push(offer)
+                offersOnTicket.add(offer)
                 console.log('offer found on ticket!')
+                offersOnTicket = offersOnTicket;
+
             }
         })
 
-        if (offersOnTicket.length > 0) {
+        if (offersOnTicket.size > 0) {
             offersAlreadyColor = 'text-error-500';
         }
 
@@ -97,7 +99,7 @@
                         {/each}
                     </div>
                 </div>
-                <div class="text-sm font-bold {offersAlreadyColor}">{'Offers on ticket: ' + offersOnTicket?.length}</div>
+                <div class="text-sm font-bold {offersAlreadyColor}">{'Offers on ticket: ' + offersOnTicket?.size}</div>
             </footer>
 
         </div>
