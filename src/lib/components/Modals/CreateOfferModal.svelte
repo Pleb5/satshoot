@@ -33,7 +33,6 @@
         const offer = new OfferEvent($ndk)
 
         console.log($ndk.activeUser)
-        offer.author = $ndk.activeUser as NDKUser;
 
         offer.status = OfferStatus.Pending;
 

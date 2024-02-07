@@ -332,7 +332,6 @@ const tagOptions: AutocompleteOption<string>[] = [
             if ($ndk.activeUser) {
                 const event = new TicketEvent($ndk);
 
-                event.author = $ndk.activeUser;
                 event.title = titleText;
                 event.description = descriptionText;
                 event.status = TicketStatus.New;
