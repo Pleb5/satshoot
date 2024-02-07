@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import { NDKRelaySet } from '@nostr-dev-kit/ndk';
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 
     import { InputChip } from '@skeletonlabs/skeleton';
     import { Autocomplete } from '@skeletonlabs/skeleton';
@@ -335,6 +335,7 @@ const tagOptions: AutocompleteOption<string>[] = [
                 event.author = $ndk.activeUser;
                 event.title = titleText;
                 event.description = descriptionText;
+                event.status = TicketStatus.New;
                 tagList.forEach((tag) => {
                     event.tags.push(['t', tag]);
                 });

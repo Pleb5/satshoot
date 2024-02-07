@@ -3,7 +3,7 @@
     import ndk from '$lib/stores/ndk';
     import { NDKRelaySet } from '@nostr-dev-kit/ndk';
     import type { NDKUser } from '@nostr-dev-kit/ndk';
-    import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
+    import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     
 	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
@@ -34,6 +34,8 @@
 
         console.log($ndk.activeUser)
         offer.author = $ndk.activeUser as NDKUser;
+
+        offer.status = OfferStatus.Pending;
 
         offer.pricing = pricingMethod;
         offer.amount = amount;

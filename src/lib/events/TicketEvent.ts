@@ -13,7 +13,6 @@ export class TicketEvent extends NDKEvent {
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= BTCTroubleshootKind.Ticket;
-        this.tags.push(['status', TicketStatus.New.toString()])
     }
 
     static from(event:NDKEvent){

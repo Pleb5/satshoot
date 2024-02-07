@@ -21,10 +21,6 @@ export class OfferEvent extends NDKEvent {
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= BTCTroubleshootKind.Offer;
-        this._status = OfferStatus.Pending;
-        // Default to free help
-        this.tags.push(['pricing', Pricing.Absolute.toString()]);
-        this.tags.push(['amount', '0']);
     }
 
     static from(event:NDKEvent){
@@ -62,10 +58,11 @@ export class OfferEvent extends NDKEvent {
 
     set pricing(pricing: Pricing) {
         this.removeTag('pricing');
+        console.log('removed default pricing tag from offer, setting a new one...')
         this.tags.push(['pricing', pricing.toString()]);
     }
 
-    get amount(): Pricing | undefined {
+    get amount(): number | undefined {
         return parseInt(this.tagValue("amount") as string);
     }
 
