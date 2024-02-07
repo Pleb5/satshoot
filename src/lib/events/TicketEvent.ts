@@ -1,5 +1,5 @@
 import { BTCTroubleshootKind } from "./kinds";
-import { NDKEvent, type NDK, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
+import { NDKUser, NDKEvent, type NDK, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
 
 export enum TicketStatus {
     New = 0,
@@ -9,10 +9,14 @@ export enum TicketStatus {
 
 
 export class TicketEvent extends NDKEvent {
+    private _status: TicketStatus;
+    private _title: string;
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= BTCTroubleshootKind.Ticket;
+        this._status = parseInt(this.tagValue('status') as string);
+        this._title = this.tagValue('title') as string;
     }
 
     static from(event:NDKEvent){
@@ -35,21 +39,23 @@ export class TicketEvent extends NDKEvent {
         this.tags.push(['a', offerAddress]);
     }
 
-    get title(): string | undefined {
-        return this.tagValue("title");
+    get title(): string {
+        return this._title;
     }
 
     set title(title: string) {
+        this._title = title;
         // Can only have exactly one title tag
         this.removeTag('title');
         this.tags.push(['title', title]);
     }
 
-    get status(): TicketStatus | undefined {
-        return parseInt(this.tagValue('status') as string);
+    get status(): TicketStatus {
+        return this._status;
     }
 
     set status(status: TicketStatus) {
+        this._status = status;
         this.removeTag('status');
         this.tags.push(['status', status.toString()]);
     }

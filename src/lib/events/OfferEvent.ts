@@ -17,10 +17,15 @@ export enum Pricing {
 
 export class OfferEvent extends NDKEvent {
     private _status: OfferStatus;
+    private _pricing: Pricing;
+    private _amount: number;
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= BTCTroubleshootKind.Offer;
+        this._status = parseInt(this.tagValue('status') as string);
+        this._pricing = parseInt(this.tagValue('pricing') as string);
+        this._amount = parseInt(this.tagValue("amount") as string);
     }
 
     static from(event:NDKEvent){
@@ -33,8 +38,8 @@ export class OfferEvent extends NDKEvent {
 
     // this.generateTags() will take care of setting d-tag
 
-    get referencedTicketAddress(): string | undefined {
-        return this.tagValue("a");
+    get referencedTicketAddress(): string {
+        return this.tagValue("a") as string;
     }
 
     set referencedTicketAddress(referencedTicketAddress: string) {
@@ -49,24 +54,27 @@ export class OfferEvent extends NDKEvent {
 
     set status(status: OfferStatus) {
         this._status = status;
+        this.removeTag('status');
+        this.tags.push(['status', status.toString()]);
     }
 
     // No milestones based approach yet
-    get pricing(): Pricing | undefined {
-        return parseInt(this.tagValue("pricing") as string);
+    get pricing(): Pricing {
+        return this._pricing;
     }
 
     set pricing(pricing: Pricing) {
+        this._pricing = pricing;
         this.removeTag('pricing');
-        console.log('removed default pricing tag from offer, setting a new one...')
         this.tags.push(['pricing', pricing.toString()]);
     }
 
-    get amount(): number | undefined {
-        return parseInt(this.tagValue("amount") as string);
+    get amount(): number {
+        return this._amount;
     }
 
     set amount(amount: number) {
+        this._amount = amount;
         this.removeTag('amount');
         this.tags.push(['amount', amount.toString()]);
     }
