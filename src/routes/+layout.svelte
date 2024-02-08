@@ -74,7 +74,7 @@
         // -----------  Set up relays and connect -------------
 
         // Get user-defined pool from local storage if possible
-        if ($storedPool) {
+        if ($storedPool && $blacklistedRelays) {
             $storedPool.forEach((relay:string) => {
                 console.log('Add explicit relay in layout onmount')
                 $ndk.addExplicitRelay(new NDKRelay(relay));
