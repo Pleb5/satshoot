@@ -4,6 +4,7 @@
 
 
     import ndk from '$lib/stores/ndk';
+    import { stopMySubscriptions } from "$lib/stores/troubleshoot-eventstores";
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { goto } from '$app/navigation';
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
@@ -24,6 +25,8 @@
 
                 $sessionPK = '';
                 sessionStorage.clear();
+
+                stopMySubscriptions();
 
                 ndk.set(new NDKSvelte({
                     enableOutboxModel: false,

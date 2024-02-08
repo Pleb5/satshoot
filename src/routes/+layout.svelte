@@ -50,7 +50,7 @@
     import { onDestroy, onMount } from "svelte";
 
     // Tickets and Offers
-    import { tickets, offers } from "$lib/stores/troubleshoot-eventstores";
+    import { tickets, offers, startMySubscriptions } from "$lib/stores/troubleshoot-eventstores";
 
     initializeStores();
 
@@ -115,6 +115,9 @@
                         $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
 
                         let user: NDKUser = await $ndk.signer.user();
+
+                        startMySubscriptions(user.pubkey);
+
                         await user.fetchProfile();
 
                         // Trigger UI change in profile when user Promise is retrieved
@@ -149,6 +152,9 @@
                                         $sessionPK = privateKey;
 
                                         let user: NDKUser = await $ndk.signer.user();
+
+                                        startMySubscriptions(user.pubkey);
+
                                         await user.fetchProfile();
 
                                         // Trigger UI change in profile when user Promise is retrieved
@@ -169,14 +175,12 @@
                         console.log('No ndk signer! setting one')
                         $ndk.signer = new NDKNip07Signer();
                     }
-                    console.log('Trying to log in via NIP07 signer:', $ndk.signer)
-                    await $ndk.signer.user();
+                    let user = await $ndk.signer.user();
 
-                    console.log('success! user:', $ndk.activeUser)
+                    startMySubscriptions(user.pubkey);
 
                     await $ndk.activeUser?.fetchProfile();
 
-                    console.log('profile image:', $ndk.activeUser?.profile?.image)
                     // Trigger UI update for profile
                     $ndk.activeUser = $ndk.activeUser;
                 }
@@ -230,7 +234,7 @@
                         <Avatar 
                             class="rounded-full border-white placeholder-white"
                             border="border-4 border-surface-300-600-token hover:!border-primary-500"
-                            cursor="cursor-pointer"
+                            cursor="c, myTickets, myOffers,ursor-pointer"
                             bind:src={profileImage}
                         /> 
                     </button>

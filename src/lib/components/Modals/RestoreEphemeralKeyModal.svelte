@@ -5,6 +5,8 @@
     import { NDKPrivateKeySigner, NDKUser } from "@nostr-dev-kit/ndk";
     import { privateKeyFromSeedWords, validateWords } from "nostr-tools/nip06";
     import { wordlist } from '@scure/bip39/wordlists/english';
+
+    import { startMySubscriptions } from "$lib/stores/troubleshoot-eventstores";
     
 	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
@@ -82,6 +84,8 @@
             // Fetch user
             const user:NDKUser = await $ndk.signer.user();
 
+            startMySubscriptions(user.pubkey);
+
             // Update UI as soon as profile arrives but start encryption in the meantime
             user.fetchProfile().then(() => {
                 // Trigger UI change in profile
@@ -96,7 +100,6 @@
 
             cryptWorker.onmessage = (m) => {
                 // set response and close modal
-                console.log("Received message from cryptWorker:", m)
                 const encryptedSeed = m.data['encryptedSeed'];
                 if (encryptedSeed) {
                     localStorage.setItem('nostr-seedwords', encryptedSeed);

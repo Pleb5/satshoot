@@ -1,4 +1,3 @@
-<!-- All cards have title, shortened description and tags -->
 <script lang="ts">
     import type { TicketEvent } from "$lib/events/TicketEvent";
     

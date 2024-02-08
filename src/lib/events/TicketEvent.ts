@@ -1,5 +1,5 @@
 import { BTCTroubleshootKind } from "./kinds";
-import { NDKUser, NDKEvent, type NDK, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
+import { NDKEvent, type NDK, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
 
 export enum TicketStatus {
     New = 0,
