@@ -62,9 +62,18 @@
             };
             toastStore.trigger(t);
 
+            if ($modalStore[0].response) {
+                $modalStore[0].response(true);
+                modalStore.close();
+            }
+
             modalStore.close();
         } catch(e) {
             errorText = 'Error happened while publishing Offer!';
+            if ($modalStore[0].response) {
+                $modalStore[0].response(false);
+                modalStore.close();
+            }
         }
     }
 
@@ -94,7 +103,6 @@
                             <input 
                                 class="text-lg max-w-md"
                                 type="number"
-                                step="500"
                                 min="0"
                                 max="2100000000000000"
                                 placeholder="Amount"

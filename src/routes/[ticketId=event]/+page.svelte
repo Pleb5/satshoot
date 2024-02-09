@@ -1,8 +1,9 @@
 <script lang="ts">
-    import type { TicketEvent } from "$lib/events/TicketEvent";
+    import { TicketEvent } from "$lib/events/TicketEvent";
     import type { OfferEvent } from "$lib/events/OfferEvent";
-    import { tickets, offers } from "$lib/stores/troubleshoot-eventstores";
     import ndk from "$lib/stores/ndk";
+    import type { NDKEvent } from "@nostr-dev-kit/ndk";
+    import { NDKRelaySet } from "@nostr-dev-kit/ndk";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -15,60 +16,63 @@
 
     import { page } from '$app/stores';
     import UserCard from "$lib/components/User/UserCard.svelte";
+    import { onMount } from "svelte";
 
     $pageTitleStore = 'Ticket';
     
     const modalStore = getModalStore();
 
     let ticket: TicketEvent | undefined = undefined;
-
-    console.log($page.params.ticketId)
+    let ticketPromise: Promise<NDKEvent | null> ;
 
     let offersOnTicket: Set<OfferEvent> = new Set();
 
     let offersAlreadyColor: string = 'text-primary-300-600-token';
 
-    console.log('offers: ', $offers)
-
-    $: {
-        // Setting up the ticket if page even after page refreshes
-        if (!ticket) {
-            $tickets.forEach((ticketEvent) => {
-                console.log('in foreach tickets')
-                if (ticketEvent.encode() === $page.params.ticketId) {
-                    ticket = ticketEvent;
-                    console.log(ticket)
-                }
-            });
-        }
-
-        // Registering the offers on this ticket on the fly
-        $offers.forEach((offer: OfferEvent) =>{
-            if(offer.referencedTicketAddress === ticket?.ticketAddress) {
-                offersOnTicket.add(offer)
-                console.log('offer found on ticket!')
+    async function getOffers() {
+        if (ticket) {
+            offersOnTicket = await ticket.fetchAllOffers($ndk);
+            if (offersOnTicket.size > 0) {
+                offersAlreadyColor = 'text-error-500';
                 offersOnTicket = offersOnTicket;
-
             }
-        })
-
-        if (offersOnTicket.size > 0) {
-            offersAlreadyColor = 'text-error-500';
         }
-
     }
 
-    function createOffer() {
-        const modalComponent: ModalComponent = {
-            ref: CreateOfferModal,
-            props: {ticketAddress: ticket?.ticketAddress},
-        };
+    // Only trying to fetch offers on ticket once. This doesnt create a permanent
+    // subscription which would likely be an overkill
+    onMount(async() => {
+        // Get ticket from naddr
+        ticketPromise = $ndk.fetchEvent($page.params.ticketId, {}, new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)); 
+        let event = await ticketPromise;
+        console.log('ticket event fetched, value:', event)
+        if (event) {
+            ticket = TicketEvent.from(event);
+            ticket = ticket;
+            await getOffers();
+            console.log('offers fetched in onMount:', offersOnTicket)
+        }
+    });
 
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
+    async function createOffer() {
+        const offerPosted: boolean = await new Promise<boolean>((resolve) => {
+            const modalComponent: ModalComponent = {
+                ref: CreateOfferModal,
+                props: {ticketAddress: ticket?.ticketAddress},
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (offerPosted: boolean) => {resolve(offerPosted)},
+            };
+            modalStore.trigger(modal);
+        });
+
+        if (offerPosted) {
+            // Get offer posted by user from relays and also other offers possibly posted in the meantime
+            await getOffers();
+        }
     }
 
 
@@ -103,7 +107,7 @@
         </footer>
 
     </div>
-                    <!-- Create Offer -->
+    <!-- Create Offer -->
     <div class="flex justify-center items-center gap-x-2">
         <button 
             type="button"
@@ -132,6 +136,6 @@
     <h2 class="font-bold text-2xl ml-8" >Posted by:</h2>
     <UserCard ndk={$ndk} npub={ticket.author.npub} />
 {:else}
-    <h2 class="text-center font-bold" >Error: Ticket not found among ticket events!</h2>
+    <h2 class="text-center font-bold mt-10" >Loading Ticket...</h2>
 {/if}
 

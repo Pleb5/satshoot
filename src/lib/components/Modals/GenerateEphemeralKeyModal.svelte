@@ -128,7 +128,7 @@
 </script>
 
 {#if $modalStore[0]}
-	<div class="modal-example-fullscreen {cBase}">
+	<div class="{cBase}">
 		<div class="flex flex-col items-center ">
 			<h2 class="h2 mb-4">Backup your Account</h2>
             {#if seedWords.length > 0 && npub && nsec}

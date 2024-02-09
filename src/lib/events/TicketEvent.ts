@@ -1,5 +1,7 @@
 import { BTCTroubleshootKind } from "./kinds";
-import { NDKEvent, type NDK, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
+import { NDKEvent, type NDKTag, type NostrEvent, type NDKFilter } from "@nostr-dev-kit/ndk";
+import type { NDKSvelte } from "@nostr-dev-kit/ndk-svelte";
+import { OfferEvent } from "./OfferEvent";
 
 export enum TicketStatus {
     New = 0,
@@ -11,12 +13,14 @@ export enum TicketStatus {
 export class TicketEvent extends NDKEvent {
     private _status: TicketStatus;
     private _title: string;
+    private _tTags: NDKTag[];
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= BTCTroubleshootKind.Ticket;
         this._status = parseInt(this.tagValue('status') as string);
         this._title = this.tagValue('title') as string;
+        this._tTags = this.tags.filter((tag:NDKTag) => tag[0]==='t');
     }
 
     static from(event:NDKEvent){
@@ -69,7 +73,32 @@ export class TicketEvent extends NDKEvent {
     }
 
     get tTags(): NDKTag[] {
-        return this.tags.filter((tag:NDKTag) => tag[0] == 't');
+        return this._tTags;
+    }
+
+    set tTags(tags: NDKTag[]) {
+        this._tTags = tags;
+    }
+
+    public async fetchAllOffers(ndk: NDKSvelte): Promise<Set<OfferEvent>> {
+        if (!ndk) {
+            throw new Error('NDK is null, cannot fetch Offers!');
+        }
+
+        const filter: NDKFilter<BTCTroubleshootKind> = { kinds: [BTCTroubleshootKind.Offer], '#a': [this.ticketAddress] };
+
+        // Trust it to ndk to calculate the relays, no relayset will be given
+        const events: Set<NDKEvent> = await ndk.fetchEvents(filter);
+
+        const offerSet: Set<OfferEvent> = new Set();
+
+        events.forEach((event: NDKEvent) => {
+            offerSet.add(OfferEvent.from(event));
+        });
+
+        console.log('offers fetched for event:', offerSet)
+
+        return offerSet;
     }
 
 }
