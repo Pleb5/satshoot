@@ -11,14 +11,10 @@ import { get } from "svelte/store";
 // Create a subscription that is running all the time,
 // watching for troubleshoot ticket and offer events
 const ticketFilter: NDKFilter<BTCTroubleshootKind> = {kinds: [BTCTroubleshootKind.Ticket], limit:1000};
-const offerFilter: NDKFilter<BTCTroubleshootKind> = {kinds: [BTCTroubleshootKind.Offer], limit:1000};
 const subOptions: NDKSubscriptionOptions = { closeOnEose: false, pool: get(ndk).pool };
 
 export const tickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
             = get(ndk).storeSubscribe(ticketFilter, subOptions, TicketEvent);
-
-export const offers:NDKEventStore<ExtendedBaseType<OfferEvent>>
-            = get(ndk).storeSubscribe(offerFilter, subOptions, OfferEvent);
 
 // The filter's pubkey part will be filled in when user logs in
 export const myTicketFilter: NDKFilter<BTCTroubleshootKind> = {kinds: [BTCTroubleshootKind.Ticket], authors: [], limit:1000};

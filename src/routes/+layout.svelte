@@ -50,7 +50,7 @@
     import { onDestroy, onMount } from "svelte";
 
     // Tickets and Offers
-    import { tickets, offers, startMySubscriptions } from "$lib/stores/troubleshoot-eventstores";
+    import { tickets, startMySubscriptions } from "$lib/stores/troubleshoot-eventstores";
 
     initializeStores();
 
@@ -98,7 +98,6 @@
 
         // ref/unref if lots of components start to sub/unsub!
         tickets.startSubscription();
-        offers.startSubscription();
 
 
         if (!loggedIn) {
@@ -196,7 +195,6 @@
     onDestroy( () => {
         // ref/unref if lots of components start to sub/unsub!
         tickets.unsubscribe();
-        offers.unsubscribe();
     })
 
     const settingsMenu: PopupSettings = {
