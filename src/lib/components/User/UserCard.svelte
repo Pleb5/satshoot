@@ -37,18 +37,20 @@
     $: {
         editable = ndk.activeUser?.npub === npub;
 
-        let opts = { npub: npub };
-        try {
-            user = ndk.getUser(opts);
-            // ndk.activeUser is undefined at this point but
-            // user.ndk.activeUser is the logged in user?!?!
-            profilePromise = user.fetchProfile();
-            profilePromise.then((profile:NDKUserProfile | null) => {
-                aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
-                userNameText = profile?.name ?? user?.profile?.displayName ?? "";
-            })
-        } catch (e) {
-            console.error(`error trying to get user`, { opts }, e);
+        if (npub) {
+            let opts = { npub: npub };
+            try {
+                user = ndk.getUser(opts);
+                // ndk.activeUser is undefined at this point but
+                // user.ndk.activeUser is the logged in user?!?!
+                profilePromise = user.fetchProfile();
+                profilePromise.then((profile:NDKUserProfile | null) => {
+                    aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
+                    userNameText = profile?.name ?? user?.profile?.displayName ?? "";
+                })
+            } catch (e) {
+                console.error(`error trying to get user`, { opts }, e);
+            }
         }
     }
 

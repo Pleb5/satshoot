@@ -4,7 +4,7 @@ import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 
 import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
 import { myTickets } from '$lib/stores/troubleshoot-eventstores';
-import TicketCard from '../OrderBook/ticket-card.svelte';
+import TicketCard from '../OrderBook/TicketCard.svelte';
 
 let tabGroup = TicketStatus.New;
 

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { tickets } from "$lib/stores/troubleshoot-eventstores";
-    import TicketCard from "./ticket-card.svelte";
+    import TicketCard from "./TicketCard.svelte";
     
 </script>
 
