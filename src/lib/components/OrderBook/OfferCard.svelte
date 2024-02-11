@@ -1,13 +1,14 @@
 <script lang="ts">
-    import type { OfferEvent } from "$lib/events/OfferEvent";
+    import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
-    import { NDKEvent } from "@nostr-dev-kit/ndk";
+    import type { NDKEvent } from "@nostr-dev-kit/ndk";
     import { onMount } from "svelte";
     import ndk from "$lib/stores/ndk";
     import { NDKRelaySet } from "@nostr-dev-kit/ndk";
 
     import { nip19 } from "nostr-tools";
     import { BTCTroubleshootKind } from "$lib/events/kinds";
+    import TicketCard from "./TicketCard.svelte";
     
     export let offer: OfferEvent;
     let ticket: TicketEvent | null;
@@ -19,9 +20,19 @@
 
     let ticketPromise: Promise<NDKEvent> | null = null;
 
+    let pricing: string = '';
+
     onMount(async() => {
 
         if (offer) {
+            switch (offer.pricing) {
+                case Pricing.Absolute:
+                    pricing = 'sats';
+                    break;
+                case Pricing.SatsPerMin:
+                    pricing = 'sats/min';
+                    break;
+            }
             ticketPromise = $ndk.fetchEvent(bech32ID, {}, new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)) as Promise<TicketEvent> | null; 
             let event = await ticketPromise;
             if (event) {
@@ -36,25 +47,11 @@
 <div class="card">
     {#if offer}
         {#if ticket}
-            <header class="card-header">
-                <a class="anchor" href={"/" + bech32ID }>{ticket.title ?? 'No title'}</a>
-            </header>
-
-            <!-- TODO: truncate to shorter text. figure out how many chars looks good -->
-            <section class="p-4">
-                { 
-                ticket.description 
-                    ? ticket.description.length > 80 ? ticket.description.substring(0, 80) + "..." : ticket.description
-                    : 'No description!'
-                }
-            </section>
-            <footer class="items-center flex flex-wrap card-footer">
-                {#each ticket.tTags as tag }
-                    <div class="px-2 rounded-token">
-                        <span class="badge variant-filled-surface">{ tag[1] }</span>
-                    </div>
-                {/each}
-            </footer>
+            <TicketCard {ticket} >
+                <div slot="myOffer" class="text-primary-300-600-token mt-2">
+                    {'My Offer: ' + offer.amount + ' ' + pricing}
+                </div>
+            </TicketCard>
         {:else}
             <h2 class="h2 text-center text-error-500">Loading Ticket for Offer...</h2>
         {/if}

@@ -1,10 +1,13 @@
 <script lang="ts">
     import { tickets } from "$lib/stores/troubleshoot-eventstores";
     import TicketCard from "./TicketCard.svelte";
-    
+
+    // TODO: Orderbook is unnecessary
+    // tickets lose offercount state on back page navigation
+
 </script>
 
-<div class="flex flex-col justify-center items-center gap-y-4 ">
+<div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
     {#if $tickets}
         {#each $tickets as ticket}
 

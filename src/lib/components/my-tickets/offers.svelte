@@ -66,7 +66,7 @@ $: {
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
-                <div class="flex flex-col justify-center center gap-y-4">
+                <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
                     {#each pendingOffersArray as offer }
                         <OfferCard {offer} />
                     {/each}

@@ -28,18 +28,6 @@
 
     let offersOnTicket: Set<OfferEvent> = new Set();
 
-    let offersAlreadyColor: string = 'text-primary-300-600-token';
-
-    async function getOffers() {
-        if (ticket) {
-            offersOnTicket = await ticket.fetchAllOffers($ndk);
-            if (offersOnTicket.size > 0) {
-                offersAlreadyColor = 'text-error-500';
-                offersOnTicket = offersOnTicket;
-            }
-        }
-    }
-
     // Only trying to fetch offers on ticket once. This doesnt create a permanent
     // subscription which would likely be an overkill
     onMount(async() => {
@@ -50,8 +38,7 @@
         if (event) {
             ticket = TicketEvent.from(event);
             ticket = ticket;
-            await getOffers();
-            console.log('offers fetched in onMount:', offersOnTicket)
+            offersOnTicket = await ticket.fetchAllOffers($ndk);
         }
     });
 
@@ -72,7 +59,9 @@
 
         if (offerPosted) {
             // Get offer posted by user from relays and also other offers possibly posted in the meantime
-            await getOffers();
+            if (ticket) {
+                offersOnTicket = await ticket.fetchAllOffers($ndk);
+            }
         }
     }
 
@@ -87,14 +76,7 @@
 </script>
 
 <div class="card m-6">
-    <TicketCard {ticket} titleSize='xl' titleLink={false} >
-        <div 
-            class="text-sm font-bold {offersAlreadyColor} mt-2"
-            slot="offerCount"
-        >
-            {'Offers on ticket: ' + offersOnTicket?.size}
-        </div>
-    </TicketCard>
+    <TicketCard {ticket} titleSize='xl' titleLink={false} />
 
 </div>
 <!-- Create Offer -->

@@ -1,10 +1,26 @@
 <script lang="ts">
     import type { TicketEvent } from "$lib/events/TicketEvent";
+    import ndk from "$lib/stores/ndk";
+    import { onMount } from "svelte";
     
     export let ticket: TicketEvent | undefined = undefined;
     export let titleSize: string = 'md';
     export let titleLink: boolean = true;
     const bech32ID = ticket?.encode();
+
+    let offerCount: number = 0;
+    let offersAlreadyColor: string = 'text-primary-300-600-token';
+
+    $: {
+        if (ticket) {
+            ticket.fetchAllOffers($ndk).then((offers) => {
+                offerCount = offers.size;
+                if (offerCount > 0) {
+                }
+                offersAlreadyColor = 'text-error-500';
+            });
+        }
+    }
 </script>
 
 
@@ -31,7 +47,14 @@
                 </div>
                 <slot name="button"/>
             </div>
-            <slot name="offerCount" />
+
+        <slot name='myOffer' />
+
+        <div 
+            class="text-sm font-bold {offersAlreadyColor} mt-2"
+        >
+            {'Offers on ticket: ' + offerCount}
+        </div>
         </section>
         <footer class="items-center flex flex-wrap card-footer">
             {#each ticket.tTags as tag }
