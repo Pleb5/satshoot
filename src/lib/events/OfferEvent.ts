@@ -1,5 +1,8 @@
 import { BTCTroubleshootKind } from "./kinds";
-import { NDKEvent, type NDK, type NostrEvent } from "@nostr-dev-kit/ndk";
+import { NDKEvent, NDKRelaySet, type NDK, type NostrEvent } from "@nostr-dev-kit/ndk";
+import type { NDKSvelte } from "@nostr-dev-kit/ndk-svelte";
+import { nip19 } from "nostr-tools";
+import { TicketEvent } from "./TicketEvent";
 
 // This is implicitly set by the TicketEvent referenced by this offer's 'a' tag.
 // When ticket updates its 'a' tag, the accepted offer status also changes
@@ -86,6 +89,30 @@ export class OfferEvent extends NDKEvent {
 
     set description(desc: string) {
         this.content = desc;
+    }
+
+    public async getTicket(ndk: NDKSvelte): Promise<TicketEvent | null> {
+        if (!ndk) {
+            throw new Error('NDK is null, cannot fetch event for Offer!');
+        }
+
+        
+        const bech32ID: string = nip19.naddrEncode({
+            kind: BTCTroubleshootKind.Ticket,
+            pubkey: this.referencedTicketAddress.split(':')[1] as string,
+            identifier: this.referencedTicketAddress.split(':')[2] as string,
+        });
+
+        const event = await ndk.fetchEvent(
+            bech32ID,
+            {},
+            new NDKRelaySet(new Set(ndk.pool.relays.values()), ndk)); 
+
+        let ticket: TicketEvent | null = null;
+        if (event) {
+            ticket = TicketEvent.from(event);
+        }
+        return ticket;
     }
 
 }

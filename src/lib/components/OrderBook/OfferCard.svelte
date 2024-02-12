@@ -1,24 +1,13 @@
 <script lang="ts">
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
-    import { TicketEvent } from "$lib/events/TicketEvent";
-    import type { NDKEvent } from "@nostr-dev-kit/ndk";
+    import type { TicketEvent } from "$lib/events/TicketEvent";
     import { onMount } from "svelte";
     import ndk from "$lib/stores/ndk";
-    import { NDKRelaySet } from "@nostr-dev-kit/ndk";
 
-    import { nip19 } from "nostr-tools";
-    import { BTCTroubleshootKind } from "$lib/events/kinds";
     import TicketCard from "./TicketCard.svelte";
     
     export let offer: OfferEvent;
     let ticket: TicketEvent | null;
-    const bech32ID: string = nip19.naddrEncode({
-        kind: BTCTroubleshootKind.Ticket,
-        pubkey: offer.referencedTicketAddress?.split(':')[1] as string,
-        identifier: offer.referencedTicketAddress?.split(':')[2] as string,
-    });
-
-    let ticketPromise: Promise<NDKEvent> | null = null;
 
     let pricing: string = '';
 
@@ -33,11 +22,7 @@
                     pricing = 'sats/min';
                     break;
             }
-            ticketPromise = $ndk.fetchEvent(bech32ID, {}, new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)) as Promise<TicketEvent> | null; 
-            let event = await ticketPromise;
-            if (event) {
-                ticket = TicketEvent.from(event);
-            }
+            ticket = await offer.getTicket($ndk); 
         }
 
     });

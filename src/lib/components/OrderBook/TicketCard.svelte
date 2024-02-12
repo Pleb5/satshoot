@@ -16,8 +16,8 @@
             ticket.fetchAllOffers($ndk).then((offers) => {
                 offerCount = offers.size;
                 if (offerCount > 0) {
+                    offersAlreadyColor = 'text-error-500';
                 }
-                offersAlreadyColor = 'text-error-500';
             });
         }
     }
