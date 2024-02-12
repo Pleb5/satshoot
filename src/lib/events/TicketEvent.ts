@@ -1,6 +1,6 @@
 import { BTCTroubleshootKind } from "./kinds";
 import { NDKEvent, type NDKTag, type NostrEvent, type NDKFilter } from "@nostr-dev-kit/ndk";
-import type { NDKSvelte } from "@nostr-dev-kit/ndk-svelte";
+import { NDKRelaySet } from "@nostr-dev-kit/ndk";
 import { OfferEvent } from "./OfferEvent";
 
 export enum TicketStatus {
@@ -14,6 +14,7 @@ export class TicketEvent extends NDKEvent {
     private _status: TicketStatus;
     private _title: string;
     private _tTags: NDKTag[];
+    private _offersOnTicket: Set<OfferEvent>;
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
@@ -21,6 +22,9 @@ export class TicketEvent extends NDKEvent {
         this._status = parseInt(this.tagValue('status') as string);
         this._title = this.tagValue('title') as string;
         this._tTags = this.tags.filter((tag:NDKTag) => tag[0]==='t');
+        this._offersOnTicket = new Set();
+
+        this.startOfferSubs();
     }
 
     static from(event:NDKEvent){
@@ -80,25 +84,29 @@ export class TicketEvent extends NDKEvent {
         this._tTags = tags;
     }
 
-    public async fetchAllOffers(ndk: NDKSvelte): Promise<Set<OfferEvent>> {
-        if (!ndk) {
-            throw new Error('NDK is null, cannot fetch Offers!');
-        }
-
-        const filter: NDKFilter<BTCTroubleshootKind> = { kinds: [BTCTroubleshootKind.Offer], '#a': [this.ticketAddress] };
-
-        // Trust it to ndk to calculate the relays, no relayset will be given
-        const events: Set<NDKEvent> = await ndk.fetchEvents(filter);
-
-        const offerSet: Set<OfferEvent> = new Set();
-
-        events.forEach((event: NDKEvent) => {
-            offerSet.add(OfferEvent.from(event));
-        });
-
-        console.log('offers fetched for event:', offerSet)
-
-        return offerSet;
+    get offersOnTicket(): Set<OfferEvent> {
+        return this._offersOnTicket;
     }
+
+    public startOfferSubs() {
+        if (this.ndk) {
+            const sub = this.ndk.subscribe(
+                {
+                    kinds: [BTCTroubleshootKind.Offer as number],
+                    '#a': [this.ticketAddress],
+                },
+                {},
+                new NDKRelaySet(new Set(this.ndk.pool.relays.values()), this.ndk)
+            );
+            
+            sub.on("event", (e: NDKEvent) => {
+                this._offersOnTicket.add(OfferEvent.from(e));
+                console.log('offer arrived, adding to offersOnTicket')
+            });
+
+            sub.start();
+        }
+    }
+
 
 }

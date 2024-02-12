@@ -24,21 +24,21 @@
     const modalStore = getModalStore();
 
     let ticket: TicketEvent | undefined = undefined;
-    let ticketPromise: Promise<NDKEvent | null> ;
-
-    let offersOnTicket: Set<OfferEvent> = new Set();
 
     // Only trying to fetch offers on ticket once. This doesnt create a permanent
     // subscription which would likely be an overkill
     onMount(async() => {
         // Get ticket from naddr
-        ticketPromise = $ndk.fetchEvent($page.params.ticketId, {}, new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)); 
-        let event = await ticketPromise;
+        let event =  await $ndk.fetchEvent(
+            $page.params.ticketId,
+            {},
+            new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
+        ); 
+
         console.log('ticket event fetched, value:', event)
         if (event) {
             ticket = TicketEvent.from(event);
             ticket = ticket;
-            offersOnTicket = await ticket.fetchAllOffers($ndk);
         }
     });
 
@@ -58,10 +58,7 @@
         });
 
         if (offerPosted) {
-            // Get offer posted by user from relays and also other offers possibly posted in the meantime
-            if (ticket) {
-                offersOnTicket = await ticket.fetchAllOffers($ndk);
-            }
+            console.log('offer posted:', offerPosted)
         }
     }
 

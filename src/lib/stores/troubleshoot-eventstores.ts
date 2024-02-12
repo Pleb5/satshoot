@@ -10,7 +10,7 @@ import { get } from "svelte/store";
 
 // Create a subscription that is running all the time,
 // watching for troubleshoot ticket and offer events
-const ticketFilter: NDKFilter<BTCTroubleshootKind> = {kinds: [BTCTroubleshootKind.Ticket], limit:1000};
+const ticketFilter: NDKFilter<BTCTroubleshootKind> = {kinds: [BTCTroubleshootKind.Ticket], limit:5000};
 const subOptions: NDKSubscriptionOptions = { closeOnEose: false, pool: get(ndk).pool };
 
 export const tickets:NDKEventStore<ExtendedBaseType<TicketEvent>>

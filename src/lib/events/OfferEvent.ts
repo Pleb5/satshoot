@@ -1,6 +1,6 @@
 import { BTCTroubleshootKind } from "./kinds";
 import { NDKEvent, NDKRelaySet, type NDK, type NostrEvent } from "@nostr-dev-kit/ndk";
-import type { NDKSvelte } from "@nostr-dev-kit/ndk-svelte";
+import type { NDKFilter } from "@nostr-dev-kit/ndk";
 import { nip19 } from "nostr-tools";
 import { TicketEvent } from "./TicketEvent";
 
@@ -24,12 +24,18 @@ export class OfferEvent extends NDKEvent {
     private _pricing: Pricing;
     private _amount: number;
 
+    private _ticket: TicketEvent | null;
+
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= BTCTroubleshootKind.Offer;
         this._status = parseInt(this.tagValue('status') as string);
         this._pricing = parseInt(this.tagValue('pricing') as string);
         this._amount = parseInt(this.tagValue("amount") as string);
+        this._ticket = null;
+
+        this.startTicketSub();
+
     }
 
     static from(event:NDKEvent){
@@ -91,28 +97,37 @@ export class OfferEvent extends NDKEvent {
         this.content = desc;
     }
 
-    public async getTicket(ndk: NDKSvelte): Promise<TicketEvent | null> {
-        if (!ndk) {
-            throw new Error('NDK is null, cannot fetch event for Offer!');
-        }
-
-        
-        const bech32ID: string = nip19.naddrEncode({
-            kind: BTCTroubleshootKind.Ticket,
-            pubkey: this.referencedTicketAddress.split(':')[1] as string,
-            identifier: this.referencedTicketAddress.split(':')[2] as string,
-        });
-
-        const event = await ndk.fetchEvent(
-            bech32ID,
-            {},
-            new NDKRelaySet(new Set(ndk.pool.relays.values()), ndk)); 
-
-        let ticket: TicketEvent | null = null;
-        if (event) {
-            ticket = TicketEvent.from(event);
-        }
-        return ticket;
+    get ticket(): TicketEvent | null {
+        return this._ticket;
     }
 
+    public startTicketSub() {
+        if (this.ndk) {
+            const bech32ID: string = nip19.naddrEncode({
+                kind: BTCTroubleshootKind.Ticket,
+                pubkey: this.referencedTicketAddress.split(':')[1] as string,
+                identifier: this.referencedTicketAddress.split(':')[2] as string,
+            });
+
+            console.log('referenced ticket', this.referencedTicketAddress)
+
+            const filter: NDKFilter = {
+                kinds: [BTCTroubleshootKind.Ticket as number],
+                authors: [this.referencedTicketAddress.split(':')[1] as string],
+                '#d': [this.referencedTicketAddress.split(':')[2] as string],
+            };
+            const sub = this.ndk.subscribe(
+                filter,
+                {},
+                new NDKRelaySet(new Set(this.ndk.pool.relays.values()), this.ndk)
+            );
+            
+            sub.on("event", (e: NDKEvent) => {
+                console.log('ticket arrived for Offer!', e)
+                this._ticket = TicketEvent.from(e);
+            });
+
+            sub.start();
+        }
+    }
 }

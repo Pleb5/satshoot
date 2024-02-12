@@ -1,7 +1,5 @@
 <script lang="ts">
     import type { TicketEvent } from "$lib/events/TicketEvent";
-    import ndk from "$lib/stores/ndk";
-    import { onMount } from "svelte";
     
     export let ticket: TicketEvent | undefined = undefined;
     export let titleSize: string = 'md';
@@ -13,12 +11,10 @@
 
     $: {
         if (ticket) {
-            ticket.fetchAllOffers($ndk).then((offers) => {
-                offerCount = offers.size;
-                if (offerCount > 0) {
-                    offersAlreadyColor = 'text-error-500';
-                }
-            });
+            offerCount = ticket.offersOnTicket.size;
+            if (offerCount > 0) {
+                offersAlreadyColor = 'text-error-500';
+            }
         }
     }
 </script>
