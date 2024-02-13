@@ -1,7 +1,8 @@
 <script lang="ts">
-    import Orderbook from "$lib/components/OrderBook/orderbook.svelte";
     import { InputChip } from "@skeletonlabs/skeleton";
+    import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
     import pageTitleStore from "$lib/stores/pagetitle-store";
+    import { tickets } from "$lib/stores/troubleshoot-eventstores";
 
     let list: string[] = ['foo', 'bar', 'fizz', 'buzz'];
 
@@ -18,5 +19,14 @@
     <div class="sticky top-0 mx-auto flex items-center justify-center bg-surface-100-800-token">
         <InputChip bind:value={list} name="chips" placeholder="Filter Tickets" />
     </div>
-    <Orderbook />
+
+    <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
+        {#if $tickets}
+            {#each $tickets as ticket}
+
+                <TicketCard {ticket}/>
+
+            {/each}
+        {/if}
+    </div>
 </div>
