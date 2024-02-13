@@ -1,7 +1,9 @@
 import { BTCTroubleshootKind } from "./kinds";
-import { NDKEvent, type NDKTag, type NostrEvent, type NDKFilter } from "@nostr-dev-kit/ndk";
+import { NDKEvent, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
 import { NDKRelaySet } from "@nostr-dev-kit/ndk";
 import { OfferEvent } from "./OfferEvent";
+import type { NDKEventStore, ExtendedBaseType, NDKSvelte } from '@nostr-dev-kit/ndk-svelte';
+import type { NDKFilter, NDKSubscriptionOptions } from '@nostr-dev-kit/ndk';
 
 export enum TicketStatus {
     New = 0,
@@ -14,7 +16,7 @@ export class TicketEvent extends NDKEvent {
     private _status: TicketStatus;
     private _title: string;
     private _tTags: NDKTag[];
-    private _offersOnTicket: Set<OfferEvent> | null;
+    private _offersOnTicket: NDKEventStore<ExtendedBaseType<OfferEvent>> | null;
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
@@ -82,31 +84,27 @@ export class TicketEvent extends NDKEvent {
         this._tTags = tags;
     }
 
-    get offersOnTicket(): Set<OfferEvent> {
+    get offersOnTicket(): NDKEventStore<ExtendedBaseType<OfferEvent>> | null {
         return this._offersOnTicket;
     }
 
-    public startOfferSubs() {
+    set offersOnTicket(offers: NDKEventStore<ExtendedBaseType<OfferEvent>> | null) {
+        this._offersOnTicket = offers;
+    }
 
-        if (this.ndk) {
-            const sub = this.ndk.subscribe(
-                {
-                    kinds: [BTCTroubleshootKind.Offer as number],
-                    '#a': [this.ticketAddress],
-                },
-                {},
-                new NDKRelaySet(new Set(this.ndk.pool.relays.values()), this.ndk)
-            );
-            
-            sub.on("event", (e: NDKEvent) => {
-                if (!this._offersOnTicket) {
-                    this._offersOnTicket = new Set();
-                }
-                this._offersOnTicket.add(OfferEvent.from(e));
-                console.log('offer arrived, adding to offersOnTicket')
-            });
+    public setupOfferSubs() {
+        if (this.ndk && !this._offersOnTicket) {
+            const offerFilter: NDKFilter<BTCTroubleshootKind> = {
+                kinds: [BTCTroubleshootKind.Offer],
+                '#a': [this.ticketAddress],
+                limit:500
+            };
 
-            sub.start();
+            const subOptions: NDKSubscriptionOptions = {
+                closeOnEose: false,
+                pool: this.ndk.pool
+            };
+            this._offersOnTicket = (this.ndk as NDKSvelte).storeSubscribe(offerFilter, subOptions, OfferEvent);
         }
     }
 

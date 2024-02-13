@@ -6,6 +6,7 @@
     import { NDKRelaySet } from "@nostr-dev-kit/ndk";
     import { BTCTroubleshootKind } from "$lib/events/kinds";
     import { onDestroy, onMount } from "svelte";
+    import type { Unsubscriber } from "svelte/store";
     
     export let ticket: TicketEvent | null = null;
     export let titleSize: string = 'md';
@@ -14,43 +15,35 @@
 
     const bech32ID = ticket?.encode();
 
-    let offers: Set<OfferEvent> | null = null;
+    let offers: OfferEvent[] = [];
     let offerCount: string = '?';
     let offersAlreadyColor: string = 'text-primary-300-600-token';
-
-    let sub: NDKSubscription;
+    
+    let unsubscribe: Unsubscriber | undefined = undefined;
 
     $: {
+        console.log('in ticket card onmount ')
         if (ticket && countAllOffers) {
-            if (offers === null) {
-                console.log('start offer sub for offercount in ticket card')
-                sub = $ndk.subscribe(
-                    {
-                        kinds: [BTCTroubleshootKind.Offer as number],
-                        '#a': [ticket.ticketAddress],
-                    },
-                    {},
-                    new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
-                );
-
-                sub.on("event", (e: NDKEvent) => {
-                    if (!offers) {
-                        offers = new Set();
-                    }
-                    offers.add(OfferEvent.from(e));
-                    offerCount = offers.size.toString();
-                    offersAlreadyColor = 'text-error-500';
-                    console.log('offer arrived, adding to offersOnTicket')
-                });
-
-                sub.start();
-            } 
+            console.log('start offer sub for offercount in ticket card')
+            ticket.setupOfferSubs();
+            // A normal svelte store sub is used instead of auto-sub 
+            // because of the store being a member in the class and calling ticket.$offersOnTicket doesnt work
+            unsubscribe = ticket.offersOnTicket.subscribe((offerList: OfferEvent[]) => {
+                offers = offerList;
+                offerCount = offers.length.toString();
+                if (offerCount > 0) {
+                    offersAlreadyColor = 'text-error-300-600-token';
+                }
+                console.log('offer count: ', offerCount)
+            });
         }
     }
 
     onDestroy(() => {
-        if (sub) {
-            sub.stop(); 
+        if (unsubscribe) {
+            console.log('in ticket card onDestroy')
+            unsubscribe();
+            ticket?.offersOnTicket.unsubscribe();
         }
     });
 </script>
