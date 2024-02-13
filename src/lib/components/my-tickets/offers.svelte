@@ -78,19 +78,19 @@ $: {
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
                     {#each pendingOfferSet as offer }
-                        <OfferCard {offer} />
+                        <OfferCard {offer} countAllOffers={true}/>
                     {/each}
                 </div>
             {:else if tabGroup === 1}
                 <div>
                     {#each wonOfferSet as offer }
-                        <OfferCard {offer} />
+                        <OfferCard {offer} countAllOffers={true}/>
                     {/each}
                 </div>
             {:else if tabGroup === 2}
                 <div>
                     {#each lostOfferSet as offer }
-                        <OfferCard {offer} />
+                        <OfferCard {offer} countAllOffers={true}/>
                     {/each}
                 </div>
             {/if}

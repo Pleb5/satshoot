@@ -5,6 +5,7 @@
     import type { TicketEvent } from "$lib/events/TicketEvent";
     
     export let offer: OfferEvent | null = null;
+    export let countAllOffers: boolean = false;
     let ticket: TicketEvent | null = null;
 
     let pricing: string = '';
@@ -34,7 +35,7 @@
 <div class="card">
     {#if offer}
         {#if ticket}
-            <TicketCard ticket={ticket} >
+            <TicketCard ticket={ticket} {countAllOffers} >
                 <div slot="myOffer" class="text-primary-300-600-token mt-2">
                     {'My Offer: ' + offer.amount + ' ' + pricing}
                 </div>

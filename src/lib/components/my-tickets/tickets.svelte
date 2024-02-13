@@ -33,12 +33,6 @@ $: {
                 if (!(ticketSet?.has(ticket)) ) {
                     console.log('NEW valid ticket found. Adding to set, starting ticket sub')
                     ticketSet?.add(ticket);
-                    // When to stop?
-                    ticket.startOfferSubs().then(()=>{
-                        newTicketSet = newTicketSet;
-                        inProgressTicketSet = inProgressTicketSet;
-                        closedTicketSet = closedTicketSet;
-                    });
                 }
 
                 console.log('my offers:', $myTickets)
@@ -72,19 +66,19 @@ $: {
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
                     {#each newTicketSet as ticket }
-                        <TicketCard {ticket} />
+                        <TicketCard {ticket} countAllOffers={true}/>
                     {/each}
                 </div>
                 {:else if tabGroup === 1}
                 <div>
                     {#each inProgressTicketSet as ticket }
-                        <TicketCard {ticket} />
+                        <TicketCard {ticket} countAllOffers={true}/>
                     {/each}
                 </div>
                 {:else if tabGroup === 2}
                 <div>
                     {#each closedTicketSet as ticket }
-                        <TicketCard {ticket} />
+                        <TicketCard {ticket} countAllOffers={true}/>
                     {/each}
                 </div>
             {/if}
