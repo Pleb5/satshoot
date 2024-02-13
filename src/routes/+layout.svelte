@@ -9,6 +9,7 @@
 
     import ndk from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
+    import { myTicketFilter, myOfferFilter, tickets, myTickets, myOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -50,7 +51,6 @@
     import { onDestroy, onMount } from "svelte";
 
     // Tickets and Offers
-    import { tickets, startMySubscriptions } from "$lib/stores/troubleshoot-eventstores";
 
     initializeStores();
 
@@ -96,9 +96,10 @@
 
         console.log("NDK Connected");
 
-        // ref/unref if lots of components start to sub/unsub!
-        tickets.startSubscription();
-
+        // Start all tickets sub. Starting this anywhere else seems to break reliability.
+        // User-defined Relays are restored from local storage here and this runs AFTER page onmounts.
+        // This causes the subscription to fail because there are yet no relays to subscribe to
+        tickets.ref();
 
         if (!loggedIn) {
             console.log('not logged in! Trying to log in...')
@@ -115,7 +116,11 @@
 
                         let user: NDKUser = await $ndk.signer.user();
 
-                        startMySubscriptions(user.pubkey);
+                        myTicketFilter.authors?.push(user.pubkey);
+                        myOfferFilter.authors?.push(user.pubkey);
+                        myTickets.ref();
+                        myOffers.ref();
+                        console.log('started my subscriptions!')
 
                         await user.fetchProfile();
 
@@ -151,8 +156,12 @@
                                         $sessionPK = privateKey;
 
                                         let user: NDKUser = await $ndk.signer.user();
-
-                                        startMySubscriptions(user.pubkey);
+                                        
+                                        myTicketFilter.authors?.push(user.pubkey);
+                                        myOfferFilter.authors?.push(user.pubkey);
+                                        myTickets.ref();
+                                        myOffers.ref();
+                                        console.log('started my subscriptions!')
 
                                         await user.fetchProfile();
 
@@ -176,9 +185,13 @@
                     }
                     let user = await $ndk.signer.user();
 
-                    startMySubscriptions(user.pubkey);
+                    myTicketFilter.authors?.push(user.pubkey);
+                    myOfferFilter.authors?.push(user.pubkey);
+                    myTickets.ref();
+                    myOffers.ref();
+                    console.log('started my subscriptions!')
 
-                    await $ndk.activeUser?.fetchProfile();
+                    await user.fetchProfile();
 
                     // Trigger UI update for profile
                     $ndk.activeUser = $ndk.activeUser;
@@ -192,10 +205,13 @@
         }
     });
 
-    onDestroy( () => {
-        // ref/unref if lots of components start to sub/unsub!
-        tickets.unsubscribe();
-    })
+    onDestroy(()=>{
+        tickets.unref();
+        myTickets.unref();
+        myOffers.unref();
+        console.log('stopped my subscriptions and all tickets subs !')
+    });
+
 
     const settingsMenu: PopupSettings = {
         event: "click",

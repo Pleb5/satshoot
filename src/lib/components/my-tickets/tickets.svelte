@@ -8,38 +8,47 @@ import TicketCard from '../OrderBook/TicketCard.svelte';
 
 let tabGroup = TicketStatus.New;
 
-const ticketMap: Map<TicketStatus, TicketEvent[]> = new Map();
-let newTicketsArray: TicketEvent[] = [];
-let inProgressTicketsArray: TicketEvent[] = [];
-let closedTicketsArray: TicketEvent[] = [];
+const ticketMap: Map<TicketStatus, Set<TicketEvent>> = new Map();
+let newTicketSet: Set<TicketEvent> = new Set();
+let inProgressTicketSet: Set<TicketEvent> = new Set();
+let closedTicketSet: Set<TicketEvent> = new Set();
 
-ticketMap.set(TicketStatus.New, newTicketsArray);
-ticketMap.set(TicketStatus.InProgress, inProgressTicketsArray);
-ticketMap.set(TicketStatus.Closed, closedTicketsArray);
+ticketMap.set(TicketStatus.New, newTicketSet);
+ticketMap.set(TicketStatus.InProgress, inProgressTicketSet);
+ticketMap.set(TicketStatus.Closed, closedTicketSet);
 
 // Sort tickets into buckets according to state. Do this every time a new ticket is received for the user
 $: {
-    if ($myTickets) {
+    if ($myTickets && $myTickets.length > 0) {
+        // Search newest ticket using  
         $myTickets.forEach((ticket: TicketEvent) => {
-            let ticketArray = ticketMap.get(ticket.status as TicketStatus) as TicketEvent[];
-            let found = false;
-            ticketArray.forEach((sortedTicket: TicketEvent) => {
-                if (sortedTicket.ticketAddress === ticket.ticketAddress) {
-                    found = true;
+            // If ticket has valid status
+            if (ticket.status === TicketStatus.New || 
+                ticket.status === TicketStatus.InProgress || 
+                ticket.status === TicketStatus.Closed) {
+
+                console.log('valid ticket, trying add to myTickets...')
+
+                let ticketSet = ticketMap.get(ticket.status);
+                if (!(ticketSet?.has(ticket)) ) {
+                    console.log('NEW valid ticket found. Adding to set, starting ticket sub')
+                    ticketSet?.add(ticket);
+                    // When to stop?
+                    ticket.startOfferSubs().then(()=>{
+                        newTicketSet = newTicketSet;
+                        inProgressTicketSet = inProgressTicketSet;
+                        closedTicketSet = closedTicketSet;
+                    });
                 }
-            });
-            if (!found) {
-                ticketArray.push(ticket);
-                console.log('new unique ticket, adding to myTickets...')
-                newTicketsArray = newTicketsArray;
-                inProgressTicketsArray = inProgressTicketsArray;
-                closedTicketsArray = closedTicketsArray;
+
+                console.log('my offers:', $myTickets)
+                console.log('new tickets:', newTicketSet)
             }
-            console.log('newTicketsArray', newTicketsArray)
+            newTicketSet = newTicketSet;
+            inProgressTicketSet = inProgressTicketSet;
+            closedTicketSet = closedTicketSet;
         });
 
-
-        console.log('my tickets:', $myTickets)
     } else {
         console.log('My tickets is null!')
     }
@@ -62,19 +71,19 @@ $: {
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
-                    {#each newTicketsArray as ticket }
+                    {#each newTicketSet as ticket }
                         <TicketCard {ticket} />
                     {/each}
                 </div>
                 {:else if tabGroup === 1}
                 <div>
-                    {#each inProgressTicketsArray as ticket }
+                    {#each inProgressTicketSet as ticket }
                         <TicketCard {ticket} />
                     {/each}
                 </div>
                 {:else if tabGroup === 2}
                 <div>
-                    {#each closedTicketsArray as ticket }
+                    {#each closedTicketSet as ticket }
                         <TicketCard {ticket} />
                     {/each}
                 </div>

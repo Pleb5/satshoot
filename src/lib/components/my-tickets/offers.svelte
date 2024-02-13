@@ -8,45 +8,55 @@ import OfferCard from '../OrderBook/OfferCard.svelte';
 
 let tabGroup = OfferStatus.Pending;
 
-const offerMap: Map<OfferStatus, OfferEvent[]> = new Map();
-let pendingOffersArray: OfferEvent[] = [];
-let wonOffersArray: OfferEvent[] = [];
-let lostOffersArray: OfferEvent[] = [];
+const offerMap: Map<OfferStatus, Set<OfferEvent>> = new Map();
+let pendingOfferSet: Set<OfferEvent> = new Set();
+let wonOfferSet: Set<OfferEvent> = new Set();
+let lostOfferSet: Set<OfferEvent> = new Set();
 
-offerMap.set(OfferStatus.Pending, pendingOffersArray);
-offerMap.set(OfferStatus.Won, wonOffersArray);
-offerMap.set(OfferStatus.Lost, lostOffersArray);
+offerMap.set(OfferStatus.Pending, pendingOfferSet);
+offerMap.set(OfferStatus.Won, wonOfferSet);
+offerMap.set(OfferStatus.Lost, lostOfferSet);
+
 
 // Sort offers into buckets according to state. Do this every time a new offers is received for the user
 $: {
-    if ($myOffers) {
+    if ($myOffers && $myOffers.length > 0) {
+        // NDKSvelte does not preserve the latest added event. We need it to be able to
+        // start a subscription which updates the ticket referenced by the offer.
+        // So we create Sets that store offers of different status.
+        // We try to insert ALL offers into these sets WHENEVER a new offer arrived in this reactive block
+        // If indeed a new one was added, we need to start its subscription.
         $myOffers.forEach((offer: OfferEvent) => {
-            let offerArray = offerMap.get(offer.status as OfferStatus) as OfferEvent[];
-            if (!offerArray) {
-                console.log('Impossible offer status: ', offer.status)
-                return;
-            }
-            let found = false;
-            offerArray.forEach((sortedOffer: OfferEvent) => {
-                if (sortedOffer.offerAddress === offer.offerAddress) {
-                    found = true;
+
+            // If offer has valid status
+            if (offer.status === OfferStatus.Pending || 
+                offer.status === OfferStatus.Won || 
+                offer.status === OfferStatus.Lost) {
+
+                console.log('valid offer, trying add to myOffers...')
+
+                let offerSet = offerMap.get(offer.status);
+                if (!(offerSet?.has(offer)) ) {
+                    console.log('NEW valid offer found. Adding to set, starting ticket sub')
+                    offerSet?.add(offer);
+                    // When to stop?
+                    offer.startTicketSub().then(()=>{
+                        pendingOfferSet = pendingOfferSet;
+                        wonOfferSet = wonOfferSet;
+                        lostOfferSet = lostOfferSet;
+                    });
                 }
-            });
-            if (!found) {
-                offerArray.push(offer);
-                console.log('new unique offers, adding to myOffers...')
-                pendingOffersArray = pendingOffersArray;
-                wonOffersArray = wonOffersArray;
-                lostOffersArray = lostOffersArray;
+
+                console.log('my offers:', $myOffers)
+                console.log('pending offers:', pendingOfferSet)
             }
-            console.log('pendingOffersArray', pendingOffersArray)
-        });
+            pendingOfferSet = pendingOfferSet;
+            wonOfferSet = wonOfferSet;
+            lostOfferSet = lostOfferSet;
+        })
 
-
-        console.log('my offers:', $myOffers)
-        console.log('pending offers:', pendingOffersArray)
     } else {
-        console.log('My offers is null!')
+        console.log('My offers is null or size equals 0!')
     }
 }
 
@@ -67,19 +77,19 @@ $: {
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
-                    {#each pendingOffersArray as offer }
+                    {#each pendingOfferSet as offer }
                         <OfferCard {offer} />
                     {/each}
                 </div>
             {:else if tabGroup === 1}
                 <div>
-                    {#each wonOffersArray as offer }
+                    {#each wonOfferSet as offer }
                         <OfferCard {offer} />
                     {/each}
                 </div>
             {:else if tabGroup === 2}
                 <div>
-                    {#each lostOffersArray as offer }
+                    {#each lostOfferSet as offer }
                         <OfferCard {offer} />
                     {/each}
                 </div>

@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
 
-const pageTitleStore = writable('Bitcoin Troubleshoot');
+const pageTitleStore = writable('BTC Troubleshoot');
 
 export default pageTitleStore;

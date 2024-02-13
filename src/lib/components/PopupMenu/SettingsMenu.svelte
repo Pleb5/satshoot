@@ -2,10 +2,10 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings } from '@skeletonlabs/skeleton';
 
-
     import ndk from '$lib/stores/ndk';
-    import { stopMySubscriptions } from "$lib/stores/troubleshoot-eventstores";
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
+    import { myTicketFilter, myOfferFilter, myTickets, myOffers } from '$lib/stores/troubleshoot-eventstores';
+
     import { goto } from '$app/navigation';
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 
@@ -26,7 +26,10 @@
                 $sessionPK = '';
                 sessionStorage.clear();
 
-                stopMySubscriptions();
+                myTickets.unsubscribe();
+                myOffers.unsubscribe();
+                myTicketFilter.authors = [];
+                myOfferFilter.authors = [];
 
                 ndk.set(new NDKSvelte({
                     enableOutboxModel: false,

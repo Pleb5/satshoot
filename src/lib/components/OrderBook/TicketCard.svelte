@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { TicketEvent } from "$lib/events/TicketEvent";
     
-    export let ticket: TicketEvent | undefined = undefined;
+    export let ticket: TicketEvent | null = null;
     export let titleSize: string = 'md';
     export let titleLink: boolean = true;
     const bech32ID = ticket?.encode();

@@ -2,7 +2,7 @@
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
-    import { startMySubscriptions } from "$lib/stores/troubleshoot-eventstores";
+    import { myTickets, myOffers , myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
     import pageTitleStore from "$lib/stores/pagetitle-store";
     import { sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
@@ -39,7 +39,10 @@
             let user: NDKUser = await $ndk.signer.user();
             localStorage.setItem('login-method', "nip07");
 
-            startMySubscriptions(user.pubkey);
+            myTicketFilter.authors?.push(user.pubkey);
+            myOfferFilter.authors?.push(user.pubkey);
+            myTickets.ref();
+            myOffers.ref();
 
             await user.fetchProfile();
             // Add user relays to stored pool
@@ -77,7 +80,10 @@
         // Update UI
         $ndk.activeUser = $ndk.activeUser;
 
-        startMySubscriptions(user.pubkey);
+        myTicketFilter.authors?.push(user.pubkey);
+        myOfferFilter.authors?.push(user.pubkey);
+        myTickets.ref();
+        myOffers.ref();
 
         const modalComponent: ModalComponent = {
             ref: GenerateEphemeralKeyModal,

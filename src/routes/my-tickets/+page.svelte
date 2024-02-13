@@ -5,7 +5,6 @@ import tabStore from "$lib/stores/tab-store";
 import Tickets from "$lib/components/my-tickets/tickets.svelte";
 import Offers from "$lib/components/my-tickets/offers.svelte";
 
-
 </script>
 
 <TabGroup justify='justify-evenly' flex='flex-grow'>

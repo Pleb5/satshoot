@@ -1,16 +1,20 @@
 <script lang="ts">
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
-    import { onMount } from "svelte";
 
     import TicketCard from "./TicketCard.svelte";
+    import type { TicketEvent } from "$lib/events/TicketEvent";
     
-    export let offer: OfferEvent;
+    export let offer: OfferEvent | null = null;
+    let ticket: TicketEvent | null = null;
 
     let pricing: string = '';
 
-    onMount(async() => {
-
+    $: {
         if (offer) {
+            console.log('offer is defined, lets set ticket...')
+            if (offer.ticket) {
+                ticket = offer.ticket;
+            }
             switch (offer.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';
@@ -19,22 +23,18 @@
                     pricing = 'sats/min';
                     break;
             }
+        } else {
+            console.log('offer is null yet!')
         }
 
-    });
-
-    $: {
-        if (offer.ticket) {
-            offer.ticket = offer.ticket;
-        }
     }
 
 </script>
 
 <div class="card">
     {#if offer}
-        {#if offer.ticket}
-            <TicketCard ticket={offer.ticket} >
+        {#if ticket}
+            <TicketCard ticket={ticket} >
                 <div slot="myOffer" class="text-primary-300-600-token mt-2">
                     {'My Offer: ' + offer.amount + ' ' + pricing}
                 </div>

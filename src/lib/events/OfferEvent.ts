@@ -1,7 +1,6 @@
 import { BTCTroubleshootKind } from "./kinds";
 import { NDKEvent, NDKRelaySet, type NDK, type NostrEvent } from "@nostr-dev-kit/ndk";
 import type { NDKFilter } from "@nostr-dev-kit/ndk";
-import { nip19 } from "nostr-tools";
 import { TicketEvent } from "./TicketEvent";
 
 // This is implicitly set by the TicketEvent referenced by this offer's 'a' tag.
@@ -16,7 +15,7 @@ export enum Pricing {
     SatsPerMin = 0,
     Absolute = 1,
     // This has been postponed
-    MilestoneBased = 2,
+    // MilestoneBased = 2,
 }
 
 export class OfferEvent extends NDKEvent {
@@ -34,7 +33,9 @@ export class OfferEvent extends NDKEvent {
         this._amount = parseInt(this.tagValue("amount") as string);
         this._ticket = null;
 
-        this.startTicketSub();
+        // Todo: This needs to happen from outside of offerevent/TicketEvent
+        // GUI update problem...
+        // Readd fetchTicket/fetchOffers one-off call for resource saving?
 
     }
 
@@ -101,33 +102,35 @@ export class OfferEvent extends NDKEvent {
         return this._ticket;
     }
 
-    public startTicketSub() {
-        if (this.ndk) {
-            const bech32ID: string = nip19.naddrEncode({
-                kind: BTCTroubleshootKind.Ticket,
-                pubkey: this.referencedTicketAddress.split(':')[1] as string,
-                identifier: this.referencedTicketAddress.split(':')[2] as string,
-            });
+    public async startTicketSub(): Promise<TicketEvent | null> {
 
-            console.log('referenced ticket', this.referencedTicketAddress)
+        return new Promise((resolve) => {
+            if (this.ndk) {
+                const filter: NDKFilter = {
+                    kinds: [BTCTroubleshootKind.Ticket as number],
+                    authors: [this.referencedTicketAddress.split(':')[1] as string],
+                    '#d': [this.referencedTicketAddress.split(':')[2] as string],
+                };
+                const sub = this.ndk.subscribe(
+                    filter,
+                    {},
+                    new NDKRelaySet(new Set(this.ndk.pool.relays.values()), this.ndk)
+                );
 
-            const filter: NDKFilter = {
-                kinds: [BTCTroubleshootKind.Ticket as number],
-                authors: [this.referencedTicketAddress.split(':')[1] as string],
-                '#d': [this.referencedTicketAddress.split(':')[2] as string],
-            };
-            const sub = this.ndk.subscribe(
-                filter,
-                {},
-                new NDKRelaySet(new Set(this.ndk.pool.relays.values()), this.ndk)
-            );
-            
-            sub.on("event", (e: NDKEvent) => {
-                console.log('ticket arrived for Offer!', e)
-                this._ticket = TicketEvent.from(e);
-            });
+                sub.on("event", (e: NDKEvent) => {
+                    console.log('ticket arrived for Offer!', e)
+                    this._ticket = TicketEvent.from(e);
+                    resolve(this.ticket);
+                });
 
-            sub.start();
-        }
+                sub.on("eose", () => {
+                    resolve(null);
+                });
+
+                sub.start();
+            } else {
+                resolve(null);
+            }
+        });
     }
 }

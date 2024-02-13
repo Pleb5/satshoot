@@ -6,7 +6,7 @@
     import { privateKeyFromSeedWords, validateWords } from "nostr-tools/nip06";
     import { wordlist } from '@scure/bip39/wordlists/english';
 
-    import { startMySubscriptions } from "$lib/stores/troubleshoot-eventstores";
+    import { myTickets, myOffers, myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
     
 	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
@@ -84,7 +84,10 @@
             // Fetch user
             const user:NDKUser = await $ndk.signer.user();
 
-            startMySubscriptions(user.pubkey);
+            myTicketFilter.authors?.push(user.pubkey);
+            myOfferFilter.authors?.push(user.pubkey);
+            myTickets.ref();
+            myOffers.ref();
 
             // Update UI as soon as profile arrives but start encryption in the meantime
             user.fetchProfile().then(() => {
