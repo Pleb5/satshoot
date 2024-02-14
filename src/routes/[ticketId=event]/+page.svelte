@@ -6,6 +6,8 @@
     import type { NDKEvent } from "@nostr-dev-kit/ndk";
     import { NDKRelaySet } from "@nostr-dev-kit/ndk";
 
+    import { offersOnTicketsFilter, offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
+
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
@@ -18,29 +20,53 @@
     import { page } from '$app/stores';
     import UserCard from "$lib/components/User/UserCard.svelte";
     import { onMount } from "svelte";
+    import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
 
     $pageTitleStore = 'Ticket';
     
     const modalStore = getModalStore();
 
     let ticket: TicketEvent | undefined = undefined;
+    let offers: OfferEvent[] = [];
 
     // Only trying to fetch offers on ticket once. This doesnt create a permanent
     // subscription which would likely be an overkill
-    onMount(async() => {
-        // Get ticket from naddr
-        let event =  await $ndk.fetchEvent(
-            $page.params.ticketId,
-            {},
-            new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
-        ); 
 
-        console.log('ticket event fetched, value:', event)
-        if (event) {
-            ticket = TicketEvent.from(event);
-            ticket = ticket;
+    $: {
+        if (!ticket) {
+            // Get ticket from naddr
+            $ndk.fetchEvent(
+                $page.params.ticketId,
+                {},
+                new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
+            ).then((event: NDKEvent | null) => {
+                console.log('ticket event fetched, value:', event)
+                if (event) {
+                    ticket = TicketEvent.from(event);
+
+                    // Add a live sub on offers of this ticket if not already subbed
+                    const aTagFilters = offersOnTicketsFilter['#a'];
+                    if (!aTagFilters?.includes(ticket?.ticketAddress)) {
+                        offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
+                        offersOnTickets.unsubscribe();
+                        offersOnTickets.startSubscription();
+                    }
+
+                }
+            }); 
+
         }
-    });
+        if (ticket) {
+            offers = [];
+            $offersOnTickets.forEach((offer: OfferEvent) => {
+                if (offer.referencedTicketAddress === ticket?.ticketAddress) {
+                    offers.push(offer);
+                }
+            });
+
+            offers = offers;
+        }
+    }
 
     async function createOffer() {
         const offerPosted: boolean = await new Promise<boolean>((resolve) => {
@@ -63,7 +89,7 @@
     }
 
 
-    // For tootip    
+    // For tooltip    
     const popupHover: PopupSettings = {
         event: 'click',
         target: 'popupHover',
@@ -104,4 +130,10 @@
 <!-- User -->
 <h2 class="font-bold text-2xl ml-8" >Posted by:</h2>
 <UserCard ndk={$ndk} npub={ticket?.author.npub} />
-
+<!-- Offers on Ticket -->
+<h2 class="font-bold text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>
+<div class="grid grid-cols-1 items-center gap-y-4 mx-8">
+    {#each offers as offer}
+        <OfferCard {offer} showTicket={false}/>
+    {/each}
+</div>

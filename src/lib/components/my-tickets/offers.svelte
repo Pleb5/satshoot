@@ -79,7 +79,7 @@ $: {
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
-                <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
+                <div class="grid grid-cols-1 items-center center gap-y-4 mx-8">
                     {#each pendingOffers as offer }
                         <OfferCard {offer} countAllOffers={true}/>
                     {/each}
