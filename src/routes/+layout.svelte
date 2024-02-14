@@ -9,7 +9,7 @@
 
     import ndk from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
-    import { myTicketFilter, myOfferFilter, tickets, myTickets, myOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { myTicketFilter, myOfferFilter, tickets, myTickets, myOffers, offersOnTickets, ticketsOfMyOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -100,6 +100,7 @@
         // User-defined Relays are restored from local storage here and this runs AFTER page onmounts.
         // This causes the subscription to fail because there are yet no relays to subscribe to
         tickets.ref();
+        offersOnTickets.ref();
 
         if (!loggedIn) {
             console.log('not logged in! Trying to log in...')
@@ -108,7 +109,7 @@
 
             if (loginMethod){
                 if (loginMethod === LoginMethod.Ephemeral) {
-                    // We either get the private key from sessionStorage or decrypt from localStorage
+        // We either get the private key from sessionStorage or decrypt from localStorage
                     if ($sessionPK) {
                         console.log('sessionPK', $sessionPK)
 
@@ -120,6 +121,10 @@
                         myOfferFilter.authors?.push(user.pubkey);
                         myTickets.ref();
                         myOffers.ref();
+
+        // Does this do anything before I push the first '#d' tag(ticket of interest)?
+                        ticketsOfMyOffers.ref();
+
                         console.log('started my subscriptions!')
 
                         await user.fetchProfile();
@@ -207,9 +212,11 @@
 
     onDestroy(()=>{
         tickets.unref();
+        offersOnTickets.unref();
         myTickets.unref();
         myOffers.unref();
-        console.log('stopped my subscriptions and all tickets subs !')
+        ticketsOfMyOffers.unref();
+        console.log('unref all subs in onDestroy!')
     });
 
 

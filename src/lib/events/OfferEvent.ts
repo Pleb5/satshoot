@@ -1,7 +1,7 @@
+import { ticketsOfMyOffers, ticketsOfMyOffersFilter } from "$lib/stores/troubleshoot-eventstores";
 import { BTCTroubleshootKind } from "./kinds";
 import { NDKEvent, NDKRelaySet, type NDK, type NostrEvent } from "@nostr-dev-kit/ndk";
 import type { NDKFilter } from "@nostr-dev-kit/ndk";
-import { TicketEvent } from "./TicketEvent";
 
 // This is implicitly set by the TicketEvent referenced by this offer's 'a' tag.
 // When ticket updates its 'a' tag, the accepted offer status also changes
@@ -23,20 +23,12 @@ export class OfferEvent extends NDKEvent {
     private _pricing: Pricing;
     private _amount: number;
 
-    private _ticket: TicketEvent | null;
-
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= BTCTroubleshootKind.Offer;
         this._status = parseInt(this.tagValue('status') as string);
         this._pricing = parseInt(this.tagValue('pricing') as string);
         this._amount = parseInt(this.tagValue("amount") as string);
-        this._ticket = null;
-
-        // Todo: This needs to happen from outside of offerevent/TicketEvent
-        // GUI update problem...
-        // Readd fetchTicket/fetchOffers one-off call for resource saving?
-
     }
 
     static from(event:NDKEvent){
@@ -96,41 +88,5 @@ export class OfferEvent extends NDKEvent {
 
     set description(desc: string) {
         this.content = desc;
-    }
-
-    get ticket(): TicketEvent | null {
-        return this._ticket;
-    }
-
-    public async startTicketSub(): Promise<TicketEvent | null> {
-
-        return new Promise((resolve) => {
-            if (this.ndk) {
-                const filter: NDKFilter = {
-                    kinds: [BTCTroubleshootKind.Ticket as number],
-                    authors: [this.referencedTicketAddress.split(':')[1] as string],
-                    '#d': [this.referencedTicketAddress.split(':')[2] as string],
-                };
-                const sub = this.ndk.subscribe(
-                    filter,
-                    {},
-                    new NDKRelaySet(new Set(this.ndk.pool.relays.values()), this.ndk)
-                );
-
-                sub.on("event", (e: NDKEvent) => {
-                    console.log('ticket arrived for Offer!', e)
-                    this._ticket = TicketEvent.from(e);
-                    resolve(this.ticket);
-                });
-
-                sub.on("eose", () => {
-                    resolve(null);
-                });
-
-                sub.start();
-            } else {
-                resolve(null);
-            }
-        });
     }
 }

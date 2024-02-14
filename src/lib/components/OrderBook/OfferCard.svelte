@@ -3,19 +3,35 @@
 
     import TicketCard from "./TicketCard.svelte";
     import type { TicketEvent } from "$lib/events/TicketEvent";
+
+    import { offersOnTickets, offersOnTicketsFilter, ticketsOfMyOffers } from "$lib/stores/troubleshoot-eventstores";
     
     export let offer: OfferEvent | null = null;
     export let countAllOffers: boolean = false;
-    let ticket: TicketEvent | null = null;
+    let ticket: TicketEvent | undefined = undefined;
 
     let pricing: string = '';
 
     $: {
         if (offer) {
             console.log('offer is defined, lets set ticket...')
-            if (offer.ticket) {
-                ticket = offer.ticket;
+            console.log('tickets of my offers:', $ticketsOfMyOffers)
+            if (!ticket) {
+                $ticketsOfMyOffers.forEach((t: TicketEvent) => {
+                    if (t.ticketAddress === offer?.referencedTicketAddress) {
+                        ticket = t;
+                        console.log('ticket', ticket)
+                        const aTagFilters = offersOnTicketsFilter['#a'];
+                        if (!aTagFilters?.includes(ticket?.ticketAddress)) {
+                            offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
+                            offersOnTickets.unsubscribe();
+                            offersOnTickets.startSubscription();
+                        }
+                    }
+                });
+
             }
+
             switch (offer.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';

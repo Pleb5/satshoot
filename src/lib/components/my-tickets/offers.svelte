@@ -3,57 +3,60 @@ import ndk from '$lib/stores/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
-import { myOffers } from '$lib/stores/troubleshoot-eventstores';
+import { myOffers, ticketsOfMyOffersFilter, ticketsOfMyOffers } from '$lib/stores/troubleshoot-eventstores';
 import OfferCard from '../OrderBook/OfferCard.svelte';
 
 let tabGroup = OfferStatus.Pending;
 
-const offerMap: Map<OfferStatus, Set<OfferEvent>> = new Map();
-let pendingOfferSet: Set<OfferEvent> = new Set();
-let wonOfferSet: Set<OfferEvent> = new Set();
-let lostOfferSet: Set<OfferEvent> = new Set();
+const offerMap: Map<OfferStatus, OfferEvent[]> = new Map();
+let pendingOffers: OfferEvent[] = [];
+let wonOffers: OfferEvent[] = [];
+let lostOffers: OfferEvent[] = [];
 
-offerMap.set(OfferStatus.Pending, pendingOfferSet);
-offerMap.set(OfferStatus.Won, wonOfferSet);
-offerMap.set(OfferStatus.Lost, lostOfferSet);
+offerMap.set(OfferStatus.Pending, pendingOffers);
+offerMap.set(OfferStatus.Won, wonOffers);
+offerMap.set(OfferStatus.Lost, lostOffers);
 
 
 // Sort offers into buckets according to state. Do this every time a new offers is received for the user
 $: {
-    if ($myOffers && $myOffers.length > 0) {
+    if ($myOffers) {
         // NDKSvelte does not preserve the latest added event. We need it to be able to
         // start a subscription which updates the ticket referenced by the offer.
         // So we create Sets that store offers of different status.
         // We try to insert ALL offers into these sets WHENEVER a new offer arrived in this reactive block
-        // If indeed a new one was added, we need to start its subscription.
+        pendingOffers = [];
+        wonOffers = [];
+        lostOffers = [];
+
         $myOffers.forEach((offer: OfferEvent) => {
-
-            // If offer has valid status
-            if (offer.status === OfferStatus.Pending || 
-                offer.status === OfferStatus.Won || 
-                offer.status === OfferStatus.Lost) {
-
-                console.log('valid offer, trying add to myOffers...')
-
-                let offerSet = offerMap.get(offer.status);
-                if (!(offerSet?.has(offer)) ) {
-                    console.log('NEW valid offer found. Adding to set, starting ticket sub')
-                    offerSet?.add(offer);
-                    // When to stop?
-                    offer.startTicketSub().then(()=>{
-                        pendingOfferSet = pendingOfferSet;
-                        wonOfferSet = wonOfferSet;
-                        lostOfferSet = lostOfferSet;
-                    });
-                }
-
-                console.log('my offers:', $myOffers)
-                console.log('pending offers:', pendingOfferSet)
+            if (offer.status === OfferStatus.Pending) {
+                pendingOffers.push(offer);
+            } else if (offer.status === OfferStatus.Won) {
+                wonOffers.push(offer);
+            } else if (offer.status === OfferStatus.Lost) {
+                lostOffers.push(offer);
             }
-            pendingOfferSet = pendingOfferSet;
-            wonOfferSet = wonOfferSet;
-            lostOfferSet = lostOfferSet;
-        })
+            // TODO: set new filters here.
+            const dTagFilters = ticketsOfMyOffersFilter['#d'];
+            const dTag = offer.referencedTicketAddress.split(':')[2] as string;
+
+            if (!dTagFilters?.includes(dTag)) {
+                ticketsOfMyOffersFilter['#d']?.push(dTag);       
+            }
+
+        });
+         // Restart subscritpion
+        ticketsOfMyOffers.unsubscribe();
+        console.log('unsubbed from ticketsOfMyOffers');
+        ticketsOfMyOffers.startSubscription();
+        console.log('restarted sub ticketsOfMyOffers');
+        console.log(ticketsOfMyOffers);
+
+        // UI update
+        pendingOffers = pendingOffers;
+        wonOffers = wonOffers;
+        lostOffers = lostOffers;
 
     } else {
         console.log('My offers is null or size equals 0!')
@@ -77,19 +80,19 @@ $: {
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
-                    {#each pendingOfferSet as offer }
+                    {#each pendingOffers as offer }
                         <OfferCard {offer} countAllOffers={true}/>
                     {/each}
                 </div>
             {:else if tabGroup === 1}
                 <div>
-                    {#each wonOfferSet as offer }
+                    {#each wonOffers as offer }
                         <OfferCard {offer} countAllOffers={true}/>
                     {/each}
                 </div>
             {:else if tabGroup === 2}
                 <div>
-                    {#each lostOfferSet as offer }
+                    {#each lostOffers as offer }
                         <OfferCard {offer} countAllOffers={true}/>
                     {/each}
                 </div>

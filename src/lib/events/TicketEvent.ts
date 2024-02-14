@@ -1,9 +1,5 @@
 import { BTCTroubleshootKind } from "./kinds";
 import { NDKEvent, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
-import { NDKRelaySet } from "@nostr-dev-kit/ndk";
-import { OfferEvent } from "./OfferEvent";
-import type { NDKEventStore, ExtendedBaseType, NDKSvelte } from '@nostr-dev-kit/ndk-svelte';
-import type { NDKFilter, NDKSubscriptionOptions } from '@nostr-dev-kit/ndk';
 
 export enum TicketStatus {
     New = 0,
@@ -16,7 +12,6 @@ export class TicketEvent extends NDKEvent {
     private _status: TicketStatus;
     private _title: string;
     private _tTags: NDKTag[];
-    private _offersOnTicket: NDKEventStore<ExtendedBaseType<OfferEvent>> | null;
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
@@ -24,7 +19,6 @@ export class TicketEvent extends NDKEvent {
         this._status = parseInt(this.tagValue('status') as string);
         this._title = this.tagValue('title') as string;
         this._tTags = this.tags.filter((tag:NDKTag) => tag[0]==='t');
-        this._offersOnTicket = null;
     }
 
     static from(event:NDKEvent){
@@ -83,30 +77,5 @@ export class TicketEvent extends NDKEvent {
     set tTags(tags: NDKTag[]) {
         this._tTags = tags;
     }
-
-    get offersOnTicket(): NDKEventStore<ExtendedBaseType<OfferEvent>> | null {
-        return this._offersOnTicket;
-    }
-
-    set offersOnTicket(offers: NDKEventStore<ExtendedBaseType<OfferEvent>> | null) {
-        this._offersOnTicket = offers;
-    }
-
-    public setupOfferSubs() {
-        if (this.ndk && !this._offersOnTicket) {
-            const offerFilter: NDKFilter<BTCTroubleshootKind> = {
-                kinds: [BTCTroubleshootKind.Offer],
-                '#a': [this.ticketAddress],
-                limit:500
-            };
-
-            const subOptions: NDKSubscriptionOptions = {
-                closeOnEose: false,
-                pool: this.ndk.pool
-            };
-            this._offersOnTicket = (this.ndk as NDKSvelte).storeSubscribe(offerFilter, subOptions, OfferEvent);
-        }
-    }
-
 
 }

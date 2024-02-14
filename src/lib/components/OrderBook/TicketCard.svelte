@@ -1,12 +1,7 @@
 <script lang="ts">
-    import { OfferEvent } from "$lib/events/OfferEvent";
+    import type { OfferEvent } from "$lib/events/OfferEvent";
     import type { TicketEvent, } from "$lib/events/TicketEvent";
-    import ndk from "$lib/stores/ndk";
-    import type { NDKEvent, NDKSubscription } from "@nostr-dev-kit/ndk";
-    import { NDKRelaySet } from "@nostr-dev-kit/ndk";
-    import { BTCTroubleshootKind } from "$lib/events/kinds";
-    import { onDestroy, onMount } from "svelte";
-    import type { Unsubscriber } from "svelte/store";
+    import { offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
     
     export let ticket: TicketEvent | null = null;
     export let titleSize: string = 'md';
@@ -18,34 +13,28 @@
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';
     let offersAlreadyColor: string = 'text-primary-300-600-token';
-    
-    let unsubscribe: Unsubscriber | undefined = undefined;
 
     $: {
-        console.log('in ticket card onmount ')
+        console.log('in ticket card reactive block ')
         if (ticket && countAllOffers) {
             console.log('start offer sub for offercount in ticket card')
-            ticket.setupOfferSubs();
-            // A normal svelte store sub is used instead of auto-sub 
-            // because of the store being a member in the class and calling ticket.$offersOnTicket doesnt work
-            unsubscribe = ticket.offersOnTicket.subscribe((offerList: OfferEvent[]) => {
-                offers = offerList;
-                offerCount = offers.length.toString();
-                if (offerCount > 0) {
-                    offersAlreadyColor = 'text-error-300-600-token';
+
+            offers = [];
+            $offersOnTickets.forEach((offer: OfferEvent) => {
+                if (offer.referencedTicketAddress === ticket?.ticketAddress) {
+                    offers.push(offer);
                 }
-                console.log('offer count: ', offerCount)
+                
             });
+
+            offerCount = offers.length.toString();
+            if (offers.length > 0) {
+                offersAlreadyColor = 'text-error-300-600-token';
+            }
+            console.log('offer count: ', offerCount)
         }
     }
 
-    onDestroy(() => {
-        if (unsubscribe) {
-            console.log('in ticket card onDestroy')
-            unsubscribe();
-            ticket?.offersOnTicket.unsubscribe();
-        }
-    });
 </script>
 
 
