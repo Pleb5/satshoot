@@ -1,7 +1,5 @@
-import { ticketsOfMyOffers, ticketsOfMyOffersFilter } from "$lib/stores/troubleshoot-eventstores";
 import { BTCTroubleshootKind } from "./kinds";
-import { NDKEvent, NDKRelaySet, type NDK, type NostrEvent } from "@nostr-dev-kit/ndk";
-import type { NDKFilter } from "@nostr-dev-kit/ndk";
+import { NDKEvent, type NDK, type NostrEvent } from "@nostr-dev-kit/ndk";
 
 // This is implicitly set by the TicketEvent referenced by this offer's 'a' tag.
 // When ticket updates its 'a' tag, the accepted offer status also changes

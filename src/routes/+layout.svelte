@@ -119,8 +119,8 @@
 
                         myTicketFilter.authors?.push(user.pubkey);
                         myOfferFilter.authors?.push(user.pubkey);
-                        myTickets.ref();
-                        myOffers.ref();
+                        myTickets.startSubscription();
+                        myOffers.startSubscription();
 
         // Does this do anything before I push the first '#d' tag(ticket of interest)?
                         ticketsOfMyOffers.ref();
@@ -164,8 +164,8 @@
                                         
                                         myTicketFilter.authors?.push(user.pubkey);
                                         myOfferFilter.authors?.push(user.pubkey);
-                                        myTickets.ref();
-                                        myOffers.ref();
+                                        myTickets.startSubscription();
+                                        myOffers.startSubscription();
                                         console.log('started my subscriptions!')
 
                                         await user.fetchProfile();
@@ -192,8 +192,8 @@
 
                     myTicketFilter.authors?.push(user.pubkey);
                     myOfferFilter.authors?.push(user.pubkey);
-                    myTickets.ref();
-                    myOffers.ref();
+                    myTickets.startSubscription();
+                    myOffers.startSubscription();
                     console.log('started my subscriptions!')
 
                     await user.fetchProfile();

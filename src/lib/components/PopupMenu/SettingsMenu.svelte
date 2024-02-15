@@ -4,10 +4,12 @@
 
     import ndk from '$lib/stores/ndk';
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
-    import { myTicketFilter, myOfferFilter, myTickets, myOffers } from '$lib/stores/troubleshoot-eventstores';
+    import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfMyOffers, ticketsOfMyOffersFilter, offersOnTicketsFilter, offersOnTickets } from '$lib/stores/troubleshoot-eventstores';
 
     import { goto } from '$app/navigation';
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
+    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import type { TicketEvent } from '$lib/events/TicketEvent';
 
     const modalStore = getModalStore();
 
@@ -26,10 +28,47 @@
                 $sessionPK = '';
                 sessionStorage.clear();
 
+                // Remove offer subscriptions that follow offers on myTickets
+        // also remove those that tracked other offers on tickets I bid on as a Troubleshooter(myOffers #a tag or ticketsOfMyOffers.ticketAddress)
+
+                // helper variables
+                let aTagArray = offersOnTicketsFilter['#a'] as string[];
+                let restartSubNeeded = false;
+                console.log('offersOnTicketsFilter before delete', offersOnTicketsFilter)
+                for (let i = 0; i < aTagArray.length; i++) {
+                    let ticketAddr: string = aTagArray[i];
+                    $myTickets.forEach((ticket: TicketEvent) => {
+                        if (ticket.ticketAddress === ticketAddr) {
+                            offersOnTicketsFilter['#a']?.splice(i, 1);
+                            restartSubNeeded = true;
+                        }
+                    });
+                    $myOffers.forEach((offer: OfferEvent) => {
+                        if (offer.referencedTicketAddress === ticketAddr) {
+                            offersOnTicketsFilter['#a']?.splice(i, 1);
+                            restartSubNeeded = true;
+                        }
+                    });
+                }
+
+                if (restartSubNeeded) {
+                    console.log('removed some tracked offers, restarting sub..')
+                    console.log('offersOnTicketsFilter', offersOnTicketsFilter)
+                    offersOnTickets.unsubscribe();
+                    offersOnTickets.empty();
+                    offersOnTickets.startSubscription();
+                }
+
                 myTickets.unsubscribe();
                 myOffers.unsubscribe();
+                myTickets.empty();
+                myOffers.empty();
                 myTicketFilter.authors = [];
                 myOfferFilter.authors = [];
+
+                ticketsOfMyOffers.unsubscribe();
+                ticketsOfMyOffersFilter['#d'] = [];
+
 
                 ndk.set(new NDKSvelte({
                     enableOutboxModel: false,

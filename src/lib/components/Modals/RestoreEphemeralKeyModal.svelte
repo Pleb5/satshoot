@@ -86,8 +86,8 @@
 
             myTicketFilter.authors?.push(user.pubkey);
             myOfferFilter.authors?.push(user.pubkey);
-            myTickets.ref();
-            myOffers.ref();
+            myTickets.startSubscription();
+            myOffers.startSubscription();
 
             // Update UI as soon as profile arrives but start encryption in the meantime
             user.fetchProfile().then(() => {

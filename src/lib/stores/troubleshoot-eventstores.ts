@@ -48,18 +48,18 @@ export const ticketsOfMyOffersFilter: NDKFilter<BTCTroubleshootKind> = {
 };
 
 export const tickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
-        = get(ndk).storeSubscribe(ticketFilter, subOptions, TicketEvent);
+        = get(ndk).storeSubscribe<TicketEvent>(ticketFilter, subOptions, TicketEvent);
 
 export let offersOnTickets:NDKEventStore<ExtendedBaseType<OfferEvent>>
-        = get(ndk).storeSubscribe(offersOnTicketsFilter, subOptions, OfferEvent);
+        = get(ndk).storeSubscribe<OfferEvent>(offersOnTicketsFilter, subOptions, OfferEvent);
 
 export const myTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
-        = get(ndk).storeSubscribe(myTicketFilter, subOptions, TicketEvent);
+        = get(ndk).storeSubscribe<TicketEvent>(myTicketFilter, subOptions, TicketEvent);
 
 export const myOffers:NDKEventStore<ExtendedBaseType<OfferEvent>>
-        = get(ndk).storeSubscribe(myOfferFilter, subOptions, OfferEvent);
+        = get(ndk).storeSubscribe<OfferEvent>(myOfferFilter, subOptions, OfferEvent);
 
 export let ticketsOfMyOffers:NDKEventStore<ExtendedBaseType<TicketEvent>>
-        = get(ndk).storeSubscribe(ticketsOfMyOffersFilter, subOptions, TicketEvent);
+        = get(ndk).storeSubscribe<TicketEvent>(ticketsOfMyOffersFilter, subOptions, TicketEvent);
 
 

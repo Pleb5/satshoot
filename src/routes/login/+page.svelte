@@ -41,8 +41,8 @@
 
             myTicketFilter.authors?.push(user.pubkey);
             myOfferFilter.authors?.push(user.pubkey);
-            myTickets.ref();
-            myOffers.ref();
+            myTickets.startSubscription();
+            myOffers.startSubscription();
 
             await user.fetchProfile();
             // Add user relays to stored pool
@@ -82,8 +82,8 @@
 
         myTicketFilter.authors?.push(user.pubkey);
         myOfferFilter.authors?.push(user.pubkey);
-        myTickets.ref();
-        myOffers.ref();
+        myTickets.startSubscription();
+        myOffers.startSubscription();
 
         const modalComponent: ModalComponent = {
             ref: GenerateEphemeralKeyModal,
