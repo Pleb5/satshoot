@@ -3,6 +3,7 @@
     import type NDK from "@nostr-dev-kit/ndk";
 
     import { Avatar } from "@skeletonlabs/skeleton";
+    import { clipboard } from '@skeletonlabs/skeleton';
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
@@ -228,8 +229,38 @@
         <footer class="mt-4">
             <h4 class="h4">Other:</h4>
             <div class="flex flex-col gap-y-1">
-                <div>Npub: {npub}</div>
-                <div>Nip05: {userProfile?.nip05 ?? '?'}</div>
+                <div class="flex items-center gap-x-2">
+                    <div>Npub: {npub}</div>
+                    {#if npub}
+                        <div>
+                            <button 
+                                class="btn btn-icon"
+                                use:clipboard={npub}
+                            >
+                                <span>
+                                    <i class='fa-regular fa-copy'/>
+                                </span>
+                            <button>
+                        </div>
+                    {/if}
+                </div>
+                <div class="flex items-center gap-x-2">
+                    <div>
+                        Nip05: {userProfile?.nip05 ?? '?'}
+                    </div>
+                    {#if userProfile?.nip05}
+                        <div>
+                            <button 
+                                class="btn btn-icon "
+                                use:clipboard={userProfile.nip05}
+                            >
+                                <span>
+                                    <i class='fa-regular fa-copy'/>
+                                </span>
+                            <button>
+                        </div>
+                    {/if}
+                </div>
                 <div class=" flex items-center gap-x-2 ">
                     <div>LN address(lud16): {userProfile?.lud16 ?? '?'}</div>
                     {#if editable}

@@ -147,7 +147,7 @@
                         on:click={onCopySeed}
                     >
                         {copied ? 'Copied!' : 'Dangerously Copy'}
-                        <button>
+                        </button>
                 </div>
 
                 <div class="grid grid-cols-4 w-full mb-8 space-x-2">
@@ -160,7 +160,7 @@
                         on:click={onCopyNsec}
                     >
                         {copiedNsec ? 'Copied!' : 'Dangerously Copy'}
-                        <button>
+                        </button>
                 </div>
 
                 <div class="grid grid-cols-4 w-full mb-8 space-x-2">
@@ -173,7 +173,7 @@
                         on:click={onCopyNpub}
                     >
                         {copiedNpub ? 'Copied!' : 'Copy'}
-                        <button>
+                        </button>
                 </div>
 
                 <h2 class="h4 mb-4">Your secret words will be stored locally in encrypted form</h2>
