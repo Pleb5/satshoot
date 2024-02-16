@@ -2,6 +2,8 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import type { TicketEvent, } from "$lib/events/TicketEvent";
     import { offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
+
+    import { nip19 } from "nostr-tools";
     
     export let ticket: TicketEvent | null = null;
     export let titleSize: string = 'md';
@@ -9,29 +11,54 @@
     export let countAllOffers: boolean = false;
 
     const bech32ID = ticket?.encode();
+    let npub: string;
+    let timeSincePosted: string; 
 
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';
     let offersAlreadyColor: string = 'text-primary-300-600-token';
 
     $: {
-        console.log('in ticket card reactive block ')
-        if (ticket && countAllOffers) {
-            console.log('start offer sub for offercount in ticket card')
+        if (ticket) {
+            npub = nip19.npubEncode(ticket.pubkey);
 
-            offers = [];
-            $offersOnTickets.forEach((offer: OfferEvent) => {
-                if (offer.referencedTicketAddress === ticket?.ticketAddress) {
-                    offers.push(offer);
+            if (ticket.created_at) {
+                // Created_at is in Unix time seconds
+                let seconds = Math.floor(Date.now() / 1000 - ticket.created_at);
+                let minutes = Math.floor(seconds / 60);
+                let hours = Math.floor(minutes / 60);
+                let days = Math.floor(hours / 24);
+                if (days >= 1) {
+                    timeSincePosted = days.toString() + ' day(s) ago';
+                } else if(hours >= 1) {
+                    timeSincePosted = hours.toString() + ' hour(s) ago';
+                } else if(minutes >= 1) {
+                    timeSincePosted = minutes.toString() + ' minute(s) ago';
+                } else if(seconds >= 20) {
+                    timeSincePosted = seconds.toString() + ' second(s) ago';
+                } else {
+                    timeSincePosted = 'just now';
                 }
-                
-            });
-
-            offerCount = offers.length.toString();
-            if (offers.length > 0) {
-                offersAlreadyColor = 'text-error-300-600-token';
             }
-            console.log('offer count: ', offerCount)
+
+            if (countAllOffers) {
+
+                console.log('start offer sub for offercount in ticket card')
+
+                offers = [];
+                $offersOnTickets.forEach((offer: OfferEvent) => {
+                    if (offer.referencedTicketAddress === ticket?.ticketAddress) {
+                        offers.push(offer);
+                    }
+
+                });
+
+                offerCount = offers.length.toString();
+                if (offers.length > 0) {
+                    offersAlreadyColor = 'text-error-300-600-token';
+                }
+                console.log('offer count: ', offerCount)
+            }
         }
     }
 
@@ -62,7 +89,13 @@
                 <slot name="button"/>
             </div>
 
-        <slot name='myOffer' />
+            <div class="">
+                <span class="">Posted by: </span>
+                <span>
+                    <a class="anchor" href={'/' + npub}>{npub.slice(0, 10) + '...'}</a>
+                </span>
+            </div>
+            <div class="">{timeSincePosted}</div>
         {#if countAllOffers}
                 <div 
                     class="text-sm font-bold {offersAlreadyColor} mt-2"

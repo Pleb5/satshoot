@@ -40,7 +40,7 @@ $: {
                 offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
             }
         });
-        /// TODO: set filter here, restart offer sub.
+        /// Set filter, restart offer sub.
         offersOnTickets.unsubscribe();
         console.log(' unsubbed from offersOnTickets')
         // offersOnTickets = $ndk.storeSubscribe(offersOnTicketsFilter, subOptions, OfferEvent);
@@ -74,7 +74,7 @@ $: {
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
-                <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each newTickets as ticket }
                         <TicketCard {ticket} countAllOffers={true}/>
                     {/each}

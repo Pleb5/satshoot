@@ -20,7 +20,7 @@
         <InputChip bind:value={list} name="chips" placeholder="Filter Tickets" />
     </div>
 
-    <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8">
+    <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8 mb-8">
         {#if $tickets}
             {#each $tickets as ticket}
 

@@ -21,10 +21,6 @@ offerMap.set(OfferStatus.Lost, lostOffers);
 // Sort offers into buckets according to state. Do this every time a new offers is received for the user
 $: {
     if ($myOffers) {
-        // NDKSvelte does not preserve the latest added event. We need it to be able to
-        // start a subscription which updates the ticket referenced by the offer.
-        // So we create Sets that store offers of different status.
-        // We try to insert ALL offers into these sets WHENEVER a new offer arrived in this reactive block
         pendingOffers = [];
         wonOffers = [];
         lostOffers = [];
@@ -37,7 +33,6 @@ $: {
             } else if (offer.status === OfferStatus.Lost) {
                 lostOffers.push(offer);
             }
-            // TODO: set new filters here.
             const dTagFilters = ticketsOfMyOffersFilter['#d'];
             const dTag = offer.referencedTicketAddress.split(':')[2] as string;
 
@@ -79,7 +74,7 @@ $: {
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
-                <div class="grid grid-cols-1 items-center center gap-y-4 mx-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each pendingOffers as offer }
                         <OfferCard {offer} countAllOffers={true}/>
                     {/each}

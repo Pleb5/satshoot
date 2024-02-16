@@ -29,4 +29,3 @@ import Offers from "$lib/components/my-tickets/offers.svelte";
 		{/if}
 	</svelte:fragment>
 </TabGroup>
-			

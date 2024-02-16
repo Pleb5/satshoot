@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
 
     import TicketCard from "./TicketCard.svelte";
@@ -11,6 +12,8 @@
     export let showTicket: boolean = true;
     let ticket: TicketEvent | undefined = undefined;
 
+    let npub: string;
+    let timeSincePosted: string; 
     let pricing: string = '';
 
     $: {
@@ -22,6 +25,27 @@
                 case Pricing.SatsPerMin:
                     pricing = 'sats/min';
                     break;
+            }
+
+            npub = nip19.npubEncode(offer.pubkey);
+
+            if (offer.created_at) {
+                // Created_at is in Unix time seconds
+                let seconds = Math.floor(Date.now() / 1000 - offer.created_at);
+                let minutes = Math.floor(seconds / 60);
+                let hours = Math.floor(minutes / 60);
+                let days = Math.floor(hours / 24);
+                if (days >= 1) {
+                    timeSincePosted = days.toString() + ' day(s) ago';
+                } else if(hours >= 1) {
+                    timeSincePosted = hours.toString() + ' hour(s) ago';
+                } else if(minutes >= 1) {
+                    timeSincePosted = minutes.toString() + ' minute(s) ago';
+                } else if(seconds >= 20) {
+                    timeSincePosted = seconds.toString() + ' second(s) ago';
+                } else {
+                    timeSincePosted = 'just now';
+                }
             }
 
             if (showTicket) {
@@ -50,23 +74,29 @@
 
 </script>
 
-<div class="card">
+<div class="card pt-4">
     {#if offer}
         <h3 class="h3 text-center text-primary-300-600-token">
             {'Offer: ' + offer.amount + ' ' + pricing} 
         </h3>
-        {#if showTicket}
-            <h4 class="h4 text-center text-primary-300-600-token"> On Ticket:</h4>
-            {#if ticket}
-                <TicketCard ticket={ticket} {countAllOffers} >
-                    <div slot="myOffer" class="text-primary-300-600-token mt-2">
-
-                    </div>
-                </TicketCard>
-            {:else}
-                <h2 class="h2 text-center text-error-500">Loading Ticket for Offer...</h2>
+        <div class="flex flex-col gap-y-1 justify-start p-2">
+            <div class="">
+                <span class="">Posted by: </span>
+                <span>
+                    <a class="anchor" href={'/' + npub}>{npub.slice(0, 10) + '...'}</a>
+                </span>
+            </div>
+            <div class="">{timeSincePosted}</div>
+            {#if showTicket}
+                <h4 class="h4 text-primary-300-600-token"> On Ticket:</h4>
+                {#if ticket}
+                    <TicketCard ticket={ticket} {countAllOffers} >
+                    </TicketCard>
+                {:else}
+                    <h2 class="h2 text-center text-error-500">Loading Ticket for Offer...</h2>
+                {/if}
             {/if}
-        {/if}
+        </div>
     {:else}
         <h2 class="h2 text-center text-error-500">Error: Offer not found!</h2>
     {/if}
