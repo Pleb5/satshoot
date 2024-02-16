@@ -15,8 +15,11 @@
 
     function logout() {
         const modalBody = `
-<p>Do really you wish to log out?</p>
-<strong class="text-error-400-500-token">If you are logged in with an ephemeral account, it will be deleted!</strong>`;
+                <p>Do really you wish to log out?</p>
+                <strong class="text-error-400-500-token">
+                    If you are logged in with an ephemeral account,
+                    it will be deleted from local storage!
+                </strong>`;
 
         let logoutResponse = async function(r: boolean){
             if (r) {
