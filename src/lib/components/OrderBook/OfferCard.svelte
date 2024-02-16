@@ -16,6 +16,11 @@
     let timeSincePosted: string; 
     let pricing: string = '';
 
+    function insertThousandSeparator(amount: number) {
+        return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+
     $: {
         if (offer) {
             switch (offer.pricing) {
@@ -77,7 +82,7 @@
 <div class="card pt-4">
     {#if offer}
         <h3 class="h3 text-center text-primary-300-600-token">
-            {'Offer: ' + offer.amount + ' ' + pricing} 
+            {'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
         </h3>
         <div class="flex flex-col gap-y-1 justify-start p-2">
             <div class="">
