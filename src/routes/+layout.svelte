@@ -99,8 +99,11 @@
         // Start all tickets sub. Starting this anywhere else seems to break reliability.
         // User-defined Relays are restored from local storage here and this runs AFTER page onmounts.
         // This causes the subscription to fail because there are yet no relays to subscribe to
+        // ALL STORE SUBS MUST START IN LAYOUT.SVELTE! CAN RESTART IN PAGES/COMPONENTS LATER
+        // BUT IT IS IMPORANT THAT THEY ARE STARTED HERE!
         tickets.ref();
         offersOnTickets.ref();
+        ticketsOfMyOffers.startSubscription();
 
         if (!loggedIn) {
             console.log('not logged in! Trying to log in...')
@@ -121,9 +124,6 @@
                         myOfferFilter.authors?.push(user.pubkey);
                         myTickets.startSubscription();
                         myOffers.startSubscription();
-
-        // Does this do anything before I push the first '#d' tag(ticket of interest)?
-                        ticketsOfMyOffers.ref();
 
                         console.log('started my subscriptions!')
 

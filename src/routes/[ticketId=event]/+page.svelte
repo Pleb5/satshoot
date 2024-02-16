@@ -1,12 +1,10 @@
 <script lang="ts">
-    import { TicketEvent } from "$lib/events/TicketEvent";
+    import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import ndk from "$lib/stores/ndk";
-    import type { NDKEvent } from "@nostr-dev-kit/ndk";
-    import { NDKRelaySet } from "@nostr-dev-kit/ndk";
 
-    import { offersOnTicketsFilter, offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
+    import { offersOnTicketsFilter, offersOnTickets, ticketsOfMyOffersFilter, ticketsOfMyOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -17,46 +15,67 @@
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
 
+    import { getToastStore } from '@skeletonlabs/skeleton';
+    import type { ToastSettings } from '@skeletonlabs/skeleton';
+
     import { page } from '$app/stores';
+    import { nip19 } from 'nostr-tools';
+    import { idFromNaddr } from '$lib/utils/nip19'
     import UserCard from "$lib/components/User/UserCard.svelte";
-    import { onMount } from "svelte";
     import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
 
     $pageTitleStore = 'Ticket';
     
     const modalStore = getModalStore();
+    const toastStore = getToastStore();
 
     let ticket: TicketEvent | undefined = undefined;
     let offers: OfferEvent[] = [];
+
+    let myTicket = false;
 
     // Only trying to fetch offers on ticket once. This doesnt create a permanent
     // subscription which would likely be an overkill
 
     $: {
-        if (!ticket) {
-            // Get ticket from naddr
-            $ndk.fetchEvent(
-                $page.params.ticketId,
-                {},
-                new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
-            ).then((event: NDKEvent | null) => {
-                console.log('ticket event fetched, value:', event)
-                if (event) {
-                    ticket = TicketEvent.from(event);
+        if ($ticketsOfMyOffers) {
+            const naddr = $page.params.ticketId;
+            const dTag = idFromNaddr(naddr).split(':')[2];
+            const dTagFilters = ticketsOfMyOffersFilter['#d'];
 
-                    // Add a live sub on offers of this ticket if not already subbed
-                    const aTagFilters = offersOnTicketsFilter['#a'];
-                    if (!aTagFilters?.includes(ticket?.ticketAddress)) {
-                        offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
-                        offersOnTickets.unsubscribe();
-                        offersOnTickets.startSubscription();
-                    }
+            console.log(dTagFilters)
 
+            if (!dTagFilters?.includes(dTag)) {
+                ticketsOfMyOffersFilter['#d']?.push(dTag);
+                // Restart subscritpion
+                ticketsOfMyOffers.unsubscribe();
+                console.log('unsubbed from ticketsOfMyOffers');
+                ticketsOfMyOffers.startSubscription();
+                console.log('restarted sub ticketsOfMyOffers');
+                console.log(ticketsOfMyOffers);
+            }
+            
+            $ticketsOfMyOffers.forEach((t: TicketEvent) => {
+                console.log('ticket:', t)
+                if (t.encode() === naddr){
+                    ticket = t;
                 }
-            }); 
-
+            });
         }
         if (ticket) {
+            // Add a live sub on offers of this ticket if not already subbed
+            const aTagFilters = offersOnTicketsFilter['#a'];
+            if (!aTagFilters?.includes(ticket?.ticketAddress)) {
+                offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
+                offersOnTickets.unsubscribe();
+                offersOnTickets.startSubscription();
+            }
+            // If there is an active user and it is the creator of this ticket
+            // We will hide create Offer button and the usercard, but enable taking offers
+            if ($ndk.activeUser && $ndk.activeUser.pubkey === ticket.pubkey) {
+                myTicket = true;
+            }
+
             offers = [];
             $offersOnTickets.forEach((offer: OfferEvent) => {
                 if (offer.referencedTicketAddress === ticket?.ticketAddress) {
@@ -88,6 +107,70 @@
         }
     }
 
+    async function takeOffer(offer: OfferEvent) {
+        const modalBody = `
+                    <p>Do really want to take this Offer?</p>
+                    <strong class="text-error-500">
+                        You agree to pay the fee listed on the Offer!
+                    </strong>
+        `;
+
+        let takeOfferResponse = async function(r: boolean){
+            if (r) {
+                if (ticket) {
+                    // User chose to take offer
+                    ticket.acceptedOfferAddress = offer.offerAddress;
+
+                    try {
+                        await ticket.publish();
+
+                        console.log('ticket updated', ticket)
+
+                        // Ticket posted Modal
+                        const modal: ModalSettings = {
+                            type: 'alert',
+                            // Data
+                            title: 'Success!',
+                            body: `
+                                <p>You accepted the Offer!<p>
+                                <p>
+                                    Get your issue resolved here in encrypted DM 
+                                    or any other private messaging app(SimpleX chat recommended!)
+                                <p>
+                            `,
+                            buttonTextCancel:'Great!',
+                        };
+                        modalStore.trigger(modal);
+                    } catch(e) {
+                        console.log(e)
+                        const t: ToastSettings = {
+                            message: 'Error while accepting Offer! Fix connection with Relays and try again!',
+                            timeout: 7000,
+                            background: 'bg-error-300-600-token',
+                        };
+                        toastStore.trigger(t);
+                    }
+                } else {
+                    const t: ToastSettings = {
+                        message: 'Cannot accept Offer, Ticket not found!',
+                        timeout: 7000,
+                        background: 'bg-error-300-600-token',
+                    };
+                    toastStore.trigger(t);
+                }
+            }
+        }
+
+        const modal: ModalSettings = {
+            type: 'confirm',
+            // Data
+            title: 'Confirm taking Offer',
+            body: modalBody,
+            response: takeOfferResponse,
+        };
+        modalStore.trigger(modal);
+    }
+
 
     // For tooltip    
     const popupHover: PopupSettings = {
@@ -102,38 +185,53 @@
     <TicketCard {ticket} titleSize='xl' titleLink={false} />
 
 </div>
-<!-- Create Offer -->
-<div class="flex justify-center items-center gap-x-2">
-    <button 
-        type="button"
-        on:click={ createOffer }
-        class="btn btn-2xl text-xl font-bold bg-primary-300-600-token"
-        disabled={!$ndk.activeUser}
-    >
-        Create Offer
-    </button>
-    {#if !$ndk.activeUser}
-        <i 
-            class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
-            [&>*]:pointer-events-none" 
-            use:popup={popupHover}
-        />
 
-        <div class="card w-80 p-4 bg-primary-300-600-token" data-popup="popupHover">
-            <p>
-                Need to log in before creating an offer!
-            </p>
-            <div class="arrow bg-primary-300-600-token" />
-        </div>
-    {/if}
-</div>
-<!-- User -->
-<h2 class="font-bold text-2xl ml-8" >Posted by:</h2>
-<UserCard ndk={$ndk} npub={ticket?.author.npub} />
+{#if !myTicket}
+    <!-- Create Offer -->
+    <div class="flex justify-center items-center gap-x-2">
+        <button 
+            type="button"
+            on:click={ createOffer }
+            class="btn btn-2xl text-xl font-bold bg-primary-300-600-token"
+            disabled={!$ndk.activeUser}
+        >
+            Create Offer
+        </button>
+        {#if !$ndk.activeUser}
+            <i 
+                class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
+                [&>*]:pointer-events-none" 
+                use:popup={popupHover}
+            />
+
+            <div class="card w-80 p-4 bg-primary-300-600-token" data-popup="popupHover">
+                <p>
+                    Need to log in before creating an offer!
+                </p>
+                <div class="arrow bg-primary-300-600-token" />
+            </div>
+        {/if}
+    </div>
+    <!-- User -->
+    <h2 class="font-bold text-2xl ml-8" >Posted by:</h2>
+    <UserCard ndk={$ndk} npub={ticket?.author.npub} />
+{/if}
 <!-- Offers on Ticket -->
 <h2 class="font-bold text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>
 <div class="grid grid-cols-1 items-center gap-y-4 mx-8">
     {#each offers as offer}
-        <OfferCard {offer} showTicket={false}/>
+        <OfferCard {offer} showTicket={false}>
+            <div slot="takeOffer" class="flex justify-center mt-2">
+                {#if ticket && myTicket && ticket.status === TicketStatus.New}
+                    <button
+                        type="button"
+                        class="btn btn-lg bg-primary-300-600-token"
+                        on:click={takeOffer(offer)}
+                    >
+                        Take Offer
+                    </button>
+                {/if}
+            </div>
+        </OfferCard>
     {/each}
 </div>

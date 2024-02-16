@@ -44,7 +44,7 @@ export const myOfferFilter: NDKFilter<BTCTroubleshootKind> = {
 export const ticketsOfMyOffersFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
     '#d': [],
-    limit:500,
+    limit:1000,
 };
 
 export const tickets:NDKEventStore<ExtendedBaseType<TicketEvent>>

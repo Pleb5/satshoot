@@ -16,6 +16,10 @@
     let timeSincePosted: string; 
     let pricing: string = '';
 
+    // Because Tickets drive the status of Offers, this is calculated always
+    // as soon as the ticket for this offer is fetched
+    let status = '?';
+
     function insertThousandSeparator(amount: number) {
         return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
@@ -53,23 +57,31 @@
                 }
             }
 
-            if (showTicket) {
-                console.log('offer is defined, lets set ticket...')
-                console.log('tickets of my offers:', $ticketsOfMyOffers)
-                if (!ticket) {
-                    $ticketsOfMyOffers.forEach((t: TicketEvent) => {
-                        if (t.ticketAddress === offer?.referencedTicketAddress) {
-                            ticket = t;
-                            console.log('ticket', ticket)
-                            const aTagFilters = offersOnTicketsFilter['#a'];
-                            if (!aTagFilters?.includes(ticket?.ticketAddress)) {
-                                offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
-                                offersOnTickets.unsubscribe();
-                                offersOnTickets.startSubscription();
-                            }
+            console.log('offer is defined, lets set ticket...')
+            console.log('tickets of my offers:', $ticketsOfMyOffers)
+            if (!ticket) {
+                $ticketsOfMyOffers.forEach((t: TicketEvent) => {
+                    if (t.ticketAddress === offer?.referencedTicketAddress) {
+                        ticket = t;
+                        const winner = ticket.acceptedOfferAddress;
+                        console.log('ticket', ticket)
+                        if (!winner){
+                            status = 'Pending';
+                        } else if(winner === offer.offerAddress) {
+                            status = 'Won';
+                        } else {
+                            // The winner is defined but it is not us so our offer lost
+                            status = 'Lost';
                         }
-                    });
-                }
+                        
+                        const aTagFilters = offersOnTicketsFilter['#a'];
+                        if (!aTagFilters?.includes(ticket?.ticketAddress)) {
+                            offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
+                            offersOnTickets.unsubscribe();
+                            offersOnTickets.startSubscription();
+                        }
+                    }
+                });
             }
         } else {
             console.log('offer is null yet!')
@@ -84,12 +96,17 @@
         <h3 class="h3 text-center text-primary-300-600-token">
             {'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
         </h3>
+        <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start p-2">
             <div class="">
                 <span class="">Posted by: </span>
                 <span>
                     <a class="anchor" href={'/' + npub}>{npub.slice(0, 10) + '...'}</a>
                 </span>
+            </div>
+            <div class="">
+                <span class="">Status: </span>
+                <span class="font-bold text-primary-300-600-token">{status}</span>
             </div>
             <div class="">{timeSincePosted}</div>
             {#if showTicket}

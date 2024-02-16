@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { OfferEvent } from "$lib/events/OfferEvent";
-    import type { TicketEvent, } from "$lib/events/TicketEvent";
+    import { TicketStatus, type TicketEvent, } from "$lib/events/TicketEvent";
     import { offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
 
     import { nip19 } from "nostr-tools";
@@ -13,6 +13,7 @@
     const bech32ID = ticket?.encode();
     let npub: string;
     let timeSincePosted: string; 
+    let ticketStatus: string;
 
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';
@@ -38,6 +39,16 @@
                     timeSincePosted = seconds.toString() + ' second(s) ago';
                 } else {
                     timeSincePosted = 'just now';
+                }
+            }
+
+            if (ticket.status >= 0) {
+                if (ticket.status === TicketStatus.New) {
+                    ticketStatus = 'New';
+                } else if (ticket.status === TicketStatus.InProgress) {
+                    ticketStatus = 'In Progress';
+                } else if (ticket.status === TicketStatus.Closed) {
+                    ticketStatus = 'Closed';
                 }
             }
 
@@ -95,6 +106,10 @@
                     <a class="anchor" href={'/' + npub}>{npub.slice(0, 10) + '...'}</a>
                 </span>
             </div>
+            <div class="">
+                <span class="pr-1">Status: </span>
+                <span class="text-primary-300-600-token font-bold">{ticketStatus}</span>
+            </div>
             <div class="">{timeSincePosted}</div>
         {#if countAllOffers}
                 <div 
@@ -106,7 +121,7 @@
         </section>
         <footer class="items-center flex flex-wrap card-footer">
             {#each ticket.tTags as tag }
-                <div class="px-2 rounded-token">
+                <div class="pr-4 rounded-token">
                     <span class="badge variant-filled-surface">{ tag[1] }</span>
                 </div>
             {/each}
