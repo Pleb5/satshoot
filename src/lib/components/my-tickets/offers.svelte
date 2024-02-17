@@ -5,6 +5,7 @@ import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
 import { myOffers, ticketsOfMyOffersFilter, ticketsOfMyOffers } from '$lib/stores/troubleshoot-eventstores';
 import OfferCard from '../OrderBook/OfferCard.svelte';
+    import type { TicketEvent } from '$lib/events/TicketEvent';
 
 let tabGroup = OfferStatus.Pending;
 
@@ -20,39 +21,46 @@ offerMap.set(OfferStatus.Lost, lostOffers);
 
 // Sort offers into buckets according to state. Do this every time a new offers is received for the user
 $: {
-    if ($myOffers) {
+    // If we got a new offer, push it into the collection and start listening to ticket of that
+    // OR we got a new ticket that we are interested in with these offers. Check its '#a' tag to set offer status 
+    if ($myOffers && $ticketsOfMyOffers) {
+        console.log('my offers', $myOffers)
         pendingOffers = [];
         wonOffers = [];
         lostOffers = [];
 
         $myOffers.forEach((offer: OfferEvent) => {
-            if (offer.status === OfferStatus.Pending) {
-                pendingOffers.push(offer);
-            } else if (offer.status === OfferStatus.Won) {
-                wonOffers.push(offer);
-            } else if (offer.status === OfferStatus.Lost) {
-                lostOffers.push(offer);
-            }
             const dTagFilters = ticketsOfMyOffersFilter['#d'];
             const dTag = offer.referencedTicketAddress.split(':')[2] as string;
 
+    // If I havent been listening to ticket of this offer, I just start listening to it
+    // Else I already am listening to this ticket so I look it up if it might have changed its accepted offer
+    // This approach does not display an offer until it has successfully retrieved its status from its ticket!
             if (!dTagFilters?.includes(dTag)) {
                 ticketsOfMyOffersFilter['#d']?.push(dTag);       
+                // Restart subscritpion
+                ticketsOfMyOffers.unsubscribe();
+                console.log('unsubbed from ticketsOfMyOffers');
+                ticketsOfMyOffers.startSubscription();
+                console.log('restarted sub ticketsOfMyOffers');
+                console.log(ticketsOfMyOffers);
+            } else {
+                $ticketsOfMyOffers.forEach((ticket:TicketEvent) => {
+                    console.log('look up ticket of my offer...')
+                    if (ticket.acceptedOfferAddress === offer.offerAddress) {
+                        wonOffers.push(offer);
+                    } else if (ticket.acceptedOfferAddress) {
+                        lostOffers.push(offer);
+                    } else {
+                        pendingOffers.push(offer);
+                    }
+                });
+                // UI update only if offer status is set
+                pendingOffers = pendingOffers;
+                wonOffers = wonOffers;
+                lostOffers = lostOffers;
             }
-
         });
-         // Restart subscritpion
-        ticketsOfMyOffers.unsubscribe();
-        console.log('unsubbed from ticketsOfMyOffers');
-        ticketsOfMyOffers.startSubscription();
-        console.log('restarted sub ticketsOfMyOffers');
-        console.log(ticketsOfMyOffers);
-
-        // UI update
-        pendingOffers = pendingOffers;
-        wonOffers = wonOffers;
-        lostOffers = lostOffers;
-
     } else {
         console.log('My offers is null or size equals 0!')
     }

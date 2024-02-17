@@ -19,7 +19,6 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
 
     import { page } from '$app/stores';
-    import { nip19 } from 'nostr-tools';
     import { idFromNaddr } from '$lib/utils/nip19'
     import UserCard from "$lib/components/User/UserCard.svelte";
     import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
@@ -53,37 +52,39 @@
                 ticketsOfMyOffers.startSubscription();
                 console.log('restarted sub ticketsOfMyOffers');
                 console.log(ticketsOfMyOffers);
+            } else {
+                $ticketsOfMyOffers.forEach((t: TicketEvent) => {
+                    console.log('ticket:', t)
+                    if (t.encode() === naddr){
+                        ticket = TicketEvent.from(t);
+                    }
+                });
             }
-            
-            $ticketsOfMyOffers.forEach((t: TicketEvent) => {
-                console.log('ticket:', t)
-                if (t.encode() === naddr){
-                    ticket = t;
-                }
-            });
         }
         if (ticket) {
-            // Add a live sub on offers of this ticket if not already subbed
-            const aTagFilters = offersOnTicketsFilter['#a'];
-            if (!aTagFilters?.includes(ticket?.ticketAddress)) {
-                offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
-                offersOnTickets.unsubscribe();
-                offersOnTickets.startSubscription();
-            }
             // If there is an active user and it is the creator of this ticket
             // We will hide create Offer button and the usercard, but enable taking offers
             if ($ndk.activeUser && $ndk.activeUser.pubkey === ticket.pubkey) {
                 myTicket = true;
             }
 
-            offers = [];
-            $offersOnTickets.forEach((offer: OfferEvent) => {
-                if (offer.referencedTicketAddress === ticket?.ticketAddress) {
-                    offers.push(offer);
-                }
-            });
+            // Add a live sub on offers of this ticket if not already subbed
+            // Else already subbed, we can check if new offer arrived on ticket
+            const aTagFilters = offersOnTicketsFilter['#a'];
+            if (!aTagFilters?.includes(ticket?.ticketAddress)) {
+                offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
+                offersOnTickets.unsubscribe();
+                offersOnTickets.startSubscription();
+            } else {
+                offers = [];
+                $offersOnTickets.forEach((offer: OfferEvent) => {
+                    if (offer.referencedTicketAddress === ticket?.ticketAddress) {
+                        offers.push(offer);
+                    }
+                });
 
-            offers = offers;
+                offers = offers;
+            }
         }
     }
 
@@ -119,12 +120,16 @@
             if (r) {
                 if (ticket) {
                     // User chose to take offer
-                    ticket.acceptedOfferAddress = offer.offerAddress;
+                    let ticketToPublish = new TicketEvent($ndk);
+                    ticketToPublish.tags = ticket.tags;
+                    ticketToPublish.description = ticket.description;
+                    // Important part! This also sets status to in progress
+                    ticketToPublish.acceptedOfferAddress = offer.offerAddress;
 
                     try {
-                        await ticket.publish();
+                        await ticketToPublish.publish();
 
-                        console.log('ticket updated', ticket)
+                        console.log('ticket updated', ticketToPublish)
 
                         // Ticket posted Modal
                         const modal: ModalSettings = {

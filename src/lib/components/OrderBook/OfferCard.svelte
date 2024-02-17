@@ -59,7 +59,7 @@
 
             console.log('offer is defined, lets set ticket...')
             console.log('tickets of my offers:', $ticketsOfMyOffers)
-            if (!ticket) {
+            if ($ticketsOfMyOffers) {
                 $ticketsOfMyOffers.forEach((t: TicketEvent) => {
                     if (t.ticketAddress === offer?.referencedTicketAddress) {
                         ticket = t;

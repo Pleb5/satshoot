@@ -39,7 +39,7 @@ export class TicketEvent extends NDKEvent {
         // Can only have exactly one accepted offer tag
         this.removeTag('a');
         this.tags.push(['a', offerAddress]);
-        this._status = TicketStatus.InProgress;
+        this.status = TicketStatus.InProgress;
     }
 
     get title(): string {

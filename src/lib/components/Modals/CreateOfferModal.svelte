@@ -34,8 +34,6 @@
 
         console.log($ndk.activeUser)
 
-        offer.status = OfferStatus.Pending;
-
         offer.pricing = pricingMethod;
         offer.amount = amount;
         offer.description = description;

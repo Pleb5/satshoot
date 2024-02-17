@@ -1,8 +1,8 @@
 import { BTCTroubleshootKind } from "./kinds";
 import { NDKEvent, type NDK, type NostrEvent } from "@nostr-dev-kit/ndk";
 
-// This is implicitly set by the TicketEvent referenced by this offer's 'a' tag.
-// When ticket updates its 'a' tag, the accepted offer status also changes
+// Offer Status is implicitly set by the TicketEvent referenced by this offer's 'a' tag.
+// When ticket updates its 'a' tag, ALL offers statuses change that referenced this ticket
 export enum OfferStatus {
     Pending = 0, // No 'a' tag present in TicketEvent
     Won = 1, // TicketEvent references this event in its 'a' tag
@@ -17,14 +17,12 @@ export enum Pricing {
 }
 
 export class OfferEvent extends NDKEvent {
-    private _status: OfferStatus;
     private _pricing: Pricing;
     private _amount: number;
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= BTCTroubleshootKind.Offer;
-        this._status = parseInt(this.tagValue('status') as string);
         this._pricing = parseInt(this.tagValue('pricing') as string);
         this._amount = parseInt(this.tagValue("amount") as string);
     }
@@ -47,16 +45,6 @@ export class OfferEvent extends NDKEvent {
         // Can only have exactly one accepted offer tag
         this.removeTag('a');
         this.tags.push(['a', referencedTicketAddress]);
-    }
-
-    get status():OfferStatus {
-        return this._status;
-    }
-
-    set status(status: OfferStatus) {
-        this._status = status;
-        this.removeTag('status');
-        this.tags.push(['status', status.toString()]);
     }
 
     // No milestones based approach yet
