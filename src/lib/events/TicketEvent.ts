@@ -16,7 +16,7 @@ export class TicketEvent extends NDKEvent {
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= BTCTroubleshootKind.Ticket;
-        this._status = parseInt(this.tagValue('status') as string);
+        this._status = parseInt(this.tagValue('s') as string);
         this._title = this.tagValue('title') as string;
         this._tTags = this.tags.filter((tag:NDKTag) => tag[0]==='t');
     }
@@ -59,8 +59,8 @@ export class TicketEvent extends NDKEvent {
 
     set status(status: TicketStatus) {
         this._status = status;
-        this.removeTag('status');
-        this.tags.push(['status', status.toString()]);
+        this.removeTag('s');
+        this.tags.push(['s', status.toString()]);
     }
     
     get description(): string {

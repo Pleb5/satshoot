@@ -9,7 +9,7 @@
 
     import ndk from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
-    import { myTicketFilter, myOfferFilter, tickets, myTickets, myOffers, offersOnTickets, ticketsOfMyOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { myTicketFilter, myOfferFilter, newTickets, myTickets, myOffers, offersOnTickets, ticketsOfMyOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -101,8 +101,8 @@
         // This causes the subscription to fail because there are yet no relays to subscribe to
         // ALL STORE SUBS MUST START IN LAYOUT.SVELTE! CAN RESTART IN PAGES/COMPONENTS LATER
         // BUT IT IS IMPORANT THAT THEY ARE STARTED HERE!
-        tickets.ref();
-        offersOnTickets.ref();
+        newTickets.startSubscription();
+        offersOnTickets.startSubscription();
         ticketsOfMyOffers.startSubscription();
 
         if (!loggedIn) {
@@ -211,7 +211,7 @@
     });
 
     onDestroy(()=>{
-        tickets.unref();
+        newTickets.unsubscribe();
         offersOnTickets.unref();
         myTickets.unref();
         myOffers.unref();

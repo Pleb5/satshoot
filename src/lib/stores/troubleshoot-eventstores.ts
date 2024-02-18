@@ -3,7 +3,7 @@ import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte'
 import type { NDKFilter, NDKSubscriptionOptions } from '@nostr-dev-kit/ndk';
 
 import { BTCTroubleshootKind } from '$lib/events/kinds';
-import { TicketEvent } from '$lib/events/TicketEvent';
+import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 import { OfferEvent } from '$lib/events/OfferEvent';
 
 import { get } from "svelte/store";
@@ -11,9 +11,10 @@ import { get } from "svelte/store";
 // Export necessary when restarting a subscription with a new filter
 export const subOptions: NDKSubscriptionOptions = { closeOnEose: false, pool: get(ndk).pool };
 
-const ticketFilter: NDKFilter<BTCTroubleshootKind> = {
+const newTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
-    limit:5000
+    '#s': [TicketStatus.New.toString()],
+    limit: 5000,
 };
 
 // ALL Offers on defined tickets
@@ -47,8 +48,8 @@ export const ticketsOfMyOffersFilter: NDKFilter<BTCTroubleshootKind> = {
     limit:1000,
 };
 
-export const tickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
-        = get(ndk).storeSubscribe<TicketEvent>(ticketFilter, subOptions, TicketEvent);
+export const newTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
+        = get(ndk).storeSubscribe<TicketEvent>(newTicketsFilter, subOptions, TicketEvent);
 
 export let offersOnTickets:NDKEventStore<ExtendedBaseType<OfferEvent>>
         = get(ndk).storeSubscribe<OfferEvent>(offersOnTicketsFilter, subOptions, OfferEvent);

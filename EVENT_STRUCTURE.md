@@ -55,9 +55,9 @@
         // Milestones if the Bitcoiner wants to define multiple steps for the ticket | string, optional
         ["milestones", <milestone1>, <milestone2>, ...,<milestoneN> ],
 
-        ["status", <0(new) OR 1(in progress) OR 2(closed)>],
+        ["s", <0(new) OR 1(in progress) OR 2(closed)>],
 
-        // If Bitcoiner accepts an offer she MAY set this tag
+        // If Bitcoiner accepts an offer she SHOULD set this tag
         ["a", 32768:<hex pubkey of Troubleshooter>:<Offer ID from a d-tag of an offer>],
     ],
     "content": {

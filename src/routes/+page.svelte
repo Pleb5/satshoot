@@ -2,11 +2,15 @@
     import { InputChip } from "@skeletonlabs/skeleton";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
     import pageTitleStore from "$lib/stores/pagetitle-store";
-    import { tickets } from "$lib/stores/troubleshoot-eventstores";
+    import { newTickets } from "$lib/stores/troubleshoot-eventstores";
 
     let list: string[] = ['foo', 'bar', 'fizz', 'buzz'];
 
     $pageTitleStore = 'BTC Troubleshoot';
+
+    $: if($newTickets) {
+        console.log('newtickets:', $newTickets)
+    }
 
 </script>
 
@@ -21,8 +25,8 @@
     </div>
 
     <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8 mb-8">
-        {#if $tickets}
-            {#each $tickets as ticket}
+        {#if $newTickets}
+            {#each $newTickets as ticket}
 
                 <TicketCard {ticket}/>
 
