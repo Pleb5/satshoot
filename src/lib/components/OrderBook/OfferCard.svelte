@@ -19,6 +19,7 @@
     // Because Tickets drive the status of Offers, this is calculated always
     // as soon as the ticket for this offer is fetched
     let status = '?';
+    let statusColor = 'text-primary-300-600-token';
 
     function insertThousandSeparator(amount: number) {
         return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -69,6 +70,7 @@
                             status = 'Pending';
                         } else if(winner === offer.offerAddress) {
                             status = 'Won';
+                            statusColor = 'text-success-300-600-token';
                         } else {
                             // The winner is defined but it is not us so our offer lost
                             status = 'Lost';
@@ -106,7 +108,7 @@
             </div>
             <div class="">
                 <span class="">Status: </span>
-                <span class="font-bold text-primary-300-600-token">{status}</span>
+                <span class="font-bold {statusColor}">{status}</span>
             </div>
             <div class="">{timeSincePosted}</div>
             {#if showTicket}
