@@ -1,11 +1,19 @@
 <script lang="ts">
+    import ndk from "$lib/stores/ndk";
     import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
+
+    import CreateOfferModal from "../Modals/CreateOfferModal.svelte";
+
+    import { getModalStore } from "@skeletonlabs/skeleton";
+    import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
 
     import TicketCard from "./TicketCard.svelte";
     import type { TicketEvent } from "$lib/events/TicketEvent";
 
     import { offersOnTickets, offersOnTicketsFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
+
+    const modalStore = getModalStore();
     
     export let offer: OfferEvent | null = null;
     export let countAllOffers: boolean = false;
@@ -16,6 +24,8 @@
     let timeSincePosted: string; 
     let pricing: string = '';
 
+    let editOffer: boolean = false;
+
     // Because Tickets drive the status of Offers, this is calculated always
     // as soon as the ticket for this offer is fetched
     let status = '?';
@@ -23,6 +33,21 @@
 
     function insertThousandSeparator(amount: number) {
         return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function editMyOffer() {
+        if (offer) {
+            const modalComponent: ModalComponent = {
+                ref: CreateOfferModal,
+                props: {ticketAddress: offer.referencedTicketAddress, offerToEdit: offer},
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+            };
+            modalStore.trigger(modal);
+        }
     }
 
 
@@ -38,6 +63,9 @@
             }
 
             npub = nip19.npubEncode(offer.pubkey);
+            if ($ndk.activeUser && $ndk.activeUser.npub === npub) {
+                editOffer = true;
+            }
 
             if (offer.created_at) {
                 // Created_at is in Unix time seconds
@@ -95,9 +123,22 @@
 
 <div class="card pt-4">
     {#if offer}
-        <h3 class="h3 text-center text-primary-300-600-token">
-            {'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
-        </h3>
+        <div class="grid grid-cols-3 justify-center">
+            <h3 class="h3 col-start-2 text-center text-primary-300-600-token">
+                { (editOffer ? 'My ' : '') + 'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
+            </h3>
+            <div class="col-start-3 justify-self-end mr-4">
+                {#if editOffer}
+                    <button 
+                        type="button"
+                        class="btn font-bold bg-primary-400-500-token" 
+                        on:click = {editMyOffer}
+                    >
+                        Edit
+                    </button>
+                {/if}
+            </div>
+        </div>
         <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start p-8 pt-2">
             <div class="">

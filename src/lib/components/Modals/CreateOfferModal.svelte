@@ -1,9 +1,8 @@
 <script lang="ts">
-	import type { SvelteComponent } from 'svelte';
+	import { onMount, type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
     import { NDKRelaySet } from '@nostr-dev-kit/ndk';
-    import type { NDKUser } from '@nostr-dev-kit/ndk';
-    import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
+    import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
     
 	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
@@ -15,6 +14,8 @@
 	export let parent: SvelteComponent;
 
     export let ticketAddress: string | undefined = undefined;
+
+    export let offerToEdit: OfferEvent | undefined = undefined;
 
 	const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -40,10 +41,16 @@
 
         offer.referencedTicketAddress = ticketAddress as string;
 
-        // generate unique d-tag
-        offer.generateTags();
+        // Only generate new d-tag if we are not editing an existing one
+        if (!offerToEdit) {
+            // generate unique d-tag
+            offer.generateTags();
+        } else {
+            offer.removeTag('d');
+            offer.tags.push(['d', offerToEdit.tagValue('d') as string]);
+        }
 
-        console.log(offer)
+        console.log('offer to post:', offer)
 
         try {
 
@@ -74,6 +81,14 @@
             }
         }
     }
+
+    onMount(()=>{
+        if (offerToEdit) {
+            pricingMethod = offerToEdit.pricing;
+            amount = offerToEdit.amount;
+            description = offerToEdit.description;
+        }
+    });
 
 </script>
 
