@@ -10,6 +10,7 @@
 
     $: if($newTickets) {
         console.log('newtickets:', $newTickets)
+        $newTickets = $newTickets;
     }
 
 </script>
