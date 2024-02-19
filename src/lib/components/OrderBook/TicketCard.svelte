@@ -100,6 +100,8 @@
                 <slot name="button"/>
             </div>
 
+            <hr class="my-4" />
+
             <div class="">
                 <span class="">Posted by: </span>
                 <span>

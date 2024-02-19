@@ -99,7 +99,7 @@
             {'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
         </h3>
         <slot name="takeOffer" />
-        <div class="flex flex-col gap-y-1 justify-start p-2">
+        <div class="flex flex-col gap-y-1 justify-start p-8 pt-2">
             <div class="">
                 <span class="">Posted by: </span>
                 <span>
