@@ -1,16 +1,31 @@
 <script lang="ts">
     import { InputChip } from "@skeletonlabs/skeleton";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
+    import type { TicketEvent } from "$lib/events/TicketEvent";
     import pageTitleStore from "$lib/stores/pagetitle-store";
-    import { newTickets } from "$lib/stores/troubleshoot-eventstores";
+    import { newTickets, inProgressTickets } from "$lib/stores/troubleshoot-eventstores";
 
     let list: string[] = ['foo', 'bar', 'fizz', 'buzz'];
 
     $pageTitleStore = 'BTC Troubleshoot';
 
-    $: if($newTickets) {
-        console.log('newtickets:', $newTickets)
-        $newTickets = $newTickets;
+    $: {
+        if($newTickets) {
+            console.log('newtickets:', $newTickets)
+            $newTickets = $newTickets;
+        }
+        // If ticket gets taken(in progress ticket arrived), remove from new tickets
+        if ($inProgressTickets && $newTickets) {
+            for (let i =0; i < $inProgressTickets.length; i++) {
+                $newTickets.forEach((newTicket: TicketEvent)=> {
+                    const inProgressTicket = $inProgressTickets[i];
+                    if (newTicket.ticketAddress === inProgressTicket.ticketAddress) {
+                        $newTickets.splice(i, 1);
+                    }
+                });
+
+            }
+        }
     }
 
 </script>

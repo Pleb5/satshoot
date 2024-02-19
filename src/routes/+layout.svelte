@@ -9,7 +9,7 @@
 
     import ndk from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
-    import { myTicketFilter, myOfferFilter, newTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { myTicketFilter, myOfferFilter, newTickets, inProgressTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -102,6 +102,7 @@
         // ALL STORE SUBS MUST START IN LAYOUT.SVELTE! CAN RESTART IN PAGES/COMPONENTS LATER
         // BUT IT IS IMPORANT THAT THEY ARE STARTED HERE!
         newTickets.startSubscription();
+        inProgressTickets.startSubscription();
         offersOnTickets.startSubscription();
         ticketsOfSpecificOffers.startSubscription();
 
@@ -212,6 +213,7 @@
 
     onDestroy(()=>{
         newTickets.unsubscribe();
+        inProgressTickets.unsubscribe();
         offersOnTickets.unref();
         myTickets.unref();
         myOffers.unref();
