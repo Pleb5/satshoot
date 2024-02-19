@@ -9,7 +9,7 @@
     import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
 
     import TicketCard from "./TicketCard.svelte";
-    import type { TicketEvent } from "$lib/events/TicketEvent";
+    import { TicketStatus, type TicketEvent } from "$lib/events/TicketEvent";
 
     import { offersOnTickets, offersOnTicketsFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
@@ -63,9 +63,6 @@
             }
 
             npub = nip19.npubEncode(offer.pubkey);
-            if ($ndk.activeUser && $ndk.activeUser.npub === npub) {
-                editOffer = true;
-            }
 
             if (offer.created_at) {
                 // Created_at is in Unix time seconds
@@ -117,6 +114,15 @@
             console.log('offer is null yet!')
         }
 
+        // Only allow editing offer if the ticket still accepts offers(no winner yet)
+        if (offer && ticket) {
+            if ($ndk.activeUser
+                && $ndk.activeUser.npub === npub
+                && ticket.status === TicketStatus.New
+            ) {
+                editOffer = true;
+            }
+        }
     }
 
 </script>

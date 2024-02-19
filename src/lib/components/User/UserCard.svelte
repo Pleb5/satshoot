@@ -26,19 +26,20 @@
     export let user: NDKUser | undefined = undefined;
     let profilePromise:Promise<NDKUserProfile | null>;
 
-    let aboutText:string; 
+// Because of the two-way binding AND reactivity, we must ensure to run reactive profile fetch exactly ONCE
+    let needProfile: boolean = true;
+    let aboutText: string;
     let userNameText: string;
     let lud16Text:string;
 
-
-    let editable: boolean = ndk.activeUser?.npub === npub;
+    $: editable = ndk.activeUser?.npub === npub;
     // Some strange behavior around ndk, user and ndk.activeUser when recursively
     // assigning ndk.getUser(npub) -> user.ndk = this -> user.ndk.activeUser = ...?
     // user.ndk.activeUser.ndk = .... ???!!! infinte recursion of assignments?
     $: {
-        editable = ndk.activeUser?.npub === npub;
-
-        if (npub) {
+        if (npub && needProfile) {
+            needProfile = false;
+            console.log('in usercard reactive block')
             let opts = { npub: npub };
             try {
                 user = ndk.getUser(opts);
@@ -48,12 +49,14 @@
                 profilePromise.then((profile:NDKUserProfile | null) => {
                     aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
                     userNameText = profile?.name ?? user?.profile?.displayName ?? "";
-                })
+                    lud16Text = profile?.lud16 ?? '';
+                });
             } catch (e) {
                 console.error(`error trying to get user`, { opts }, e);
             }
         }
     }
+
 
     const editNamePopup: PopupSettings = {
         event: 'click',
@@ -174,7 +177,7 @@
                     src={userProfile?.image}
                 /> 
                 <div class=" flex items-center justify-center gap-x-2 ">
-                    <h2 class="h2 text-center font-bold text-2xl">{userProfile?.name}</h2>
+                    <h2 class="h2 text-center font-bold text-2xl">{userProfile?.name ?? 'Name?'}</h2>
                     {#if editable}
                         <button use:popup={editNamePopup}>
                             <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
@@ -187,7 +190,7 @@
                                         type="text"
                                         class="input"
                                         placeholder="New Name"
-                                        bind:value={userNameText}
+                                        bind:value={ userNameText }
                                     />
                                     <button 
                                         type="submit" 
@@ -225,7 +228,7 @@
                 </div>
             {/if}
         </div>
-        <div>{userProfile?.bio ?? userProfile?.about}</div>
+        <div>{userProfile?.bio ?? userProfile?.about ?? '?'}</div>
         <footer class="mt-4">
             <h4 class="h4">Other:</h4>
             <div class="flex flex-col gap-y-1">
