@@ -4,7 +4,7 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import ndk from "$lib/stores/ndk";
 
-    import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers, newTickets } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -43,6 +43,8 @@
         if (!$ndk.activeUser){
             allowCreateOffer = false;
             disallowCreateOfferReason = 'Need to log in before creating an offer!'; 
+        } else {
+            allowCreateOffer = true;
         }
         if ($ticketsOfSpecificOffers) {
             const naddr = $page.params.ticketId;
@@ -64,6 +66,10 @@
                     console.log('ticket:', t)
                     if (t.encode() === naddr){
                         ticket = TicketEvent.from(t);
+                        if (ticket.status !== TicketStatus.New) {
+                            allowCreateOffer = false;
+                            disallowCreateOfferReason = 'This ticket is already In Progress! No new offers will be accepted!';
+                        }
                     }
                 });
             }
