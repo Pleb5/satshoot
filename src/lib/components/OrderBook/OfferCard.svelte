@@ -121,6 +121,8 @@
                 && ticket.status === TicketStatus.New
             ) {
                 editOffer = true;
+            } else {
+                editOffer = false;
             }
         }
     }
