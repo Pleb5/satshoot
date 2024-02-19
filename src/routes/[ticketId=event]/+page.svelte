@@ -4,7 +4,7 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import ndk from "$lib/stores/ndk";
 
-    import { offersOnTicketsFilter, offersOnTickets, ticketsOfMyOffersFilter, ticketsOfMyOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers as ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -37,23 +37,23 @@
     // subscription which would likely be an overkill
 
     $: {
-        if ($ticketsOfMyOffers) {
+        if ($ticketsOfSpecificOffers) {
             const naddr = $page.params.ticketId;
             const dTag = idFromNaddr(naddr).split(':')[2];
-            const dTagFilters = ticketsOfMyOffersFilter['#d'];
+            const dTagFilters = ticketsOfSpecificOffersFilter['#d'];
 
             console.log(dTagFilters)
 
             if (!dTagFilters?.includes(dTag)) {
-                ticketsOfMyOffersFilter['#d']?.push(dTag);
+                ticketsOfSpecificOffersFilter['#d']?.push(dTag);
                 // Restart subscritpion
-                ticketsOfMyOffers.unsubscribe();
-                console.log('unsubbed from ticketsOfMyOffers');
-                ticketsOfMyOffers.startSubscription();
-                console.log('restarted sub ticketsOfMyOffers');
-                console.log(ticketsOfMyOffers);
+                ticketsOfSpecificOffers.unsubscribe();
+                console.log('unsubbed from ticketsOfSpecificOffers');
+                ticketsOfSpecificOffers.startSubscription();
+                console.log('restarted sub ticketsOfSpecificOffers');
+                console.log(ticketsOfSpecificOffers);
             } else {
-                $ticketsOfMyOffers.forEach((t: TicketEvent) => {
+                $ticketsOfSpecificOffers.forEach((t: TicketEvent) => {
                     console.log('ticket:', t)
                     if (t.encode() === naddr){
                         ticket = TicketEvent.from(t);

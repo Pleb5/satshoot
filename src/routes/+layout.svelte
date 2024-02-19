@@ -9,7 +9,7 @@
 
     import ndk from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
-    import { myTicketFilter, myOfferFilter, newTickets, myTickets, myOffers, offersOnTickets, ticketsOfMyOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { myTicketFilter, myOfferFilter, newTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -103,7 +103,7 @@
         // BUT IT IS IMPORANT THAT THEY ARE STARTED HERE!
         newTickets.startSubscription();
         offersOnTickets.startSubscription();
-        ticketsOfMyOffers.startSubscription();
+        ticketsOfSpecificOffers.startSubscription();
 
         if (!loggedIn) {
             console.log('not logged in! Trying to log in...')
@@ -215,7 +215,7 @@
         offersOnTickets.unref();
         myTickets.unref();
         myOffers.unref();
-        ticketsOfMyOffers.unref();
+        ticketsOfSpecificOffers.unref();
         console.log('unref all subs in onDestroy!')
     });
 

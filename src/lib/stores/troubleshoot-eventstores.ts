@@ -17,6 +17,16 @@ const newTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
     limit: 5000,
 };
 
+// Tickets that MY Offers(as a TroubleShooter) reference
+// <Ticket #d tag> == <my offer.referencedTicketAddress third part>
+// #a: "<kind>:<pubkey>:<d-tag>"
+export const ticketsOfSpecificOffersFilter: NDKFilter<BTCTroubleshootKind> = {
+    kinds: [BTCTroubleshootKind.Ticket],
+    '#d': [],
+    limit:1000,
+};
+
+
 // ALL Offers on defined tickets
 // Offer '#a' tag == ticket.ticketAddress
 export const offersOnTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
@@ -38,18 +48,11 @@ export const myOfferFilter: NDKFilter<BTCTroubleshootKind> = {
     authors: [], 
     limit:1000
 };
-
-// Tickets that MY Offers(as a TroubleShooter) reference
-// <Ticket #d tag> == <my offer.referencedTicketAddress third part>
-// #a: "<kind>:<pubkey>:<d-tag>"
-export const ticketsOfMyOffersFilter: NDKFilter<BTCTroubleshootKind> = {
-    kinds: [BTCTroubleshootKind.Ticket],
-    '#d': [],
-    limit:1000,
-};
-
 export const newTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
         = get(ndk).storeSubscribe<TicketEvent>(newTicketsFilter, subOptions, TicketEvent);
+
+export let ticketsOfSpecificOffers:NDKEventStore<ExtendedBaseType<TicketEvent>>
+= get(ndk).storeSubscribe<TicketEvent>(ticketsOfSpecificOffersFilter, subOptions, TicketEvent);
 
 export let offersOnTickets:NDKEventStore<ExtendedBaseType<OfferEvent>>
         = get(ndk).storeSubscribe<OfferEvent>(offersOnTicketsFilter, subOptions, OfferEvent);
@@ -59,8 +62,4 @@ export const myTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
 
 export const myOffers:NDKEventStore<ExtendedBaseType<OfferEvent>>
         = get(ndk).storeSubscribe<OfferEvent>(myOfferFilter, subOptions, OfferEvent);
-
-export let ticketsOfMyOffers:NDKEventStore<ExtendedBaseType<TicketEvent>>
-        = get(ndk).storeSubscribe<TicketEvent>(ticketsOfMyOffersFilter, subOptions, TicketEvent);
-
 

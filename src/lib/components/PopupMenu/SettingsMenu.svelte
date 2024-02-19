@@ -4,7 +4,7 @@
 
     import ndk from '$lib/stores/ndk';
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
-    import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfMyOffers, ticketsOfMyOffersFilter, offersOnTicketsFilter, offersOnTickets } from '$lib/stores/troubleshoot-eventstores';
+    import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfSpecificOffers, ticketsOfSpecificOffersFilter, offersOnTicketsFilter, offersOnTickets } from '$lib/stores/troubleshoot-eventstores';
 
     import { goto } from '$app/navigation';
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
@@ -32,7 +32,7 @@
                 sessionStorage.clear();
 
                 // Remove offer subscriptions that follow offers on myTickets
-        // also remove those that tracked other offers on tickets I bid on as a Troubleshooter(myOffers #a tag or ticketsOfMyOffers.ticketAddress)
+        // also remove those that tracked other offers on tickets I bid on as a Troubleshooter(myOffers #a tag or ticketsOfSpecificOffers.ticketAddress)
 
                 // helper variables
                 let aTagArray = offersOnTicketsFilter['#a'] as string[];
@@ -69,8 +69,8 @@
                 myTicketFilter.authors = [];
                 myOfferFilter.authors = [];
 
-                ticketsOfMyOffers.unsubscribe();
-                ticketsOfMyOffersFilter['#d'] = [];
+                ticketsOfSpecificOffers.unsubscribe();
+                ticketsOfSpecificOffersFilter['#d'] = [];
 
 
                 ndk.set(new NDKSvelte({

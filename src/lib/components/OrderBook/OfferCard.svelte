@@ -5,7 +5,7 @@
     import TicketCard from "./TicketCard.svelte";
     import type { TicketEvent } from "$lib/events/TicketEvent";
 
-    import { offersOnTickets, offersOnTicketsFilter, ticketsOfMyOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { offersOnTickets, offersOnTicketsFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
     
     export let offer: OfferEvent | null = null;
     export let countAllOffers: boolean = false;
@@ -59,9 +59,9 @@
             }
 
             console.log('offer is defined, lets set ticket...')
-            console.log('tickets of my offers:', $ticketsOfMyOffers)
-            if ($ticketsOfMyOffers) {
-                $ticketsOfMyOffers.forEach((t: TicketEvent) => {
+            console.log('tickets of my offers:', $ticketsOfSpecificOffers)
+            if ($ticketsOfSpecificOffers) {
+                $ticketsOfSpecificOffers.forEach((t: TicketEvent) => {
                     if (t.ticketAddress === offer?.referencedTicketAddress) {
                         ticket = t;
                         const winner = ticket.acceptedOfferAddress;
