@@ -3,8 +3,7 @@ An app for bitcoiners to troubleshoot each other's technical issues for sats, us
 
 Try it locally:
 ```
-npm install
-npm run dev
+npm install && npm run dev
 ```
 
 ------ ! Work In Progress ! ------
