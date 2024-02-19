@@ -46,13 +46,14 @@ $: {
                 console.log(ticketsOfSpecificOffers);
             } else {
                 $ticketsOfSpecificOffers.forEach((ticket:TicketEvent) => {
-                    console.log('look up ticket of my offer...')
-                    if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                        wonOffers.push(offer);
-                    } else if (ticket.acceptedOfferAddress) {
-                        lostOffers.push(offer);
-                    } else {
-                        pendingOffers.push(offer);
+                    if (ticket.ticketAddress === offer.referencedTicketAddress) {
+                        if (ticket.acceptedOfferAddress === offer.offerAddress) {
+                            wonOffers.push(offer);
+                        } else if (ticket.acceptedOfferAddress) {
+                            lostOffers.push(offer);
+                        } else {
+                            pendingOffers.push(offer);
+                        }
                     }
                 });
                 // UI update only if offer status is set
@@ -74,7 +75,7 @@ $: {
             Pending
         </Tab>
         <Tab bind:group={tabGroup} name="tab2" value={OfferStatus.Won}>
-            In Progress
+            Won
         </Tab>
         <Tab bind:group={tabGroup} name="tab2" value={OfferStatus.Lost}>
             Lost
