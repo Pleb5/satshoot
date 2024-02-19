@@ -103,14 +103,14 @@
             <hr class="my-4" />
 
             <div class="">
+                <span class="pr-1">Status: </span>
+                <span class="text-primary-300-600-token font-bold">{ticketStatus}</span>
+            </div>
+            <div class="">
                 <span class="">Posted by: </span>
                 <span>
                     <a class="anchor" href={'/' + npub}>{npub.slice(0, 10) + '...'}</a>
                 </span>
-            </div>
-            <div class="">
-                <span class="pr-1">Status: </span>
-                <span class="text-primary-300-600-token font-bold">{ticketStatus}</span>
             </div>
             <div class="">{timeSincePosted}</div>
         {#if countAllOffers}
