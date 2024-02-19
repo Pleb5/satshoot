@@ -80,13 +80,13 @@ $: {
                     {/each}
                 </div>
                 {:else if tabGroup === 1}
-                <div>
+                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each inProgressTickets as ticket }
                         <TicketCard {ticket} countAllOffers={true}/>
                     {/each}
                 </div>
                 {:else if tabGroup === 2}
-                <div>
+                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each closedTickets as ticket }
                         <TicketCard {ticket} countAllOffers={true}/>
                     {/each}
