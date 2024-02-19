@@ -4,7 +4,7 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import ndk from "$lib/stores/ndk";
 
-    import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers as ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -33,10 +33,17 @@
 
     let myTicket = false;
 
+    let allowCreateOffer: boolean = true;
+    let disallowCreateOfferReason = '';
+
     // Only trying to fetch offers on ticket once. This doesnt create a permanent
     // subscription which would likely be an overkill
 
     $: {
+        if (!$ndk.activeUser){
+            allowCreateOffer = false;
+            disallowCreateOfferReason = 'Need to log in before creating an offer!'; 
+        }
         if ($ticketsOfSpecificOffers) {
             const naddr = $page.params.ticketId;
             const dTag = idFromNaddr(naddr).split(':')[2];
@@ -80,6 +87,10 @@
                 $offersOnTickets.forEach((offer: OfferEvent) => {
                     if (offer.referencedTicketAddress === ticket?.ticketAddress) {
                         offers.push(offer);
+                        if (offer.pubkey === $ndk.activeUser?.pubkey) {
+                            allowCreateOffer = false;
+                            disallowCreateOfferReason = 'You already have an offer on ticket! Edit your Offer from the Offers-list if you want to change it!';
+                        }
                     }
                 });
 
@@ -198,11 +209,11 @@
             type="button"
             on:click={ createOffer }
             class="btn btn-2xl text-xl font-bold bg-primary-300-600-token"
-            disabled={!$ndk.activeUser}
+            disabled={!allowCreateOffer}
         >
             Create Offer
         </button>
-        {#if !$ndk.activeUser}
+        {#if !allowCreateOffer}
             <i 
                 class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
                 [&>*]:pointer-events-none" 
@@ -211,7 +222,7 @@
 
             <div class="card w-80 p-4 bg-primary-300-600-token" data-popup="popupHover">
                 <p>
-                    Need to log in before creating an offer!
+                    {disallowCreateOfferReason} 
                 </p>
                 <div class="arrow bg-primary-300-600-token" />
             </div>
@@ -223,7 +234,7 @@
 {/if}
 <!-- Offers on Ticket -->
 <h2 class="font-bold text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>
-<div class="grid grid-cols-1 items-center gap-y-4 mx-8">
+<div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
     {#each offers as offer}
         <OfferCard {offer} showTicket={false}>
             <div slot="takeOffer" class="flex justify-center mt-2">
