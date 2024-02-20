@@ -154,11 +154,11 @@
                             // Data
                             title: 'Success!',
                             body: `
-                                <p>You accepted the Offer!<p>
+                                <p>You accepted the Offer!</p>
                                 <p>
                                     Get your issue resolved here in encrypted DM 
                                     or any other private messaging app(SimpleX chat recommended!)
-                                <p>
+                                </p>
                             `,
                             buttonTextCancel:'Great!',
                         };

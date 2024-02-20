@@ -1,9 +1,19 @@
 <script lang="ts">
+    import ndk from "$lib/stores/ndk";
     import type { OfferEvent } from "$lib/events/OfferEvent";
-    import { TicketStatus, type TicketEvent, } from "$lib/events/TicketEvent";
+    import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
     import { offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
 
     import { nip19 } from "nostr-tools";
+
+    import { getToastStore } from '@skeletonlabs/skeleton';
+    import type { ToastSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import type { ModalSettings } from '@skeletonlabs/skeleton';
+
+    const toastStore = getToastStore();
+    const modalStore = getModalStore();
+			
     
     export let ticket: TicketEvent | null = null;
     export let titleSize: string = 'md';
@@ -18,6 +28,64 @@
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';
     let offersAlreadyColor: string = 'text-primary-300-600-token';
+
+    async function closeTicket() {
+        let closeTicketResponse = async function(r: boolean) {
+            if (r) {
+                if (ticket) {
+                    // User chose to take offer
+                    let ticketToPublish = new TicketEvent($ndk);
+                    ticketToPublish.tags = ticket.tags;
+                    ticketToPublish.description = ticket.description;
+                    // Important part! This also sets status to in progress
+                    ticketToPublish.status = TicketStatus.Closed;
+
+                    try {
+                        await ticketToPublish.publish();
+
+                        console.log('ticket closed', ticketToPublish)
+
+                        // Ticket posted Modal
+                        const modal: ModalSettings = {
+                            type: 'alert',
+                            title: 'Ticket Closed!',
+                            body: `
+                                <p>You Closed the Ticket! Hope your issue was resolved!</p>
+                                <p>
+                                    You will find this Ticket in 'My Tickets' under the 'Closed' tab!
+                                </p>
+                            `,
+                            buttonTextCancel:'Ok',
+                        };
+                        modalStore.trigger(modal);
+                    } catch(e) {
+                        console.log(e)
+                        const t: ToastSettings = {
+                            message: 'Error while closing Ticket! Fix connection with Relays and try again!',
+                            timeout: 7000,
+                            background: 'bg-error-300-600-token',
+                        };
+                        toastStore.trigger(t);
+                    }
+                } else {
+                    const t: ToastSettings = {
+                        message: 'Error: Could could not find ticket to close!',
+                        timeout: 7000,
+                        background: 'bg-error-300-600-token',
+                    };
+                    toastStore.trigger(t);
+                }
+            }
+        }
+        const modal: ModalSettings = {
+            type: 'confirm',
+            // Data
+            title: 'Confirm closing Ticket',
+            body: 'Do really want to Close this Ticket?',
+            response: closeTicketResponse,
+        };
+        modalStore.trigger(modal);
+    }
 
     $: {
         if (ticket) {
@@ -78,7 +146,7 @@
 
 <div class="card">
     {#if ticket}
-        <header class="card-header">
+        <header class="card-header grid grid-cols-2">
             {#if titleLink}
                 <a class="anchor text-{titleSize}" href={"/" + bech32ID }>{ticket.title ?? 'No title'}</a>
             {:else}
@@ -86,6 +154,13 @@
                     {ticket.title ?? 'No title'}
                 </div>
             {/if}
+            {#if ticket.status === TicketStatus.InProgress }
+                <div class="justify-self-end mr-4">
+                    <button type="button" class="btn btn-md bg-primary-400-500-token" on:click={closeTicket}>
+                        Close
+                    </button>
+                </div> 
+            {/if }
         </header>
 
         <section class="p-4">
@@ -97,7 +172,6 @@
                         : 'No description!'
                     }
                 </div>
-                <slot name="button"/>
             </div>
 
             <hr class="my-4" />

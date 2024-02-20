@@ -16,7 +16,7 @@
         }
         // If ticket gets taken(in progress ticket arrived), remove from new tickets
         if ($inProgressTickets && $newTickets) {
-            for (let i =0; i < $inProgressTickets.length; i++) {
+            for (let i = 0; i < $inProgressTickets.length; i++) {
                 $newTickets.forEach((newTicket: TicketEvent)=> {
                     const inProgressTicket = $inProgressTickets[i];
                     if (newTicket.ticketAddress === inProgressTicket.ticketAddress) {
