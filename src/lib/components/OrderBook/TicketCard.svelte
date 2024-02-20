@@ -79,7 +79,6 @@
         }
         const modal: ModalSettings = {
             type: 'confirm',
-            // Data
             title: 'Confirm closing Ticket',
             body: 'Do really want to Close this Ticket?',
             response: closeTicketResponse,

@@ -10,6 +10,7 @@
     import ndk from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { myTicketFilter, myOfferFilter, newTickets, inProgressTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { messageStore, messageStoreFilter } from "$lib/stores/messages";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -18,6 +19,9 @@
     import { privateKeyFromSeedWords} from "nostr-tools/nip06"
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
+
+    import type { TicketEvent } from "$lib/events/TicketEvent";
+    import type { OfferEvent } from "$lib/events/OfferEvent";
 
     import { AppShell } from '@skeletonlabs/skeleton';
     import { AppBar } from '@skeletonlabs/skeleton';
@@ -63,6 +67,38 @@
     let profileImage: string | undefined;
     let loggedIn: boolean;
 
+    $: if ($myTickets && $ndk.activeUser) {
+        console.log('my ticket arrived, setting up messageStore...');
+        messageStore.unsubscribe();
+        messageStoreFilter['#t'] = [];
+
+        $myTickets.forEach((ticket: TicketEvent) => {
+            if (ticket.acceptedOfferAddress) {
+                if (!(messageStoreFilter['#t'].includes(ticket.acceptedOfferAddress))) {
+                    messageStoreFilter['#t'].push(ticket.acceptedOfferAddress);
+                }
+            }
+        });
+        console.log('messageStoreFilter: ', messageStoreFilter)
+        messageStore.startSubscription();
+    }
+
+    $: if ($myOffers && $ndk.activeUser) {
+        console.log('my offer arrived, setting up messageStore...');
+        messageStore.unsubscribe();
+        messageStoreFilter['#t'] = [];
+
+        $myOffers.forEach((offer: OfferEvent) => {
+            if (offer.referencedTicketAddress) {
+                if (!(messageStoreFilter['#t'].includes(offer.referencedTicketAddress))) {
+                    messageStoreFilter['#t'].push(offer.referencedTicketAddress);
+                }
+            }
+        });
+        console.log('messageStoreFilter: ', messageStoreFilter)
+        messageStore.startSubscription();
+    }
+
     $: {
         profileImage = $ndk.activeUser?.profile?.image;
         loggedIn = !!$ndk.activeUser;
@@ -105,6 +141,8 @@
         inProgressTickets.startSubscription();
         offersOnTickets.startSubscription();
         ticketsOfSpecificOffers.startSubscription();
+
+        messageStore.startSubscription();
 
         if (!loggedIn) {
             console.log('not logged in! Trying to log in...')
@@ -218,6 +256,8 @@
         myTickets.unref();
         myOffers.unref();
         ticketsOfSpecificOffers.unref();
+
+        messageStore.unsubscribe();
         console.log('unref all subs in onDestroy!')
     });
 

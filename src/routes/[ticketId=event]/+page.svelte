@@ -154,11 +154,14 @@
                             // Data
                             title: 'Success!',
                             body: `
-                                <p>You accepted the Offer!</p>
-                                <p>
-                                    Get your issue resolved here in encrypted DM 
-                                    or any other private messaging app(SimpleX chat recommended!)
-                                </p>
+                        <p>You accepted the Offer!</p>
+                        <strong class='text-error-500'>
+                            It is strongly recommended you use specialized E2EE(e.g. SimpleX chat)
+                            messaging software for highly sensitive information!
+                        </strong>
+                        <p>
+                            Go to 'Messages' and talk about your preferred communication method then switch to that app for the actual Troubleshooting!
+                        </p>
                             `,
                             buttonTextCancel:'Great!',
                         };

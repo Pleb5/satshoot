@@ -6,6 +6,8 @@
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfSpecificOffers, ticketsOfSpecificOffersFilter, offersOnTicketsFilter, offersOnTickets } from '$lib/stores/troubleshoot-eventstores';
 
+    import { messageStore, messageStoreFilter } from '$lib/stores/messages';
+
     import { goto } from '$app/navigation';
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
@@ -57,20 +59,20 @@
                 if (restartSubNeeded) {
                     console.log('removed some tracked offers, restarting sub..')
                     console.log('offersOnTicketsFilter', offersOnTicketsFilter)
-                    offersOnTickets.unsubscribe();
                     offersOnTickets.empty();
                     offersOnTickets.startSubscription();
                 }
 
-                myTickets.unsubscribe();
-                myOffers.unsubscribe();
                 myTickets.empty();
                 myOffers.empty();
                 myTicketFilter.authors = [];
                 myOfferFilter.authors = [];
 
-                ticketsOfSpecificOffers.unsubscribe();
+                ticketsOfSpecificOffers.empty();
                 ticketsOfSpecificOffersFilter['#d'] = [];
+
+                messageStore.empty();
+                messageStoreFilter['#t'] = [];
 
 
                 ndk.set(new NDKSvelte({
