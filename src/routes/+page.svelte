@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { TicketEvent } from "$lib/events/TicketEvent";
-    import { newTickets } from "$lib/stores/troubleshoot-eventstores";
+    import { newTickets, inProgressTickets } from "$lib/stores/troubleshoot-eventstores";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 
     import type { NDKTag } from "@nostr-dev-kit/ndk";
@@ -15,6 +15,16 @@
     let ticketList: Set<TicketEvent> = new Set;
 
     $: {
+        if ($inProgressTickets && $newTickets) {
+            for (let i = 0; i < $inProgressTickets.length; i++) {
+                $newTickets.forEach((newTicket: TicketEvent)=> {
+                    const inProgressTicket = $inProgressTickets[i];
+                    if (newTicket.ticketAddress === inProgressTicket.ticketAddress) {
+                        $newTickets.splice(i, 1);
+                    }
+                });
+            }
+        }
         if($newTickets || filterList) {
             // We just received a new ticket but we are not filtering
             if (filterList.length === 0) {
