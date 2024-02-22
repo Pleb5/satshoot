@@ -1,5 +1,5 @@
 import ndk from "./ndk";
-import { type NDKFilter, type NDKSubscriptionOptions, NDKKind, NDKEvent } from '@nostr-dev-kit/ndk';
+import { type NDKFilter, type NDKSubscriptionOptions, NDKKind } from '@nostr-dev-kit/ndk';
 
 import { get } from "svelte/store";
 
@@ -15,6 +15,7 @@ export const receivedMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = 
 };
 
 export const myMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
+    kinds: [NDKKind.EncryptedDirectMessage],
     authors: [],
     '#t': [],
     limit: 21_000,

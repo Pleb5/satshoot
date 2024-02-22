@@ -8,7 +8,7 @@
     import { onDestroy, onMount } from "svelte";
 
 	import { Avatar } from '@skeletonlabs/skeleton';
-    import { NDKEvent, NDKKind, type NDKUser } from "@nostr-dev-kit/ndk";
+    import { NDKEvent, NDKKind, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 
     import { idFromNaddr } from '$lib/utils/nip19'
 
@@ -31,6 +31,8 @@
 
 	let elemChat: HTMLElement;
 
+    let needSetup = true;
+
 	// Navigation List
 	let people: NDKUser[] = [];
     let currentPersonId: string;
@@ -48,19 +50,24 @@
 	}
 
 	async function sendMessage() {
-        const dm = new NDKEvent($ndk);
-        dm.kind = NDKKind.EncryptedDirectMessage;
-        dm.tags.push(['t', ticketAddress]);
-        dm.tags.push(['p', currentPersonId]);
+        if (currentMessage) {
+            const dm = new NDKEvent($ndk);
+            dm.kind = NDKKind.EncryptedDirectMessage;
+            dm.content = currentMessage;
+            dm.tags.push(['t', ticketAddress]);
+            dm.tags.push(['p', currentPersonId]);
 
-        console.log('event to encrypt: ', dm)
+            console.log('event to encrypt: ', dm)
 
-        dm.encrypt();
+            await dm.encrypt();
 
-        await dm.publish();
+            console.log('encrypted event: ', dm)
 
-        // Clear prompt
-        currentMessage = '';
+            await dm.publish();
+
+            // Clear prompt
+            currentMessage = '';
+        }
 	}
 
 	function onPromptKeydown(event: KeyboardEvent): void {
@@ -69,6 +76,89 @@
 			sendMessage();
 		}
 	}
+
+    async function updateMessageFeed() {
+        console.log('message arrived: ', $messageStore)
+        messages = [];
+        for (const dm of $messageStore) {
+            let personOfMessage: NDKUser | undefined = undefined;
+
+            let host = false;
+
+            if (dm.pubkey === $ndk.activeUser?.pubkey) {
+                host = true;
+                personOfMessage = $ndk.activeUser;
+            } else {
+                let personKnown = false;
+                for (const person of people) {
+                    if (person.pubkey === dm.pubkey) {
+                        personKnown = true;
+                        personOfMessage = person;
+                    }
+                }
+
+                if (!personKnown) {
+                    currentPersonId = dm.pubkey;
+                    personOfMessage = $ndk.getUser({hexpubkey: dm.pubkey}); 
+                    people.push(personOfMessage);
+                    personOfMessage.fetchProfile().then(()=>{
+                        people = people;
+                        console.log('fetched profile of new message sender!')
+                        messageFeed = messageFeed;
+                    });
+                }
+            }
+
+            try {
+                console.log('decrypting message...', dm)
+                await dm.decrypt(personOfMessage as NDKUser, $ndk.signer);
+                let message = dm.content;
+                console.log('message decrypted', message)
+
+                const messageDate = new Date(dm.created_at as number * 1000);
+                // Time is shown in local time zone
+                const dateString = messageDate.toTimeString();
+
+
+                const newMessage = {
+                    id: messages.length,
+                    host: host,
+                    avatar: (personOfMessage as NDKUser).profile?.image ?? '',
+                    name: (personOfMessage as NDKUser).profile?.name ?? (personOfMessage as NDKUser).npub.substring(0, 10),
+                    pubkey: (personOfMessage as NDKUser).pubkey,
+                    timestamp: dateString,
+                    message: message,
+                    color: 'variant-soft-primary'
+                };
+
+                messages.push(newMessage);
+
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        console.log('messages', messages);
+        // Update the message feed
+        messageFeed = messages.filter((message: MessageFeed) => {
+            if (message.pubkey === currentPersonId 
+                || message.pubkey === $ndk.activeUser?.pubkey) {
+
+                return true;
+            }
+
+            return false;
+        });
+        console.log('messageFeed', messageFeed)
+
+        // Smooth scroll to bottom
+        // Timeout prevents race condition
+        if (elemChat) {
+            setTimeout(() => {
+                scrollChatBottom('smooth');
+            }, 0);
+        }
+    }
 
 	// When DOM mounted, scroll to bottom
 	onMount(() => {
@@ -85,79 +175,10 @@
         messageStore.empty();
     });
 
-    $: if ($ndk.activeUser) {
-        // If my ticket then just wait for messages to arrive
-        // else I add the ticket creator to people
-        let ticketPubkey = ticketAddress.split(':')[1];
-        if ($ndk.activeUser.pubkey !== ticketPubkey) {
-            people.push($ndk.getUser({hexpubkey: ticketPubkey}));
-            currentPersonId = ticketPubkey;
-            people = people;
-        }
-    }
-
-    $: if ($messageStore) {
-        $messageStore.forEach(async (dm: NDKEvent) => {
-            messages = [];
-            let personOfMessage: NDKUser | undefined = undefined;
-
-            let host = false;
-
-            if (dm.pubkey === $ndk.activeUser?.pubkey) {
-                host = true;
-                personOfMessage = $ndk.activeUser;
-            } else {
-                let personKnown = false;
-                people.forEach((person: NDKUser) => {
-                    if (person.pubkey === dm.pubkey) {
-                        personKnown = true;
-                        personOfMessage = person;
-                    }
-                });
-                if (!personKnown) {
-                    personOfMessage = $ndk.getUser({hexpubkey: dm.pubkey}); 
-                    people.push(personOfMessage);
-                    await personOfMessage.fetchProfile();
-                }
-            }
-            
-            await dm.decrypt($ndk.activeUser, $ndk.signer);
-            let message = dm.content;
-
-            const messageDate = new Date(dm.created_at as number * 1000);
-            // Time is shown in local time zone
-            const dateString = messageDate.toTimeString();
-
-
-            const newMessage = {
-                id: messages.length,
-                host: host,
-                avatar: (personOfMessage as NDKUser).profile?.image ?? '',
-                name: (personOfMessage as NDKUser).profile?.name ?? (personOfMessage as NDKUser).npub.substring(0, 10),
-                pubkey: (personOfMessage as NDKUser).pubkey,
-                timestamp: dateString,
-                message: message,
-                color: 'variant-soft-primary'
-            };
-
-            messages.push(newMessage);
-            messageFeed = messages.filter((message: MessageFeed) => {
-                message.pubkey === currentPersonId;
-            });
-
-        });
-        // Update the message feed
-        messages = messages;
-
-        // Smooth scroll to bottom
-        // Timeout prevents race condition
-        setTimeout(() => {
-            scrollChatBottom('smooth');
-        }, 0);
-    }
-
     // If there is a logged in user, start receiving messages related to the ticket
-    $: if ($ndk.activeUser) {
+    $: if ($ndk.activeUser && needSetup) {
+        needSetup = false;
+        console.log('setup filters and start startSubscription')
         myMessageFilter['authors'] = [];
         myMessageFilter['authors'].push($ndk.activeUser.pubkey);
         myMessageFilter['#t'] = [];
@@ -170,7 +191,26 @@
 
         messageStore.empty();
         messageStore.startSubscription();
+
+        // If my ticket then just wait for messages to arrive
+        // else I add the ticket creator to people
+        let ticketPubkey = ticketAddress.split(':')[1];
+        if ($ndk.activeUser.pubkey !== ticketPubkey) {
+            const user = $ndk.getUser({hexpubkey: ticketPubkey});
+            people.push(user);
+            currentPersonId = ticketPubkey;
+            
+            user.fetchProfile().then(() => {
+                people = people;
+            });
+
+        }
     }
+
+    $: if ($messageStore) {
+        updateMessageFeed();
+    }
+
     
 </script>
 <h2 class="h2 my-4 text-center font-bold">{'Ticket: ' + ticketTitle}</h2>
@@ -212,7 +252,7 @@
         <div class="grid grid-row-[1fr_auto]">
             <!-- Conversation -->
             <section bind:this={elemChat} class="max-h-[500px] p-4 overflow-y-auto space-y-4">
-                {#each messages as bubble}
+                {#each messageFeed as bubble}
                     {#if bubble.host === true}
                         <div class="grid grid-cols-[auto_1fr] gap-2">
                             <Avatar src={bubble.avatar} width="w-12" />

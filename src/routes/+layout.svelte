@@ -121,8 +121,6 @@
                 if (loginMethod === LoginMethod.Ephemeral) {
         // We either get the private key from sessionStorage or decrypt from localStorage
                     if ($sessionPK) {
-                        console.log('sessionPK', $sessionPK)
-
                         $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
 
                         let user: NDKUser = await $ndk.signer.user();
