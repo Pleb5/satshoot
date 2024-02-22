@@ -247,7 +247,7 @@
         <AppBar gridColumns="grid-cols-3" slotDefault="items-center" slotTrail="place-content-end ">
             <svelte:fragment slot="lead">
                 <div class="grid grid-cols-2 w-32 h-18">
-                    <img class="w-full h-full" src="bitcoin-troubleshoot.svg" alt="logo" />
+                    <img class="w-full h-full" src="/bitcoin-troubleshoot.svg" alt="logo" />
                     <div class="flex justify-center items-center">
                         <LightSwitch />
                     </div>
@@ -296,10 +296,6 @@
                     <AppRailAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>
                         <MenuItem_2 />
                     </AppRailAnchor>
-
-                    <AppRailAnchor href="/messages" selected={$page.url.pathname === '/messages'}>
-                        <MenuItem_3 /> 
-                    </AppRailAnchor>
                 </svelte:fragment>
             </AppRail>
     </svelte:fragment>
@@ -327,10 +323,6 @@
                     <MenuItem_2 />
             </TabAnchor>
 
-            <TabAnchor href="/messages" selected={$page.url.pathname === '/messages'}>
-                    <MenuItem_3 />
-            </TabAnchor>
-            <!-- ... -->
         </TabGroup>
     </svelte:fragment>
 </AppShell>
