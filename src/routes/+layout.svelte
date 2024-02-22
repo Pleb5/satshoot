@@ -10,7 +10,7 @@
     import ndk from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { myTicketFilter, myOfferFilter, newTickets, inProgressTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
-    import { messageStore, messageStoreFilter } from "$lib/stores/messages";
+    import { messageStore } from "$lib/stores/messages";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -66,38 +66,6 @@
 
     let profileImage: string | undefined;
     let loggedIn: boolean;
-
-    $: if ($myTickets && $ndk.activeUser) {
-        console.log('my ticket arrived, setting up messageStore...');
-        messageStore.unsubscribe();
-        messageStoreFilter['#t'] = [];
-
-        $myTickets.forEach((ticket: TicketEvent) => {
-            if (ticket.acceptedOfferAddress) {
-                if (!(messageStoreFilter['#t'].includes(ticket.acceptedOfferAddress))) {
-                    messageStoreFilter['#t'].push(ticket.acceptedOfferAddress);
-                }
-            }
-        });
-        console.log('messageStoreFilter: ', messageStoreFilter)
-        messageStore.startSubscription();
-    }
-
-    $: if ($myOffers && $ndk.activeUser) {
-        console.log('my offer arrived, setting up messageStore...');
-        messageStore.unsubscribe();
-        messageStoreFilter['#t'] = [];
-
-        $myOffers.forEach((offer: OfferEvent) => {
-            if (offer.referencedTicketAddress) {
-                if (!(messageStoreFilter['#t'].includes(offer.referencedTicketAddress))) {
-                    messageStoreFilter['#t'].push(offer.referencedTicketAddress);
-                }
-            }
-        });
-        console.log('messageStoreFilter: ', messageStoreFilter)
-        messageStore.startSubscription();
-    }
 
     $: {
         profileImage = $ndk.activeUser?.profile?.image;
@@ -297,8 +265,8 @@
                         <Avatar 
                             class="rounded-full border-white placeholder-white"
                             border="border-4 border-surface-300-600-token hover:!border-primary-500"
-                            cursor="c, myTickets, myOffers,ursor-pointer"
-                            bind:src={profileImage}
+                            cursor="cursor-pointer"
+                            src={profileImage}
                         /> 
                     </button>
                     <!-- Popup menu content -->

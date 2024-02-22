@@ -19,6 +19,7 @@
     export let countAllOffers: boolean = false;
     export let showTicket: boolean = true;
     let ticket: TicketEvent | undefined = undefined;
+    let ticketChat = false;
 
     let npub: string;
     let timeSincePosted: string; 
@@ -50,6 +51,9 @@
         }
     }
 
+    $: if ($ndk.activeUser) {
+        ticketChat = true;
+    }
 
     $: {
         if (offer) {
@@ -132,6 +136,15 @@
 <div class="card pt-4">
     {#if offer}
         <div class="grid grid-cols-3 justify-center">
+            {#if ticketChat && ticket}
+                <a
+                    href={"/messages/" + ticket.encode() + ":" + ticket.title}
+                    class="btn btn-icon btn-md justify-self-start"
+                >
+                    <i class="fa-regular fa-comment"></i>
+                </a>
+                
+            {/if}
             <h3 class="h3 col-start-2 text-center text-primary-300-600-token">
                 { (editOffer ? 'My ' : '') + 'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
             </h3>

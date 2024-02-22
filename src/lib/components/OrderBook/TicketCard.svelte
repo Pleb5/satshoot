@@ -16,7 +16,8 @@
 			
     
     export let ticket: TicketEvent | null = null;
-    export let titleSize: string = 'md';
+    let ticketChat = false;
+    export let titleSize: string = 'xl';
     export let titleLink: boolean = true;
     export let countAllOffers: boolean = false;
 
@@ -86,6 +87,12 @@
         modalStore.trigger(modal);
     }
 
+    // TODO: insert chat button somewhere. Edit new ticket if mine on ticket page. remove messages button from app rail/bar
+
+    $: if ($ndk.activeUser) {
+        ticketChat = true;
+    }
+
     $: {
         if (ticket) {
             npub = nip19.npubEncode(ticket.pubkey);
@@ -145,11 +152,23 @@
 
 <div class="card">
     {#if ticket}
-        <header class="card-header grid grid-cols-2">
+        <header class="card-header grid grid-cols-3">
+            {#if ticketChat}
+                <a
+                    href={"/messages/" + bech32ID + ":" + ticket.title}
+                    class="btn btn-icon btn-md justify-self-start"
+                >
+                    <i class="fa-regular fa-comment text-2xl"></i>
+                </a>
+                
+            {/if}
             {#if titleLink}
-                <a class="anchor text-{titleSize}" href={"/" + bech32ID }>{ticket.title ?? 'No title'}</a>
+                <a 
+                    class="anchor col-start-2 justify-self-center text-{titleSize}" 
+                    href={"/" + bech32ID }>{ticket.title ?? 'No title'}
+                </a>
             {:else}
-                <div class="text-{titleSize}">
+                <div class="col-start-2 text-{titleSize}">
                     {ticket.title ?? 'No title'}
                 </div>
             {/if}

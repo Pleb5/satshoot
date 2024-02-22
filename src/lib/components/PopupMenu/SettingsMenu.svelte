@@ -6,7 +6,7 @@
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfSpecificOffers, ticketsOfSpecificOffersFilter, offersOnTicketsFilter, offersOnTickets } from '$lib/stores/troubleshoot-eventstores';
 
-    import { messageStore, messageStoreFilter } from '$lib/stores/messages';
+    import { messageStore,  receivedMessageFilter, myMessageFilter } from '$lib/stores/messages';
 
     import { goto } from '$app/navigation';
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
@@ -72,7 +72,11 @@
                 ticketsOfSpecificOffersFilter['#d'] = [];
 
                 messageStore.empty();
-                messageStoreFilter['#t'] = [];
+                receivedMessageFilter['#t'] = [];
+                receivedMessageFilter['#p'] = [];
+
+                myMessageFilter['authors'] = [];
+                myMessageFilter['#t'] = [];
 
 
                 ndk.set(new NDKSvelte({
