@@ -19,11 +19,12 @@
 
 
 	interface MessageFeed {
-		id: number;
+		id: string;
 		host: boolean;
 		avatar: string;
 		name: string;
         pubkey: string,
+        recipient: string;
 		timestamp: string;
 		message: string;
 		color: string;
@@ -35,13 +36,15 @@
 
 	// Navigation List
 	let people: NDKUser[] = [];
-    let currentPersonId: string;
+    let currentPerson: NDKUser;
 
 	// All Messages
 	let messages: MessageFeed[] = [];
     // Filtered messages by person 
 	let messageFeed: MessageFeed[] = [];
 	let currentMessage = '';
+
+    let seenMessages: string[] = [];
 
 	// For some reason, eslint thinks ScrollBehavior is undefined...
 	// eslint-disable-next-line no-undef
@@ -55,7 +58,7 @@
             dm.kind = NDKKind.EncryptedDirectMessage;
             dm.content = currentMessage;
             dm.tags.push(['t', ticketAddress]);
-            dm.tags.push(['p', currentPersonId]);
+            dm.tags.push(['p', currentPerson.pubkey]);
 
             console.log('event to encrypt: ', dm)
 
@@ -77,18 +80,79 @@
 		}
 	}
 
+    function updateUserProfile(user: NDKUser) {
+        user.fetchProfile().then(() => {
+            people = people;
+            messageFeed.forEach((message: MessageFeed) => {
+                if (message.pubkey === (user as NDKUser).pubkey) {
+                    message.avatar = (user as NDKUser).profile?.image ?? '';
+                    message.name = (user as NDKUser).profile?.name 
+                        ?? (user as NDKUser).npub.substring(0,10);
+                }
+            });
+            messageFeed = messageFeed;
+        });
+    }
+
+    function generateCurrentFeed() {
+        const unOrderedMessageFeed = messages.filter((message: MessageFeed) => {
+            if (message.pubkey === currentPerson.pubkey) {
+                return true;
+            } else if(message.recipient === currentPerson.pubkey) {
+                return true;
+            }
+
+            return false;
+        });
+
+        // Need to reorder feed according to 
+        messageFeed = [];
+        $messageStore.forEach((dm: NDKEvent) => {
+            unOrderedMessageFeed.forEach((message: MessageFeed) => {
+                if (message.id === dm.id) {
+                    messageFeed.unshift(message);
+                }
+            });
+        });
+        messageFeed = messageFeed;
+
+        // Smooth scroll to bottom
+        // Timeout prevents race condition
+        if (elemChat) {
+            setTimeout(() => {
+                scrollChatBottom('smooth');
+            }, 0);
+        }
+    }
+
     async function updateMessageFeed() {
         console.log('message arrived: ', $messageStore)
-        messages = [];
         for (const dm of $messageStore) {
+            console.log('checking if this dm is already seen')
+            const alreadyHere: boolean = seenMessages.filter((id: string) => {
+                if (dm.id === id) return true;
+                return false;
+            }).length > 0;
+
+            if (alreadyHere) {
+                console.log('continue');
+                continue;
+            } else {
+                console.log('this is a new message, lets decrypt and add it...');
+                seenMessages.push(dm.id);
+            }
+
             let personOfMessage: NDKUser | undefined = undefined;
+            let otherUser: NDKUser;
 
             let host = false;
 
             if (dm.pubkey === $ndk.activeUser?.pubkey) {
                 host = true;
                 personOfMessage = $ndk.activeUser;
+                otherUser = $ndk.getUser({hexpubkey: dm.tagValue('p')});
             } else {
+                otherUser = $ndk.getUser({hexpubkey: dm.pubkey});
                 let personKnown = false;
                 for (const person of people) {
                     if (person.pubkey === dm.pubkey) {
@@ -98,22 +162,24 @@
                 }
 
                 if (!personKnown) {
-                    currentPersonId = dm.pubkey;
-                    personOfMessage = $ndk.getUser({hexpubkey: dm.pubkey}); 
+                    personOfMessage = $ndk.getUser({hexpubkey: dm.pubkey});
+                    if (!currentPerson) {
+                        currentPerson = personOfMessage; 
+                    }
                     people.push(personOfMessage);
-                    personOfMessage.fetchProfile().then(()=>{
-                        people = people;
-                        console.log('fetched profile of new message sender!')
-                        messageFeed = messageFeed;
-                    });
+
+                    updateUserProfile(personOfMessage);
                 }
             }
 
             try {
-                console.log('decrypting message...', dm)
-                await dm.decrypt(personOfMessage as NDKUser, $ndk.signer);
+                // ECDH DEMANDS THAT DECRYPTION ALWAYS USES THE PUBKEY OF THE OTHER PARTY
+                // BE IT THE SENDER OR THE RECIPIENT OF THE ACTUAL MESSAGE
+                // 
+                // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
+
+                await dm.decrypt(otherUser); // ALWAYS USE CURRENT PERSON REGARDLESS OF WHO SENT THE MESSAGE
                 let message = dm.content;
-                console.log('message decrypted', message)
 
                 const messageDate = new Date(dm.created_at as number * 1000);
                 // Time is shown in local time zone
@@ -121,11 +187,12 @@
 
 
                 const newMessage = {
-                    id: messages.length,
+                    id: dm.id,
                     host: host,
                     avatar: (personOfMessage as NDKUser).profile?.image ?? '',
                     name: (personOfMessage as NDKUser).profile?.name ?? (personOfMessage as NDKUser).npub.substring(0, 10),
                     pubkey: (personOfMessage as NDKUser).pubkey,
+                    recipient: dm.tagValue('p') as string,
                     timestamp: dateString,
                     message: message,
                     color: 'variant-soft-primary'
@@ -138,26 +205,8 @@
             }
         }
 
-        console.log('messages', messages);
         // Update the message feed
-        messageFeed = messages.filter((message: MessageFeed) => {
-            if (message.pubkey === currentPersonId 
-                || message.pubkey === $ndk.activeUser?.pubkey) {
-
-                return true;
-            }
-
-            return false;
-        });
-        console.log('messageFeed', messageFeed)
-
-        // Smooth scroll to bottom
-        // Timeout prevents race condition
-        if (elemChat) {
-            setTimeout(() => {
-                scrollChatBottom('smooth');
-            }, 0);
-        }
+        generateCurrentFeed();
     }
 
 	// When DOM mounted, scroll to bottom
@@ -178,7 +227,6 @@
     // If there is a logged in user, start receiving messages related to the ticket
     $: if ($ndk.activeUser && needSetup) {
         needSetup = false;
-        console.log('setup filters and start startSubscription')
         myMessageFilter['authors'] = [];
         myMessageFilter['authors'].push($ndk.activeUser.pubkey);
         myMessageFilter['#t'] = [];
@@ -196,18 +244,15 @@
         // else I add the ticket creator to people
         let ticketPubkey = ticketAddress.split(':')[1];
         if ($ndk.activeUser.pubkey !== ticketPubkey) {
-            const user = $ndk.getUser({hexpubkey: ticketPubkey});
-            people.push(user);
-            currentPersonId = ticketPubkey;
+            currentPerson = $ndk.getUser({hexpubkey: ticketPubkey});
+            people.push(currentPerson);
             
-            user.fetchProfile().then(() => {
-                people = people;
-            });
+            updateUserProfile(currentPerson);
 
         }
     }
 
-    $: if ($messageStore) {
+    $: if ($messageStore.length > 0) {
         updateMessageFeed();
     }
 
@@ -229,17 +274,21 @@
                     {#each people as person}
                         <button
                             type="button"
-                            class="btn w-full flex items-center space-x-4 {person.pubkey === currentPersonId
+                            class="btn w-full flex items-center space-x-4 {person.pubkey === currentPerson.pubkey
                             ? 'variant-filled-primary'
                             : 'bg-surface-hover-token'}"
-                            on:click={() => (currentPersonId = person.pubkey)}
+                            on:click={() => {
+                                currentPerson = person;
+                                generateCurrentFeed();
+                                updateUserProfile(currentPerson);
+                            }}
                             >
                             <Avatar
                                 src={person.profile?.image}
                                 width="w-8"
                             />
                             <span class="flex-1 text-start">
-                                {person.profile?.name}
+                                {person.profile?.name ?? person.npub.substring(0,15)}
                             </span>
                         </button>
                     {/each}
