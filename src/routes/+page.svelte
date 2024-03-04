@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { TicketEvent } from "$lib/events/TicketEvent";
-    import { newTickets, inProgressTickets } from "$lib/stores/troubleshoot-eventstores";
+    import { newTickets, oldTickets } from "$lib/stores/troubleshoot-eventstores";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 
     import type { NDKTag } from "@nostr-dev-kit/ndk";
@@ -15,10 +15,10 @@
     let ticketList: Set<TicketEvent> = new Set;
 
     $: {
-        if ($inProgressTickets && $newTickets) {
-            for (let i = 0; i < $inProgressTickets.length; i++) {
+        if ($oldTickets && $newTickets) {
+            for (let i = 0; i < $oldTickets.length; i++) {
                 $newTickets.forEach((newTicket: TicketEvent)=> {
-                    const inProgressTicket = $inProgressTickets[i];
+                    const inProgressTicket = $oldTickets[i];
                     if (newTicket.ticketAddress === inProgressTicket.ticketAddress) {
                         $newTickets.splice(i, 1);
                     }

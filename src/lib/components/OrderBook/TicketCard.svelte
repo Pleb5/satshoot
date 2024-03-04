@@ -174,7 +174,10 @@
                     {ticket.title ?? 'No title'}
                 </div>
             {/if}
-            {#if ticket.status === TicketStatus.InProgress }
+            {#if $ndk.activeUser
+                && ticket.pubkey === $ndk.activeUser.pubkey
+                && (ticket.status === TicketStatus.InProgress
+                || ticket.status === TicketStatus.New)}
                 <div class="justify-self-end mr-4">
                     <button type="button" class="btn btn-md bg-primary-400-500-token" on:click={closeTicket}>
                         Close

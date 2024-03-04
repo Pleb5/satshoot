@@ -3,9 +3,8 @@ import ndk from '$lib/stores/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 
 import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
-import { OfferEvent } from '$lib/events/OfferEvent';
 import { myTickets } from '$lib/stores/troubleshoot-eventstores';
-import { offersOnTickets, offersOnTicketsFilter, subOptions } from "$lib/stores/troubleshoot-eventstores";
+import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
 import TicketCard from '../OrderBook/TicketCard.svelte';
 
 let tabGroup = TicketStatus.New;
