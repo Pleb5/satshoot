@@ -67,11 +67,6 @@
 
 </script>
 
-<a href="/post-ticket" class="btn fixed bottom-20 right-10 xl:btn-xl lg:btn-lg md:btn-md bg-primary-300-600-token">
-    <span>Get Help</span>
-</a>
-
-
 <div class="flex flex-col justify-center gap-y-2 mt-2">
     <div class="sticky top-0 w-80 mx-auto flex gap-x-2 items-center justify-center">
         <InputChip

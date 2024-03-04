@@ -1,3 +1,2 @@
-<i class="fa-solid fa-message text-3xl"/>
-<div>Messages</div>
-
+<i class="fa-brands fa-bitcoin text-4xl"/>
+<div>My Tickets</div>

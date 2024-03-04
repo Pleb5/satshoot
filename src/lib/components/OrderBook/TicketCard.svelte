@@ -87,7 +87,7 @@
         modalStore.trigger(modal);
     }
 
-    // TODO: insert chat button somewhere. Edit new ticket if mine on ticket page. remove messages button from app rail/bar
+    // TODO:Edit new ticket if mine on ticket page
 
     $: if ($ndk.activeUser) {
         ticketChat = true;
@@ -158,7 +158,7 @@
                     href={"/messages/" + bech32ID + ":" + ticket.title}
                     class="btn btn-icon btn-md justify-self-start"
                 >
-                    <i class="fa-regular fa-comment text-2xl"></i>
+                    <i class="fa-solid fa-comment text-3xl"></i>
                 </a>
                 
             {/if}

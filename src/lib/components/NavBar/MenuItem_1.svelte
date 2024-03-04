@@ -1,2 +1,2 @@
-<i class="fa-solid fa-home text-3xl"/>
-<div>Home</div>
+<i class="fa-solid fa-book-open text-3xl"></i>
+<div>New Tickets</div>

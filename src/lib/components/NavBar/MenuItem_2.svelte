@@ -1,2 +1,3 @@
-<i class="fa-brands fa-bitcoin text-4xl"/>
-<div>My Tickets</div>
+<i class="fa-solid fa-hand-holding-medical text-3xl"></i>
+<div>Get Help</div>
+

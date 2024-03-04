@@ -291,8 +291,12 @@
                         <MenuItem_1 />
                     </AppRailAnchor>
 
-                    <AppRailAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>
+                    <AppRailAnchor href="/post-ticket" selected={$page.url.pathname === '/post-ticket'}>
                         <MenuItem_2 />
+                    </AppRailAnchor>
+
+                    <AppRailAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>
+                        <MenuItem_3 />
                     </AppRailAnchor>
                 </svelte:fragment>
             </AppRail>
@@ -317,8 +321,12 @@
                     <MenuItem_1 />
             </TabAnchor>
 
-            <TabAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>
+            <TabAnchor href="/post-ticket" selected={$page.url.pathname === '/post-ticket'}>
                     <MenuItem_2 />
+            </TabAnchor>
+
+            <TabAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>
+                <MenuItem_3 />
             </TabAnchor>
 
         </TabGroup>
