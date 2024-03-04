@@ -1,5 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
+    import type { NDKTag } from "@nostr-dev-kit/ndk";
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
     import { offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
@@ -10,6 +11,9 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings } from '@skeletonlabs/skeleton';
+
+    import { ticketToEdit } from "$lib/stores/ticket-to-edit";
+    import { goto } from "$app/navigation";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -149,6 +153,14 @@
         }
     }
 
+    function editTicket() {
+        if (ticket) {
+            $ticketToEdit = ticket;
+
+            goto('/post-ticket')
+        }
+    }
+
 </script>
 
 
@@ -164,16 +176,26 @@
                 </a>
                 
             {/if}
-            {#if titleLink}
-                <a 
-                    class="anchor col-start-2 justify-self-center text-{titleSize}" 
-                    href={"/" + bech32ID }>{ticket.title ?? 'No title'}
-                </a>
-            {:else}
-                <div class="col-start-2 text-{titleSize}">
-                    {ticket.title ?? 'No title'}
-                </div>
-            {/if}
+            <div class="flex justify-center items-start gap-x-6">
+                {#if titleLink}
+                    <a 
+                        class="anchor col-start-2 justify-self-center text-{titleSize}" 
+                        href={"/" + bech32ID }>{ticket.title ?? 'No title'}
+                    </a>
+                {:else}
+                    <div class="col-start-2 text-{titleSize}">
+                        {ticket.title ?? 'No title'}
+                    </div>
+                {/if}
+
+                {#if $ndk.activeUser 
+                    && $ndk.activeUser.pubkey === ticket.pubkey
+                    && ticket.status === TicketStatus.New}
+                    <button class="mt-1" on:click={editTicket}>
+                        <i class="text-primary-500 fa-solid fa-pen-to-square text-xl" />
+                    </button>
+                {/if}
+            </div>
             {#if $ndk.activeUser
                 && ticket.pubkey === $ndk.activeUser.pubkey
                 && (ticket.status === TicketStatus.InProgress
