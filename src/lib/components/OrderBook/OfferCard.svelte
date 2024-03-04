@@ -30,7 +30,7 @@
     // Because Tickets drive the status of Offers, this is calculated always
     // as soon as the ticket for this offer is fetched
     let status = '?';
-    let statusColor = 'text-primary-300-600-token';
+    let statusColor = 'text-primary-400-500-token';
 
     function insertThousandSeparator(amount: number) {
         return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -135,20 +135,20 @@
 
 <div class="card pt-4">
     {#if offer}
-        <div class="grid grid-cols-3 justify-center">
+        <div class="grid grid-cols-3 justify-center items-center mx-4">
             {#if ticketChat && ticket}
                 <a
                     href={"/messages/" + ticket.encode() + ":" + ticket.title}
                     class="btn btn-icon btn-md justify-self-start"
                 >
-                    <i class="fa-regular fa-comment"></i>
+                    <i class="fa-solid fa-comment text-3xl"></i>
                 </a>
                 
             {/if}
-            <h3 class="h3 col-start-2 text-center text-primary-300-600-token">
+            <h3 class="h3 col-start-2 text-center text-primary-500">
                 { (editOffer ? 'My ' : '') + 'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
             </h3>
-            <div class="col-start-3 justify-self-end mr-4">
+            <div class="col-start-3 justify-self-end">
                 {#if editOffer}
                     <button 
                         type="button"

@@ -196,7 +196,7 @@
 
             <div class="">
                 <span class="pr-1">Status: </span>
-                <span class="text-primary-300-600-token font-bold">{ticketStatus}</span>
+                <span class="text-primary-400-500-token font-bold">{ticketStatus}</span>
             </div>
             <div class="">
                 <span class="">Posted by: </span>
