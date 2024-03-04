@@ -16,6 +16,8 @@
 			
     
     export let ticket: TicketEvent | null = null;
+    // Can disable chat from outside manually
+    export let showChat = true;
     let ticketChat = false;
     export let titleSize: string = 'xl';
     export let titleLink: boolean = true;
@@ -28,7 +30,7 @@
 
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';
-    let offersAlreadyColor: string = 'text-primary-300-600-token';
+    let offersAlreadyColor: string = 'text-primary-400-500-token';
 
     async function closeTicket() {
         let closeTicketResponse = async function(r: boolean) {
@@ -89,7 +91,7 @@
 
     // TODO:Edit new ticket if mine on ticket page
 
-    $: if ($ndk.activeUser) {
+    $: if ($ndk.activeUser && showChat) {
         ticketChat = true;
     }
 
@@ -140,7 +142,7 @@
 
                 offerCount = offers.length.toString();
                 if (offers.length > 0) {
-                    offersAlreadyColor = 'text-error-300-600-token';
+                    offersAlreadyColor = 'text-error-400-500-token';
                 }
                 console.log('offer count: ', offerCount)
             }

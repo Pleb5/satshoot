@@ -99,9 +99,10 @@
                             status = 'Pending';
                         } else if(winner === offer.offerAddress) {
                             status = 'Won';
-                            statusColor = 'text-success-300-600-token';
+                            statusColor = 'text-warning-500';
                         } else {
                             // The winner is defined but it is not us so our offer lost
+                            statusColor = 'text-error-500';
                             status = 'Lost';
                         }
                         
@@ -135,7 +136,7 @@
 
 <div class="card pt-4">
     {#if offer}
-        <div class="grid grid-cols-3 justify-center items-center mx-4">
+        <div class="grid grid-cols-3 justify-center items-center mx-6">
             {#if ticketChat && ticket}
                 <a
                     href={"/messages/" + ticket.encode() + ":" + ticket.title}
@@ -174,9 +175,9 @@
             </div>
             <div class="">{timeSincePosted}</div>
             {#if showTicket}
-                <h4 class="h4 text-primary-300-600-token"> On Ticket:</h4>
+                <h4 class="h4 text-center text-primary-400-500-token"> On Ticket:</h4>
                 {#if ticket}
-                    <TicketCard ticket={ticket} {countAllOffers} >
+                    <TicketCard ticket={ticket} showChat={false} {countAllOffers} >
                     </TicketCard>
                 {:else}
                     <h2 class="h2 text-center text-error-500">Loading Ticket for Offer...</h2>

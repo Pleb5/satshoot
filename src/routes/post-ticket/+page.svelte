@@ -377,54 +377,54 @@ const tagOptions: AutocompleteOption<string>[] = [
 			
 </script>
 
-<div class="flex flex-col p-4 w-full text-token space-y-8 items-center">
-
-    <label class="label max-w-md">
-        <span>Ticket Title(min. 10chars)</span>
-        <input 
-            class="input {titleState}"
-            type="text"
-            placeholder="Title of your Ticket"
-            minlength={minTitleLength}
-            bind:value={titleText}
-        />
-    </label>
-
-
-    <label class="label max-w-xl">
-        <span>Ticket Description(min. 20chars)</span>
-        <textarea 
-            class="textarea {descriptionState}"
-            rows="4"
-            placeholder="Detailed description of your issue"
-            minlength={minDescriptionLength}
-            bind:value={descriptionText}
-        />
-    </label>
-
-
-    <div class="text-token max-w-sm gap-y-2 ">
-        <span>Ticket Tags(max. 5pcs)</span>
-        <InputChip
-            bind:input={tagInput}
-            bind:value={tagList}
-            name="tags"
-            placeholder="Enter tag value..."
-            max={maxTags}
-            minlength={2}
-            maxlength={20}
-        />
-
-
-        <div class="card max-w-sm pb-4 overflow-y-auto max-h-32" tabindex="-1">
-            <Autocomplete
-                bind:input={tagInput}
-                options={tagOptions}
-                on:selection={onTagSelection}
+<div class="flex justify-center">
+    <div class="p-4">
+        <label class="label max-w-md">
+            <span class="text-2xl">Ticket Title(min. 10chars)</span>
+            <input 
+                class="input {titleState}"
+                type="text"
+                placeholder="Title of your Ticket"
+                minlength={minTitleLength}
+                bind:value={titleText}
             />
+        </label>
+
+
+        <label class="label max-w-xl mt-8">
+            <span class="text-2xl">Ticket Description(min. 20chars)</span>
+            <textarea 
+                class="textarea {descriptionState}"
+                rows="4"
+                placeholder="Detailed description of your issue"
+                minlength={minDescriptionLength}
+                bind:value={descriptionText}
+            />
+        </label>
+
+
+        <div class="text-token max-w-sm gap-y-2 mt-8">
+            <span class="text-2xl">Ticket Tags(max. 5pcs)</span>
+            <InputChip
+                bind:input={tagInput}
+                bind:value={tagList}
+                name="tags"
+                placeholder="Enter tag value..."
+                max={maxTags}
+                minlength={2}
+                maxlength={20}
+            />
+
+
+            <div class="card max-w-sm pb-4 overflow-y-auto max-h-32" tabindex="-1">
+                <Autocomplete
+                    bind:input={tagInput}
+                    options={tagOptions}
+                    on:selection={onTagSelection}
+                />
+            </div>
         </div>
     </div>
-
 </div>
 
 <div class="flex justify-center mt-8">

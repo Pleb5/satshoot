@@ -139,8 +139,6 @@
                 <span>See Alby</span>
             </a>
         </div>
-        <!-- Todo: Add tooltip hint '?' to explain that the ephemeral part refers to  -->
-        <!-- local storage of key. Backed up nostr identities are not lost on clearing the browser local storage -->
         <div class="flex gap-x-4 items-center">
             <button class="btn btn-lg bg-primary-300-600-token " on:click={onEphemeralLogin}>
                 <span>Generate NEW Ephemeral Nostr identity</span>
