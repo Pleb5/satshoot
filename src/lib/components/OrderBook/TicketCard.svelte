@@ -27,7 +27,7 @@
     export let titleLink: boolean = true;
     export let countAllOffers: boolean = false;
 
-    const bech32ID = ticket?.encode();
+    let bech32ID = '';
     let npub: string;
     let timeSincePosted: string; 
     let ticketStatus: string;
@@ -101,6 +101,7 @@
 
     $: {
         if (ticket) {
+            bech32ID = ticket.encode()
             npub = nip19.npubEncode(ticket.pubkey);
 
             if (ticket.created_at) {
@@ -170,7 +171,7 @@
             {#if ticketChat}
                 <a
                     href={"/messages/" + bech32ID + ":" + ticket.title}
-                    class="btn btn-icon btn-md justify-self-start"
+                    class="btn btn-icon btn-sm md:btn-md justify-self-start"
                 >
                     <i class="fa-solid fa-comment text-2xl md:text-3xl"></i>
                 </a>
