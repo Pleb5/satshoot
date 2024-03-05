@@ -17,7 +17,6 @@
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import GenerateEphemeralKeyModal from "$lib/components/Modals/GenerateEphemeralKeyModal.svelte";
-    import RestoreEphemeralKeyModal from "$lib/components/Modals/RestoreEphemeralKeyModal.svelte";
 
     $pageTitleStore = 'Login';
 
@@ -101,20 +100,7 @@
         modalStore.trigger(modal);
     }
 
-    function onRestoreEphemeralKey() {
-        // Restore Private Key from a modal prompt where user enters seed words
-        const modalComponent: ModalComponent = {
-            ref: RestoreEphemeralKeyModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
-    }
-
-    // For tootip    
+    // For tooltip    
     const popupHover: PopupSettings = {
         event: 'click',
         target: 'popupHover',
@@ -176,9 +162,9 @@
 
         </div>
 
-        <button class="btn btn-lg bg-primary-300-600-token " on:click={onRestoreEphemeralKey}>
+        <a href="/restore" class="btn btn-lg bg-primary-300-600-token">
             <span>Restore Ephemeral Nostr identity(Seed Words)</span>
-        </button>
+        </a>
 
     </div>
 

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
     import { sessionPK } from "$lib/stores/ndk";
     import { NDKPrivateKeySigner, NDKUser } from "@nostr-dev-kit/ndk";
@@ -8,15 +7,13 @@
 
     import { myTickets, myOffers, myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
     
-	// Stores
-	import { getModalStore } from '@skeletonlabs/skeleton';
-
-	// Props
-	/** Exposes parent props to this component. */
-	export let parent: SvelteComponent;
-
-	const modalStore = getModalStore();
+    import { getToastStore } from '@skeletonlabs/skeleton';
+    import type { ToastSettings } from '@skeletonlabs/skeleton';
+    import { goto } from '$app/navigation';
+    import { tick } from 'svelte';
     
+    const toastStore = getToastStore();
+
     let seedWords: string[] = new Array(12).fill('');
     let passphrase:string;
     let confirmPassphrase:string;
@@ -27,6 +24,8 @@
 
     let statusMessage: string;
     let statusColor = 'text-blue-500';
+
+    let disable = false;
 
     function validateSingleSeedWord(seedWord: string):boolean {
         return wordlist.includes(seedWord);
@@ -108,7 +107,14 @@
                     localStorage.setItem('nostr-seedwords', encryptedSeed);
                     localStorage.setItem('nostr-npub', user.npub);
                     localStorage.setItem('login-method', "ephemeral");
-                    modalStore.close();
+                    
+                    const t: ToastSettings = {
+                        message: 'Encrypted Seed saved in local storage!',
+                        timeout: 7000,
+                        background: 'bg-success-300-600-token',
+                    };
+                    toastStore.trigger(t);
+                    goto('/my-tickets');
                 } else {
                     statusMessage = 'Unexpected response from decryption process:' + m.data;
                     setTimeout(()=>{
@@ -134,6 +140,9 @@
                     statusColor = 'text-red-500';
                 }, 800);            
             }
+            // Disable Finish button until we get a result from the encryption process
+            disable = true;
+            await tick();
 
             // Start worker in background and wait for decryption result in onmessage
             cryptWorker.postMessage({
@@ -159,100 +168,95 @@ Probably incorrect Seed Words!` + e
         }
     }
 
-    // Notes: Use `w-screen h-screen` to fit the visible canvas size.
-    const cBase = 'bg-surface-100-800-token w-screen h-screen p-4 flex justify-center items-center';
-
 </script>
 
-{#if $modalStore[0]}
-	<div class="modal-example-fullscreen {cBase}">
-		<div class="flex flex-col items-center space-y-16">
-            <h2 class="h2">Restore Seed Words:</h2>
-            <form on:submit|preventDefault={ finish }>
-                <div class="flex w-full justify-between">
-                    <div class="card p-4 border-2 border-red-500">
-                        <div class="grid grid-cols-4 gap-x-2 gap-y-2">
-                            {#each seedWords as word, i}
-                                <div class="flex items-center gap-x-1">
-                                    <strong class="max-w-sm">{i+1}{'. '}</strong>
-                                    <input
-                                        class="input {
-                                            validateSingleSeedWord(seedWords[i])
-                                            ? 'input-success' : 'input-error'
-                                        }"
-                                        type='text'
-                                        on:input={ (event) => {
-                                            seedWords[i] = event.currentTarget.value.toLowerCase();
-                                        }}
-                                    />
-                                </div>
-                            {/each}
-                        </div>
+<div class="p-4 flex justify-center items-center">
+    <div class="flex flex-col items-center space-y-16">
+        <h2 class="h2">Restore Seed Words:</h2>
+        <form on:submit|preventDefault={ finish }>
+            <div class="flex w-full justify-between">
+                <div class="card p-4 border-2 border-red-500">
+                    <div class="grid grid-cols-4 gap-x-2 gap-y-2">
+                        {#each seedWords as word, i}
+                            <div class="flex items-center gap-x-1">
+                                <strong class="max-w-sm">{i+1}{'. '}</strong>
+                                <input
+                                    class="input {
+                                    validateSingleSeedWord(seedWords[i])
+                                    ? 'input-success' : 'input-error'
+                                    }"
+                                    type='text'
+                                    on:input={ (event) => {
+                                        seedWords[i] = event.currentTarget.value.toLowerCase();
+                                    }}
+                                />
+                            </div>
+                        {/each}
                     </div>
                 </div>
+            </div>
 
 
-                <div class="flex flex-col gap-y-2 items-center my-6">
-                    <h2 class="h4 font-bold text-center">Your secret words will be stored locally in encrypted form and unencrypted until your session ends.</h2>
-                    <h4 class="h4 text-center">Provide a strong passphrase for encryption at rest(min. 14chars):</h4>
-                    <!-- Todo: autocomplete -->
-                    <div class="flex justify-between items-center ">
-                        <input 
-                            class="input {passphraseValid ? 'input-success' : 'input-error'} w-80" 
-                            title="Passphrase(min. 14chars):" 
-                            type={ showPassword? 'text' : 'password' }
-                            placeholder="Enter Passphrase..."
-                            on:input={ (event) => {
-                                passphrase = event.currentTarget.value;
-                                validatePassphrase();
-                            }}
-                        />
+            <div class="flex flex-col gap-y-2 items-center my-6">
+                <h2 class="h4 font-bold text-center">Your secret words will be stored locally in encrypted form and unencrypted until your session ends.</h2>
+                <h4 class="h4 text-center">Provide a strong passphrase for encryption at rest(min. 14chars):</h4>
+                <!-- Todo: autocomplete -->
+                <div class="flex justify-between items-center ">
+                    <input 
+                        class="input {passphraseValid ? 'input-success' : 'input-error'} w-80" 
+                        title="Passphrase(min. 14chars):" 
+                        type={ showPassword? 'text' : 'password' }
+                        placeholder="Enter Passphrase..."
+                        on:input={ (event) => {
+                            passphrase = event.currentTarget.value;
+                            validatePassphrase();
+                        }}
+                    />
 
-                        <button
-                            type="button" 
-                            class="btn btn-icon-sm"
-                            on:click={ () => showPassword = !showPassword }>
-                            <span>
-                                <i class="fa-solid { showPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
-                            </span>
-                        </button>
-                    </div>
-
-                    <div class="flex justify-between items-center m-4">
-                        <input 
-                            class="input {confirmPassphraseValid ? 'input-success' : 'input-error'} w-80" 
-                            title="Confirm Passphrase:" 
-                            type={ showConfirmPassword ? 'text' : 'password' }
-                            placeholder="Confirm Passphrase..." 
-                            disabled={!passphraseValid}
-                            on:input={ (event) => {
-                                confirmPassphrase = event.currentTarget.value;
-                                validateConfirmPassphrase();
-                            }}
-                        />
-
-                        <button
-                            type="button" 
-                            class="btn btn-icon-sm"
-                            on:click={ () => showConfirmPassword = !showConfirmPassword }>
-                            <span>
-                                <i class="fa-solid { showConfirmPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
-                            </span>
-                        </button>
-                    </div>
-
-                    <button 
-                        type="submit"
-                        class="btn font-bold bg-success-400-500-token w-72 mt-4" 
-                        disabled={!passphraseValid || !confirmPassphraseValid} 
-                    >
-                        Finish
+                    <button
+                        type="button" 
+                        class="btn btn-icon-sm"
+                        on:click={ () => showPassword = !showPassword }>
+                        <span>
+                            <i class="fa-solid { showPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                        </span>
                     </button>
                 </div>
-            </form>
-            {#if statusMessage}
-                <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
-            {/if}
-		</div>
-	</div>
-{/if}
+
+                <div class="flex justify-between items-center m-4">
+                    <input 
+                        class="input {confirmPassphraseValid ? 'input-success' : 'input-error'} w-80" 
+                        title="Confirm Passphrase:" 
+                        type={ showConfirmPassword ? 'text' : 'password' }
+                        placeholder="Confirm Passphrase..." 
+                        disabled={!passphraseValid}
+                        on:input={ (event) => {
+                            confirmPassphrase = event.currentTarget.value;
+                            validateConfirmPassphrase();
+                        }}
+                    />
+
+                    <button
+                        type="button" 
+                        class="btn btn-icon-sm"
+                        on:click={ () => showConfirmPassword = !showConfirmPassword }>
+                        <span>
+                            <i class="fa-solid { showConfirmPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                        </span>
+                    </button>
+                </div>
+
+                <button 
+                    type="submit"
+                    class="btn font-bold bg-success-400-500-token w-72 mt-4" 
+                    disabled={!passphraseValid || !confirmPassphraseValid || disable} 
+                >
+                    Finish
+                </button>
+            </div>
+        </form>
+        {#if statusMessage}
+            <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
+        {/if}
+    </div>
+</div>
