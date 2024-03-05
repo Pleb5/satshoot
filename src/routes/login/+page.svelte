@@ -1,12 +1,9 @@
 <script lang='ts'>
     import type { NDKUser } from "@nostr-dev-kit/ndk";
-    import { NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
+    import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
     import { myTickets, myOffers , myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
     import pageTitleStore from "$lib/stores/pagetitle-store";
-    import { sessionPK } from "$lib/stores/ndk";
-    import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
-    import { nsecEncode } from "nostr-tools/nip19"
 
     import { browser } from "$app/environment";
 
@@ -16,7 +13,6 @@
     import type { PopupSettings } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import GenerateEphemeralKeyModal from "$lib/components/Modals/GenerateEphemeralKeyModal.svelte";
 
     $pageTitleStore = 'Login';
 
@@ -62,42 +58,6 @@
             };
             modalStore.trigger(modal);
         }
-    }
-
-
-
-    async function onEphemeralLogin() {
-        // Generate new Ephemeral private private key
-        const seedWords = generateSeedWords();
-        const privateKey = privateKeyFromSeedWords(seedWords); 
-
-        $ndk.signer = new NDKPrivateKeySigner(privateKey);
-        let user: NDKUser = await $ndk.signer?.user();
-        // Store private key in session storage 
-        $sessionPK = privateKey;
-
-        // Update UI
-        $ndk.activeUser = $ndk.activeUser;
-
-        myTicketFilter.authors?.push(user.pubkey);
-        myOfferFilter.authors?.push(user.pubkey);
-        myTickets.startSubscription();
-        myOffers.startSubscription();
-
-        const modalComponent: ModalComponent = {
-            ref: GenerateEphemeralKeyModal,
-            props: {
-                seedWords: seedWords.split(' '), 
-                npub: user.npub,
-                nsec: nsecEncode(privateKey) 
-            }
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
     }
 
     // For tooltip    
@@ -150,9 +110,9 @@
             </a>
         </div>
         <div class="flex gap-x-4 items-center mx-4 mt-8">
-            <button class="btn btn-md lg:btn-lg bg-primary-300-600-token " on:click={onEphemeralLogin}>
+            <a href="/create-seed" class="btn btn-md lg:btn-lg bg-primary-300-600-token ">
                 <span>NEW local Nostr keypair</span>
-            </button>
+            </a>
             <i 
                 class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
                 [&>*]:pointer-events-none" 
