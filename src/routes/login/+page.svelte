@@ -112,11 +112,10 @@
 
 <div class="flex items-center mt-8">
     <div class="flex flex-col items-start gap-y-5 mx-auto">
-        <div class="flex gap-x-4">
-            <button class="btn btn-lg bg-primary-300-600-token " on:click={onNIP07Login}>
-                <span>Connect NIP07 Browser Extension </span>
-            </button>
-
+        <button class="btn btn-md lg:btn-lg bg-primary-300-600-token mx-4" on:click={onNIP07Login}>
+            <span>Connect NIP07 Browser Extension </span>
+        </button>
+        <div class="grid grid-cols-2 gap-x-2 gap-y-4 mx-4">
             <a 
                 class="btn btn-md bg-warning-300-600-token"
                 href="https://getalby.com/"
@@ -124,10 +123,35 @@
             >
                 <span>See Alby</span>
             </a>
+
+            <a 
+                class="btn btn-md bg-warning-300-600-token"
+                href="https://chromewebstore.google.com/detail/nos2x/kpgefcfmnafjgpblomihpgmejjdanjjp?pli=1
+"
+                target="_blank"
+            >
+                <span>See nos2x</span>
+            </a>
+
+            <a 
+                class="btn btn-md bg-warning-300-600-token"
+                href="https://chromewebstore.google.com/detail/horse/ogdjeglchjlenflecdcoonkngmmipcoe"
+                target="_blank"
+            >
+                <span>See horse</span>
+            </a>
+
+            <a 
+                class="btn btn-md bg-warning-300-600-token"
+                href="https://www.getflamingo.org/"
+                target="_blank"
+            >
+                <span>See Flamingo</span>
+            </a>
         </div>
-        <div class="flex gap-x-4 items-center">
-            <button class="btn btn-lg bg-primary-300-600-token " on:click={onEphemeralLogin}>
-                <span>Generate NEW Ephemeral Nostr identity</span>
+        <div class="flex gap-x-4 items-center mx-4 mt-8">
+            <button class="btn btn-md lg:btn-lg bg-primary-300-600-token " on:click={onEphemeralLogin}>
+                <span>NEW local Nostr keypair</span>
             </button>
             <i 
                 class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
@@ -162,8 +186,8 @@
 
         </div>
 
-        <a href="/restore" class="btn btn-lg bg-primary-300-600-token">
-            <span>Restore Ephemeral Nostr identity(Seed Words)</span>
+        <a href="/restore" class="btn mx-4 mt-8 bg-primary-300-600-token">
+            <span>RESTORE Nostr keypair from Seed Words</span>
         </a>
 
     </div>
