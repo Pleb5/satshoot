@@ -233,7 +233,7 @@
             <h4 class="h4">Other:</h4>
             <div class="flex flex-col gap-y-1">
                 <div class="flex items-center gap-x-2">
-                    <div>Npub: {npub}</div>
+                    <div>Npub: {npub?.substring(0,20) + '...'}</div>
                     {#if npub}
                         <div>
                             <button 
