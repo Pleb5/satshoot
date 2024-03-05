@@ -8,9 +8,15 @@
     import { onDestroy, onMount } from "svelte";
 
 	import { Avatar } from '@skeletonlabs/skeleton';
+
+    import { getToastStore } from '@skeletonlabs/skeleton';
+    import type { ToastSettings } from '@skeletonlabs/skeleton';
+
     import { NDKEvent, NDKKind, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 
     import { idFromNaddr } from '$lib/utils/nip19'
+
+    const toastStore = getToastStore();
 
     const ticketAddress = idFromNaddr($page.params.ticketId);
     const ticketTitle = $page.params.title;
@@ -54,6 +60,15 @@
 
 	async function sendMessage() {
         if (currentMessage) {
+            if (!currentPerson) {
+                const t: ToastSettings = {
+                    message: 'No Person to message!',
+                    timeout: 5000,
+                    background: 'bg-error-300-600-token',
+                };
+                toastStore.trigger(t);
+                return;
+            }
             const dm = new NDKEvent($ndk);
             dm.kind = NDKKind.EncryptedDirectMessage;
             dm.content = currentMessage;
@@ -183,7 +198,7 @@
 
                 const messageDate = new Date(dm.created_at as number * 1000);
                 // Time is shown in local time zone
-                const dateString = messageDate.toTimeString();
+                const dateString = messageDate.toLocaleString();
 
 
                 const newMessage = {
