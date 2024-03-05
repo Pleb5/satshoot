@@ -1,4 +1,5 @@
 <script lang="ts">
+
     import ndk from '$lib/stores/ndk';
     import {blacklistedRelays, storedPool } from "$lib/stores/ndk";
 
@@ -89,7 +90,7 @@
         const modal: ModalSettings = {
             type: 'confirm',
             title: 'Confirm Removal of Relay',
-            body: "Do you really want to remove this Relay?",
+            body: `Do you really want to remove ${relay.url.replace("wss://","").slice(0, -1)}?`,
             response: removeRelayResponse,
         };
         modalStore.trigger(modal);
@@ -150,14 +151,12 @@
         </form>
     </div>
 </div>
-    <div>
-</div>
-<div class="flex flex-col gap-y-6 justify-center items-center mb-10">
+<div class="flex flex-col gap-y-6 justify-center items-center mb-10 mx-2">
     {#each relays as relay}
-        <div class="card card-hover bg-surface-active-token flex justify-between gap-x-16 p-4">
+        <div class="card card-hover bg-surface-active-token flex flex-col items-center p-4">
             <RelayListElement relay = {relay}/>
             <button 
-                class="btn bg-error-400-500-token" 
+                class="btn bg-error-400-500-token w-52" 
                 on:click={ () => {removeRelay(relay)} }
             >
                 Remove
