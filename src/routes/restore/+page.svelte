@@ -170,93 +170,89 @@ Probably incorrect Seed Words!` + e
 
 </script>
 
-<div class="p-4 flex justify-center items-center">
-    <div class="flex flex-col items-center space-y-16">
-        <h2 class="h2">Restore Seed Words:</h2>
-        <form on:submit|preventDefault={ finish }>
-            <div class="flex w-full justify-between">
-                <div class="card p-4 border-2 border-red-500">
-                    <div class="grid grid-cols-4 gap-x-2 gap-y-2">
-                        {#each seedWords as word, i}
-                            <div class="flex items-center gap-x-1">
-                                <strong class="max-w-sm">{i+1}{'. '}</strong>
-                                <input
-                                    class="input {
-                                    validateSingleSeedWord(seedWords[i])
-                                    ? 'input-success' : 'input-error'
-                                    }"
-                                    type='text'
-                                    on:input={ (event) => {
-                                        seedWords[i] = event.currentTarget.value.toLowerCase();
-                                    }}
-                                />
-                            </div>
-                        {/each}
+<div class="p-4">
+    <h2 class="h2 text-center mb-8">Restore Seed Words:</h2>
+    <form on:submit|preventDefault={ finish }>
+        <div class="card p-4 border-2 border-red-500 mx-4 lg:mx-20">
+            <div class="grid grid-cols-2 gap-x-2 gap-y-2">
+                {#each seedWords as word, i}
+                    <div class="flex items-center gap-x-1">
+                        <strong class="max-w-sm">{i+1}{'. '}</strong>
+                        <input
+                            class="input {
+                            validateSingleSeedWord(seedWords[i])
+                            ? 'input-success' : 'input-error'
+                            }"
+                            type='text'
+                            on:input={ (event) => {
+                                seedWords[i] = event.currentTarget.value.toLowerCase();
+                            }}
+                        />
                     </div>
-                </div>
+                {/each}
             </div>
+        </div>
 
 
-            <div class="flex flex-col gap-y-2 items-center my-6">
-                <h2 class="h4 font-bold text-center">Your secret words will be stored locally in encrypted form and unencrypted until your session ends.</h2>
-                <h4 class="h4 text-center">Provide a strong passphrase for encryption at rest(min. 14chars):</h4>
-                <!-- Todo: autocomplete -->
-                <div class="flex justify-between items-center ">
-                    <input 
-                        class="input {passphraseValid ? 'input-success' : 'input-error'} w-80" 
-                        title="Passphrase(min. 14chars):" 
-                        type={ showPassword? 'text' : 'password' }
-                        placeholder="Enter Passphrase..."
-                        on:input={ (event) => {
-                            passphrase = event.currentTarget.value;
-                            validatePassphrase();
-                        }}
-                    />
+        <div class="flex flex-col gap-y-2 items-center my-6">
+            <h2 class="h4 font-bold text-center">Your secret words will be stored locally in encrypted form and unencrypted until your session ends.</h2>
+            <h4 class="h4 text-center">Provide a strong passphrase for encryption at rest(min. 14chars):</h4>
+            <!-- Todo: autocomplete -->
+            <div class="flex justify-between items-center ">
+                <input 
+                    class="input {passphraseValid ? 'input-success' : 'input-error'} w-80" 
+                    title="Passphrase(min. 14chars):" 
+                    type={ showPassword? 'text' : 'password' }
+                    placeholder="Enter Passphrase..."
+                    on:input={ (event) => {
+                        passphrase = event.currentTarget.value;
+                        validatePassphrase();
+                    }}
+                />
 
-                    <button
-                        type="button" 
-                        class="btn btn-icon-sm"
-                        on:click={ () => showPassword = !showPassword }>
-                        <span>
-                            <i class="fa-solid { showPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
-                        </span>
-                    </button>
-                </div>
-
-                <div class="flex justify-between items-center m-4">
-                    <input 
-                        class="input {confirmPassphraseValid ? 'input-success' : 'input-error'} w-80" 
-                        title="Confirm Passphrase:" 
-                        type={ showConfirmPassword ? 'text' : 'password' }
-                        placeholder="Confirm Passphrase..." 
-                        disabled={!passphraseValid}
-                        on:input={ (event) => {
-                            confirmPassphrase = event.currentTarget.value;
-                            validateConfirmPassphrase();
-                        }}
-                    />
-
-                    <button
-                        type="button" 
-                        class="btn btn-icon-sm"
-                        on:click={ () => showConfirmPassword = !showConfirmPassword }>
-                        <span>
-                            <i class="fa-solid { showConfirmPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
-                        </span>
-                    </button>
-                </div>
-
-                <button 
-                    type="submit"
-                    class="btn font-bold bg-success-400-500-token w-72 mt-4" 
-                    disabled={!passphraseValid || !confirmPassphraseValid || disable} 
-                >
-                    Finish
+                <button
+                    type="button" 
+                    class="btn btn-icon-sm"
+                    on:click={ () => showPassword = !showPassword }>
+                    <span>
+                        <i class="fa-solid { showPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                    </span>
                 </button>
             </div>
-        </form>
-        {#if statusMessage}
-            <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
-        {/if}
-    </div>
+
+            <div class="flex justify-between items-center m-4">
+                <input 
+                    class="input {confirmPassphraseValid ? 'input-success' : 'input-error'} w-80" 
+                    title="Confirm Passphrase:" 
+                    type={ showConfirmPassword ? 'text' : 'password' }
+                    placeholder="Confirm Passphrase..." 
+                    disabled={!passphraseValid}
+                    on:input={ (event) => {
+                        confirmPassphrase = event.currentTarget.value;
+                        validateConfirmPassphrase();
+                    }}
+                />
+
+                <button
+                    type="button" 
+                    class="btn btn-icon-sm"
+                    on:click={ () => showConfirmPassword = !showConfirmPassword }>
+                    <span>
+                        <i class="fa-solid { showConfirmPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                    </span>
+                </button>
+            </div>
+
+            <button 
+                type="submit"
+                class="btn font-bold bg-success-400-500-token w-72 mt-4" 
+                disabled={!passphraseValid || !confirmPassphraseValid || disable} 
+            >
+                Finish
+            </button>
+        </div>
+    </form>
+    {#if statusMessage}
+        <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
+    {/if}
 </div>
