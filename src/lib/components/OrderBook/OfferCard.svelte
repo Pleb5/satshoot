@@ -146,7 +146,7 @@
                 </a>
                 
             {/if}
-            <h3 class="h3 col-start-2 text-center text-primary-500">
+            <h3 class="h4 md:h3 col-start-2 text-center text-tertiary-500">
                 { (editOffer ? 'My ' : '') + 'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
             </h3>
             <div class="col-start-3 justify-self-end">

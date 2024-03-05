@@ -166,42 +166,34 @@
 
 <div class="card">
     {#if ticket}
-        <header class="card-header grid grid-cols-3">
+        <header class="card-header grid grid-cols-6 items-center">
             {#if ticketChat}
                 <a
                     href={"/messages/" + bech32ID + ":" + ticket.title}
                     class="btn btn-icon btn-md justify-self-start"
                 >
-                    <i class="fa-solid fa-comment text-3xl"></i>
+                    <i class="fa-solid fa-comment text-2xl md:text-3xl"></i>
                 </a>
                 
             {/if}
-            <div class="flex justify-center items-start gap-x-6">
+            <div class="col-start-2 col-span-4 justify-self-center">
                 {#if titleLink}
                     <a 
-                        class="anchor col-start-2 justify-self-center text-{titleSize}" 
+                        class="anchor justify-self-center text-{titleSize}" 
                         href={"/" + bech32ID }>{ticket.title ?? 'No title'}
                     </a>
                 {:else}
-                    <div class="col-start-2 text-{titleSize}">
+                    <div class="text-{titleSize}">
                         {ticket.title ?? 'No title'}
                     </div>
-                {/if}
-
-                {#if $ndk.activeUser 
-                    && $ndk.activeUser.pubkey === ticket.pubkey
-                    && ticket.status === TicketStatus.New}
-                    <button class="mt-1" on:click={editTicket}>
-                        <i class="text-primary-500 fa-solid fa-pen-to-square text-xl" />
-                    </button>
                 {/if}
             </div>
             {#if $ndk.activeUser
                 && ticket.pubkey === $ndk.activeUser.pubkey
                 && (ticket.status === TicketStatus.InProgress
                 || ticket.status === TicketStatus.New)}
-                <div class="justify-self-end mr-4">
-                    <button type="button" class="btn btn-md bg-primary-400-500-token" on:click={closeTicket}>
+                <div class="justify-self-end ">
+                    <button type="button" class="btn btn-sm md:btn-md bg-primary-400-500-token" on:click={closeTicket}>
                         Close
                     </button>
                 </div> 
@@ -240,12 +232,24 @@
                 </div>
         {/if}
         </section>
-        <footer class="items-center flex flex-wrap card-footer">
-            {#each ticket.tTags as tag }
-                <div class="pr-4 rounded-token">
-                    <span class="badge variant-filled-surface">{ tag[1] }</span>
+        <footer class="card-footer">
+            <div class="flex justify-between">
+                <div class="items-center flex flex-wrap gap-y-1">
+                    {#each ticket.tTags as tag }
+                        <div class="pr-3 rounded-token">
+                            <span class="badge variant-filled-surface">{ tag[1] }</span>
+                        </div>
+                    {/each}
                 </div>
-            {/each}
+
+                {#if $ndk.activeUser 
+                    && $ndk.activeUser.pubkey === ticket.pubkey
+                    && ticket.status === TicketStatus.New}
+                    <button class="mt-1" on:click={editTicket}>
+                        <i class="text-primary-500 fa-solid fa-pen-to-square text-xl md:text-2xl" />
+                    </button>
+                {/if}
+            </div>
         </footer>
     {:else}
         <h2 class="text-center font-bold mt-10" >Loading Ticket...</h2>

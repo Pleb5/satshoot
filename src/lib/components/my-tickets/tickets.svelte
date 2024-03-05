@@ -7,6 +7,7 @@ import { myTickets } from '$lib/stores/troubleshoot-eventstores';
 import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
 import TicketCard from '../OrderBook/TicketCard.svelte';
 
+
 let tabGroup = TicketStatus.New;
 
 const ticketMap: Map<TicketStatus, TicketEvent[]> = new Map();
@@ -75,7 +76,7 @@ $: {
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each newTickets as ticket }
-                        <TicketCard {ticket} countAllOffers={true}/>
+                        <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                     {/each}
                 </div>
                 {:else if tabGroup === 1}

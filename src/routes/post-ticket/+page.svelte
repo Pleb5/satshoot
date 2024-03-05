@@ -195,7 +195,7 @@
     </div>
 </div>
 
-<div class="flex justify-center mt-8">
+<div class="flex justify-center my-8">
     <button type="button"
         class="btn btn-lg bg-gradient-to-br variant-gradient-primary-tertiary"
         on:click={postTicket}

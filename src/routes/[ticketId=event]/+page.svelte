@@ -238,7 +238,7 @@
         {/if}
     </div>
     <!-- User -->
-    <h2 class="font-bold text-2xl ml-8" >Posted by:</h2>
+    <h2 class="font-bold text-2xl ml-8 mt-4" >Posted by:</h2>
     <UserCard ndk={$ndk} npub={ticket?.author.npub} />
 {/if}
 <!-- Offers on Ticket -->

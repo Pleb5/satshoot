@@ -92,7 +92,7 @@
     <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8 mb-8">
         {#each ticketList as ticket}
 
-            <TicketCard {ticket}/>
+            <TicketCard {ticket} titleSize={'md lg:text-xl'}/>
 
         {/each}
     </div>
