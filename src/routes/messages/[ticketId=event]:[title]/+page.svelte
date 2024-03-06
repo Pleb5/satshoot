@@ -268,16 +268,54 @@
     }
 
     $: if ($messageStore.length > 0) {
+        console.log('message arrived')
         updateMessageFeed();
     }
 
     
 </script>
-<h2 class="h2 my-4 text-center font-bold">{'Ticket: ' + ticketTitle}</h2>
-<section class="card mx-4">
+
+<div class="bg-surface-100-800-token p-2">
+    <h2 class="h2 my-2 text-center font-bold">{'Ticket: ' + ticketTitle}</h2>
+    <!-- Horizontal Navigation bar -->
+    <div class="flex flex-col md:hidden border-r border-surface-500/30">
+        <!-- Header -->
+        <header class="border-b border-surface-500/30 p-2">
+            <input class="input" type="search" placeholder="Search..." />
+        </header>
+        <!-- List -->
+        <div class="grid grid-cols-5 p-2 pb-0 space-x-2">
+            <small class="opacity-50">Contacts</small>
+            <div class="flex flex-col space-y-1 col-start-2 col-span-4 max-h-24 overflow-y-auto">
+                {#each people as person}
+                    <button
+                        type="button"
+                        class="btn w-full flex items-center space-x-4 {person.pubkey === currentPerson.pubkey
+                        ? 'variant-filled-primary'
+                        : 'bg-surface-hover-token'}"
+                        on:click={() => {
+                            currentPerson = person;
+                            generateCurrentFeed();
+                            updateUserProfile(currentPerson);
+                        }}
+                    >
+                        <Avatar
+                            src={person.profile?.image}
+                            width="w-8"
+                        />
+                        <span class="flex-1 text-start">
+                            {person.profile?.name ?? person.npub.substring(0,15)}
+                        </span>
+                    </button>
+                {/each}
+            </div>
+        </div>
+    </div>
+</div>
+<section class="card mx-4 my-2">
     <div class="chat w-full h-full grid grid-cols-1 lg:grid-cols-[30%_1fr]">
-        <!-- Navigation -->
-        <div class="hidden lg:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
+        <!-- Vertical Navigation bar -->
+        <div class="hidden md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
             <!-- Header -->
             <header class="border-b border-surface-500/30 p-4">
                 <input class="input" type="search" placeholder="Search..." />
@@ -297,7 +335,7 @@
                                 generateCurrentFeed();
                                 updateUserProfile(currentPerson);
                             }}
-                            >
+                        >
                             <Avatar
                                 src={person.profile?.image}
                                 width="w-8"
@@ -342,24 +380,24 @@
                     {/if}
                 {/each}
             </section>
-            <!-- Prompt -->
-            <section class="border-t border-surface-500/30 p-4">
-                <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
-                    <button class="input-group-shim">+</button>
-                    <textarea
-                        bind:value={currentMessage}
-                        class="bg-transparent border-0 ring-0"
-                        name="prompt"
-                        id="prompt"
-                        placeholder="Write a message..."
-                        rows="1"
-                        on:keydown={onPromptKeydown}
-                    />
-                    <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
-                        <i class="fa-solid fa-paper-plane" />
-                    </button>
-                </div>
-            </section>
         </div>
+    </div>
+</section>
+<!-- Prompt -->
+<section class="sticky bottom-0 w-full border-t border-surface-500/30 bg-surface-100-800-token p-4">
+    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
+        <button class="input-group-shim">+</button>
+        <textarea
+            bind:value={currentMessage}
+            class="bg-transparent border-0 ring-0"
+            name="prompt"
+            id="prompt"
+            placeholder="Write a message..."
+            rows="1"
+            on:keydown={onPromptKeydown}
+        />
+        <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
+            <i class="fa-solid fa-paper-plane" />
+        </button>
     </div>
 </section>
