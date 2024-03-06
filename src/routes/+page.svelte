@@ -68,7 +68,7 @@
 </script>
 
 <div class="flex flex-col justify-center gap-y-2 mt-2">
-    <div class="sticky top-0 w-80 mx-auto flex gap-x-2 items-center justify-center">
+    <div class="sticky top-2 w-80 mx-auto flex gap-x-2 items-center justify-center">
         <InputChip
             bind:value={filterList}
             bind:input={filterInput}
@@ -89,7 +89,7 @@
         </button>
     </div>
 
-    <div class="grid grid-cols-1 itesm-center center gap-y-4 mx-8 mb-8">
+    <div class="grid grid-cols-1 gap-y-4 mx-8 mb-8">
         {#each ticketList as ticket}
 
             <TicketCard {ticket} titleSize={'md lg:text-xl'}/>
