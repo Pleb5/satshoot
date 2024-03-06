@@ -64,7 +64,7 @@
     const popupHover: PopupSettings = {
         event: 'click',
         target: 'popupHover',
-        placement: 'top'
+        placement: 'bottom'
     };
 
 
@@ -119,31 +119,32 @@
                 use:popup={popupHover}
             />
             
-            <div class="card w-80 p-4 bg-primary-300-600-token" data-popup="popupHover">
-                <p>
-                    Generate a new nostr keypair from bip39 seed words.
-                    The words will be stored in browser local storage in an encrypted form.
-                    Whenever you clear the browser local storage(e.g. delete cookies)
-                    you need to restore the nostr key from the bip39 words.
-                </p>
-                <br/>
-                <p>
-                    This identity can be used anywhere in the nostr ecosystem.
-                    Take care of the words and don't store them unencrypted in digital form. 
-                    If you intend to use it in the long run, also create a physical backup:
-                </p>
-                <br/>
-                <ul>
-                    <li>
-                        - Write them down on a piece of paper and laminate it
-                    </li>
-                    <li>
-                        - Or backup in steel like bitcoiners do with seed words
-                    </li>
-                </ul>
-                <div class="arrow bg-primary-300-600-token" />
+            <div  data-popup="popupHover">
+                <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
+                    <p>
+                        Generate a new nostr keypair from bip39 seed words.
+                        The words will be stored in browser local storage in an encrypted form.
+                        Whenever you clear the browser local storage(e.g. delete cookies)
+                        you need to restore the nostr key from the bip39 words.
+                    </p>
+                    <br/>
+                    <p>
+                        This identity can be used anywhere in the nostr ecosystem.
+                        Take care of the words and don't store them unencrypted in digital form. 
+                        If you intend to use it in the long run, also create a physical backup:
+                    </p>
+                    <br/>
+                    <ul>
+                        <li>
+                            - Write them down on a piece of paper and laminate it
+                        </li>
+                        <li>
+                            - Or backup in steel like bitcoiners do with seed words
+                        </li>
+                    </ul>
+                    <div class="arrow bg-primary-300-600-token" />
+                </div>
             </div>
-
         </div>
 
         <a href="/restore" class="btn mx-4 mt-8 bg-primary-300-600-token">
