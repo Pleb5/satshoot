@@ -1,0 +1,12 @@
+{
+    "name": "Bitcoin Troubleshoot",
+    "description": "An app for bitcoiners to troubleshoot each other's technical issues for sats, using nostr",
+    "display": "standalone",
+    "static_url": "/",
+    "icons": [
+        {
+            "src": "bitcoin-troubleshoot.svg",
+            "sizes": "any"
+        }
+    ]
+}
