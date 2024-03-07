@@ -7,7 +7,7 @@
     import { DataLoadError } from '$lib/utils/errors';
 	// Props
 	/** Exposes parent props to this component. */
-	export let parent: SvelteComponent;
+	// export let parent: SvelteComponent;
 
 	const modalStore = getModalStore();
 

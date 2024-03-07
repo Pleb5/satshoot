@@ -38,6 +38,8 @@
 
 	let elemChat: HTMLElement;
 
+    let searchInput = '';
+
     let needSetup = true;
 
 	// Navigation List
@@ -46,8 +48,13 @@
 
 	// All Messages
 	let messages: MessageFeed[] = [];
-    // Filtered messages by person 
-	let messageFeed: MessageFeed[] = [];
+
+    // Filtered messages by person but NOT YET by searchText
+    let unfilteredMessageFeed: MessageFeed[] = [];
+
+    // Filtered messages by person AND searchText 
+	let filteredMessageFeed: MessageFeed[] = [];
+
 	let currentMessage = '';
 
     let seenMessages: string[] = [];
@@ -98,14 +105,14 @@
     function updateUserProfile(user: NDKUser) {
         user.fetchProfile().then(() => {
             people = people;
-            messageFeed.forEach((message: MessageFeed) => {
+            filteredMessageFeed.forEach((message: MessageFeed) => {
                 if (message.pubkey === (user as NDKUser).pubkey) {
                     message.avatar = (user as NDKUser).profile?.image ?? '';
                     message.name = (user as NDKUser).profile?.name 
                         ?? (user as NDKUser).npub.substring(0,10);
                 }
             });
-            messageFeed = messageFeed;
+            filteredMessageFeed = filteredMessageFeed;
         });
     }
 
@@ -121,15 +128,17 @@
         });
 
         // Need to reorder feed according to 
-        messageFeed = [];
+        unfilteredMessageFeed = [];
         $messageStore.forEach((dm: NDKEvent) => {
             unOrderedMessageFeed.forEach((message: MessageFeed) => {
                 if (message.id === dm.id) {
-                    messageFeed.unshift(message);
+                    unfilteredMessageFeed.unshift(message);
                 }
             });
         });
-        messageFeed = messageFeed;
+
+        // filter by the search bar
+        searchText();
 
         // Smooth scroll to bottom
         // Timeout prevents race condition
@@ -138,6 +147,16 @@
                 scrollChatBottom('smooth');
             }, 0);
         }
+    }
+
+    function searchText() {
+        console.log('searchtext', searchInput)
+        filteredMessageFeed = unfilteredMessageFeed.filter((message: MessageFeed) => {
+            if (message.message.includes(searchInput)) {
+                console.log('true')
+                return true;
+            }
+        });
     }
 
     async function updateMessageFeed() {
@@ -272,7 +291,6 @@
         updateMessageFeed();
     }
 
-    
 </script>
 
 <div class="bg-surface-100-800-token p-2">
@@ -281,7 +299,13 @@
     <div class="flex flex-col md:hidden border-r border-surface-500/30">
         <!-- Header -->
         <header class="border-b border-surface-500/30 p-2">
-            <input class="input" type="search" placeholder="Search..." />
+            <input
+                class="input"
+                type="search"
+                placeholder="Search..."
+                bind:value={searchInput}
+                on:keyup={searchText}
+            />
         </header>
         <!-- List -->
         <div class="grid grid-cols-5 p-2 pb-0 space-x-2">
@@ -312,13 +336,19 @@
         </div>
     </div>
 </div>
-<section class="card mx-4 my-2">
-    <div class="chat w-full h-full grid grid-cols-1 lg:grid-cols-[30%_1fr]">
+<section class="card">
+    <div class="chat w-full h-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
         <!-- Vertical Navigation bar -->
         <div class="hidden md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
             <!-- Header -->
             <header class="border-b border-surface-500/30 p-4">
-                <input class="input" type="search" placeholder="Search..." />
+                <input
+                    class="input"
+                    type="search"
+                    placeholder="Search..."
+                    bind:value={searchInput}
+                    on:keyup={searchText}
+                />
             </header>
             <!-- List -->
             <div class="p-4 space-y-4 overflow-y-auto">
@@ -347,14 +377,12 @@
                     {/each}
                 </div>
             </div>
-            <!-- Footer -->
-            <!-- <footer class="border-t border-surface-500/30 p-4">(footer)</footer> -->
         </div>
         <!-- Chat -->
         <div class="grid grid-row-[1fr_auto]">
             <!-- Conversation -->
-            <section bind:this={elemChat} class="max-h-[500px] p-4 overflow-y-auto space-y-4">
-                {#each messageFeed as bubble}
+            <section bind:this={elemChat} class="max-h-[700px] p-4 overflow-y-auto space-y-4">
+                {#each filteredMessageFeed as bubble}
                     {#if bubble.host === true}
                         <div class="grid grid-cols-[auto_1fr] gap-2">
                             <Avatar src={bubble.avatar} width="w-12" />
