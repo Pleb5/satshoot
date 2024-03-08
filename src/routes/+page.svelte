@@ -29,10 +29,8 @@
             // We just received a new ticket but we are not filtering
             if (filterList.length === 0) {
                 ticketList = new Set($newTickets);
-                console.log('filter length 0!', $newTickets)
             } else {
                 // We need to check all tickets against all filters
-                console.log('check filters...')
                 ticketList = new Set();
                 $newTickets.forEach((ticket: TicketEvent) => {
                     filterList.forEach((filter: string) => {
@@ -45,21 +43,17 @@
                         ticket.tags.forEach((tag: NDKTag) => {
                             if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
                                 tagsContain = true;
-                                console.log('tag contains!')
                             }
                         });
 
                         const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
                         const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
-                        if (titleContains) console.log('tag contains!');
-                        if (descContains) console.log('desc contains!');
 
                         if (titleContains || descContains || tagsContain) {
                             ticketList.add(ticket);
                         }
                     });
                 });
-                console.log('ticketList:', ticketList)
                 ticketList = ticketList;
             }
         }

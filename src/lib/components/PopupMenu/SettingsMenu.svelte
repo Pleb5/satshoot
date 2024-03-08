@@ -39,7 +39,6 @@
                 // helper variables
                 let aTagArray = offersOnTicketsFilter['#a'] as string[];
                 let restartSubNeeded = false;
-                console.log('offersOnTicketsFilter before delete', offersOnTicketsFilter)
                 for (let i = 0; i < aTagArray.length; i++) {
                     let ticketAddr: string = aTagArray[i];
                     $myTickets.forEach((ticket: TicketEvent) => {
@@ -57,8 +56,6 @@
                 }
 
                 if (restartSubNeeded) {
-                    console.log('removed some tracked offers, restarting sub..')
-                    console.log('offersOnTicketsFilter', offersOnTicketsFilter)
                     offersOnTickets.empty();
                     offersOnTickets.startSubscription();
                 }
@@ -127,7 +124,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="/">
+                    <a href="/about">
                         <span class="w-6 text-center"><i class="fa-solid fa-info" /></span>
                         <span>About</span>
                     </a>

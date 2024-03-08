@@ -2,7 +2,6 @@
     import type { NDKRelay } from "@nostr-dev-kit/ndk";
     import { NDKRelayStatus } from '@nostr-dev-kit/ndk';
 
-
     export let relay: NDKRelay;
     let relayStatusColor: string;
     let relayStatusText: string;
@@ -25,8 +24,8 @@
         }
     }
 
-
 </script>
+
 {#if relay}
     <div class="grid grid-cols-10 p-4 justify-center items-center">
         <div class="text-xl col-span-6">{ relay.url.replace("wss://","").slice(0, -1) }</div>

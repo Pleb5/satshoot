@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { type SvelteComponent } from 'svelte';
-
 	// Modals
 	import { getModalStore } from '@skeletonlabs/skeleton';
 

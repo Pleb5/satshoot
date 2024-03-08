@@ -80,8 +80,6 @@
 
                 $ndk.pool.blacklistRelayUrls.add(relay.url);
 
-                console.log('removed relay: ', relay.url)
-
                 update();
             }
         }

@@ -22,7 +22,6 @@ ticketMap.set(TicketStatus.Closed, closedTickets);
 // Sort tickets into buckets according to state. Do this every time a new ticket is received for the user
 $: {
     if ($myTickets) {
-        console.log('my tickets is defined, sort it by status...', $myTickets)
         newTickets = [];
         inProgressTickets = [];
         closedTickets = [];
@@ -42,12 +41,8 @@ $: {
         });
         /// Set filter, restart offer sub.
         offersOnTickets.unsubscribe();
-        console.log(' unsubbed from offersOnTickets')
         // offersOnTickets = $ndk.storeSubscribe(offersOnTicketsFilter, subOptions, OfferEvent);
         offersOnTickets.startSubscription();
-        console.log('restarted sub offersOnTickets')
-        console.log(offersOnTickets)
-
 
         // UI update
         newTickets = newTickets;

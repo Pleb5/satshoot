@@ -24,7 +24,6 @@ $: {
     // If we got a new offer, push it into the collection and start listening to ticket of that
     // OR we got a new ticket that we are interested in with these offers. Check its '#a' tag to set offer status 
     if ($myOffers && $ticketsOfSpecificOffers) {
-        console.log('my offers', $myOffers)
         pendingOffers = [];
         wonOffers = [];
         lostOffers = [];
@@ -40,10 +39,7 @@ $: {
                 ticketsOfSpecificOffersFilter['#d']?.push(dTag);       
                 // Restart subscritpion
                 ticketsOfSpecificOffers.unsubscribe();
-                console.log('unsubbed from ticketsOfSpecificOffers');
                 ticketsOfSpecificOffers.startSubscription();
-                console.log('restarted sub ticketsOfSpecificOffers');
-                console.log(ticketsOfSpecificOffers);
             } else {
                 $ticketsOfSpecificOffers.forEach((ticket:TicketEvent) => {
                     if (ticket.ticketAddress === offer.referencedTicketAddress) {

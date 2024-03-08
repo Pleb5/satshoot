@@ -39,7 +39,6 @@
     $: {
         if (npub && needProfile) {
             needProfile = false;
-            console.log('in usercard reactive block')
             let opts = { npub: npub };
             try {
                 user = ndk.getUser(opts);
@@ -127,14 +126,12 @@
             toastStore.trigger(t);
             return;
         }
-        console.log("event to publish: ", event)
         if (user) {
             event.author = user;
             try {
                 const relaysPublished = await event.publish(
                     new NDKRelaySet(new Set(ndk.pool.relays.values()), ndk)
                 );
-                console.log('RelaysPublished',relaysPublished)
                 profilePromise = user.fetchProfile();
                 await profilePromise;
                 const t: ToastSettings = {

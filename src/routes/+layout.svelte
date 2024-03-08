@@ -20,9 +20,6 @@
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
 
-    import type { TicketEvent } from "$lib/events/TicketEvent";
-    import type { OfferEvent } from "$lib/events/OfferEvent";
-
     import { AppShell } from '@skeletonlabs/skeleton';
     import { AppBar } from '@skeletonlabs/skeleton';
     import { Avatar } from '@skeletonlabs/skeleton';
@@ -80,7 +77,6 @@
         // Get user-defined pool from local storage if possible
         if ($storedPool && $blacklistedRelays) {
             $storedPool.forEach((relay:string) => {
-                console.log('Add explicit relay in layout onmount')
                 $ndk.addExplicitRelay(new NDKRelay(relay));
             })
             // Retrieve blacklisted relay urls removed explicitly by the user
@@ -98,8 +94,6 @@
 
         await $ndk.connect();
 
-        console.log("NDK Connected");
-
         // Start all tickets sub. Starting this anywhere else seems to break reliability.
         // User-defined Relays are restored from local storage here and this runs AFTER page onmounts.
         // This causes the subscription to fail because there are yet no relays to subscribe to
@@ -113,7 +107,6 @@
         messageStore.startSubscription();
 
         if (!loggedIn) {
-            console.log('not logged in! Trying to log in...')
             // Try to get saved user from localStorage
             const loginMethod = localStorage.getItem("login-method");
 
@@ -129,8 +122,6 @@
                         myOfferFilter.authors?.push(user.pubkey);
                         myTickets.startSubscription();
                         myOffers.startSubscription();
-
-                        console.log('started my subscriptions!')
 
                         await user.fetchProfile();
 
@@ -159,7 +150,6 @@
                                 // We got some kind of response from modal
                             }).then(async (decryptedSeed: string|undefined) => {
                                     if (decryptedSeed) {
-                                        console.log("got seedwords from localStorage: ", decryptedSeed);
                                         const privateKey = privateKeyFromSeedWords(decryptedSeed); 
                                         $ndk.signer = new NDKPrivateKeySigner(privateKey); 
                                         
@@ -171,7 +161,6 @@
                                         myOfferFilter.authors?.push(user.pubkey);
                                         myTickets.startSubscription();
                                         myOffers.startSubscription();
-                                        console.log('started my subscriptions!')
 
                                         await user.fetchProfile();
 
@@ -190,7 +179,6 @@
                     }
                 } else if (loginMethod === LoginMethod.NIP07) {
                     if (!$ndk.signer) {
-                        console.log('No ndk signer! setting one')
                         $ndk.signer = new NDKNip07Signer();
                     }
                     let user = await $ndk.signer.user();
@@ -199,7 +187,6 @@
                     myOfferFilter.authors?.push(user.pubkey);
                     myTickets.startSubscription();
                     myOffers.startSubscription();
-                    console.log('started my subscriptions!')
 
                     await user.fetchProfile();
 
@@ -209,7 +196,6 @@
             }
         } else {
             // We are logged in, lets fetch profile
-            console.log('Logged in! layout.svelte')
             await $ndk.activeUser?.fetchProfile();
             $ndk.activeUser = $ndk.activeUser;
         }
@@ -224,7 +210,6 @@
         ticketsOfSpecificOffers.unref();
 
         messageStore.unsubscribe();
-        console.log('unref all subs in onDestroy!')
     });
 
 

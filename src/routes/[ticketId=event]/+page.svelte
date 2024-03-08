@@ -4,7 +4,7 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import ndk from "$lib/stores/ndk";
 
-    import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers, newTickets } from "$lib/stores/troubleshoot-eventstores";
+    import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import pageTitleStore from "$lib/stores/pagetitle-store";
 
@@ -51,19 +51,13 @@
             const dTag = idFromNaddr(naddr).split(':')[2];
             const dTagFilters = ticketsOfSpecificOffersFilter['#d'];
 
-            console.log(dTagFilters)
-
             if (!dTagFilters?.includes(dTag)) {
                 ticketsOfSpecificOffersFilter['#d']?.push(dTag);
                 // Restart subscritpion
                 ticketsOfSpecificOffers.unsubscribe();
-                console.log('unsubbed from ticketsOfSpecificOffers');
                 ticketsOfSpecificOffers.startSubscription();
-                console.log('restarted sub ticketsOfSpecificOffers');
-                console.log(ticketsOfSpecificOffers);
             } else {
                 $ticketsOfSpecificOffers.forEach((t: TicketEvent) => {
-                    console.log('ticket:', t)
                     if (t.encode() === naddr){
                         ticket = TicketEvent.from(t);
                         if (ticket.status !== TicketStatus.New) {
@@ -119,10 +113,6 @@
             };
             modalStore.trigger(modal);
         });
-
-        if (offerPosted) {
-            console.log('offer posted:', offerPosted)
-        }
     }
 
     async function takeOffer(offer: OfferEvent) {
@@ -145,8 +135,6 @@
 
                     try {
                         await ticketToPublish.publish();
-
-                        console.log('ticket updated', ticketToPublish)
 
                         // Ticket posted Modal
                         const modal: ModalSettings = {

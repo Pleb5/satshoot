@@ -87,14 +87,11 @@
                 }
             }
 
-            console.log('offer is defined, lets set ticket...')
-            console.log('tickets of my offers:', $ticketsOfSpecificOffers)
             if ($ticketsOfSpecificOffers) {
                 $ticketsOfSpecificOffers.forEach((t: TicketEvent) => {
                     if (t.ticketAddress === offer?.referencedTicketAddress) {
                         ticket = t;
                         const winner = ticket.acceptedOfferAddress;
-                        console.log('ticket', ticket)
                         if (!winner){
                             status = 'Pending';
                         } else if(winner === offer.offerAddress) {

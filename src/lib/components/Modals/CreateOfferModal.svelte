@@ -11,7 +11,7 @@
 
 	// Props
 	/** Exposes parent props to this component. */
-	export let parent: SvelteComponent;
+	// export let parent: SvelteComponent;
 
     export let ticketAddress: string | undefined = undefined;
 

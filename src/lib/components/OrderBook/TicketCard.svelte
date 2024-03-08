@@ -1,6 +1,5 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import type { NDKTag } from "@nostr-dev-kit/ndk";
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
     import { offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
@@ -50,8 +49,6 @@
                     try {
                         await ticketToPublish.publish();
 
-                        console.log('ticket closed', ticketToPublish)
-
                         // Ticket posted Modal
                         const modal: ModalSettings = {
                             type: 'alert',
@@ -93,8 +90,6 @@
         modalStore.trigger(modal);
     }
 
-    // TODO:Edit new ticket if mine on ticket page
-
     $: if ($ndk.activeUser && showChat) {
         ticketChat = true;
     }
@@ -134,9 +129,6 @@
             }
 
             if (countAllOffers) {
-
-                console.log('start offer sub for offercount in ticket card')
-
                 offers = [];
                 $offersOnTickets.forEach((offer: OfferEvent) => {
                     if (offer.referencedTicketAddress === ticket?.ticketAddress) {
@@ -149,7 +141,6 @@
                 if (offers.length > 0) {
                     offersAlreadyColor = 'text-error-400-500-token';
                 }
-                console.log('offer count: ', offerCount)
             }
         }
     }
