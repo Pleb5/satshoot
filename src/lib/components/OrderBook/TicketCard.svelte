@@ -24,6 +24,7 @@
     let ticketChat = false;
     export let titleSize: string = 'xl';
     export let titleLink: boolean = true;
+    export let shortenDescription = true;
     export let countAllOffers: boolean = false;
 
     let bech32ID = '';
@@ -153,6 +154,16 @@
         }
     }
 
+    function generateDescription(): string {
+        if (ticket?.description) {
+            if (shortenDescription && ticket.description.length > 80) {
+                return ticket.description.substring(0, 80) + '...';
+            } else {
+                return ticket.description;
+            }
+        } else return 'No description!';
+    }
+
 </script>
 
 
@@ -195,11 +206,7 @@
         <section class="p-4">
             <div class=" grid grid-cols-5 gap-x-2">
                 <div class="col-span-4">
-                    { 
-                    ticket.description 
-                        ? ticket.description.length > 80 ? ticket.description.substring(0, 80) + "..." : ticket.description
-                        : 'No description!'
-                    }
+                    { generateDescription() }
                 </div>
             </div>
 

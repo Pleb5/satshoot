@@ -195,7 +195,7 @@
 </script>
 
 <div class="card m-6">
-    <TicketCard {ticket} titleSize='xl' titleLink={false} />
+    <TicketCard {ticket} titleSize='xl' titleLink={false} shortenDescription={false} />
 
 </div>
 
