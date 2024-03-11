@@ -40,8 +40,6 @@
             myOffers.startSubscription();
 
             await user.fetchProfile();
-            // Add user relays to stored pool
-            console.log('fetched user:', user)
 
             // Trigger UI update for profile
             $ndk.activeUser = $ndk.activeUser;

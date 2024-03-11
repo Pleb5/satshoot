@@ -121,10 +121,7 @@
 
         $ndk.pool.blacklistRelayUrls.delete(url);
 
-        console.log(Array.from($ndk.pool.blacklistRelayUrls.keys()))
-
         if (!($ndk.explicitRelayUrls?.includes(url))) {
-            console.log('add explicit relay')
             $ndk.addExplicitRelay(url);
         }
 

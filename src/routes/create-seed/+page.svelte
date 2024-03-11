@@ -99,7 +99,6 @@
 
     async function encryptAndSaveSeed() {
         if (seedWords && npub) {
-            console.log('encryptAndSaveSeed')
             // encrypt seed 
             const cryptWorker = new Worker(new URL("$lib/utils/crypto.worker.ts", import.meta.url),{
                 type: 'module'

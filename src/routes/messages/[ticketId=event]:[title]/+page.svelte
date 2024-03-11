@@ -82,11 +82,7 @@
             dm.tags.push(['t', ticketAddress]);
             dm.tags.push(['p', currentPerson.pubkey]);
 
-            console.log('event to encrypt: ', dm)
-
             await dm.encrypt();
-
-            console.log('encrypted event: ', dm)
 
             await dm.publish();
 
@@ -150,29 +146,23 @@
     }
 
     function searchText() {
-        console.log('searchtext', searchInput)
         filteredMessageFeed = unfilteredMessageFeed.filter((message: MessageFeed) => {
             if (message.message.includes(searchInput)) {
-                console.log('true')
                 return true;
             }
         });
     }
 
     async function updateMessageFeed() {
-        console.log('message arrived: ', $messageStore)
         for (const dm of $messageStore) {
-            console.log('checking if this dm is already seen')
             const alreadyHere: boolean = seenMessages.filter((id: string) => {
                 if (dm.id === id) return true;
                 return false;
             }).length > 0;
 
             if (alreadyHere) {
-                console.log('continue');
                 continue;
             } else {
-                console.log('this is a new message, lets decrypt and add it...');
                 seenMessages.push(dm.id);
             }
 
@@ -287,7 +277,6 @@
     }
 
     $: if ($messageStore.length > 0) {
-        console.log('message arrived')
         updateMessageFeed();
     }
 

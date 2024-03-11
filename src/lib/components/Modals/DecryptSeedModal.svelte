@@ -32,7 +32,6 @@
             });
 
             cryptWorker.onmessage = (m) => {
-                console.log("Received message from cryptWorker:", m)
                 const decryptedSeed = m.data['decryptedSeed'];
                 if (decryptedSeed) {
                     if ($modalStore[0].response) {

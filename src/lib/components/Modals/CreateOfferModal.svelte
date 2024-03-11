@@ -33,8 +33,6 @@
     async function postOffer() {
         const offer = new OfferEvent($ndk)
 
-        console.log($ndk.activeUser)
-
         offer.pricing = pricingMethod;
         offer.amount = amount;
         offer.description = description;
@@ -50,15 +48,11 @@
             offer.tags.push(['d', offerToEdit.tagValue('d') as string]);
         }
 
-        console.log('offer to post:', offer)
-
         try {
 
             const relaysPublished = await offer.publish(
                 new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
             );
-
-            console.log(relaysPublished)
 
             const t: ToastSettings = {
                 message: 'Offer Posted!',
