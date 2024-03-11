@@ -6,12 +6,12 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+        "serve": "npm run build && npx http-server ./build/"
 	},
 	"devDependencies": {
 		"@skeletonlabs/skeleton": "^2.7.0",
 		"@skeletonlabs/tw-plugin": "^0.3.1",
-		"@sveltejs/adapter-auto": "^3.1.1",
 		"@sveltejs/adapter-static": "^3.0.1",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.2",

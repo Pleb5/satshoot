@@ -16,7 +16,7 @@
 
     import { LoginMethod } from "$lib/stores/ndk";
 
-    import { privateKeyFromSeedWords} from "nostr-tools/nip06"
+    import { privateKeyFromSeedWords} from "nostr-tools/nip06";
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
 
