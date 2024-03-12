@@ -1,0 +1,13 @@
+{
+  "names": {
+    "five": "d04ecf33a303a59852fdb681ed8b412201ba85d8d2199aec73cb62681d62aa90"
+  },
+  "relays": {
+    "d04ecf33a303a59852fdb681ed8b412201ba85d8d2199aec73cb62681d62aa90": [
+      "wss://relay.damus.io",
+      "wss://nos.lol",
+      "wss://eden.nostr.land",
+      "wss://bitcoiner.social"
+    ]
+  }
+}

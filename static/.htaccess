@@ -6,3 +6,9 @@
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteRule . /404.html [L]
 </IfModule>
+
+<If "%{REQUEST_URI} =~ m#^/.well-known/#">
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Headers "*" 
+    Header always set Access-Control-Allow-Methods "GET" 
+</If> 
