@@ -1,12 +1,17 @@
 # bitcoin-troubleshoot
 An app for bitcoiners to troubleshoot each other's technical issues for sats, using nostr
 
+Try it live on:
+```
+bitcointroubleshoot.com
+```
+
 Try it locally:
 ```
 npm install && npm run dev
 ```
 
------- ! Work In Progress ! ------
+## ------ ! Work In Progress ! ------
 
 # The short story:
 
