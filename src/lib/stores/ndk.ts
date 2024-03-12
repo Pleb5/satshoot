@@ -5,7 +5,6 @@ import { localStorageStore } from '@skeletonlabs/skeleton';
 import type { Writable } from 'svelte/store';
 
 export const DEFAULTRELAYURLS = [
-    "wss://purplepag.es/",
     "wss://relay.nostr.band/",
     "wss://nos.lol/",
     "wss://relay.snort.social/",
