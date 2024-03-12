@@ -12,3 +12,5 @@
     Header always set Access-Control-Allow-Headers "*" 
     Header always set Access-Control-Allow-Methods "GET" 
 </If> 
+
+AddType application/manifest+json .webmanifest .json
