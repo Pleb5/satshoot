@@ -2,13 +2,17 @@
     import { NDKEvent, NDKRelaySet, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
     import type NDK from "@nostr-dev-kit/ndk";
 
+    import EditProfileModal from "../Modals/EditProfileModal.svelte";
+    import { getModalStore } from "@skeletonlabs/skeleton";
+    import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
+
     import { Avatar } from "@skeletonlabs/skeleton";
     import { clipboard } from '@skeletonlabs/skeleton';
-    import { popup } from '@skeletonlabs/skeleton';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
+
     const toastStore = getToastStore();
+    const modalStore = getModalStore();
 
     /**
      * The NDK instance you want to use
@@ -55,23 +59,6 @@
             }
         }
     }
-
-
-    const editNamePopup: PopupSettings = {
-        event: 'click',
-        target: 'editNamePopup',
-        placement: 'bottom'
-    };
-    const editAboutPopup: PopupSettings = {
-        event: 'click',
-        target: 'editAboutPopup',
-        placement: 'bottom'
-    };
-    const editLud16Popup: PopupSettings = {
-        event: 'click',
-        target: 'editLud16Popup',
-        placement: 'bottom'
-    };
 
     // Represents the part of the profile to be updated
     interface ProfileUpdate {
@@ -149,16 +136,78 @@
 
     // Here we overwrite both name and display_name
     function editName() {
-        editProfile({name:true});
+        // If user confirms modal do the editing
+        new Promise<string|undefined>((resolve) => {
+            const modalComponent: ModalComponent = {
+                ref: EditProfileModal,
+                props: {dataToEdit: userNameText, fieldName: 'Name'},
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (editedData: string|undefined) => {
+                    resolve(editedData); 
+                },
+            };
+            modalStore.trigger(modal);
+            // We got some kind of response from modal
+        }).then((editedData: string|undefined) => {
+                if (editedData) {
+                    userNameText = editedData;
+                    editProfile({name:true});
+                }
+            });
+
     }
 
     // Here we overwrite both about and bio if possible
     function editAbout() {
-        editProfile({about:true});
+        new Promise<string|undefined>((resolve) => {
+            const modalComponent: ModalComponent = {
+                ref: EditProfileModal,
+                props: {dataToEdit: aboutText, fieldName: 'About'},
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (editedData: string|undefined) => {
+                    resolve(editedData); 
+                },
+            };
+            modalStore.trigger(modal);
+            // We got some kind of response from modal
+        }).then((editedData: string|undefined) => {
+                if (editedData) {
+                    aboutText = editedData;
+                    editProfile({about:true});
+                }
+            });
     }
 
     function editLud16() {
-        editProfile({lud16:true})
+        new Promise<string|undefined>((resolve) => {
+            const modalComponent: ModalComponent = {
+                ref: EditProfileModal,
+                props: {dataToEdit: lud16Text, fieldName: 'LN Address'},
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (editedData: string|undefined) => {
+                    resolve(editedData); 
+                },
+            };
+            modalStore.trigger(modal);
+            // We got some kind of response from modal
+        }).then((editedData: string|undefined) => {
+                if (editedData) {
+                    lud16Text = editedData;
+                    editProfile({lud16:true});
+                }
+            });
     }
 
 </script>
@@ -168,61 +217,29 @@
 {:then userProfile}
     <div class="card p-4 m-8 mt-4">
         <header class="mb-8">
-            <div class="grid grid-cols-3 justify-evenly">
-                <Avatar 
-                    class="rounded-full border-white placeholder-white"
-                    src={userProfile?.image}
-                /> 
+            <div class="grid grid-cols-3 items-center justify-center">
+                <div>
+                    <Avatar 
+                        class="rounded-full border-white placeholder-white"
+                        src={userProfile?.image}
+                    /> 
+                </div>
                 <div class=" flex items-center justify-center gap-x-2 ">
                     <h2 class="h2 text-center font-bold text-lg sm:text-2xl">{userProfile?.name ?? 'Name?'}</h2>
-                    {#if editable}
-                        <button use:popup={editNamePopup}>
-                            <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
-                        </button>
-                        <div class="card p-4 bg-primary-300-600-token" data-popup="editNamePopup">
-                            <h4 class="h4 text-center">Edit Name</h4>
-                            <form on:submit|preventDefault={editName}>
-                                <div class="flex flex-col justify-center gap-y-2">
-                                    <input 
-                                        type="text"
-                                        class="input"
-                                        placeholder="New Name"
-                                        bind:value={ userNameText }
-                                    />
-                                    <button 
-                                        type="submit" 
-                                        class="btn btn-lg mt-4 bg-success-300-600-token"
-                                    >
-                                        Change
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    {/if}
                 </div>
+                {#if editable}
+                    <button on:click={editName}>
+                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
+                    </button>
+                {/if}
             </div>
         </header>
         <div class="flex items-center gap-x-2">
             <h4 class="h4">About</h4>
             {#if editable}
-                <button use:popup={editAboutPopup}>
+                <button on:click={editAbout}>
                     <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
                 </button>
-                <div class="card p-4 bg-primary-300-600-token " data-popup="editAboutPopup">
-                    <h4 class="h4 text-center">Edit About</h4>
-                    <form on:submit|preventDefault={editAbout}>
-                        <div class="flex flex-col justify-center gap-y-4">
-                            <textarea 
-                                rows="6"
-                                class="textarea"
-                                placeholder="Write about yourself"
-                                bind:value={aboutText}
-                            />
-                            <button type="submit" class="btn btn-lg bg-success-300-600-token">Publish</button>
-                        </div>
-                    </form>
-                    <div class="arrow bg-primary-300-600-token" />
-                </div>
             {/if}
         </div>
         <div>{userProfile?.bio ?? userProfile?.about ?? '?'}</div>
@@ -264,28 +281,9 @@
                 <div class=" flex items-center gap-x-2 ">
                     <div>LN address(lud16): {userProfile?.lud16 ?? '?'}</div>
                     {#if editable}
-                        <button use:popup={editLud16Popup}>
+                        <button on:click={editLud16}>
                             <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
                         </button>
-                        <div class="card p-4 bg-primary-300-600-token" data-popup="editLud16Popup">
-                            <h4 class="h4 text-center">Edit LN address</h4>
-                            <form on:submit|preventDefault={editLud16}>
-                                <div class="flex flex-col justify-center gap-y-2">
-                                    <input 
-                                        type="text"
-                                        class="input"
-                                        placeholder="New Address"
-                                        bind:value={lud16Text}
-                                    />
-                                    <button 
-                                        type="submit" 
-                                        class="btn btn-lg mt-4 bg-success-300-600-token"
-                                    >
-                                        Change
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
                     {/if}
                 </div>
             </div>
