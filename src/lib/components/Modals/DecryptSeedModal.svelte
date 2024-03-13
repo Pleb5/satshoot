@@ -1,7 +1,8 @@
 <script lang="ts">
-	// Modals
+    import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
-    import { SvelteComponent } from 'svelte';
+
+    import { tick } from 'svelte';
 
     import { DataLoadError } from '$lib/utils/errors';
 	// Props
@@ -12,10 +13,15 @@
 
     let passphrase:string;
     let statusMessage: string;
-    let statusColor = 'text-blue-500';
+    let statusColor = 'text-tertiary-200-700-token';
 
-    function loadSeed() {
-        statusColor = 'text-blue-500';
+    let decrypting = false;
+
+    async function loadSeed() {
+        decrypting = true;
+        await tick();
+
+        statusColor = 'text-tertiary-200-700-token';
         statusMessage = 'Decrypting...';
         try {
             const encrpytedSeed: string|null = localStorage.getItem("nostr-seedwords")
@@ -34,6 +40,7 @@
 
             cryptWorker.onmessage = (m) => {
                 const decryptedSeed = m.data['decryptedSeed'];
+                decrypting = false;
                 if (decryptedSeed) {
                     if ($modalStore[0].response) {
                         $modalStore[0].response(decryptedSeed);
@@ -48,6 +55,7 @@
             };
 
             cryptWorker.onerror = (e) => {
+                decrypting = false;
                 console.log("Error happened in cryptWorker:", e.message)
                 statusMessage = `Error while decrypting seed words! Incorrect Passphrase!`;
                 setTimeout(()=>{
@@ -57,6 +65,7 @@
             };
 
             cryptWorker.onmessageerror = (me) => {
+                decrypting = false;
                 console.log('Message error:', me);
                 statusMessage = 'Received malformed message: ' + me.data;
 
@@ -74,6 +83,7 @@
 
 
         } catch(e) {
+            decrypting = false;
             if (e instanceof DataLoadError) {
                 const error = e as DataLoadError;
                statusMessage = error.message; 
@@ -119,7 +129,7 @@
                 <button 
                     type="submit"
                     class="btn btn-lg h-14 font-bold bg-primary-400-500-token"
-                    disabled={!passphrase}
+                    disabled={!passphrase || decrypting}
                 >
                     Decrypt
                 </button>

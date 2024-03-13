@@ -23,7 +23,7 @@
     let showConfirmPassword: boolean = false;
 
     let statusMessage: string;
-    let statusColor = 'text-blue-500';
+    let statusColor = 'text-tertiary-200-700-token';
 
     let disable = false;
 
@@ -72,7 +72,7 @@
 
     async function encryptAndSaveSeed() {
         statusMessage = 'Encrypting and saving Seed in browser storage...';
-        statusColor = 'text-blue-500';
+        statusColor = 'text-tertiary-200-700-token';
         try {
             const privateKey = privateKeyFromSeedWords(seedWords.join(' ')); 
             $ndk.signer = new NDKPrivateKeySigner(privateKey); 
@@ -162,7 +162,7 @@ Probably incorrect Seed Words!` + e
     function finish() {
         // Todo: Loading popup while encrypting
         statusMessage = 'Validating...';
-        statusColor = 'text-blue-500';
+        statusColor = 'text-tertiary-200-700-token';
         if (validateSeedWordInputs()) {
             encryptAndSaveSeed();
         }

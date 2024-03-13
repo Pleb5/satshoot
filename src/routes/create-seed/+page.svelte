@@ -76,7 +76,7 @@
     let showConfirmPassphrase: boolean = false;
 
     let statusMessage: string;
-    let statusColor = 'text-blue-500';
+    let statusColor = 'text-tertiary-200-700-token';
 
     let disable = false;
 
