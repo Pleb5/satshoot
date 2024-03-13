@@ -4,7 +4,6 @@
     import { NDKRelaySet } from '@nostr-dev-kit/ndk';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 
-    import pageTitleStore from "$lib/stores/pagetitle-store";
     import { ticketToEdit } from "$lib/stores/ticket-to-edit";
 
     import { InputChip } from '@skeletonlabs/skeleton';
@@ -24,8 +23,6 @@
     // Retrieve Modal Store at the top level
     const modalStore = getModalStore();
 			
-    $pageTitleStore = 'Post Ticket';
-
     let tagInput = '';
     
 
@@ -149,7 +146,7 @@
 <div class="flex justify-center">
     <div class="p-4">
         <label class="label max-w-md">
-            <span class="text-2xl">Ticket Title(min. 10chars)</span>
+            <span class="text-lg sm:text-2xl">Ticket Title(min. 10chars)</span>
             <input 
                 class="input {titleState}"
                 type="text"
@@ -161,7 +158,7 @@
 
 
         <label class="label max-w-xl mt-8">
-            <span class="text-2xl">Ticket Description(min. 20chars)</span>
+            <span class="text-lg sm:text-2xl">Ticket Description(min. 20chars)</span>
             <textarea 
                 class="textarea {descriptionState}"
                 rows="4"
@@ -173,7 +170,7 @@
 
 
         <div class="text-token max-w-sm gap-y-2 mt-8">
-            <span class="text-2xl">Ticket Tags(max. 5pcs)</span>
+            <span class="text-lg sm:text-2xl">Ticket Tags(max. 5pcs)</span>
             <InputChip
                 bind:input={tagInput}
                 bind:value={tagList}

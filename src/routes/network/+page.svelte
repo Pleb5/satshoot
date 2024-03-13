@@ -3,16 +3,12 @@
     import ndk from '$lib/stores/ndk';
     import {blacklistedRelays, storedPool } from "$lib/stores/ndk";
 
-    import pageTitleStore from "$lib/stores/pagetitle-store";
-
     import normalizeUrl from "normalize-url";
     import type { NDKRelay } from '@nostr-dev-kit/ndk';
-    import { onDestroy, onMount } from 'svelte';
+    import { onMount } from 'svelte';
 
     import { type ModalSettings, getModalStore } from '@skeletonlabs/skeleton';
     import RelayListElement from '$lib/components/Relays/RelayListElement.svelte';
-
-    $pageTitleStore = 'Network';
 
     const modalStore = getModalStore();
 

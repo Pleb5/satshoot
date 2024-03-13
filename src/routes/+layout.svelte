@@ -12,8 +12,6 @@
     import { myTicketFilter, myOfferFilter, newTickets, oldTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
     import { messageStore } from "$lib/stores/messages";
 
-    import pageTitleStore from "$lib/stores/pagetitle-store";
-
     import { LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06";
@@ -227,18 +225,24 @@
 <Modal />
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
 	<svelte:fragment slot="header">
-        <AppBar gridColumns="grid-cols-3" slotDefault="items-center" slotTrail="place-content-end ">
+        <AppBar gridColumns="grid-cols-3" slotDefault="place-content-center" slotTrail="place-content-end ">
             <svelte:fragment slot="lead">
-                <div class="grid grid-cols-2 w-32 h-18">
-                    <img class="w-full h-full" src="/bitcoin-troubleshoot.svg" alt="logo" />
-                    <div class="flex justify-center items-center">
-                        <LightSwitch />
-                    </div>
+                <div class="flex flex-col gap-y-2">
+                    <LightSwitch />
+                    <a href="/about">
+                        <div class="badge bg-tertiary-200-700-token flex justify-center items-center">
+                            <span class="w-6 text-center">
+                                <i class="fa-solid fa-info text-lg" />
+                            </span>
+                        </div>
+                    </a>
                 </div>
             </svelte:fragment>
 
-            <h2 class="h2 lg:pl-20 text-center">{$pageTitleStore}</h2>
-            
+            <div class="flex justify-center lg:ml-20">
+                <img class="" src="/bitcoin-troubleshoot.svg" alt="logo" />
+            </div>
+
             <svelte:fragment slot="trail">
                 {#if loggedIn}
                     <!-- Triggers popup settings menu -->

@@ -1,6 +1,5 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import pageTitleStore from "$lib/stores/pagetitle-store";
     import { page } from "$app/stores";
 
     import { messageStore, receivedMessageFilter, myMessageFilter } from "$lib/stores/messages";
@@ -20,9 +19,6 @@
 
     const ticketAddress = idFromNaddr($page.params.ticketId);
     const ticketTitle = $page.params.title;
-
-    $pageTitleStore = 'Messages';
-
 
 	interface MessageFeed {
 		id: string;

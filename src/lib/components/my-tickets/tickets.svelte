@@ -77,13 +77,13 @@ $: {
                 {:else if tabGroup === 1}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each inProgressTickets as ticket }
-                        <TicketCard {ticket} countAllOffers={true}/>
+                        <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                     {/each}
                 </div>
                 {:else if tabGroup === 2}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each closedTickets as ticket }
-                        <TicketCard {ticket} countAllOffers={true}/>
+                        <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                     {/each}
                 </div>
             {/if}

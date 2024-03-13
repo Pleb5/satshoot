@@ -19,7 +19,7 @@
         const modalBody = `
                 <p>Do really you wish to log out?</p>
                 <strong class="text-error-400-500-token">
-                    If you are logged in with an ephemeral account,
+                    If you are logged in with an local keypair,
                     it will be deleted from local storage!
                 </strong>`;
 
@@ -117,18 +117,6 @@
                     </a>
                 </li>
                 <hr class="!my-4" />
-                <li>
-                    <a href="/">
-                        <span class="w-6 text-center"><i class="fa-solid fa-question" /></span>
-                        <span>FAQ</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/about">
-                        <span class="w-6 text-center"><i class="fa-solid fa-info" /></span>
-                        <span>About</span>
-                    </a>
-                </li>
                 <li>
                     <a href="/">
                         <span class="w-6 text-center"><i class="fa-regular fa-comment" /></span>

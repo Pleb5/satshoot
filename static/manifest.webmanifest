@@ -3,6 +3,7 @@
     "short_name": "BTC Troubleshoot",
     "description": "An app for bitcoiners to troubleshoot each other's technical issues for sats, using nostr",
     "display": "standalone",
+    "background_color": "#fff",
     "start_url": "/",
     "icons": [
         {

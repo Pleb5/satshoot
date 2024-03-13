@@ -70,7 +70,7 @@
     const editLud16Popup: PopupSettings = {
         event: 'click',
         target: 'editLud16Popup',
-        placement: 'right'
+        placement: 'bottom'
     };
 
     // Represents the part of the profile to be updated
@@ -174,7 +174,7 @@
                     src={userProfile?.image}
                 /> 
                 <div class=" flex items-center justify-center gap-x-2 ">
-                    <h2 class="h2 text-center font-bold text-2xl">{userProfile?.name ?? 'Name?'}</h2>
+                    <h2 class="h2 text-center font-bold text-lg sm:text-2xl">{userProfile?.name ?? 'Name?'}</h2>
                     {#if editable}
                         <button use:popup={editNamePopup}>
                             <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
@@ -208,7 +208,7 @@
                 <button use:popup={editAboutPopup}>
                     <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
                 </button>
-                <div class="card p-4 bg-primary-300-600-token w-96" data-popup="editAboutPopup">
+                <div class="card p-4 bg-primary-300-600-token " data-popup="editAboutPopup">
                     <h4 class="h4 text-center">Edit About</h4>
                     <form on:submit|preventDefault={editAbout}>
                         <div class="flex flex-col justify-center gap-y-4">

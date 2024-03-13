@@ -6,9 +6,6 @@
     import type { NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
-    import pageTitleStore from "$lib/stores/pagetitle-store";
-
-    $pageTitleStore = 'BTC Troubleshoot';
 
     let filterInput = '';
     let filterList: string[] = [];
@@ -69,18 +66,18 @@
             name="chips"
             placeholder="Filter by Title, Description or Tags"
         />
-        <button 
-            class="btn btn-icon"
-            on:click={() => {
-                    if (filterInput) {
-                        filterList = [...filterList, filterInput];
-                        filterInput = '';
-                    }
-                }
-            }
-        >
-            <i class="fa-solid fa-magnifying-glass text-lg"></i>
-        </button>
+        <!-- <button  -->
+        <!--     class="btn btn-icon" -->
+        <!--     on:click={() => { -->
+        <!--             if (filterInput) { -->
+        <!--                 filterList = [...filterList, filterInput]; -->
+        <!--                 filterInput = ''; -->
+        <!--             } -->
+        <!--         } -->
+        <!--     } -->
+        <!-- > -->
+        <!--     <i class="fa-solid fa-magnifying-glass text-lg"></i> -->
+        <!-- </button> -->
     </div>
 
     <div class="grid grid-cols-1 gap-y-4 mx-8 mb-8">

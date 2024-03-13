@@ -1,19 +1,18 @@
 <script lang="ts">
-    import pageTitleStore from "$lib/stores/pagetitle-store";
-    $pageTitleStore = 'About';
 </script>
 
-<h2 class="h2 text-center">Bitcoin Troubleshoot</h2>
-<div class="card mx-10 mt-4 p-2">
-    <h4 class="h4 text-center">What is Bitcoin Troubleshoot?</h4>
+<h2 class="h2 text-center my-2">About Bitcoin Troubleshoot</h2>
+<h4 class="h4 text-center">What is Bitcoin Troubleshoot?</h4>
+<div class="card mx-10 mt-1 p-2">
     <p>
         Bitcoin Troubleshoot is an app for bitcoiners to help each other in Self Custody
         issues with free market incentives. It is essentially P2P market with an auction mechanism.
     </p>
 
 </div>
-<div class="card mx-10 mt-4 p-2">
-    <h4 class="h4 text-center">So how does this work in action?</h4>
+
+<h4 class="h4 text-center mt-4">So how does this work in action?</h4>
+<div class="card mx-10 mt-1 p-2">
     <p>
         Let's take the example of Alice who is a bitcoiner and has a problem with her node.
         She cannot connect to it from her Software Wallet. She creates a 'Ticket' in 
@@ -36,8 +35,8 @@
 </div>
 
 
-<div class="card mx-10 mt-4 p-2">
-    <h4 class="h4 text-center">How is this better than other solutions?</h4>
+<h4 class="h4 text-center mt-4">How is this better than other solutions?</h4>
+<div class="card mx-10 mt-1 p-2">
     <p>
         There are many options for bitcoiners to find technical help. I believe however, 
         that a dedicated Nostr solution is the best way to go for several reasons:

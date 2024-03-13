@@ -200,7 +200,7 @@ Probably incorrect Seed Words!` + e
             <!-- Todo: autocomplete -->
             <div class="flex justify-between items-center ">
                 <input 
-                    class="input {passphraseValid ? 'input-success' : 'input-error'} w-80" 
+                    class="input {passphraseValid ? 'input-success' : 'input-error'}" 
                     title="Passphrase(min. 14chars):" 
                     type={ showPassword? 'text' : 'password' }
                     placeholder="Enter Passphrase..."
@@ -220,9 +220,9 @@ Probably incorrect Seed Words!` + e
                 </button>
             </div>
 
-            <div class="flex justify-between items-center m-4">
+            <div class="flex justify-between items-center my-4">
                 <input 
-                    class="input {confirmPassphraseValid ? 'input-success' : 'input-error'} w-80" 
+                    class="input {confirmPassphraseValid ? 'input-success' : 'input-error'} " 
                     title="Confirm Passphrase:" 
                     type={ showConfirmPassword ? 'text' : 'password' }
                     placeholder="Confirm Passphrase..." 

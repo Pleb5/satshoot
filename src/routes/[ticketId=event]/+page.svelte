@@ -6,8 +6,6 @@
 
     import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
-    import pageTitleStore from "$lib/stores/pagetitle-store";
-
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
@@ -20,16 +18,16 @@
 
     import { page } from '$app/stores';
     import { idFromNaddr } from '$lib/utils/nip19'
+    import { nip19 } from "nostr-tools";
     import UserCard from "$lib/components/User/UserCard.svelte";
     import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
 
-    $pageTitleStore = 'Ticket';
-    
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
     let ticket: TicketEvent | undefined = undefined;
     let offers: OfferEvent[] = [];
+    let npub: string | undefined = undefined;
 
     let myTicket = false;
 
@@ -58,7 +56,7 @@
                 ticketsOfSpecificOffers.startSubscription();
             } else {
                 $ticketsOfSpecificOffers.forEach((t: TicketEvent) => {
-                    if (t.encode() === naddr){
+                    if (idFromNaddr(t.encode()) === idFromNaddr(naddr)){
                         ticket = TicketEvent.from(t);
                         if (ticket.status !== TicketStatus.New) {
                             allowCreateOffer = false;
@@ -69,6 +67,7 @@
             }
         }
         if (ticket) {
+            npub = nip19.npubEncode(ticket.pubkey);
             // If there is an active user and it is the creator of this ticket
             // We will hide create Offer button and the usercard, but enable taking offers
             if ($ndk.activeUser && $ndk.activeUser.pubkey === ticket.pubkey) {
@@ -189,13 +188,13 @@
     const popupHover: PopupSettings = {
         event: 'click',
         target: 'popupHover',
-        placement: 'right'
+        placement: 'top'
     };
     
 </script>
 
 <div class="card m-6">
-    <TicketCard {ticket} titleSize='xl' titleLink={false} shortenDescription={false} />
+    <TicketCard {ticket} titleSize='md sm:tex-lg' titleLink={false} shortenDescription={false} />
 
 </div>
 
@@ -217,7 +216,7 @@
                 use:popup={popupHover}
             />
 
-            <div class="card w-80 p-4 bg-primary-300-600-token" data-popup="popupHover">
+            <div class="card p-4 bg-primary-300-600-token" data-popup="popupHover">
                 <p>
                     {disallowCreateOfferReason} 
                 </p>
@@ -226,11 +225,11 @@
         {/if}
     </div>
     <!-- User -->
-    <h2 class="font-bold text-2xl ml-8 mt-4" >Posted by:</h2>
-    <UserCard ndk={$ndk} npub={ticket?.author.npub} />
+    <h2 class="font-bold text-lg sm:text-2xl ml-8 mt-4" >Posted by:</h2>
+    <UserCard ndk={$ndk} npub={npub} />
 {/if}
 <!-- Offers on Ticket -->
-<h2 class="font-bold text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>
+<h2 class="font-bold text-lg sm:text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>
 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
     {#each offers as offer}
         <OfferCard {offer} showTicket={false}>

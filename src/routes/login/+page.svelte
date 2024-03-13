@@ -3,7 +3,6 @@
     import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
     import { myTickets, myOffers , myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
-    import pageTitleStore from "$lib/stores/pagetitle-store";
 
     import { browser } from "$app/environment";
 
@@ -13,8 +12,6 @@
     import type { PopupSettings } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
-
-    $pageTitleStore = 'Login';
 
     // Retrieve Modal Store at the top level
     const modalStore = getModalStore();
@@ -146,7 +143,7 @@
         </div>
 
         <a href="/restore" class="btn mx-4 mt-8 bg-primary-300-600-token">
-            <span>RESTORE Nostr keypair from Seed Words</span>
+            <span>RESTORE from Seed Words</span>
         </a>
 
     </div>
