@@ -16,6 +16,7 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
+    import { goto } from '$app/navigation';
 
     // Retrieve Toast store at the top level
     const toastStore = getToastStore();
@@ -112,6 +113,7 @@
                     buttonTextCancel:'Ok',
                 };
                 modalStore.trigger(modal);
+                goto('/my-tickets');
             } else {
                 const t: ToastSettings = {
                     message: 'No Active User to post the Ticket!',
