@@ -1,11 +1,12 @@
 <script lang="ts">
 	// Modals
 	import { getModalStore } from '@skeletonlabs/skeleton';
+    import { SvelteComponent } from 'svelte';
 
     import { DataLoadError } from '$lib/utils/errors';
 	// Props
 	/** Exposes parent props to this component. */
-	// export let parent: SvelteComponent;
+	export let parent: SvelteComponent;
 
 	const modalStore = getModalStore();
 
