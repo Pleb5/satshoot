@@ -5,9 +5,13 @@
 <h4 class="h4 text-center">What is Bitcoin Troubleshoot?</h4>
 <div class="card mx-10 mt-1 p-2">
     <p>
-        Bitcoin Troubleshoot is an app for bitcoiners to help each other in Self Custody
-        issues with free market incentives. It is essentially P2P market with an auction mechanism.
+        Bitcoin Troubleshoot is an open-source app for bitcoiners to help each other in Self Custody
+        issues with free market incentives. This is achieved through a P2P market with an auction mechanism implemented on the nostr protocol. 
     </p>
+    <span>Check out the source code and contribute on</span>
+    <a href="https://github.com/Pleb5/bitcoin-troubleshoot">
+        <span><i class="fa-brands fa-github">GitHub</i></span>
+    </a>
 
 </div>
 
