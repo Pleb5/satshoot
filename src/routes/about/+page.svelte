@@ -19,7 +19,7 @@
 <div class="card mx-10 mt-1 p-2">
     <p>
         Let's take the example of Alice who is a bitcoiner and has a problem with her node.
-        She cannot connect to it from her Software Wallet. She creates a 'Ticket' in 
+        She cannot connect to it from her Wallet Software. She creates a 'Ticket' in 
         Bitcoin Troubleshoot and posts it on nostr. Now anyone who has a clue how to solve her 
         problem can bid on it with an 'Offer'. This Offer contains the price of the Troubleshooting.
     </p>
@@ -27,8 +27,8 @@
     <p class="mt-2">
         Bob who is deeper down the rabbit hole finds this ticket in the feed and bids on it with an offer. 
         Alice received a bunch of offers from different bitcoiners but she trusts Bob the most and finds his 
-        price affordable. She accepts Bob's Offer. They can now resolve the node issue via encrypted chat or 
-        they can also just switch to a different platform for the actual Troubleshooting part.
+        price affordable. She accepts Bob's Offer. They can now resolve the node issue via encrypted chat in 
+        Bitcoin Troubleshoot or they can just switch to a different platform for the actual Troubleshooting part.
     </p>
 
     <p class="mt-2">
