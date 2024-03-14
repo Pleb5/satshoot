@@ -11,10 +11,11 @@
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
 
     import { ticketToEdit } from "$lib/stores/ticket-to-edit";
     import { goto } from "$app/navigation";
+    import ShareTicketModal from "../Modals/ShareTicketModal.svelte";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -150,9 +151,17 @@
 
     function shareTicket() {
         if (ticket) {
-            // Todo: share ticket here
-            // perhaps modal with a url copy and a kind 1 note edit text 
-            // with default text and default #bitcointroubleshoot #asknostr tags 
+            const modalComponent: ModalComponent = {
+                ref: ShareTicketModal,
+                props: {ticket: ticket},
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+            };
+            modalStore.trigger(modal);
+
         }
     }
 
@@ -177,7 +186,7 @@
     // For context menu: Edit ticket, close ticket, share ticket
     const popupHover: PopupSettings = {
         event: 'click',
-        target: 'popupHover',
+        target: `popupHover_${ticket?.id}`,
         placement: 'bottom'
     };
 
@@ -186,7 +195,7 @@
 
 <div class="card">
     {#if ticket}
-        <header class="card-header grid grid-cols-6 items-center">
+        <header class="card-header grid grid-cols-6 items-start">
             {#if ticketChat}
                 <a
                     href={"/messages/" + bech32ID + ":" + ticket.title}
@@ -219,14 +228,14 @@
                     >
                         <i class="fa fa-sm fa-ellipsis-v"></i>
                     </button>
-                    <div data-popup="popupHover">
-                        <div class="card p-2 bg-primary-300-600-token shadow-xl z-50">
+                    <div data-popup="popupHover_{ticket.id}">
+                        <div class="card p-2 bg-primary-300-600-token shadow-xl z-50 ">
                             <ul class="list">
                                 <!-- Share Ticket -->
                                 <li>
                                     <button class="" on:click={shareTicket}>
                                         <span><i class="fa-solid fa-share-nodes"/></span>
-                                        <span class="flex-auto">Share Ticket</span>
+                                        <span class="flex-auto">Share</span>
                                     </button>
                                 </li>
                                 <!-- Edit Ticket -->
@@ -234,7 +243,7 @@
                                     <li>
                                         <button class="" on:click={editTicket}>
                                             <span><i class="fa-solid fa-pen-to-square"/></span>
-                                            <span class="flex-auto">Edit Ticket</span>
+                                            <span class="flex-auto">Edit</span>
                                         </button>
                                     </li>
                                 {/if}
@@ -245,7 +254,7 @@
                                     <li>
                                         <button class="" on:click={closeTicket}>
                                             <span><i class="fa-solid fa-lock"/></span>
-                                            <span class="flex-auto">Close Ticket</span>
+                                            <span class="flex-auto">Close</span>
                                         </button>
                                     </li>
                                 {/if}
