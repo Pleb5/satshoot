@@ -6,6 +6,8 @@
 
     import { nip19 } from "nostr-tools";
 
+    import { popup } from '@skeletonlabs/skeleton';
+    import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
@@ -146,6 +148,14 @@
         }
     }
 
+    function shareTicket() {
+        if (ticket) {
+            // Todo: share ticket here
+            // perhaps modal with a url copy and a kind 1 note edit text 
+            // with default text and default #bitcointroubleshoot #asknostr tags 
+        }
+    }
+
     function editTicket() {
         if (ticket) {
             $ticketToEdit = ticket;
@@ -163,6 +173,13 @@
             }
         } else return 'No description!';
     }
+
+    // For context menu: Edit ticket, close ticket, share ticket
+    const popupHover: PopupSettings = {
+        event: 'click',
+        target: 'popupHover',
+        placement: 'bottom'
+    };
 
 </script>
 
@@ -193,12 +210,48 @@
             </div>
             {#if $ndk.activeUser
                 && ticket.pubkey === $ndk.activeUser.pubkey
-                && (ticket.status === TicketStatus.InProgress
-                || ticket.status === TicketStatus.New)}
+            }
                 <div class="justify-self-end ">
-                    <button type="button" class="btn btn-sm md:btn-md bg-primary-400-500-token" on:click={closeTicket}>
-                        Close
+                    <button
+                        type="button"
+                        class="btn btn-icon btn-sm md:btn-md bg-primary-400-500-token"
+                        use:popup={popupHover}
+                    >
+                        <i class="fa fa-sm fa-ellipsis-v"></i>
                     </button>
+                    <div data-popup="popupHover">
+                        <div class="card p-2 bg-primary-300-600-token shadow-xl z-50">
+                            <ul class="list">
+                                <!-- Share Ticket -->
+                                <li>
+                                    <button class="" on:click={shareTicket}>
+                                        <span><i class="fa-solid fa-share-nodes"/></span>
+                                        <span class="flex-auto">Share Ticket</span>
+                                    </button>
+                                </li>
+                                <!-- Edit Ticket -->
+                                {#if ticket.status === TicketStatus.New}
+                                    <li>
+                                        <button class="" on:click={editTicket}>
+                                            <span><i class="fa-solid fa-pen-to-square"/></span>
+                                            <span class="flex-auto">Edit Ticket</span>
+                                        </button>
+                                    </li>
+                                {/if}
+                                <!-- Close Ticket -->
+                                {#if ticket.status === TicketStatus.InProgress
+                                    || ticket.status === TicketStatus.New
+                                }
+                                    <li>
+                                        <button class="" on:click={closeTicket}>
+                                            <span><i class="fa-solid fa-lock"/></span>
+                                            <span class="flex-auto">Close Ticket</span>
+                                        </button>
+                                    </li>
+                                {/if}
+                            </ul>
+                        </div>
+                    </div>
                 </div> 
             {/if }
         </header>
@@ -240,14 +293,6 @@
                         </div>
                     {/each}
                 </div>
-
-                {#if $ndk.activeUser 
-                    && $ndk.activeUser.pubkey === ticket.pubkey
-                    && ticket.status === TicketStatus.New}
-                    <button class="mt-1" on:click={editTicket}>
-                        <i class="text-primary-500 fa-solid fa-pen-to-square text-xl md:text-2xl" />
-                    </button>
-                {/if}
             </div>
         </footer>
     {:else}

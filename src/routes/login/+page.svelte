@@ -10,7 +10,7 @@
 
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import type { ModalSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
 
     // Retrieve Modal Store at the top level
@@ -114,7 +114,7 @@
                 use:popup={popupHover}
             />
             
-            <div  data-popup="popupHover">
+            <div data-popup="popupHover">
                 <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
                     <p>
                         Generate a new nostr keypair from bip39 seed words.
