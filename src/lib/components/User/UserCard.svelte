@@ -1,7 +1,8 @@
 <script lang="ts">
     import { NDKEvent, NDKRelaySet, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
-    import type NDK from "@nostr-dev-kit/ndk";
 
+    import ndk from "$lib/stores/ndk";
+    import { connected } from "$lib/stores/ndk";
     import EditProfileModal from "../Modals/EditProfileModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
@@ -10,14 +11,10 @@
     import { clipboard } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
+    import { beforeNavigate } from "$app/navigation";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
-
-    /**
-     * The NDK instance you want to use
-     */
-    export let ndk: NDK;
 
     /**
      * The npub of the user you want to display a user card for
@@ -36,16 +33,16 @@
     let userNameText: string;
     let lud16Text:string;
 
-    $: editable = ndk.activeUser?.npub === npub;
+    $: editable = $ndk.activeUser?.npub === npub;
     // Some strange behavior around ndk, user and ndk.activeUser when recursively
     // assigning ndk.getUser(npub) -> user.ndk = this -> user.ndk.activeUser = ...?
     // user.ndk.activeUser.ndk = .... ???!!! infinte recursion of assignments?
     $: {
-        if (npub && needProfile) {
+        if (npub && needProfile && $connected) {
             needProfile = false;
             let opts = { npub: npub };
             try {
-                user = ndk.getUser(opts);
+                user = $ndk.getUser(opts);
                 // ndk.activeUser is undefined at this point but
                 // user.ndk.activeUser is the logged in user?!?!
                 profilePromise = user.fetchProfile();
@@ -68,7 +65,7 @@
     }
 
     async function editProfile(fieldsToUpdate: Partial<ProfileUpdate>) {
-        const event = new NDKEvent(ndk);
+        const event = new NDKEvent($ndk);
         event.kind = 0;
         if (fieldsToUpdate['name']) {
             event.content = JSON.stringify({
@@ -117,7 +114,7 @@
             event.author = user;
             try {
                 const relaysPublished = await event.publish(
-                    new NDKRelaySet(new Set(ndk.pool.relays.values()), ndk)
+                    new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
                 );
                 profilePromise = user.fetchProfile();
                 await profilePromise;

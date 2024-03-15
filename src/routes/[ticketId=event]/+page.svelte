@@ -226,7 +226,7 @@
     </div>
     <!-- User -->
     <h2 class="font-bold text-lg sm:text-2xl ml-8 mt-4" >Posted by:</h2>
-    <UserCard ndk={$ndk} npub={npub} />
+    <UserCard npub={npub} />
 {/if}
 <!-- Offers on Ticket -->
 <h2 class="font-bold text-lg sm:text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>

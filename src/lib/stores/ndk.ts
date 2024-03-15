@@ -33,6 +33,7 @@ const ndkSvelte = new NDKSvelte({
     explicitRelayUrls:[],
 });
 
+export const connected = writable(false);
 
 // Create a singleton instance that is the default export
 const ndk = writable(ndkSvelte);

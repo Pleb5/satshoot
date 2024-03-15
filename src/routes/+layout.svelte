@@ -8,6 +8,7 @@
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
     import ndk from "$lib/stores/ndk";
+    import { connected } from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { myTicketFilter, myOfferFilter, newTickets, oldTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
     import { messageStore } from "$lib/stores/messages";
@@ -91,6 +92,7 @@
         }
 
         await $ndk.connect();
+        $connected = true;
 
         // Start all tickets sub. Starting this anywhere else seems to break reliability.
         // User-defined Relays are restored from local storage here and this runs AFTER page onmounts.
