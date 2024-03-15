@@ -1,6 +1,7 @@
 <script lang="ts">
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import FeedbackModal from '../Modals/FeedbackModal.svelte';
 
     import ndk from '$lib/stores/ndk';
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
@@ -14,6 +15,19 @@
     import type { TicketEvent } from '$lib/events/TicketEvent';
 
     const modalStore = getModalStore();
+
+    function feedback() {
+
+        const modalComponent: ModalComponent = {
+            ref: FeedbackModal,
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
+    }
 
     function logout() {
         const modalBody = `
@@ -118,10 +132,10 @@
                 </li>
                 <hr class="!my-4" />
                 <li>
-                    <a href="/">
+                    <button class="w-full" on:click={feedback}>
                         <span class="w-6 text-center"><i class="fa-regular fa-comment" /></span>
                         <span>Feedback</span>
-                    </a>
+                    </button>
                 </li>
                 <hr class="!my-4" />
                 <li>
