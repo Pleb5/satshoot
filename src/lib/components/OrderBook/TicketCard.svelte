@@ -39,6 +39,13 @@
     let offerCount: string = '?';
     let offersAlreadyColor: string = 'text-primary-400-500-token';
 
+    // For context menu: Edit ticket, close ticket, share ticket
+    const popupHover: PopupSettings = {
+        event: 'click',
+        target: `popupHover_${ticket?.id}`,
+        placement: 'bottom'
+    };
+
     async function closeTicket() {
         let closeTicketResponse = async function(r: boolean) {
             if (r) {
@@ -102,6 +109,7 @@
         if (ticket) {
             bech32ID = ticket.encode()
             npub = nip19.npubEncode(ticket.pubkey);
+            popupHover.target = 'popupHover_' + ticket.id;
 
             if (ticket.created_at) {
                 // Created_at is in Unix time seconds
@@ -182,13 +190,6 @@
             }
         } else return 'No description!';
     }
-
-    // For context menu: Edit ticket, close ticket, share ticket
-    const popupHover: PopupSettings = {
-        event: 'click',
-        target: `popupHover_${ticket?.id}`,
-        placement: 'bottom'
-    };
 
 </script>
 
