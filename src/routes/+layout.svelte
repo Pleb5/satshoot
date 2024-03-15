@@ -13,11 +13,12 @@
     import { myTicketFilter, myOfferFilter, newTickets, oldTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
     import { messageStore } from "$lib/stores/messages";
 
-    import { LoginMethod } from "$lib/stores/ndk";
+    import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06";
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer, NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
+    import { privateKeyFromNsec } from "$lib/utils/nip19";
 
     import { AppShell } from '@skeletonlabs/skeleton';
     import { AppBar } from '@skeletonlabs/skeleton';
@@ -44,7 +45,7 @@
     // Skeleton Modals
     import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
-    import DecryptSeedModal from "$lib/components/Modals/DecryptSeedModal.svelte";
+    import DecryptSecretModal from "$lib/components/Modals/DecryptSecretModal.svelte";
 
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
@@ -134,44 +135,59 @@
                             // User can dismiss modal in which case decryptedSeed is undefined
                             new Promise<string|undefined>((resolve) => {
                                 const modalComponent: ModalComponent = {
-                                    ref: DecryptSeedModal,
+                                    ref: DecryptSecretModal,
                                 };
 
                                 const modal: ModalSettings = {
                                     type: 'component',
                                     component: modalComponent,
-                                    response: (decryptedSeed: string|undefined) => {
-                                        resolve(decryptedSeed); 
+                                    response: (responseObject: any) => {
+                                        resolve(responseObject); 
                                     },
                                 };
-                                // Call DecryptSeed Modal to prompt for passphrase
-                                // This can throw invalid seed words if decryption was unsuccessful
+                                // Call DecryptSecret Modal to prompt for passphrase
+                                // This can throw invalid secret if decryption was unsuccessful
                                 modalStore.trigger(modal);
                                 // We got some kind of response from modal
-                            }).then(async (decryptedSeed: string|undefined) => {
-                                    if (decryptedSeed) {
-                                        const privateKey = privateKeyFromSeedWords(decryptedSeed); 
-                                        $ndk.signer = new NDKPrivateKeySigner(privateKey); 
-                                        
-                                        $sessionPK = privateKey;
+                            }).then(async (responseObject: any) => {
+                                    if (responseObject) {
+                                        const decryptedSecret = responseObject['decryptedSecret'];
+                                        const restoreMethod = responseObject['restoreMethod'];
+                                        if (decryptedSecret && restoreMethod) {
+                                            let privateKey:string|undefined = undefined;
+                                            if (restoreMethod === RestoreMethod.Seed) {
+                                                privateKey = privateKeyFromSeedWords(decryptedSecret);
+                                            } else if (restoreMethod === RestoreMethod.Nsec) {
+                                                privateKey = privateKeyFromNsec(decryptedSecret);
+                                            }
 
-                                        let user: NDKUser = await $ndk.signer.user();
-                                        
-                                        myTicketFilter.authors?.push(user.pubkey);
-                                        myOfferFilter.authors?.push(user.pubkey);
-                                        myTickets.startSubscription();
-                                        myOffers.startSubscription();
+                                            if (privateKey) {
+                                                $ndk.signer = new NDKPrivateKeySigner(privateKey); 
 
-                                        await user.fetchProfile();
+                                                $sessionPK = privateKey;
 
-                                        // Trigger UI change in profile when user Promise is retrieved
-                                        $ndk.activeUser = $ndk.activeUser;
+                                                let user: NDKUser = await $ndk.signer.user();
+
+                                                myTicketFilter.authors?.push(user.pubkey);
+                                                myOfferFilter.authors?.push(user.pubkey);
+                                                myTickets.startSubscription();
+                                                myOffers.startSubscription();
+
+                                                await user.fetchProfile();
+
+                                                // Trigger UI change in profile when user Promise is retrieved
+                                                $ndk.activeUser = $ndk.activeUser;
+                                            } else {
+                                                throw new Error("Could not create hex private key from decrypted secret. Clear browser local storage and login again.");
+                                            }
+
+                                        }
                                     }
                                 });
 
                         } catch(e) {
                             const t: ToastSettings = {
-                                message:`Could not create private key from seed words, error: ${e}`,
+                                message:`Could not create private key from local secret, error: ${e}`,
                                 autohide: false,
                             };
                             toastStore.trigger(t);

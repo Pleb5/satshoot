@@ -105,7 +105,7 @@
             });
 
             cryptWorker.onmessage = (m) => {
-                const encryptedSeed = m.data['encryptedSeed'];
+                const encryptedSeed = m.data['encryptedSecret'];
                 if (encryptedSeed && npub) {
                     // Save encrypted seed words in browser localStorage
                     localStorage.setItem('nostr-seedwords', encryptedSeed);
@@ -122,7 +122,7 @@
 
                     goto('/' + npub);
                 } else {
-                    statusMessage = 'Unexpected response from decryption process:' + m.data;
+                    statusMessage = 'Unexpected response from encryption process:' + m.data;
                     setTimeout(()=>{
                         statusColor = 'text-red-500';
                     }, 800);            
@@ -130,7 +130,7 @@
             };
 
             cryptWorker.onerror = (e) => {
-                statusMessage = `Error while decrypting seed words! Incorrect Passphrase!`;
+                statusMessage = `Error while encrypting seed words!`;
                 setTimeout(()=>{
                     statusColor = 'text-red-500';
                 }, 800);            
@@ -150,7 +150,7 @@
 
             // Start worker in background and wait for decryption result in onmessage
             cryptWorker.postMessage({
-                seed: seedWords,
+                secret: seedWords,
                 passphrase: passphrase,
                 salt: npub
             });

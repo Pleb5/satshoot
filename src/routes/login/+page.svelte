@@ -106,7 +106,7 @@
         </div>
         <div class="flex gap-x-4 items-center mx-4 mt-8">
             <a href="/create-seed" class="btn btn-md lg:btn-lg bg-primary-300-600-token ">
-                <span>NEW local Nostr keypair</span>
+                <span>NEW Local Nostr Keypair</span>
             </a>
             <i 
                 class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
@@ -143,7 +143,7 @@
         </div>
 
         <a href="/restore" class="btn mx-4 mt-8 bg-primary-300-600-token">
-            <span>RESTORE from Seed Words</span>
+            <span>RESTORE Local Keypair</span>
         </a>
 
     </div>

@@ -1,23 +1,23 @@
-import { encryptSeed, decryptSeed } from "$lib/utils/crypto";
+import { encryptSecret, decryptSecret } from "$lib/utils/crypto";
 
-function runEncryptSeed (seed: string, passphrase: string, salt: string) {
-    const encryptedSeed = encryptSeed(seed, passphrase, salt); 
-    postMessage({encryptedSeed: encryptedSeed});
+function runEncryptSecret (secret: string, passphrase: string, salt: string) {
+    const encryptedSecret = encryptSecret(secret, passphrase, salt); 
+    postMessage({encryptedSecret: encryptedSecret});
 }
 
-function runDecryptSeed(ciphertext: string, passphrase: string, salt: string) {
-    const decryptedSeed = decryptSeed(ciphertext, passphrase, salt);
-    postMessage({decryptedSeed: decryptedSeed});
+function runDecryptSecret(ciphertext: string, passphrase: string, salt: string) {
+    const decryptedSecret = decryptSecret(ciphertext, passphrase, salt);
+    postMessage({decryptedSecret: decryptedSecret});
 }
 
 onmessage = (m:MessageEvent) => {
-    const seed = m.data['seed'];
-    const encryptedSeed = m.data['encrpytedSeed'];
+    const secret = m.data['secret'];
+    const encryptedSecret = m.data['encrpytedSecret'];
     const passphrase = m.data['passphrase'];
     const salt = m.data['salt'];
-    if (encryptedSeed && passphrase && salt) {
-        runDecryptSeed(encryptedSeed, passphrase, salt);
-    } else if(seed && passphrase && salt) {
-        runEncryptSeed(seed, passphrase, salt);
+    if (encryptedSecret && passphrase && salt) {
+        runDecryptSecret(encryptedSecret, passphrase, salt);
+    } else if(secret && passphrase && salt) {
+        runEncryptSecret(secret, passphrase, salt);
     }
 };

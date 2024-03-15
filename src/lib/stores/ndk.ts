@@ -11,6 +11,11 @@ export const DEFAULTRELAYURLS = [
     "wss://relay.damus.io/",
 ]
 
+export enum RestoreMethod {
+    Seed = 1,
+    Nsec = 2,
+}
+
 export enum LoginMethod {
     NIP07 = "nip07",
     Ephemeral = "ephemeral",

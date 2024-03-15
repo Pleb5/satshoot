@@ -6,29 +6,29 @@ import { utf8ToBytes, bytesToUtf8, bytesToHex, hexToBytes } from '@noble/ciphers
 
 import { scrypt} from '@noble/hashes/scrypt';
 
-export function encryptSeed (seed: string, passphrase: string, salt: string):string {
+export function encryptSecret (secret: string, passphrase: string, salt: string):string {
     const key = scrypt(passphrase, salt, { N: 2 ** 16, r: 8, p: 1, dkLen: 32,
         onProgress(percentage: number) {
         },
     });
 
     const chacha = managedNonce(xchacha20poly1305)(key); 
-    const data = utf8ToBytes(seed);
+    const data = utf8ToBytes(secret);
     const cipherData = chacha.encrypt(data);
 
     return bytesToHex(cipherData);
 }
 
-export function decryptSeed(ciphertext: string, passphrase: string, salt: string): string {
+export function decryptSecret(ciphertext: string, passphrase: string, salt: string): string {
     const key = scrypt(passphrase, salt, { N: 2 ** 16, r: 8, p: 1, dkLen: 32,
         onProgress(percentage: number) {
         },
     });
 
     const chacha = managedNonce(xchacha20poly1305)(key); 
-    const seedBytes = chacha.decrypt(hexToBytes(ciphertext));
-    const decryptedSeed = bytesToUtf8(seedBytes);
+    const secretBytes = chacha.decrypt(hexToBytes(ciphertext));
+    const decryptedSecret = bytesToUtf8(secretBytes);
 
-    return decryptedSeed;
+    return decryptedSecret;
 }
 

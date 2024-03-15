@@ -5,6 +5,9 @@
     import { tick } from 'svelte';
 
     import { DataLoadError } from '$lib/utils/errors';
+
+    import { RestoreMethod } from "$lib/stores/ndk";
+
 	// Props
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
@@ -17,18 +20,27 @@
 
     let decrypting = false;
 
-    async function loadSeed() {
+    async function loadSecret() {
         decrypting = true;
         await tick();
 
         statusColor = 'text-tertiary-200-700-token';
         statusMessage = 'Decrypting...';
         try {
-            const encrpytedSeed: string|null = localStorage.getItem("nostr-seedwords")
-            const salt :string|null = localStorage.getItem("nostr-npub")
+            let restoreMethod: RestoreMethod|undefined = undefined;
+            const encryptedSeed: string|null = localStorage.getItem("nostr-seedwords");
+            const encryptedNsec: string|null = localStorage.getItem("nostr-nsec");
+            const salt :string|null = localStorage.getItem("nostr-npub");
 
-            if (!encrpytedSeed) {
-                throw new DataLoadError('Could not fetch encrypted seedwords from local storage!', 'nostr-seedwords');
+            // Restore method depends on the local storage key(nostr-seedwords/nsec)
+            if (encryptedSeed) {
+                restoreMethod = RestoreMethod.Seed;
+            } else if (encryptedNsec) {
+                restoreMethod = RestoreMethod.Nsec;
+            }
+
+            if (!encryptedSeed && !encryptedNsec) {
+                throw new DataLoadError('Could not fetch encrypted secret from local storage!', 'tried: nostr-seedwords, nostr-nsec');
             }
             if (!salt) {
                 throw new DataLoadError('Could not fetch npub from local storage! Npub necessary for decryption!', 'nostr-npub');
@@ -39,11 +51,16 @@
             });
 
             cryptWorker.onmessage = (m) => {
-                const decryptedSeed = m.data['decryptedSeed'];
+                const decryptedSecret = m.data['decryptedSecret'];
                 decrypting = false;
-                if (decryptedSeed) {
+                if (decryptedSecret) {
                     if ($modalStore[0].response) {
-                        $modalStore[0].response(decryptedSeed);
+                        $modalStore[0].response(
+                            {
+                                decryptedSecret: decryptedSecret,
+                                restoreMethod: restoreMethod
+                            }
+                        );
                         modalStore.close();
                     };
                 } else {
@@ -57,7 +74,7 @@
             cryptWorker.onerror = (e) => {
                 decrypting = false;
                 console.log("Error happened in cryptWorker:", e.message)
-                statusMessage = `Error while decrypting seed words! Incorrect Passphrase!`;
+                statusMessage = `Error while decrypting secret! Incorrect Passphrase!`;
                 setTimeout(()=>{
                     statusColor = 'text-red-500';
                 }, 800);            
@@ -76,7 +93,7 @@
             
             // Start worker in background and wait for decryption result in onmessage
             cryptWorker.postMessage({
-                encrpytedSeed: encrpytedSeed,
+                encrpytedSecret: encryptedSeed ?? encryptedNsec,
                 passphrase: passphrase,
                 salt: salt
             });
@@ -106,7 +123,7 @@
         <h3 class="h3 text-center font-bold">Decrypt Local Seed</h3>
         <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
         <form 
-            on:submit|preventDefault={ loadSeed }>
+            on:submit|preventDefault={ loadSecret }>
             <div class="flex justify-between items-center m-4">
                     <input 
                         class="input" 
