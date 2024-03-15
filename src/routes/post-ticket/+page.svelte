@@ -16,7 +16,7 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
-    import { goto } from '$app/navigation';
+    import { beforeNavigate, goto } from '$app/navigation';
 
     // Retrieve Toast store at the top level
     const toastStore = getToastStore();
@@ -141,6 +141,10 @@
             });
             tagList = tagList;
         }
+    });
+
+    beforeNavigate(async ()=>{
+        $ticketToEdit = null;
     });
 			
 </script>
