@@ -50,7 +50,6 @@
         let closeTicketResponse = async function(r: boolean) {
             if (r) {
                 if (ticket) {
-                    // User chose to take offer
                     let ticketToPublish = new TicketEvent($ndk);
                     ticketToPublish.tags = ticket.tags;
                     ticketToPublish.description = ticket.description;

@@ -3,6 +3,7 @@
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import ndk from "$lib/stores/ndk";
+    import { connected } from "$lib/stores/ndk";
 
     import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
@@ -51,9 +52,9 @@
             const dTag = idFromNaddr(naddr).split(':')[2];
             const dTagFilters = ticketsOfSpecificOffersFilter['#d'];
 
-            if (!dTagFilters?.includes(dTag)) {
+            if (!dTagFilters?.includes(dTag) && $connected) {
                 ticketsOfSpecificOffersFilter['#d']?.push(dTag);
-                // Restart subscritpion
+                // Restart subscription
                 ticketsOfSpecificOffers.unsubscribe();
                 ticketsOfSpecificOffers.startSubscription();
             } else {

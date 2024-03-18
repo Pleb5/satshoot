@@ -82,9 +82,7 @@
     }
 
     $: if($navigating) {
-        console.log('navigating', $navigating)
         if ($navigating.to?.url.pathname === '/my-tickets') {
-            console.log('navigating to my tickets')
             $tabStore = 1; 
         }
     }
