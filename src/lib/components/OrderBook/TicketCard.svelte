@@ -196,7 +196,7 @@
 
 <div class="card">
     {#if ticket}
-        <header class="card-header grid grid-cols-6 items-start">
+        <header class="card-header grid grid-cols-[15%_1fr_15%] items-start">
             {#if ticketChat}
                 <a
                     href={"/messages/" + bech32ID + ":" + ticket.title}
@@ -206,14 +206,14 @@
                 </a>
                 
             {/if}
-            <div class="col-start-2 col-span-4 justify-self-center">
+            <div class="justify-self-center text-center justify-center text-wrap col-start-2">
                 {#if titleLink}
                     <a 
                         class="anchor justify-self-center text-{titleSize}" 
                         href={"/" + bech32ID }>{ticket.title ?? 'No title'}
                     </a>
                 {:else}
-                    <div class="text-{titleSize}">
+                    <div class="text-{titleSize} text-wrap ">
                         {ticket.title ?? 'No title'}
                     </div>
                 {/if}
@@ -224,14 +224,14 @@
                 <div class="justify-self-end ">
                     <button
                         type="button"
-                        class="btn btn-icon btn-sm md:btn-md bg-primary-400-500-token"
+                        class="btn btn-icon w-8 h-8 bg-primary-400-500-token"
                         use:popup={popupHover}
                     >
-                        <i class="fa fa-sm fa-ellipsis-v"></i>
+                        <i class="fa text-sm fa-ellipsis-v"></i>
                     </button>
                     <div data-popup="popupHover_{ticket.id}">
                         <div class="card p-2 bg-primary-300-600-token shadow-xl z-50 ">
-                            <ul class="list">
+                            <ul class="list space-y-4">
                                 <!-- Share Ticket -->
                                 <li>
                                     <button class="" on:click={shareTicket}>

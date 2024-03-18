@@ -131,15 +131,15 @@
 
 </script>
 
-<div class="card pt-4">
+<div class="card pt-2">
     {#if offer}
-        <div class="grid grid-cols-3 justify-center items-center mx-6">
+        <div class="grid grid-cols-[15%_1fr_15%] justify-center items-center mx-2">
             {#if ticketChat && ticket}
                 <a
                     href={"/messages/" + ticket.encode() + ":" + ticket.title}
-                    class="btn btn-icon btn-md justify-self-start"
+                    class="btn btn-icon btn-sm justify-self-start"
                 >
-                    <i class="fa-solid fa-comment text-3xl"></i>
+                    <i class="fa-solid fa-comment text-2xl"></i>
                 </a>
                 
             {/if}
@@ -150,10 +150,10 @@
                 {#if editOffer}
                     <button 
                         type="button"
-                        class="btn font-bold bg-primary-400-500-token" 
+                        class="btn btn-icon font-bold " 
                         on:click = {editMyOffer}
                     >
-                        Edit
+                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
                     </button>
                 {/if}
             </div>
@@ -172,9 +172,9 @@
             </div>
             <div class="">{timeSincePosted}</div>
             {#if showTicket}
-                <h4 class="h4 text-center text-primary-400-500-token"> On Ticket:</h4>
+                <hr class="my-2"/>
                 {#if ticket}
-                    <TicketCard ticket={ticket} showChat={false} {countAllOffers} >
+                    <TicketCard ticket={ticket} titleSize={'md md:text-xl'} showChat={false} {countAllOffers} >
                     </TicketCard>
                 {:else}
                     <h2 class="h2 text-center text-error-500">Loading Ticket for Offer...</h2>
