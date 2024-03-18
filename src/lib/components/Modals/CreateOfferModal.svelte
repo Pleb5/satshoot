@@ -8,6 +8,9 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
+    import { goto } from '$app/navigation';
+    import { navigating } from '$app/stores';
+    import tabStore from '$lib/stores/tab-store';
 
 	// Props
 	/** Exposes parent props to this component. */
@@ -67,12 +70,22 @@
             }
 
             modalStore.close();
+
+            goto('/my-tickets');
         } catch(e) {
             errorText = 'Error happened while publishing Offer!';
             if ($modalStore[0].response) {
                 $modalStore[0].response(false);
                 modalStore.close();
             }
+        }
+    }
+
+    $: if($navigating) {
+        console.log('navigating', $navigating)
+        if ($navigating.to?.url.pathname === '/my-tickets') {
+            console.log('navigating to my tickets')
+            $tabStore = 1; 
         }
     }
 
