@@ -13,8 +13,7 @@
 	// Props
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
-
-    let message: string = '';
+    let textArea:HTMLTextAreaElement;
 
     async function postFeedback() {
         $ndk.enableOutboxModel = true;
@@ -22,7 +21,7 @@
         const kind1Event = new NDKEvent($ndk);
         kind1Event.kind = NDKKind.Text;
 
-        kind1Event.content = message;
+        kind1Event.content = textArea.value;
         kind1Event.generateTags();
 
         const five = $ndk.getUser(
@@ -31,7 +30,6 @@
         kind1Event.tag(five);
 
         try {
-
             let relays = await kind1Event.publish();
             console.log(relays)
             const t: ToastSettings = {
@@ -57,7 +55,9 @@
     }
 
     onMount(()=>{
-        message = `\n\n#bitcointroubleshoot #feedback`;
+        textArea.value = `\n\n#bitcointroubleshoot #feedback`;
+        textArea.setSelectionRange(0, 0);
+        textArea.focus();
     });
 
 </script>
@@ -70,7 +70,7 @@
                 <textarea 
                     rows="8"
                     class="textarea"
-                    bind:value={message}
+                    bind:this={textArea}
                 />
                 <button
                     type="submit"
