@@ -3,6 +3,7 @@
     import { page } from "$app/stores";
 
     import { messageStore, receivedMessageFilter, myMessageFilter } from "$lib/stores/messages";
+    import { offersOnTickets, offersOnTicketsFilter, myTickets } from "$lib/stores/troubleshoot-eventstores";
 
     import { onDestroy, onMount } from "svelte";
 
@@ -14,11 +15,13 @@
     import { NDKEvent, NDKKind, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 
     import { idFromNaddr } from '$lib/utils/nip19'
+    import type { OfferEvent } from "$lib/events/OfferEvent";
+    import { TicketEvent } from "$lib/events/TicketEvent";
 
     const toastStore = getToastStore();
 
     const ticketAddress = idFromNaddr($page.params.ticketId);
-    const ticketTitle = $page.params.title;
+    let ticket: TicketEvent | null = null;
 
 	interface MessageFeed {
 		id: string;
@@ -41,6 +44,8 @@
 	// Navigation List
 	let people: NDKUser[] = [];
     let currentPerson: NDKUser;
+    // The pubkey of the person who made the winning Offer
+    let winner: string = '';
 
 	// All Messages
 	let messages: MessageFeed[] = [];
@@ -108,6 +113,25 @@
         });
     }
 
+    function addPerson(pubkey: string): NDKUser {
+        for (const person of people) {
+            if (person.pubkey === pubkey) {
+                return person;
+            }
+        }
+        
+        // We havent added this person yet
+        const person = $ndk.getUser({hexpubkey: pubkey});
+        console.log('adding new person', person)
+        if (!currentPerson) {
+            currentPerson = person; 
+        }
+        people.push(person);
+
+        updateUserProfile(person);
+        return person;
+    }
+
     function generateCurrentFeed() {
         const unOrderedMessageFeed = messages.filter((message: MessageFeed) => {
             if (message.pubkey === currentPerson.pubkey) {
@@ -150,6 +174,7 @@
     }
 
     async function updateMessageFeed() {
+        console.log('update message feeed')
         for (const dm of $messageStore) {
             const alreadyHere: boolean = seenMessages.filter((id: string) => {
                 if (dm.id === id) return true;
@@ -173,23 +198,10 @@
                 otherUser = $ndk.getUser({hexpubkey: dm.tagValue('p')});
             } else {
                 otherUser = $ndk.getUser({hexpubkey: dm.pubkey});
-                let personKnown = false;
-                for (const person of people) {
-                    if (person.pubkey === dm.pubkey) {
-                        personKnown = true;
-                        personOfMessage = person;
-                    }
-                }
 
-                if (!personKnown) {
-                    personOfMessage = $ndk.getUser({hexpubkey: dm.pubkey});
-                    if (!currentPerson) {
-                        currentPerson = personOfMessage; 
-                    }
-                    people.push(personOfMessage);
-
-                    updateUserProfile(personOfMessage);
-                }
+                // This only adds person if it is not already added
+                console.log('add person in updateMessageFeed')
+                personOfMessage = addPerson(dm.pubkey)
             }
 
             try {
@@ -229,11 +241,6 @@
         generateCurrentFeed();
     }
 
-	// When DOM mounted, scroll to bottom
-	onMount(() => {
-		scrollChatBottom();
-	}); 
-
     onDestroy(()=>{
         myMessageFilter['authors'] = [];
         myMessageFilter['#t'] = [];
@@ -246,7 +253,6 @@
 
     // If there is a logged in user, start receiving messages related to the ticket
     $: if ($ndk.activeUser && needSetup) {
-        needSetup = false;
         myMessageFilter['authors'] = [];
         myMessageFilter['authors'].push($ndk.activeUser.pubkey);
         myMessageFilter['#t'] = [];
@@ -260,26 +266,72 @@
         messageStore.empty();
         messageStore.startSubscription();
 
-        // If my ticket then just wait for messages to arrive
+        // If my ticket then add all people that created an offer on this ticket
+        // and highlight winner offer if there is one
         // else I add the ticket creator to people
-        let ticketPubkey = ticketAddress.split(':')[1];
-        if ($ndk.activeUser.pubkey !== ticketPubkey) {
-            currentPerson = $ndk.getUser({hexpubkey: ticketPubkey});
-            people.push(currentPerson);
-            
-            updateUserProfile(currentPerson);
-
-        }
+        console.log('fetch ticket...')
+        //  We must fetch this ticket once
+        // to get the winner and the ticket title. 
+        // myTickets does not necessarily contain this ticket at this point so it is easier this way
+        $ndk.fetchEvent(ticketAddress).then((t: NDKEvent|null) => {
+            needSetup = false;
+            let ticketPubkey = ticketAddress.split(':')[1];
+            if (t) {
+                console.log('got ticket')
+                ticket = TicketEvent.from(t);
+            }
+            if (($ndk.activeUser as NDKUser).pubkey !== ticketPubkey) {
+                addPerson(ticketPubkey);
+                console.log('addperson in fetchevent, NOT my ticket')
+            } else {
+                // This is my ticket.
+                const aTagFilters = offersOnTicketsFilter['#a'];
+                if (!aTagFilters?.includes(ticketAddress)) {
+                    offersOnTicketsFilter['#a']?.push(ticketAddress);
+                    offersOnTickets.unsubscribe();
+                    offersOnTickets.startSubscription();
+                } else if(ticket) {
+                    // Get all offers on my ticket, extract pubkeys and add to people
+                    // currentPerson should be the winner OR the latest offer maker
+                    $offersOnTickets.forEach((offer: OfferEvent) => {
+                        if (offer.referencedTicketAddress === ticketAddress) {
+                            const user = $ndk.getUser({hexpubkey: offer.pubkey});
+                            // If this is the winner offer, set currentPerson
+                            if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
+                                currentPerson = user;
+                                console.log('we got a winner in setup')
+                                winner = offer.pubkey;
+                            }
+                        }
+                    });
+                }
+            }
+        });
     }
 
-    $: if ($messageStore.length > 0) {
+    $: if (ticket && $offersOnTickets) {
+        $offersOnTickets.forEach((offer: OfferEvent) => {
+            if (offer.referencedTicketAddress === ticketAddress) {
+                // If this is the winner offer, set winner
+                if (!winner) {
+                    if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
+                        console.log('we got a winner in arrived offers')
+                        winner = offer.pubkey;
+                    }
+                }
+                addPerson(offer.pubkey);
+            }
+        });
+    }
+
+    $: if ($messageStore.length > 0 && !needSetup && currentPerson) {
         updateMessageFeed();
     }
 
 </script>
 
 <div class="bg-surface-100-800-token p-2">
-    <h2 class="h2 my-2 text-center font-bold">{'Ticket: ' + ticketTitle}</h2>
+    <h4 class="h4 mb-2 text-center font-bold">{'Ticket: ' + (ticket ? ticket.title : '?')}</h4>
     <!-- Horizontal Navigation bar -->
     <div class="flex flex-col md:hidden border-r border-surface-500/30">
         <!-- Header -->
@@ -299,7 +351,8 @@
                 {#each people as person}
                     <button
                         type="button"
-                        class="btn w-full flex items-center space-x-4 {person.pubkey === currentPerson.pubkey
+                        class="btn w-full flex items-center space-x-4 
+                        {person.pubkey === currentPerson.pubkey
                         ? 'variant-filled-primary'
                         : 'bg-surface-hover-token'}"
                         on:click={() => {
@@ -355,8 +408,8 @@
                                 src={person.profile?.image}
                                 width="w-8"
                             />
-                            <span class="flex-1 text-start">
-                                {person.profile?.name ?? person.npub.substring(0,15)}
+                            <span class="flex-1 text-start text-primary-200">
+                                {person.profile?.name ?? person.npub.substring(0,10)}
                             </span>
                         </button>
                     {/each}
@@ -366,7 +419,7 @@
         <!-- Chat -->
         <div class="grid grid-row-[1fr_auto]">
             <!-- Conversation -->
-            <section bind:this={elemChat} class="max-h-[700px] p-4 overflow-y-auto space-y-4">
+            <section bind:this={elemChat} class="max-h-[450px] p-4 overflow-y-auto space-y-4">
                 {#each filteredMessageFeed as bubble}
                     {#if bubble.host === true}
                         <div class="grid grid-cols-[auto_1fr] gap-2">
@@ -397,7 +450,7 @@
     </div>
 </section>
 <!-- Prompt -->
-<section class="sticky bottom-0 w-full border-t border-surface-500/30 bg-surface-100-800-token p-4">
+<section class="w-full mt-auto border-t border-surface-500/30 bg-surface-100-800-token p-2">
     <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
         <button class="input-group-shim">+</button>
         <textarea
