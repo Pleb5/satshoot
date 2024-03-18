@@ -78,12 +78,12 @@
             dm.tags.push(['t', ticketAddress]);
             dm.tags.push(['p', currentPerson.pubkey]);
 
+            // Clear prompt
+            currentMessage = '';
+
             await dm.encrypt();
 
             await dm.publish();
-
-            // Clear prompt
-            currentMessage = '';
         }
 	}
 
@@ -402,7 +402,7 @@
         <button class="input-group-shim">+</button>
         <textarea
             bind:value={currentMessage}
-            class="bg-transparent border-0 ring-0"
+            class="bg-transparent border-0 ring-0 text-sm"
             name="prompt"
             id="prompt"
             placeholder="Write a message..."
