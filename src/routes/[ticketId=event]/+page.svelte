@@ -7,6 +7,7 @@
     import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
+    import OfferTakenModal from "$lib/components/Modals/OfferTakenModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
 
@@ -21,6 +22,7 @@
     import { nip19 } from "nostr-tools";
     import UserCard from "$lib/components/User/UserCard.svelte";
     import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
+    import { goto } from "$app/navigation";
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -135,24 +137,19 @@
                     try {
                         await ticketToPublish.publish();
 
-                        // Ticket posted Modal
+                        const modalComponent: ModalComponent = {
+                            ref: OfferTakenModal,
+                        };
+
                         const modal: ModalSettings = {
-                            type: 'alert',
-                            // Data
-                            title: 'Success!',
-                            body: `
-                        <p>You accepted the Offer!</p>
-                        <strong class='text-error-500'>
-                            It is strongly recommended you use specialized E2EE(e.g. SimpleX chat)
-                            messaging software for highly sensitive information!
-                        </strong>
-                        <p>
-                            Go to 'Messages' and talk about your preferred communication method then switch to that app for the actual Troubleshooting!
-                        </p>
-                            `,
-                            buttonTextCancel:'Great!',
+                            type: 'component',
+                            component: modalComponent,
                         };
                         modalStore.trigger(modal);
+
+                        // Navigate to ticket messages
+                        goto('/messages/' + ticket.encode() + ":" + ticket.title);
+
                     } catch(e) {
                         console.log(e)
                         const t: ToastSettings = {
