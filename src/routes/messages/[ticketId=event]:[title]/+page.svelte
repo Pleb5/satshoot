@@ -83,6 +83,8 @@
             dm.tags.push(['t', ticketAddress]);
             dm.tags.push(['p', currentPerson.pubkey]);
 
+            console.log('dm', dm)
+
             // Clear prompt
             currentMessage = '';
 
@@ -326,146 +328,150 @@
         });
     }
 
-    $: if ($messageStore.length > 0 && !needSetup && currentPerson) {
+    $: if (!needSetup && $messageStore.length > 0) {
         updateMessageFeed();
     }
 
 </script>
 
-<div class="bg-surface-100-800-token p-2">
-    <h4 class="h4 mb-2 text-center font-bold">{'Ticket: ' + (ticket ? ticket.title : '?')}</h4>
-    <!-- Horizontal Navigation bar -->
-    <div class="flex flex-col md:hidden border-r border-surface-500/30">
-        <!-- Header -->
-        <header class="border-b border-surface-500/30 p-2">
-            <input
-                class="input"
-                type="search"
-                placeholder="Search..."
-                bind:value={searchInput}
-                on:keyup={searchText}
-            />
-        </header>
-        <!-- List -->
-        <div class="grid grid-cols-5 p-2 pb-0 space-x-2">
-            <small class="opacity-50">Contacts</small>
-            <div class="flex flex-col space-y-1 col-start-2 col-span-4 max-h-24 overflow-y-auto">
-                {#each people as person}
-                    <button
-                        type="button"
-                        class="btn w-full flex items-center space-x-4 
-                        {person.pubkey === currentPerson.pubkey
-                        ? 'variant-filled-primary'
-                        : 'bg-surface-hover-token'}"
-                        on:click={() => {
-                            currentPerson = person;
-                            generateCurrentFeed();
-                            updateUserProfile(currentPerson);
-                        }}
-                    >
-                        <Avatar
-                            src={person.profile?.image}
-                            width="w-8"
-                        />
-                        <span class="flex-1 text-start">
-                            {person.profile?.name ?? person.npub.substring(0,15)}
-                        </span>
-                    </button>
-                {/each}
-            </div>
-        </div>
-    </div>
-</div>
-<section class="card">
-    <div class="chat w-full h-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
-        <!-- Vertical Navigation bar -->
-        <div class="hidden md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
-            <!-- Header -->
-            <header class="border-b border-surface-500/30 p-4">
-                <input
-                    class="input"
-                    type="search"
-                    placeholder="Search..."
-                    bind:value={searchInput}
-                    on:keyup={searchText}
-                />
-            </header>
-            <!-- List -->
-            <div class="p-4 space-y-4 overflow-y-auto">
-                <small class="opacity-50">Contacts</small>
-                <div class="flex flex-col space-y-1">
-                    {#each people as person}
-                        <button
-                            type="button"
-                            class="btn w-full flex items-center space-x-4 {person.pubkey === currentPerson.pubkey
-                            ? 'variant-filled-primary'
-                            : 'bg-surface-hover-token'}"
-                            on:click={() => {
-                                currentPerson = person;
-                                generateCurrentFeed();
-                                updateUserProfile(currentPerson);
-                            }}
-                        >
-                            <Avatar
-                                src={person.profile?.image}
-                                width="w-8"
-                            />
-                            <span class="flex-1 text-start text-primary-200">
-                                {person.profile?.name ?? person.npub.substring(0,10)}
-                            </span>
-                        </button>
-                    {/each}
+<div class="grid grid-rows-[1fr_auto] max-h-screen">
+    <div class="">
+        <div class="bg-surface-100-800-token p-2">
+            <h4 class="h4 mb-2 text-center font-bold">{'Ticket: ' + (ticket ? ticket.title : '?')}</h4>
+            <!-- Horizontal Navigation bar -->
+            <div class="flex flex-col md:hidden border-r border-surface-500/30">
+                <!-- Header -->
+                <header class="border-b border-surface-500/30 p-2">
+                    <input
+                        class="input"
+                        type="search"
+                        placeholder="Search..."
+                        bind:value={searchInput}
+                        on:keyup={searchText}
+                    />
+                </header>
+                <!-- Contact List -->
+                <div class="grid grid-cols-5 p-2 pb-0 space-x-2">
+                    <small class="opacity-50">Contacts</small>
+                    <div class="flex flex-col space-y-1 col-start-2 col-span-4 max-h-20 overflow-y-auto">
+                        {#each people as person}
+                            <button
+                                type="button"
+                                class="btn w-full flex items-center space-x-4 
+                                {person.pubkey === currentPerson.pubkey
+                                ? 'variant-filled-primary'
+                                : 'bg-surface-hover-token'}"
+                                on:click={() => {
+                                    currentPerson = person;
+                                    generateCurrentFeed();
+                                    updateUserProfile(currentPerson);
+                                }}
+                            >
+                                <Avatar
+                                    src={person.profile?.image}
+                                    width="w-8"
+                                />
+                                <span class="flex-1 text-start {person.pubkey === winner 
+                                        ? 'text-warning-400 font-bold' : ''}">
+                                    {person.profile?.name ?? person.npub.substring(0,15)}
+                                </span>
+                            </button>
+                        {/each}
+                    </div>
                 </div>
             </div>
         </div>
-        <!-- Chat -->
-        <div class="grid grid-row-[1fr_auto]">
-            <!-- Conversation -->
-            <section bind:this={elemChat} class="max-h-[450px] p-4 overflow-y-auto space-y-4">
-                {#each filteredMessageFeed as bubble}
-                    {#if bubble.host === true}
-                        <div class="grid grid-cols-[auto_1fr] gap-2">
-                            <Avatar src={bubble.avatar} width="w-12" />
-                            <div class="card p-4 variant-soft rounded-tl-none space-y-2">
-                                <header class="flex justify-between items-center">
-                                    <p class="font-bold">{bubble.name}</p>
-                                    <small class="opacity-50">{bubble.timestamp}</small>
-                                </header>
-                                <p>{bubble.message}</p>
-                            </div>
+        <section class="card ">
+            <div class="chat  w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
+                <!-- Vertical Navigation bar -->
+                <div class="hidden md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
+                    <!-- Header -->
+                    <header class="border-b border-surface-500/30 p-4">
+                        <input
+                            class="input"
+                            type="search"
+                            placeholder="Search..."
+                            bind:value={searchInput}
+                            on:keyup={searchText}
+                        />
+                    </header>
+                    <!-- Contact List -->
+                    <div class="p-4 space-y-4 overflow-y-auto ">
+                        <small class="opacity-50">Contacts</small>
+                        <div class="flex flex-col space-y-1">
+                            {#each people as person}
+                                <button
+                                    type="button"
+                                    class="btn w-full flex items-center space-x-4 {person.pubkey === currentPerson.pubkey
+                                    ? 'variant-filled-primary'
+                                    : 'bg-surface-hover-token'}"
+                                    on:click={() => {
+                                        currentPerson = person;
+                                        generateCurrentFeed();
+                                        updateUserProfile(currentPerson);
+                                    }}
+                                >
+                                    <Avatar
+                                        src={person.profile?.image}
+                                        width="w-8"
+                                    />
+                                    <span class="flex-1 text-start
+                                        {person.pubkey === winner 
+                                        ? 'text-warning-500 font-bold' : ''}">
+                                        {person.profile?.name ?? person.npub.substring(0,10)}
+                                    </span>
+                                </button>
+                            {/each}
                         </div>
-                    {:else}
-                        <div class="grid grid-cols-[1fr_auto] gap-2">
-                            <div class="card p-4 rounded-tr-none space-y-2 {bubble.color}">
-                                <header class="flex justify-between items-center">
-                                    <p class="font-bold">{bubble.name}</p>
-                                    <small class="opacity-50">{bubble.timestamp}</small>
-                                </header>
-                                <p>{bubble.message}</p>
+                    </div>
+                </div>
+                <!-- Conversation -->
+                <section bind:this={elemChat} class="p-4 h-[48vh] lg:h-[70vh] xl:h-[80vh] overflow-y-auto space-y-4 mb-auto">
+                    {#each filteredMessageFeed as bubble}
+                        {#if bubble.host === true}
+                            <div class="grid grid-cols-[auto_1fr] gap-2">
+                                <Avatar src={bubble.avatar} width="w-12" />
+                                <div class="card p-4 variant-soft rounded-tl-none space-y-2">
+                                    <header class="flex justify-between items-center">
+                                        <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
+                                        <small class="opacity-50">{bubble.timestamp}</small>
+                                    </header>
+                                    <p>{bubble.message}</p>
+                                </div>
                             </div>
-                            <Avatar src={bubble.avatar} width="w-12" />
-                        </div>
-                    {/if}
-                {/each}
-            </section>
+                        {:else}
+                            <div class="grid grid-cols-[1fr_auto] gap-2">
+                                <div class="card p-4 rounded-tr-none space-y-2 {bubble.color}">
+                                    <header class="flex justify-between items-center">
+                                        <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
+                                        <small class="opacity-50">{bubble.timestamp}</small>
+                                    </header>
+                                    <p>{bubble.message}</p>
+                                </div>
+                                <Avatar src={bubble.avatar} width="w-12" />
+                            </div>
+                        {/if}
+                    {/each}
+                </section>
+            </div>
+        </section>
+    </div>
+    <!-- Prompt -->
+    <section class="w-full h-14 border-t border-surface-500/30 bg-surface-100-800-token p-2">
+        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
+            <button class="input-group-shim">+</button>
+            <textarea
+                bind:value={currentMessage}
+                class="bg-transparent border-0 ring-0 text-sm"
+                name="prompt"
+                id="prompt"
+                placeholder="Write a message..."
+                rows="1"
+                on:keydown={onPromptKeydown}
+            />
+            <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
+                <i class="fa-solid fa-paper-plane" />
+            </button>
         </div>
-    </div>
-</section>
-<!-- Prompt -->
-<section class="w-full mt-auto border-t border-surface-500/30 bg-surface-100-800-token p-2">
-    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
-        <button class="input-group-shim">+</button>
-        <textarea
-            bind:value={currentMessage}
-            class="bg-transparent border-0 ring-0 text-sm"
-            name="prompt"
-            id="prompt"
-            placeholder="Write a message..."
-            rows="1"
-            on:keydown={onPromptKeydown}
-        />
-        <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
-            <i class="fa-solid fa-paper-plane" />
-        </button>
-    </div>
-</section>
+    </section>
+</div>
