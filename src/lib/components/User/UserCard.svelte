@@ -33,12 +33,18 @@
     let userNameText: string;
     let lud16Text:string;
 
-    $: editable = $ndk.activeUser?.npub === npub;
+    let editable = false;
+
+    $: if ($ndk.activeUser && npub) {
+        editable = $ndk.activeUser?.npub === npub;
+        needProfile = true;
+    }
     // Some strange behavior around ndk, user and ndk.activeUser when recursively
     // assigning ndk.getUser(npub) -> user.ndk = this -> user.ndk.activeUser = ...?
     // user.ndk.activeUser.ndk = .... ???!!! infinte recursion of assignments?
     $: {
         if (npub && needProfile && $connected) {
+            console.log('need profile, fetching...')
             needProfile = false;
             let opts = { npub: npub };
             try {
@@ -214,7 +220,7 @@
 {:then userProfile}
     <div class="card p-4 m-8 mt-4">
         <header class="mb-8">
-            <div class="grid grid-cols-3 items-center justify-center">
+            <div class="grid grid-cols-[auto_1fr_auto] items-center justify-center gap-x-2">
                 <div>
                     <Avatar 
                         class="rounded-full border-white placeholder-white"
@@ -225,7 +231,7 @@
                     <h2 class="h2 text-center font-bold text-lg sm:text-2xl">{userProfile?.name ?? 'Name?'}</h2>
                 </div>
                 {#if editable}
-                    <button on:click={editName}>
+                    <button class="justify-self-end" on:click={editName}>
                         <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
                     </button>
                 {/if}
