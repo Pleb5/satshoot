@@ -340,7 +340,9 @@
 <div class="grid grid-rows-[1fr_auto] max-h-screen">
     <div class="">
         <div class="bg-surface-100-800-token p-2">
-            <h4 class="h4 mb-2 text-center font-bold">{'Ticket: ' + (ticket ? ticket.title : '?')}</h4>
+            <a class="anchor" href={'/' + $page.params.ticketId}>
+                <h4 class="h4 mb-2 text-center font-bold">{'Ticket: ' + (ticket ? ticket.title : '?')}</h4>
+            </a>
             <!-- Horizontal Navigation bar -->
             <div class="flex flex-col md:hidden border-r border-surface-500/30">
                 <!-- Header -->
