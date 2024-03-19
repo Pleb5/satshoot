@@ -142,7 +142,7 @@
         </form>
     </div>
 </div>
-<div class="flex flex-col gap-y-6 justify-center items-center mb-10 mx-2">
+<div class="flex flex-col gap-y-4 justify-center items-center mb-10 mx-2 overflow-y-auto">
     {#each relays as relay}
         <div class="card card-hover bg-surface-active-token flex flex-col items-center p-4">
             <RelayListElement relay = {relay}/>
