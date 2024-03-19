@@ -22,6 +22,7 @@
 
     const ticketAddress = idFromNaddr($page.params.ticketId);
     let ticket: TicketEvent | null = null;
+    let myTicket = false;
 
 	interface MessageFeed {
 		id: string;
@@ -287,6 +288,8 @@
                 addPerson(ticketPubkey);
             } else {
                 // This is my ticket.
+                myTicket = true;
+                console.log('this is my ticket')
                 const aTagFilters = offersOnTicketsFilter['#a'];
                 if (!aTagFilters?.includes(ticketAddress)) {
                     offersOnTicketsFilter['#a']?.push(ticketAddress);
@@ -311,7 +314,7 @@
         });
     }
 
-    $: if (ticket && $offersOnTickets) {
+    $: if (ticket && myTicket && $offersOnTickets) {
         $offersOnTickets.forEach((offer: OfferEvent) => {
             if (offer.referencedTicketAddress === ticketAddress) {
                 // If this is the winner offer, set winner
