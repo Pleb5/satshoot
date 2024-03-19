@@ -14,7 +14,8 @@
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import ShareTicketModal from "$lib/components/Modals/ShareTicketModal.svelte";
     import { onMount } from 'svelte';
     import { beforeNavigate, goto } from '$app/navigation';
 
@@ -82,23 +83,23 @@
        if (titleValid && descriptionValid) {
             // Post the ticket...
             if ($ndk.activeUser) {
-                const event = new TicketEvent($ndk);
+                const ticket = new TicketEvent($ndk);
 
-                event.title = titleText;
-                event.description = descriptionText;
-                event.status = TicketStatus.New;
+                ticket.title = titleText;
+                ticket.description = descriptionText;
+                ticket.status = TicketStatus.New;
                 tagList.forEach((tag) => {
-                    event.tags.push(['t', tag]);
+                    ticket.tags.push(['t', tag]);
                 });
                 // Generate 'd' tag and tags from description hashtags
                 // only if we are not editing but creating a new ticket
                 if (!$ticketToEdit) {
-                    event.generateTags();
+                    ticket.generateTags();
                 } else {
-                    event.removeTag('d');
-                    event.tags.push(['d', $ticketToEdit.tagValue('d') as string]);
+                    ticket.removeTag('d');
+                    ticket.tags.push(['d', $ticketToEdit.tagValue('d') as string]);
                 }
-                await event.publish(
+                await ticket.publish(
                     new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
                 );
 
@@ -113,6 +114,32 @@
                     buttonTextCancel:'Ok',
                 };
                 modalStore.trigger(modal);
+
+                let shareTicketResponse = function(r: boolean){
+                    if (r) {
+                        const modalComponent: ModalComponent = {
+                            ref: ShareTicketModal,
+                            props: {ticket: ticket},
+                        };
+
+                        const shareModal: ModalSettings = {
+                            type: 'component',
+                            component: modalComponent,
+                        };
+                        modalStore.trigger(shareModal);
+                    }
+                }
+                const postAsTextModal: ModalSettings = {
+                    type: 'confirm',
+                    title: 'Share Ticket as Text Note?',
+                    body: 'It will show up in your feed on popular clients.',
+                    buttonTextCancel: 'No thanks',
+                    buttonTextConfirm: 'Of course!',
+                    response: shareTicketResponse,
+                };
+                modalStore.trigger(postAsTextModal);
+
+
                 goto('/my-tickets');
             } else {
                 const t: ToastSettings = {
