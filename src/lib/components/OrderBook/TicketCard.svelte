@@ -102,7 +102,7 @@
 
     $: if ($ndk.activeUser && showChat) {
         ticketChat = true;
-    }
+    } else ticketChat = false;
 
     $: {
         if (ticket) {

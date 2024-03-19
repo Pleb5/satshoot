@@ -37,14 +37,13 @@
 
     $: if ($ndk.activeUser && npub) {
         editable = $ndk.activeUser?.npub === npub;
-        needProfile = true;
+        needProfile = true
     }
     // Some strange behavior around ndk, user and ndk.activeUser when recursively
     // assigning ndk.getUser(npub) -> user.ndk = this -> user.ndk.activeUser = ...?
     // user.ndk.activeUser.ndk = .... ???!!! infinte recursion of assignments?
     $: {
         if (npub && needProfile && $connected) {
-            console.log('need profile, fetching...')
             needProfile = false;
             let opts = { npub: npub };
             try {
