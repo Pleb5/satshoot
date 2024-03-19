@@ -3,16 +3,16 @@
     import { page } from "$app/stores";
 
     import { messageStore, receivedMessageFilter, myMessageFilter } from "$lib/stores/messages";
-    import { offersOnTickets, offersOnTicketsFilter, myTickets } from "$lib/stores/troubleshoot-eventstores";
+    import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
 
-    import { onDestroy, onMount } from "svelte";
+    import { onDestroy } from "svelte";
 
 	import { Avatar } from '@skeletonlabs/skeleton';
 
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
 
-    import { NDKEvent, NDKKind, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
+    import { NDKEvent, NDKKind, type NDKUser } from "@nostr-dev-kit/ndk";
 
     import { idFromNaddr } from '$lib/utils/nip19'
     import type { OfferEvent } from "$lib/events/OfferEvent";
@@ -268,7 +268,7 @@
 
         // If my ticket then add all people that created an offer on this ticket
         // and highlight winner offer if there is one
-        // else I add the ticket creator to people
+        // else add the ticket creator to people
         console.log('fetch ticket...')
         //  We must fetch this ticket once
         // to get the winner and the ticket title. 
@@ -281,8 +281,8 @@
                 ticket = TicketEvent.from(t);
             }
             if (($ndk.activeUser as NDKUser).pubkey !== ticketPubkey) {
-                addPerson(ticketPubkey);
                 console.log('addperson in fetchevent, NOT my ticket')
+                addPerson(ticketPubkey);
             } else {
                 // This is my ticket.
                 const aTagFilters = offersOnTicketsFilter['#a'];
@@ -296,8 +296,8 @@
                     $offersOnTickets.forEach((offer: OfferEvent) => {
                         if (offer.referencedTicketAddress === ticketAddress) {
                             const user = $ndk.getUser({hexpubkey: offer.pubkey});
-                            // If this is the winner offer, set currentPerson
                             if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
+                                // We set the current person to the winner if possible
                                 currentPerson = user;
                                 console.log('we got a winner in setup')
                                 winner = offer.pubkey;
@@ -319,7 +319,9 @@
                         winner = offer.pubkey;
                     }
                 }
-                addPerson(offer.pubkey);
+                if (offer.pubkey !== ($ndk.activeUser as NDKUser).pubkey) {
+                    addPerson(offer.pubkey);
+                }
             }
         });
     }
