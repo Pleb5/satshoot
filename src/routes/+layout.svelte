@@ -25,7 +25,7 @@
     import { Avatar } from '@skeletonlabs/skeleton';
     import { AppRail, AppRailAnchor } from '@skeletonlabs/skeleton';
     import { TabGroup, TabAnchor } from '@skeletonlabs/skeleton';
-    import { page } from '$app/stores';
+    import { page, updated } from '$app/stores';
 
     // Popup menu
     import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
@@ -235,6 +235,22 @@
         placement: "top"
     };
 
+    // Check for app updates and offer reload option to user in a Toast
+    $: if ($updated) {
+        let toastId:string;
+        const t: ToastSettings = {
+            message: 'New version of the app just dropped!',
+            autohide: false,
+            action: {
+                label: 'Reload',
+                response: () => {
+                    toastStore.close(toastId);
+                    location.reload();
+                },
+            }
+        };
+        toastId = toastStore.trigger(t);
+    }
 
     
 </script>
