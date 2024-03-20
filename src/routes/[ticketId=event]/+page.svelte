@@ -4,6 +4,7 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import ndk from "$lib/stores/ndk";
     import { connected } from "$lib/stores/ndk";
+    import loginAlert from '$lib/stores/login-alert';
 
     import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
@@ -36,6 +37,7 @@
 
     let allowCreateOffer: boolean = true;
     let disallowCreateOfferReason = '';
+    let loginAlertShown = false;
 
     // Only trying to fetch offers on ticket once. This doesnt create a permanent
     // subscription which would likely be an overkill
@@ -44,6 +46,33 @@
         if (!$ndk.activeUser){
             allowCreateOffer = false;
             disallowCreateOfferReason = 'Need to log in before creating an offer!'; 
+            
+            if ($loginAlert && !loginAlertShown) {
+                loginAlertShown = true;
+                const modalBody = `
+                    <p>You need to login to create an Offer.</p>
+                    <p>Login now?</p>
+                `;
+
+                let loginResponse = async function(r: boolean){
+                    if (r) {
+                        goto('/login');
+                    } else {
+                        $loginAlert = false;
+                        modalStore.close();
+                    }
+                }
+
+                const modal: ModalSettings = {
+                    type: 'confirm',
+                    title: 'Log in to create Offer',
+                    body: modalBody,
+                    buttonTextConfirm: 'Go to Login',
+                    buttonTextCancel: 'No, thanks',
+                    response: loginResponse,
+                };
+                modalStore.trigger(modal);
+            }
         } else {
             allowCreateOffer = true;
         }
