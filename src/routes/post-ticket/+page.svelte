@@ -6,6 +6,8 @@
 
     import { ticketToEdit } from "$lib/stores/ticket-to-edit";
 
+    import tabStore from '$lib/stores/tab-store';
+
     import { InputChip } from '@skeletonlabs/skeleton';
     import { Autocomplete } from '@skeletonlabs/skeleton';
     import type { AutocompleteOption } from '@skeletonlabs/skeleton';
@@ -16,8 +18,10 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import ShareTicketModal from "$lib/components/Modals/ShareTicketModal.svelte";
+
     import { onMount } from 'svelte';
     import { beforeNavigate, goto } from '$app/navigation';
+    import { navigating } from '$app/stores';
 
     // Retrieve Toast store at the top level
     const toastStore = getToastStore();
@@ -173,6 +177,12 @@
     beforeNavigate(async ()=>{
         $ticketToEdit = null;
     });
+
+    $: if($navigating) {
+        if ($navigating.to?.url.pathname === '/my-tickets') {
+            $tabStore = 0; 
+        }
+    }
 			
 </script>
 
