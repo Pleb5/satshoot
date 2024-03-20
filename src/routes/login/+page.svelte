@@ -3,6 +3,7 @@
     import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
     import { myTickets, myOffers , myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
+    import redirectStore from "$lib/stores/redirect-store";
 
     import { browser } from "$app/environment";
 
@@ -19,7 +20,12 @@
     // Navigate to Home page if user is already logged in(needs to log out first)
     $: {
         if ($ndk.activeUser) {
-           goto('/'); 
+            if ($redirectStore) {
+                goto($redirectStore)
+                $redirectStore = '';
+            } else {
+                goto('/'); 
+            }
         }
     }
 

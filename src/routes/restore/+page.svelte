@@ -7,6 +7,8 @@
     import { wordlist } from '@scure/bip39/wordlists/english';
 
     import { myTickets, myOffers, myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
+
+    import redirectStore from '$lib/stores/redirect-store';
     
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
@@ -136,7 +138,12 @@
                             background: 'bg-success-300-600-token',
                         };
                         toastStore.trigger(t);
-                        goto('/my-tickets');
+                        if ($redirectStore) {
+                            goto($redirectStore);
+                            $redirectStore = '';
+                        } else {
+                            goto('/my-tickets');
+                        }
                     } else {
                         statusMessage = 'Unexpected response from encryption process:' + m.data;
                         setTimeout(()=>{

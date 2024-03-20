@@ -2,6 +2,7 @@
     import ndk from "$lib/stores/ndk";
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { myTickets, myOffers , myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
+    import redirectStore from "$lib/stores/redirect-store";
     import { NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import { sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
@@ -119,8 +120,13 @@
                         background: 'bg-success-300-600-token',
                     };
                     toastStore.trigger(t);
-
-                    goto('/' + npub);
+                    
+                    if ($redirectStore) {
+                        goto($redirectStore);
+                        $redirectStore = '';
+                    } else {
+                        goto('/' + npub);
+                    }
                 } else {
                     statusMessage = 'Unexpected response from encryption process:' + m.data;
                     setTimeout(()=>{

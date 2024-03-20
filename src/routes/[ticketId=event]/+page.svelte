@@ -5,6 +5,7 @@
     import ndk from "$lib/stores/ndk";
     import { connected } from "$lib/stores/ndk";
     import loginAlert from '$lib/stores/login-alert';
+    import redirectStore from '$lib/stores/redirect-store';
 
     import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
@@ -56,8 +57,10 @@
 
                 let loginResponse = async function(r: boolean){
                     if (r) {
+                        $redirectStore = $page.url.toString();
                         goto('/login');
                     } else {
+                        $redirectStore = '';
                         $loginAlert = false;
                         modalStore.close();
                     }
