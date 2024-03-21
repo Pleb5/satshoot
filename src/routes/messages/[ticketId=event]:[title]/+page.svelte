@@ -107,7 +107,8 @@
             people = people;
             filteredMessageFeed.forEach((message: MessageFeed) => {
                 if (message.pubkey === (user as NDKUser).pubkey) {
-                    message.avatar = (user as NDKUser).profile?.image ?? '';
+                    message.avatar = (user as NDKUser).profile?.image 
+                        ?? `https://robohash.org/${message.pubkey}`;
                     message.name = (user as NDKUser).profile?.name 
                         ?? (user as NDKUser).npub.substring(0,10);
                 }
@@ -224,9 +225,10 @@
                 const newMessage = {
                     id: dm.id,
                     host: host,
-                    avatar: (personOfMessage as NDKUser).profile?.image ?? '',
                     name: (personOfMessage as NDKUser).profile?.name ?? (personOfMessage as NDKUser).npub.substring(0, 10),
                     pubkey: (personOfMessage as NDKUser).pubkey,
+                    avatar: (personOfMessage as NDKUser).profile?.image ??
+                        `https://robohash.org/${(personOfMessage as NDKUser).pubkey}`,
                     recipient: dm.tagValue('p') as string,
                     timestamp: dateString,
                     message: message,
@@ -373,7 +375,8 @@
                                 }}
                             >
                                 <Avatar
-                                    src={person.profile?.image}
+                                    src={person.profile?.image
+                                        ?? `https://robohash.org/${person.pubkey}`}
                                     width="w-8"
                                 />
                                 <span class="flex-1 text-start {person.pubkey === winner 
@@ -417,7 +420,8 @@
                                     }}
                                 >
                                     <Avatar
-                                        src={person.profile?.image}
+                                        src={person.profile?.image 
+                                            ?? `https://robohash.org/${person.pubkey}`}
                                         width="w-8"
                                     />
                                     <span class="flex-1 text-start
@@ -435,7 +439,10 @@
                     {#each filteredMessageFeed as bubble}
                         {#if bubble.host === true}
                             <div class="grid grid-cols-[auto_1fr] gap-2">
-                                <Avatar src={bubble.avatar} width="w-12" />
+                                <Avatar
+                                    src={bubble.avatar
+                                    ?? `https://robohash.org/${bubble.pubkey}`}
+                                    width="w-12" />
                                 <div class="card p-4 variant-soft rounded-tl-none space-y-2">
                                     <header class="flex justify-between items-center">
                                         <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
@@ -453,7 +460,10 @@
                                     </header>
                                     <p>{bubble.message}</p>
                                 </div>
-                                <Avatar src={bubble.avatar} width="w-12" />
+                                <Avatar 
+                                    src={bubble.avatar
+                                    ?? `https://robohash.org/${bubble.pubkey}`}
+                                    width="w-12" />
                             </div>
                         {/if}
                     {/each}

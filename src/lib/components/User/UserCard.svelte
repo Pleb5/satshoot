@@ -223,7 +223,8 @@
                 <div>
                     <Avatar 
                         class="rounded-full border-white placeholder-white"
-                        src={userProfile?.image}
+                        src={userProfile?.image 
+                            ?? `https://robohash.org/${user?.pubkey}`}
                     /> 
                 </div>
                 <div class=" flex items-center justify-center gap-x-2 ">
