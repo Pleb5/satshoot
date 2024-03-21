@@ -60,7 +60,7 @@
 
         {
             "src": "/screenshots/mobile/app_screenshot_1.jpeg",
-            "sizes": "751x1600",
+            "sizes": "742x1600",
             "type": "image/jpeg",
             "form_factor": "narrow",
             "label": "btc_troubleshoot_ticket"
@@ -74,28 +74,21 @@
         },
         {
             "src": "/screenshots/mobile/app_screenshot_3.jpeg",
-            "sizes": "747x1600",
+            "sizes": "742x1600",
             "type": "image/jpeg",
             "form_factor": "narrow",
             "label": "btc_troubleshoot_offer_posted"
         },
         {
             "src": "/screenshots/mobile/app_screenshot_4.jpeg",
-            "sizes": "748x1600",
-            "type": "image/jpeg",
-            "form_factor": "narrow",
-            "label": "btc_troubleshoot_take_offer"
-        },
-        {
-            "src": "/screenshots/mobile/app_screenshot_5.jpeg",
-            "sizes": "753x1600",
+            "sizes": "742x1600",
             "type": "image/jpeg",
             "form_factor": "narrow",
             "label": "btc_troubleshoot_offer_won"
         },
         {
-            "src": "/screenshots/mobile/app_screenshot_6.jpeg",
-            "sizes": "753x1600",
+            "src": "/screenshots/mobile/app_screenshot_5.jpeg",
+            "sizes": "742x1600",
             "type": "image/jpeg",
             "form_factor": "narrow",
             "label": "btc_troubleshoot_chat"

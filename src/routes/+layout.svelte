@@ -71,6 +71,12 @@
         
     onMount(async () => {
         localStorage.debug = 'ndk:*'
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            showAppInstallPromotion = true;
+        });
         
         // -----------  Set up relays and connect -------------
 
@@ -246,6 +252,36 @@
                 response: () => {
                     toastStore.close(toastId);
                     location.reload();
+                },
+            }
+        };
+        toastId = toastStore.trigger(t);
+    }
+
+    // Install App promotion
+    let deferredInstallPrompt: BeforeInstallPromptEvent;
+    let showAppInstallPromotion = false;
+    $: if(showAppInstallPromotion) {
+        showAppInstallPromotion = false;
+        let toastId:string;
+        const t: ToastSettings = {
+            message: 'Install app for a better experience!',
+            autohide: false,
+            action: {
+                label: 'Install',
+                response: async() => {
+                    toastStore.close(toastId);
+                    deferredInstallPrompt.prompt();
+                    // Find out whether the user confirmed the installation or not
+                    const { outcome } = await deferredInstallPrompt.userChoice;
+                    // The deferredInstallPrompt can only be used once.
+                    deferredInstallPrompt = null;
+                    // Act on the user's choice
+                    if (outcome === 'accepted') {
+                        console.log('User accepted the install prompt.');
+                    } else if (outcome === 'dismissed') {
+                        console.log('User dismissed the install prompt');
+                    }
                 },
             }
         };
