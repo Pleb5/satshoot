@@ -17,9 +17,9 @@
         <h4 class="h4 mb-2 text-center font-bold">{$ticketTitle ?? '?'}</h4>
     </a>
     <!-- Top Navigation -->
-    <div class="flex flex-col items-start md:hidden">
+    <div class="flex flex-col items-center md:hidden">
         <!-- Header -->
-        <header class="self-center p-2">
+        <header class="p-2">
             <input
                 class="input {$hideSearch ? 'hidden' : ''}"
                 type="search"
@@ -30,7 +30,7 @@
             />
         </header>
         <!-- Contact List -->
-        <div class="flex flex-col items-start p-2 pb-0 space-x-2">
+        <div class="flex flex-col items-center p-2 pb-0 space-x-2">
             <small class="opacity-50">Contacts</small>
             <div class="flex flex-col space-y-1 overflow-y-hidden {$contactsHeight}">
                 {#if !$hideMessagesNavHeader && $people}

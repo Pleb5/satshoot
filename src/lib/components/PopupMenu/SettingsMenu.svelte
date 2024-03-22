@@ -115,7 +115,7 @@
 </script>
 
 <div data-popup="settingsMenu" >
-    <div class="card p-4 w-60 shadow-xl z-50">
+    <div class="card p-4 w-44 sm:w-60 shadow-xl z-50">
         <nav class="list-nav">
             <ul>
                 <li>

@@ -49,7 +49,7 @@
     let chatMaxHeight: string;
     let elemPage: HTMLDivElement;
     let hideChat = false;
-    $contactsHeight = 'h-12';
+    $contactsHeight = 'h-14';
     $arrowDown = true;
     $hideSearch = false;
 
@@ -287,7 +287,7 @@
         hideChat = false;
         $hideSearch = false;
         $arrowDown = true;
-        $contactsHeight = 'h-12';
+        $contactsHeight = 'h-14';
     }
 
     onMount(()=>{
