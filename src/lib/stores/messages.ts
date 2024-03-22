@@ -30,7 +30,7 @@ export const messageStore = get(ndk).storeSubscribe([receivedMessageFilter, myMe
 // AND the last message is visible regardless of screen sizes
 // Therefore, the variables used in the Prompt must be accessible from the messages page
 // despite it being inserted into the DOM in layout.svelte.
-// This is achieved via storing all necessary variables in globally accessible stores
+// This is achieved via storing all necessary variables in these globally accessible stores
 // and setting the store values later, when the User navigates to the chat
 export const promptStore = writable<Prompt>();
 export const currentMessage = writable('');
