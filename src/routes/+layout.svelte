@@ -48,6 +48,7 @@
     import DecryptSecretModal from "$lib/components/Modals/DecryptSecretModal.svelte";
 
     import Prompt from "$lib/components/messages/Prompt.svelte";
+    import MessagesNavHeader from "$lib/components/messages/MessagesNavHeader.svelte";
 
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
@@ -338,6 +339,7 @@
                 {/if}
             </svelte:fragment>
         </AppBar>
+        <MessagesNavHeader />
     </svelte:fragment>
     <!-- Sidebar. Hidden on small screens -->
 	<svelte:fragment slot="sidebarLeft">

@@ -19,10 +19,17 @@
     import { TicketEvent } from "$lib/events/TicketEvent";
 
     import { currentMessage, onPromptKeyDown, sendMessage, hide } from "$lib/stores/messages";
+    import {
+        titleLink, ticketTitle, hideSearch, searchInput, searchText, contactsHeight,
+        people, currentPerson, selectCurrentPerson, expandContacts,
+        resetContactsList, winner, arrowDown, hideMessagesNavHeader
+    } from "$lib/stores/messages";
 
     const toastStore = getToastStore();
 
     const ticketAddress = idFromNaddr($page.params.ticketId);
+    $titleLink = '/' + $page.params.ticketId;
+
     let ticket: TicketEvent | null = null;
     let myTicket = false;
 
@@ -39,29 +46,30 @@
 	}
 
 	let elemChat: HTMLElement;
-    let contactsHeight = 'h-14';
     let hideChat = false;
-    let hideArrow = false;
-    let hideSearch = false;
+    $contactsHeight = 'h-12';
+    $arrowDown = true;
+    $hideSearch = false;
 
 
-    let searchInput = '';
+    $searchInput = '';
 
     let needSetup = true;
 
-	// Navigation List
-	let people: NDKUser[] = [];
-    let currentPerson: NDKUser;
+	// Contact List
+	$people = [];
+    $currentPerson = null;
+
     // The pubkey of the person who made the winning Offer
-    let winner: string = '';
+    $winner = '';
 
 	// All Messages
 	let messages: MessageFeed[] = [];
 
-    // Filtered messages by person but NOT YET by searchText
+    // Filtered messages by person but NOT YET by $searchText
     let unfilteredMessageFeed: MessageFeed[] = [];
 
-    // Filtered messages by person AND searchText 
+    // Filtered messages by person AND $searchText 
 	let filteredMessageFeed: MessageFeed[] = [];
 
     let seenMessages: string[] = [];
@@ -74,7 +82,7 @@
 
 	$sendMessage = async () => {
         if ($currentMessage) {
-            if (!currentPerson) {
+            if (!$currentPerson) {
                 const t: ToastSettings = {
                     message: 'No Person to message!',
                     timeout: 5000,
@@ -87,7 +95,7 @@
             dm.kind = NDKKind.EncryptedDirectMessage;
             dm.content = $currentMessage;
             dm.tags.push(['t', ticketAddress]);
-            dm.tags.push(['p', currentPerson.pubkey]);
+            dm.tags.push(['p', $currentPerson.pubkey]);
 
             console.log('dm', dm)
 
@@ -109,7 +117,8 @@
 
     function updateUserProfile(user: NDKUser) {
         user.fetchProfile().then(() => {
-            people = people;
+            $people = $people;
+            console.log('updateUserProfile', user)
             filteredMessageFeed.forEach((message: MessageFeed) => {
                 if (message.pubkey === (user as NDKUser).pubkey) {
                     message.avatar = (user as NDKUser).profile?.image 
@@ -123,7 +132,7 @@
     }
 
     function addPerson(pubkey: string): NDKUser {
-        for (const person of people) {
+        for (const person of $people) {
             if (person.pubkey === pubkey) {
                 return person;
             }
@@ -132,20 +141,32 @@
         // We havent added this person yet
         const person = $ndk.getUser({hexpubkey: pubkey});
         console.log('adding new person', person)
-        if (!currentPerson) {
-            currentPerson = person; 
-        }
-        people.push(person);
-
+        $people.push(person);
         updateUserProfile(person);
+        if (!$currentPerson) {
+            $selectCurrentPerson(person, $people.length - 1); 
+        }
+
         return person;
+    }
+
+    $selectCurrentPerson = (person: NDKUser, i: number) => {
+        console.log('selectCurrentPerson')
+        // Swap current person to top
+        $currentPerson = person;
+        $people[i] = $people[0];
+        $people[0] = $currentPerson;
+
+        generateCurrentFeed();
+        updateUserProfile($currentPerson);
+        $resetContactsList();
     }
 
     function generateCurrentFeed() {
         const unOrderedMessageFeed = messages.filter((message: MessageFeed) => {
-            if (message.pubkey === currentPerson.pubkey) {
+            if (message.pubkey === $currentPerson.pubkey) {
                 return true;
-            } else if(message.recipient === currentPerson.pubkey) {
+            } else if(message.recipient === $currentPerson.pubkey) {
                 return true;
             }
 
@@ -163,20 +184,21 @@
         });
 
         // filter by the search bar
-        searchText();
+        $searchText();
 
         // Smooth scroll to bottom
         // Timeout prevents race condition
         if (elemChat) {
+            console.log('scrolling...')
             setTimeout(() => {
                 scrollChatBottom('smooth');
             }, 0);
         }
     }
 
-    function searchText() {
+    $searchText = () => {
         filteredMessageFeed = unfilteredMessageFeed.filter((message: MessageFeed) => {
-            if (message.message.includes(searchInput)) {
+            if (message.message.includes($searchInput)) {
                 return true;
             }
         });
@@ -251,19 +273,28 @@
         generateCurrentFeed();
     }
 
-    function expandContacts() {
+    $expandContacts = () => {
         hideChat = true;
-        hideArrow = true;
-        hideSearch = true;
-        contactsHeight = 'h-full';
+        $hideSearch = true;
+        $arrowDown = false;
+        $contactsHeight = 'h-full';
+    }
+
+    $resetContactsList = () => {
+        hideChat = false;
+        $hideSearch = false;
+        $arrowDown = true;
+        $contactsHeight = 'h-12';
     }
 
     onMount(()=>{
         $hide = false;
+        $hideMessagesNavHeader = false;
     });
 
     onDestroy(()=>{
         $hide = true;
+        $hideMessagesNavHeader = true;
 
         myMessageFilter['authors'] = [];
         myMessageFilter['#t'] = [];
@@ -302,6 +333,7 @@
             if (t) {
                 console.log('got ticket')
                 ticket = TicketEvent.from(t);
+                $ticketTitle = 'Ticket: ' + ticket.title.substring(0, 20) + '...';
             }
             if (($ndk.activeUser as NDKUser).pubkey !== ticketPubkey) {
                 console.log('addperson in fetchevent, NOT my ticket')
@@ -323,9 +355,10 @@
                             const user = $ndk.getUser({hexpubkey: offer.pubkey});
                             if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
                                 // We set the current person to the winner if possible
-                                currentPerson = user;
+                                console.log('setting currentPerson in setup phase')
+                                $currentPerson = user;
                                 console.log('we got a winner in setup')
-                                winner = offer.pubkey;
+                                $winner = offer.pubkey;
                             }
                         }
                     });
@@ -338,10 +371,10 @@
         $offersOnTickets.forEach((offer: OfferEvent) => {
             if (offer.referencedTicketAddress === ticketAddress) {
                 // If this is the winner offer, set winner
-                if (!winner) {
+                if (!$winner) {
                     if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
                         console.log('we got a winner in arrived offers')
-                        winner = offer.pubkey;
+                        $winner = offer.pubkey;
                     }
                 }
                 if (offer.pubkey !== ($ndk.activeUser as NDKUser).pubkey) {
@@ -356,136 +389,84 @@
     }
 
 </script>
-<div class="sticky top-0 z-20 bg-surface-100-800-token p-2">
-    <a class="anchor" href={'/' + $page.params.ticketId}>
-        <h4 class="h4 mb-2 text-center font-bold">{'Ticket: ' + (ticket ? (ticket.title.substring(0, 20)+'...') : '?')}</h4>
-    </a>
-    <!-- Horizontal Navigation bar -->
-    <div class="flex flex-col md:hidden border-r border-surface-500/30">
-        <!-- Header -->
-        <header class="border-b border-surface-500/30 p-2">
-            <input
-                class="input {hideSearch ? 'hidden' : ''}"
-                type="search"
-                placeholder="Search..."
-                bind:value={searchInput}
-                on:keyup={searchText}
-            />
-        </header>
-        <!-- Contact List -->
-        <div class="grid grid-cols-5 p-2 pb-0 space-x-2">
-            <small class="opacity-50">Contacts</small>
-            <div class="flex flex-col space-y-1 col-start-2 col-span-4 {contactsHeight}">
-                {#each people as person}
-                    <button
-                        type="button"
-                        class="btn w-full flex items-center space-x-4 
-                        {person.pubkey === currentPerson.pubkey
-                        ? 'variant-filled-primary'
-                        : 'bg-surface-hover-token'}"
-                        on:click={() => {
-                            currentPerson = person;
-                            generateCurrentFeed();
-                            updateUserProfile(currentPerson);
-                        }}
-                    >
-                        <Avatar
-                            src={person.profile?.image
-                                ?? `https://robohash.org/${person.pubkey}`}
-                            width="w-8"
-                        />
-                        <span class="flex-1 text-start {person.pubkey === winner 
-                            ? 'text-warning-400 font-bold' : ''}">
-                            {person.profile?.name ?? person.npub.substring(0,15)}
-                        </span>
-                    </button>
-                {/each}
-            </div>
-            <button class="btn btn-icon {hideArrow ? 'hidden' : ''}" on:click={expandContacts}>
-                <i class="fa-solid fa-chevron-down text-xl"></i>
-            </button>
-        </div>
-    </div>
-</div>
-<section class="card ">
-    <div class="chat {hideChat ? 'hidden' : ''} w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
-        <!-- Vertical Navigation bar -->
-        <div class="hidden md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
-            <!-- Header -->
-            <header class="sticky top-0 z-20 border-b border-surface-500/30 p-4">
-                <input
-                    class="input"
-                    type="search"
-                    placeholder="Search..."
-                    bind:value={searchInput}
-                    on:keyup={searchText}
-                />
-            </header>
-            <!-- Contact List -->
-            <div class="p-4 space-y-4">
-                <small class="opacity-50">Contacts</small>
-                <div class="flex flex-col space-y-1">
-                    {#each people as person}
-                        <button
-                            type="button"
-                            class="btn w-full flex items-center space-x-4 {person.pubkey === currentPerson.pubkey
-                            ? 'variant-filled-primary'
-                            : 'bg-surface-hover-token'}"
-                            on:click={() => {
-                                currentPerson = person;
-                                generateCurrentFeed();
-                                updateUserProfile(currentPerson);
-                            }}
-                        >
-                            <Avatar
-                                src={person.profile?.image 
-                                    ?? `https://robohash.org/${person.pubkey}`}
-                                width="w-8"
-                            />
-                            <span class="flex-1 text-start
-                                {person.pubkey === winner 
-                                ? 'text-warning-500 font-bold' : ''}">
-                                {person.profile?.name ?? person.npub.substring(0,10)}
-                            </span>
-                        </button>
-                    {/each}
+
+<div class="card p-2 bg-surface-100-800-token h-full">
+    <section class="">
+        <div class="chat {hideChat ? 'hidden' : ''} w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
+            <!-- Side Navigation -->
+            <div class="hidden sticky top-0 z-20 md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
+                <!-- Header -->
+                <header class="border-b border-surface-500/30 p-4">
+                    <input
+                        class="input"
+                        type="search"
+                        placeholder="Search..."
+                        bind:value={$searchInput}
+                        on:keyup={$searchText}
+                    />
+                </header>
+                <!-- Contact List -->
+                <div class="p-4 space-y-4">
+                    <small class="opacity-50">Contacts</small>
+                    <div class="flex flex-col space-y-1">
+                        {#each $people as person, i}
+                            <button
+                                type="button"
+                                class="btn w-full flex items-center space-x-4
+                                {person.pubkey === $currentPerson.pubkey
+                                    ? 'variant-filled-primary'
+                                    : 'bg-surface-hover-token'}"
+                                on:click={$selectCurrentPerson(person, i)}                            >
+                                <Avatar
+                                    src={person.profile?.image 
+                                        ?? `https://robohash.org/${person.pubkey}`}
+                                    width="w-8"
+                                />
+                                <span class="flex-1 text-start
+                                    {person.pubkey === $winner 
+                                    ? 'text-warning-500 font-bold' : ''}">
+                                    {person.profile?.name ?? person.npub.substring(0,10)}
+                                </span>
+                            </button>
+                        {/each}
+                    </div>
                 </div>
             </div>
+            <!-- Conversation -->
+            <section bind:this={elemChat} class="p-4 space-y-4 overflow-y-auto">
+                {#each filteredMessageFeed as bubble}
+                    {#if bubble.host === true}
+                        <div class="grid grid-cols-[auto_1fr] gap-2">
+                            <Avatar
+                                src={bubble.avatar
+                                    ?? `https://robohash.org/${bubble.pubkey}`}
+                                width="w-12" />
+                            <div class="card p-4 variant-soft rounded-tl-none space-y-2">
+                                <header class="flex justify-between items-center gap-x-4">
+                                    <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
+                                    <small class="opacity-50">{bubble.timestamp}</small>
+                                </header>
+                                <p>{bubble.message}</p>
+                            </div>
+                        </div>
+                    {:else}
+                        <div class="grid grid-cols-[1fr_auto] gap-2">
+                            <div class="card p-4 rounded-tr-none space-y-2 {bubble.color}">
+                                <header class="flex justify-between items-center gap-x-4">
+                                    <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
+                                    <small class="opacity-50">{bubble.timestamp}</small>
+                                </header>
+                                <p>{bubble.message}</p>
+                            </div>
+                            <Avatar 
+                                src={bubble.avatar
+                                    ?? `https://robohash.org/${bubble.pubkey}`}
+                                width="w-12" />
+                        </div>
+                    {/if}
+                {/each}
+            </section>
         </div>
-        <!-- Conversation -->
-        <section bind:this={elemChat} class="p-4 space-y-4 mb-auto">
-            {#each filteredMessageFeed as bubble}
-                {#if bubble.host === true}
-                    <div class="grid grid-cols-[auto_1fr] gap-2">
-                        <Avatar
-                            src={bubble.avatar
-                                ?? `https://robohash.org/${bubble.pubkey}`}
-                            width="w-12" />
-                        <div class="card p-4 variant-soft rounded-tl-none space-y-2">
-                            <header class="flex justify-between items-center gap-x-4">
-                                <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
-                                <small class="opacity-50">{bubble.timestamp}</small>
-                            </header>
-                            <p>{bubble.message}</p>
-                        </div>
-                    </div>
-                {:else}
-                    <div class="grid grid-cols-[1fr_auto] gap-2">
-                        <div class="card p-4 rounded-tr-none space-y-2 {bubble.color}">
-                            <header class="flex justify-between items-center">
-                                <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
-                                <small class="opacity-50">{bubble.timestamp}</small>
-                            </header>
-                            <p>{bubble.message}</p>
-                        </div>
-                        <Avatar 
-                            src={bubble.avatar
-                                ?? `https://robohash.org/${bubble.pubkey}`}
-                            width="w-12" />
-                    </div>
-                {/if}
-            {/each}
-        </section>
-    </div>
-</section>
+    </section>
+</div>
 
