@@ -47,6 +47,8 @@
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import DecryptSecretModal from "$lib/components/Modals/DecryptSecretModal.svelte";
 
+    import Prompt from "$lib/components/messages/Prompt.svelte";
+
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount } from "svelte";
@@ -366,6 +368,9 @@
 
     <!-- Footer: Only visible on small and medium screens(sm, md) -->
 	<svelte:fragment slot="footer">
+        <!-- Prompt for Messages-->
+        <Prompt />
+
         <TabGroup 
             justify="justify-center"
             active="bg-primary-300-600-token"

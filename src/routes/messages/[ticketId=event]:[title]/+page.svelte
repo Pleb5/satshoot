@@ -5,7 +5,7 @@
     import { messageStore, receivedMessageFilter, myMessageFilter } from "$lib/stores/messages";
     import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
 
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
 	import { Avatar } from '@skeletonlabs/skeleton';
 
@@ -17,6 +17,8 @@
     import { idFromNaddr } from '$lib/utils/nip19'
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
+
+    import { currentMessage, onPromptKeyDown, sendMessage, hide } from "$lib/stores/messages";
 
     const toastStore = getToastStore();
 
@@ -57,8 +59,6 @@
     // Filtered messages by person AND searchText 
 	let filteredMessageFeed: MessageFeed[] = [];
 
-	let currentMessage = '';
-
     let seenMessages: string[] = [];
 
 	// For some reason, eslint thinks ScrollBehavior is undefined...
@@ -67,8 +67,8 @@
 		elemChat.scrollTo({ top: elemChat.scrollHeight, behavior });
 	}
 
-	async function sendMessage() {
-        if (currentMessage) {
+	$sendMessage = async () => {
+        if ($currentMessage) {
             if (!currentPerson) {
                 const t: ToastSettings = {
                     message: 'No Person to message!',
@@ -80,14 +80,14 @@
             }
             const dm = new NDKEvent($ndk);
             dm.kind = NDKKind.EncryptedDirectMessage;
-            dm.content = currentMessage;
+            dm.content = $currentMessage;
             dm.tags.push(['t', ticketAddress]);
             dm.tags.push(['p', currentPerson.pubkey]);
 
             console.log('dm', dm)
 
             // Clear prompt
-            currentMessage = '';
+            $currentMessage = '';
 
             await dm.encrypt();
 
@@ -95,10 +95,10 @@
         }
 	}
 
-	function onPromptKeydown(event: KeyboardEvent): void {
+	$onPromptKeyDown = (event: KeyboardEvent) => {
 		if (['Enter'].includes(event.code)) {
 			event.preventDefault();
-			sendMessage();
+			$sendMessage();
 		}
 	}
 
@@ -246,7 +246,13 @@
         generateCurrentFeed();
     }
 
+    onMount(()=>{
+        $hide = false;
+    });
+
     onDestroy(()=>{
+        $hide = true;
+
         myMessageFilter['authors'] = [];
         myMessageFilter['#t'] = [];
 
@@ -471,22 +477,4 @@
             </div>
         </section>
     </div>
-    <!-- Prompt -->
-    <section class="w-full h-14 border-t border-surface-500/30 bg-surface-100-800-token p-2">
-        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
-            <button class="input-group-shim">+</button>
-            <textarea
-                bind:value={currentMessage}
-                class="bg-transparent border-0 ring-0 text-sm"
-                name="prompt"
-                id="prompt"
-                placeholder="Write a message..."
-                rows="1"
-                on:keydown={onPromptKeydown}
-            />
-            <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
-                <i class="fa-solid fa-paper-plane" />
-            </button>
-        </div>
-    </section>
 </div>
