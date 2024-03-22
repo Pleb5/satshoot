@@ -46,6 +46,8 @@
 	}
 
 	let elemChat: HTMLElement;
+    let chatMaxHeight: string;
+    let elemPage: HTMLDivElement;
     let hideChat = false;
     $contactsHeight = 'h-12';
     $arrowDown = true;
@@ -163,36 +165,37 @@
     }
 
     function generateCurrentFeed() {
-        const unOrderedMessageFeed = messages.filter((message: MessageFeed) => {
-            if (message.pubkey === $currentPerson.pubkey) {
-                return true;
-            } else if(message.recipient === $currentPerson.pubkey) {
-                return true;
-            }
-
-            return false;
-        });
-
-        // Need to reorder feed according to 
-        unfilteredMessageFeed = [];
-        $messageStore.forEach((dm: NDKEvent) => {
-            unOrderedMessageFeed.forEach((message: MessageFeed) => {
-                if (message.id === dm.id) {
-                    unfilteredMessageFeed.unshift(message);
+        if (messages.length > 0) {
+            const unOrderedMessageFeed = messages.filter((message: MessageFeed) => {
+                if (message.pubkey === $currentPerson.pubkey) {
+                    return true;
+                } else if(message.recipient === $currentPerson.pubkey) {
+                    return true;
                 }
+
+                return false;
             });
-        });
 
-        // filter by the search bar
-        $searchText();
+            // Need to reorder feed according to 
+            unfilteredMessageFeed = [];
+            $messageStore.forEach((dm: NDKEvent) => {
+                unOrderedMessageFeed.forEach((message: MessageFeed) => {
+                    if (message.id === dm.id) {
+                        unfilteredMessageFeed.unshift(message);
+                    }
+                });
+            });
 
-        // Smooth scroll to bottom
-        // Timeout prevents race condition
-        if (elemChat) {
-            console.log('scrolling...')
-            setTimeout(() => {
-                scrollChatBottom('smooth');
-            }, 0);
+            // filter by the search bar
+            $searchText();
+
+            // Smooth scroll to bottom
+            // Timeout prevents race condition
+            if (elemChat) {
+                setTimeout(() => {
+                    scrollChatBottom('smooth');
+                }, 0);
+            }
         }
     }
 
@@ -288,6 +291,7 @@
     }
 
     onMount(()=>{
+        console.log('onMount')
         $hide = false;
         $hideMessagesNavHeader = false;
     });
@@ -329,6 +333,9 @@
         // myTickets does not necessarily contain this ticket at this point so it is easier this way
         $ndk.fetchEvent(ticketAddress).then((t: NDKEvent|null) => {
             needSetup = false;
+            chatMaxHeight = elemPage.clientHeight.toString();
+            elemChat = elemChat;
+
             let ticketPubkey = ticketAddress.split(':')[1];
             if (t) {
                 console.log('got ticket')
@@ -356,7 +363,7 @@
                             if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
                                 // We set the current person to the winner if possible
                                 console.log('setting currentPerson in setup phase')
-                                $currentPerson = user;
+                                $selectCurrentPerson(user);
                                 console.log('we got a winner in setup')
                                 $winner = offer.pubkey;
                             }
@@ -390,7 +397,7 @@
 
 </script>
 
-<div class="card p-2 bg-surface-100-800-token h-full">
+<div bind:this={elemPage} class="card p-2 bg-surface-100-800-token h-full " >
     <section class="">
         <div class="chat {hideChat ? 'hidden' : ''} w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
             <!-- Side Navigation -->
@@ -433,7 +440,12 @@
                 </div>
             </div>
             <!-- Conversation -->
-            <section bind:this={elemChat} class="p-4 space-y-4 overflow-y-auto">
+            <!-- Inline css needed to adjust max-height after rendering -->
+            <section 
+                bind:this={elemChat}
+                class="p-4 space-y-4 overflow-y-auto"
+                style="max-height:{chatMaxHeight}px;"
+            >
                 {#each filteredMessageFeed as bubble}
                     {#if bubble.host === true}
                         <div class="grid grid-cols-[auto_1fr] gap-2">
