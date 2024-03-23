@@ -18,17 +18,12 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
 
-    import { currentMessage, onPromptKeyDown, sendMessage, hide } from "$lib/stores/messages";
-    import {
-        titleLink, ticketTitle, hideSearch, searchInput, searchText, contactsHeight,
-        people, currentPerson, selectCurrentPerson, expandContacts,
-        resetContactsList, winner, arrowDown, hideMessagesNavHeader
-    } from "$lib/stores/messages";
 
     const toastStore = getToastStore();
 
     const ticketAddress = idFromNaddr($page.params.ticketId);
-    $titleLink = '/' + $page.params.ticketId;
+    let titleLink = '/' + $page.params.ticketId;
+    let ticketTitle:string = 'Ticket: ?';
 
     let ticket: TicketEvent | null = null;
     let myTicket = false;
@@ -46,32 +41,33 @@
 	}
 
 	let elemChat: HTMLElement;
-    let chatMaxHeight: string;
-    let elemPage: HTMLDivElement;
+    let chatHeight: number;
     let hideChat = false;
-    $contactsHeight = 'h-14';
-    $arrowDown = true;
-    $hideSearch = false;
+    let contactsHeight = 'h-14';
+    let arrowDown = true;
+    let hideSearch = false;
+
+    let currentMessage: string = '';
 
 
-    $searchInput = '';
+    let searchInput = '';
 
     let needSetup = true;
 
 	// Contact List
-	$people = [];
-    $currentPerson = null;
+	let people:NDKUser[] = [];
+    let currentPerson: NDKUser;
 
     // The pubkey of the person who made the winning Offer
-    $winner = '';
+    let winner = '';
 
 	// All Messages
 	let messages: MessageFeed[] = [];
 
-    // Filtered messages by person but NOT YET by $searchText
+    // Filtered messages by person but NOT YET by searchText
     let unfilteredMessageFeed: MessageFeed[] = [];
 
-    // Filtered messages by person AND $searchText 
+    // Filtered messages by person AND searchText 
 	let filteredMessageFeed: MessageFeed[] = [];
 
     let seenMessages: string[] = [];
@@ -82,9 +78,9 @@
 		elemChat.scrollTo({ top: elemChat.scrollHeight, behavior });
 	}
 
-	$sendMessage = async () => {
-        if ($currentMessage) {
-            if (!$currentPerson) {
+	async function sendMessage() {
+        if (currentMessage) {
+            if (!currentPerson) {
                 const t: ToastSettings = {
                     message: 'No Person to message!',
                     timeout: 5000,
@@ -95,14 +91,14 @@
             }
             const dm = new NDKEvent($ndk);
             dm.kind = NDKKind.EncryptedDirectMessage;
-            dm.content = $currentMessage;
+            dm.content = currentMessage;
             dm.tags.push(['t', ticketAddress]);
-            dm.tags.push(['p', $currentPerson.pubkey]);
+            dm.tags.push(['p', currentPerson.pubkey]);
 
             console.log('dm', dm)
 
             // Clear prompt
-            $currentMessage = '';
+            currentMessage = '';
 
             await dm.encrypt();
 
@@ -110,17 +106,17 @@
         }
 	}
 
-	$onPromptKeyDown = (event: KeyboardEvent) => {
+	function onPromptKeyDown(event: KeyboardEvent) {
 		if (['Enter'].includes(event.code)) {
 			event.preventDefault();
-			$sendMessage();
+			sendMessage();
 		}
 	}
 
     function updateUserProfile(user: NDKUser) {
         user.fetchProfile().then(() => {
-            $people = $people;
             console.log('updateUserProfile', user)
+            people = people;
             filteredMessageFeed.forEach((message: MessageFeed) => {
                 if (message.pubkey === (user as NDKUser).pubkey) {
                     message.avatar = (user as NDKUser).profile?.image 
@@ -134,7 +130,7 @@
     }
 
     function addPerson(pubkey: string): NDKUser {
-        for (const person of $people) {
+        for (const person of people) {
             if (person.pubkey === pubkey) {
                 return person;
             }
@@ -143,33 +139,33 @@
         // We havent added this person yet
         const person = $ndk.getUser({hexpubkey: pubkey});
         console.log('adding new person', person)
-        $people.push(person);
+        people.push(person);
+        people = people;
         updateUserProfile(person);
-        if (!$currentPerson) {
-            $selectCurrentPerson(person, $people.length - 1); 
-        }
 
         return person;
     }
 
-    $selectCurrentPerson = (person: NDKUser, i: number) => {
-        console.log('selectCurrentPerson')
-        // Swap current person to top
-        $currentPerson = person;
-        $people[i] = $people[0];
-        $people[0] = $currentPerson;
+    function selectCurrentPerson(person: NDKUser, i: number) {
+        if (currentPerson !== person){
+            console.log('selectCurrentPerson')
+            // Swap current person to top
+            currentPerson = person;
+            people[i] = people[0];
+            people[0] = currentPerson;
 
-        generateCurrentFeed();
-        updateUserProfile($currentPerson);
-        $resetContactsList();
+            generateCurrentFeed();
+            updateUserProfile(currentPerson);
+            resetContactsList();
+        }
     }
 
     function generateCurrentFeed() {
         if (messages.length > 0) {
             const unOrderedMessageFeed = messages.filter((message: MessageFeed) => {
-                if (message.pubkey === $currentPerson.pubkey) {
+                if (message.pubkey === currentPerson.pubkey) {
                     return true;
-                } else if(message.recipient === $currentPerson.pubkey) {
+                } else if(message.recipient === currentPerson.pubkey) {
                     return true;
                 }
 
@@ -187,7 +183,7 @@
             });
 
             // filter by the search bar
-            $searchText();
+            searchText();
 
             // Smooth scroll to bottom
             // Timeout prevents race condition
@@ -199,9 +195,9 @@
         }
     }
 
-    $searchText = () => {
+    function searchText() {
         filteredMessageFeed = unfilteredMessageFeed.filter((message: MessageFeed) => {
-            if (message.message.includes($searchInput)) {
+            if (message.message.includes(searchInput)) {
                 return true;
             }
         });
@@ -273,33 +269,30 @@
         }
 
         // Update the message feed
-        generateCurrentFeed();
+        if (currentPerson) {
+            generateCurrentFeed();
+        }
     }
 
-    $expandContacts = () => {
+    function expandContacts() {
         hideChat = true;
-        $hideSearch = true;
-        $arrowDown = false;
-        $contactsHeight = 'h-full';
+        hideSearch = true;
+        arrowDown = false;
+        contactsHeight = 'h-full';
     }
 
-    $resetContactsList = () => {
+    function resetContactsList() {
         hideChat = false;
-        $hideSearch = false;
-        $arrowDown = true;
-        $contactsHeight = 'h-14';
+        hideSearch = false;
+        arrowDown = true;
+        contactsHeight = 'h-14';
     }
 
     onMount(()=>{
         console.log('onMount')
-        $hide = false;
-        $hideMessagesNavHeader = false;
     });
 
     onDestroy(()=>{
-        $hide = true;
-        $hideMessagesNavHeader = true;
-
         myMessageFilter['authors'] = [];
         myMessageFilter['#t'] = [];
 
@@ -333,14 +326,13 @@
         // myTickets does not necessarily contain this ticket at this point so it is easier this way
         $ndk.fetchEvent(ticketAddress).then((t: NDKEvent|null) => {
             needSetup = false;
-            chatMaxHeight = elemPage.clientHeight.toString();
             elemChat = elemChat;
 
             let ticketPubkey = ticketAddress.split(':')[1];
             if (t) {
                 console.log('got ticket')
                 ticket = TicketEvent.from(t);
-                $ticketTitle = 'Ticket: ' + ticket.title.substring(0, 20) + '...';
+                ticketTitle = 'Ticket: ' + ticket.title.substring(0, 20) + '...';
             }
             if (($ndk.activeUser as NDKUser).pubkey !== ticketPubkey) {
                 console.log('addperson in fetchevent, NOT my ticket')
@@ -355,17 +347,11 @@
                     offersOnTickets.unsubscribe();
                     offersOnTickets.startSubscription();
                 } else if(ticket) {
-                    // Get all offers on my ticket, extract pubkeys and add to people
-                    // currentPerson should be the winner OR the latest offer maker
                     $offersOnTickets.forEach((offer: OfferEvent) => {
                         if (offer.referencedTicketAddress === ticketAddress) {
-                            const user = $ndk.getUser({hexpubkey: offer.pubkey});
                             if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
-                                // We set the current person to the winner if possible
-                                console.log('setting currentPerson in setup phase')
-                                $selectCurrentPerson(user);
                                 console.log('we got a winner in setup')
-                                $winner = offer.pubkey;
+                                winner = offer.pubkey;
                             }
                         }
                     });
@@ -378,10 +364,10 @@
         $offersOnTickets.forEach((offer: OfferEvent) => {
             if (offer.referencedTicketAddress === ticketAddress) {
                 // If this is the winner offer, set winner
-                if (!$winner) {
+                if (!winner) {
                     if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
                         console.log('we got a winner in arrived offers')
-                        $winner = offer.pubkey;
+                        winner = offer.pubkey;
                     }
                 }
                 if (offer.pubkey !== ($ndk.activeUser as NDKUser).pubkey) {
@@ -392,13 +378,80 @@
     }
 
     $: if (!needSetup && $messageStore.length > 0) {
-        updateMessageFeed();
+        updateMessageFeed() 
     }
 
+    // $: if(chatHeight && elemChat.clientHeight > 0) {
+    //     console.log('chatMaxHeight', chatHeight)
+    //     chatHeight = elemChat.clientHeight.toString();
+    // }
+    //
 </script>
-
-<div bind:this={elemPage} class="card p-2 bg-surface-100-800-token h-full " >
-    <section class="">
+<div class="w-full h-full flex flex-col overflow-hidden card p-2 bg-surface-100-800-token">
+    <section class="flex-none">
+        <a class="anchor" href={titleLink}>
+            <h4 class="h4 mb-2 text-center font-bold">{ticketTitle ?? '?'}</h4>
+        </a>
+        <!-- Top Navigation -->
+        <div class="flex flex-col items-center md:hidden">
+            <!-- Header -->
+            <header class="p-2">
+                <input
+                    class="input {hideSearch ? 'hidden' : ''}"
+                    type="search"
+                    placeholder="Search..."
+                    bind:value={searchInput}
+                    on:keyup={searchText}
+                    on:search={searchText}
+                />
+            </header>
+            <!-- Contact List -->
+            <div class="flex flex-col items-center p-2 pb-0 space-x-2">
+                <small class="opacity-50">Contacts</small>
+                <div class="flex flex-col space-y-1 overflow-y-hidden {contactsHeight}">
+                    {#each people as person, i}
+                        <button
+                            type="button"
+                            class="btn w-full flex items-center space-x-4 
+                            {currentPerson 
+                            ? (
+                                person.pubkey === currentPerson.pubkey
+                                ? 'variant-filled-primary'
+                                : 'bg-surface-hover-token'
+                              )
+                            : 'bg-surface-hover-token'}"
+                            on:click={() => selectCurrentPerson(person, i)}
+                        >
+                            <Avatar
+                                src={person.profile?.image
+                                    ?? `https://robohash.org/${person.pubkey}`}
+                                width="w-8"
+                            />
+                            <span class="flex-1 text-start {person.pubkey === winner 
+                                ? 'text-warning-400 font-bold' : ''}">
+                                {person.profile?.name ?? person.npub.substring(0,15)}
+                            </span>
+                        </button>
+                    {/each}
+                </div>
+            </div>
+            <div class="flex w-full justify-center {arrowDown ? '' : 'sticky bottom-0'}">
+                <button 
+                    class="btn btn-icon "
+                    on:click={()=>{
+                        if (arrowDown) {
+                            expandContacts();
+                        } else {
+                            resetContactsList();
+                        }
+                    }}
+                >
+                    <i class="fa-solid fa-chevron-{arrowDown ? 'down' : 'up'} text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+    <section class="flex-auto" bind:clientHeight={chatHeight}>
         <div class="chat {hideChat ? 'hidden' : ''} w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
             <!-- Side Navigation -->
             <div class="hidden sticky top-0 z-20 md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
@@ -408,29 +461,33 @@
                         class="input"
                         type="search"
                         placeholder="Search..."
-                        bind:value={$searchInput}
-                        on:keyup={$searchText}
+                        bind:value={searchInput}
+                        on:keyup={searchText}
                     />
                 </header>
                 <!-- Contact List -->
                 <div class="p-4 space-y-4">
                     <small class="opacity-50">Contacts</small>
                     <div class="flex flex-col space-y-1">
-                        {#each $people as person, i}
+                        {#each people as person, i}
                             <button
                                 type="button"
                                 class="btn w-full flex items-center space-x-4
-                                {person.pubkey === $currentPerson.pubkey
-                                    ? 'variant-filled-primary'
+                                    {currentPerson 
+                                    ? (
+                                        person.pubkey === currentPerson.pubkey
+                                        ? 'variant-filled-primary'
+                                        : 'bg-surface-hover-token'
+                                      )
                                     : 'bg-surface-hover-token'}"
-                                on:click={$selectCurrentPerson(person, i)}                            >
+                                on:click={() => selectCurrentPerson(person, i)}                            >
                                 <Avatar
                                     src={person.profile?.image 
                                         ?? `https://robohash.org/${person.pubkey}`}
                                     width="w-8"
                                 />
                                 <span class="flex-1 text-start
-                                    {person.pubkey === $winner 
+                                    {person.pubkey === winner 
                                     ? 'text-warning-500 font-bold' : ''}">
                                     {person.profile?.name ?? person.npub.substring(0,10)}
                                 </span>
@@ -444,7 +501,7 @@
             <section 
                 bind:this={elemChat}
                 class="p-4 space-y-4 overflow-y-auto"
-                style="max-height:{chatMaxHeight}px;"
+                style="height:{chatHeight}px;"
             >
                 {#each filteredMessageFeed as bubble}
                     {#if bubble.host === true}
@@ -478,6 +535,24 @@
                     {/if}
                 {/each}
             </section>
+        </div>
+    </section>
+    <!-- Prompt -->
+    <section class="flex-none w-full h-14 border-t border-surface-500/30 bg-surface-100-800-token p-2">
+        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
+            <button class="input-group-shim">+</button>
+            <textarea
+                bind:value={currentMessage}
+                class="bg-transparent border-0 ring-0 text-sm"
+                name="prompt"
+                id="prompt"
+                placeholder="Write a message..."
+                rows="1"
+                on:keydown={onPromptKeyDown}
+            />
+            <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
+                <i class="fa-solid fa-paper-plane" />
+            </button>
         </div>
     </section>
 </div>

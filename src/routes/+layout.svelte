@@ -47,9 +47,6 @@
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import DecryptSecretModal from "$lib/components/Modals/DecryptSecretModal.svelte";
 
-    import Prompt from "$lib/components/messages/Prompt.svelte";
-    import MessagesNavHeader from "$lib/components/messages/MessagesNavHeader.svelte";
-
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount } from "svelte";
@@ -339,7 +336,6 @@
                 {/if}
             </svelte:fragment>
         </AppBar>
-        <MessagesNavHeader />
     </svelte:fragment>
     <!-- Sidebar. Hidden on small screens -->
 	<svelte:fragment slot="sidebarLeft">
@@ -370,9 +366,6 @@
 
     <!-- Footer: Only visible on small and medium screens(sm, md) -->
 	<svelte:fragment slot="footer">
-        <!-- Prompt for Messages-->
-        <Prompt />
-
         <TabGroup 
             justify="justify-center"
             active="bg-primary-300-600-token"
