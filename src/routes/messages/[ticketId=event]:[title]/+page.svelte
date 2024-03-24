@@ -17,6 +17,7 @@
     import { idFromNaddr } from '$lib/utils/nip19'
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
+    import { afterNavigate } from "$app/navigation";
 
 
     const toastStore = getToastStore();
@@ -41,6 +42,8 @@
 	}
 
 	let elemChat: HTMLElement;
+    let elemHeader:HTMLElement;
+    let elemPrompt:HTMLElement;
     let chatHeight: number;
     let hideChat = false;
     let contactsHeight = 'h-14';
@@ -288,10 +291,6 @@
         contactsHeight = 'h-14';
     }
 
-    onMount(()=>{
-        console.log('onMount')
-    });
-
     onDestroy(()=>{
         myMessageFilter['authors'] = [];
         myMessageFilter['#t'] = [];
@@ -381,179 +380,191 @@
         updateMessageFeed() 
     }
 
-    // $: if(chatHeight && elemChat.clientHeight > 0) {
-    //     console.log('chatMaxHeight', chatHeight)
-    //     chatHeight = elemChat.clientHeight.toString();
-    // }
-    //
+    let innerHeight = 0;
+    $: if (innerHeight) {
+        const elemPage = document.querySelector('#page');
+        console.log(elemPage.offsetHeight)
+        if (elemPage) {
+            const promptHeight = elemPrompt.offsetHeight;
+            const headerHeight = elemHeader.offsetHeight;
+            chatHeight = (elemPage as HTMLElement).offsetHeight - promptHeight - headerHeight;
+        }
+    }
+
 </script>
-<div class="w-full h-full flex flex-col overflow-hidden card p-2 bg-surface-100-800-token">
-    <section class="flex-none">
-        <a class="anchor" href={titleLink}>
-            <h4 class="h4 mb-2 text-center font-bold">{ticketTitle ?? '?'}</h4>
-        </a>
-        <!-- Top Navigation -->
-        <div class="flex flex-col items-center md:hidden">
-            <!-- Header -->
-            <header class="p-2">
-                <input
-                    class="input {hideSearch ? 'hidden' : ''}"
-                    type="search"
-                    placeholder="Search..."
-                    bind:value={searchInput}
-                    on:keyup={searchText}
-                    on:search={searchText}
-                />
-            </header>
-            <!-- Contact List -->
-            <div class="flex flex-col items-center p-2 pb-0 space-x-2">
-                <small class="opacity-50">Contacts</small>
-                <div class="flex flex-col space-y-1 overflow-y-hidden {contactsHeight}">
-                    {#each people as person, i}
-                        <button
-                            type="button"
-                            class="btn w-full flex items-center space-x-4 
-                            {currentPerson 
-                            ? (
-                                person.pubkey === currentPerson.pubkey
-                                ? 'variant-filled-primary'
-                                : 'bg-surface-hover-token'
-                              )
-                            : 'bg-surface-hover-token'}"
-                            on:click={() => selectCurrentPerson(person, i)}
-                        >
-                            <Avatar
-                                src={person.profile?.image
-                                    ?? `https://robohash.org/${person.pubkey}`}
-                                width="w-8"
-                            />
-                            <span class="flex-1 text-start {person.pubkey === winner 
-                                ? 'text-warning-400 font-bold' : ''}">
-                                {person.profile?.name ?? person.npub.substring(0,15)}
-                            </span>
-                        </button>
-                    {/each}
-                </div>
-            </div>
-            <div class="flex w-full justify-center {arrowDown ? '' : 'sticky bottom-0'}">
-                <button 
-                    class="btn btn-icon "
-                    on:click={()=>{
-                        if (arrowDown) {
-                            expandContacts();
-                        } else {
-                            resetContactsList();
-                        }
-                    }}
-                >
-                    <i class="fa-solid fa-chevron-{arrowDown ? 'down' : 'up'} text-xl"></i>
-                </button>
-            </div>
-        </div>
-    </section>
-    <section class="flex-auto" bind:clientHeight={chatHeight}>
-        <div class="chat {hideChat ? 'hidden' : ''} w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
-            <!-- Side Navigation -->
-            <div class="hidden sticky top-0 z-20 md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
+
+<svelte:window bind:innerHeight={innerHeight} />
+<div class="h-full overflow-hidden">
+    <div class="w-full h-full flex flex-col overflow-hidden card p-2 bg-surface-100-800-token">
+        <section class="flex-none" bind:this={elemHeader}>
+            <a class="anchor" href={titleLink}>
+                <h4 class="h4 mb-2 text-center font-bold">{ticketTitle ?? '?'}</h4>
+            </a>
+            <!-- Top Navigation -->
+            <div class="flex flex-col items-center md:hidden">
                 <!-- Header -->
-                <header class="border-b border-surface-500/30 p-4">
+                <header class="p-2">
                     <input
-                        class="input"
+                        class="input {hideSearch ? 'hidden' : ''}"
                         type="search"
                         placeholder="Search..."
                         bind:value={searchInput}
                         on:keyup={searchText}
+                        on:search={searchText}
                     />
                 </header>
                 <!-- Contact List -->
-                <div class="p-4 space-y-4">
+                <div class="flex flex-col items-center p-2 pb-0 space-x-2">
                     <small class="opacity-50">Contacts</small>
-                    <div class="flex flex-col space-y-1">
+                    <div class="flex flex-col space-y-1 overflow-y-hidden {contactsHeight}">
                         {#each people as person, i}
                             <button
                                 type="button"
-                                class="btn w-full flex items-center space-x-4
-                                    {currentPerson 
-                                    ? (
-                                        person.pubkey === currentPerson.pubkey
-                                        ? 'variant-filled-primary'
-                                        : 'bg-surface-hover-token'
-                                      )
-                                    : 'bg-surface-hover-token'}"
-                                on:click={() => selectCurrentPerson(person, i)}                            >
+                                class="btn w-full flex items-center space-x-4 
+                                {currentPerson 
+                                ? (
+                                person.pubkey === currentPerson.pubkey
+                                ? 'variant-filled-primary'
+                                : 'bg-surface-hover-token'
+                                )
+                                : 'bg-surface-hover-token'}"
+                                on:click={() => selectCurrentPerson(person, i)}
+                            >
                                 <Avatar
-                                    src={person.profile?.image 
+                                    src={person.profile?.image
                                         ?? `https://robohash.org/${person.pubkey}`}
                                     width="w-8"
                                 />
-                                <span class="flex-1 text-start
-                                    {person.pubkey === winner 
-                                    ? 'text-warning-500 font-bold' : ''}">
-                                    {person.profile?.name ?? person.npub.substring(0,10)}
+                                <span class="flex-1 text-start {person.pubkey === winner 
+                                    ? 'text-warning-400 font-bold' : ''}">
+                                    {person.profile?.name ?? person.npub.substring(0,15)}
                                 </span>
                             </button>
                         {/each}
                     </div>
                 </div>
+                <div class="flex w-full justify-center {arrowDown ? '' : 'sticky bottom-0'}">
+                    <button 
+                        class="btn btn-icon "
+                        on:click={()=>{
+                            if (arrowDown) {
+                                expandContacts();
+                            } else {
+                                resetContactsList();
+                            }
+                        }}
+                    >
+                        <i class="fa-solid fa-chevron-{arrowDown ? 'down' : 'up'} text-xl"></i>
+                    </button>
+                </div>
             </div>
-            <!-- Conversation -->
-            <!-- Inline css needed to adjust max-height after rendering -->
-            <section 
-                bind:this={elemChat}
-                class="p-4 space-y-4 overflow-y-auto"
-                style="height:{chatHeight}px;"
-            >
-                {#each filteredMessageFeed as bubble}
-                    {#if bubble.host === true}
-                        <div class="grid grid-cols-[auto_1fr] gap-2">
-                            <Avatar
-                                src={bubble.avatar
-                                    ?? `https://robohash.org/${bubble.pubkey}`}
-                                width="w-12" />
-                            <div class="card p-4 variant-soft rounded-tl-none space-y-2">
-                                <header class="flex justify-between items-center gap-x-4">
-                                    <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
-                                    <small class="opacity-50">{bubble.timestamp}</small>
-                                </header>
-                                <p>{bubble.message}</p>
-                            </div>
+        </section>
+        <section class="flex-auto overflow-hidden" >
+            <div class="chat {hideChat ? 'hidden' : ''} w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
+                <!-- Side Navigation -->
+                <div class="hidden sticky top-0 z-20 md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
+                    <!-- Header -->
+                    <header class="border-b border-surface-500/30 p-4">
+                        <input
+                            class="input"
+                            type="search"
+                            placeholder="Search..."
+                            bind:value={searchInput}
+                            on:keyup={searchText}
+                        />
+                    </header>
+                    <!-- Contact List -->
+                    <div class="p-4 space-y-4">
+                        <small class="opacity-50">Contacts</small>
+                        <div class="flex flex-col space-y-1">
+                            {#each people as person, i}
+                                <button
+                                    type="button"
+                                    class="btn w-full flex items-center space-x-4
+                                    {currentPerson 
+                                    ? (
+                                    person.pubkey === currentPerson.pubkey
+                                    ? 'variant-filled-primary'
+                                    : 'bg-surface-hover-token'
+                                    )
+                                    : 'bg-surface-hover-token'}"
+                                    on:click={() => selectCurrentPerson(person, i)}                            >
+                                    <Avatar
+                                        src={person.profile?.image 
+                                            ?? `https://robohash.org/${person.pubkey}`}
+                                        width="w-8"
+                                    />
+                                    <span class="flex-1 text-start
+                                        {person.pubkey === winner 
+                                        ? 'text-warning-500 font-bold' : ''}">
+                                        {person.profile?.name ?? person.npub.substring(0,10)}
+                                    </span>
+                                </button>
+                            {/each}
                         </div>
-                    {:else}
-                        <div class="grid grid-cols-[1fr_auto] gap-2">
-                            <div class="card p-4 rounded-tr-none space-y-2 {bubble.color}">
-                                <header class="flex justify-between items-center gap-x-4">
-                                    <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
-                                    <small class="opacity-50">{bubble.timestamp}</small>
-                                </header>
-                                <p>{bubble.message}</p>
+                    </div>
+                </div>
+                <!-- Conversation -->
+                <!-- Inline css needed to adjust max-height after rendering -->
+                <section 
+                    bind:this={elemChat}
+                    class="p-4 space-y-4 overflow-y-auto"
+                    style="height: {chatHeight}px;"
+                >
+                    {#each filteredMessageFeed as bubble}
+                        {#if bubble.host === true}
+                            <div class="grid grid-cols-[auto_1fr] gap-2">
+                                <Avatar
+                                    src={bubble.avatar
+                                        ?? `https://robohash.org/${bubble.pubkey}`}
+                                    width="w-12" />
+                                <div class="card p-4 variant-soft rounded-tl-none space-y-2">
+                                    <header class="flex justify-between items-center gap-x-4">
+                                        <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
+                                        <small class="opacity-50">{bubble.timestamp}</small>
+                                    </header>
+                                    <p>{bubble.message}</p>
+                                </div>
                             </div>
-                            <Avatar 
-                                src={bubble.avatar
-                                    ?? `https://robohash.org/${bubble.pubkey}`}
-                                width="w-12" />
-                        </div>
-                    {/if}
-                {/each}
-            </section>
-        </div>
-    </section>
-    <!-- Prompt -->
-    <section class="flex-none w-full h-14 border-t border-surface-500/30 bg-surface-100-800-token p-2">
-        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
-            <button class="input-group-shim">+</button>
-            <textarea
-                bind:value={currentMessage}
-                class="bg-transparent border-0 ring-0 text-sm"
-                name="prompt"
-                id="prompt"
-                placeholder="Write a message..."
-                rows="1"
-                on:keydown={onPromptKeyDown}
-            />
-            <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
-                <i class="fa-solid fa-paper-plane" />
-            </button>
-        </div>
-    </section>
+                        {:else}
+                            <div class="grid grid-cols-[1fr_auto] gap-2">
+                                <div class="card p-4 rounded-tr-none space-y-2 {bubble.color}">
+                                    <header class="flex justify-between items-center gap-x-4">
+                                        <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
+                                        <small class="opacity-50">{bubble.timestamp}</small>
+                                    </header>
+                                    <p>{bubble.message}</p>
+                                </div>
+                                <Avatar 
+                                    src={bubble.avatar
+                                        ?? `https://robohash.org/${bubble.pubkey}`}
+                                    width="w-12" />
+                            </div>
+                        {/if}
+                    {/each}
+                </section>
+            </div>
+        </section>
+        <!-- Prompt -->
+        <section
+            bind:this={elemPrompt}
+            class="flex-none w-full h-14 border-t border-surface-500/30
+                    bg-surface-100-800-token p-2">
+            <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
+                <button class="input-group-shim">+</button>
+                <textarea
+                    bind:value={currentMessage}
+                    class="bg-transparent border-0 ring-0 text-sm"
+                    name="prompt"
+                    id="prompt"
+                    placeholder="Write a message..."
+                    rows="1"
+                    on:keydown={onPromptKeyDown}
+                />
+                <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
+                    <i class="fa-solid fa-paper-plane" />
+                </button>
+            </div>
+        </section>
+    </div>
 </div>
-

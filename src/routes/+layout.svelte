@@ -68,7 +68,7 @@
         profileImage = $ndk.activeUser?.profile?.image;
         loggedIn = !!$ndk.activeUser;
     }
-        
+
     onMount(async () => {
         localStorage.debug = 'ndk:*'
 
@@ -77,7 +77,7 @@
             deferredInstallPrompt = e;
             showAppInstallPromotion = true;
         });
-        
+
         // -----------  Set up relays and connect -------------
 
         // Get user-defined pool from local storage if possible
