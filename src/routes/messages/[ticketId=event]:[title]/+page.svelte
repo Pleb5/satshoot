@@ -109,7 +109,7 @@
             dm.tags.push(['t', ticketAddress]);
             dm.tags.push(['p', currentPerson.pubkey]);
 
-            console.log('dm', dm)
+            // console.log('dm', dm)
 
             // Clear prompt
             currentMessage = '';
@@ -129,7 +129,7 @@
 
     function updateUserProfile(user: NDKUser) {
         user.fetchProfile().then(() => {
-            console.log('updateUserProfile', user)
+            // console.log('updateUserProfile', user)
             people = people;
             filteredMessageFeed.forEach((message: MessageFeed) => {
                 if (message.pubkey === (user as NDKUser).pubkey) {
@@ -152,7 +152,7 @@
         
         // We havent added this person yet
         const person = $ndk.getUser({hexpubkey: pubkey});
-        console.log('adding new person', person)
+        // console.log('adding new person', person)
         const contact = {person: person, selected: false};
         people.push(contact);
         people = people;
@@ -164,7 +164,7 @@
 
     async function selectCurrentPerson(contact: Contact) {
         if (currentPerson !== contact.person){
-            console.log('selectCurrentPerson')
+            // console.log('selectCurrentPerson')
             currentPerson = contact.person;
             
             people.forEach((c: Contact) => {
@@ -228,7 +228,7 @@
     }
 
     async function updateMessageFeed() {
-        console.log('update message feeed')
+        // console.log('update message feeed')
         for (const dm of $messageStore) {
             const alreadyHere: boolean = seenMessages.filter((id: string) => {
                 if (dm.id === id) return true;
@@ -254,7 +254,7 @@
                 otherUser = $ndk.getUser({hexpubkey: dm.pubkey});
 
                 // This only adds person if it is not already added
-                console.log('add person in updateMessageFeed')
+                // console.log('add person in updateMessageFeed')
                 personOfMessage = addPerson(dm.pubkey)
             }
 
@@ -299,7 +299,7 @@
     }
 
     function expandContacts() {
-        console.log('expandContacts')
+        // console.log('expandContacts')
         hideChat = true;
         hideSearch = true;
         hidePrompt = true;
@@ -328,7 +328,7 @@
     function calculateHeights() {
         const elemPage = document.querySelector('#page');
         if (elemPage && elemPrompt && elemHeader && elemSideHeader) {
-            console.log('recalculate chat and sideContactsHeight')
+            // console.log('recalculate chat and sideContactsHeight')
             const promptHeight = elemPrompt.offsetHeight;
             const headerHeight = elemHeader.offsetHeight;
             chatHeight = (elemPage as HTMLElement).offsetHeight - promptHeight - headerHeight;
@@ -339,13 +339,13 @@
 
             sideContactsHeight = chatHeight - sideHeaderHeight
                 - sideContactsLabelOffsetHeight - sideContactsListDivPaddingHeight;
-            console.log('promptHeight', promptHeight)
-            console.log('headerHeight', headerHeight)
-            console.log('sideHeaderHeight', sideHeaderHeight)
-            console.log('sideContactsLabelOffsetHeight', sideContactsLabelOffsetHeight)
-            console.log('sideContactsListDivPaddingHeight', sideContactsListDivPaddingHeight)
-            console.log('chatHeight', chatHeight)
-            console.log('sideContactsHeight', sideContactsHeight)
+            // console.log('promptHeight', promptHeight)
+            // console.log('headerHeight', headerHeight)
+            // console.log('sideHeaderHeight', sideHeaderHeight)
+            // console.log('sideContactsLabelOffsetHeight', sideContactsLabelOffsetHeight)
+            // console.log('sideContactsListDivPaddingHeight', sideContactsListDivPaddingHeight)
+            // console.log('chatHeight', chatHeight)
+            // console.log('sideContactsHeight', sideContactsHeight)
         } else {
             console.log('not calculateHeights, reason:')
             console.log(elemPage)

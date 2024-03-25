@@ -50,31 +50,28 @@
             
             if ($loginAlert && !loginAlertShown) {
                 loginAlertShown = true;
-                const modalBody = `
-                    <p>You need to login to create an Offer.</p>
-                    <p>Login now?</p>
-                `;
 
-                let loginResponse = async function(r: boolean){
-                    if (r) {
-                        $redirectStore = $page.url.toString();
-                        goto('/login');
-                    } else {
-                        $redirectStore = '';
-                        $loginAlert = false;
-                        modalStore.close();
-                    }
-                }
-
-                const modal: ModalSettings = {
-                    type: 'confirm',
-                    title: 'Log in to create Offer',
-                    body: modalBody,
-                    buttonTextConfirm: 'Go to Login',
-                    buttonTextCancel: 'No, thanks',
-                    response: loginResponse,
+                let toastId:string;
+                const t: ToastSettings = {
+                    message: 'Login to create an Offer!',
+                    autohide: false,
+                    action: {
+                        label: 'Login',
+                        response: () => {
+                            toastStore.close(toastId);
+                            $redirectStore = $page.url.toString();
+                            goto('/login');
+                        },
+                    },
+                    callback: (response) => {
+                        if(response.status === 'closed') {
+                            $redirectStore = '';
+                            $loginAlert = false;
+                        }
+                    },
                 };
-                modalStore.trigger(modal);
+                toastId = toastStore.trigger(t);
+
             }
         } else {
             allowCreateOffer = true;
