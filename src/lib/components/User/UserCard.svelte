@@ -11,7 +11,6 @@
     import { clipboard } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
-    import { beforeNavigate } from "$app/navigation";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -44,20 +43,24 @@
     // user.ndk.activeUser.ndk = .... ???!!! infinte recursion of assignments?
     $: {
         if (npub && needProfile && $connected) {
+            // console.log('setting user and profile')
             needProfile = false;
             let opts = { npub: npub };
-            try {
-                user = $ndk.getUser(opts);
-                // ndk.activeUser is undefined at this point but
-                // user.ndk.activeUser is the logged in user?!?!
-                profilePromise = user.fetchProfile();
-                profilePromise.then((profile:NDKUserProfile | null) => {
-                    aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
-                    userNameText = profile?.name ?? user?.profile?.displayName ?? "";
-                    lud16Text = profile?.lud16 ?? '';
-                });
-            } catch (e) {
-                console.error(`error trying to get user`, { opts }, e);
+            if (!user) {
+                try {
+                    user = $ndk.getUser(opts);
+                    // ndk.activeUser is undefined at this point but
+                    // user.ndk.activeUser is the logged in user?!?!
+                    profilePromise = user.fetchProfile();
+                    profilePromise.then((profile:NDKUserProfile | null) => {
+                        // console.log('profile promise arrived')
+                        aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
+                        userNameText = profile?.name ?? user?.profile?.displayName ?? "";
+                        lud16Text = profile?.lud16 ?? '';
+                    });
+                } catch (e) {
+                    console.error(`error trying to get user`, { opts }, e);
+                }
             }
         }
     }
@@ -215,14 +218,32 @@
 </script>
 
 {#await profilePromise}
-    <div class="" >Loading user...</div>
+    <section class="w-full">
+        <div class="p-4 space-y-4">
+            <div class="grid grid-cols-[20%_1fr] gap-8 items-center">
+                <div class="placeholder-circle animate-pulse" />
+                <div class="placeholder animate-pulse" />
+            </div>
+            <div class="grid grid-cols-3 gap-8">
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+            </div>
+            <div class="grid grid-cols-4 gap-4">
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+            </div>
+        </div>
+    </section>
 {:then userProfile}
     <div class="card p-4 m-8 mt-4">
         <header class="mb-8">
             <div class="grid grid-cols-[auto_1fr_auto] items-center justify-center gap-x-2">
                 <div>
                     <Avatar 
-                        class="rounded-full border-white placeholder-white"
+                        class="rounded-full border-white"
                         src={userProfile?.image 
                             ?? `https://robohash.org/${user?.pubkey}`}
                     /> 

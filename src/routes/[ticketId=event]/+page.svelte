@@ -75,6 +75,7 @@
             }
         } else {
             allowCreateOffer = true;
+            toastStore.clear();
         }
         if ($ticketsOfSpecificOffers) {
             const naddr = $page.params.ticketId;
@@ -89,10 +90,13 @@
             } else {
                 $ticketsOfSpecificOffers.forEach((t: TicketEvent) => {
                     if (idFromNaddr(t.encode()) === idFromNaddr(naddr)){
-                        ticket = TicketEvent.from(t);
-                        if (ticket.status !== TicketStatus.New) {
-                            allowCreateOffer = false;
-                            disallowCreateOfferReason = 'This ticket is already In Progress! No new offers will be accepted!';
+                        if (!ticket) {
+                            ticket = TicketEvent.from(t);
+                            // console.log('setting ticket in ticket page')
+                            if (ticket.status !== TicketStatus.New) {
+                                allowCreateOffer = false;
+                                disallowCreateOfferReason = 'This ticket is already In Progress! No new offers will be accepted!';
+                            }
                         }
                     }
                 });

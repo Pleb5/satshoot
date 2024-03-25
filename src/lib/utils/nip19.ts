@@ -2,6 +2,7 @@ import {nip19} from 'nostr-tools';
 
 export function idFromNaddr(naddr: string) {
     const ndecode = nip19.decode(naddr).data as any;
+    // console.log('naddr relay data: ', ndecode.relays)
     return `${ndecode.kind}:${ndecode.pubkey}:${ndecode.identifier}`;
 }
 
