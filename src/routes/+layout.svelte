@@ -9,6 +9,7 @@
 
     import ndk from "$lib/stores/ndk";
     import { connected } from "$lib/stores/ndk";
+    import { NDKRelayStatus } from "@nostr-dev-kit/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { myTicketFilter, myOfferFilter, newTickets, oldTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
     import { messageStore } from "$lib/stores/messages";
@@ -100,6 +101,38 @@
 
         await $ndk.connect();
         $connected = true;
+
+        $ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
+            // console.log('relay disconnected')
+            const relayName = relay.url.replace("wss://", "").slice(0, -1);
+            const t: ToastSettings = {
+                message:`Relay: ${relayName} Disconnected!`,
+                background: 'bg-error-500',
+                timeout: 5000,
+            };
+            toastStore.trigger(t);
+
+
+            if ($ndk.pool.connectedRelays().length === 0) {
+                const t: ToastSettings = {
+                    message:`No Connected Relay! Check Network Settings!`,
+                    background: 'bg-error-500',
+                    autohide: false,
+                    action: {
+                        label: 'Reset Network',
+                        response: () => {
+                            $blacklistedRelays = [];
+                            $storedPool = [];
+                            $ndk.pool.blacklistRelayUrls.clear();
+                            DEFAULTRELAYURLS.forEach((url: string)=>{
+                                $ndk.addExplicitRelay(url);
+                            });
+                        },
+                    },
+                };
+                toastStore.trigger(t);
+            }
+        });
 
         // Start all tickets sub. Starting this anywhere else seems to break reliability.
         // User-defined Relays are restored from local storage here and this runs AFTER page onmounts.
