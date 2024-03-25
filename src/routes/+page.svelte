@@ -11,6 +11,42 @@
     let filterList: string[] = [];
     let ticketList: Set<TicketEvent> = new Set;
 
+    function filterTickets() {
+        // We need to check all tickets against all filters
+        ticketList = new Set();
+        $newTickets.forEach((ticket: TicketEvent) => {
+            filterList.forEach((filter: string) => {
+                const lowerCaseFilter = filter.toLowerCase();
+
+                const lowerCaseTitle = ticket.title.toLowerCase();
+                const lowerCaseDescription = ticket.description.toLowerCase();
+
+                let tagsContain: boolean = false;
+                ticket.tags.forEach((tag: NDKTag) => {
+                    if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                        tagsContain = true;
+                    }
+                });
+
+                const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
+                const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+
+                if (titleContains || descContains || tagsContain) {
+                    ticketList.add(ticket);
+                }
+            });
+        });
+        ticketList = ticketList;
+    }
+
+    function addTagAndFilter(tag: string) {
+        if (!filterList.includes(tag)) {
+            filterList.push(tag);
+            filterList = filterList;
+            filterTickets();
+        }
+    }
+
     $: {
         if ($oldTickets && $newTickets) {
             for (let i = 0; i < $oldTickets.length; i++) {
@@ -27,31 +63,7 @@
             if (filterList.length === 0) {
                 ticketList = new Set($newTickets);
             } else {
-                // We need to check all tickets against all filters
-                ticketList = new Set();
-                $newTickets.forEach((ticket: TicketEvent) => {
-                    filterList.forEach((filter: string) => {
-                        const lowerCaseFilter = filter.toLowerCase();
-
-                        const lowerCaseTitle = ticket.title.toLowerCase();
-                        const lowerCaseDescription = ticket.description.toLowerCase();
-
-                        let tagsContain: boolean = false;
-                        ticket.tags.forEach((tag: NDKTag) => {
-                            if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
-                                tagsContain = true;
-                            }
-                        });
-
-                        const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-                        const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
-
-                        if (titleContains || descContains || tagsContain) {
-                            ticketList.add(ticket);
-                        }
-                    });
-                });
-                ticketList = ticketList;
+                filterTickets();
             }
         }
     }
@@ -82,9 +94,10 @@
 
     <div class="grid grid-cols-1 gap-y-4 mx-8 mb-8">
         {#each ticketList as ticket}
-
-            <TicketCard {ticket} titleSize={'md lg:text-xl'}/>
-
+            <TicketCard {ticket}
+                titleSize={'md lg:text-xl'}
+                tagCallback={addTagAndFilter} 
+            />
         {/each}
     </div>
 </div>

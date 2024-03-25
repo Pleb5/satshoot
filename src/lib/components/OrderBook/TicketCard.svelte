@@ -29,6 +29,7 @@
     export let titleLink: boolean = true;
     export let shortenDescription = true;
     export let countAllOffers: boolean = false;
+    export let tagCallback: ((tag:string) => void) | null = null;
 
     let bech32ID = '';
     let npub: string;
@@ -298,7 +299,15 @@
                 <div class="items-center flex flex-wrap gap-y-1">
                     {#each ticket.tTags as tag }
                         <div class="pr-3 rounded-token">
-                            <span class="badge variant-filled-surface">{ tag[1] }</span>
+                            <button
+                                type="button"
+                                class="badge variant-filled-surface"
+                                on:click={()=> {
+                                    if (tagCallback) tagCallback(tag[1])
+                                }}
+                            >
+                                <span class="">{ tag[1] }</span>
+                            </button>
                         </div>
                     {/each}
                 </div>
