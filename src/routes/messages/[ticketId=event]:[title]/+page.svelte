@@ -17,7 +17,6 @@
     import { idFromNaddr } from '$lib/utils/nip19'
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
-    import { afterNavigate } from "$app/navigation";
 
 
     const toastStore = getToastStore();
@@ -41,14 +40,20 @@
 		color: string;
 	}
 
+    interface Contact {
+        person: NDKUser,
+        selected: boolean,
+    }
+
 	let elemChat: HTMLElement;
     let elemHeader:HTMLElement;
     let elemPrompt:HTMLElement;
     let chatHeight: number;
-    let hideChat = false;
-    let contactsHeight = 'h-14';
-    let arrowDown = true;
-    let hideSearch = false;
+    let hideChat:boolean;
+    let hidePrompt:boolean;
+    let contactsHeight:string;
+    let arrowDown:boolean;
+    let hideSearch:boolean;
 
     let currentMessage: string = '';
 
@@ -58,7 +63,7 @@
     let needSetup = true;
 
 	// Contact List
-	let people:NDKUser[] = [];
+	let people: Contact[] = [];
     let currentPerson: NDKUser;
 
     // The pubkey of the person who made the winning Offer
@@ -133,29 +138,36 @@
     }
 
     function addPerson(pubkey: string): NDKUser {
-        for (const person of people) {
-            if (person.pubkey === pubkey) {
-                return person;
+        for (const contact of people) {
+            if (contact.person.pubkey === pubkey) {
+                return contact.person;
             }
         }
         
         // We havent added this person yet
         const person = $ndk.getUser({hexpubkey: pubkey});
         console.log('adding new person', person)
-        people.push(person);
+        const contact = {person: person, selected: false};
+        people.push(contact);
         people = people;
+
         updateUserProfile(person);
 
         return person;
     }
 
-    function selectCurrentPerson(person: NDKUser, i: number) {
-        if (currentPerson !== person){
+    function selectCurrentPerson(contact: Contact) {
+        if (currentPerson !== contact.person){
             console.log('selectCurrentPerson')
-            // Swap current person to top
-            currentPerson = person;
-            people[i] = people[0];
-            people[0] = currentPerson;
+            currentPerson = contact.person;
+            
+            people.forEach((c: Contact) => {
+                c.selected = false;
+            });
+
+            contact.selected = true;
+
+            people = people;
 
             generateCurrentFeed();
             updateUserProfile(currentPerson);
@@ -278,15 +290,28 @@
     }
 
     function expandContacts() {
+        console.log('expandContacts')
         hideChat = true;
         hideSearch = true;
+        hidePrompt = true;
         arrowDown = false;
         contactsHeight = 'h-full';
     }
 
     function resetContactsList() {
+        let anyoneSelected = false;
+        people.forEach((contact: Contact) => {
+            if(contact.selected) {
+                anyoneSelected = true;
+            }
+        });
+        if(!anyoneSelected && people.length > 0) {
+           selectCurrentPerson(people[0]); 
+        }
+         
         hideChat = false;
         hideSearch = false;
+        hidePrompt = false;
         arrowDown = true;
         contactsHeight = 'h-14';
     }
@@ -383,20 +408,23 @@
     let innerHeight = 0;
     $: if (innerHeight) {
         const elemPage = document.querySelector('#page');
-        console.log(elemPage.offsetHeight)
-        if (elemPage) {
+        if (elemPage && elemPrompt && elemHeader) {
             const promptHeight = elemPrompt.offsetHeight;
             const headerHeight = elemHeader.offsetHeight;
             chatHeight = (elemPage as HTMLElement).offsetHeight - promptHeight - headerHeight;
         }
     }
 
+    onMount(() => {
+        expandContacts();
+    });
+
 </script>
 
 <svelte:window bind:innerHeight={innerHeight} />
 <div class="h-full overflow-hidden">
-    <div class="w-full h-full flex flex-col overflow-hidden card p-2 bg-surface-100-800-token">
-        <section class="flex-none" bind:this={elemHeader}>
+    <div class="w-full h-full flex flex-col overflow-hidden card bg-surface-100-800-token">
+        <section class="flex-none pt-2" bind:this={elemHeader}>
             <a class="anchor" href={titleLink}>
                 <h4 class="h4 mb-2 text-center font-bold">{ticketTitle ?? '?'}</h4>
             </a>
@@ -417,27 +445,29 @@
                 <div class="flex flex-col items-center p-2 pb-0 space-x-2">
                     <small class="opacity-50">Contacts</small>
                     <div class="flex flex-col space-y-1 overflow-y-hidden {contactsHeight}">
-                        {#each people as person, i}
+                        {#each people as contact, i}
                             <button
                                 type="button"
                                 class="btn w-full flex items-center space-x-4 
-                                {currentPerson 
-                                ? (
-                                person.pubkey === currentPerson.pubkey
-                                ? 'variant-filled-primary'
-                                : 'bg-surface-hover-token'
-                                )
-                                : 'bg-surface-hover-token'}"
-                                on:click={() => selectCurrentPerson(person, i)}
+                                { contact.selected
+                                    ? 'variant-filled-primary'
+                                    : 'bg-surface-hover-token'
+                                }
+                                { !contact.selected && arrowDown
+                                    ? 'hidden'
+                                    : ''
+                                }
+                                "
+                                on:click={() => selectCurrentPerson(contact)}
                             >
                                 <Avatar
-                                    src={person.profile?.image
-                                        ?? `https://robohash.org/${person.pubkey}`}
+                                    src={contact.person.profile?.image
+                                        ?? `https://robohash.org/${contact.person.pubkey}`}
                                     width="w-8"
                                 />
-                                <span class="flex-1 text-start {person.pubkey === winner 
+                                <span class="flex-1 text-start {contact.person.pubkey === winner 
                                     ? 'text-warning-400 font-bold' : ''}">
-                                    {person.profile?.name ?? person.npub.substring(0,15)}
+                                    {contact.person.profile?.name ?? contact.person.npub.substring(0,15)}
                                 </span>
                             </button>
                         {/each}
@@ -460,9 +490,14 @@
             </div>
         </section>
         <section class="flex-auto overflow-hidden" >
-            <div class="chat {hideChat ? 'hidden' : ''} w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
+            <div
+                class="chat  
+                        w-full grid grid-cols-1 md:grid-cols-[30%_1fr]"
+            >
                 <!-- Side Navigation -->
-                <div class="hidden sticky top-0 z-20 md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
+                <div
+                    class="hidden md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30"
+                >
                     <!-- Header -->
                     <header class="border-b border-surface-500/30 p-4">
                         <input
@@ -477,27 +512,25 @@
                     <div class="p-4 space-y-4">
                         <small class="opacity-50">Contacts</small>
                         <div class="flex flex-col space-y-1">
-                            {#each people as person, i}
+                            {#each people as contact, i (contact.person.pubkey)}
                                 <button
                                     type="button"
                                     class="btn w-full flex items-center space-x-4
-                                    {currentPerson 
-                                    ? (
-                                    person.pubkey === currentPerson.pubkey
-                                    ? 'variant-filled-primary'
-                                    : 'bg-surface-hover-token'
-                                    )
-                                    : 'bg-surface-hover-token'}"
-                                    on:click={() => selectCurrentPerson(person, i)}                            >
+                                    {contact.selected
+                                        ? 'variant-filled-primary'
+                                        : 'bg-surface-hover-token'
+                                    }"
+                                    on:click={() => selectCurrentPerson(contact)}
+                                >
                                     <Avatar
-                                        src={person.profile?.image 
-                                            ?? `https://robohash.org/${person.pubkey}`}
+                                        src={contact.person.profile?.image 
+                                            ?? `https://robohash.org/${contact.person.pubkey}`}
                                         width="w-8"
                                     />
                                     <span class="flex-1 text-start
-                                        {person.pubkey === winner 
+                                        {contact.person.pubkey === winner 
                                         ? 'text-warning-500 font-bold' : ''}">
-                                        {person.profile?.name ?? person.npub.substring(0,10)}
+                                        {contact.person.profile?.name ?? contact.person.npub.substring(0,10)}
                                     </span>
                                 </button>
                             {/each}
@@ -505,10 +538,10 @@
                     </div>
                 </div>
                 <!-- Conversation -->
-                <!-- Inline css needed to adjust max-height after rendering -->
+                <!-- Inline css needed to adjust height reactively -->
                 <section 
                     bind:this={elemChat}
-                    class="p-4 space-y-4 overflow-y-auto"
+                    class="p-4 space-y-4 overflow-y-auto {hideChat ? 'hidden' : ''}"
                     style="height: {chatHeight}px;"
                 >
                     {#each filteredMessageFeed as bubble}
@@ -546,25 +579,28 @@
             </div>
         </section>
         <!-- Prompt -->
-        <section
-            bind:this={elemPrompt}
-            class="flex-none w-full h-14 border-t border-surface-500/30
-                    bg-surface-100-800-token p-2">
-            <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
-                <button class="input-group-shim">+</button>
-                <textarea
-                    bind:value={currentMessage}
-                    class="bg-transparent border-0 ring-0 text-sm"
-                    name="prompt"
-                    id="prompt"
-                    placeholder="Write a message..."
-                    rows="1"
-                    on:keydown={onPromptKeyDown}
-                />
-                <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
-                    <i class="fa-solid fa-paper-plane" />
-                </button>
-            </div>
-        </section>
+        {#if !hidePrompt}
+            <section
+                bind:this={elemPrompt}
+                class="flex-none w-full h-14 border-t border-surface-500/30
+                bg-surface-100-800-token p-2"
+            >
+                <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
+                    <button class="input-group-shim">+</button>
+                    <textarea
+                        bind:value={currentMessage}
+                        class="bg-transparent border-0 ring-0 text-sm"
+                        name="prompt"
+                        id="prompt"
+                        placeholder="Write a message..."
+                        rows="1"
+                        on:keydown={onPromptKeyDown}
+                    />
+                    <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
+                        <i class="fa-solid fa-paper-plane" />
+                    </button>
+                </div>
+            </section>
+        {/if}
     </div>
 </div>
