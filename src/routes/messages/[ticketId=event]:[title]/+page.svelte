@@ -5,7 +5,7 @@
     import { messageStore, receivedMessageFilter, myMessageFilter } from "$lib/stores/messages";
     import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
 
-    import { onDestroy, onMount } from "svelte";
+    import { onDestroy, onMount, tick } from "svelte";
 
 	import { Avatar } from '@skeletonlabs/skeleton';
 
@@ -47,8 +47,14 @@
 
 	let elemChat: HTMLElement;
     let elemHeader:HTMLElement;
+    let elemSideHeader:HTMLElement;
     let elemPrompt:HTMLElement;
+    let elemSideContactListDiv:HTMLElement;
+
+    let sideContactsLabelOffsetHeight: number;
     let chatHeight: number;
+    let sideContactsHeight: number;
+
     let hideChat:boolean;
     let hidePrompt:boolean;
     let contactsHeight:string;
@@ -156,7 +162,7 @@
         return person;
     }
 
-    function selectCurrentPerson(contact: Contact) {
+    async function selectCurrentPerson(contact: Contact) {
         if (currentPerson !== contact.person){
             console.log('selectCurrentPerson')
             currentPerson = contact.person;
@@ -172,6 +178,9 @@
             generateCurrentFeed();
             updateUserProfile(currentPerson);
             resetContactsList();
+
+            await tick();
+            calculateHeights();
         }
     }
 
@@ -316,6 +325,36 @@
         contactsHeight = 'h-14';
     }
 
+    function calculateHeights() {
+        const elemPage = document.querySelector('#page');
+        if (elemPage && elemPrompt && elemHeader && elemSideHeader) {
+            console.log('recalculate chat and sideContactsHeight')
+            const promptHeight = elemPrompt.offsetHeight;
+            const headerHeight = elemHeader.offsetHeight;
+            chatHeight = (elemPage as HTMLElement).offsetHeight - promptHeight - headerHeight;
+
+            const sideHeaderHeight = elemSideHeader.offsetHeight;
+            const sideContactsListDivPaddingHeight = parseInt(window.getComputedStyle(
+                elemSideContactListDiv).paddingTop) * 2;
+
+            sideContactsHeight = chatHeight - sideHeaderHeight
+                - sideContactsLabelOffsetHeight - sideContactsListDivPaddingHeight;
+            console.log('promptHeight', promptHeight)
+            console.log('headerHeight', headerHeight)
+            console.log('sideHeaderHeight', sideHeaderHeight)
+            console.log('sideContactsLabelOffsetHeight', sideContactsLabelOffsetHeight)
+            console.log('sideContactsListDivPaddingHeight', sideContactsListDivPaddingHeight)
+            console.log('chatHeight', chatHeight)
+            console.log('sideContactsHeight', sideContactsHeight)
+        } else {
+            console.log('not calculateHeights, reason:')
+            console.log(elemPage)
+            console.log(elemPrompt)
+            console.log(elemHeader)
+            console.log(elemSideHeader)
+        }
+    }
+
     onDestroy(()=>{
         myMessageFilter['authors'] = [];
         myMessageFilter['#t'] = [];
@@ -406,13 +445,9 @@
     }
 
     let innerHeight = 0;
-    $: if (innerHeight) {
-        const elemPage = document.querySelector('#page');
-        if (elemPage && elemPrompt && elemHeader) {
-            const promptHeight = elemPrompt.offsetHeight;
-            const headerHeight = elemHeader.offsetHeight;
-            chatHeight = (elemPage as HTMLElement).offsetHeight - promptHeight - headerHeight;
-        }
+    let innerWidth = 0
+    $: if (innerHeight || innerWidth) {
+        calculateHeights();
     }
 
     onMount(() => {
@@ -421,7 +456,7 @@
 
 </script>
 
-<svelte:window bind:innerHeight={innerHeight} />
+<svelte:window bind:innerHeight={innerHeight} bind:innerWidth={innerWidth}/>
 <div class="h-full overflow-hidden">
     <div class="w-full h-full flex flex-col overflow-hidden card bg-surface-100-800-token">
         <section class="flex-none pt-2" bind:this={elemHeader}>
@@ -490,16 +525,11 @@
             </div>
         </section>
         <section class="flex-auto overflow-hidden" >
-            <div
-                class="chat  
-                        w-full grid grid-cols-1 md:grid-cols-[30%_1fr]"
-            >
+            <div class="chat w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
                 <!-- Side Navigation -->
-                <div
-                    class="hidden md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30"
-                >
+                <div class="hidden md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
                     <!-- Header -->
-                    <header class="border-b border-surface-500/30 p-4">
+                    <header class="border-b border-surface-500/30 p-4" bind:this={elemSideHeader}>
                         <input
                             class="input"
                             type="search"
@@ -509,9 +539,14 @@
                         />
                     </header>
                     <!-- Contact List -->
-                    <div class="p-4 space-y-4">
-                        <small class="opacity-50">Contacts</small>
-                        <div class="flex flex-col space-y-1">
+                    <div class="p-4  space-y-4" bind:this={elemSideContactListDiv}>
+                        <small class="opacity-50" bind:offsetHeight={sideContactsLabelOffsetHeight}>
+                            Contacts
+                        </small>
+                        <div
+                            class="flex flex-col space-y-1 overflow-y-auto"
+                            style="height: {sideContactsHeight}px; margin:0"
+                        >
                             {#each people as contact, i (contact.person.pubkey)}
                                 <button
                                     type="button"
