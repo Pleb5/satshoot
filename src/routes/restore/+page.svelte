@@ -14,6 +14,7 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { goto } from '$app/navigation';
     import { tick } from 'svelte';
+    import { loggedIn } from '$lib/stores/login';
 
     
     const toastStore = getToastStore();
@@ -101,6 +102,7 @@
 
                 // Fetch user
                 const user:NDKUser = await $ndk.signer.user();
+                if (!!user.npub) $loggedIn = true;
 
                 myTicketFilter.authors?.push(user.pubkey);
                 myOfferFilter.authors?.push(user.pubkey);

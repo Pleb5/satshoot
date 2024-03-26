@@ -4,7 +4,7 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import ndk from "$lib/stores/ndk";
     import { connected } from "$lib/stores/ndk";
-    import loginAlert from '$lib/stores/login-alert';
+    import { loginAlert } from '$lib/stores/login';
     import redirectStore from '$lib/stores/redirect-store';
 
     import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";

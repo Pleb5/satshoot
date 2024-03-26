@@ -4,6 +4,7 @@
     import ndk from "$lib/stores/ndk";
     import { myTickets, myOffers , myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
     import redirectStore from "$lib/stores/redirect-store";
+    import { loggedIn } from "$lib/stores/login";
 
     import { browser } from "$app/environment";
 
@@ -19,7 +20,7 @@
 
     // Navigate to Home page if user is already logged in(needs to log out first)
     $: {
-        if ($ndk.activeUser) {
+        if ($loggedIn) {
             if ($redirectStore) {
                 goto($redirectStore)
                 $redirectStore = '';
@@ -35,6 +36,8 @@
             $ndk.signer = new NDKNip07Signer();
 
             let user: NDKUser = await $ndk.signer.user();
+            if (!!user.npub) $loggedIn = true;
+
             localStorage.setItem('login-method', "nip07");
 
             myTicketFilter.authors?.push(user.pubkey);

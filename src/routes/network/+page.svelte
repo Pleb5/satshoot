@@ -4,7 +4,8 @@
     import {blacklistedRelays, storedPool } from "$lib/stores/ndk";
 
     import normalizeUrl from "normalize-url";
-    import type { NDKRelay } from '@nostr-dev-kit/ndk';
+    import { NDKRelay } from '@nostr-dev-kit/ndk';
+    import { NDKRelayStatus } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
 
     import { type ModalSettings, getModalStore } from '@skeletonlabs/skeleton';
@@ -45,18 +46,29 @@
 
     
     function update() {
-        // update UI then sync to local storage
-        relays = Array.from($ndk.pool.relays.values());
+        // Sync UI and ndk with modified relays
+        // storedPool and blacklistedRelays are sources of truth, not ndk pool
+        relays = [];
+        $storedPool?.forEach((url: string)=> {
+            if (($ndk.explicitRelayUrls as string[]).includes(url)) {
+                relays.push($ndk.pool.getRelay(url));
+            } else {
+                $ndk.pool.blacklistRelayUrls.delete(url);
 
-        // relays are destroyed when page refreshes, we need to only sync when
-        // there are values to be synced
-        if (relays.length > 0){
-            storedPool.set($ndk.pool.urls());
+                const newRelay = $ndk.addExplicitRelay(url);
+                relays.push(newRelay);
+            }
+        });
 
-            blacklistedRelays.set(
-                Array.from($ndk.pool.blacklistRelayUrls.keys())
-            );
-        }
+        $blacklistedRelays?.forEach((url: string)=> {
+            if (($ndk.explicitRelayUrls as string[]).includes(url)) {
+                $ndk.pool.removeRelay(url);
+            }
+
+            $ndk.pool.blacklistRelayUrls.add(url);
+        });
+
+        relays = relays;
     }
 
 
@@ -66,15 +78,16 @@
             if (r) {
                 // Removal confirmed, remove the relay. Only remove from app
                 // Don't remove from nostr-wide relay list(nip 65)
-                $ndk.pool.removeRelay(relay.url);
+                if (($storedPool as string[]).includes(relay.url)) {
+                    const index:number = ($storedPool as string[]).indexOf(relay.url);
+                    ($storedPool as string[]).splice(index, 1);
+                    storedPool.set($storedPool);
+                }
 
-                $ndk.explicitRelayUrls = 
-                    $ndk.explicitRelayUrls?.filter((explicitRelay) => {
-                        relay.url !== explicitRelay;
-                    });
-
-
-                $ndk.pool.blacklistRelayUrls.add(relay.url);
+                if (!($blacklistedRelays as string[]).includes(relay.url)) {
+                    ($blacklistedRelays as string[]).push(relay.url);
+                    blacklistedRelays.set($blacklistedRelays);
+                }
 
                 update();
             }
@@ -113,16 +126,20 @@
     // Inform users with a tooltip that this does not change the nostr-wide
     // user relays, it just saves this preference locally which disappears on logout or browser local data clearance
     function addRelay() {
+        // Removing added Relay from blacklistedRelays 
         const url: string = normalizeRelayUrl(relayInputValue);
-
-        $ndk.pool.blacklistRelayUrls.delete(url);
-
-        if (!($ndk.explicitRelayUrls?.includes(url))) {
-            $ndk.addExplicitRelay(url);
+        if (($blacklistedRelays as string[]).includes(url)) {
+            const index = ($blacklistedRelays as string[]).indexOf(url);
+            ($blacklistedRelays as string[]).splice(index, 1);
         }
 
+        // Adding relay to local storage stored pool if unique
+        if (!($storedPool as string[]).includes(url)) {
+            ($storedPool as string[]).push(url);
+        }
 
         relayInputValue = "";
+
         update();
     }
 </script>

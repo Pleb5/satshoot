@@ -9,8 +9,9 @@
 
     import ndk from "$lib/stores/ndk";
     import { connected } from "$lib/stores/ndk";
-    import { NDKRelayStatus } from "@nostr-dev-kit/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
+    import { loggedIn } from "$lib/stores/login";
+
     import { myTicketFilter, myOfferFilter, newTickets, oldTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
     import { messageStore } from "$lib/stores/messages";
 
@@ -51,6 +52,7 @@
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount } from "svelte";
+    import { goto } from "$app/navigation";
 
     // Tickets and Offers
 
@@ -62,13 +64,7 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    let profileImage: string | undefined;
-    let loggedIn: boolean;
-
-    $: {
-        profileImage = $ndk.activeUser?.profile?.image;
-        loggedIn = !!$ndk.activeUser;
-    }
+    let noConnectedRelaysToastID: string;
 
     onMount(async () => {
         localStorage.debug = 'ndk:*'
@@ -85,11 +81,11 @@
         if ($storedPool && $blacklistedRelays) {
             $storedPool.forEach((relay:string) => {
                 $ndk.addExplicitRelay(new NDKRelay(relay));
-            })
+            });
             // Retrieve blacklisted relay urls removed explicitly by the user
             $blacklistedRelays.forEach((relay:string) => {
                 $ndk.pool.blacklistRelayUrls.add(relay);
-            })
+            });
         } else {
             // Initialize stored pool and ndk with default relays
             $ndk.explicitRelayUrls = DEFAULTRELAYURLS; 
@@ -113,24 +109,33 @@
             toastStore.trigger(t);
 
 
-            if ($ndk.pool.connectedRelays().length === 0) {
+            if ($ndk.pool.connectedRelays().length === 0
+                && !noConnectedRelaysToastID) {
+                $connected = false;
                 const t: ToastSettings = {
-                    message:`No Connected Relay! Check Network Settings!`,
+                    message:`No Connected Relays!`,
                     background: 'bg-error-500',
+                    classes: "text-sm",
                     autohide: false,
                     action: {
-                        label: 'Reset Network',
+                        label: 'Check Network',
                         response: () => {
-                            $blacklistedRelays = [];
-                            $storedPool = [];
-                            $ndk.pool.blacklistRelayUrls.clear();
-                            DEFAULTRELAYURLS.forEach((url: string)=>{
-                                $ndk.addExplicitRelay(url);
-                            });
+                            goto('/network');
                         },
                     },
                 };
-                toastStore.trigger(t);
+                noConnectedRelaysToastID = toastStore.trigger(t);
+            }
+        });
+
+        $ndk.pool.on('relay:connect', (relay: NDKRelay) => {
+            if ($storedPool?.includes(relay.url)) {
+                $connected = true;
+                console.log('user-defined relay came online')
+                if(noConnectedRelaysToastID) {
+                    toastStore.close(noConnectedRelaysToastID);
+                    noConnectedRelaysToastID = '';
+                }
             }
         });
 
@@ -139,6 +144,7 @@
         // This causes the subscription to fail because there are yet no relays to subscribe to
         // ALL STORE SUBS MUST START IN LAYOUT.SVELTE! CAN RESTART IN PAGES/COMPONENTS LATER
         // BUT IT IS IMPORANT THAT THEY ARE STARTED HERE!
+        // UPDATE: $connected store helps initialize things at the right time
         newTickets.startSubscription();
         oldTickets.startSubscription();
         offersOnTickets.startSubscription();
@@ -146,7 +152,7 @@
 
         messageStore.startSubscription();
 
-        if (!loggedIn) {
+        if (!$loggedIn) {
             // Try to get saved user from localStorage
             const loginMethod = localStorage.getItem("login-method");
 
@@ -157,6 +163,7 @@
                         $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
 
                         let user: NDKUser = await $ndk.signer.user();
+                        if (!!user.npub) $loggedIn = true;
 
                         myTicketFilter.authors?.push(user.pubkey);
                         myOfferFilter.authors?.push(user.pubkey);
@@ -206,6 +213,7 @@
                                                 $sessionPK = privateKey;
 
                                                 let user: NDKUser = await $ndk.signer.user();
+                                                if (!!user.npub) $loggedIn = true;
 
                                                 myTicketFilter.authors?.push(user.pubkey);
                                                 myOfferFilter.authors?.push(user.pubkey);
@@ -237,6 +245,8 @@
                         $ndk.signer = new NDKNip07Signer();
                     }
                     let user = await $ndk.signer.user();
+
+                    if (!!user.npub) $loggedIn = true;
 
                     myTicketFilter.authors?.push(user.pubkey);
                     myOfferFilter.authors?.push(user.pubkey);
@@ -347,7 +357,7 @@
             </div>
 
             <svelte:fragment slot="trail">
-                {#if loggedIn}
+                {#if $loggedIn}
                     <!-- Triggers popup settings menu -->
                     <button use:popup={settingsMenu}>
 
@@ -356,7 +366,8 @@
                             class="rounded-full border-white placeholder-white"
                             border="border-4 border-surface-300-600-token hover:!border-primary-500"
                             cursor="cursor-pointer"
-                            src={profileImage ?? `https://robohash.org/${$ndk.activeUser?.pubkey}`}
+                            src={$ndk.activeUser?.profile?.image
+                                    ?? `https://robohash.org/${$ndk.activeUser?.pubkey}`}
                         /> 
                     </button>
                     <!-- Popup menu content -->

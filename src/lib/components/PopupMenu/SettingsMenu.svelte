@@ -13,6 +13,7 @@
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import type { TicketEvent } from '$lib/events/TicketEvent';
+    import { loggedIn } from '$lib/stores/login';
 
     const modalStore = getModalStore();
 
@@ -46,6 +47,8 @@
 
                 $sessionPK = '';
                 sessionStorage.clear();
+
+                $loggedIn = false;
 
                 // Remove offer subscriptions that follow offers on myTickets
         // also remove those that tracked other offers on tickets I bid on as a Troubleshooter(myOffers #a tag or ticketsOfSpecificOffers.ticketAddress)

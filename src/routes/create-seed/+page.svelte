@@ -14,6 +14,7 @@
 
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
+    import { loggedIn } from "$lib/stores/login";
 
     const toastStore = getToastStore();
 
@@ -29,6 +30,9 @@
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
         let user: NDKUser = await $ndk.signer?.user();
+
+        if (!!user.npub) $loggedIn = true;
+
         // Store private key in session storage 
         $sessionPK = privateKey;
 
