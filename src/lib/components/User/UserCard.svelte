@@ -3,6 +3,7 @@
 
     import ndk from "$lib/stores/ndk";
     import { connected } from "$lib/stores/ndk";
+
     import EditProfileModal from "../Modals/EditProfileModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
@@ -27,17 +28,18 @@
     let profilePromise:Promise<NDKUserProfile | null>;
 
 // Because of the two-way binding AND reactivity, we must ensure to run reactive profile fetch exactly ONCE
-    let needProfile: boolean = true;
+    let needProfile = true;
     let aboutText: string;
     let userNameText: string;
     let lud16Text:string;
 
     let editable = false;
 
-    $: if ($ndk.activeUser && npub) {
-        editable = $ndk.activeUser?.npub === npub;
-        needProfile = true
+    $: if (npub) {
+        // if user changed the npub reload profile
+        needProfile = true;
     }
+
     // Some strange behavior around ndk, user and ndk.activeUser when recursively
     // assigning ndk.getUser(npub) -> user.ndk = this -> user.ndk.activeUser = ...?
     // user.ndk.activeUser.ndk = .... ???!!! infinte recursion of assignments?
@@ -46,21 +48,21 @@
             // console.log('setting user and profile')
             needProfile = false;
             let opts = { npub: npub };
-            if (!user) {
-                try {
-                    user = $ndk.getUser(opts);
-                    // ndk.activeUser is undefined at this point but
-                    // user.ndk.activeUser is the logged in user?!?!
-                    profilePromise = user.fetchProfile();
-                    profilePromise.then((profile:NDKUserProfile | null) => {
-                        // console.log('profile promise arrived')
-                        aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
-                        userNameText = profile?.name ?? user?.profile?.displayName ?? "";
-                        lud16Text = profile?.lud16 ?? '';
-                    });
-                } catch (e) {
-                    console.error(`error trying to get user`, { opts }, e);
-                }
+            try {
+                // console.log('user is undefined, setting user')
+                user = $ndk.getUser(opts);
+                editable = $ndk.activeUser?.npub === npub;
+                // ndk.activeUser is undefined at this point but
+                // user.ndk.activeUser is the logged in user?!?!
+                profilePromise = user.fetchProfile();
+                profilePromise.then((profile:NDKUserProfile | null) => {
+                    // console.log('profile promise arrived')
+                    aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
+                    userNameText = profile?.name ?? user?.profile?.displayName ?? "";
+                    lud16Text = profile?.lud16 ?? '';
+                });
+            } catch (e) {
+                console.error(`error trying to get user`, { opts }, e);
             }
         }
     }
