@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onMount, type SvelteComponent, tick } from 'svelte';
     import ndk from '$lib/stores/ndk';
-    import { NDKEvent, NDKKind, NDKRelaySet, type NDKTag } from '@nostr-dev-kit/ndk';
+    import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
     
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { clipboard } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
@@ -20,10 +21,10 @@
     const shareURL = `https://bitcointroubleshoot.com/${ticket.encode()}`;
 
     let message: string = '';
-    let disable = false;
+    let posting = false;
 
     async function postTicket() {
-        disable = true;
+        posting = true;
         await tick();
 
         $ndk.enableOutboxModel = true;
@@ -38,7 +39,7 @@
 
             let relays = await kind1Event.publish();
             console.log(relays)
-            disable = false;
+            posting = false;
             const t: ToastSettings = {
                 message: 'Ticket Posted as Text Note!',
                 timeout: 7000,
@@ -49,7 +50,7 @@
             modalStore.close();
             $ndk.enableOutboxModel = false;
         } catch(e) {
-            disable = false;
+            posting = false;
             const t: ToastSettings = {
                 message: 'Error happened while publishing note!',
                 timeout: 5000,
@@ -110,9 +111,17 @@
                     <button
                         type="submit"
                         class="btn btn-lg bg-success-300-600-token"
-                        disabled={disable}
+                        disabled={posting}
                     >
-                        Post
+                        {#if posting}
+                            <span>
+                                <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
+                                    track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8" />
+                            </span>
+                        {:else}
+                            <span>Post</span>
+                        {/if}
+                        
                     </button>
                 </div>
             </form>

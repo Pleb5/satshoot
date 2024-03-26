@@ -1,6 +1,7 @@
 <script lang="ts">
     import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
 
     import { tick } from 'svelte';
 
@@ -148,7 +149,14 @@
                     class="btn btn-lg h-14 font-bold bg-primary-400-500-token"
                     disabled={!passphrase || decrypting}
                 >
-                    Decrypt
+                    {#if decrypting}
+                        <span>
+                            <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500"
+                                track="stroke-primary-500/30" strokeLinecap="round" width="w-8" />
+                        </span>
+                    {:else}
+                        <span>Decrypt</span>
+                    {/if}
                 </button>
             </div>
         </form>

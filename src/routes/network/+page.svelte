@@ -5,7 +5,6 @@
 
     import normalizeUrl from "normalize-url";
     import { NDKRelay } from '@nostr-dev-kit/ndk';
-    import { NDKRelayStatus } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
 
     import { type ModalSettings, getModalStore } from '@skeletonlabs/skeleton';

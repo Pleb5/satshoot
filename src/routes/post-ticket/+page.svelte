@@ -17,9 +17,11 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
     import ShareTicketModal from "$lib/components/Modals/ShareTicketModal.svelte";
 
-    import { onMount } from 'svelte';
+    import { onMount, tick } from 'svelte';
     import { beforeNavigate, goto } from '$app/navigation';
     import { navigating } from '$app/stores';
 
@@ -48,6 +50,8 @@
     // reactive classes based on validity of user input
     let titleState = '';
     let descriptionState = '';
+
+    let posting = false;
 
     // Tag validation on tag selection from autocomplete
     function onTagSelection(event: CustomEvent<AutocompleteOption<string>>): void {
@@ -87,6 +91,9 @@
        if (titleValid && descriptionValid) {
             // Post the ticket...
             if ($ndk.activeUser) {
+                posting = true;
+                await tick();
+
                 const ticket = new TicketEvent($ndk);
 
                 ticket.title = titleText;
@@ -106,6 +113,8 @@
                 await ticket.publish(
                     new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
                 );
+
+                posting = false;
 
                 $ticketToEdit = null;
 
@@ -143,7 +152,7 @@
                 };
                 modalStore.trigger(postAsTextModal);
 
-
+                $tabStore = 0;
                 goto('/my-tickets');
             } else {
                 const t: ToastSettings = {
@@ -239,7 +248,15 @@
     <button type="button"
         class="btn btn-lg bg-gradient-to-br variant-gradient-primary-tertiary"
         on:click={postTicket}
+        disabled={posting}
     >
-        <span>Post Ticket</span>
+        {#if posting}
+            <span>
+                <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
+                    track="stroke-tertiary-500/30" width="w-8" strokeLinecap="round"/>
+            </span>
+        {:else}
+            <span>Post Ticket</span>
+        {/if}
     </button>
 </div>

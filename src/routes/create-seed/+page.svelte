@@ -12,6 +12,7 @@
     import { onMount, tick } from "svelte";
     import { goto } from "$app/navigation";
 
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { loggedIn } from "$lib/stores/login";
@@ -83,7 +84,7 @@
     let statusMessage: string;
     let statusColor = 'text-tertiary-200-700-token';
 
-    let disable = false;
+    let encrypting = false;
 
     function validatePassphrase() {
         if (passphrase.length > 13){
@@ -155,7 +156,8 @@
                 }, 800);            
             }
 
-            disable = true;
+            encrypting = true;
+
             await tick();
 
             // Start worker in background and wait for decryption result in onmessage
@@ -273,10 +275,17 @@
         <div class="flex justify-center">
             <button 
                 class="btn font-bold bg-success-400-500-token w-60" 
-                disabled={!passphraseValid || !confirmPassphraseValid || disable} 
+                disabled={!passphraseValid || !confirmPassphraseValid || encrypting} 
                 on:click={finish}
             >
-                Finish
+                {#if encrypting}
+                    <span>
+                        <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
+                            track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8" />
+                    </span>
+                {:else}
+                    <span>Finish</span>
+                {/if}
             </button>
         </div>
         {#if statusMessage}

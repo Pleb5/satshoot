@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { onMount, type SvelteComponent } from 'svelte';
+	import { onMount, tick, type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
-    import { NDKEvent, NDKKind, NDKRelaySet, NDKUser } from '@nostr-dev-kit/ndk';
+    import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
     
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
@@ -14,6 +15,8 @@
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
     let textArea:HTMLTextAreaElement;
+
+    let posting = false;
 
     async function postFeedback() {
         $ndk.enableOutboxModel = true;
@@ -30,7 +33,11 @@
         kind1Event.tag(five);
 
         try {
+            posting = true;
+            await tick();
+
             let relays = await kind1Event.publish();
+            posting = false;
             console.log(relays)
             const t: ToastSettings = {
                 message: 'Appreciate Your Feedback!',
@@ -42,6 +49,7 @@
             modalStore.close();
             $ndk.enableOutboxModel = false;
         } catch(e) {
+            posting = false;
             const t: ToastSettings = {
                 message: 'Error happened while publishing Feedback! Try again later!',
                 timeout: 5000,
@@ -75,8 +83,16 @@
                 <button
                     type="submit"
                     class="btn btn-lg bg-success-300-600-token"
+                    disabled={posting}
                 >
-                    Post
+                {#if posting}
+                    <span>
+                        <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
+                            track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8" />
+                    </span>
+                {:else}
+                    <span>Post</span>
+                {/if}
                 </button>
             </div>
         </form>

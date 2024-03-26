@@ -225,7 +225,7 @@
 </script>
 
 <div class="card m-6">
-    <TicketCard {ticket} titleSize='md sm:tex-lg' titleLink={false} shortenDescription={false} />
+    <TicketCard {ticket} titleSize='md sm:text-lg' titleLink={false} shortenDescription={false} />
 
 </div>
 

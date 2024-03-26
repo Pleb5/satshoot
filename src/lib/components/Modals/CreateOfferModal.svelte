@@ -8,6 +8,8 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
+
     import { goto } from '$app/navigation';
     import { navigating } from '$app/stores';
     import tabStore from '$lib/stores/tab-store';
@@ -30,10 +32,12 @@
     let description: string = '';
 
     let errorText = '';
+    let posting = false;
     
     const cBase = 'card bg-surface-100-800-token w-screen/2 h-screen/2 p-8 flex justify-center items-center';
 
     async function postOffer() {
+        posting = true;
         const offer = new OfferEvent($ndk)
 
         offer.pricing = pricingMethod;
@@ -56,6 +60,7 @@
             const relaysPublished = await offer.publish(
                 new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
             );
+            posting = false;
 
             const t: ToastSettings = {
                 message: 'Offer Posted!',
@@ -73,6 +78,7 @@
 
             goto('/my-tickets');
         } catch(e) {
+            posting = false;
             errorText = 'Error happened while publishing Offer!';
             if ($modalStore[0].response) {
                 $modalStore[0].response(false);
@@ -143,8 +149,16 @@
                         <button 
                             type="submit"
                             class="btn font-bold bg-success-400-500-token w-72 mt-4" 
+                            disabled={posting}
                         >
-                            Post Offer
+                            {#if posting}
+                                <span>
+                                    <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
+                                        track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8"/>
+                                </span>
+                            {:else}
+                                <span>Post Offer</span>
+                            {/if}
                         </button>
                     </div>
                 </form>
