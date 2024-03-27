@@ -265,7 +265,9 @@
                 // 
                 // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
 
-                await dm.decrypt(otherUser); // ALWAYS USE CURRENT PERSON REGARDLESS OF WHO SENT THE MESSAGE
+                // ALWAYS USE OTHER USER REGARDLESS OF WHO SENT THE MESSAGE
+                await dm.decrypt(otherUser); 
+
                 let message = dm.content;
 
                 const messageDate = new Date(dm.created_at as number * 1000);
@@ -290,6 +292,7 @@
 
             } catch (e) {
                 console.log(e);
+                console.trace();
             }
         }
 
@@ -303,6 +306,7 @@
         // console.log('expandContacts')
         hideChat = true;
         hidePrompt = true;
+        hideSearchIcon = true;
         arrowDown = false;
         contactsHeight = 'h-full';
     }
@@ -320,6 +324,7 @@
          
         hideChat = false;
         hidePrompt = false;
+        hideSearchIcon = false;
         arrowDown = true;
         contactsHeight = 'h-14';
     }
@@ -366,19 +371,6 @@
 
     // If there is a logged in user, start receiving messages related to the ticket
     $: if ($ndk.activeUser && needSetup) {
-        myMessageFilter['authors'] = [];
-        myMessageFilter['authors'].push($ndk.activeUser.pubkey);
-        myMessageFilter['#t'] = [];
-        myMessageFilter['#t'].push(ticketAddress);
-
-        receivedMessageFilter['#p'] = [];
-        receivedMessageFilter['#p'].push($ndk.activeUser.pubkey);
-        receivedMessageFilter['#t'] = [];
-        receivedMessageFilter['#t'].push(ticketAddress);
-
-        messageStore.empty();
-        messageStore.startSubscription();
-
         // If my ticket then add all people that created an offer on this ticket
         // and highlight winner offer if there is one
         // else add the ticket creator to people
@@ -387,6 +379,22 @@
         // myTickets does not necessarily contain this ticket at this point so it is easier this way
         console.log('fetch ticket...')
         $ndk.fetchEvent(ticketAddress).then((t: NDKEvent|null) => {
+            // Possible problem here to start the start message subscriptions before ticket arrived
+            // updateMessageFeed() might be called too soon in reactive statements below
+            // Sometimes this throws a very obscure error so try to initiate message subs here
+            myMessageFilter['authors'] = [];
+            myMessageFilter['authors'].push(($ndk.activeUser as NDKUser).pubkey);
+            myMessageFilter['#t'] = [];
+            myMessageFilter['#t'].push(ticketAddress);
+
+            receivedMessageFilter['#p'] = [];
+            receivedMessageFilter['#p'].push(($ndk.activeUser as NDKUser).pubkey);
+            receivedMessageFilter['#t'] = [];
+            receivedMessageFilter['#t'].push(ticketAddress);
+
+            messageStore.empty();
+            messageStore.startSubscription();
+
             needSetup = false;
             elemChat = elemChat;
 
@@ -610,7 +618,6 @@
                 class="flex-none flex flex-col w-full border-t border-surface-500/30
                 bg-surface-100-800-token p-2"
             >
-            <!-- Search on narrow screens -->
                 <div class="{hideSearch ? 'hidden' : ''} md:hidden p-2">
                     <!-- On some devices a little 'x' icon clears the input, triggering on:search event -->
                     <input
@@ -622,38 +629,39 @@
                         on:search={searchText}
                     />
                 </div>
-                <div class="grid grid-cols-[1fr_auto] gap-x-2">
-                    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
-                        <button class="input-group-shim">+</button>
-                        <textarea
-                            bind:value={currentMessage}
-                            class="bg-transparent border-0 ring-0 text-sm"
-                            name="prompt"
-                            id="prompt"
-                            placeholder="Write a message..."
-                            rows="1"
-                            on:keydown={onPromptKeyDown}
-                        />
-                        <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
-                            <i class="fa-solid fa-paper-plane" />
-                        </button>
-                    </div>
-                    {#if !hideSearchIcon}
-                        <button class="md:hidden btn btn-icon bg-primary-300-600-token"
-                                on:click={async ()=> {
-                                    hideSearch = !hideSearch;
-                                    await tick();
-                                    calculateHeights();
-                                }}
-                        >
-                            <span class="">
-                                <i class="fa-solid fa-magnifying-glass text-lg"></i>
-                            </span>
-                        </button>
-                    {/if}
+                <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
+                    <button class="input-group-shim">+</button>
+                    <textarea
+                        bind:value={currentMessage}
+                        class="bg-transparent border-0 ring-0 text-sm"
+                        name="prompt"
+                        id="prompt"
+                        placeholder="Write a message..."
+                        rows="1"
+                        on:keydown={onPromptKeyDown}
+                    />
+                    <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
+                        <i class="fa-solid fa-paper-plane" />
+                    </button>
                 </div>
             </section>
         {/if}
     </div>
 </div>
 
+<!-- Search on narrow screens -->
+{#if !hideSearchIcon}
+    <div class="fixed bottom-[7.75rem] sm:bottom-[8.15rem] right-4">
+        <button class="md:hidden btn btn-icon bg-primary-300-600-token"
+            on:click={async ()=> {
+                hideSearch = !hideSearch;
+                await tick();
+                calculateHeights();
+            }}
+        >
+            <span class="">
+                <i class="fa-solid fa-magnifying-glass text-lg"></i>
+            </span>
+        </button>
+    </div>
+{/if}
