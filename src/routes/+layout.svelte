@@ -99,14 +99,15 @@
         $connected = true;
 
         $ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
+            // Disabled for now, too annoying
             // console.log('relay disconnected')
-            const relayName = relay.url.replace("wss://", "").slice(0, -1);
-            const t: ToastSettings = {
-                message:`Relay: ${relayName} Disconnected!`,
-                background: 'bg-error-500',
-                timeout: 5000,
-            };
-            toastStore.trigger(t);
+            // const relayName = relay.url.replace("wss://", "").slice(0, -1);
+            // const t: ToastSettings = {
+            //     message:`Relay: ${relayName} Disconnected!`,
+            //     background: 'bg-error-500',
+            //     timeout: 5000,
+            // };
+            // toastStore.trigger(t);
 
 
             if ($ndk.pool.connectedRelays().length === 0
