@@ -146,7 +146,7 @@
             <div class="flex justify-center">
                 <button 
                     type="submit"
-                    class="btn btn-lg h-14 font-bold bg-primary-400-500-token"
+                    class="btn btn-lg h-14 font-bold bg-success-400-500-token"
                     disabled={!passphrase || decrypting}
                 >
                     {#if decrypting}

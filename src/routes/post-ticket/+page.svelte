@@ -246,14 +246,14 @@
 
 <div class="flex justify-center my-8">
     <button type="button"
-        class="btn btn-lg bg-gradient-to-br variant-gradient-primary-tertiary"
+        class="btn btn-lg bg-success-400-500-token"
         on:click={postTicket}
         disabled={posting}
     >
         {#if posting}
             <span>
-                <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
-                    track="stroke-tertiary-500/30" width="w-8" strokeLinecap="round"/>
+                <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500"
+                    track="stroke-primary-500/3" width="w-8" strokeLinecap="round"/>
             </span>
         {:else}
             <span>Post Ticket</span>
