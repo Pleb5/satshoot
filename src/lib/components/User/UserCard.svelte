@@ -220,7 +220,7 @@
 </script>
 
 {#await profilePromise}
-    <section class="w-full">
+    <section class="w-[300px] md:w-[400px]">
         <div class="p-4 space-y-4">
             <div class="grid grid-cols-[20%_1fr] gap-8 items-center">
                 <div class="placeholder-circle animate-pulse" />
