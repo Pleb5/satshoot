@@ -158,6 +158,9 @@
                 {/if}
             </div>
         </div>
+        <div class="text-center text-base md:text-lg p-2">
+            {offer.description}
+        </div>
         <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start p-8 pt-2">
             <div class="">

@@ -267,10 +267,8 @@
         </header>
 
         <section class="p-4">
-            <div class=" grid grid-cols-5 gap-x-2">
-                <div class="col-span-4">
-                    { generateDescription() }
-                </div>
+            <div class="text-center text-base md:text-lg">
+                { generateDescription() }
             </div>
 
             <hr class="my-4" />
