@@ -141,7 +141,7 @@ $: {
     <h2 class="h2 text-center">Log in to view your Offers!</h2>
 {/if}
 <!-- Search bar -->
-<div class="fixed bottom-20 right-10 flex items-center gap-x-2">
+<div class="fixed bottom-20 right-4 flex items-center gap-x-2">
     <div class="{hideSearch ? 'hidden' : ''}">
         <!-- On some devices a little 'x' icon clears the input, triggering on:search event -->
         <input
