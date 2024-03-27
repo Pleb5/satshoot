@@ -59,7 +59,8 @@
     let hidePrompt:boolean;
     let contactsHeight:string;
     let arrowDown:boolean;
-    let hideSearch:boolean;
+    let hideSearch:boolean = true;
+    let hideSearchIcon:boolean;
 
     let currentMessage: string = '';
 
@@ -301,7 +302,6 @@
     function expandContacts() {
         // console.log('expandContacts')
         hideChat = true;
-        hideSearch = true;
         hidePrompt = true;
         arrowDown = false;
         contactsHeight = 'h-full';
@@ -319,7 +319,6 @@
         }
          
         hideChat = false;
-        hideSearch = false;
         hidePrompt = false;
         arrowDown = true;
         contactsHeight = 'h-14';
@@ -383,10 +382,10 @@
         // If my ticket then add all people that created an offer on this ticket
         // and highlight winner offer if there is one
         // else add the ticket creator to people
-        console.log('fetch ticket...')
         //  We must fetch this ticket once
         // to get the winner and the ticket title. 
         // myTickets does not necessarily contain this ticket at this point so it is easier this way
+        console.log('fetch ticket...')
         $ndk.fetchEvent(ticketAddress).then((t: NDKEvent|null) => {
             needSetup = false;
             elemChat = elemChat;
@@ -465,62 +464,53 @@
             </a>
             <!-- Top Navigation -->
             <div class="flex flex-col items-center md:hidden">
-                <!-- Header -->
-                <header class="p-2">
-                    <input
-                        class="input {hideSearch ? 'hidden' : ''}"
-                        type="search"
-                        placeholder="Search..."
-                        bind:value={searchInput}
-                        on:keyup={searchText}
-                        on:search={searchText}
-                    />
-                </header>
-                <!-- Contact List -->
-                <div class="flex flex-col items-center p-2 pb-0 space-x-2">
-                    <small class="opacity-50">Contacts</small>
-                    <div class="flex flex-col space-y-1 overflow-y-hidden {contactsHeight}">
-                        {#each people as contact, i}
-                            <button
-                                type="button"
-                                class="btn w-full flex items-center space-x-4 
-                                { contact.selected
+                <div class="flex gap-x-2 ">
+                    <!-- Contact List -->
+                    <div class="flex flex-col items-center p-2 pb-0 space-x-2">
+                        <small class="opacity-50">Contacts</small>
+                        <div class="flex flex-col space-y-1 overflow-y-hidden {contactsHeight}">
+                            {#each people as contact, i}
+                                <button
+                                    type="button"
+                                    class="btn w-full flex items-center space-x-4 
+                                    { contact.selected
                                     ? 'variant-filled-primary'
                                     : 'bg-surface-hover-token'
-                                }
-                                { !contact.selected && arrowDown
+                                    }
+                                    { !contact.selected && arrowDown
                                     ? 'hidden'
                                     : ''
-                                }
-                                "
-                                on:click={() => selectCurrentPerson(contact)}
+                                    }
+                                    "
+                                    on:click={() => selectCurrentPerson(contact)}
+                                >
+                                    <Avatar
+                                        src={contact.person.profile?.image
+                                            ?? `https://robohash.org/${contact.person.pubkey}`}
+                                        width="w-8"
+                                    />
+                                    <span class="flex-1 text-start {contact.person.pubkey === winner 
+                                        ? 'text-warning-400 font-bold' : ''}">
+                                        {contact.person.profile?.name ?? contact.person.npub.substring(0,15)}
+                                    </span>
+                                </button>
+                            {/each}
+                        </div>
+                        <div class="flex w-full justify-center {arrowDown ? '' : 'sticky bottom-0'}">
+                            <button 
+                                class="btn btn-icon "
+                                on:click={()=>{
+                                    if (arrowDown) {
+                                        expandContacts();
+                                    } else {
+                                        resetContactsList();
+                                    }
+                                }}
                             >
-                                <Avatar
-                                    src={contact.person.profile?.image
-                                        ?? `https://robohash.org/${contact.person.pubkey}`}
-                                    width="w-8"
-                                />
-                                <span class="flex-1 text-start {contact.person.pubkey === winner 
-                                    ? 'text-warning-400 font-bold' : ''}">
-                                    {contact.person.profile?.name ?? contact.person.npub.substring(0,15)}
-                                </span>
+                                <i class="fa-solid fa-chevron-{arrowDown ? 'down' : 'up'} text-xl"></i>
                             </button>
-                        {/each}
+                        </div>
                     </div>
-                </div>
-                <div class="flex w-full justify-center {arrowDown ? '' : 'sticky bottom-0'}">
-                    <button 
-                        class="btn btn-icon "
-                        on:click={()=>{
-                            if (arrowDown) {
-                                expandContacts();
-                            } else {
-                                resetContactsList();
-                            }
-                        }}
-                    >
-                        <i class="fa-solid fa-chevron-{arrowDown ? 'down' : 'up'} text-xl"></i>
-                    </button>
                 </div>
             </div>
         </section>
@@ -533,7 +523,7 @@
                         <input
                             class="input"
                             type="search"
-                            placeholder="Search..."
+                            placeholder="Search Messages..."
                             bind:value={searchInput}
                             on:keyup={searchText}
                         />
@@ -617,25 +607,53 @@
         {#if !hidePrompt}
             <section
                 bind:this={elemPrompt}
-                class="flex-none w-full h-14 border-t border-surface-500/30
+                class="flex-none flex flex-col w-full border-t border-surface-500/30
                 bg-surface-100-800-token p-2"
             >
-                <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
-                    <button class="input-group-shim">+</button>
-                    <textarea
-                        bind:value={currentMessage}
-                        class="bg-transparent border-0 ring-0 text-sm"
-                        name="prompt"
-                        id="prompt"
-                        placeholder="Write a message..."
-                        rows="1"
-                        on:keydown={onPromptKeyDown}
+            <!-- Search on narrow screens -->
+                <div class="{hideSearch ? 'hidden' : ''} md:hidden right-10 p-2">
+                    <!-- On some devices a little 'x' icon clears the input, triggering on:search event -->
+                    <input
+                        class="input"
+                        type="search"
+                        placeholder="Search Messages..."
+                        bind:value={searchInput}
+                        on:keyup={searchText}
+                        on:search={searchText}
                     />
-                    <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
-                        <i class="fa-solid fa-paper-plane" />
-                    </button>
+                </div>
+                <div class="grid grid-cols-[1fr_auto] gap-x-2">
+                    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
+                        <button class="input-group-shim">+</button>
+                        <textarea
+                            bind:value={currentMessage}
+                            class="bg-transparent border-0 ring-0 text-sm"
+                            name="prompt"
+                            id="prompt"
+                            placeholder="Write a message..."
+                            rows="1"
+                            on:keydown={onPromptKeyDown}
+                        />
+                        <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
+                            <i class="fa-solid fa-paper-plane" />
+                        </button>
+                    </div>
+                    {#if !hideSearchIcon}
+                        <button class="md:hidden btn btn-icon bg-primary-300-600-token"
+                                on:click={async ()=> {
+                                    hideSearch = !hideSearch;
+                                    await tick();
+                                    calculateHeights();
+                                }}
+                        >
+                            <span class="">
+                                <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                            </span>
+                        </button>
+                    {/if}
                 </div>
             </section>
         {/if}
     </div>
 </div>
+
