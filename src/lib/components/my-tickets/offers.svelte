@@ -1,23 +1,64 @@
 <script lang="ts">
 import ndk from '$lib/stores/ndk';
+import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
 import { myOffers, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from '$lib/stores/troubleshoot-eventstores';
 import OfferCard from '../OrderBook/OfferCard.svelte';
-    import type { TicketEvent } from '$lib/events/TicketEvent';
+import type { TicketEvent } from '$lib/events/TicketEvent';
 
 let tabGroup = OfferStatus.Pending;
 
-const offerMap: Map<OfferStatus, OfferEvent[]> = new Map();
 let pendingOffers: OfferEvent[] = [];
 let wonOffers: OfferEvent[] = [];
 let lostOffers: OfferEvent[] = [];
 
-offerMap.set(OfferStatus.Pending, pendingOffers);
-offerMap.set(OfferStatus.Won, wonOffers);
-offerMap.set(OfferStatus.Lost, lostOffers);
+let filterInput = '';
+let filteredPendingOffers: OfferEvent[] = [];
+let filteredWonOffers: OfferEvent[] = [];
+let filteredLostOffers: OfferEvent[] = [];
 
+let hideSearch = true;
+
+function filterByTicket(offers: OfferEvent[]): OfferEvent[] {
+    const filteredOffers = offers.filter((offer: OfferEvent) => {
+        let match = false;
+        $ticketsOfSpecificOffers.forEach((t:TicketEvent) => {
+            if (t.ticketAddress === offer.referencedTicketAddress) {
+                const lowerCaseFilter = filterInput.toLowerCase();
+
+                const lowerCaseTitle = t.title.toLowerCase();
+                const lowerCaseDescription = t.description.toLowerCase();
+
+                let tagsContain: boolean = false;
+                t.tags.forEach((tag: NDKTag) => {
+                    if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                        tagsContain = true;
+                    }
+                });
+
+                const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
+                const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+
+                if (titleContains || descContains || tagsContain) {
+                    match = true;
+                }
+            }
+        });
+        if(match) {
+            return true;
+        }
+        return false;
+    });
+    return filteredOffers;
+}
+
+function filterOffersByTicket() {
+    filteredPendingOffers = filterByTicket(pendingOffers);
+    filteredWonOffers = filterByTicket(wonOffers);
+    filteredLostOffers = filterByTicket(lostOffers);
+}
 
 // Sort offers into buckets according to state. Do this every time a new offers is received for the user
 $: {
@@ -52,12 +93,9 @@ $: {
                         }
                     }
                 });
-                // UI update only if offer status is set
-                pendingOffers = pendingOffers;
-                wonOffers = wonOffers;
-                lostOffers = lostOffers;
             }
         });
+        filterOffersByTicket();
     } else {
         console.log('My offers is null or size equals 0!')
     }
@@ -80,19 +118,19 @@ $: {
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each pendingOffers as offer }
+                    {#each filteredPendingOffers as offer }
                         <OfferCard {offer} countAllOffers={true}/>
                     {/each}
                 </div>
             {:else if tabGroup === 1}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each wonOffers as offer }
+                    {#each filteredWonOffers as offer }
                         <OfferCard {offer} countAllOffers={true}/>
                     {/each}
                 </div>
             {:else if tabGroup === 2}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each lostOffers as offer }
+                    {#each filteredLostOffers as offer }
                         <OfferCard {offer} countAllOffers={true}/>
                     {/each}
                 </div>
@@ -102,3 +140,28 @@ $: {
     {:else}
     <h2 class="h2 text-center">Log in to view your Offers!</h2>
 {/if}
+<!-- Search bar -->
+<div class="fixed bottom-20 right-10 flex items-center gap-x-2">
+    <div class="{hideSearch ? 'hidden' : ''}">
+        <!-- On some devices a little 'x' icon clears the input, triggering on:search event -->
+        <input
+            class="input"
+            type="search"
+            placeholder="Filter by title, descr. and tags..."
+            bind:value={filterInput}
+            on:keyup={filterOffersByTicket}
+            on:search={filterOffersByTicket}
+        />
+    </div>
+    <button class="btn btn-icon bg-primary-300-600-token"
+        on:click={()=> {
+            hideSearch = !hideSearch;
+            filterInput = '';
+            filterOffersByTicket();
+        }}
+    >
+        <span class="">
+            <i class="fa-solid fa-magnifying-glass text-lg"></i>
+        </span>
+    </button>
+</div>

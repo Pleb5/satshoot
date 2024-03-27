@@ -1,5 +1,6 @@
 <script lang="ts">
 import ndk from '$lib/stores/ndk';
+import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 
 import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
@@ -10,14 +11,84 @@ import TicketCard from '../OrderBook/TicketCard.svelte';
 
 let tabGroup = TicketStatus.New;
 
-const ticketMap: Map<TicketStatus, TicketEvent[]> = new Map();
 let newTickets: TicketEvent[] = [];
 let inProgressTickets: TicketEvent[] = [];
 let closedTickets: TicketEvent[] = [];
 
-ticketMap.set(TicketStatus.New, newTickets);
-ticketMap.set(TicketStatus.InProgress, inProgressTickets);
-ticketMap.set(TicketStatus.Closed, closedTickets);
+let filterInput = '';
+let filteredNewTickets: TicketEvent[] = [];
+let filteredInProgressTickets: TicketEvent[] = [];
+let filteredClosedTickets: TicketEvent[] = [];
+
+let hideSearch = true;
+
+function filterTickets() {
+    filteredNewTickets = newTickets.filter((t: TicketEvent) => {
+        const lowerCaseFilter = filterInput.toLowerCase();
+
+        const lowerCaseTitle = t.title.toLowerCase();
+        const lowerCaseDescription = t.description.toLowerCase();
+
+        let tagsContain: boolean = false;
+        t.tags.forEach((tag: NDKTag) => {
+            if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                tagsContain = true;
+            }
+        });
+
+        const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
+        const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+
+        if (titleContains || descContains || tagsContain) {
+            return true;
+        }
+        return false;
+    });
+
+    filteredInProgressTickets = inProgressTickets.filter((t: TicketEvent) => {
+        const lowerCaseFilter = filterInput.toLowerCase();
+
+        const lowerCaseTitle = t.title.toLowerCase();
+        const lowerCaseDescription = t.description.toLowerCase();
+
+        let tagsContain: boolean = false;
+        t.tags.forEach((tag: NDKTag) => {
+            if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                tagsContain = true;
+            }
+        });
+
+        const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
+        const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+
+        if (titleContains || descContains || tagsContain) {
+            return true;
+        }
+        return false;
+    });
+
+    filteredClosedTickets = closedTickets.filter((t: TicketEvent) => {
+        const lowerCaseFilter = filterInput.toLowerCase();
+
+        const lowerCaseTitle = t.title.toLowerCase();
+        const lowerCaseDescription = t.description.toLowerCase();
+
+        let tagsContain: boolean = false;
+        t.tags.forEach((tag: NDKTag) => {
+            if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                tagsContain = true;
+            }
+        });
+
+        const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
+        const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+
+        if (titleContains || descContains || tagsContain) {
+            return true;
+        }
+        return false;
+    });
+}
 
 // Sort tickets into buckets according to state. Do this every time a new ticket is received for the user
 $: {
@@ -39,15 +110,11 @@ $: {
                 offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
             }
         });
+        filterTickets();
         /// Set filter, restart offer sub.
         offersOnTickets.unsubscribe();
         // offersOnTickets = $ndk.storeSubscribe(offersOnTicketsFilter, subOptions, OfferEvent);
         offersOnTickets.startSubscription();
-
-        // UI update
-        newTickets = newTickets;
-        inProgressTickets = inProgressTickets;
-        closedTickets = closedTickets;
     } else {
         console.log('My tickets is null!')
     }
@@ -70,19 +137,19 @@ $: {
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each newTickets as ticket }
+                    {#each filteredNewTickets as ticket }
                         <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                     {/each}
                 </div>
                 {:else if tabGroup === 1}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each inProgressTickets as ticket }
+                    {#each filteredInProgressTickets as ticket }
                         <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                     {/each}
                 </div>
                 {:else if tabGroup === 2}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each closedTickets as ticket }
+                    {#each filteredClosedTickets as ticket }
                         <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                     {/each}
                 </div>
@@ -92,3 +159,28 @@ $: {
     {:else}
     <h2 class="h2 text-center">Log in to view your Tickets!</h2>
 {/if}
+<!-- Search bar -->
+<div class="fixed bottom-20 right-10 flex items-center gap-x-2">
+    <div class="{hideSearch ? 'hidden' : ''}">
+        <!-- On some devices a little 'x' icon clears the input, triggering on:search event -->
+        <input
+            class="input"
+            type="search"
+            placeholder="Filter by title, descr. and tags..."
+            bind:value={filterInput}
+            on:keyup={filterTickets}
+            on:search={filterTickets}
+        />
+    </div>
+    <button class="btn btn-icon bg-primary-300-600-token"
+        on:click={()=> {
+            hideSearch = !hideSearch;
+            filterInput = '';
+            filterTickets();
+        }}
+    >
+        <span class="">
+            <i class="fa-solid fa-magnifying-glass text-lg"></i>
+        </span>
+    </button>
+</div>

@@ -611,7 +611,7 @@
                 bg-surface-100-800-token p-2"
             >
             <!-- Search on narrow screens -->
-                <div class="{hideSearch ? 'hidden' : ''} md:hidden right-10 p-2">
+                <div class="{hideSearch ? 'hidden' : ''} md:hidden p-2">
                     <!-- On some devices a little 'x' icon clears the input, triggering on:search event -->
                     <input
                         class="input"
