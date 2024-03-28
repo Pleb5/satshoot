@@ -170,7 +170,10 @@
     async function selectCurrentPerson(contact: Contact) {
         if (currentPerson !== contact.person){
             // console.log('selectCurrentPerson')
-            $selectedPerson = contact.person.pubkey;
+            if (ticket) {
+                $selectedPerson = contact.person.pubkey + '$' + ticketAddress;
+                console.log($selectedPerson)
+            }
             currentPerson = contact.person;
             
             people.forEach((c: Contact) => {
@@ -430,10 +433,12 @@
                     if(contact) selectCurrentPerson(contact);
 
                     $offerMakerToSelect = '';
-                } else if($selectedPerson) {
-                    addPerson($selectedPerson);
+                } else if($selectedPerson && ($selectedPerson.split('$')[1] == ticketAddress)) {
+                    console.log('select person that was previously selected', $selectedPerson)
+                    const pubkey = $selectedPerson.split('$')[0];
+                    addPerson(pubkey);
                     const contact: Contact|undefined = people.find((c: Contact) =>
-                        c.person.pubkey == $selectedPerson
+                        c.person.pubkey == pubkey
                     );
 
                     if(contact) selectCurrentPerson(contact);
