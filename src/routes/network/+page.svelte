@@ -143,7 +143,7 @@
     }
 </script>
 
-<div class="flex flex-col items-center space-y-16 mb-8 mt-8">
+<div class="flex flex-col items-center gap-y-8 my-4">
     <div class="w-80">
         <form on:submit={addRelay}>
             <label class="label flex flex-col items-center">
@@ -158,7 +158,7 @@
         </form>
     </div>
 </div>
-<div class="flex flex-col gap-y-4 justify-center items-center mb-10 mx-2 overflow-y-auto">
+<div class="flex flex-col gap-y-4 justify-center items-center mb-6 mx-2 overflow-y-auto">
     {#each relays as relay}
         <div class="card card-hover bg-surface-active-token flex flex-col items-center p-4">
             <RelayListElement relay = {relay}/>
@@ -170,4 +170,9 @@
             </button>
         </div> 
     {/each}
+</div>
+<div class="flex justify-center mb-6" >
+    <button class="btn btn-md bg-primary-300-600-token" on:click={() => location.reload()}>
+        Retry Connections
+    </button>
 </div>
