@@ -58,14 +58,12 @@
                     action: {
                         label: 'Login',
                         response: () => {
-                            toastStore.close(toastId);
                             $redirectStore = $page.url.toString();
                             goto('/login');
                         },
                     },
                     callback: (response) => {
                         if(response.status === 'closed') {
-                            $redirectStore = '';
                             $loginAlert = false;
                         }
                     },
