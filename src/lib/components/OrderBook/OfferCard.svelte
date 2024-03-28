@@ -12,6 +12,7 @@
     import { TicketStatus, type TicketEvent } from "$lib/events/TicketEvent";
 
     import { offersOnTickets, offersOnTicketsFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { offerMakerToSelect } from "$lib/stores/messages";
 
     const modalStore = getModalStore();
     
@@ -19,7 +20,7 @@
     export let countAllOffers: boolean = false;
     export let showTicket: boolean = true;
     let ticket: TicketEvent | undefined = undefined;
-    let ticketChat = false;
+    export let enableChat = false;
 
     let npub: string;
     let timeSincePosted: string; 
@@ -49,10 +50,6 @@
             };
             modalStore.trigger(modal);
         }
-    }
-
-    $: if ($ndk.activeUser) {
-        ticketChat = true;
     }
 
     $: {
@@ -129,13 +126,18 @@
         }
     }
 
+    function setOfferToSelect() {
+        $offerMakerToSelect = (offer as OfferEvent).pubkey;
+    }
+
 </script>
 
 <div class="card pt-2">
     {#if offer}
         <div class="grid grid-cols-[15%_1fr_15%] justify-center items-center mx-2">
-            {#if ticketChat && ticket}
+            {#if $ndk.activeUser && enableChat && ticket}
                 <a
+                    on:click={setOfferToSelect}
                     href={"/messages/" + ticket.encode() + ":" + ticket.title}
                     class="btn btn-icon btn-sm justify-self-start"
                 >

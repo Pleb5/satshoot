@@ -2,7 +2,11 @@
     import ndk from "$lib/stores/ndk";
     import { page } from "$app/stores";
 
-    import { messageStore, receivedMessageFilter, myMessageFilter } from "$lib/stores/messages";
+    import { 
+        messageStore, receivedMessageFilter,
+        myMessageFilter, offerMakerToSelect 
+    } from "$lib/stores/messages";
+    
     import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
 
     import { onDestroy, onMount, tick } from "svelte";
@@ -407,8 +411,25 @@
             if (($ndk.activeUser as NDKUser).pubkey !== ticketPubkey) {
                 console.log('addperson in fetchevent, NOT my ticket')
                 addPerson(ticketPubkey);
+                const contact: Contact|undefined = people.find((c: Contact) =>
+                    c.person.pubkey == ticketPubkey
+                );
+
+                if(contact) selectCurrentPerson(contact);
             } else {
                 // This is my ticket.
+                if($offerMakerToSelect) {
+                    console.log('offerMakerToSelect')
+                    addPerson($offerMakerToSelect)
+                    const contact: Contact|undefined = people.find((c: Contact) =>
+                        c.person.pubkey == $offerMakerToSelect
+                    );
+                    // console.log('contact', contact)
+
+                    if(contact) selectCurrentPerson(contact);
+
+                    $offerMakerToSelect = '';
+                }
                 myTicket = true;
                 console.log('this is my ticket')
                 const aTagFilters = offersOnTicketsFilter['#a'];

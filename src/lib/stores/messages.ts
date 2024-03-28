@@ -24,3 +24,5 @@ export const myMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
 }
 
 export const messageStore = get(ndk).storeSubscribe([receivedMessageFilter, myMessageFilter], subOptions);
+
+export const offerMakerToSelect = writable<string>('');

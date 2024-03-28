@@ -119,19 +119,19 @@ $: {
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each filteredPendingOffers as offer }
-                        <OfferCard {offer} countAllOffers={true}/>
+                        <OfferCard {offer} countAllOffers={true} enableChat={true}/>
                     {/each}
                 </div>
             {:else if tabGroup === 1}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each filteredWonOffers as offer }
-                        <OfferCard {offer} countAllOffers={true}/>
+                        <OfferCard {offer} countAllOffers={true} enableChat={true}/>
                     {/each}
                 </div>
             {:else if tabGroup === 2}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each filteredLostOffers as offer }
-                        <OfferCard {offer} countAllOffers={true}/>
+                        <OfferCard {offer} countAllOffers={true} enableChat={true}/>
                     {/each}
                 </div>
             {/if}

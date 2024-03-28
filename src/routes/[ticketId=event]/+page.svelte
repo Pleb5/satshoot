@@ -261,7 +261,7 @@
 <h2 class="font-bold text-lg sm:text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>
 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
     {#each offers as offer}
-        <OfferCard {offer} showTicket={false}>
+        <OfferCard {offer} showTicket={false} enableChat={myTicket}>
             <div slot="takeOffer" class="flex justify-center mt-2">
                 {#if ticket && myTicket && ticket.status === TicketStatus.New}
                     <button
