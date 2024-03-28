@@ -4,7 +4,7 @@
 
     import { 
         messageStore, receivedMessageFilter,
-        myMessageFilter, offerMakerToSelect 
+        myMessageFilter, offerMakerToSelect, selectedPerson
     } from "$lib/stores/messages";
     
     import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
@@ -170,6 +170,7 @@
     async function selectCurrentPerson(contact: Contact) {
         if (currentPerson !== contact.person){
             // console.log('selectCurrentPerson')
+            $selectedPerson = contact.person.pubkey;
             currentPerson = contact.person;
             
             people.forEach((c: Contact) => {
@@ -429,6 +430,13 @@
                     if(contact) selectCurrentPerson(contact);
 
                     $offerMakerToSelect = '';
+                } else if($selectedPerson) {
+                    addPerson($selectedPerson);
+                    const contact: Contact|undefined = people.find((c: Contact) =>
+                        c.person.pubkey == $selectedPerson
+                    );
+
+                    if(contact) selectCurrentPerson(contact);
                 }
                 myTicket = true;
                 console.log('this is my ticket')
