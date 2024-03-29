@@ -2,7 +2,10 @@
     import type { NDKUser } from "@nostr-dev-kit/ndk";
     import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
-    import { myTickets, myOffers , myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
+    import {
+        myTickets, myOffers , myTicketFilter, myOfferFilter 
+    } from "$lib/stores/troubleshoot-eventstores";
+
     import redirectStore from "$lib/stores/redirect-store";
     import { loggedIn } from "$lib/stores/login";
 
@@ -12,8 +15,9 @@
 
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import type { ModalSettings } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
+    import BunkerLoginModal from "$lib/components/Modals/BunkerLoginModal.svelte";
 
     // Retrieve Modal Store at the top level
     const modalStore = getModalStore();
@@ -30,6 +34,18 @@
         }
     }
 
+    async function onBunkerLogin() {
+        const modalComponent: ModalComponent = {
+            ref: BunkerLoginModal,
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
+
+    }
 
     async function onNIP07Login() {
         if (browser && window.nostr) {
@@ -74,10 +90,25 @@
 
 </script>
 
-<div class="flex items-center mt-8">
+<div class="flex items-center mt-4">
+
     <div class="flex flex-col items-start gap-y-5 mx-auto">
-        <button class="btn btn-md lg:btn-lg bg-primary-300-600-token mx-4" on:click={onNIP07Login}>
-            <span>Connect NIP07 Browser Extension </span>
+        <!-- Nsec bunker remote signer -->
+        <button class="btn btn-md lg:btn-lg bg-primary-300-600-token mx-4" on:click={onBunkerLogin}>
+            <span>Nsec Bunker(most secure)</span>
+        </button>
+        <div class="grid grid-cols-2 gap-x-2 gap-y-4 mx-4">
+            <a 
+                class="btn btn-md bg-warning-300-600-token"
+                href="https://nsec.app/"
+                target="_blank"
+            >
+                <span>See Nsec.app</span>
+            </a>
+        </div>
+        <!-- Nip07 browser extension -->
+        <button class="btn btn-md lg:btn-lg bg-primary-300-600-token mx-4 mt-4" on:click={onNIP07Login}>
+            <span>NIP07 Browser Extension </span>
         </button>
         <div class="grid grid-cols-2 gap-x-2 gap-y-4 mx-4">
             <a 
@@ -113,8 +144,13 @@
                 <span>See Flamingo</span>
             </a>
         </div>
-        <div class="flex gap-x-4 items-center mx-4 mt-8">
-            <a href="/create-seed" class="btn btn-md lg:btn-lg bg-primary-300-600-token ">
+        <!-- Restore Local keypair -->
+        <a href="/restore/" class="btn btn-md lg:btn-lg mx-4 mt-4 bg-primary-300-600-token">
+            <span>RESTORE Local Keypair</span>
+        </a>
+        <!-- New local keypair -->
+        <div class="flex gap-x-4 items-center mx-4 mt-4">
+            <a href="/create-seed/" class="btn btn-md lg:btn-lg bg-primary-300-600-token ">
                 <span>NEW Local Nostr Keypair</span>
             </a>
             <i 
@@ -122,7 +158,7 @@
                 [&>*]:pointer-events-none" 
                 use:popup={popupHover}
             />
-            
+
             <div data-popup="popupHover">
                 <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
                     <p>
@@ -150,11 +186,6 @@
                 </div>
             </div>
         </div>
-
-        <a href="/restore" class="btn mx-4 mt-8 bg-primary-300-600-token">
-            <span>RESTORE Local Keypair</span>
-        </a>
-
     </div>
 
 </div>

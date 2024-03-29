@@ -1,4 +1,5 @@
 import NDKSvelte from "@nostr-dev-kit/ndk-svelte";
+import NDK from "@nostr-dev-kit/ndk";
 import { writable } from "svelte/store";
 
 import { localStorageStore } from '@skeletonlabs/skeleton';
@@ -18,6 +19,7 @@ export enum RestoreMethod {
 }
 
 export enum LoginMethod {
+    Bunker = "bunker",
     NIP07 = "nip07",
     Ephemeral = "ephemeral",
 }
@@ -40,6 +42,8 @@ const ndkSvelte = new NDKSvelte({
 });
 
 export const connected = writable(false);
+
+export const bunkerNDK = writable(new NDK({enableOutboxModel: false}));
 
 // Create a singleton instance that is the default export
 const ndk = writable(ndkSvelte);

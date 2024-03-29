@@ -8,11 +8,16 @@
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
     import ndk from "$lib/stores/ndk";
+    import type { NDKSigner } from "@nostr-dev-kit/ndk";
     import { connected } from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { loggedIn } from "$lib/stores/login";
 
-    import { myTicketFilter, myOfferFilter, newTickets, oldTickets, myTickets, myOffers, offersOnTickets, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { 
+        myTicketFilter, myOfferFilter, newTickets, oldTickets, myTickets,
+        myOffers, offersOnTickets, ticketsOfSpecificOffers 
+    } from "$lib/stores/troubleshoot-eventstores";
+    
     import { messageStore } from "$lib/stores/messages";
 
     import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
@@ -65,6 +70,21 @@
     const modalStore = getModalStore();
 
     let noConnectedRelaysToastID: string;
+
+    async function initialize() {
+        let user: NDKUser = await ($ndk.signer as NDKSigner).user();
+        if (!!user.npub) $loggedIn = true;
+
+        myTicketFilter.authors?.push(user.pubkey);
+        myOfferFilter.authors?.push(user.pubkey);
+        myTickets.startSubscription();
+        myOffers.startSubscription();
+
+        await user.fetchProfile();
+
+        // Trigger UI change in profile when user Promise is retrieved
+        $ndk.activeUser = $ndk.activeUser;
+    }
 
     onMount(async () => {
         localStorage.debug = 'ndk:*'
@@ -132,7 +152,7 @@
         $ndk.pool.on('relay:connect', (relay: NDKRelay) => {
             if ($storedPool?.includes(relay.url)) {
                 $connected = true;
-                console.log('user-defined relay came online')
+                // console.log('user-defined relay came online')
                 if(noConnectedRelaysToastID) {
                     toastStore.close(noConnectedRelaysToastID);
                     noConnectedRelaysToastID = '';
@@ -154,7 +174,7 @@
         messageStore.startSubscription();
 
         if (!$loggedIn) {
-            // Try to get saved user from localStorage
+            // Try to get saved Login method from localStorage and login that way
             const loginMethod = localStorage.getItem("login-method");
 
             if (loginMethod){
@@ -163,18 +183,7 @@
                     if ($sessionPK) {
                         $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
 
-                        let user: NDKUser = await $ndk.signer.user();
-                        if (!!user.npub) $loggedIn = true;
-
-                        myTicketFilter.authors?.push(user.pubkey);
-                        myOfferFilter.authors?.push(user.pubkey);
-                        myTickets.startSubscription();
-                        myOffers.startSubscription();
-
-                        await user.fetchProfile();
-
-                        // Trigger UI change in profile when user Promise is retrieved
-                        $ndk.activeUser = $ndk.activeUser;
+                        initialize();
 
                     } else {
                         try {
@@ -210,29 +219,18 @@
 
                                             if (privateKey) {
                                                 $ndk.signer = new NDKPrivateKeySigner(privateKey); 
-
                                                 $sessionPK = privateKey;
-
-                                                let user: NDKUser = await $ndk.signer.user();
-                                                if (!!user.npub) $loggedIn = true;
-
-                                                myTicketFilter.authors?.push(user.pubkey);
-                                                myOfferFilter.authors?.push(user.pubkey);
-                                                myTickets.startSubscription();
-                                                myOffers.startSubscription();
-
-                                                await user.fetchProfile();
-
-                                                // Trigger UI change in profile when user Promise is retrieved
-                                                $ndk.activeUser = $ndk.activeUser;
+                                                initialize();
                                             } else {
-                                                throw new Error("Could not create hex private key from decrypted secret. Clear browser local storage and login again.");
+                                                throw new Error(
+                                                    "Could not create hex private key from decrypted secret. \
+                                                    Clear browser local storage and login again."
+                                                );
                                             }
 
                                         }
                                     }
                                 });
-
                         } catch(e) {
                             const t: ToastSettings = {
                                 message:`Could not create private key from local secret, error: ${e}`,
@@ -241,23 +239,24 @@
                             toastStore.trigger(t);
                         }
                     }
+                } else if(loginMethod === LoginMethod.Bunker) {
+                    const localBunkerKey = localStorage.getItem("local-bunker-key");
+                    const targetNpub = localStorage.getItem("target-npub");
+
+                    if (localBunkerKey && targetNpub) {
+                        console.log("stored key and target npub");
+                        localSigner = new NDKPrivateKeySigner(localBunkerKey);
+                        const targetUser = ndk.getUser({ npub: targetNpub });
+                        const remoteSigner = new NDKNip46Signer(bunkerNdk, targetUser!.pubkey, localSigner);
+                        ndk.signer = remoteSigner;
+                        await remoteSigner.blockUntilReady();
+                        user = await remoteSigner.user();
+                    }
                 } else if (loginMethod === LoginMethod.NIP07) {
                     if (!$ndk.signer) {
                         $ndk.signer = new NDKNip07Signer();
                     }
-                    let user = await $ndk.signer.user();
-
-                    if (!!user.npub) $loggedIn = true;
-
-                    myTicketFilter.authors?.push(user.pubkey);
-                    myOfferFilter.authors?.push(user.pubkey);
-                    myTickets.startSubscription();
-                    myOffers.startSubscription();
-
-                    await user.fetchProfile();
-
-                    // Trigger UI update for profile
-                    $ndk.activeUser = $ndk.activeUser;
+                    initialize();
                 }
             }
         } else {

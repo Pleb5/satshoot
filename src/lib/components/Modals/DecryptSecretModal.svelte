@@ -120,7 +120,7 @@
 </script>
 
 {#if $modalStore[0]}
-	<div class="card p-8 grid grid-cols-1 justify-center w-screen/2 h-screen-2 bg-surface-400-500-token">
+	<div class="card p-8 grid grid-cols-1 justify-center bg-surface-400-500-token">
         <h3 class="h3 text-center font-bold">Decrypt Local Seed</h3>
         <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
         <form 
