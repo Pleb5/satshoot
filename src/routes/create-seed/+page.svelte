@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import type { NDKUser } from "@nostr-dev-kit/ndk";
-    import { myTickets, myOffers , myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
+
     import redirectStore from "$lib/stores/redirect-store";
     import { NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import { sessionPK } from "$lib/stores/ndk";
@@ -15,7 +15,7 @@
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
-    import { loggedIn } from "$lib/stores/login";
+    import { initializeUser } from "$lib/utils/helpers";
 
     const toastStore = getToastStore();
 
@@ -30,20 +30,10 @@
         const privateKey = privateKeyFromSeedWords(seedWords); 
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
-        let user: NDKUser = await $ndk.signer?.user();
-
-        if (!!user.npub) $loggedIn = true;
+        let user: NDKUser = await initializeUser($ndk);
 
         // Store private key in session storage 
         $sessionPK = privateKey;
-
-        // Update UI
-        $ndk.activeUser = $ndk.activeUser;
-
-        myTicketFilter.authors?.push(user.pubkey);
-        myOfferFilter.authors?.push(user.pubkey);
-        myTickets.startSubscription();
-        myOffers.startSubscription();
 
         seedWordList = seedWords.split(' ');
         nsec = nsecEncode(privateKey);

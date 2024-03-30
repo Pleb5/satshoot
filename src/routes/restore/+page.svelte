@@ -15,6 +15,7 @@
     import { goto } from '$app/navigation';
     import { tick } from 'svelte';
     import { loggedIn } from '$lib/stores/login';
+    import { initializeUser } from '$lib/utils/helpers';
 
     
     const toastStore = getToastStore();
@@ -99,90 +100,78 @@
 
                 $sessionPK = privateKey;
 
+                const user:NDKUser = await initializeUser($ndk);
 
-                // Fetch user
-                const user:NDKUser = await $ndk.signer.user();
-                if (!!user.npub) $loggedIn = true;
+                if ($loggedIn) {
+                    // Disable Finish button until we get a result from the encryption process
+                    // encrypt secret 
+                    const cryptWorker = new Worker(
+                        new URL("$lib/utils/crypto.worker.ts", import.meta.url),
+                        { type: 'module' }
+                    );
 
-                myTicketFilter.authors?.push(user.pubkey);
-                myOfferFilter.authors?.push(user.pubkey);
-                myTickets.startSubscription();
-                myOffers.startSubscription();
+                    cryptWorker.onmessage = (m) => {
+                        // set response and close modal
+                        const encryptedSecret = m.data['encryptedSecret'];
+                        if (encryptedSecret) {
+                            if (restoreMethod === RestoreMethod.Seed) {
+                                localStorage.setItem('nostr-seedwords', encryptedSecret);
+                            } else if (restoreMethod === RestoreMethod.Nsec) {
+                                localStorage.setItem('nostr-nsec', encryptedSecret);
+                            }
+                            localStorage.setItem('nostr-npub', user.npub);
+                            localStorage.setItem('login-method', "ephemeral");
 
-                // Update UI as soon as profile arrives but start encryption in the meantime
-                user.fetchProfile().then(() => {
-                    // Trigger UI change in profile
-                    $ndk.activeUser = $ndk.activeUser;
-                });
-
-                // Disable Finish button until we get a result from the encryption process
-                // encrypt secret 
-                const cryptWorker = new Worker(
-                    new URL("$lib/utils/crypto.worker.ts", import.meta.url),
-                    { type: 'module' }
-                );
-
-                cryptWorker.onmessage = (m) => {
-                    // set response and close modal
-                    const encryptedSecret = m.data['encryptedSecret'];
-                    if (encryptedSecret) {
-                        if (restoreMethod === RestoreMethod.Seed) {
-                            localStorage.setItem('nostr-seedwords', encryptedSecret);
-                        } else if (restoreMethod === RestoreMethod.Nsec) {
-                            localStorage.setItem('nostr-nsec', encryptedSecret);
-                        }
-                        localStorage.setItem('nostr-npub', user.npub);
-                        localStorage.setItem('login-method', "ephemeral");
-
-                        const t: ToastSettings = {
-                            message: 'Encrypted Secret saved in local storage!',
-                            timeout: 7000,
-                            background: 'bg-success-300-600-token',
-                        };
-                        toastStore.trigger(t);
-                        if ($redirectStore) {
-                            goto($redirectStore);
-                            $redirectStore = '';
+                            const t: ToastSettings = {
+                                message: 'Encrypted Secret saved in local storage!',
+                                timeout: 7000,
+                                background: 'bg-success-300-600-token',
+                            };
+                            toastStore.trigger(t);
+                            if ($redirectStore) {
+                                goto($redirectStore);
+                                $redirectStore = '';
+                            } else {
+                                goto('/my-tickets');
+                            }
                         } else {
-                            goto('/my-tickets');
+                            statusMessage = 'Unexpected response from encryption process:' + m.data;
+                            setTimeout(()=>{
+                                statusColor = 'text-red-500';
+                            }, 800);            
                         }
-                    } else {
-                        statusMessage = 'Unexpected response from encryption process:' + m.data;
+                    };
+
+                    cryptWorker.onerror = (e) => {
+                        console.log("Error happened in cryptWorker:", e.message)
+                        statusMessage = `Error while encrypting secret!`;
+                        setTimeout(()=>{
+                            statusColor = 'text-red-500';
+                        }, 800);            
+
+                    };
+
+                    cryptWorker.onmessageerror = (me) => {
+                        console.log('Message error:', me);
+                        statusMessage = 'Received malformed message: ' + me.data;
+
                         setTimeout(()=>{
                             statusColor = 'text-red-500';
                         }, 800);            
                     }
-                };
 
-                cryptWorker.onerror = (e) => {
-                    console.log("Error happened in cryptWorker:", e.message)
-                    statusMessage = `Error while encrypting secret!`;
-                    setTimeout(()=>{
-                        statusColor = 'text-red-500';
-                    }, 800);            
+                    disable = true;
+                    await tick();
 
-                };
-
-                cryptWorker.onmessageerror = (me) => {
-                    console.log('Message error:', me);
-                    statusMessage = 'Received malformed message: ' + me.data;
-
-                    setTimeout(()=>{
-                        statusColor = 'text-red-500';
-                    }, 800);            
+                    // Start worker in background and wait for result in onmessage
+                    cryptWorker.postMessage({
+                        // Pass the correct secret to the encryption process
+                        secret: restoreMethod === RestoreMethod.Seed 
+                            ? seedWords.join(' ') : nsec,
+                        passphrase: passphrase,
+                        salt: user.npub
+                    });
                 }
-
-                disable = true;
-                await tick();
-
-                // Start worker in background and wait for result in onmessage
-                cryptWorker.postMessage({
-                    // Pass the correct secret to the encryption process
-                    secret: restoreMethod === RestoreMethod.Seed 
-                        ? seedWords.join(' ') : nsec,
-                    passphrase: passphrase,
-                    salt: user.npub
-                });
             } else {
                 disable = true;
                 await tick();

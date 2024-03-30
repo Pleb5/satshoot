@@ -5,7 +5,10 @@
 
     import ndk from '$lib/stores/ndk';
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
-    import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfSpecificOffers, ticketsOfSpecificOffersFilter, offersOnTicketsFilter, offersOnTickets } from '$lib/stores/troubleshoot-eventstores';
+
+    import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfSpecificOffers,
+        ticketsOfSpecificOffersFilter, offersOnTicketsFilter, offersOnTickets 
+    } from '$lib/stores/troubleshoot-eventstores';
 
     import { messageStore,  receivedMessageFilter, myMessageFilter } from '$lib/stores/messages';
 

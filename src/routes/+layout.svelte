@@ -8,23 +8,24 @@
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
     import ndk from "$lib/stores/ndk";
-    import type { NDKSigner } from "@nostr-dev-kit/ndk";
+    import { bunkerNDK } from '$lib/stores/ndk';
     import { connected } from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { loggedIn } from "$lib/stores/login";
 
     import { 
-        myTicketFilter, myOfferFilter, newTickets, oldTickets, myTickets,
+        newTickets, oldTickets, myTickets,
         myOffers, offersOnTickets, ticketsOfSpecificOffers 
     } from "$lib/stores/troubleshoot-eventstores";
+
+    import { initializeUser } from '$lib/utils/helpers';
     
     import { messageStore } from "$lib/stores/messages";
 
     import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06";
-    import type { NDKUser } from "@nostr-dev-kit/ndk";
-    import { NDKNip07Signer, NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
+    import { NDKNip46Signer, NDKNip07Signer, NDKPrivateKeySigner, NDKRelay, NDKUser } from "@nostr-dev-kit/ndk";
     import { privateKeyFromNsec } from "$lib/utils/nip19";
 
     import { AppShell } from '@skeletonlabs/skeleton';
@@ -72,22 +73,10 @@
 
     let noConnectedRelaysToastID: string;
 
-    async function initialize() {
-        let user: NDKUser = await ($ndk.signer as NDKSigner).user();
-        if (!!user.npub) $loggedIn = true;
-
-        myTicketFilter.authors?.push(user.pubkey);
-        myOfferFilter.authors?.push(user.pubkey);
-        myTickets.startSubscription();
-        myOffers.startSubscription();
-
-        await user.fetchProfile();
-
-        // Trigger UI change in profile when user Promise is retrieved
-        $ndk.activeUser = $ndk.activeUser;
-    }
-
     onMount(async () => {
+
+// ---------------------------- Basic Init ----------------------------
+
         localStorage.debug = 'ndk:*'
         if(!$modeCurrent) {
             localStorage.setItem('modeCurrent', 'false');
@@ -104,12 +93,13 @@
 
         // Get user-defined pool from local storage if possible
         if ($storedPool && $blacklistedRelays) {
-            $storedPool.forEach((relay:string) => {
-                $ndk.addExplicitRelay(new NDKRelay(relay));
-            });
             // Retrieve blacklisted relay urls removed explicitly by the user
             $blacklistedRelays.forEach((relay:string) => {
                 $ndk.pool.blacklistRelayUrls.add(relay);
+            });
+
+            $storedPool.forEach((relay:string) => {
+                $ndk.addExplicitRelay(relay);
             });
         } else {
             // Initialize stored pool and ndk with default relays
@@ -178,6 +168,8 @@
 
         messageStore.startSubscription();
 
+// ------------------------ Restore Login -----------------------------------
+
         if (!$loggedIn) {
             // Try to get saved Login method from localStorage and login that way
             const loginMethod = localStorage.getItem("login-method");
@@ -188,7 +180,7 @@
                     if ($sessionPK) {
                         $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
 
-                        initialize();
+                        let user: NDKUser = await initializeUser($ndk);
 
                     } else {
                         try {
@@ -225,7 +217,7 @@
                                             if (privateKey) {
                                                 $ndk.signer = new NDKPrivateKeySigner(privateKey); 
                                                 $sessionPK = privateKey;
-                                                initialize();
+                                                initializeUser($ndk);
                                             } else {
                                                 throw new Error(
                                                     "Could not create hex private key from decrypted secret. \
@@ -245,29 +237,46 @@
                         }
                     }
                 } else if(loginMethod === LoginMethod.Bunker) {
-                    const localBunkerKey = localStorage.getItem("local-bunker-key");
-                    const targetNpub = localStorage.getItem("target-npub");
+                    const localBunkerKey = localStorage.getItem("bunkerLocalSignerPK");
+                    const bunkerTargetNpub = localStorage.getItem("bunkerTargetNpub");
+                    const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
+                    const bunkerConnectionSecret = localStorage.getItem('bunkerConnectionSecret');
 
-                    if (localBunkerKey && targetNpub) {
-                        console.log("stored key and target npub");
-                        localSigner = new NDKPrivateKeySigner(localBunkerKey);
-                        const targetUser = ndk.getUser({ npub: targetNpub });
-                        const remoteSigner = new NDKNip46Signer(bunkerNdk, targetUser!.pubkey, localSigner);
-                        ndk.signer = remoteSigner;
+                    if (localBunkerKey && bunkerTargetNpub && bunkerRelayURLsString) {
+                        const bunkerRelayURLs = bunkerRelayURLsString.split(',');
+                        bunkerRelayURLs.forEach((url: string) => {
+                            // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
+                            $bunkerNDK.addExplicitRelay(url);
+                        });
+
+                        await $bunkerNDK.connect();
+                        console.log("ndk connected to specified bunker relays");
+                        
+                        let connectionParams = bunkerTargetNpub;
+                        if (bunkerConnectionSecret) {
+                            connectionParams += '#' + bunkerConnectionSecret;
+                        }
+
+                        const localSigner = new NDKPrivateKeySigner(localBunkerKey);
+                        const targetUser = $ndk.getUser({ npub: bunkerTargetNpub });
+                        const remoteSigner = new NDKNip46Signer($bunkerNDK, targetUser!.pubkey, localSigner);
+                        $ndk.signer = remoteSigner;
+
                         await remoteSigner.blockUntilReady();
-                        user = await remoteSigner.user();
+
+                        initializeUser($ndk);
                     }
                 } else if (loginMethod === LoginMethod.NIP07) {
                     if (!$ndk.signer) {
                         $ndk.signer = new NDKNip07Signer();
                     }
-                    initialize();
+                    initializeUser($ndk);
                 }
             }
         } else {
             // We are logged in, lets fetch profile
-            await $ndk.activeUser?.fetchProfile();
-            $ndk.activeUser = $ndk.activeUser;
+            // await $ndk.activeUser?.fetchProfile();
+            // $ndk.activeUser = $ndk.activeUser;
         }
     });
 
@@ -336,7 +345,16 @@
         toastId = toastStore.trigger(t);
     }
 
-    
+    let profileImage: string = '';
+
+    $: if($ndk?.activeUser?.profile?.image) {
+        console.log('setting profile image')
+        profileImage = $ndk.activeUser.profile.image;
+    } else if($ndk.activeUser) {
+        console.log('setting profile image')
+        profileImage = `https://robohash.org/${$ndk.activeUser.pubkey}`
+    }
+
 </script>
 
 <Toast />
@@ -371,8 +389,7 @@
                             class="rounded-full border-white placeholder-white"
                             border="border-4 border-surface-300-600-token hover:!border-primary-500"
                             cursor="cursor-pointer"
-                            src={$ndk.activeUser?.profile?.image
-                                    ?? `https://robohash.org/${$ndk.activeUser?.pubkey}`}
+                            src={profileImage}
                         /> 
                     </button>
                     <!-- Popup menu content -->

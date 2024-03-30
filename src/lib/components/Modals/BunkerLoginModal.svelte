@@ -1,17 +1,13 @@
 <script lang="ts">
-	import { onMount, tick, type SvelteComponent } from 'svelte';
+	import { tick, type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
+    import { initializeUser } from '$lib/utils/helpers';
     import { bunkerNDK } from '$lib/stores/ndk';
     import { loggedIn } from '$lib/stores/login';
-    import { NDKPrivateKeySigner, NDKNip46Signer, NDKRelay } from '@nostr-dev-kit/ndk';
+    import { NDKPrivateKeySigner, NDKNip46Signer } from '@nostr-dev-kit/ndk';
 
     import {nip19} from 'nostr-tools';
     
-	// Stores
-    import {
-        myTickets, myOffers , myTicketFilter, myOfferFilter 
-    } from "$lib/stores/troubleshoot-eventstores";
-
 	import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
@@ -75,7 +71,6 @@
     }
 
     async function connectBunker() {
-        // If we're missing one of the above but we have a token, try and create a new nsecBunker connection
         if (token && token.includes('bunker://')) {
             attemptingConnection = true;
             const localSigner = NDKPrivateKeySigner.generate();
@@ -127,14 +122,14 @@
                 console.log('remoteSigner', remoteSigner)
                 await remoteSigner.blockUntilReady();
                 $ndk.signer = remoteSigner;
-                const user = await remoteSigner.user();
-                console.log('user arrived', user)
-                if (!!user.npub) {
-                    // initialize and close modal
-                    $loggedIn = true;
+                initializeUser($ndk);
+
+                if ($loggedIn) {
+                    console.log('user logged in')
+
                     localStorage.setItem('login-method', 'bunker');
                     localStorage.setItem("bunkerLocalSignerPK", localSigner.privateKey as string);
-                    localStorage.setItem("bunkerTargetNpub", user.npub);
+                    localStorage.setItem("bunkerTargetNpub", remoteUserNpub);
                     localStorage.setItem("bunkerRelayURLs", relayURLs.join(','));
                     if (secret) {
                         localStorage.setItem("bunkerConnectionSecret", secret);
@@ -147,12 +142,6 @@
                     };
                     toastStore.trigger(t);
                     modalStore.close();
-                    myTicketFilter.authors?.push(user.pubkey);
-                    myOfferFilter.authors?.push(user.pubkey);
-                    myTickets.startSubscription();
-                    myOffers.startSubscription();
-
-                    await user.fetchProfile();
                 } else {
                     const t: ToastSettings = {
                         message: 'Could not connect to Bunker!',
@@ -178,9 +167,6 @@
             statusMessage = 'Invalid Bunker token! URL must start with "bunker://"';
         }
     }
-
-    onMount(()=>{
-    });
 
 </script>
 

@@ -1,10 +1,6 @@
 <script lang='ts'>
-    import type { NDKUser } from "@nostr-dev-kit/ndk";
-    import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
+    import { NDKNip07Signer, NDKUser } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
-    import {
-        myTickets, myOffers , myTicketFilter, myOfferFilter 
-    } from "$lib/stores/troubleshoot-eventstores";
 
     import redirectStore from "$lib/stores/redirect-store";
     import { loggedIn } from "$lib/stores/login";
@@ -18,6 +14,7 @@
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import BunkerLoginModal from "$lib/components/Modals/BunkerLoginModal.svelte";
+    import { initializeUser } from "$lib/utils/helpers";
 
     // Retrieve Modal Store at the top level
     const modalStore = getModalStore();
@@ -50,28 +47,17 @@
     async function onNIP07Login() {
         if (browser && window.nostr) {
             $ndk.signer = new NDKNip07Signer();
-
-            let user: NDKUser = await $ndk.signer.user();
-            if (!!user.npub) $loggedIn = true;
-
-            localStorage.setItem('login-method', "nip07");
-
-            myTicketFilter.authors?.push(user.pubkey);
-            myOfferFilter.authors?.push(user.pubkey);
-            myTickets.startSubscription();
-            myOffers.startSubscription();
-
+            let user:NDKUser = await initializeUser($ndk);
             await user.fetchProfile();
-
-            // Trigger UI update for profile
-            $ndk.activeUser = $ndk.activeUser;
-
+            
+            if ($loggedIn){
+                localStorage.setItem('login-method', "nip07");
+            }
         }
 
         else if (!window.nostr) {
             const modal: ModalSettings = {
                 type: 'alert',
-                // Data
                 title: 'No Compatible Extension!',
                 body: 'No nip07-compatible browser extension found! See Alby, nos2x or similar!',
                 buttonTextCancel:'Cancel',
