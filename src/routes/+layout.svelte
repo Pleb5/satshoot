@@ -44,7 +44,7 @@
     import MenuItem_2 from "$lib/components/NavBar/MenuItem_2.svelte";
     import MenuItem_3 from "$lib/components/NavBar/MenuItem_3.svelte";
 
-    import { LightSwitch } from '@skeletonlabs/skeleton';
+    import { LightSwitch, modeCurrent } from '@skeletonlabs/skeleton';
 
     // Skeleton Toast
     import { Toast, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
@@ -69,6 +69,7 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
+
     let noConnectedRelaysToastID: string;
 
     async function initialize() {
@@ -88,6 +89,10 @@
 
     onMount(async () => {
         localStorage.debug = 'ndk:*'
+        if(!$modeCurrent) {
+            localStorage.setItem('modeCurrent', 'false');
+            $modeCurrent = false;
+        }
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
