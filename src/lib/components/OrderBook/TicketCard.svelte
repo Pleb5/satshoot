@@ -1,5 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
+    import currentUser from '$lib/stores/login';
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
     import { offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
@@ -101,7 +102,7 @@
         modalStore.trigger(modal);
     }
 
-    $: if ($ndk.activeUser && showChat) {
+    $: if ($currentUser && showChat) {
         ticketChat = true;
     } else ticketChat = false;
 
@@ -218,8 +219,8 @@
                     </div>
                 {/if}
             </div>
-            {#if $ndk.activeUser
-                && ticket.pubkey === $ndk.activeUser.pubkey
+            {#if $currentUser
+                && ticket.pubkey === $currentUser.pubkey
             }
                 <div class="justify-self-end ">
                     <button

@@ -1,5 +1,7 @@
 <script lang="ts">
 import ndk from '$lib/stores/ndk';
+import currentUser from "$lib/stores/login";
+
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 
@@ -103,7 +105,7 @@ $: {
 
 </script>
 
-{#if $ndk.activeUser}
+{#if $currentUser}
     <TabGroup justify='justify-evenly' flex='flex-grow'>
         <Tab bind:group={tabGroup} name="tab1" value={OfferStatus.Pending}>
             Pending

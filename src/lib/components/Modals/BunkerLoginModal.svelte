@@ -122,7 +122,8 @@
                 console.log('remoteSigner', remoteSigner)
                 await remoteSigner.blockUntilReady();
                 $ndk.signer = remoteSigner;
-                initializeUser($ndk);
+
+                await initializeUser($ndk);
 
                 if ($loggedIn) {
                     console.log('user logged in')

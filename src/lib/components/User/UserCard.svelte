@@ -1,7 +1,8 @@
 <script lang="ts">
+    import ndk from "$lib/stores/ndk";
+    import currentUser from '$lib/stores/login';
     import { NDKEvent, NDKRelaySet, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 
-    import ndk from "$lib/stores/ndk";
     import { connected } from "$lib/stores/ndk";
 
     import EditProfileModal from "../Modals/EditProfileModal.svelte";
@@ -51,7 +52,7 @@
             try {
                 // console.log('user is undefined, setting user')
                 user = $ndk.getUser(opts);
-                editable = $ndk.activeUser?.npub === npub;
+                editable = $currentUser?.npub === npub;
                 // ndk.activeUser is undefined at this point but
                 // user.ndk.activeUser is the logged in user?!?!
                 profilePromise = user.fetchProfile();

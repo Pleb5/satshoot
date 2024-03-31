@@ -1,5 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
+    import currentUser from "$lib/stores/login";
+
     import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
 
@@ -115,8 +117,8 @@
 
         // Only allow editing offer if the ticket still accepts offers(no winner yet)
         if (offer && ticket) {
-            if ($ndk.activeUser
-                && $ndk.activeUser.npub === npub
+            if ($currentUser
+                && $currentUser.npub === npub
                 && ticket.status === TicketStatus.New
             ) {
                 editOffer = true;
@@ -135,7 +137,7 @@
 <div class="card pt-2">
     {#if offer}
         <div class="grid grid-cols-[15%_1fr_15%] justify-center items-center mx-2">
-            {#if $ndk.activeUser && enableChat && ticket}
+            {#if $currentUser && enableChat && ticket}
                 <a
                     on:click={setOfferToSelect}
                     href={"/messages/" + ticket.encode() + ":" + ticket.title}

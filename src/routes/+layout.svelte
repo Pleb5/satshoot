@@ -12,6 +12,7 @@
     import { connected } from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { loggedIn } from "$lib/stores/login";
+    import currentUser from "$lib/stores/login";
 
     import { 
         newTickets, oldTickets, myTickets,
@@ -180,7 +181,7 @@
                     if ($sessionPK) {
                         $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
 
-                        let user: NDKUser = await initializeUser($ndk);
+                        await initializeUser($ndk);
 
                     } else {
                         try {
@@ -345,16 +346,6 @@
         toastId = toastStore.trigger(t);
     }
 
-    let profileImage: string = '';
-
-    $: if($ndk?.activeUser?.profile?.image) {
-        console.log('setting profile image')
-        profileImage = $ndk.activeUser.profile.image;
-    } else if($ndk.activeUser) {
-        console.log('setting profile image')
-        profileImage = `https://robohash.org/${$ndk.activeUser.pubkey}`
-    }
-
 </script>
 
 <Toast />
@@ -389,7 +380,10 @@
                             class="rounded-full border-white placeholder-white"
                             border="border-4 border-surface-300-600-token hover:!border-primary-500"
                             cursor="cursor-pointer"
-                            src={profileImage}
+                            src={
+                                $currentUser.profile.image
+                                ?? `https://robohash.org/${$currentUser.pubkey}`
+                            }
                         /> 
                     </button>
                     <!-- Popup menu content -->

@@ -1,5 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
+    import currentUser from "$lib/stores/login";
     import { page } from "$app/stores";
 
     import { 
@@ -255,9 +256,9 @@
 
             let host = false;
 
-            if (dm.pubkey === $ndk.activeUser?.pubkey) {
+            if (dm.pubkey === $currentUser?.pubkey) {
                 host = true;
-                personOfMessage = $ndk.activeUser;
+                personOfMessage = $currentUser;
                 otherUser = $ndk.getUser({hexpubkey: dm.tagValue('p')});
             } else {
                 otherUser = $ndk.getUser({hexpubkey: dm.pubkey});
@@ -378,7 +379,7 @@
     });
 
     // If there is a logged in user, start receiving messages related to the ticket
-    $: if ($ndk.activeUser && needSetup) {
+    $: if ($currentUser && needSetup) {
         // If my ticket then add all people that created an offer on this ticket
         // and highlight winner offer if there is one
         // else add the ticket creator to people
@@ -391,12 +392,12 @@
             // updateMessageFeed() might be called too soon in reactive statements below
             // Sometimes this throws a very obscure error so try to initiate message subs here
             myMessageFilter['authors'] = [];
-            myMessageFilter['authors'].push(($ndk.activeUser as NDKUser).pubkey);
+            myMessageFilter['authors'].push(($currentUser as NDKUser).pubkey);
             myMessageFilter['#t'] = [];
             myMessageFilter['#t'].push(ticketAddress);
 
             receivedMessageFilter['#p'] = [];
-            receivedMessageFilter['#p'].push(($ndk.activeUser as NDKUser).pubkey);
+            receivedMessageFilter['#p'].push(($currentUser as NDKUser).pubkey);
             receivedMessageFilter['#t'] = [];
             receivedMessageFilter['#t'].push(ticketAddress);
 
@@ -412,7 +413,7 @@
                 ticket = TicketEvent.from(t);
                 ticketTitle = 'Ticket: ' + ticket.title.substring(0, 20) + '...';
             }
-            if (($ndk.activeUser as NDKUser).pubkey !== ticketPubkey) {
+            if (($currentUser as NDKUser).pubkey !== ticketPubkey) {
                 console.log('addperson in fetchevent, NOT my ticket')
                 addPerson(ticketPubkey);
                 const contact: Contact|undefined = people.find((c: Contact) =>
@@ -474,7 +475,7 @@
                         winner = offer.pubkey;
                     }
                 }
-                if (offer.pubkey !== ($ndk.activeUser as NDKUser).pubkey) {
+                if (offer.pubkey !== ($currentUser as NDKUser).pubkey) {
                     addPerson(offer.pubkey);
                 }
             }

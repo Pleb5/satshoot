@@ -1,9 +1,10 @@
 <script lang="ts">
+    import ndk from '$lib/stores/ndk';
+    import currentUser from '$lib/stores/login';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
 
-    import ndk from '$lib/stores/ndk';
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
 
     import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfSpecificOffers,
@@ -125,7 +126,7 @@
         <nav class="list-nav">
             <ul>
                 <li>
-                    <a href={ "/" + $ndk.activeUser?.npub }>
+                    <a href={ "/" + $currentUser.npub }>
                         <span class="w-6 text-center"><i class="fa-solid fa-user" /></span>
                         <span>Profile</span>
                     </a>

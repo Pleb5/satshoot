@@ -1,8 +1,9 @@
 <script lang="ts">
+    import ndk from "$lib/stores/ndk";
+    import currentUser from '$lib/stores/login';
     import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
     import type { OfferEvent } from "$lib/events/OfferEvent";
-    import ndk from "$lib/stores/ndk";
     import { connected } from "$lib/stores/ndk";
     import { loginAlert } from '$lib/stores/login';
     import redirectStore from '$lib/stores/redirect-store';
@@ -44,7 +45,7 @@
     // subscription which would likely be an overkill
 
     $: {
-        if (!$ndk.activeUser){
+        if (!$currentUser){
             allowCreateOffer = false;
             disallowCreateOfferReason = 'Need to log in before creating an offer!'; 
             
@@ -104,7 +105,7 @@
             npub = nip19.npubEncode(ticket.pubkey);
             // If there is an active user and it is the creator of this ticket
             // We will hide create Offer button and the usercard, but enable taking offers
-            if ($ndk.activeUser && $ndk.activeUser.pubkey === ticket.pubkey) {
+            if ($currentUser && $currentUser.pubkey === ticket.pubkey) {
                 myTicket = true;
             }
 
@@ -120,7 +121,7 @@
                 $offersOnTickets.forEach((offer: OfferEvent) => {
                     if (offer.referencedTicketAddress === ticket?.ticketAddress) {
                         offers.push(offer);
-                        if (offer.pubkey === $ndk.activeUser?.pubkey) {
+                        if (offer.pubkey === $currentUser?.pubkey) {
                             allowCreateOffer = false;
                             disallowCreateOfferReason = 'You already have an offer on ticket! Edit your Offer from the Offers-list if you want to change it!';
                         }

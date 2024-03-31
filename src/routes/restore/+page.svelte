@@ -1,5 +1,7 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+    import currentUser from "$lib/stores/login";
+
     import { RestoreMethod, sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromNsec } from '$lib/utils/nip19';
     import { NDKPrivateKeySigner, NDKUser } from "@nostr-dev-kit/ndk";
@@ -100,7 +102,7 @@
 
                 $sessionPK = privateKey;
 
-                const user:NDKUser = await initializeUser($ndk);
+                await initializeUser($ndk);
 
                 if ($loggedIn) {
                     // Disable Finish button until we get a result from the encryption process
@@ -119,7 +121,7 @@
                             } else if (restoreMethod === RestoreMethod.Nsec) {
                                 localStorage.setItem('nostr-nsec', encryptedSecret);
                             }
-                            localStorage.setItem('nostr-npub', user.npub);
+                            localStorage.setItem('nostr-npub', $currentUser.npub);
                             localStorage.setItem('login-method', "ephemeral");
 
                             const t: ToastSettings = {
@@ -169,7 +171,7 @@
                         secret: restoreMethod === RestoreMethod.Seed 
                             ? seedWords.join(' ') : nsec,
                         passphrase: passphrase,
-                        salt: user.npub
+                        salt: $currentUser.npub
                     });
                 }
             } else {

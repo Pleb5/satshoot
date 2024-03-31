@@ -1,5 +1,7 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+    import currentUser from '$lib/stores/login';
+
     import type { NDKTag } from '@nostr-dev-kit/ndk';
     import { NDKRelaySet } from '@nostr-dev-kit/ndk';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
@@ -90,7 +92,7 @@
     async function postTicket() {
        if (titleValid && descriptionValid) {
             // Post the ticket...
-            if ($ndk.activeUser) {
+            if ($currentUser) {
                 posting = true;
                 await tick();
 

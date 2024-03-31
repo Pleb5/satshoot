@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import type { NDKUser } from "@nostr-dev-kit/ndk";
+    import currentUser from "$lib/stores/login";
 
     import redirectStore from "$lib/stores/redirect-store";
     import { NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
@@ -30,14 +30,14 @@
         const privateKey = privateKeyFromSeedWords(seedWords); 
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
-        let user: NDKUser = await initializeUser($ndk);
+        await initializeUser($ndk);
 
         // Store private key in session storage 
         $sessionPK = privateKey;
 
         seedWordList = seedWords.split(' ');
         nsec = nsecEncode(privateKey);
-        npub = user.npub;
+        npub = $currentUser.npub;
     });
 
     let copied = false;
