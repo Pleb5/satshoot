@@ -112,18 +112,16 @@
             const dm = new NDKEvent($ndk);
             console.log('signer', dm.ndk?.signer)
             dm.kind = NDKKind.EncryptedDirectMessage;
-            dm.content = currentMessage;
             dm.tags.push(['t', ticketAddress]);
             dm.tags.push(['p', currentPerson.pubkey]);
 
             // console.log('dm', dm)
 
+            console.log('dm before encryption', dm)
+            dm.content = await ($ndk.signer as NDKSigner).encrypt(currentPerson, currentMessage);
+            console.log('encrypted dm', dm)
             // Clear prompt
             currentMessage = '';
-
-            console.log('dm before encryption', dm)
-            await dm.encrypt();
-            console.log('encrypted dm', dm)
 
             await dm.publish();
         }
