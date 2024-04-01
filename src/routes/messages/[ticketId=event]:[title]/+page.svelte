@@ -17,7 +17,7 @@
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
 
-    import { NDKEvent, NDKKind, type NDKUser } from "@nostr-dev-kit/ndk";
+    import { NDKEvent, NDKKind, type NDKUser, type NDKSigner } from "@nostr-dev-kit/ndk";
 
     import { idFromNaddr } from '$lib/utils/nip19'
     import type { OfferEvent } from "$lib/events/OfferEvent";
@@ -110,6 +110,7 @@
                 return;
             }
             const dm = new NDKEvent($ndk);
+            console.log('signer', dm.ndk?.signer)
             dm.kind = NDKKind.EncryptedDirectMessage;
             dm.content = currentMessage;
             dm.tags.push(['t', ticketAddress]);
@@ -120,7 +121,9 @@
             // Clear prompt
             currentMessage = '';
 
+            console.log('dm before encryption', dm)
             await dm.encrypt();
+            console.log('encrypted dm', dm)
 
             await dm.publish();
         }
@@ -238,7 +241,7 @@
     }
 
     async function updateMessageFeed() {
-        // console.log('update message feeed')
+        console.log('update message feeed')
         for (const dm of $messageStore) {
             const alreadyHere: boolean = seenMessages.filter((id: string) => {
                 if (dm.id === id) return true;
@@ -275,9 +278,10 @@
                 // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
 
                 // ALWAYS USE OTHER USER REGARDLESS OF WHO SENT THE MESSAGE
-                await dm.decrypt(otherUser); 
+                console.log('start decyption', dm)
+                let message = await ($ndk.signer as NDKSigner).decrypt(otherUser, dm.content); 
 
-                let message = dm.content;
+                console.log('message', message)
 
                 const messageDate = new Date(dm.created_at as number * 1000);
                 // Time is shown in local time zone
