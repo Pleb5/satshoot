@@ -214,7 +214,7 @@
 
         <div class="flex flex-col items-center mb-4">
             <h2 class="h4">Your secret words will be stored locally in encrypted form!</h2>
-            <h4 class="h4 ">Provide a strong passphrase for encryption:</h4>
+            <h4 class="h4 ">Provide a strong passphrase for encryption at rest(min. 14chars):</h4>
         </div>
 
         <div class="flex flex-col gap-y-4 justify-center items-center mb-8">

@@ -1,4 +1,10 @@
 <script lang="ts">
+    import { onMount } from "svelte";
+
+    onMount(()=>{
+        const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+		elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+    });
 </script>
 
 <h2 class="h2 text-center my-2">About Bitcoin Troubleshoot</h2>
