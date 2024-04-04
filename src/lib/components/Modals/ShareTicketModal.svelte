@@ -98,15 +98,23 @@
                 </button>
             </div>
             <h4 class="h4 text-center mb-2">{'Post Ticket as Text Note'}</h4>
-            <form on:submit|preventDefault={ postTicket }>
-                <div class="flex flex-col justify-center gap-y-4">
-                    <textarea 
-                        rows="10"
-                        class="textarea"
-                        bind:value={message}
-                    />
+            <div class="flex flex-col justify-center gap-y-4">
+                <textarea 
+                    rows="10"
+                    class="textarea"
+                    bind:value={message}
+                />
+                <div class="grid grid-cols-[30%_1fr] gap-x-2">
+                    <button 
+                        type="button"
+                        class="btn btn-md bg-error-300-600-token"
+                        on:click={()=> modalStore.close()}
+                    >
+                        Cancel
+                    </button>
                     <button
-                        type="submit"
+                        type="button"
+                        on:click={postTicket}
                         class="btn btn-lg bg-success-300-600-token"
                         disabled={posting}
                     >
@@ -118,10 +126,10 @@
                         {:else}
                             <span>Post</span>
                         {/if}
-                        
+
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     {:else}
         <h2 class="h2 font-bold text-center text-error-300-600-token">

@@ -69,28 +69,37 @@
 {#if $modalStore[0]}
     <div class="card p-4 bg-primary-300-600-token">
         <h4 class="h4 text-center mb-2">Post Public Feedback</h4>
-        <form on:submit|preventDefault={ postFeedback }>
-            <div class="flex flex-col justify-center gap-y-4">
-                <textarea 
-                    rows="8"
-                    class="textarea"
-                    bind:this={textArea}
-                />
+        <div class="flex flex-col justify-center gap-y-4">
+            <textarea 
+                rows="8"
+                class="textarea"
+                bind:this={textArea}
+            />
+            <div class="grid grid-cols-[30%_1fr] gap-x-2">
+                <button 
+                    type="button"
+                    class="btn btn-md bg-error-300-600-token"
+                    on:click={()=> modalStore.close()}
+                >
+                    Cancel
+                </button>
+
                 <button
                     type="submit"
+                    on:click={postFeedback}
                     class="btn btn-lg bg-success-300-600-token"
                     disabled={posting}
                 >
-                {#if posting}
-                    <span>
-                        <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
-                            track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8" />
-                    </span>
-                {:else}
-                    <span>Post</span>
-                {/if}
+                    {#if posting}
+                        <span>
+                            <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
+                                track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8" />
+                        </span>
+                    {:else}
+                        <span>Post</span>
+                    {/if}
                 </button>
             </div>
-        </form>
+        </div>
     </div>
 {/if}
