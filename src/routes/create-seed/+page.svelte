@@ -37,7 +37,7 @@
 
         seedWordList = seedWords.split(' ');
         nsec = nsecEncode(privateKey);
-        npub = $currentUser.npub;
+        npub = $currentUser!.npub;
     });
 
     let copied = false;

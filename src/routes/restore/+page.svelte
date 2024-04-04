@@ -121,7 +121,7 @@
                             } else if (restoreMethod === RestoreMethod.Nsec) {
                                 localStorage.setItem('nostr-nsec', encryptedSecret);
                             }
-                            localStorage.setItem('nostr-npub', $currentUser.npub);
+                            localStorage.setItem('nostr-npub', $currentUser!.npub);
                             localStorage.setItem('login-method', "ephemeral");
 
                             const t: ToastSettings = {
@@ -171,7 +171,7 @@
                         secret: restoreMethod === RestoreMethod.Seed 
                             ? seedWords.join(' ') : nsec,
                         passphrase: passphrase,
-                        salt: $currentUser.npub
+                        salt: $currentUser!.npub
                     });
                 }
             } else {
