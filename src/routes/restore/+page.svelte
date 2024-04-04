@@ -4,16 +4,16 @@
 
     import { RestoreMethod, sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromNsec } from '$lib/utils/nip19';
-    import { NDKPrivateKeySigner, NDKUser } from "@nostr-dev-kit/ndk";
+    import { NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import { privateKeyFromSeedWords, validateWords } from "nostr-tools/nip06";
     import { wordlist } from '@scure/bip39/wordlists/english';
-
-    import { myTickets, myOffers, myTicketFilter, myOfferFilter } from "$lib/stores/troubleshoot-eventstores";
 
     import redirectStore from '$lib/stores/redirect-store';
     
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
+
     import { goto } from '$app/navigation';
     import { tick } from 'svelte';
     import { loggedIn } from '$lib/stores/login';
@@ -36,7 +36,7 @@
     let statusMessage: string;
     let statusColor = 'text-tertiary-200-700-token';
 
-    let disable = false;
+    let encrypting = false;
 
     function validateSingleSeedWord(seedWord: string):boolean {
         return wordlist.includes(seedWord);
@@ -162,7 +162,7 @@
                         }, 800);            
                     }
 
-                    disable = true;
+                    encrypting = true;
                     await tick();
 
                     // Start worker in background and wait for result in onmessage
@@ -175,7 +175,7 @@
                     });
                 }
             } else {
-                disable = true;
+                encrypting = true;
                 await tick();
                 throw new Error("Creating Private key from input failed!");
             }
@@ -184,7 +184,7 @@
 Probably incorrect Seed Words or nsec! ` + e
             setTimeout(()=>{
                 statusColor = 'text-red-500';
-                disable = false;
+                encrypting = false;
             }, 800);            
         }
     }
@@ -309,9 +309,16 @@ Probably incorrect Seed Words or nsec! ` + e
                 <button 
                     type="submit"
                     class="btn font-bold bg-success-400-500-token w-72 mt-4" 
-                    disabled={!restoreMethod || !passphraseValid || !confirmPassphraseValid || disable} 
+                    disabled={!restoreMethod || !passphraseValid || !confirmPassphraseValid || encrypting} 
                 >
-                    Finish
+                {#if encrypting}
+                    <span>
+                        <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
+                            track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8" />
+                    </span>
+                {:else}
+                    <span>Finish</span>
+                {/if}
                 </button>
             </div>
         </form>
