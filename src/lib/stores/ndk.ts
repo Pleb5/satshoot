@@ -37,7 +37,11 @@ export const sessionPK: Writable<string> = localStorageStore('pk', '',{ storage:
 export const storedPool: Writable<string[] | undefined> = localStorageStore('pool', undefined);
 
 const ndkSvelte = new NDKSvelte({
-    enableOutboxModel: false,
+    enableOutboxModel: true,
+    outboxRelayUrls: ["wss://purplepag.es/"],
+    blacklistRelayUrls: [],
+    autoConnectUserRelays: true,
+    autoFetchUserMutelist: true,
     explicitRelayUrls:[],
 });
 

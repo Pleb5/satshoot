@@ -22,11 +22,12 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
 
     import { page } from '$app/stores';
-    import { idFromNaddr } from '$lib/utils/nip19'
+    import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
     import { nip19 } from "nostr-tools";
     import UserCard from "$lib/components/User/UserCard.svelte";
     import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
     import { goto } from "$app/navigation";
+    import { NDKRelay } from "@nostr-dev-kit/ndk";
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -78,6 +79,14 @@
         }
         if ($ticketsOfSpecificOffers) {
             const naddr = $page.params.ticketId;
+            const relaysFromURL = relaysFromNaddr(naddr).split(',');
+            // console.log('ticket relays', relaysFromURL)
+            relaysFromURL.forEach((relayURL: string) => {
+                $ndk.pool.addRelay(new NDKRelay(relayURL));
+            });
+
+            // console.log('pool after adding relays from URL: ', $ndk.pool)
+
             const dTag = idFromNaddr(naddr).split(':')[2];
             const dTagFilters = ticketsOfSpecificOffersFilter['#d'];
 

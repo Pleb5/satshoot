@@ -19,8 +19,6 @@
     let posting = false;
 
     async function postFeedback() {
-        $ndk.enableOutboxModel = true;
-        $ndk.outboxRelayUrls = ["wss://purplepag.es"];
         const kind1Event = new NDKEvent($ndk);
         kind1Event.kind = NDKKind.Text;
 
@@ -47,7 +45,6 @@
             toastStore.trigger(t);
 
             modalStore.close();
-            $ndk.enableOutboxModel = false;
         } catch(e) {
             posting = false;
             const t: ToastSettings = {
@@ -58,7 +55,6 @@
             toastStore.trigger(t);
 
             modalStore.close();
-            $ndk.enableOutboxModel = false;
         }
     }
 

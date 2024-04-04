@@ -1,9 +1,14 @@
 import {nip19} from 'nostr-tools';
 
-export function idFromNaddr(naddr: string) {
+export function idFromNaddr(naddr: string): string {
     const ndecode = nip19.decode(naddr).data as any;
     // console.log('naddr relay data: ', ndecode.relays)
     return `${ndecode.kind}:${ndecode.pubkey}:${ndecode.identifier}`;
+}
+
+export function relaysFromNaddr(naddr: string): string {
+    const ndecode = nip19.decode(naddr).data as any;
+    return `${ndecode.relays}`;
 }
 
 export function privateKeyFromNsec(nsec: string): string|undefined {

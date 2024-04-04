@@ -98,7 +98,11 @@
 
 
                 ndk.set(new NDKSvelte({
-                    enableOutboxModel: false,
+                    enableOutboxModel: true,
+                    outboxRelayUrls: ["wss://purplepag.es/"],
+                    blacklistRelayUrls: [],
+                    autoConnectUserRelays: true,
+                    autoFetchUserMutelist: true,
                     explicitRelayUrls: DEFAULTRELAYURLS,
                 }));
 

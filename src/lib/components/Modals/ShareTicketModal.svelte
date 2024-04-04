@@ -18,7 +18,7 @@
 	export let parent: SvelteComponent;
 
     export let ticket: TicketEvent;
-    const shareURL = `https://bitcointroubleshoot.com/${ticket.encode()}`;
+    let shareURL = '';
 
     let message: string = '';
     let posting = false;
@@ -27,8 +27,6 @@
         posting = true;
         await tick();
 
-        $ndk.enableOutboxModel = true;
-        $ndk.outboxRelayUrls = ["wss://purplepag.es"];
         const kind1Event = new NDKEvent($ndk);
         kind1Event.kind = NDKKind.Text;
 
@@ -48,7 +46,6 @@
             toastStore.trigger(t);
 
             modalStore.close();
-            $ndk.enableOutboxModel = false;
         } catch(e) {
             posting = false;
             const t: ToastSettings = {
@@ -59,12 +56,12 @@
             toastStore.trigger(t);
 
             modalStore.close();
-            $ndk.enableOutboxModel = false;
         }
     }
 
     onMount(()=>{
         if (ticket) {
+            shareURL = `https://bitcointroubleshoot.com/${ticket.encode()}`
             // Set default text
             message = `Hey Nostr,\nPlease help me with this #bitcoin issue and I can pay sats for your time:\n\n`;
             message += `${ticket.title}\n\n`;

@@ -124,9 +124,8 @@
         if (user) {
             event.author = user;
             try {
-                const relaysPublished = await event.publish(
-                    new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
-                );
+                const relaysPublished = await event.publish();
+
                 profilePromise = user.fetchProfile();
                 await profilePromise;
                 const t: ToastSettings = {

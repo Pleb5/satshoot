@@ -47,6 +47,11 @@
     function update() {
         // Sync UI and ndk with modified relays
         // storedPool and blacklistedRelays are sources of truth, not ndk pool
+        // This code forces ndk pool to include relays specified by the user
+        // And forces ndk to exclude relays removed('blacklisted') by the user
+        // BUT this does not prevent ndk from adding/blacklisting extra relays
+        // E.g. outbox pool is not displayed here.
+        // Only user-defined relays are displayed here
         relays = [];
         $storedPool?.forEach((url: string)=> {
             if (($ndk.explicitRelayUrls as string[]).includes(url)) {
@@ -66,6 +71,7 @@
 
             $ndk.pool.blacklistRelayUrls.add(url);
         });
+        // console.log($ndk.pool.connectedRelays())
 
         relays = relays;
     }
