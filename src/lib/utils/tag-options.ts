@@ -20,6 +20,7 @@ export const tagOptions: AutocompleteOption<string>[] = [
         { label: 'SatsCard', value: 'satscard'},
         { label: 'TapSigner', value: 'tapsigner'},
         { label: 'SatChip', value: 'satchip'},
+        { label: 'SatoChip', value: 'satochip'},
         { label: 'ColdPower', value: 'coldpower'},
         { label: 'ESP32', value: 'esp_32'},
         { label: 'STM32', value: 'stm_32'},
