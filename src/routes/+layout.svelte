@@ -8,6 +8,7 @@
 	import '@fortawesome/fontawesome-free/css/brands.css';
 
     import ndk from "$lib/stores/ndk";
+    import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import { bunkerNDK } from '$lib/stores/ndk';
     import { connected } from "$lib/stores/ndk";
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
@@ -110,6 +111,9 @@
             //init blacklist
             blacklistedRelays.set([]);
         }
+        
+        // Setup client-side caching
+        $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'bitcoin-troubleshoot-db' });
 
         await $ndk.connect();
         $connected = true;

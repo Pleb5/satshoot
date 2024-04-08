@@ -1,5 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+    import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import currentUser from '$lib/stores/login';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
@@ -104,6 +105,7 @@
                     autoConnectUserRelays: true,
                     autoFetchUserMutelist: true,
                     explicitRelayUrls: DEFAULTRELAYURLS,
+                    cacheAdapter: new NDKCacheAdapterDexie({ dbName: 'bitcoin-troubleshoot-db' }),
                 }));
 
                 await $ndk.connect();

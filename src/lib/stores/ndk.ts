@@ -5,6 +5,7 @@ import { writable } from "svelte/store";
 import { localStorageStore } from '@skeletonlabs/skeleton';
 import type { Writable } from 'svelte/store';
 
+
 export const DEFAULTRELAYURLS = [
     "wss://relay.nostr.band/",
     "wss://nos.lol/",
@@ -31,11 +32,15 @@ export const blacklistedRelays: Writable<string[] | undefined> = localStorageSto
 
 // save this in session storage when logging in or restoring cipher pk
 // then check for pk store in login before trying to decrypt
+// Saves us from decryption every time user reloads page during a session
 export const sessionPK: Writable<string> = localStorageStore('pk', '',{ storage:'session' });
 // Save this in local(NOT session) storage when adding or removing relays
 // Always check for relays here when instantiating ndk
 export const storedPool: Writable<string[] | undefined> = localStorageStore('pool', undefined);
 
+// Client-side caching. Used for performance enhancement as well as a solution to identify
+// new data and serve push notifications. Notify user when 'tickets of interest' change,
+// that is, my tickets and tickets I bid on, as well as new messages
 const ndkSvelte = new NDKSvelte({
     enableOutboxModel: true,
     outboxRelayUrls: ["wss://purplepag.es/"],
