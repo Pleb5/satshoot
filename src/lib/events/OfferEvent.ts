@@ -10,8 +10,8 @@ export enum OfferStatus {
 }
 
 export enum Pricing {
-    SatsPerMin = 0,
-    Absolute = 1,
+    Absolute = 0,
+    SatsPerMin = 1,
     // This has been postponed
     // MilestoneBased = 2,
 }

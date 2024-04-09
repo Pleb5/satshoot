@@ -78,7 +78,7 @@
         // Replacement is based on this. Allows for multiple updatable/replaceable offers
         ["d", <offer ID, integer, mandatory>],
         ["a", 32767:<hex pubkey of Bitcoiner>:<ticket ID from a d-tag of a ticket>, mandatory>],
-        ["pricing", <pricing strategy, MUST be either 0(sats/minute), 1(absolute price) or 2(sats/milestone), integer, mandatory>],
+        ["pricing", <pricing strategy, MUST be either 0(absolute price), 1(sats/minute) or 2(sats/milestone), integer, mandatory>],
         // Amount of the price. If more than 1 amount, then it refers to the milestones of the ticket respectively. Else refers to the sats/minute or absolute price | mandatory
         ["amount", [<amount1>, <amount2>, ..., amountN>]]
     ],

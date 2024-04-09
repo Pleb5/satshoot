@@ -113,8 +113,8 @@
                     <label class="m-4">
                         <span>Pricing Method</span>
                         <select class="select" bind:value={pricingMethod}>
-                            <option value={Pricing.SatsPerMin}>Sats/Minute</option>
-                            <option value={Pricing.Absolute}>Absolute Price (sats)</option>
+                            <option value={Pricing.Absolute}>Absolute Price(sats)</option>
+                            <option value={Pricing.SatsPerMin}>Time-based Price(sats/minute)</option>
                         </select>
                     </label>
                     <!-- Amount -->
@@ -132,7 +132,7 @@
                                 placeholder="Amount"
                                 bind:value={amount}
                             />
-                            <div>{pricingMethod ? 'sats' : 'sats/min'}</div>
+                            <div>{pricingMethod ? 'sats/min' : 'sats'}</div>
                         </div>
                     </label>
                     <!-- Description -->
