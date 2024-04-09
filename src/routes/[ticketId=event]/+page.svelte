@@ -11,7 +11,7 @@
     import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
-    import OfferTakenModal from "$lib/components/Modals/OfferTakenModal.svelte";
+    import TakeOfferModal from "$lib/components/Modals/TakeOfferModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
 
@@ -159,67 +159,18 @@
     }
 
     async function takeOffer(offer: OfferEvent) {
-        const modalBody = `
-                    <p>Do really want to take this Offer?</p>
-                    <strong class="text-error-500">
-                        You agree to pay the fee listed on the Offer!
-                    </strong>
-        `;
+        if (ticket) {
+            const modalComponent: ModalComponent = {
+                ref: TakeOfferModal,
+                props: {ticket: ticket, offer: offer},
+            };
 
-        let takeOfferResponse = async function(r: boolean){
-            if (r) {
-                if (ticket) {
-                    // User chose to take offer
-                    let ticketToPublish = new TicketEvent($ndk);
-                    ticketToPublish.tags = ticket.tags;
-                    ticketToPublish.description = ticket.description;
-                    // Important part! This also sets status to in progress
-                    ticketToPublish.acceptedOfferAddress = offer.offerAddress;
-
-                    try {
-                        await ticketToPublish.publish();
-
-                        const modalComponent: ModalComponent = {
-                            ref: OfferTakenModal,
-                        };
-
-                        const modal: ModalSettings = {
-                            type: 'component',
-                            component: modalComponent,
-                        };
-                        modalStore.trigger(modal);
-
-                        // Navigate to ticket messages
-                        goto('/messages/' + ticket.encode() + ":" + ticket.title);
-
-                    } catch(e) {
-                        console.log(e)
-                        const t: ToastSettings = {
-                            message: 'Error while accepting Offer! Fix connection with Relays and try again!',
-                            timeout: 7000,
-                            background: 'bg-error-300-600-token',
-                        };
-                        toastStore.trigger(t);
-                    }
-                } else {
-                    const t: ToastSettings = {
-                        message: 'Cannot accept Offer, Ticket not found!',
-                        timeout: 7000,
-                        background: 'bg-error-300-600-token',
-                    };
-                    toastStore.trigger(t);
-                }
-            }
-        }
-
-        const modal: ModalSettings = {
-            type: 'confirm',
-            // Data
-            title: 'Confirm taking Offer',
-            body: modalBody,
-            response: takeOfferResponse,
-        };
-        modalStore.trigger(modal);
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+            };
+            modalStore.trigger(modal);
+        } 
     }
 
 
