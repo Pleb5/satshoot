@@ -155,7 +155,7 @@
 </script>
 
 
-<div class="card">
+<div class="card bg-surface-200-700-token">
     {#if ticket}
         <header class="card-header grid grid-cols-[15%_1fr_15%] items-start">
             {#if ticketChat}

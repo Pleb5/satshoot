@@ -134,7 +134,7 @@
 
 </script>
 
-<div class="card pt-2">
+<div class="card pt-2 bg-surface-200-700-token">
     {#if offer}
         <div class="grid grid-cols-[15%_1fr_15%] justify-center items-center mx-2">
             {#if $currentUser && enableChat && ticket}
