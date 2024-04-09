@@ -80,7 +80,7 @@
                 <div class="grid grid-cols-[30%_1fr] gap-x-2">
                     <button 
                         type="button"
-                        class="btn btn-md bg-error-300-600-token"
+                        class="btn btn-sm sm:btn-md bg-error-300-600-token"
                         on:click={()=> modalStore.close()}
                     >
                         Cancel
@@ -88,7 +88,7 @@
                     <button
                         type="button"
                         on:click={closeTicket}
-                        class="btn btn-lg bg-tertiary-300-600-token"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                         disabled={closing}
                     >
                         {#if closing}

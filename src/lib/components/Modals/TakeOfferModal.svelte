@@ -91,7 +91,7 @@
                 <div class="grid grid-cols-[30%_1fr] gap-x-2">
                     <button 
                         type="button"
-                        class="btn btn-md bg-error-300-600-token"
+                        class="btn btn-sm sm:btn-md bg-error-300-600-token"
                         on:click={()=> modalStore.close()}
                     >
                         Cancel
@@ -99,7 +99,7 @@
                     <button
                         type="button"
                         on:click={takeOffer}
-                        class="btn btn-lg bg-tertiary-300-600-token"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                         disabled={takingOffer}
                     >
                         {#if takingOffer}
@@ -108,7 +108,7 @@
                                     track="stroke-error-500/30" strokeLinecap="round" width="w-8" />
                             </span>
                         {:else}
-                            <span>Close</span>
+                            <span>Take Offer</span>
                         {/if}
 
                     </button>

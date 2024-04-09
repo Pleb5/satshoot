@@ -111,7 +111,7 @@
                 <div class="grid grid-cols-[30%_1fr] gap-x-2">
                     <button 
                         type="button"
-                        class="btn btn-md bg-error-300-600-token"
+                        class="btn btn-sm sm:btn-md bg-error-300-600-token"
                         on:click={()=> modalStore.close()}
                     >
                         Cancel
@@ -119,7 +119,7 @@
                     <button
                         type="button"
                         on:click={postTicket}
-                        class="btn btn-lg bg-success-300-600-token"
+                        class="btn btn-sm sm:btn-md bg-success-300-600-token"
                         disabled={posting}
                     >
                         {#if posting}
