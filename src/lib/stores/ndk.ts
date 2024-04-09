@@ -9,7 +9,6 @@ import type { Writable } from 'svelte/store';
 export const DEFAULTRELAYURLS = [
     "wss://relay.nostr.band/",
     "wss://nos.lol/",
-    "wss://relay.snort.social/",
     "wss://bitcoiner.social/",
     "wss://relay.damus.io/",
 ]
