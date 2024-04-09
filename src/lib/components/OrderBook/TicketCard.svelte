@@ -1,5 +1,4 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
     import currentUser from '$lib/stores/login';
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
@@ -9,16 +8,14 @@
 
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { getToastStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
 
     import { ticketToEdit } from "$lib/stores/ticket-to-edit";
     import { goto } from "$app/navigation";
     import ShareTicketModal from "../Modals/ShareTicketModal.svelte";
+    import CloseTicketModal from '$lib/components/Modals/CloseTicketModal.svelte';
 
-    const toastStore = getToastStore();
     const modalStore = getModalStore();
 			
     
@@ -49,58 +46,21 @@
     };
 
     async function closeTicket() {
-        let closeTicketResponse = async function(r: boolean) {
-            if (r) {
-                if (ticket) {
-                    let ticketToPublish = new TicketEvent($ndk);
-                    ticketToPublish.tags = ticket.tags;
-                    ticketToPublish.description = ticket.description;
-                    // Important part! This also sets status to in progress
-                    ticketToPublish.status = TicketStatus.Closed;
+        if (ticket) {
+            const modalComponent: ModalComponent = {
+                ref: CloseTicketModal,
+                props: {ticket: ticket},
+            };
 
-                    try {
-                        await ticketToPublish.publish();
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+            };
+            modalStore.trigger(modal);
 
-                        // Ticket posted Modal
-                        const modal: ModalSettings = {
-                            type: 'alert',
-                            title: 'Ticket Closed!',
-                            body: `
-                                <p>You Closed the Ticket! Hope your issue was resolved!</p>
-                                <p>
-                                    You will find this Ticket in 'My Tickets' under the 'Closed' tab!
-                                </p>
-                            `,
-                            buttonTextCancel:'Ok',
-                        };
-                        modalStore.trigger(modal);
-                    } catch(e) {
-                        console.log(e)
-                        const t: ToastSettings = {
-                            message: 'Error while closing Ticket! Fix connection with Relays and try again!',
-                            timeout: 7000,
-                            background: 'bg-error-300-600-token',
-                        };
-                        toastStore.trigger(t);
-                    }
-                } else {
-                    const t: ToastSettings = {
-                        message: 'Error: Could could not find ticket to close!',
-                        timeout: 7000,
-                        background: 'bg-error-300-600-token',
-                    };
-                    toastStore.trigger(t);
-                }
-            }
         }
-        const modal: ModalSettings = {
-            type: 'confirm',
-            title: 'Confirm closing Ticket',
-            body: 'Do really want to Close this Ticket?',
-            response: closeTicketResponse,
-        };
-        modalStore.trigger(modal);
     }
+
 
     $: if ($currentUser && showChat) {
         ticketChat = true;
