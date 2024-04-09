@@ -19,8 +19,12 @@
             messaging software for highly sensitive information!
         </strong>
         <p class="mt-4">
-            <span>Go to </span>
-            <span class="badge bg-primary-300-600-token"> Messages</span>
+            <span> You will be redirected to </span>
+            <span class="badge bg-primary-300-600-token">
+                <span class="mr-2">Ticket Messages</span>
+                <i class="fa-solid fa-comment text-lg md:text-xl"></i>
+
+            </span>
             <span>
                 and talk about your preferred communication method then switch to that app for the actual Troubleshooting!
             </span>
