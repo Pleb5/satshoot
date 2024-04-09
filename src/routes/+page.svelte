@@ -6,6 +6,7 @@
     import type { NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
+    import { onMount } from "svelte";
 
     let filterInput = '';
     let filterList: string[] = [];
@@ -13,30 +14,32 @@
 
     function filterTickets() {
         // We need to check all tickets against all filters
-        ticketList = new Set();
-        $newTickets.forEach((ticket: TicketEvent) => {
-            filterList.forEach((filter: string) => {
-                const lowerCaseFilter = filter.toLowerCase();
+        if (filterList.length > 0) {
+            ticketList = new Set();
+            $newTickets.forEach((ticket: TicketEvent) => {
+                filterList.forEach((filter: string) => {
+                    const lowerCaseFilter = filter.toLowerCase();
 
-                const lowerCaseTitle = ticket.title.toLowerCase();
-                const lowerCaseDescription = ticket.description.toLowerCase();
+                    const lowerCaseTitle = ticket.title.toLowerCase();
+                    const lowerCaseDescription = ticket.description.toLowerCase();
 
-                let tagsContain: boolean = false;
-                ticket.tags.forEach((tag: NDKTag) => {
-                    if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
-                        tagsContain = true;
+                    let tagsContain: boolean = false;
+                    ticket.tags.forEach((tag: NDKTag) => {
+                        if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                            tagsContain = true;
+                        }
+                    });
+
+                    const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
+                    const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+
+                    if (titleContains || descContains || tagsContain) {
+                        ticketList.add(ticket);
                     }
                 });
-
-                const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-                const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
-
-                if (titleContains || descContains || tagsContain) {
-                    ticketList.add(ticket);
-                }
             });
-        });
-        ticketList = ticketList;
+            ticketList = ticketList;
+        }
     }
 
     function addTagAndFilter(tag: string) {
@@ -68,6 +71,10 @@
         }
     }
 
+    onMount(()=>{
+        ticketList = new Set($newTickets);
+    });
+
 </script>
 
 <div class="flex flex-col justify-center gap-y-2 mt-2">
@@ -93,7 +100,7 @@
     </div>
 
     <div class="grid grid-cols-1 gap-y-4 mx-8 mb-8">
-        {#each ticketList as ticket}
+        {#each ticketList as ticket (ticket.id)}
             <TicketCard {ticket}
                 titleSize={'md lg:text-xl'}
                 tagCallback={addTagAndFilter} 
