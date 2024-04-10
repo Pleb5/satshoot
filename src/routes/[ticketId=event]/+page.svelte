@@ -8,7 +8,9 @@
     import { loginAlert } from '$lib/stores/login';
     import redirectStore from '$lib/stores/redirect-store';
 
-    import { offersOnTicketsFilter, offersOnTickets, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { offersOnTicketsFilter, offersOnTickets,
+        ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers 
+    } from "$lib/stores/troubleshoot-eventstores";
 
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
     import TakeOfferModal from "$lib/components/Modals/TakeOfferModal.svelte";
@@ -21,7 +23,6 @@
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
 
-    import { onMount } from "svelte";
     import { page } from '$app/stores';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
     import { nip19 } from "nostr-tools";
@@ -101,6 +102,11 @@
                     if (idFromNaddr(t.encode()) === idFromNaddr(naddr)){
                         if (!ticket) {
                             ticket = TicketEvent.from(t);
+
+                            // Scroll to top as soon as ticket arrives
+                            const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+                            elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+
                             // console.log('setting ticket in ticket page')
                             if (ticket.status !== TicketStatus.New) {
                                 allowCreateOffer = false;
@@ -182,11 +188,6 @@
         placement: 'top'
     };
 
-    onMount(()=>{
-        const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
-        elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
-    });
-    
 </script>
 
 <div class="card m-6 flex justify-center">
