@@ -99,14 +99,37 @@
         <!-- </button> -->
     </div>
 
-    <div class="grid grid-cols-1 gap-y-4 mx-8 mb-8">
-        {#each ticketList as ticket (ticket.id)}
-            <div class="flex justify-center">
-                <TicketCard {ticket}
-                    titleSize={'md lg:text-xl'}
-                    tagCallback={addTagAndFilter} 
-                />
-            </div>
-        {/each}
-    </div>
+    {#if ticketList.size > 0}
+        <div class="grid grid-cols-1 gap-y-4 mx-8 mb-8">
+            {#each ticketList as ticket (ticket.id)}
+                <div class="flex justify-center">
+                    <TicketCard {ticket}
+                        titleSize={'md lg:text-xl'}
+                        tagCallback={addTagAndFilter} 
+                    />
+                </div>
+            {/each}
+        </div>
+    {:else}
+        <div class="flex flex-col items-center gap-y-8">
+            {#each {length: 4} as _ }
+                <section class="w-[300px] md:w-[400px]">
+                    <div class="p-4 space-y-4">
+                        <div class="placeholder animate-pulse" />
+                        <div class="grid grid-cols-3 gap-8">
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                        </div>
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                        </div>
+                    </div>
+                </section>
+            {/each}
+        </div>
+    {/if}
 </div>
