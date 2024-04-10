@@ -21,6 +21,7 @@
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
 
+    import { onMount } from "svelte";
     import { page } from '$app/stores';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
     import { nip19 } from "nostr-tools";
@@ -180,6 +181,11 @@
         target: 'popupHover',
         placement: 'top'
     };
+
+    onMount(()=>{
+        const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+        elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+    });
     
 </script>
 
