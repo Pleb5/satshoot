@@ -101,10 +101,12 @@
 
     <div class="grid grid-cols-1 gap-y-4 mx-8 mb-8">
         {#each ticketList as ticket (ticket.id)}
-            <TicketCard {ticket}
-                titleSize={'md lg:text-xl'}
-                tagCallback={addTagAndFilter} 
-            />
+            <div class="flex justify-center">
+                <TicketCard {ticket}
+                    titleSize={'md lg:text-xl'}
+                    tagCallback={addTagAndFilter} 
+                />
+            </div>
         {/each}
     </div>
 </div>

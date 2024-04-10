@@ -155,7 +155,7 @@
 </script>
 
 
-<div class="card bg-surface-200-700-token">
+<div class="card bg-surface-200-700-token sm:max-w-[70vw] lg:max-w-[60vw] flex-grow">
     {#if ticket}
         <header class="card-header grid grid-cols-[15%_1fr_15%] items-start">
             {#if ticketChat}

@@ -183,7 +183,7 @@
     
 </script>
 
-<div class="card m-6">
+<div class="card m-6 flex justify-center">
     <TicketCard {ticket} titleSize='md sm:text-lg' titleLink={false} shortenDescription={false} />
 
 </div>
@@ -215,25 +215,29 @@
         {/if}
     </div>
     <!-- User -->
-    <h2 class="font-bold text-lg sm:text-2xl ml-8 mt-4" >Posted by:</h2>
-    <UserCard npub={npub} />
+    <h2 class="font-bold text-center text-lg sm:text-2xl ml-8 mt-4" >Posted by:</h2>
+    <div class="flex justify-center">
+        <UserCard npub={npub} />
+    </div>
 {/if}
 <!-- Offers on Ticket -->
-<h2 class="font-bold text-lg sm:text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>
+<h2 class="font-bold text-center text-lg sm:text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>
 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
     {#each offers as offer}
-        <OfferCard {offer} showTicket={false} enableChat={myTicket}>
-            <div slot="takeOffer" class="flex justify-center mt-2">
-                {#if ticket && myTicket && ticket.status === TicketStatus.New}
-                    <button
-                        type="button"
-                        class="btn btn-lg bg-primary-300-600-token"
-                        on:click={takeOffer(offer)}
-                    >
-                        Take Offer
-                    </button>
-                {/if}
-            </div>
-        </OfferCard>
+        <div class="flex justify-center">
+            <OfferCard {offer} showTicket={false} enableChat={myTicket}>
+                <div slot="takeOffer" class="flex justify-center mt-2">
+                    {#if ticket && myTicket && ticket.status === TicketStatus.New}
+                        <button
+                            type="button"
+                            class="btn btn-lg bg-primary-300-600-token"
+                            on:click={takeOffer(offer)}
+                        >
+                            Take Offer
+                        </button>
+                    {/if}
+                </div>
+            </OfferCard>
+        </div>
     {/each}
 </div>

@@ -240,7 +240,7 @@
         </div>
     </section>
 {:then userProfile}
-    <div class="card p-4 m-8 mt-4 bg-surface-200-700-token">
+    <div class="card p-4 m-8 mt-4 bg-surface-200-700-token flex-grow sm:max-w-[70vw] lg:max-w-[60vw]">
         <header class="mb-8">
             <div class="grid grid-cols-[auto_1fr_auto] items-center justify-center gap-x-2">
                 <div>

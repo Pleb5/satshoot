@@ -1,5 +1,4 @@
 <script lang="ts">
-import ndk from '$lib/stores/ndk';
 import currentUser from "$lib/stores/login";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
@@ -140,19 +139,25 @@ $: {
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each filteredNewTickets as ticket }
-                        <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
+                        <div class="flex justify-center">
+                            <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
+                        </div>
                     {/each}
                 </div>
                 {:else if tabGroup === 1}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each filteredInProgressTickets as ticket }
-                        <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
+                        <div class="flex justify-center">
+                            <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
+                        </div>
                     {/each}
                 </div>
                 {:else if tabGroup === 2}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each filteredClosedTickets as ticket }
-                        <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
+                        <div class="flex justify-center">
+                            <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
+                        </div>
                     {/each}
                 </div>
             {/if}
