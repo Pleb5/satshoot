@@ -83,9 +83,11 @@
             const naddr = $page.params.ticketId;
             const relaysFromURL = relaysFromNaddr(naddr).split(',');
             // console.log('ticket relays', relaysFromURL)
-            relaysFromURL.forEach((relayURL: string) => {
-                $ndk.pool.addRelay(new NDKRelay(relayURL));
-            });
+            if (relaysFromURL.length > 0) {
+                relaysFromURL.forEach((relayURL: string) => {
+                    $ndk.pool.addRelay(new NDKRelay(relayURL));
+                });
+            }
 
             // console.log('pool after adding relays from URL: ', $ndk.pool)
 

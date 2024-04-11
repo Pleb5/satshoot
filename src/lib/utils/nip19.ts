@@ -1,14 +1,24 @@
 import {nip19} from 'nostr-tools';
 
 export function idFromNaddr(naddr: string): string {
-    const ndecode = nip19.decode(naddr).data as any;
-    // console.log('naddr relay data: ', ndecode.relays)
-    return `${ndecode.kind}:${ndecode.pubkey}:${ndecode.identifier}`;
+    try {
+        const ndecode = nip19.decode(naddr).data as any;
+        // console.log('naddr relay data: ', ndecode.relays)
+        return `${ndecode.kind}:${ndecode.pubkey}:${ndecode.identifier}`;
+    } catch(e) {
+        console.log(e);
+        return '';
+    }
 }
 
 export function relaysFromNaddr(naddr: string): string {
-    const ndecode = nip19.decode(naddr).data as any;
-    return `${ndecode.relays}`;
+    try {
+        const ndecode = nip19.decode(naddr).data as any;
+        return `${ndecode.relays}`;
+    } catch (e) {
+        console.log(e);
+        return '';
+    }
 }
 
 export function privateKeyFromNsec(nsec: string): string|undefined {
