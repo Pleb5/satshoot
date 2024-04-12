@@ -1,10 +1,10 @@
 <IfModule mod_rewrite.c>
-	RewriteEngine On
-	RewriteBase /
-	RewriteRule ^404\.html$ - [L]
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule . /404.html [L]
+    RewriteEngine On
+    RewriteBase /
+    RewriteRule ^404\.html$ - [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . /404.html [L]
 </IfModule>
 
 <If "%{REQUEST_URI} =~ m#^/.well-known/#">
