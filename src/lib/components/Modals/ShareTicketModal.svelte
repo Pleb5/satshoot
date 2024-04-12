@@ -62,9 +62,6 @@
 
     onMount(()=>{
         if (ticket) {
-            // URL character limit after the '/' is 255 (naddr...)
-            // might go beyond if many relays are involved
-            // TODO: fix this behavior
             shareURL = `https://bitcointroubleshoot.com/${ticket.encode()}`
             // Set default text
             message = `Hey Nostr,\nPlease help me with this #bitcoin issue and I can pay sats for your time:\n\n`;
