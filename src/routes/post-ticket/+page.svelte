@@ -112,9 +112,11 @@
                     ticket.removeTag('d');
                     ticket.tags.push(['d', $ticketToEdit.tagValue('d') as string]);
                 }
-                await ticket.publish(
-                    new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
-                );
+
+                const relays = await ticket.publish();
+                console.log(relays)
+                console.log('onrelays', ticket.onRelays)
+
 
                 posting = false;
 
