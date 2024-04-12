@@ -3,6 +3,9 @@
     import ndk from '$lib/stores/ndk';
     import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
 
+    import { nip19 } from "nostr-tools";
+    import { relaysFromNaddr } from '$lib/utils/nip19';
+
     
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { clipboard } from '@skeletonlabs/skeleton';
@@ -62,10 +65,33 @@
 
     onMount(()=>{
         if (ticket) {
-            // URL character limit after the '/' is 255 (naddr...)
-            // might go beyond if many relays are involved
-            // TODO: fix this behavior
-            shareURL = `https://bitcointroubleshoot.com/${ticket.encode()}`
+            // Construct a valid shareURL that has a path below 257 chars, trailing slash included 
+            // naddr1... must be less than 256 chars
+            // or webserver config will respond with 403 forbidden
+            // see https://serverfault.com/questions/140852/rewritten-urls-with-parameter-length-255-dont-work
+            const relayURLs = relaysFromNaddr(ticket.encode()).split(',');
+            // console.log('full naddr: ', ticket.encode())
+            // console.log('ticket on relays', ticket.onRelays)
+            // console.log('relays', relayURLs)
+
+            // Add relays one by one until the 256 char limit
+            // for the encoded result is not exceeded
+            let relaysPermitted: string[] = [];
+            let path = '';
+            for (const url of relayURLs) {
+                relaysPermitted.push(url);
+                path = nip19.naddrEncode({
+                    kind: ticket.kind as number,
+                    pubkey: ticket.pubkey,
+                    identifier: ticket.dTag as string,
+                    relays: relaysPermitted,
+                });
+                
+                if(path.length < 256) {
+                    shareURL = `https://bitcointroubleshoot.com/${path}`;
+                } else break;
+            }
+
             // Set default text
             message = `Hey Nostr,\nPlease help me with this #bitcoin issue and I can pay sats for your time:\n\n`;
             message += `${ticket.title}\n\n`;
