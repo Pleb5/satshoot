@@ -175,8 +175,6 @@
                     });
                 }
             } else {
-                encrypting = true;
-                await tick();
                 throw new Error("Creating Private key from input failed!");
             }
         } catch(e) {
