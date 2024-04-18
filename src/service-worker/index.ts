@@ -28,8 +28,8 @@ sw.onactivate = (event: ExtendableEvent) => {
 sw.onmessage = (m) => {
     console.log('message received in service worker', m)
     const title = m.data['title'];
-    const body = m.data['message'];
-    const tag = m.data['id'];
+    const body = m.data['body'];
+    const tag = m.data['tag'];
     if (m.data['notification'] && title && body && tag) {
         const granted = Notification.permission === 'granted';
         if(granted) {
@@ -47,6 +47,10 @@ sw.onmessage = (m) => {
         }
     } else {
         console.log('Unexpected message in Service Worker: ', m);
+        console.log('title', m.data['title'])
+        console.log('body', m.data['body'])
+        console.log('tag', m.data['tag'])
+        console.log('notification', m.data['notification'])
     }
 };
 

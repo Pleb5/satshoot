@@ -106,16 +106,8 @@ $: {
             } else if (ticket.status === TicketStatus.Closed) {
                 closedTickets.push(ticket);
             }
-            const aTagFilters = offersOnTicketsFilter['#a'];
-            if (!aTagFilters?.includes(ticket.ticketAddress)) {
-                offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
-            }
         });
         filterTickets();
-        /// Set filter, restart offer sub.
-        offersOnTickets.unsubscribe();
-        // offersOnTickets = $ndk.storeSubscribe(offersOnTicketsFilter, subOptions, OfferEvent);
-        offersOnTickets.startSubscription();
     } else {
         console.log('My tickets is null!')
     }

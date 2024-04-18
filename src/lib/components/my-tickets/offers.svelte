@@ -72,30 +72,19 @@ $: {
         lostOffers = [];
 
         $myOffers.forEach((offer: OfferEvent) => {
-            const dTagFilters = ticketsOfSpecificOffersFilter['#d'];
-            const dTag = offer.referencedTicketAddress.split(':')[2] as string;
-
-    // If I havent been listening to ticket of this offer, I just start listening to it
-    // Else I already am listening to this ticket so I look it up if it might have changed its accepted offer
-    // This approach does not display an offer until it has successfully retrieved its status from its ticket!
-            if (!dTagFilters?.includes(dTag)) {
-                ticketsOfSpecificOffersFilter['#d']?.push(dTag);       
-                // Restart subscritpion
-                ticketsOfSpecificOffers.unsubscribe();
-                ticketsOfSpecificOffers.startSubscription();
-            } else {
-                $ticketsOfSpecificOffers.forEach((ticket:TicketEvent) => {
-                    if (ticket.ticketAddress === offer.referencedTicketAddress) {
-                        if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                            wonOffers.push(offer);
-                        } else if (ticket.acceptedOfferAddress) {
-                            lostOffers.push(offer);
-                        } else {
-                            pendingOffers.push(offer);
-                        }
+            // This approach does not display an offer until it has successfully 
+            // retrieved its status from its ticket!
+            $ticketsOfSpecificOffers.forEach((ticket:TicketEvent) => {
+                if (ticket.ticketAddress === offer.referencedTicketAddress) {
+                    if (ticket.acceptedOfferAddress === offer.offerAddress) {
+                        wonOffers.push(offer);
+                    } else if (ticket.acceptedOfferAddress) {
+                        lostOffers.push(offer);
+                    } else {
+                        pendingOffers.push(offer);
                     }
-                });
-            }
+                }
+            });
         });
         filterOffersByTicket();
     } else {

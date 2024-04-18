@@ -11,6 +11,7 @@
     import { offersOnTicketsFilter, offersOnTickets,
         ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers 
     } from "$lib/stores/troubleshoot-eventstores";
+    import { restartEventStoreWithNotification } from '$lib/utils/helpers';
 
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
     import TakeOfferModal from "$lib/components/Modals/TakeOfferModal.svelte";
@@ -44,8 +45,7 @@
     let disallowCreateOfferReason = '';
     let loginAlertShown = false;
 
-    // Only trying to fetch offers on ticket once. This doesnt create a permanent
-    // subscription which would likely be an overkill
+    // offersOnTickets.subscription?.on('event', ()=> {console.log('event received test')})
 
     $: {
         if (!$currentUser){
@@ -97,8 +97,7 @@
             if (!dTagFilters?.includes(dTag) && $connected) {
                 ticketsOfSpecificOffersFilter['#d']?.push(dTag);
                 // Restart subscription
-                ticketsOfSpecificOffers.unsubscribe();
-                ticketsOfSpecificOffers.startSubscription();
+                restartEventStoreWithNotification(ticketsOfSpecificOffers);
             } else {
                 $ticketsOfSpecificOffers.forEach((t: TicketEvent) => {
                     if (idFromNaddr(t.encode()) === idFromNaddr(naddr)){
@@ -131,9 +130,10 @@
             // Else already subbed, we can check if new offer arrived on ticket
             const aTagFilters = offersOnTicketsFilter['#a'];
             if (!aTagFilters?.includes(ticket?.ticketAddress)) {
+                console.log('offers have not been tracked on this ticket')
                 offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
-                offersOnTickets.unsubscribe();
-                offersOnTickets.startSubscription();
+
+                restartEventStoreWithNotification(offersOnTickets);
             } else {
                 offers = [];
                 $offersOnTickets.forEach((offer: OfferEvent) => {

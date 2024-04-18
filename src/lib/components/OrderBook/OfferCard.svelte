@@ -16,6 +16,8 @@
     import { offersOnTickets, offersOnTicketsFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
     import { offerMakerToSelect } from "$lib/stores/messages";
 
+    import { restartEventStoreWithNotification } from '$lib/utils/helpers';
+
     const modalStore = getModalStore();
     
     export let offer: OfferEvent | null = null;
@@ -105,8 +107,8 @@
                         const aTagFilters = offersOnTicketsFilter['#a'];
                         if (!aTagFilters?.includes(ticket?.ticketAddress)) {
                             offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
-                            offersOnTickets.unsubscribe();
-                            offersOnTickets.startSubscription();
+
+                            restartEventStoreWithNotification(offersOnTickets);
                         }
                     }
                 });

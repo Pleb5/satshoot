@@ -21,7 +21,7 @@ const newTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
 const oldTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
     '#s': [TicketStatus.InProgress.toString(), TicketStatus.Closed.toString()],
-    limit: 100,
+    limit: 1000,
 };
 
 // Tickets that MY Offers(as a TroubleShooter) reference
@@ -30,7 +30,7 @@ const oldTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
 export const ticketsOfSpecificOffersFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
     '#d': [],
-    limit:1000,
+    limit:10000,
 };
 
 
@@ -46,14 +46,14 @@ export const offersOnTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
 export const myTicketFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
     authors: [],
-    limit:1000
+    limit:10000
 };
 
 // The filter's pubkey part will be filled in when user logs in
 export const myOfferFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Offer], 
     authors: [], 
-    limit:1000
+    limit:10000
 };
 export const newTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
         = get(ndk).storeSubscribe<TicketEvent>(newTicketsFilter, subOptions, TicketEvent);

@@ -14,6 +14,7 @@
     import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
     import { loggedIn } from "$lib/stores/login";
     import currentUser from "$lib/stores/login";
+    import notificationsEnabled from "$lib/stores/notifications";
 
     import { 
         newTickets, oldTickets, myTickets,
@@ -150,6 +151,8 @@
         });
 
         $ndk.pool.on('relay:connect', (relay: NDKRelay) => {
+            if(!relay) return;
+
             if ($storedPool?.includes(relay.url)) {
                 $connected = true;
                 // console.log('user-defined relay came online')
@@ -286,14 +289,14 @@
     });
 
     onDestroy(()=>{
-        newTickets.unsubscribe();
-        oldTickets.unsubscribe();
-        offersOnTickets.unref();
-        myTickets.unref();
-        myOffers.unref();
-        ticketsOfSpecificOffers.unref();
-
-        messageStore.unsubscribe();
+        // newTickets.unsubscribe();
+        // oldTickets.unsubscribe();
+        // offersOnTickets.unref();
+        // myTickets.unref();
+        // myOffers.unref();
+        // ticketsOfSpecificOffers.unref();
+        //
+        // messageStore.unsubscribe();
     });
 
 
@@ -348,6 +351,11 @@
             }
         };
         toastId = toastStore.trigger(t);
+    }
+
+    // NOTIFICATIONS
+    $: if( ($myTickets || $myOffers) && $notificationsEnabled) {
+
     }
 
 </script>
@@ -432,20 +440,20 @@
 	<svelte:fragment slot="footer">
         <TabGroup 
             justify="justify-center"
-            active="bg-primary-300-600-token"
-            hover="hover:variant-soft-primary"
             flex="flex-1"
             rounded=""
             border=""
+            hover="hover:variant-soft-primary"
+            active="bg-primary-300-600-token"
             background="bg-surface-100-800-token"
             class="lg:hidden w-full"
         >
             <TabAnchor href="/" selected={$page.url.pathname === '/'}>
-                    <MenuItem_1 />
+                <MenuItem_1 />
             </TabAnchor>
 
             <TabAnchor href="/post-ticket" selected={$page.url.pathname === '/post-ticket'}>
-                    <MenuItem_2 />
+                <MenuItem_2 />
             </TabAnchor>
 
             <TabAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>

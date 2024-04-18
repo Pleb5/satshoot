@@ -19,6 +19,7 @@ import { dev } from '$app/environment';
 import { 
     myTicketFilter, myOfferFilter, myTickets, myOffers,
     ticketsOfSpecificOffers, offersOnTickets,
+    offersOnTicketsFilter, ticketsOfSpecificOffersFilter
 } from "$lib/stores/troubleshoot-eventstores";
 
 import { BTCTroubleshootKind } from '$lib/events/kinds';
@@ -34,10 +35,43 @@ export async function initializeUser(ndk: NDK) {
     // --------------- User Subscriptions -------------- //
     myTicketFilter.authors?.push(user.pubkey);
     myOfferFilter.authors?.push(user.pubkey);
+
     myTickets.startSubscription();
     myOffers.startSubscription();
 
+    myTickets.subscription?.on('event',
+        (event: NDKEvent) => {
+            const ticket = TicketEvent.from(event);
+            if (!offersOnTicketsFilter['#a']?.includes(ticket.ticketAddress)) {
+                offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
+                /// Set filter, restart offer sub.
+                restartEventStoreWithNotification(offersOnTickets);
+            }
+        }
+    );
+
+    myOffers.subscription?.on('event',
+        (event: NDKEvent) => {
+            const offer = OfferEvent.from(event);
+            const dTagOfTicket = offer.referencedTicketAddress.split(':')[2] as string;
+            if (!ticketsOfSpecificOffersFilter['#d']?.includes(dTagOfTicket)) {
+                ticketsOfSpecificOffersFilter['#d']?.push(dTagOfTicket);
+                /// Set filter, restart ticket sub.
+                restartEventStoreWithNotification(ticketsOfSpecificOffers);
+            }
+        }
+    );
+
+
+
     // --------- Notifications based on User Subscriptions and Relevant Tickets/Offers -------- //
+
+    // TODO: check what events are added to ticketsOfSpecificOffers and offersOnTickets!
+    // Everything might not be relevant!
+    // Start listening to #a and #d tags based on mytickets and myoffers HERE
+    ticketsOfSpecificOffers.startSubscription();
+    offersOnTickets.startSubscription();
+
     requestNotifications( 
         (ticketsOfSpecificOffers as NDKEventStore<ExtendedBaseType<TicketEvent>>).subscription!
     );
@@ -51,6 +85,58 @@ export async function initializeUser(ndk: NDK) {
 
     await user.fetchProfile();
     currentUser.set(user);
+}
+
+export function restartEventStoreWithNotification<NDKEventStore>(store: NDKEventStore) {
+    store.unsubscribe();
+    store.startSubscription();
+    requestNotifications(store.subscription);
+}
+
+function requestNotifications(subscription: NDKSubscription) {
+    console.log('requesting notifications...', subscription)
+    subscription.on("event", 
+        async (event: NDKEvent, r: NDKRelay, subscription: NDKSubscription) => {
+            // Check for new unique events not served from cache
+            console.log('checking notificationsEnabled')
+            if(get(notificationsEnabled) 
+                && subscription.eventFirstSeen.get(event.id) !== 0
+            ) {
+                const activeSW = await getActiveServiceWorker()
+                if(!activeSW) {
+                    console.log('Notifications are only served through Service Workers\
+                        and there is no Service Worker available!')
+                    return;
+                }
+
+                console.log('new unique event arrived in SW', event)
+                // event was NOT received from cache and is not a duplicate
+                // so we Notify the user about a new _unique_ event reveived
+                let title = '';
+                let body = '';
+                let tag = '';
+
+                // The Ticket of our _Offer_ was updated
+                if (event.kind === BTCTroubleshootKind.Ticket) {
+                    title = 'Offer update arrived!';
+                    body = 'Check your Offers!';
+                    tag = BTCTroubleshootKind.Ticket.toString();
+                // The Offer on our _Ticket_ was updated
+                } else if(event.kind === BTCTroubleshootKind.Offer) {
+                    title = 'Ticket update arrived!';
+                    body = 'Check your Tickets!';
+                    tag = BTCTroubleshootKind.Offer.toString();
+                }
+
+                activeSW.postMessage({
+                    notification: 'true',
+                    title: title,
+                    body: body,
+                    tag: tag,
+                });
+            }
+        }
+    );
 }
 
 export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
@@ -102,46 +188,3 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
     return null;
 }
 
-function requestNotifications(subscription: NDKSubscription) {
-    subscription.on("event", 
-        async (event: NDKEvent, r: NDKRelay, subscription: NDKSubscription) => {
-            // Check for new unique events not served from cache
-            if(get(notificationsEnabled) 
-                && subscription.eventFirstSeen.get(event.id) !== 0
-            ) {
-                const activeSW = await getActiveServiceWorker()
-                if(!activeSW) {
-                    console.log('Notifications are only served through Service Workers\
-                        and there is no Service Worker available!')
-                    return;
-                }
-
-                console.log('new unique event arrived in SW', event)
-                // event was NOT received from cache and is not a duplicate
-                // so we Notify the user about a new _unique_ event reveived
-                let title = '';
-                let body = '';
-                let tag = '';
-
-                // The Ticket of our _Offer_ was updated
-                if (event.kind === BTCTroubleshootKind.Ticket) {
-                    title = 'Offer update arrived!';
-                    body = 'Check your Offers!';
-                    tag = BTCTroubleshootKind.Ticket.toString();
-                // The Offer on our _Ticket_ was updated
-                } else if(event.kind === BTCTroubleshootKind.Offer) {
-                    title = 'Ticket update arrived!';
-                    body = 'Check your Tickets!';
-                    tag = BTCTroubleshootKind.Offer.toString();
-                }
-
-                activeSW.postMessage({
-                    notification: 'true',
-                    title: title,
-                    body: body,
-                    tag: tag,
-                });
-            }
-        }
-    );
-}

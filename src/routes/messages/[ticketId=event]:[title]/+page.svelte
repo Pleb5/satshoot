@@ -10,6 +10,8 @@
     
     import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
 
+    import { restartEventStoreWithNotification } from '$lib/utils/helpers';
+
     import { onDestroy, onMount, tick } from "svelte";
 
 	import { Avatar } from '@skeletonlabs/skeleton';
@@ -451,8 +453,7 @@
                 const aTagFilters = offersOnTicketsFilter['#a'];
                 if (!aTagFilters?.includes(ticketAddress)) {
                     offersOnTicketsFilter['#a']?.push(ticketAddress);
-                    offersOnTickets.unsubscribe();
-                    offersOnTickets.startSubscription();
+                    restartEventStoreWithNotification(offersOnTickets);
                 } else if(ticket) {
                     $offersOnTickets.forEach((offer: OfferEvent) => {
                         if (offer.referencedTicketAddress === ticketAddress) {
