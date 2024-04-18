@@ -3,8 +3,12 @@
     import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import currentUser from '$lib/stores/login';
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
+    import { SlideToggle } from '@skeletonlabs/skeleton';
+    import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
+
+    import notificationsEnabled from '$lib/stores/notifications';
 
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
 
@@ -21,6 +25,37 @@
     import { loggedIn } from '$lib/stores/login';
 
     const modalStore = getModalStore();
+    const toastStore = getToastStore();
+
+    $: if($notificationsEnabled || !$notificationsEnabled) {
+        console.log('set notifications permission')
+        // If there is no permission for notifications yet, ask for it
+        // If it is denied then return and turn notifications off
+        if(Notification.permission !== 'granted') {
+            Notification.requestPermission().then(
+            (permission: NotificationPermission) => {
+                if (permission !== 'granted') {
+                    notificationsEnabled.set(false);
+                    const t: ToastSettings = {
+                        message:`
+                        <p>Notifications Settings are Disabled in the browser!</p>
+                        <p>
+                        <span>Click small icon </span>
+                        <span><i class="fa-solid fa-circle-info"></i></span>
+                        <span> left of browser search bar to enable this setting!</span>
+                        </p>
+`,
+                        autohide: false,
+                    };
+                    toastStore.clear();
+                    toastStore.trigger(t);
+                    console.log('user did not grant permission for notifications')
+                }
+                // User enabled notification settings, set user choice in local storage too
+                notificationsEnabled.set($notificationsEnabled);
+            });
+        }
+    }
 
     function feedback() {
 
@@ -142,6 +177,15 @@
                         <span class="w-6 text-center"><i class="fa-solid fa-globe" /></span>
                         <span>Network</span>
                     </a>
+                </li>
+                <li>
+                    <SlideToggle name='enable-notifications'
+                        active="bg-primary-500"
+                        size='sm'
+                        bind:checked={$notificationsEnabled}
+                    >
+                        Notifications
+                    </SlideToggle>
                 </li>
                 <hr class="!my-4" />
                 <li>
