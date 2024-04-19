@@ -27,7 +27,7 @@
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
 
-    let subscription: NDKSubscription | undefined = undefined;
+    let ticketSubscription: NDKSubscription | undefined = undefined;
     let alreadySubscribedToTicket = false;
 
     let npub: string;
@@ -98,9 +98,17 @@
                 const ticketFilter: NDKFilter<BTCTroubleshootKind> = {
                     kinds: [BTCTroubleshootKind.Ticket],
                     '#d': [dTagOfTicket],
+                    // This could break subs if low!
+                    // Limit of the initial query.
+                    // Might be the case that filters are groupable and this 
+                    // limits this kind of query. Need to test more...
+                    limit: 10000,
                 }
-                subscription = $ndk.subscribe(ticketFilter, {closeOnEose: false, pool: $ndk.pool});
-                subscription.on('event', (event: NDKEvent) => {
+                ticketSubscription = $ndk.subscribe(
+                    ticketFilter,
+                    {closeOnEose: false, pool: $ndk.pool},
+                );
+                ticketSubscription.on('event', (event: NDKEvent) => {
                     ticket = TicketEvent.from(event);
                     const winner = ticket.acceptedOfferAddress;
                     if (winner === offer!.offerAddress){
@@ -115,6 +123,7 @@
                         status = 'Pending';
                     }
                 });
+                // console.log('subscribing to ticket of this Offer', ticketSubscription)
             }
         } else {
             console.log('offer is null yet!')
@@ -138,7 +147,8 @@
     }
 
     onDestroy(() => {
-        subscription?.stop();
+        // console.log('Unsubbing from Ticket updates of this Offer')
+        ticketSubscription?.stop();
     });
 
 </script>

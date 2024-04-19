@@ -62,10 +62,10 @@ function filterOffersByTicket() {
     filteredLostOffers = filterByTicket(lostOffers);
 }
 
-// Sort offers into buckets according to state. Do this every time a new offers is received for the user
+// Sort offers into buckets according to state
+// Do this every time a new offer is received for the user
 $: {
-    // If we got a new offer, push it into the collection and start listening to ticket of that
-    // OR we got a new ticket that we are interested in with these offers. Check its '#a' tag to set offer status 
+    // If we got a new offer, push it into the collection 
     if ($myOffers && $ticketsOfSpecificOffers) {
         pendingOffers = [];
         wonOffers = [];
@@ -104,12 +104,12 @@ $: {
         <Tab bind:group={tabGroup} name="tab2" value={OfferStatus.Won}>
             Won
         </Tab>
-        <Tab bind:group={tabGroup} name="tab2" value={OfferStatus.Lost}>
+        <Tab bind:group={tabGroup} name="tab3" value={OfferStatus.Lost}>
             Lost
         </Tab>
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
-            {#if tabGroup === 0}
+            {#if tabGroup === OfferStatus.Pending}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each filteredPendingOffers as offer }
                         <div class="flex justify-center">
@@ -117,7 +117,7 @@ $: {
                         </div>
                     {/each}
                 </div>
-            {:else if tabGroup === 1}
+            {:else if tabGroup === OfferStatus.Won}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each filteredWonOffers as offer }
                         <div class="flex justify-center">
@@ -125,7 +125,7 @@ $: {
                         </div>
                     {/each}
                 </div>
-            {:else if tabGroup === 2}
+            {:else if tabGroup === OfferStatus.Lost}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each filteredLostOffers as offer }
                         <div class="flex justify-center">

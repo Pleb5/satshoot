@@ -43,11 +43,6 @@
     let timeSincePosted: string; 
     let ticketStatus: string;
 
-    const subOptions: NDKSubscriptionOptions = { 
-        closeOnEose: false,
-        pool: $ndk.pool
-    };
-    
     let offerSubscription: NDKSubscription | undefined = undefined;
     let alreadySubscribedOnOffers = false;
     let offers: OfferEvent[] = [];
@@ -105,8 +100,13 @@
                 let offersFilter: NDKFilter<BTCTroubleshootKind> = {
                     kinds: [BTCTroubleshootKind.Offer],
                     '#a': [ticket.ticketAddress],
+                    // This could break subs if low!
+                    limit: 10000,
                 }
-                offerSubscription = $ndk.subscribe(offersFilter, {closeOnEose: false, pool: $ndk.pool});
+                offerSubscription = $ndk.subscribe(
+                    offersFilter,
+                    {closeOnEose: false, pool: $ndk.pool}
+                );
 
                 offerSubscription.on('event', (event: NDKEvent) => {
                     const offer = OfferEvent.from(event);
@@ -116,6 +116,13 @@
                     // This does not do much yet(only number of offers is used)
                     // offers = offers;
                 });
+                // offerSubscription.on('close', ()=> {
+                //     console.log('offer sub was closed')
+                // })
+                // offerSubscription.on('eose', ()=> {
+                //     console.log('offer sub eose')
+                // })
+                // console.log('subscribed to offers on ticket:', offerSubscription)
             }
         }
     }
@@ -171,7 +178,7 @@
     }
 
     onDestroy(()=> {
-        console.log('unsubbing from offers of ticket')
+        // console.log('unsubbing from offers of ticket')
         offerSubscription?.stop();
     });
 
