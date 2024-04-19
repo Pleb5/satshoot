@@ -1,8 +1,16 @@
 <script lang="ts">
+    import ndk from "$lib/stores/ndk";
+    import type {
+        NDKSubscription,
+        NDKSubscriptionOptions,
+        NDKFilter,
+        NDKEvent
+    } from "@nostr-dev-kit/ndk"; 
+
     import currentUser from '$lib/stores/login';
-    import type { OfferEvent } from "$lib/events/OfferEvent";
+    import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
-    import { offersOnTickets } from "$lib/stores/troubleshoot-eventstores";
+    import { BTCTroubleshootKind } from "$lib/events/kinds";
 
     import { nip19 } from "nostr-tools";
 
@@ -15,6 +23,7 @@
     import { goto } from "$app/navigation";
     import ShareTicketModal from "../Modals/ShareTicketModal.svelte";
     import CloseTicketModal from '$lib/components/Modals/CloseTicketModal.svelte';
+    import { onDestroy, onMount } from "svelte";
 
     const modalStore = getModalStore();
 			
@@ -34,6 +43,13 @@
     let timeSincePosted: string; 
     let ticketStatus: string;
 
+    const subOptions: NDKSubscriptionOptions = { 
+        closeOnEose: false,
+        pool: $ndk.pool
+    };
+    
+    let offerSubscription: NDKSubscription | undefined = undefined;
+    let alreadySubscribedOnOffers = false;
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';
     let offersAlreadyColor: string = 'text-primary-400-500-token';
@@ -44,23 +60,6 @@
         target: `popupHover_${ticket?.id}`,
         placement: 'bottom'
     };
-
-    async function closeTicket() {
-        if (ticket) {
-            const modalComponent: ModalComponent = {
-                ref: CloseTicketModal,
-                props: {ticket: ticket},
-            };
-
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-            };
-            modalStore.trigger(modal);
-
-        }
-    }
-
 
     $: if ($currentUser && showChat) {
         ticketChat = true;
@@ -101,19 +100,22 @@
                 }
             }
 
-            if (countAllOffers) {
-                offers = [];
-                $offersOnTickets.forEach((offer: OfferEvent) => {
-                    if (offer.referencedTicketAddress === ticket?.ticketAddress) {
-                        offers.push(offer);
-                    }
-
-                });
-
-                offerCount = offers.length.toString();
-                if (offers.length > 0) {
-                    offersAlreadyColor = 'text-error-400-500-token';
+            if (countAllOffers && !alreadySubscribedOnOffers) {
+                alreadySubscribedOnOffers = true;
+                let offersFilter: NDKFilter<BTCTroubleshootKind> = {
+                    kinds: [BTCTroubleshootKind.Offer],
+                    '#a': [ticket.ticketAddress],
                 }
+                offerSubscription = $ndk.subscribe(offersFilter, {closeOnEose: false, pool: $ndk.pool});
+
+                offerSubscription.on('event', (event: NDKEvent) => {
+                    const offer = OfferEvent.from(event);
+                    offers.push(offer);
+                    offerCount = offers.length.toString();
+                    offersAlreadyColor = 'text-error-400-500-token';
+                    // This does not do much yet(only number of offers is used)
+                    // offers = offers;
+                });
             }
         }
     }
@@ -142,6 +144,22 @@
         }
     }
 
+    async function closeTicket() {
+        if (ticket) {
+            const modalComponent: ModalComponent = {
+                ref: CloseTicketModal,
+                props: {ticket: ticket},
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+            };
+            modalStore.trigger(modal);
+
+        }
+    }
+
     function generateDescription(): string {
         if (ticket?.description) {
             if (shortenDescription && ticket.description.length > 80) {
@@ -151,6 +169,11 @@
             }
         } else return 'No description!';
     }
+
+    onDestroy(()=> {
+        console.log('unsubbing from offers of ticket')
+        offerSubscription?.stop();
+    });
 
 </script>
 
@@ -247,7 +270,7 @@
             <div class="">{timeSincePosted}</div>
         {#if countAllOffers}
                 <div 
-                    class="text-sm font-bold {offersAlreadyColor} mt-2"
+                    class="text-md font-bold {offersAlreadyColor} mt-2"
                 >
                     {'Offers on ticket: ' + offerCount}
                 </div>

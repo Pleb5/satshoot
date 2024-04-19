@@ -5,18 +5,19 @@
     import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
 
+    import TicketCard from "./TicketCard.svelte";
+    import { TicketStatus, TicketEvent } from "$lib/events/TicketEvent";
+
+    import { offerMakerToSelect } from "$lib/stores/messages";
+
+    import type { NDKFilter, NDKEvent, NDKSubscription } from "@nostr-dev-kit/ndk";
+    import { BTCTroubleshootKind } from "$lib/events/kinds";
+
     import CreateOfferModal from "../Modals/CreateOfferModal.svelte";
 
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
-
-    import TicketCard from "./TicketCard.svelte";
-    import { TicketStatus, type TicketEvent } from "$lib/events/TicketEvent";
-
-    import { offersOnTickets, offersOnTicketsFilter, ticketsOfSpecificOffers } from "$lib/stores/troubleshoot-eventstores";
-    import { offerMakerToSelect } from "$lib/stores/messages";
-
-    import { restartEventStoreWithNotification } from '$lib/utils/helpers';
+    import { onDestroy } from "svelte";
 
     const modalStore = getModalStore();
     
@@ -25,6 +26,9 @@
     export let showTicket: boolean = true;
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
+
+    let subscription: NDKSubscription | undefined = undefined;
+    let alreadySubscribedToTicket = false;
 
     let npub: string;
     let timeSincePosted: string; 
@@ -88,29 +92,27 @@
                 }
             }
 
-            if ($ticketsOfSpecificOffers) {
-                $ticketsOfSpecificOffers.forEach((t: TicketEvent) => {
-                    if (t.ticketAddress === offer?.referencedTicketAddress) {
-                        ticket = t;
-                        const winner = ticket.acceptedOfferAddress;
-                        if (winner === offer.offerAddress){
-                            status = 'Won';
-                        } else if(winner || ticket.status === TicketStatus.Closed) {
-                            status = 'Lost';
-                            statusColor = 'text-error-500';
-                        } else {
-                            // The winner is defined but it is not us so our offer lost
-                            // OR the ticket does not have a winner but it is closed
-                            statusColor = 'text-warning-500';
-                            status = 'Pending';
-                        }
-                        
-                        const aTagFilters = offersOnTicketsFilter['#a'];
-                        if (!aTagFilters?.includes(ticket?.ticketAddress)) {
-                            offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
-
-                            restartEventStoreWithNotification(offersOnTickets);
-                        }
+            if (!alreadySubscribedToTicket) {
+                alreadySubscribedToTicket = true;
+                const dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
+                const ticketFilter: NDKFilter<BTCTroubleshootKind> = {
+                    kinds: [BTCTroubleshootKind.Ticket],
+                    '#d': [dTagOfTicket],
+                }
+                subscription = $ndk.subscribe(ticketFilter, {closeOnEose: false, pool: $ndk.pool});
+                subscription.on('event', (event: NDKEvent) => {
+                    ticket = TicketEvent.from(event);
+                    const winner = ticket.acceptedOfferAddress;
+                    if (winner === offer!.offerAddress){
+                        status = 'Won';
+                    } else if(winner || ticket.status === TicketStatus.Closed) {
+                        status = 'Lost';
+                        statusColor = 'text-error-500';
+                    } else {
+                        // The winner is defined but it is not us so our offer lost
+                        // OR the ticket does not have a winner but it is closed
+                        statusColor = 'text-warning-500';
+                        status = 'Pending';
                     }
                 });
             }
@@ -134,6 +136,10 @@
     function setOfferToSelect() {
         $offerMakerToSelect = (offer as OfferEvent).pubkey;
     }
+
+    onDestroy(() => {
+        subscription?.stop();
+    });
 
 </script>
 
@@ -184,10 +190,30 @@
             {#if showTicket}
                 <hr class="my-2"/>
                 {#if ticket}
-                    <TicketCard ticket={ticket} titleSize={'md md:text-xl'} showChat={false} {countAllOffers} >
+                    <TicketCard 
+                        {ticket}
+                        titleSize={'md md:text-xl'}
+                        showChat={false}
+                        {countAllOffers}
+                    >
                     </TicketCard>
                 {:else}
-                    <h2 class="h2 text-center text-error-500">Loading Ticket for Offer...</h2>
+                    <section class="w-full">
+                        <div class="p-4 space-y-4">
+                            <div class="placeholder animate-pulse" />
+                            <div class="grid grid-cols-3 gap-8">
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                            </div>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                            </div>
+                        </div>
+                    </section>
                 {/if}
             {/if}
         </div>

@@ -3,15 +3,15 @@
     import currentUser from '$lib/stores/login';
     import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
-    import type { OfferEvent } from "$lib/events/OfferEvent";
+    import { OfferEvent } from "$lib/events/OfferEvent";
     import { connected } from "$lib/stores/ndk";
     import { loginAlert } from '$lib/stores/login';
     import redirectStore from '$lib/stores/redirect-store';
 
-    import { offersOnTicketsFilter, offersOnTickets,
-        ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers 
-    } from "$lib/stores/troubleshoot-eventstores";
-    import { restartEventStoreWithNotification } from '$lib/utils/helpers';
+    import UserCard from "$lib/components/User/UserCard.svelte";
+    import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
+    import { BTCTroubleshootKind } from "$lib/events/kinds";
+    import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
 
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
     import TakeOfferModal from "$lib/components/Modals/TakeOfferModal.svelte";
@@ -24,19 +24,38 @@
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
 
-    import { page } from '$app/stores';
-    import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
     import { nip19 } from "nostr-tools";
-    import UserCard from "$lib/components/User/UserCard.svelte";
-    import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
+    
+    import {
+        NDKRelay,
+        type NDKFilter,
+        type NDKSubscriptionOptions,
+        NDKEvent,
+        NDKSubscription 
+    } from "@nostr-dev-kit/ndk";
+
+    import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
+    
+    import { page } from '$app/stores';
     import { goto } from "$app/navigation";
-    import { NDKRelay } from "@nostr-dev-kit/ndk";
+    import { onDestroy } from "svelte";
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
+    const subOptions: NDKSubscriptionOptions = { 
+        closeOnEose: false,
+        pool: $ndk.pool
+    };
+    let ticketSubscription: NDKSubscription | undefined = undefined;
     let ticket: TicketEvent | undefined = undefined;
-    let offers: OfferEvent[] = [];
+    let offersFilter: NDKFilter<BTCTroubleshootKind> = {
+        kinds: [BTCTroubleshootKind.Offer],
+        '#a': [],
+    }
+    let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>
+        = $ndk.storeSubscribe<OfferEvent>(offersFilter, subOptions, OfferEvent);
+    let alreadySubscribedToOffers = false;
     let npub: string | undefined = undefined;
 
     let myTicket = false;
@@ -45,7 +64,71 @@
     let disallowCreateOfferReason = '';
     let loginAlertShown = false;
 
-    // offersOnTickets.subscription?.on('event', ()=> {console.log('event received test')})
+    let needSetup = true;
+
+    // Wait for ndk to connect then setup subscription on ticket from URL params
+    $: if ($connected && needSetup) {
+        needSetup = false;
+        const naddr = $page.params.ticketId;
+        const relaysFromURL = relaysFromNaddr(naddr).split(',');
+        // console.log('ticket relays', relaysFromURL)
+        if (relaysFromURL.length > 0) {
+            relaysFromURL.forEach((relayURL: string) => {
+                if (relayURL) {
+                    $ndk.pool.addRelay(new NDKRelay(relayURL));
+                }
+            });
+        }
+
+        // Create new subscription on this ticket 
+        const dTag = idFromNaddr(naddr).split(':')[2];
+        const ticketFilter: NDKFilter<BTCTroubleshootKind> = {
+            kinds: [BTCTroubleshootKind.Ticket],
+            '#d': [dTag],
+        };
+
+
+        console.log('connected, setting up')
+        ticketSubscription = $ndk.subscribe(ticketFilter, subOptions);
+        ticketSubscription.on('event', (event: NDKEvent) => {
+            ticket = TicketEvent.from(event);
+
+            // Scroll to top as soon as ticket arrives
+            const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+            elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+
+            // TODO: Some effect to show the ticket changed
+
+            if (ticket.status !== TicketStatus.New) {
+                allowCreateOffer = false;
+                disallowCreateOfferReason = "Status of this ticket not 'New' anymore! Cannot Create Offer!";
+            }
+
+            // Subscribe on Offers of this ticket. Do this only once
+            if (!alreadySubscribedToOffers) {
+                alreadySubscribedToOffers = true;
+                // Add a live sub on offers of this ticket if not already subbed
+                // Else already subbed, we can check if new offer arrived on ticket
+                offersFilter['#a']!.push(ticket.ticketAddress);
+                offerStore.startSubscription();
+
+                // Although the store has all the events we could check with svelte
+                // reactive statements but this way we don't have to iterate though
+                // the whole store to find the newest added offer. ndk svelte
+                // stores events in chronological order, not in the order ndk saw the events.
+                // Fine-grained reactivity is still better achieved with a regular subscription
+                offerStore.subscription?.on('event', (event: NDKEvent) => {
+                    const offer = OfferEvent.from(event);
+
+                    if (offer.pubkey === $currentUser?.pubkey) {
+                        allowCreateOffer = false;
+                        disallowCreateOfferReason = 'You already have an offer on ticket!\
+                            Edit your Offer from the Offers-list if you want to change it!';
+                    }
+                });
+            }
+        });
+    };
 
     $: {
         if (!$currentUser){
@@ -79,75 +162,14 @@
             allowCreateOffer = true;
             toastStore.clear();
         }
-        if ($ticketsOfSpecificOffers) {
-            const naddr = $page.params.ticketId;
-            const relaysFromURL = relaysFromNaddr(naddr).split(',');
-            // console.log('ticket relays', relaysFromURL)
-            if (relaysFromURL.length > 0) {
-                relaysFromURL.forEach((relayURL: string) => {
-                    $ndk.pool.addRelay(new NDKRelay(relayURL));
-                });
-            }
+    }
 
-            // console.log('pool after adding relays from URL: ', $ndk.pool)
-
-            const dTag = idFromNaddr(naddr).split(':')[2];
-            const dTagFilters = ticketsOfSpecificOffersFilter['#d'];
-
-            if (!dTagFilters?.includes(dTag) && $connected) {
-                ticketsOfSpecificOffersFilter['#d']?.push(dTag);
-                // Restart subscription
-                restartEventStoreWithNotification(ticketsOfSpecificOffers);
-            } else {
-                $ticketsOfSpecificOffers.forEach((t: TicketEvent) => {
-                    if (idFromNaddr(t.encode()) === idFromNaddr(naddr)){
-                        if (!ticket) {
-                            ticket = TicketEvent.from(t);
-
-                            // Scroll to top as soon as ticket arrives
-                            const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
-                            elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
-
-                            // console.log('setting ticket in ticket page')
-                            if (ticket.status !== TicketStatus.New) {
-                                allowCreateOffer = false;
-                                disallowCreateOfferReason = 'This ticket is already In Progress! No new offers will be accepted!';
-                            }
-                        }
-                    }
-                });
-            }
-        }
-        if (ticket) {
-            npub = nip19.npubEncode(ticket.pubkey);
-            // If there is an active user and it is the creator of this ticket
-            // We will hide create Offer button and the usercard, but enable taking offers
-            if ($currentUser && $currentUser.pubkey === ticket.pubkey) {
-                myTicket = true;
-            }
-
-            // Add a live sub on offers of this ticket if not already subbed
-            // Else already subbed, we can check if new offer arrived on ticket
-            const aTagFilters = offersOnTicketsFilter['#a'];
-            if (!aTagFilters?.includes(ticket?.ticketAddress)) {
-                console.log('offers have not been tracked on this ticket')
-                offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
-
-                restartEventStoreWithNotification(offersOnTickets);
-            } else {
-                offers = [];
-                $offersOnTickets.forEach((offer: OfferEvent) => {
-                    if (offer.referencedTicketAddress === ticket?.ticketAddress) {
-                        offers.push(offer);
-                        if (offer.pubkey === $currentUser?.pubkey) {
-                            allowCreateOffer = false;
-                            disallowCreateOfferReason = 'You already have an offer on ticket! Edit your Offer from the Offers-list if you want to change it!';
-                        }
-                    }
-                });
-
-                offers = offers;
-            }
+    $: if ($currentUser && ticket) {
+        npub = nip19.npubEncode(ticket.pubkey);
+        // If there is an active user and it is the creator of this ticket
+        // We will hide create Offer button and the usercard, but enable taking offers
+        if ($currentUser && $currentUser.pubkey === ticket.pubkey) {
+            myTicket = true;
         }
     }
 
@@ -182,13 +204,17 @@
         } 
     }
 
-
     // For tooltip    
     const popupHover: PopupSettings = {
         event: 'click',
         target: 'popupHover',
         placement: 'top'
     };
+
+    onDestroy(() => {
+        ticketSubscription?.stop()
+        offerStore.empty();
+    });
 
 </script>
 
@@ -224,15 +250,17 @@
         {/if}
     </div>
     <!-- User -->
-    <h2 class="font-bold text-center text-lg sm:text-2xl ml-8 mt-4" >Posted by:</h2>
+    <h2 class="font-bold text-center text-lg sm:text-2xl mt-4" >Posted by:</h2>
     <div class="flex justify-center">
         <UserCard npub={npub} />
     </div>
 {/if}
 <!-- Offers on Ticket -->
-<h2 class="font-bold text-center text-lg sm:text-2xl ml-8 mb-4" >{'Current Offers on this Ticket: ' + offers.length}</h2>
+<h2 class="font-bold text-center text-lg sm:text-2xl mb-4" >
+    {'Current Offers on this Ticket: ' + $offerStore.length}
+</h2>
 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-    {#each offers as offer}
+    {#each $offerStore as offer}
         <div class="flex justify-center">
             <OfferCard {offer} showTicket={false} enableChat={myTicket}>
                 <div slot="takeOffer" class="flex justify-center mt-2">

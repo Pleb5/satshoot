@@ -52,16 +52,17 @@
 
     $: {
         if ($oldTickets && $newTickets) {
+            console.log('oldticket arrived')
             for (let i = 0; i < $oldTickets.length; i++) {
                 $newTickets.forEach((newTicket: TicketEvent)=> {
-                    const inProgressTicket = $oldTickets[i];
-                    if (newTicket.ticketAddress === inProgressTicket.ticketAddress) {
+                    if (newTicket.ticketAddress === $oldTickets[i].ticketAddress) {
                         $newTickets.splice(i, 1);
                     }
                 });
             }
         }
         if($newTickets || filterList) {
+            console.log('new tickets arrived')
             // We just received a new ticket but we are not filtering
             if (filterList.length === 0) {
                 ticketList = new Set($newTickets);
