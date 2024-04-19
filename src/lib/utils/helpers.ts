@@ -18,8 +18,8 @@ import { dev } from '$app/environment';
 
 import { 
     myTicketFilter, myOfferFilter, myTickets, myOffers,
-    ticketsOfSpecificOffers, offersOnTickets,
-    offersOnTicketsFilter, ticketsOfSpecificOffersFilter
+    ticketsOfMyOffers, offersOfMyTickets,
+    offersOfMyTicketsFilter, ticketsOfMyOffersFilter
 } from "$lib/stores/troubleshoot-eventstores";
 
 import { BTCTroubleshootKind } from '$lib/events/kinds';
@@ -42,10 +42,10 @@ export async function initializeUser(ndk: NDK) {
     myTickets.subscription?.on('event',
         (event: NDKEvent) => {
             const ticket = TicketEvent.from(event);
-            if (!offersOnTicketsFilter['#a']?.includes(ticket.ticketAddress)) {
-                offersOnTicketsFilter['#a']?.push(ticket.ticketAddress);
+            if (!offersOfMyTicketsFilter['#a']?.includes(ticket.ticketAddress)) {
+                offersOfMyTicketsFilter['#a']?.push(ticket.ticketAddress);
                 /// Set filter, restart offer sub.
-                restartEventStoreWithNotification(offersOnTickets);
+                restartEventStoreWithNotification(offersOfMyTickets);
             }
         }
     );
@@ -54,10 +54,10 @@ export async function initializeUser(ndk: NDK) {
         (event: NDKEvent) => {
             const offer = OfferEvent.from(event);
             const dTagOfTicket = offer.referencedTicketAddress.split(':')[2] as string;
-            if (!ticketsOfSpecificOffersFilter['#d']?.includes(dTagOfTicket)) {
-                ticketsOfSpecificOffersFilter['#d']?.push(dTagOfTicket);
+            if (!ticketsOfMyOffersFilter['#d']?.includes(dTagOfTicket)) {
+                ticketsOfMyOffersFilter['#d']?.push(dTagOfTicket);
                 /// Set filter, restart ticket sub.
-                restartEventStoreWithNotification(ticketsOfSpecificOffers);
+                restartEventStoreWithNotification(ticketsOfMyOffers);
             }
         }
     );
@@ -66,18 +66,18 @@ export async function initializeUser(ndk: NDK) {
 
     // --------- Notifications based on User Subscriptions and Relevant Tickets/Offers -------- //
 
-    // TODO: check what events are added to ticketsOfSpecificOffers and offersOnTickets!
+    // TODO: check what events are added to ticketsOfMyOffers and offersOfMyTickets!
     // Everything might not be relevant!
     // Start listening to #a and #d tags based on mytickets and myoffers HERE
-    ticketsOfSpecificOffers.startSubscription();
-    offersOnTickets.startSubscription();
+    ticketsOfMyOffers.startSubscription();
+    offersOfMyTickets.startSubscription();
 
     requestNotifications( 
-        (ticketsOfSpecificOffers as NDKEventStore<ExtendedBaseType<TicketEvent>>).subscription!
+        (ticketsOfMyOffers as NDKEventStore<ExtendedBaseType<TicketEvent>>).subscription!
     );
 
     requestNotifications( 
-        (offersOnTickets as NDKEventStore<ExtendedBaseType<OfferEvent>>).subscription!
+        (offersOfMyTickets as NDKEventStore<ExtendedBaseType<OfferEvent>>).subscription!
     );
 
 
@@ -94,11 +94,11 @@ export function restartEventStoreWithNotification<NDKEventStore>(store: NDKEvent
 }
 
 function requestNotifications(subscription: NDKSubscription) {
-    console.log('requesting notifications...', subscription)
+    // console.log('requesting notifications...', subscription)
     subscription.on("event", 
         async (event: NDKEvent, r: NDKRelay, subscription: NDKSubscription) => {
             // Check for new unique events not served from cache
-            console.log('checking notificationsEnabled')
+            // console.log('checking notificationsEnabled')
             if(get(notificationsEnabled) 
                 && subscription.eventFirstSeen.get(event.id) !== 0
             ) {

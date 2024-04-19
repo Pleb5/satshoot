@@ -8,7 +8,7 @@
         myMessageFilter, offerMakerToSelect, selectedPerson
     } from "$lib/stores/messages";
     
-    import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
+    import { offersOfMyTickets, offersOfMyTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
 
     import { restartEventStoreWithNotification } from '$lib/utils/helpers';
 
@@ -450,12 +450,12 @@
                 }
                 myTicket = true;
                 console.log('this is my ticket')
-                const aTagFilters = offersOnTicketsFilter['#a'];
+                const aTagFilters = offersOfMyTicketsFilter['#a'];
                 if (!aTagFilters?.includes(ticketAddress)) {
-                    offersOnTicketsFilter['#a']?.push(ticketAddress);
-                    restartEventStoreWithNotification(offersOnTickets);
+                    offersOfMyTicketsFilter['#a']?.push(ticketAddress);
+                    restartEventStoreWithNotification(offersOfMyTickets);
                 } else if(ticket) {
-                    $offersOnTickets.forEach((offer: OfferEvent) => {
+                    $offersOfMyTickets.forEach((offer: OfferEvent) => {
                         if (offer.referencedTicketAddress === ticketAddress) {
                             if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
                                 console.log('we got a winner in setup')
@@ -468,8 +468,8 @@
         });
     }
 
-    $: if (ticket && myTicket && $offersOnTickets) {
-        $offersOnTickets.forEach((offer: OfferEvent) => {
+    $: if (ticket && myTicket && $offersOfMyTickets) {
+        $offersOfMyTickets.forEach((offer: OfferEvent) => {
             if (offer.referencedTicketAddress === ticketAddress) {
                 // If this is the winner offer, set winner
                 if (!winner) {

@@ -18,7 +18,7 @@
 
     import { 
         newTickets, oldTickets, myTickets,
-        myOffers, offersOnTickets, ticketsOfSpecificOffers 
+        myOffers, offersOfMyTickets, ticketsOfMyOffers 
     } from "$lib/stores/troubleshoot-eventstores";
 
     import { initializeUser } from '$lib/utils/helpers';
@@ -171,8 +171,8 @@
         // UPDATE: $connected store helps initialize things at the right time
         newTickets.startSubscription();
         oldTickets.startSubscription();
-        offersOnTickets.startSubscription();
-        ticketsOfSpecificOffers.startSubscription();
+        offersOfMyTickets.startSubscription();
+        ticketsOfMyOffers.startSubscription();
 
         messageStore.startSubscription();
 
@@ -287,18 +287,6 @@
             // $ndk.activeUser = $ndk.activeUser;
         }
     });
-
-    onDestroy(()=>{
-        // newTickets.unsubscribe();
-        // oldTickets.unsubscribe();
-        // offersOnTickets.unref();
-        // myTickets.unref();
-        // myOffers.unref();
-        // ticketsOfSpecificOffers.unref();
-        //
-        // messageStore.unsubscribe();
-    });
-
 
     const settingsMenu: PopupSettings = {
         event: "click",

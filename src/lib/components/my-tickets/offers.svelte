@@ -6,7 +6,7 @@ import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
-import { myOffers, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from '$lib/stores/troubleshoot-eventstores';
+import { myOffers, ticketsOfMyOffers } from '$lib/stores/troubleshoot-eventstores';
 import OfferCard from '../OrderBook/OfferCard.svelte';
 import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
 
@@ -26,7 +26,7 @@ let hideSearch = true;
 function filterByTicket(offers: OfferEvent[]): OfferEvent[] {
     const filteredOffers = offers.filter((offer: OfferEvent) => {
         let match = false;
-        $ticketsOfSpecificOffers.forEach((t:TicketEvent) => {
+        $ticketsOfMyOffers.forEach((t:TicketEvent) => {
             if (t.ticketAddress === offer.referencedTicketAddress) {
                 const lowerCaseFilter = filterInput.toLowerCase();
 
@@ -66,7 +66,7 @@ function filterOffersByTicket() {
 // Do this every time a new offer is received for the user
 $: {
     // If we got a new offer, push it into the collection 
-    if ($myOffers && $ticketsOfSpecificOffers) {
+    if ($myOffers && $ticketsOfMyOffers) {
         pendingOffers = [];
         wonOffers = [];
         lostOffers = [];
@@ -74,7 +74,7 @@ $: {
         $myOffers.forEach((offer: OfferEvent) => {
             // This approach does not display an offer until it has successfully 
             // retrieved its status from its ticket!
-            $ticketsOfSpecificOffers.forEach((ticket:TicketEvent) => {
+            $ticketsOfMyOffers.forEach((ticket:TicketEvent) => {
                 if (ticket.ticketAddress === offer.referencedTicketAddress) {
                     if (ticket.acceptedOfferAddress === offer.offerAddress) {
                         wonOffers.push(offer);

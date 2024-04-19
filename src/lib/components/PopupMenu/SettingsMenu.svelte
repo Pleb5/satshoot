@@ -12,8 +12,8 @@
 
     import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
 
-    import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfSpecificOffers,
-        ticketsOfSpecificOffersFilter, offersOnTicketsFilter, offersOnTickets 
+    import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfMyOffers,
+        ticketsOfMyOffersFilter, offersOfMyTicketsFilter, offersOfMyTickets 
     } from '$lib/stores/troubleshoot-eventstores';
 
     import { messageStore,  receivedMessageFilter, myMessageFilter } from '$lib/stores/messages';
@@ -91,30 +91,30 @@
                 $loggedIn = false;
 
                 // Remove offer subscriptions that follow offers on myTickets
-        // also remove those that tracked other offers on tickets I bid on as a Troubleshooter(myOffers #a tag or ticketsOfSpecificOffers.ticketAddress)
+        // also remove those that tracked other offers on tickets I bid on as a Troubleshooter(myOffers #a tag or ticketsOfMyOffers.ticketAddress)
 
                 // helper variables
-                let aTagArray = offersOnTicketsFilter['#a'] as string[];
+                let aTagArray = offersOfMyTicketsFilter['#a'] as string[];
                 let restartSubNeeded = false;
                 for (let i = 0; i < aTagArray.length; i++) {
                     let ticketAddr: string = aTagArray[i];
                     $myTickets.forEach((ticket: TicketEvent) => {
                         if (ticket.ticketAddress === ticketAddr) {
-                            offersOnTicketsFilter['#a']?.splice(i, 1);
+                            offersOfMyTicketsFilter['#a']?.splice(i, 1);
                             restartSubNeeded = true;
                         }
                     });
                     $myOffers.forEach((offer: OfferEvent) => {
                         if (offer.referencedTicketAddress === ticketAddr) {
-                            offersOnTicketsFilter['#a']?.splice(i, 1);
+                            offersOfMyTicketsFilter['#a']?.splice(i, 1);
                             restartSubNeeded = true;
                         }
                     });
                 }
 
                 if (restartSubNeeded) {
-                    offersOnTickets.empty();
-                    offersOnTickets.startSubscription();
+                    offersOfMyTickets.empty();
+                    offersOfMyTickets.startSubscription();
                 }
 
                 myTickets.empty();
@@ -122,8 +122,8 @@
                 myTicketFilter.authors = [];
                 myOfferFilter.authors = [];
 
-                ticketsOfSpecificOffers.empty();
-                ticketsOfSpecificOffersFilter['#d'] = [];
+                ticketsOfMyOffers.empty();
+                ticketsOfMyOffersFilter['#d'] = [];
 
                 messageStore.empty();
                 receivedMessageFilter['#t'] = [];

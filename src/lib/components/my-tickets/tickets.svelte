@@ -6,7 +6,6 @@ import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 
 import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
 import { myTickets } from '$lib/stores/troubleshoot-eventstores';
-import { offersOnTickets, offersOnTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
 import TicketCard from '../OrderBook/TicketCard.svelte';
 
 
