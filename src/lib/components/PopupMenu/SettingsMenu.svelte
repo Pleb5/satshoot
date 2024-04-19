@@ -163,7 +163,7 @@
 </script>
 
 <div data-popup="settingsMenu" >
-    <div class="card p-4 w-44 sm:w-60 shadow-xl z-50">
+    <div class="card p-4 w-48 sm:w-60 shadow-xl z-50">
         <nav class="list-nav">
             <ul>
                 <li>
@@ -180,6 +180,7 @@
                 </li>
                 <li>
                     <SlideToggle name='enable-notifications'
+                        class='text-md'
                         active="bg-primary-500"
                         size='sm'
                         bind:checked={$notificationsEnabled}
