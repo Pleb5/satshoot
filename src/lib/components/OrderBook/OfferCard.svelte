@@ -93,15 +93,16 @@
                     if (t.ticketAddress === offer?.referencedTicketAddress) {
                         ticket = t;
                         const winner = ticket.acceptedOfferAddress;
-                        if (!winner){
-                            status = 'Pending';
-                        } else if(winner === offer.offerAddress) {
+                        if (winner === offer.offerAddress){
                             status = 'Won';
-                            statusColor = 'text-warning-500';
+                        } else if(winner || ticket.status === TicketStatus.Closed) {
+                            status = 'Lost';
+                            statusColor = 'text-error-500';
                         } else {
                             // The winner is defined but it is not us so our offer lost
-                            statusColor = 'text-error-500';
-                            status = 'Lost';
+                            // OR the ticket does not have a winner but it is closed
+                            statusColor = 'text-warning-500';
+                            status = 'Pending';
                         }
                         
                         const aTagFilters = offersOnTicketsFilter['#a'];

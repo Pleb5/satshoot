@@ -8,7 +8,7 @@ import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
 import { myOffers, ticketsOfSpecificOffersFilter, ticketsOfSpecificOffers } from '$lib/stores/troubleshoot-eventstores';
 import OfferCard from '../OrderBook/OfferCard.svelte';
-import type { TicketEvent } from '$lib/events/TicketEvent';
+import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
 
 let tabGroup = OfferStatus.Pending;
 
@@ -78,7 +78,9 @@ $: {
                 if (ticket.ticketAddress === offer.referencedTicketAddress) {
                     if (ticket.acceptedOfferAddress === offer.offerAddress) {
                         wonOffers.push(offer);
-                    } else if (ticket.acceptedOfferAddress) {
+                    } else if (ticket.acceptedOfferAddress
+                            || ticket.status === TicketStatus.Closed
+                    ) {
                         lostOffers.push(offer);
                     } else {
                         pendingOffers.push(offer);
