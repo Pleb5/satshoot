@@ -14,14 +14,12 @@ export const subOptions: NDKSubscriptionOptions = { closeOnEose: false, pool: ge
 const newTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
     '#s': [TicketStatus.New.toString()],
-    limit: 5000,
 };
 
 // Need to check for "In progress" or "Closed" status to remove from new tickets when ticket changes
 const oldTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
     '#s': [TicketStatus.InProgress.toString(), TicketStatus.Closed.toString()],
-    limit: 1000,
 };
 
 // Tickets that MY Offers(as a TroubleShooter) reference
@@ -30,7 +28,6 @@ const oldTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
 export const ticketsOfSpecificOffersFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
     '#d': [],
-    limit:10000,
 };
 
 
@@ -39,21 +36,18 @@ export const ticketsOfSpecificOffersFilter: NDKFilter<BTCTroubleshootKind> = {
 export const offersOnTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Offer],
     '#a': [],
-    limit:20000
 };
 
 // The filter's pubkey part will be filled in when user logs in
 export const myTicketFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
     authors: [],
-    limit:10000
 };
 
 // The filter's pubkey part will be filled in when user logs in
 export const myOfferFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Offer], 
     authors: [], 
-    limit:10000
 };
 export const newTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
         = get(ndk).storeSubscribe<TicketEvent>(newTicketsFilter, subOptions, TicketEvent);
