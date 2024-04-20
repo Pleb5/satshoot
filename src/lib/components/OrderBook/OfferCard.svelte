@@ -10,7 +10,7 @@
 
     import { offerMakerToSelect } from "$lib/stores/messages";
 
-    import type { NDKFilter, NDKEvent, NDKSubscription } from "@nostr-dev-kit/ndk";
+    import type { NDKFilter, NDKEvent, NDKSubscription, NDKRelay } from "@nostr-dev-kit/ndk";
     import { BTCTroubleshootKind } from "$lib/events/kinds";
 
     import CreateOfferModal from "../Modals/CreateOfferModal.svelte";
@@ -106,9 +106,14 @@
                 }
                 ticketSubscription = $ndk.subscribe(
                     ticketFilter,
-                    {closeOnEose: false, pool: $ndk.pool},
+                    {
+                        closeOnEose: false,
+                        pool: $ndk.pool,
+                    },
                 );
-                ticketSubscription.on('event', (event: NDKEvent) => {
+                console.log('cacheadapter: ', $ndk.cacheAdapter)
+                ticketSubscription.on('event', (event: NDKEvent, relay: NDKRelay, sub: NDKSubscription) => {
+                    console.log('ticket event arrived. First seend: ', sub.eventFirstSeen)
                     ticket = TicketEvent.from(event);
                     const winner = ticket.acceptedOfferAddress;
                     if (winner === offer!.offerAddress){
@@ -123,7 +128,6 @@
                         status = 'Pending';
                     }
                 });
-                // console.log('subscribing to ticket of this Offer', ticketSubscription)
             }
         } else {
             console.log('offer is null yet!')
@@ -147,7 +151,7 @@
     }
 
     onDestroy(() => {
-        // console.log('Unsubbing from Ticket updates of this Offer')
+        console.log('Unsubbing from Ticket updates of this Offer')
         ticketSubscription?.stop();
     });
 

@@ -111,7 +111,7 @@ $: {
         <svelte:fragment slot="panel">
             {#if tabGroup === OfferStatus.Pending}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredPendingOffers as offer }
+                    {#each filteredPendingOffers as offer(offer.id) }
                         <div class="flex justify-center">
                             <OfferCard {offer} countAllOffers={true} enableChat={true}/>
                         </div>
@@ -119,7 +119,7 @@ $: {
                 </div>
             {:else if tabGroup === OfferStatus.Won}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredWonOffers as offer }
+                    {#each filteredWonOffers as offer(offer.id) }
                         <div class="flex justify-center">
                             <OfferCard {offer} countAllOffers={true} enableChat={true}/>
                         </div>
@@ -127,7 +127,7 @@ $: {
                 </div>
             {:else if tabGroup === OfferStatus.Lost}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredLostOffers as offer }
+                    {#each filteredLostOffers as offer(offer.id) }
                         <div class="flex justify-center">
                             <OfferCard {offer} countAllOffers={true} enableChat={true}/>
                         </div>

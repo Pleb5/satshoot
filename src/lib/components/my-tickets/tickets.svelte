@@ -129,7 +129,7 @@ $: {
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredNewTickets as ticket }
+                    {#each filteredNewTickets as ticket(ticket.id) }
                         <div class="flex justify-center">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                         </div>
@@ -137,7 +137,7 @@ $: {
                 </div>
                 {:else if tabGroup === 1}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredInProgressTickets as ticket }
+                    {#each filteredInProgressTickets as ticket(ticket.id) }
                         <div class="flex justify-center">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                         </div>
@@ -145,7 +145,7 @@ $: {
                 </div>
                 {:else if tabGroup === 2}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredClosedTickets as ticket }
+                    {#each filteredClosedTickets as ticket(ticket.id) }
                         <div class="flex justify-center">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                         </div>
