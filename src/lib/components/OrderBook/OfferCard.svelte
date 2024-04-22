@@ -27,8 +27,16 @@
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
 
+    let ticketFilter: NDKFilter<BTCTroubleshootKind> = {
+        kinds: [BTCTroubleshootKind.Ticket],
+        '#d': [],
+        // This could break subs if low!
+        // Limit of the initial query.
+        // Might be the case that filters are groupable and this 
+        // limits this kind of query. Need to test more...
+        limit: 10000,
+    }
     let ticketSubscription: NDKSubscription | undefined = undefined;
-    let alreadySubscribedToTicket = false;
 
     let npub: string;
     let timeSincePosted: string; 
@@ -92,18 +100,13 @@
                 }
             }
 
-            if (!alreadySubscribedToTicket) {
-                alreadySubscribedToTicket = true;
-                const dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
-                const ticketFilter: NDKFilter<BTCTroubleshootKind> = {
-                    kinds: [BTCTroubleshootKind.Ticket],
-                    '#d': [dTagOfTicket],
-                    // This could break subs if low!
-                    // Limit of the initial query.
-                    // Might be the case that filters are groupable and this 
-                    // limits this kind of query. Need to test more...
-                    limit: 10000,
-                }
+            const dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
+            if (!ticketFilter['#d']!.includes(dTagOfTicket)) {
+
+                if (ticketSubscription) ticketSubscription.stop();
+
+                ticketFilter['#d'] = [dTagOfTicket];
+
                 ticketSubscription = $ndk.subscribe(
                     ticketFilter,
                     {
@@ -113,7 +116,7 @@
                 );
                 console.log('cacheadapter: ', $ndk.cacheAdapter)
                 ticketSubscription.on('event', (event: NDKEvent, relay: NDKRelay, sub: NDKSubscription) => {
-                    console.log('ticket event arrived. First seend: ', sub.eventFirstSeen)
+                    console.log('ticket event arrived. First seen: ', sub.eventFirstSeen)
                     ticket = TicketEvent.from(event);
                     const winner = ticket.acceptedOfferAddress;
                     if (winner === offer!.offerAddress){
@@ -128,6 +131,9 @@
                         status = 'Pending';
                     }
                 });
+                // ticketSubscription.on('event:dup', (event: NDKEvent)=> {
+                //     console.log('duplicate event arrived: ', event)
+                // });
             }
         } else {
             console.log('offer is null yet!')

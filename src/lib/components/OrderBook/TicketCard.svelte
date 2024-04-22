@@ -44,7 +44,12 @@
     let ticketStatus: string;
 
     let offerSubscription: NDKSubscription | undefined = undefined;
-    let alreadySubscribedOnOffers = false;
+    let offersFilter: NDKFilter<BTCTroubleshootKind> = {
+        kinds: [BTCTroubleshootKind.Offer],
+        '#a': [],
+        // This could break subs if low!
+        limit: 10000,
+    }
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';
     let offersAlreadyColor: string = 'text-primary-400-500-token';
@@ -58,6 +63,7 @@
 
     $: if ($currentUser && showChat) {
         ticketChat = true;
+        console.log('currentUser && ticketChat')
     } else ticketChat = false;
 
     $: {
@@ -94,35 +100,32 @@
                     ticketStatus = 'Closed';
                 }
             }
+            console.log('new tickets address: ', ticket.ticketAddress)
 
-            if (countAllOffers && !alreadySubscribedOnOffers) {
-                alreadySubscribedOnOffers = true;
-                let offersFilter: NDKFilter<BTCTroubleshootKind> = {
-                    kinds: [BTCTroubleshootKind.Offer],
-                    '#a': [ticket.ticketAddress],
-                    // This could break subs if low!
-                    limit: 10000,
-                }
-                offerSubscription = $ndk.subscribe(
-                    offersFilter,
-                    {closeOnEose: false, pool: $ndk.pool}
-                );
+            if (countAllOffers) {
+                // If ticket arrived or ticket was changed then start/restart offer sub
+                if (!offersFilter['#a']!.includes(ticket.ticketAddress)) {
+                    if (offerSubscription){
+                        console.log('Stopping obsolete offersub and change filter...')
+                        offerSubscription.stop();
+                    }
+                    console.log('old offer filter tracked: ', offersFilter['#a'])
+                    console.log('new offer filter tracks: ', ticket.ticketAddress)
 
-                offerSubscription.on('event', (event: NDKEvent) => {
-                    const offer = OfferEvent.from(event);
-                    offers.push(offer);
-                    offerCount = offers.length.toString();
-                    offersAlreadyColor = 'text-error-400-500-token';
-                    // This does not do much yet(only number of offers is used)
-                    // offers = offers;
-                });
-                // offerSubscription.on('close', ()=> {
-                //     console.log('offer sub was closed')
-                // })
-                // offerSubscription.on('eose', ()=> {
-                //     console.log('offer sub eose')
-                // })
-                // console.log('subscribed to offers on ticket:', offerSubscription)
+                    offersFilter['#a'] = [ticket.ticketAddress];
+
+                    offerSubscription = $ndk.subscribe(
+                        offersFilter,
+                        {closeOnEose: false, pool: $ndk.pool}
+                    );
+
+                    offerSubscription.on('event', (event: NDKEvent) => {
+                        const offer = OfferEvent.from(event);
+                        offers.push(offer);
+                        offerCount = offers.length.toString();
+                        offersAlreadyColor = 'text-error-400-500-token';
+                    });
+                } 
             }
         }
     }
@@ -178,7 +181,7 @@
     }
 
     onDestroy(()=> {
-        // console.log('unsubbing from offers of ticket')
+        console.log('unsubbing from offers of ticket')
         offerSubscription?.stop();
     });
 
