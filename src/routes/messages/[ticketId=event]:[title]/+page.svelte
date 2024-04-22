@@ -668,8 +668,8 @@
                             on:search={searchText}
                         />
                     </div>
-                    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-container-token">
-                        <button class="input-group-shim">+</button>
+                    <div class="input-group input-group-divider grid-cols-[1fr_auto] rounded-container-token">
+                        <!-- <button class="input-group-shim">+</button> -->
                         <textarea
                             bind:value={currentMessage}
                             class="bg-transparent border-0 ring-0 text-sm"
@@ -708,7 +708,7 @@
 
 <!-- Search on narrow screens -->
 {#if !hideSearchIcon}
-    <div class="fixed bottom-[7.75rem] sm:bottom-[8.15rem] right-4">
+    <div class="fixed bottom-[11rem] sm:bottom-[13rem] right-4">
         <button class="md:hidden btn btn-icon bg-primary-300-600-token"
             on:click={async ()=> {
                 hideSearch = !hideSearch;
