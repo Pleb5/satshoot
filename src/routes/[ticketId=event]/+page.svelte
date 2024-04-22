@@ -218,7 +218,7 @@
 
 </script>
 
-<div class="card m-6 flex justify-center">
+<div class="m-6 flex justify-center">
     <TicketCard {ticket} titleSize='md sm:text-lg' titleLink={false} shortenDescription={false} />
 
 </div>
