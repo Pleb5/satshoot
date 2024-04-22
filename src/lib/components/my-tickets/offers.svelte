@@ -17,49 +17,105 @@ let wonOffers: OfferEvent[] = [];
 let lostOffers: OfferEvent[] = [];
 
 let filterInput = '';
-let filteredPendingOffers: OfferEvent[] = [];
-let filteredWonOffers: OfferEvent[] = [];
-let filteredLostOffers: OfferEvent[] = [];
+let showPendingOffer: Array<boolean> = [];
+let showWonOffer: Array<boolean> = [];
+let showLostOffer: Array<boolean> = [];
 
 let hideSearch = true;
 
-function filterByTicket(offers: OfferEvent[]): OfferEvent[] {
-    const filteredOffers = offers.filter((offer: OfferEvent) => {
-        let match = false;
-        $ticketsOfMyOffers.forEach((t:TicketEvent) => {
-            if (t.ticketAddress === offer.referencedTicketAddress) {
-                const lowerCaseFilter = filterInput.toLowerCase();
+function filterOffersByTicket() {
+    showPendingOffer = [];
+    for (let i = 0; i < pendingOffers.length; i++) {
+        const ticket: TicketEvent = $ticketsOfMyOffers.find((t: TicketEvent) => 
+            t.ticketAddress === pendingOffers[i].referencedTicketAddress
+        );
 
-                const lowerCaseTitle = t.title.toLowerCase();
-                const lowerCaseDescription = t.description.toLowerCase();
+        if (!ticket) continue;
 
-                let tagsContain: boolean = false;
-                t.tags.forEach((tag: NDKTag) => {
-                    if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
-                        tagsContain = true;
-                    }
-                });
+        const lowerCaseFilter = filterInput.toLowerCase();
 
-                const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-                const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+        const lowerCaseTitle = ticket.title.toLowerCase();
+        const lowerCaseDescription = ticket.description.toLowerCase();
 
-                if (titleContains || descContains || tagsContain) {
-                    match = true;
-                }
+        let tagsContain = false;
+        ticket.tags.forEach((tag: NDKTag) => {
+            if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                tagsContain = true;
             }
         });
-        if(match) {
-            return true;
-        }
-        return false;
-    });
-    return filteredOffers;
-}
 
-function filterOffersByTicket() {
-    filteredPendingOffers = filterByTicket(pendingOffers);
-    filteredWonOffers = filterByTicket(wonOffers);
-    filteredLostOffers = filterByTicket(lostOffers);
+        const titleContains = lowerCaseTitle.includes(lowerCaseFilter);
+        const descContains = lowerCaseDescription.includes(lowerCaseFilter);
+
+        if (titleContains || descContains || tagsContain) {
+            showPendingOffer.push(true);
+        } else {
+            showPendingOffer.push(false);
+        }
+    }
+    pendingOffers = pendingOffers;
+
+    showWonOffer = [];
+    for (let i = 0; i < wonOffers.length; i++) {
+        const ticket: TicketEvent = $ticketsOfMyOffers.find((t: TicketEvent) => 
+            t.ticketAddress === wonOffers[i].referencedTicketAddress
+        );
+
+        if (!ticket) continue;
+
+        const lowerCaseFilter = filterInput.toLowerCase();
+
+        const lowerCaseTitle = ticket.title.toLowerCase();
+        const lowerCaseDescription = ticket.description.toLowerCase();
+
+        let tagsContain: boolean = false;
+        ticket.tags.forEach((tag: NDKTag) => {
+            if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                tagsContain = true;
+            }
+        });
+
+        const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
+        const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+
+        if (titleContains || descContains || tagsContain) {
+            showWonOffer.push(true);
+        } else {
+            showWonOffer.push(false);
+        }
+    }
+    wonOffers = wonOffers;
+
+    showLostOffer = [];
+    for (let i = 0; i < lostOffers.length; i++) {
+        const ticket: TicketEvent = $ticketsOfMyOffers.find((t: TicketEvent) => 
+            t.ticketAddress === lostOffers[i].referencedTicketAddress
+        );
+
+        if (!ticket) continue;
+
+        const lowerCaseFilter = filterInput.toLowerCase();
+
+        const lowerCaseTitle = ticket.title.toLowerCase();
+        const lowerCaseDescription = ticket.description.toLowerCase();
+
+        let tagsContain: boolean = false;
+        ticket.tags.forEach((tag: NDKTag) => {
+            if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                tagsContain = true;
+            }
+        });
+
+        const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
+        const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+
+        if (titleContains || descContains || tagsContain) {
+            showLostOffer.push(true);
+        } else {
+            showLostOffer.push(false);
+        }
+    }
+    lostOffers = lostOffers;
 }
 
 // Sort offers into buckets according to state
@@ -111,24 +167,24 @@ $: {
         <svelte:fragment slot="panel">
             {#if tabGroup === OfferStatus.Pending}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredPendingOffers as offer(offer.id) }
-                        <div class="flex justify-center">
+                    {#each pendingOffers as offer, i (offer.id) }
+                        <div class="flex justify-center {showPendingOffer[i] ? '' : 'hidden'}">
                             <OfferCard {offer} countAllOffers={true} enableChat={true}/>
                         </div>
                     {/each}
                 </div>
             {:else if tabGroup === OfferStatus.Won}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredWonOffers as offer(offer.id) }
-                        <div class="flex justify-center">
+                    {#each wonOffers as offer, i (offer.id) }
+                        <div class="flex justify-center {showWonOffer[i] ? '' : 'hidden'}">
                             <OfferCard {offer} countAllOffers={true} enableChat={true}/>
                         </div>
                     {/each}
                 </div>
             {:else if tabGroup === OfferStatus.Lost}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredLostOffers as offer(offer.id) }
-                        <div class="flex justify-center">
+                    {#each lostOffers as offer, i (offer.id) }
+                        <div class="flex justify-center {showLostOffer[i] ? '' : 'hidden'}">
                             <OfferCard {offer} countAllOffers={true} enableChat={true}/>
                         </div>
                     {/each}
@@ -155,8 +211,6 @@ $: {
     <button class="btn btn-icon bg-primary-300-600-token"
         on:click={()=> {
             hideSearch = !hideSearch;
-            filterInput = '';
-            filterOffersByTicket();
         }}
     >
         <span class="">

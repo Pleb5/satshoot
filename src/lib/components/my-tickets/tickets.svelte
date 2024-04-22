@@ -16,78 +16,87 @@ let inProgressTickets: TicketEvent[] = [];
 let closedTickets: TicketEvent[] = [];
 
 let filterInput = '';
-let filteredNewTickets: TicketEvent[] = [];
-let filteredInProgressTickets: TicketEvent[] = [];
-let filteredClosedTickets: TicketEvent[] = [];
+let showNewTicket: Array<boolean> = [];
+let showInProgressTicket: Array<boolean> = [];
+let showClosedTicket: Array<boolean> = [];
 
 let hideSearch = true;
 
 function filterTickets() {
-    filteredNewTickets = newTickets.filter((t: TicketEvent) => {
+    showNewTicket = [];
+    for (let i = 0; i < newTickets.length; i++) {
         const lowerCaseFilter = filterInput.toLowerCase();
 
-        const lowerCaseTitle = t.title.toLowerCase();
-        const lowerCaseDescription = t.description.toLowerCase();
+        const lowerCaseTitle = newTickets[i].title.toLowerCase();
+        const lowerCaseDescription = newTickets[i].description.toLowerCase();
 
-        let tagsContain: boolean = false;
-        t.tags.forEach((tag: NDKTag) => {
+        let tagsContain = false;
+        newTickets[i].tags.forEach((tag: NDKTag) => {
             if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
                 tagsContain = true;
             }
         });
 
-        const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-        const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+        const titleContains = lowerCaseTitle.includes(lowerCaseFilter);
+        const descContains = lowerCaseDescription.includes(lowerCaseFilter);
 
         if (titleContains || descContains || tagsContain) {
-            return true;
+            showNewTicket.push(true);
+        } else {
+            showNewTicket.push(false);
         }
-        return false;
-    });
+    }
+    newTickets = newTickets;
 
-    filteredInProgressTickets = inProgressTickets.filter((t: TicketEvent) => {
+    showInProgressTicket = [];
+    for (let i = 0; i < inProgressTickets.length; i++) {
         const lowerCaseFilter = filterInput.toLowerCase();
 
-        const lowerCaseTitle = t.title.toLowerCase();
-        const lowerCaseDescription = t.description.toLowerCase();
+        const lowerCaseTitle = inProgressTickets[i].title.toLowerCase();
+        const lowerCaseDescription = inProgressTickets[i].description.toLowerCase();
 
-        let tagsContain: boolean = false;
-        t.tags.forEach((tag: NDKTag) => {
+        let tagsContain = false;
+        inProgressTickets[i].tags.forEach((tag: NDKTag) => {
             if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
                 tagsContain = true;
             }
         });
 
-        const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-        const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+        const titleContains = lowerCaseTitle.includes(lowerCaseFilter);
+        const descContains = lowerCaseDescription.includes(lowerCaseFilter);
 
         if (titleContains || descContains || tagsContain) {
-            return true;
+            showInProgressTicket.push(true);
+        } else {
+            showInProgressTicket.push(false);
         }
-        return false;
-    });
+    }
+    inProgressTickets = inProgressTickets;
 
-    filteredClosedTickets = closedTickets.filter((t: TicketEvent) => {
+    showClosedTicket = [];
+    for (let i = 0; i < closedTickets.length; i++) {
         const lowerCaseFilter = filterInput.toLowerCase();
 
-        const lowerCaseTitle = t.title.toLowerCase();
-        const lowerCaseDescription = t.description.toLowerCase();
+        const lowerCaseTitle = closedTickets[i].title.toLowerCase();
+        const lowerCaseDescription = closedTickets[i].description.toLowerCase();
 
-        let tagsContain: boolean = false;
-        t.tags.forEach((tag: NDKTag) => {
+        let tagsContain = false;
+        closedTickets[i].tags.forEach((tag: NDKTag) => {
             if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
                 tagsContain = true;
             }
         });
 
-        const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-        const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+        const titleContains = lowerCaseTitle.includes(lowerCaseFilter);
+        const descContains = lowerCaseDescription.includes(lowerCaseFilter);
 
         if (titleContains || descContains || tagsContain) {
-            return true;
+            showClosedTicket.push(true);
+        } else {
+            showClosedTicket.push(false);
         }
-        return false;
-    });
+    }
+    closedTickets = closedTickets;
 }
 
 // Sort tickets into buckets according to state. Do this every time a new ticket is received for the user
@@ -129,24 +138,24 @@ $: {
         <svelte:fragment slot="panel">
             {#if tabGroup === 0}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredNewTickets as ticket(ticket.id) }
-                        <div class="flex justify-center">
+                    {#each newTickets as ticket, i (ticket.id)}
+                        <div class="flex justify-center {showNewTicket[i] ? '' : 'hidden'}">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                         </div>
                     {/each}
                 </div>
                 {:else if tabGroup === 1}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredInProgressTickets as ticket(ticket.id) }
-                        <div class="flex justify-center">
+                    {#each inProgressTickets as ticket, i (ticket.id)}
+                        <div class="flex justify-center {showInProgressTicket[i] ? '' : 'hidden'}">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                         </div>
                     {/each}
                 </div>
                 {:else if tabGroup === 2}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-                    {#each filteredClosedTickets as ticket(ticket.id) }
-                        <div class="flex justify-center">
+                    {#each closedTickets as ticket, i (ticket.id)}
+                        <div class="flex justify-center {showClosedTicket[i] ? '' : 'hidden'}">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
                         </div>
                     {/each}
@@ -173,8 +182,6 @@ $: {
     <button class="btn btn-icon bg-primary-300-600-token"
         on:click={()=> {
             hideSearch = !hideSearch;
-            filterInput = '';
-            filterTickets();
         }}
     >
         <span class="">
