@@ -2,7 +2,6 @@
     import ndk from "$lib/stores/ndk";
     import type {
         NDKSubscription,
-        NDKSubscriptionOptions,
         NDKFilter,
         NDKEvent
     } from "@nostr-dev-kit/ndk"; 
@@ -23,7 +22,7 @@
     import { goto } from "$app/navigation";
     import ShareTicketModal from "../Modals/ShareTicketModal.svelte";
     import CloseTicketModal from '$lib/components/Modals/CloseTicketModal.svelte';
-    import { onDestroy, onMount } from "svelte";
+    import { onDestroy } from "svelte";
 
     const modalStore = getModalStore();
 			
@@ -65,7 +64,6 @@
 
     $: if ($currentUser && showChat) {
         ticketChat = true;
-        console.log('currentUser && ticketChat')
     } else ticketChat = false;
 
     $: {
@@ -105,17 +103,17 @@
                     statusColor = 'text-error-500';
                 }
             }
-            console.log('new tickets address: ', ticket.ticketAddress)
+            // console.log('new tickets address: ', ticket.ticketAddress)
 
             if (countAllOffers) {
                 // If ticket arrived or ticket was changed then start/restart offer sub
                 if (!offersFilter['#a']!.includes(ticket.ticketAddress)) {
                     if (offerSubscription){
-                        console.log('Stopping obsolete offersub and change filter...')
+                        // console.log('Stopping obsolete offersub and change filter...')
                         offerSubscription.stop();
                     }
-                    console.log('old offer filter tracked: ', offersFilter['#a'])
-                    console.log('new offer filter tracks: ', ticket.ticketAddress)
+                    // console.log('old offer filter tracked: ', offersFilter['#a'])
+                    // console.log('new offer filter tracks: ', ticket.ticketAddress)
 
                     offersFilter['#a'] = [ticket.ticketAddress];
 
@@ -128,7 +126,7 @@
                         const offer = OfferEvent.from(event);
                         offers.push(offer);
                         offerCount = offers.length.toString();
-                        offersAlreadyColor = 'text-error-400-500-token';
+                        offersAlreadyColor = 'text-tertiary-400-500-token';
                     });
                 } 
             }
