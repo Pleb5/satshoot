@@ -61,6 +61,8 @@
         placement: 'bottom'
     };
 
+    let statusColor: string = '';
+
     $: if ($currentUser && showChat) {
         ticketChat = true;
         console.log('currentUser && ticketChat')
@@ -94,10 +96,13 @@
             if (ticket.status >= 0) {
                 if (ticket.status === TicketStatus.New) {
                     ticketStatus = 'New';
+                    statusColor = 'text-primary-400-500-token'
                 } else if (ticket.status === TicketStatus.InProgress) {
                     ticketStatus = 'In Progress';
+                    statusColor = 'text-success-500';
                 } else if (ticket.status === TicketStatus.Closed) {
                     ticketStatus = 'Closed';
+                    statusColor = 'text-error-500';
                 }
             }
             console.log('new tickets address: ', ticket.ticketAddress)
@@ -269,7 +274,7 @@
 
             <div class="">
                 <span class="pr-1">Status: </span>
-                <span class="text-primary-400-500-token font-bold">{ticketStatus}</span>
+                <span class="font-bold {statusColor}">{ticketStatus}</span>
             </div>
             <div class="">
                 <span class="">Posted by: </span>

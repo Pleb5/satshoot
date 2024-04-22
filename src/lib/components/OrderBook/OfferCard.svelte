@@ -121,14 +121,15 @@
                     const winner = ticket.acceptedOfferAddress;
                     if (winner === offer!.offerAddress){
                         status = 'Won';
+                        statusColor = 'text-warning-500';
                     } else if(winner || ticket.status === TicketStatus.Closed) {
                         status = 'Lost';
                         statusColor = 'text-error-500';
                     } else {
                         // The winner is defined but it is not us so our offer lost
                         // OR the ticket does not have a winner but it is closed
-                        statusColor = 'text-warning-500';
                         status = 'Pending';
+                        statusColor = 'text-primary-400-500-token';
                     }
                 });
                 // ticketSubscription.on('event:dup', (event: NDKEvent)=> {
