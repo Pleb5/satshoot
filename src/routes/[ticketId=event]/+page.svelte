@@ -53,8 +53,7 @@
         kinds: [BTCTroubleshootKind.Offer],
         '#a': [],
     }
-    let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>
-        = $ndk.storeSubscribe<OfferEvent>(offersFilter, subOptions, OfferEvent);
+    let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
     let alreadySubscribedToOffers = false;
     let npub: string | undefined = undefined;
 
@@ -85,6 +84,7 @@
         const ticketFilter: NDKFilter<BTCTroubleshootKind> = {
             kinds: [BTCTroubleshootKind.Ticket],
             '#d': [dTag],
+            limit: 1,
         };
 
 
@@ -110,7 +110,9 @@
                 // Add a live sub on offers of this ticket if not already subbed
                 // Else already subbed, we can check if new offer arrived on ticket
                 offersFilter['#a']!.push(ticket.ticketAddress);
-                offerStore.startSubscription();
+                offerStore = $ndk.storeSubscribe<OfferEvent>(
+                    offersFilter, subOptions, OfferEvent
+                );
 
                 // Although the store has all the events we could check with svelte
                 // reactive statements but this way we don't have to iterate though
@@ -213,7 +215,9 @@
 
     onDestroy(() => {
         ticketSubscription?.stop()
-        offerStore.empty();
+        if (offerStore) {
+            offerStore.empty();
+        }
     });
 
 </script>
@@ -257,24 +261,26 @@
 {/if}
 <!-- Offers on Ticket -->
 <h2 class="font-bold text-center text-lg sm:text-2xl mb-4" >
-    {'Current Offers on this Ticket: ' + $offerStore.length}
+    {'Current Offers on this Ticket: ' + ($offerStore ? $offerStore.length : '?') }
 </h2>
 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-    {#each $offerStore as offer}
-        <div class="flex justify-center">
-            <OfferCard {offer} showTicket={false} enableChat={myTicket}>
-                <div slot="takeOffer" class="flex justify-center mt-2">
-                    {#if ticket && myTicket && ticket.status === TicketStatus.New}
-                        <button
-                            type="button"
-                            class="btn btn-lg bg-primary-300-600-token"
-                            on:click={takeOffer(offer)}
-                        >
-                            Take Offer
-                        </button>
-                    {/if}
-                </div>
-            </OfferCard>
-        </div>
-    {/each}
+    {#if $offerStore}
+        {#each $offerStore as offer}
+            <div class="flex justify-center">
+                <OfferCard {offer} showTicket={false} enableChat={myTicket}>
+                    <div slot="takeOffer" class="flex justify-center mt-2">
+                        {#if ticket && myTicket && ticket.status === TicketStatus.New}
+                            <button
+                                type="button"
+                                class="btn btn-lg bg-primary-300-600-token"
+                                on:click={takeOffer(offer)}
+                            >
+                                Take Offer
+                            </button>
+                        {/if}
+                    </div>
+                </OfferCard>
+            </div>
+        {/each}
+    {/if}
 </div>

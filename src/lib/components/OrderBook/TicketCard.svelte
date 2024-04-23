@@ -47,7 +47,7 @@
         kinds: [BTCTroubleshootKind.Offer],
         '#a': [],
         // This could break subs if low!
-        limit: 10000,
+        limit: 10_000,
     }
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';

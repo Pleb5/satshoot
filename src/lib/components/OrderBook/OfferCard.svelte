@@ -34,7 +34,7 @@
         // Limit of the initial query.
         // Might be the case that filters are groupable and this 
         // limits this kind of query. Need to test more...
-        limit: 10000,
+        limit: 10_000,
     }
     let ticketSubscription: NDKSubscription | undefined = undefined;
 
@@ -100,6 +100,7 @@
                 }
             }
 
+        
             const dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
             if (!ticketFilter['#d']!.includes(dTagOfTicket)) {
 
@@ -107,13 +108,7 @@
 
                 ticketFilter['#d'] = [dTagOfTicket];
 
-                ticketSubscription = $ndk.subscribe(
-                    ticketFilter,
-                    {
-                        closeOnEose: false,
-                        pool: $ndk.pool,
-                    },
-                );
+                ticketSubscription = $ndk.subscribe(ticketFilter);
                 console.log('cacheadapter: ', $ndk.cacheAdapter)
                 ticketSubscription.on('event', (event: NDKEvent, relay: NDKRelay, sub: NDKSubscription) => {
                     console.log('ticket event arrived. First seen: ', sub.eventFirstSeen)
