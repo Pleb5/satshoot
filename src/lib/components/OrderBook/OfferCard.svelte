@@ -17,7 +17,7 @@
 
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     const modalStore = getModalStore();
     
@@ -34,7 +34,7 @@
         // Limit of the initial query.
         // Might be the case that filters are groupable and this 
         // limits this kind of query. Need to test more...
-        limit: 10_000,
+        limit: 1,
     }
     let ticketSubscription: NDKSubscription | undefined = undefined;
 
@@ -68,8 +68,45 @@
         }
     }
 
+    function startTicketSub() {
+        if (ticketFilter['#d']!.length > 0) {
+            ticketSubscription = $ndk.subscribe(
+                ticketFilter,
+                {
+                    closeOnEose: false,
+                    pool: $ndk.pool,
+                    groupable: false,
+                }
+            );
+            ticketSubscription.on('event', (event: NDKEvent, relay: NDKRelay, sub: NDKSubscription) => {
+                console.log('ticket event arrived. First seen: ', sub.eventFirstSeen)
+                ticket = TicketEvent.from(event);
+                const winner = ticket.acceptedOfferAddress;
+                if (winner === offer!.offerAddress){
+                    status = 'Won';
+                    statusColor = 'text-warning-500';
+                } else if(winner || ticket.status === TicketStatus.Closed) {
+                    status = 'Lost';
+                    statusColor = 'text-error-500';
+                } else {
+                    // The winner is defined but it is not us so our offer lost
+                    // OR the ticket does not have a winner but it is closed
+                    status = 'Pending';
+                    statusColor = 'text-primary-400-500-token';
+                }
+                offer = offer;
+            });
+            ticketSubscription.on('close', () => {
+                console.log('closed ticketSubscription!', offer)
+            })
+        } else {
+            console.log('Cannot start ticket sub! Filter does not contain a ticket d-tag!')
+        }
+    }
+
     $: {
         if (offer) {
+            console.log('offer changed', offer)
             switch (offer.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';
@@ -102,34 +139,20 @@
 
         
             const dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
+            console.log('ticketfilter', ticketFilter)
             if (!ticketFilter['#d']!.includes(dTagOfTicket)) {
-
-                if (ticketSubscription) ticketSubscription.stop();
+                if (ticketSubscription) {
+                    console.log('stopping ticket sub...')
+                    ticketSubscription.stop();
+                    ticketSubscription = undefined;
+                }
 
                 ticketFilter['#d'] = [dTagOfTicket];
 
-                ticketSubscription = $ndk.subscribe(ticketFilter);
-                console.log('cacheadapter: ', $ndk.cacheAdapter)
-                ticketSubscription.on('event', (event: NDKEvent, relay: NDKRelay, sub: NDKSubscription) => {
-                    console.log('ticket event arrived. First seen: ', sub.eventFirstSeen)
-                    ticket = TicketEvent.from(event);
-                    const winner = ticket.acceptedOfferAddress;
-                    if (winner === offer!.offerAddress){
-                        status = 'Won';
-                        statusColor = 'text-warning-500';
-                    } else if(winner || ticket.status === TicketStatus.Closed) {
-                        status = 'Lost';
-                        statusColor = 'text-error-500';
-                    } else {
-                        // The winner is defined but it is not us so our offer lost
-                        // OR the ticket does not have a winner but it is closed
-                        status = 'Pending';
-                        statusColor = 'text-primary-400-500-token';
-                    }
-                });
-                // ticketSubscription.on('event:dup', (event: NDKEvent)=> {
-                //     console.log('duplicate event arrived: ', event)
-                // });
+                startTicketSub();
+
+            } else {
+                console.log('dont start ticket sub, ticket filter not changed')
             }
         } else {
             console.log('offer is null yet!')
@@ -154,7 +177,10 @@
 
     onDestroy(() => {
         console.log('Unsubbing from Ticket updates of this Offer')
-        ticketSubscription?.stop();
+        console.log('onDestroy', offer)
+        if (ticketSubscription) {
+            ticketSubscription.stop();
+        }
     });
 
 </script>
