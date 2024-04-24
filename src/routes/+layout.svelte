@@ -11,7 +11,15 @@
     import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import { bunkerNDK } from '$lib/stores/ndk';
     import { connected } from "$lib/stores/ndk";
-    import { DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
+    import {
+        DEFAULTRELAYURLS,
+        blacklistedRelays,
+        storedPool,
+        sessionPK,
+    } from "$lib/stores/ndk";
+
+    import { Dexie } from "dexie";
+
     import { loggedIn } from "$lib/stores/login";
     import currentUser from "$lib/stores/login";
     import notificationsEnabled from "$lib/stores/notifications";
@@ -28,7 +36,7 @@
     import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06";
-    import { NDKNip46Signer, NDKNip07Signer, NDKPrivateKeySigner, NDKRelay, NDKUser } from "@nostr-dev-kit/ndk";
+    import { NDKNip46Signer, NDKNip07Signer, NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
     import { privateKeyFromNsec } from "$lib/utils/nip19";
 
     import { AppShell } from '@skeletonlabs/skeleton';
@@ -60,9 +68,8 @@
 
     // Skeleton stores init
     import { initializeStores } from '@skeletonlabs/skeleton';
-    import { onDestroy, onMount } from "svelte";
+    import { onMount } from "svelte";
     import { goto } from "$app/navigation";
-
     // Tickets and Offers
 
     initializeStores();
@@ -113,8 +120,24 @@
             blacklistedRelays.set([]);
         }
         
+
         // Setup client-side caching
         $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'bitcoin-troubleshoot-db' });
+        window.onunhandledrejection = async(event: PromiseRejectionEvent) => {
+            event.preventDefault();
+            console.log(event.reason)
+            if (event.reason.name === Dexie.errnames.DatabaseClosed) {
+                console.log('Could not open Dexie DB, probably version change. Deleting old DB and reloading...')
+                await Dexie.delete('bitcoin-troubleshoot-db');
+                // Must reload to open a brand new DB
+                window.location.reload();
+
+            }
+
+        };
+        // db.on('versionchange', async() => {
+        //     console.log('Dexie DB version changed, deleting old DB...')
+        // });
 
         await $ndk.connect();
         $connected = true;
