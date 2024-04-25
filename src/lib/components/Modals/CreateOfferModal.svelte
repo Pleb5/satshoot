@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { onMount, type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
-    import { NDKRelaySet } from '@nostr-dev-kit/ndk';
-    import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
+    import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     
 	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
@@ -13,6 +12,7 @@
     import { goto } from '$app/navigation';
     import { navigating } from '$app/stores';
     import tabStore from '$lib/stores/tab-store';
+    import { offerTabStore } from "$lib/stores/tab-store";
 
 	// Props
 	/** Exposes parent props to this component. */
@@ -56,11 +56,11 @@
         }
 
         try {
+            const relaysPublished = await offer.publish();
 
-            const relaysPublished = await offer.publish(
-                new NDKRelaySet(new Set($ndk.pool.relays.values()), $ndk)
-            );
             posting = false;
+            
+            $offerTabStore = OfferStatus.Pending;
 
             const t: ToastSettings = {
                 message: 'Offer Posted!',

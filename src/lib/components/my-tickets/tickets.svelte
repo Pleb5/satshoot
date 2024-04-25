@@ -3,13 +3,12 @@ import currentUser from "$lib/stores/login";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
+import { ticketTabStore } from "$lib/stores/tab-store";
 
 import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
 import { myTickets } from '$lib/stores/troubleshoot-eventstores';
 import TicketCard from '../OrderBook/TicketCard.svelte';
 
-
-let tabGroup = TicketStatus.New;
 
 let newTickets: TicketEvent[] = [];
 let inProgressTickets: TicketEvent[] = [];
@@ -125,18 +124,18 @@ $: {
 
 {#if $currentUser}
     <TabGroup justify='justify-evenly' flex='flex-grow'>
-        <Tab bind:group={tabGroup} name="tab1" value={TicketStatus.New}>
+        <Tab bind:group={$ticketTabStore} name="tab1" value={TicketStatus.New}>
             New
         </Tab>
-        <Tab bind:group={tabGroup} name="tab2" value={TicketStatus.InProgress}>
+        <Tab bind:group={$ticketTabStore} name="tab2" value={TicketStatus.InProgress}>
             In Progress
         </Tab>
-        <Tab bind:group={tabGroup} name="tab2" value={TicketStatus.Closed}>
+        <Tab bind:group={$ticketTabStore} name="tab3" value={TicketStatus.Closed}>
             Closed
         </Tab>
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
-            {#if tabGroup === 0}
+            {#if $ticketTabStore === TicketStatus.New}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each newTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showNewTicket[i] ? '' : 'hidden'}">
@@ -144,7 +143,7 @@ $: {
                         </div>
                     {/each}
                 </div>
-                {:else if tabGroup === 1}
+                {:else if $ticketTabStore === TicketStatus.InProgress}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each inProgressTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showInProgressTicket[i] ? '' : 'hidden'}">
@@ -152,7 +151,7 @@ $: {
                         </div>
                     {/each}
                 </div>
-                {:else if tabGroup === 2}
+                {:else if $ticketTabStore === TicketStatus.Closed}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each closedTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showClosedTicket[i] ? '' : 'hidden'}">

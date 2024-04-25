@@ -1,16 +1,14 @@
 <script lang="ts">
-import ndk from '$lib/stores/ndk';
 import currentUser from "$lib/stores/login";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
+import { offerTabStore } from "$lib/stores/tab-store";
 
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
 import { myOffers, ticketsOfMyOffers } from '$lib/stores/troubleshoot-eventstores';
 import OfferCard from '../OrderBook/OfferCard.svelte';
 import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
-
-let tabGroup = OfferStatus.Pending;
 
 let pendingOffers: OfferEvent[] = [];
 let wonOffers: OfferEvent[] = [];
@@ -154,18 +152,31 @@ $: {
 
 {#if $currentUser}
     <TabGroup justify='justify-evenly' flex='flex-grow'>
-        <Tab bind:group={tabGroup} name="tab1" value={OfferStatus.Pending}>
+        <Tab
+            bind:group={$offerTabStore}
+            name="offerTab1"
+            value={OfferStatus.Pending}
+
+        >
             Pending
         </Tab>
-        <Tab bind:group={tabGroup} name="tab2" value={OfferStatus.Won}>
+        <Tab
+            bind:group={$offerTabStore}
+            name="offerTab2"
+            value={OfferStatus.Won}
+        >
             Won
         </Tab>
-        <Tab bind:group={tabGroup} name="tab3" value={OfferStatus.Lost}>
+        <Tab
+            bind:group={$offerTabStore}
+            name="offerTab3"
+            value={OfferStatus.Lost}
+        >
             Lost
         </Tab>
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
-            {#if tabGroup === OfferStatus.Pending}
+            {#if $offerTabStore === OfferStatus.Pending}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each pendingOffers as offer, i (offer.id) }
                         <div class="flex justify-center {showPendingOffer[i] ? '' : 'hidden'}">
@@ -173,7 +184,7 @@ $: {
                         </div>
                     {/each}
                 </div>
-            {:else if tabGroup === OfferStatus.Won}
+            {:else if $offerTabStore === OfferStatus.Won}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each wonOffers as offer, i (offer.id) }
                         <div class="flex justify-center {showWonOffer[i] ? '' : 'hidden'}">
@@ -181,7 +192,7 @@ $: {
                         </div>
                     {/each}
                 </div>
-            {:else if tabGroup === OfferStatus.Lost}
+            {:else if $offerTabStore === OfferStatus.Lost}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each lostOffers as offer, i (offer.id) }
                         <div class="flex justify-center {showLostOffer[i] ? '' : 'hidden'}">
