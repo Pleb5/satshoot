@@ -9,7 +9,12 @@ import { OfferEvent } from '$lib/events/OfferEvent';
 import { get } from "svelte/store";
 
 // Export necessary when restarting a subscription with a new filter
-export const subOptions: NDKSubscriptionOptions = { closeOnEose: false, pool: get(ndk).pool };
+export const subOptions: NDKSubscriptionOptions = {
+    closeOnEose: false,
+    pool: get(ndk).pool,
+    groupable: false,
+    autoStart: false,
+};
 
 const newTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
@@ -55,10 +60,10 @@ export const newTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
 export const oldTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
         = get(ndk).storeSubscribe<TicketEvent>(oldTicketsFilter, subOptions, TicketEvent);
 
-export let ticketsOfMyOffers:NDKEventStore<ExtendedBaseType<TicketEvent>>
+export const ticketsOfMyOffers:NDKEventStore<ExtendedBaseType<TicketEvent>>
 = get(ndk).storeSubscribe<TicketEvent>(ticketsOfMyOffersFilter, subOptions, TicketEvent);
 
-export let offersOfMyTickets:NDKEventStore<ExtendedBaseType<OfferEvent>>
+export const offersOfMyTickets:NDKEventStore<ExtendedBaseType<OfferEvent>>
         = get(ndk).storeSubscribe<OfferEvent>(offersOfMyTicketsFilter, subOptions, OfferEvent);
 
 export const myTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
