@@ -1,4 +1,3 @@
-import NDK from '@nostr-dev-kit/ndk';
 import type { 
     NDKSigner, NDKEvent,
     NDKRelay, NDKSubscription,
@@ -19,7 +18,6 @@ import { dev } from '$app/environment';
 import { 
     myTicketFilter, myOfferFilter, myTickets, myOffers,
     ticketsOfMyOffers, offersOfMyTickets,
-    offersOfMyTicketsFilter, ticketsOfMyOffersFilter
 } from "$lib/stores/troubleshoot-eventstores";
 
 import { BTCTroubleshootKind } from '$lib/events/kinds';
@@ -33,44 +31,12 @@ export async function initializeUser(ndk: NDK) {
     currentUser.set(user);
 
     // --------------- User Subscriptions -------------- //
-    myTicketFilter.authors?.push(user.pubkey);
-    myOfferFilter.authors?.push(user.pubkey);
-
-    myTickets.startSubscription();
-    myOffers.startSubscription();
-
-    myTickets.subscription?.on('event',
-        (event: NDKEvent) => {
-            const ticket = TicketEvent.from(event);
-            if (!offersOfMyTicketsFilter['#a']?.includes(ticket.ticketAddress)) {
-                offersOfMyTicketsFilter['#a']?.push(ticket.ticketAddress);
-                /// Set filter, restart offer sub.
-                restartEventStoreWithNotification(offersOfMyTickets);
-            }
-        }
-    );
-
-    myOffers.subscription?.on('event',
-        (event: NDKEvent) => {
-            const offer = OfferEvent.from(event);
-            const dTagOfTicket = offer.referencedTicketAddress.split(':')[2] as string;
-            if (!ticketsOfMyOffersFilter['#d']?.includes(dTagOfTicket)) {
-                ticketsOfMyOffersFilter['#d']?.push(dTagOfTicket);
-                /// Set filter, restart ticket sub.
-                restartEventStoreWithNotification(ticketsOfMyOffers);
-            }
-        }
-    );
-
-
-
-    // --------- Notifications based on User Subscriptions and Relevant Tickets/Offers -------- //
-
-    // TODO: check what events are added to ticketsOfMyOffers and offersOfMyTickets!
-    // Everything might not be relevant!
-    // Start listening to #a and #d tags based on mytickets and myoffers HERE
     ticketsOfMyOffers.startSubscription();
     offersOfMyTickets.startSubscription();
+
+
+    //
+    // --------- Notifications based on myOffers and myTickets -------- //
 
     requestNotifications( 
         (ticketsOfMyOffers as NDKEventStore<ExtendedBaseType<TicketEvent>>).subscription!
@@ -80,6 +46,11 @@ export async function initializeUser(ndk: NDK) {
         (offersOfMyTickets as NDKEventStore<ExtendedBaseType<OfferEvent>>).subscription!
     );
 
+    myTicketFilter.authors?.push(user.pubkey);
+    myOfferFilter.authors?.push(user.pubkey);
+
+    myTickets.startSubscription();
+    myOffers.startSubscription();
 
     // --------- User Profile --------------- //
 

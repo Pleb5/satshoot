@@ -121,7 +121,6 @@
                 // Fine-grained reactivity is still better achieved with a regular subscription
                 offerStore.subscription?.on('event', (event: NDKEvent) => {
                     const offer = OfferEvent.from(event);
-
                     if (offer.pubkey === $currentUser?.pubkey) {
                         allowCreateOffer = false;
                         disallowCreateOfferReason = 'You already have an offer on ticket!\
@@ -131,6 +130,16 @@
             }
         });
     };
+
+    $: if ($offerStore) {
+        $offerStore.forEach((offer: OfferEvent) => {
+            if (offer.pubkey === $currentUser?.pubkey) {
+                allowCreateOffer = false;
+                disallowCreateOfferReason = 'You already have an offer on ticket!\
+                    Edit your Offer from the Offers-list if you want to change it!';
+            }
+        });
+    }
 
     $: {
         if (!$currentUser){

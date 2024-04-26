@@ -22,14 +22,14 @@
 
     import { loggedIn } from "$lib/stores/login";
     import currentUser from "$lib/stores/login";
-    import notificationsEnabled from "$lib/stores/notifications";
 
     import { 
-        newTickets, oldTickets, myTickets,
-        myOffers, offersOfMyTickets, ticketsOfMyOffers 
+        newTickets, oldTickets, myTickets, myOffers,
+        offersOfMyTicketsFilter, ticketsOfMyOffersFilter,
+        offersOfMyTickets, ticketsOfMyOffers
     } from "$lib/stores/troubleshoot-eventstores";
 
-    import { initializeUser } from '$lib/utils/helpers';
+    import { initializeUser, restartEventStoreWithNotification} from '$lib/utils/helpers';
     
     import { messageStore } from "$lib/stores/messages";
 
@@ -194,9 +194,6 @@
         // UPDATE: $connected store helps initialize things at the right time
         newTickets.startSubscription();
         oldTickets.startSubscription();
-        offersOfMyTickets.startSubscription();
-        ticketsOfMyOffers.startSubscription();
-
         messageStore.startSubscription();
 
 // ------------------------ Restore Login -----------------------------------
@@ -364,9 +361,35 @@
         toastId = toastStore.trigger(t);
     }
 
-    // NOTIFICATIONS
-    $: if( ($myTickets || $myOffers) && $notificationsEnabled) {
+    $: if($myTickets) {
+        const offerFilters: string[] = offersOfMyTicketsFilter['#a'];
+        let restartNeeded = false;
+        for(const ticket of $myTickets) {
+            if (!offerFilters.includes(ticket.ticketAddress)) {
+                offerFilters.push(ticket.ticketAddress);
+                restartNeeded = true;
+            }
+        }
 
+        if (restartNeeded) {
+            restartEventStoreWithNotification(offersOfMyTickets);
+        }
+    }
+
+    $: if ($myOffers) {
+        const dTags: string[] = ticketsOfMyOffersFilter['#d'];
+        let restartNeeded = false;
+        for(const offer of $myOffers) {
+            const dTagOfTicket = offer.referencedTicketAddress.split(':')[2] as string;
+            if (!dTags.includes(dTagOfTicket)) {
+                dTags.push(dTagOfTicket);
+                restartNeeded = true;
+            }
+        }
+
+        if (restartNeeded) {
+            restartEventStoreWithNotification(ticketsOfMyOffers);
+        }
     }
 
 </script>
