@@ -452,15 +452,24 @@
                 background="bg-surface-100-800-token"
             >
                 <svelte:fragment slot="lead">
-                    <AppRailAnchor href="/" selected={$page.url.pathname === '/'}>
+                    <AppRailAnchor
+                        href="/"
+                        selected={$page.url.pathname === '/'}
+                    >
                         <MenuItem_1 />
                     </AppRailAnchor>
 
-                    <AppRailAnchor href="/post-ticket" selected={$page.url.pathname === '/post-ticket'}>
+                    <AppRailAnchor
+                        href="/post-ticket"
+                        selected={$page.url.pathname.includes('/post-ticket')}
+                    >
                         <MenuItem_2 />
                     </AppRailAnchor>
 
-                    <AppRailAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>
+                    <AppRailAnchor 
+                        href="/my-tickets" 
+                        selected={$page.url.pathname.includes('/my-tickets')}
+                    >
                         <MenuItem_3 />
                     </AppRailAnchor>
                 </svelte:fragment>
@@ -482,15 +491,24 @@
             background="bg-surface-100-800-token"
             class="lg:hidden w-full"
         >
-            <TabAnchor href="/" selected={$page.url.pathname === '/'}>
+            <TabAnchor 
+                href="/" 
+                selected={$page.url.pathname === '/'}
+            >
                 <MenuItem_1 />
             </TabAnchor>
 
-            <TabAnchor href="/post-ticket" selected={$page.url.pathname === '/post-ticket'}>
+            <TabAnchor 
+                href="/post-ticket"
+                selected={$page.url.pathname.includes('/post-ticket')}
+            >
                 <MenuItem_2 />
             </TabAnchor>
 
-            <TabAnchor href="/my-tickets" selected={$page.url.pathname === '/my-tickets'}>
+            <TabAnchor 
+                href="/my-tickets"
+                selected={$page.url.pathname.includes('/my-tickets')}
+            >
                 <MenuItem_3 />
             </TabAnchor>
 
