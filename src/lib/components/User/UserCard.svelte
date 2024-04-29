@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from '$lib/stores/login';
-    import { NDKEvent, NDKRelaySet, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
+    import { NDKEvent, NDKRelaySet, NDKSubscriptionCacheUsage, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 
     import { connected } from "$lib/stores/ndk";
 
@@ -44,27 +44,25 @@
     // Some strange behavior around ndk, user and ndk.activeUser when recursively
     // assigning ndk.getUser(npub) -> user.ndk = this -> user.ndk.activeUser = ...?
     // user.ndk.activeUser.ndk = .... ???!!! infinte recursion of assignments?
-    $: {
-        if (npub && needProfile && $connected) {
-            // console.log('setting user and profile')
-            needProfile = false;
-            let opts = { npub: npub };
-            try {
-                // console.log('user is undefined, setting user')
-                user = $ndk.getUser(opts);
-                editable = $currentUser?.npub === npub;
-                // ndk.activeUser is undefined at this point but
-                // user.ndk.activeUser is the logged in user?!?!
-                profilePromise = user.fetchProfile();
-                profilePromise.then((profile:NDKUserProfile | null) => {
-                    // console.log('profile promise arrived')
-                    aboutText = profile?.about ?? user?.profile?.bio ?? ""; 
-                    userNameText = profile?.name ?? user?.profile?.displayName ?? "";
-                    lud16Text = profile?.lud16 ?? '';
-                });
-            } catch (e) {
-                console.error(`error trying to get user`, { opts }, e);
-            }
+    $: if (npub && needProfile && $connected) {
+        console.log('setting user and profile')
+        let opts = { npub: npub };
+        try {
+            // console.log('user is undefined, setting user')
+            user = $ndk.getUser(opts);
+            editable = $currentUser?.npub === npub;
+            // ndk.activeUser is undefined at this point but
+            // user.ndk.activeUser is the logged in user?!?!
+            profilePromise = user.fetchProfile();
+            profilePromise.then((profile:NDKUserProfile | null) => {
+                needProfile = false;
+                console.log('profile promise arrived')
+                aboutText = profile?.about ?? profile?.bio ?? ""; 
+                userNameText = profile?.name ?? profile?.displayName ?? "";
+                lud16Text = profile?.lud16 ?? '';
+            });
+        } catch (e) {
+            console.error(`error trying to get user`, { opts }, e);
         }
     }
 
@@ -122,12 +120,14 @@
             return;
         }
         if (user) {
-            event.author = user;
             try {
                 const relaysPublished = await event.publish();
+                console.log('relaysPublished', relaysPublished)
 
-                profilePromise = user.fetchProfile();
-                await profilePromise;
+                profilePromise = user.fetchProfile(
+                    {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY}
+                );
+
                 const t: ToastSettings = {
                     message:`Profile changed!`,
                 };
