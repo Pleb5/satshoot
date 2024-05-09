@@ -46,7 +46,6 @@
     let offersFilter: NDKFilter<BTCTroubleshootKind> = {
         kinds: [BTCTroubleshootKind.Offer],
         '#a': [],
-        // This could break subs if low!
         limit: 10_000,
     }
     let offers: OfferEvent[] = [];

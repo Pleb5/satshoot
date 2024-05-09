@@ -17,7 +17,7 @@
 
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
-    import { onDestroy, onMount } from "svelte";
+    import { onDestroy } from "svelte";
 
     const modalStore = getModalStore();
     
@@ -30,10 +30,6 @@
     let ticketFilter: NDKFilter<BTCTroubleshootKind> = {
         kinds: [BTCTroubleshootKind.Ticket],
         '#d': [],
-        // This could break subs if low!
-        // Limit of the initial query.
-        // Might be the case that filters are groupable and this 
-        // limits this kind of query. Need to test more...
         limit: 1,
     }
     let ticketSubscription: NDKSubscription | undefined = undefined;
@@ -176,8 +172,8 @@
     }
 
     onDestroy(() => {
-        console.log('Unsubbing from Ticket updates of this Offer')
-        console.log('onDestroy', offer)
+        // console.log('Unsubbing from Ticket updates of this Offer')
+        // console.log('onDestroy', offer)
         if (ticketSubscription) {
             ticketSubscription.stop();
         }
