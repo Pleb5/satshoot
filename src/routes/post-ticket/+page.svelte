@@ -113,51 +113,63 @@
                     ticket.tags.push(['d', $ticketToEdit.tagValue('d') as string]);
                 }
 
-                const relays = await ticket.publish();
-                console.log(relays)
-                console.log('onrelays', ticket.onRelays)
+                try {
+                    const relays = await ticket.publish();
+                    console.log(relays)
+                    console.log('onrelays', ticket.onRelays)
 
 
-                posting = false;
+                    posting = false;
 
-                $ticketToEdit = null;
+                    $ticketToEdit = null;
 
-                // Ticket posted Modal
-                const modal: ModalSettings = {
-                    type: 'alert',
-                    // Data
-                    title: 'Success!',
-                    body: 'Ticket posted successfully!',
-                    buttonTextCancel:'Ok',
-                };
-                modalStore.trigger(modal);
+                    // Ticket posted Modal
+                    const modal: ModalSettings = {
+                        type: 'alert',
+                        // Data
+                        title: 'Success!',
+                        body: 'Ticket posted successfully!',
+                        buttonTextCancel:'Ok',
+                    };
+                    modalStore.trigger(modal);
 
-                let shareTicketResponse = function(r: boolean){
-                    if (r) {
-                        const modalComponent: ModalComponent = {
-                            ref: ShareTicketModal,
-                            props: {ticket: ticket},
-                        };
+                    let shareTicketResponse = function(r: boolean){
+                        if (r) {
+                            const modalComponent: ModalComponent = {
+                                ref: ShareTicketModal,
+                                props: {ticket: ticket},
+                            };
 
-                        const shareModal: ModalSettings = {
-                            type: 'component',
-                            component: modalComponent,
-                        };
-                        modalStore.trigger(shareModal);
+                            const shareModal: ModalSettings = {
+                                type: 'component',
+                                component: modalComponent,
+                            };
+                            modalStore.trigger(shareModal);
+                        }
                     }
-                }
-                const postAsTextModal: ModalSettings = {
-                    type: 'confirm',
-                    title: 'Share Ticket as Text Note?',
-                    body: 'It will show up in your feed on popular clients.',
-                    buttonTextCancel: 'No thanks',
-                    buttonTextConfirm: 'Of course!',
-                    response: shareTicketResponse,
-                };
-                modalStore.trigger(postAsTextModal);
+                    const postAsTextModal: ModalSettings = {
+                        type: 'confirm',
+                        title: 'Share Ticket as Text Note?',
+                        body: 'It will show up in your feed on popular clients.',
+                        buttonTextCancel: 'No thanks',
+                        buttonTextConfirm: 'Of course!',
+                        response: shareTicketResponse,
+                    };
+                    modalStore.trigger(postAsTextModal);
 
-                $tabStore = 0;
-                goto('/my-tickets');
+                    $tabStore = 0;
+                    goto('/my-tickets');
+                } catch(e) {
+                    posting = false;
+                    console.log(ticket)
+                    const t: ToastSettings = {
+                        message: 'Could not post ticket: ' + e,
+                        timeout: 7000,
+                        background: 'bg-error-300-600-token',
+                    };
+                    toastStore.trigger(t);
+                }
+
             } else {
                 const t: ToastSettings = {
                     message: 'No Active User to post the Ticket!',
