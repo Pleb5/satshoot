@@ -1,7 +1,12 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from '$lib/stores/login';
-    import { NDKEvent, NDKRelaySet, NDKSubscriptionCacheUsage, type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
+    import {
+        NDKEvent, 
+        NDKSubscriptionCacheUsage,
+        type NDKUser,
+        type NDKUserProfile
+    } from "@nostr-dev-kit/ndk";
 
     import { connected } from "$lib/stores/ndk";
 
@@ -53,7 +58,9 @@
             editable = $currentUser?.npub === npub;
             // ndk.activeUser is undefined at this point but
             // user.ndk.activeUser is the logged in user?!?!
-            profilePromise = user.fetchProfile();
+            profilePromise = user.fetchProfile(
+                {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY}
+            );
             profilePromise.then((profile:NDKUserProfile | null) => {
                 needProfile = false;
                 console.log('profile promise arrived')
