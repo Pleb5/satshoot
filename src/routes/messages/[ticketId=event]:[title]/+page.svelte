@@ -450,11 +450,7 @@
                 }
                 myTicket = true;
                 console.log('this is my ticket')
-                const aTagFilters = offersOfMyTicketsFilter['#a'];
-                if (!aTagFilters?.includes(ticketAddress)) {
-                    offersOfMyTicketsFilter['#a']?.push(ticketAddress);
-                    restartEventStoreWithNotification(offersOfMyTickets);
-                } else if(ticket) {
+                if(ticket) {
                     $offersOfMyTickets.forEach((offer: OfferEvent) => {
                         if (offer.referencedTicketAddress === ticketAddress) {
                             if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
@@ -478,9 +474,7 @@
                         winner = offer.pubkey;
                     }
                 }
-                if (offer.pubkey !== ($currentUser as NDKUser).pubkey) {
-                    addPerson(offer.pubkey);
-                }
+                addPerson(offer.pubkey);
             }
         });
     }
