@@ -81,7 +81,7 @@
                 if (winner === offer!.offerAddress){
                     status = 'Won';
                     statusColor = 'text-warning-500';
-                } else if(winner || ticket.status === TicketStatus.Closed) {
+                } else if(winner || ticket.isClosed()) {
                     status = 'Lost';
                     statusColor = 'text-error-500';
                 } else {

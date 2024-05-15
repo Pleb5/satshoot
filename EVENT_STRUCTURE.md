@@ -27,35 +27,13 @@
                 ...
         ["p", <hex public keyN>],
 
-        // This could be replaced by a NIP65 Relay List?
-        // Relays the Bitcoiner writes Tickets  
-        ["r", "wss://...", write],
-        ["r", "wss://...", write],
-        ["r", "wss://...", write],
-        ["r", "wss://...", write],
-                ...
-
-        // Relays where the Bitcoiner is expecting offers | optional
-        ["r", "wss://...", read],
-        ["r", "wss://...", read],
-        ["r", "wss://...", read],
-        ["r", "wss://...", read],
-                ... 
-
-        // Relays the Bitcoiner reads AND writes Tickets  
-        ["r", "wss://..."],
-        ["r", "wss://..."],
-        ["r", "wss://..."],
-        ["r", "wss://..."],
-                ...
-
         // Preferred languages of the Bitcoiner | string, optional
         ["languages",<language1>, <language2>, ..., <languageN>],
 
         // Milestones if the Bitcoiner wants to define multiple steps for the ticket | string, optional
         ["milestones", <milestone1>, <milestone2>, ...,<milestoneN> ],
 
-        ["s", <0(new) OR 1(in progress) OR 2(closed)>],
+        ["s", <0(new) OR 1(in progress) OR 2(Resolved) or 3(Failed)>],
 
         // If Bitcoiner accepts an offer she SHOULD set this tag
         ["a", 32768:<hex pubkey of Troubleshooter>:<Offer ID from a d-tag of an offer>],

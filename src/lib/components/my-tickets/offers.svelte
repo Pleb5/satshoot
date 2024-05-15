@@ -133,7 +133,7 @@ $: {
                     if (ticket.acceptedOfferAddress === offer.offerAddress) {
                         wonOffers.push(offer);
                     } else if (ticket.acceptedOfferAddress
-                            || ticket.status === TicketStatus.Closed
+                            || ticket.isClosed()
                     ) {
                         lostOffers.push(offer);
                     } else {

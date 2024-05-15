@@ -97,10 +97,14 @@
                 } else if (ticket.status === TicketStatus.InProgress) {
                     ticketStatus = 'In Progress';
                     statusColor = 'text-success-500';
-                } else if (ticket.status === TicketStatus.Closed) {
-                    ticketStatus = 'Closed';
+                } else if (ticket.status === TicketStatus.Resolved) {
+                    ticketStatus = 'Resolved';
+                    statusColor = 'text-tertiary-500';
+                } else if (ticket.status === TicketStatus.Failed) {
+                    ticketStatus = 'Resolved';
                     statusColor = 'text-error-500';
                 }
+
             }
             // console.log('new tickets address: ', ticket.ticketAddress)
 

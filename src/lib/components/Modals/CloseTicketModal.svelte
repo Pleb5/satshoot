@@ -23,7 +23,7 @@
             ticketToPublish.tags = ticket.tags;
             ticketToPublish.description = ticket.description;
             // Important part! This also sets status to in progress
-            ticketToPublish.status = TicketStatus.Closed;
+            ticketToPublish.status = TicketStatus.Resolved;
 
             try {
                 closing = true;

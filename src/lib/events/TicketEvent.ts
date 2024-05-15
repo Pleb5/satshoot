@@ -4,7 +4,8 @@ import { NDKEvent, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
 export enum TicketStatus {
     New = 0,
     InProgress = 1,
-    Closed = 2,
+    Resolved = 2,
+    Failed = 3,
 }
 
 
@@ -61,6 +62,10 @@ export class TicketEvent extends NDKEvent {
         this._status = status;
         this.removeTag('s');
         this.tags.push(['s', status.toString()]);
+    }
+
+    public isClosed(): boolean {
+        return this._status === (TicketStatus.Resolved || TicketStatus.Failed);
     }
     
     get description(): string {

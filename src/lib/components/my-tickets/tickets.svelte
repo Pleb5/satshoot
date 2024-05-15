@@ -110,7 +110,7 @@ $: {
                 newTickets.push(ticket);
             } else if (ticket.status === TicketStatus.InProgress) {
                 inProgressTickets.push(ticket);
-            } else if (ticket.status === TicketStatus.Closed) {
+            } else if (ticket.isClosed()) {
                 closedTickets.push(ticket);
             }
         });
@@ -130,7 +130,7 @@ $: {
         <Tab bind:group={$ticketTabStore} name="tab2" value={TicketStatus.InProgress}>
             In Progress
         </Tab>
-        <Tab bind:group={$ticketTabStore} name="tab3" value={TicketStatus.Closed}>
+        <Tab bind:group={$ticketTabStore} name="tab3" value={TicketStatus.Resolved}>
             Closed
         </Tab>
         <!-- Tab Panels --->
@@ -151,7 +151,7 @@ $: {
                         </div>
                     {/each}
                 </div>
-                {:else if $ticketTabStore === TicketStatus.Closed}
+                {:else if $ticketTabStore === TicketStatus.Resolved}
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each closedTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showClosedTicket[i] ? '' : 'hidden'}">
