@@ -379,7 +379,6 @@
         receivedMessageFilter['#p'] = [];
         receivedMessageFilter['#t'] = [];
 
-        messageStore.empty();
     });
 
     // If there is a logged in user, start receiving messages related to the ticket

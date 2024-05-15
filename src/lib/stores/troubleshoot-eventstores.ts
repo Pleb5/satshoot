@@ -16,15 +16,8 @@ export const subOptions: NDKSubscriptionOptions = {
     autoStart: false,
 };
 
-const newTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
+const allTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Ticket],
-    '#s': [TicketStatus.New.toString()],
-};
-
-// Need to check for "In progress" or "Closed" status to remove from new tickets when ticket changes
-const oldTicketsFilter: NDKFilter<BTCTroubleshootKind> = {
-    kinds: [BTCTroubleshootKind.Ticket],
-    '#s': [TicketStatus.InProgress.toString(), TicketStatus.Closed.toString()],
 };
 
 // Tickets that MY Offers(as a TroubleShooter) reference
@@ -54,11 +47,8 @@ export const myOfferFilter: NDKFilter<BTCTroubleshootKind> = {
     kinds: [BTCTroubleshootKind.Offer], 
     authors: [], 
 };
-export const newTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
-        = get(ndk).storeSubscribe<TicketEvent>(newTicketsFilter, subOptions, TicketEvent);
-
-export const oldTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
-        = get(ndk).storeSubscribe<TicketEvent>(oldTicketsFilter, subOptions, TicketEvent);
+export const allTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
+        = get(ndk).storeSubscribe<TicketEvent>(allTicketsFilter, subOptions, TicketEvent);
 
 export const ticketsOfMyOffers:NDKEventStore<ExtendedBaseType<TicketEvent>>
 = get(ndk).storeSubscribe<TicketEvent>(ticketsOfMyOffersFilter, subOptions, TicketEvent);

@@ -7,7 +7,6 @@
     import type { ToastSettings, ModalSettings } from '@skeletonlabs/skeleton';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { type SvelteComponent, tick } from "svelte";
-    import { newTickets } from "$lib/stores/troubleshoot-eventstores";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -31,9 +30,6 @@
                 await tick();
 
                 await ticketToPublish.publish();
-
-                const indexOfClosedTicket = $newTickets.indexOf(ticket);
-                $newTickets.splice(indexOfClosedTicket, 1);
 
                 modalStore.close();
 

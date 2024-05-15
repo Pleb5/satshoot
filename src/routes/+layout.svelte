@@ -24,14 +24,12 @@
     import currentUser from "$lib/stores/login";
 
     import { 
-        newTickets, oldTickets, myTickets, myOffers,
+        allTickets, myTickets, myOffers,
         offersOfMyTicketsFilter, ticketsOfMyOffersFilter,
         offersOfMyTickets, ticketsOfMyOffers
     } from "$lib/stores/troubleshoot-eventstores";
 
     import { initializeUser, restartEventStoreWithNotification} from '$lib/utils/helpers';
-    
-    import { messageStore } from "$lib/stores/messages";
 
     import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
 
@@ -192,9 +190,7 @@
         // ALL STORE SUBS MUST START IN LAYOUT.SVELTE! CAN RESTART IN PAGES/COMPONENTS LATER
         // BUT IT IS IMPORANT THAT THEY ARE STARTED HERE!
         // UPDATE: $connected store helps initialize things at the right time
-        newTickets.startSubscription();
-        oldTickets.startSubscription();
-        messageStore.startSubscription();
+        allTickets.startSubscription();
 
 // ------------------------ Restore Login -----------------------------------
 
