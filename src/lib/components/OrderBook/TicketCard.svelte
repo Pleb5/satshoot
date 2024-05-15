@@ -101,7 +101,7 @@
                     ticketStatus = 'Resolved';
                     statusColor = 'text-tertiary-500';
                 } else if (ticket.status === TicketStatus.Failed) {
-                    ticketStatus = 'Resolved';
+                    ticketStatus = 'Failed';
                     statusColor = 'text-error-500';
                 }
 

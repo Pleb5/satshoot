@@ -6,6 +6,7 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings, ModalSettings } from '@skeletonlabs/skeleton';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
+    import { RadioGroup, RadioItem } from '@skeletonlabs/skeleton';
     import { type SvelteComponent, tick } from "svelte";
 
     const toastStore = getToastStore();
@@ -15,7 +16,11 @@
     export let parent: SvelteComponent;
     export let ticket: TicketEvent;
 
+    let radioGroup = 'close';
+
     let closing = false;
+
+    let closingStatus: TicketStatus.Resolved | TicketStatus.Failed = TicketStatus.Resolved;
 
     async function closeTicket() {
         if (ticket) {
@@ -23,7 +28,7 @@
             ticketToPublish.tags = ticket.tags;
             ticketToPublish.description = ticket.description;
             // Important part! This also sets status to in progress
-            ticketToPublish.status = TicketStatus.Resolved;
+            ticketToPublish.status = closingStatus;
 
             try {
                 closing = true;
@@ -38,7 +43,7 @@
                     type: 'alert',
                     title: 'Ticket Closed!',
                     body: `
-                        <p class='mb-4'>You Closed the Ticket! Hope your issue was resolved!</p>
+                        <p class='mb-4'>You Closed the Ticket!</p>
                         <p>
                         You will find this Ticket in 'My Tickets' under the 'Closed' tab!
                         </p>
@@ -73,10 +78,31 @@
     {#if ticket}
         <div class="card p-4">
             <h4 class="h4 text-center mb-2">{'Close Ticket'}</h4>
-            <div class="flex flex-col justify-center gap-y-4">
+            <div class="flex flex-col justify-center min-w-60 gap-y-4">
                 <div class="text-center font-bold">
-                    Do really want to Close this Ticket?
+                    Was Your Issue Resolved?
                 </div>
+                <RadioGroup 
+                    active="variant-filled-primary"
+                    hover="hover:variant-soft-primary"
+                >
+						<RadioItem 
+                            bind:group={closingStatus}
+                            required
+                            name="status"
+                            value={TicketStatus.Resolved}
+
+                        >
+                            Yes
+                        </RadioItem>
+						<RadioItem
+                            bind:group={closingStatus}
+                            name="status" 
+                            value={TicketStatus.Failed}
+                        >
+                            No
+                        </RadioItem>
+                </RadioGroup>
                 <div class="grid grid-cols-[30%_1fr] gap-x-2">
                     <button 
                         type="button"
@@ -97,7 +123,7 @@
                                     track="stroke-error-500/30" strokeLinecap="round" width="w-8" />
                             </span>
                         {:else}
-                            <span>Close</span>
+                            <span>Close Ticket</span>
                         {/if}
 
                     </button>

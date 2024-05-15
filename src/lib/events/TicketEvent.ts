@@ -65,7 +65,8 @@ export class TicketEvent extends NDKEvent {
     }
 
     public isClosed(): boolean {
-        return this._status === (TicketStatus.Resolved || TicketStatus.Failed);
+        return (this._status === TicketStatus.Resolved 
+            || this._status === TicketStatus.Failed);
     }
     
     get description(): string {

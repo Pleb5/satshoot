@@ -56,7 +56,6 @@
             ticketList = new Set($allTickets.filter((t: TicketEvent) => {
                 return t.status === TicketStatus.New;
             }));
-            console.log('ticketList', ticketList)
             if (filterList.length > 0) {
                 filterTickets();
             }
