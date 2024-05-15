@@ -63,10 +63,6 @@
         }
     }
 
-    onMount(()=>{
-        ticketList = new Set($allTickets);
-    });
-
 </script>
 
 <div class="flex flex-col justify-center gap-y-2 mt-2">
