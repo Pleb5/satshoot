@@ -1,6 +1,7 @@
 import type { 
     NDKSigner, NDKEvent,
     NDKRelay, NDKSubscription,
+    NDKUser, Hexpubkey
 } from '@nostr-dev-kit/ndk';
 
 import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
@@ -8,7 +9,15 @@ import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte'
 import { TicketEvent } from '$lib/events/TicketEvent';
 import { OfferEvent } from '$lib/events/OfferEvent';
 
-import { loggedIn } from '../stores/login';
+import {
+    loggedIn,
+    currentUserFollows,
+    networkFollows,
+    minWot,
+    firstOrderFollowWot,
+    secondOrderFollowWot,
+    followsUpdated,
+} from '../stores/login';
 import currentUser from '../stores/login';
 import notificationsEnabled from '$lib/stores/notifications';
 
@@ -56,6 +65,19 @@ export async function initializeUser(ndk: NDK) {
 
     await user.fetchProfile();
     currentUser.set(user);
+
+    // Update wot score
+    const $networkFollows = get(networkFollows);
+    console.log('networkFollows: ', $networkFollows)
+    const networkSize:number = $networkFollows?.size ?? 0; 
+
+    const $followsUpdated = get(followsUpdated);
+    const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 14;
+
+    if (networkSize < 1000 || $followsUpdated < twoWeeksAgo) {
+        console.log(networkSize)
+        updateFollowsAndWotScore();
+    }
 }
 
 export function restartEventStoreWithNotification<NDKEventStore>(store: NDKEventStore) {
@@ -159,3 +181,39 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
     return null;
 }
 
+export async function updateFollowsAndWotScore() {
+    const user = get(currentUser);
+    if (user) {
+        const $networkFollows = new Map<Hexpubkey, number>();
+        const $currentUserFollows = new Set<Hexpubkey>();
+
+        const follows = await user.follows(undefined, true);
+        for(const f of follows) {
+            $currentUserFollows.add(f.pubkey);
+
+            $networkFollows.set(f.pubkey, firstOrderFollowWot);
+
+            const followsOfFollow = await f.follows(undefined, true);
+            followsOfFollow.forEach((distantFollow: NDKUser) => {
+                const currentScore:number = $networkFollows.get(distantFollow.pubkey) ?? 0;
+                $networkFollows.set(distantFollow.pubkey, currentScore + secondOrderFollowWot);
+            });
+        };
+
+        currentUserFollows.set($currentUserFollows);
+        networkFollows.set($networkFollows);
+
+        followsUpdated.set(Math.floor(Date.now() / 1000));
+
+        console.log("Follows", $currentUserFollows);
+        console.log("Network follows", $networkFollows);
+    }
+    
+}
+
+export function getWotScore(targetUser: NDKUser): number {
+    const $networkFollows = get(networkFollows);
+    if (!$networkFollows) return minWot;
+
+    return $networkFollows.get(targetUser.pubkey) || minWot;
+}
