@@ -442,7 +442,7 @@
     <!-- Sidebar. Hidden on small screens -->
 	<svelte:fragment slot="sidebarLeft">
             <AppRail 
-                class="hidden lg:block"
+                class="hidden lg:block min-w-28"
                 hover="hover:variant-soft-primary"
                 active="bg-primary-300-600-token"
                 background="bg-surface-100-800-token"
