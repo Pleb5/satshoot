@@ -1,6 +1,8 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
+    import { wotUpdated } from "$lib/stores/user";
+    import { getWotPercentile } from "$lib/utils/helpers";
 
     import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
@@ -44,6 +46,8 @@
     // as soon as the ticket for this offer is fetched
     let status = '?';
     let statusColor = 'text-primary-400-500-token';
+
+    let wotPercentile: number;
 
     function insertThousandSeparator(amount: number) {
         return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -167,6 +171,10 @@
         }
     }
 
+    $: if (offer && $wotUpdated) {
+        wotPercentile = getWotPercentile($ndk.getUser({pubkey: offer.pubkey}));
+    }
+
     function setOfferToSelect() {
         $offerMakerToSelect = (offer as OfferEvent).pubkey;
     }
@@ -192,7 +200,6 @@
                 >
                     <i class="fa-solid fa-comment text-2xl"></i>
                 </a>
-                
             {/if}
             <h3 class="h4 md:h3 col-start-2 text-center text-tertiary-500">
                 { (editOffer ? 'My ' : '') + 'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
@@ -212,6 +219,12 @@
         <div class="text-center text-base md:text-lg p-2">
             {offer.description}
         </div>
+        {#if $currentUser}
+            <div class='flex flex-col items-center'>
+                <h3>Trust Score</h3>
+                <strong>{wotPercentile + '%'}</strong>
+            </div>
+        {/if}
         <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start p-8 pt-2">
             <div class="">

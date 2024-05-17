@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from '$lib/stores/user';
-    import { loginAlert } from '$lib/stores/user';
+    import { loginAlert, networkFollows } from '$lib/stores/user';
     import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
     import { OfferEvent } from "$lib/events/OfferEvent";
@@ -121,7 +121,8 @@
                 // the whole store to find the newest added offer. ndk svelte
                 // stores events in chronological order, not in the order ndk saw the events.
                 // Fine-grained reactivity is still better achieved with a regular subscription
-                // The problem is that the storeSubscribe always starts the subscription immediatelyo 
+                // The problem is that the storeSubscribe leaves the subscription UNDEFINED 
+                // and only assigns value in startSubscription function
                 // This makes it impossible to reliably attach a fine-grained Callback
                 // on an ndk-svelte store because some events arrive before the callback registration
                 // THIS DOES NOT WORK AT THE MOMENT BUT SHOULD IF NDK SUPPORTED Fine-grained

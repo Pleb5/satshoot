@@ -1,10 +1,14 @@
 import type { 
     NDKSigner, NDKEvent,
     NDKRelay, NDKSubscription,
-    NDKUser, Hexpubkey
+    NDKUser, Hexpubkey,
+    NDKFilter,
+    NDKTag,
 } from '@nostr-dev-kit/ndk';
 
-import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
+import { NDKSubscriptionCacheUsage, NDKRelaySet } from '@nostr-dev-kit/ndk';
+
+import type { NDKSvelte, NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
 
 import { TicketEvent } from '$lib/events/TicketEvent';
 import { OfferEvent } from '$lib/events/OfferEvent';
@@ -16,9 +20,14 @@ import {
     minWot,
     firstOrderFollowWot,
     secondOrderFollowWot,
+    wotUpdated,
     followsUpdated,
 } from '../stores/user';
+
+import { percentile } from '$lib/utils/misc';
+
 import currentUser from '../stores/user';
+
 import notificationsEnabled from '$lib/stores/notifications';
 
 import { get } from "svelte/store";
@@ -30,6 +39,8 @@ import {
 } from "$lib/stores/troubleshoot-eventstores";
 
 import { BTCTroubleshootKind } from '$lib/events/kinds';
+
+import {nip19} from 'nostr-tools';
 
 export async function initializeUser(ndk: NDK) {
     const user = await (ndk.signer as NDKSigner).user();
@@ -74,9 +85,11 @@ export async function initializeUser(ndk: NDK) {
     const $followsUpdated = get(followsUpdated) as number;
     const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 14;
 
+    console.log(networkSize)
+    updateFollowsAndWotScore(ndk);
     if (networkSize < 1000 || $followsUpdated < twoWeeksAgo) {
-        console.log(networkSize)
-        updateFollowsAndWotScore();
+        // console.log(networkSize)
+        // updateFollowsAndWotScore();
     }
 }
 
@@ -181,29 +194,54 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
     return null;
 }
 
-export async function updateFollowsAndWotScore() {
+export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
     const user = get(currentUser);
     if (user) {
         const $networkFollows = new Map<Hexpubkey, number>();
         const $currentUserFollows = new Set<Hexpubkey>();
 
         const follows = await user.follows(undefined, true);
+        const authors: string[] = [];
         for(const f of follows) {
             $currentUserFollows.add(f.pubkey);
 
             $networkFollows.set(f.pubkey, firstOrderFollowWot);
 
-            const followsOfFollow = await f.follows(undefined, true);
-            followsOfFollow.forEach((distantFollow: NDKUser) => {
-                const currentScore:number = $networkFollows.get(distantFollow.pubkey) ?? 0;
-                $networkFollows.set(distantFollow.pubkey, currentScore + secondOrderFollowWot);
-            });
+            authors.push(f.pubkey);
+
         };
+
+        // Now get ALL other follows of people the user follows
+        const networkFollowsFilter: NDKFilter = {
+            kinds: [3],
+            authors: authors,
+        }
+        const kind3RelaySet = NDKRelaySet.fromRelayUrls(["wss://purplepag.es"], ndk);
+
+        const networkFollowsStore = await ndk.fetchEvents(
+            networkFollowsFilter,
+            {
+                groupable: false,
+                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+            },
+            kind3RelaySet,
+        );
+
+        // Process all network follows and update the wot scores in the map
+        networkFollowsStore.forEach((event: NDKEvent) => {
+            const follows = filterValidPTags(event.tags);
+            follows.forEach((f: Hexpubkey) => {
+                const currentScore:number = $networkFollows.get(f) ?? 0;
+                $networkFollows.set(f, currentScore + secondOrderFollowWot);
+            });
+        });
 
         currentUserFollows.set($currentUserFollows);
         networkFollows.set($networkFollows);
 
         followsUpdated.set(Math.floor(Date.now() / 1000));
+
+        wotUpdated.set(true);
 
         console.log("Follows", $currentUserFollows);
         console.log("Network follows", $networkFollows);
@@ -217,3 +255,26 @@ export function getWotScore(targetUser: NDKUser): number {
 
     return $networkFollows.get(targetUser.pubkey) || minWot;
 }
+
+export function getWotPercentile(targetUser: NDKUser): number {
+    const $networkFollows:Map<Hexpubkey, number> | null = get(networkFollows);
+    if (!$networkFollows) return 0;
+
+    if (!$networkFollows.has(targetUser.pubkey)) return 0;
+
+    const wotValue = $networkFollows.get(targetUser.pubkey) as number;
+
+    const wotValues:number[] = Array.from($networkFollows.values());
+
+    return percentile(wotValues, wotValue);
+}
+
+export const filterValidPTags = (tags: NDKTag[]) => tags
+    .filter((t: NDKTag) => t[0] === 'p')
+    .map((t: NDKTag) => t[1])
+    .filter((f: Hexpubkey) => {
+        try {
+            nip19.npubEncode(f);
+            return true;
+        } catch { return false; }
+    });

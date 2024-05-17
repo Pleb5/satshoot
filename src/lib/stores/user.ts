@@ -19,6 +19,7 @@ export const minWot = 0;
 export const firstOrderFollowWot = 4;
 export const secondOrderFollowWot = 1;
 
+export const wotUpdated = writable(false);
 export const followsUpdated: Writable<number> = localStorageStore('followsUpdated', 0);
 
 const currentUser = writable<NDKUser|null>(null);

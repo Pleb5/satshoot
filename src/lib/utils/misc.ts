@@ -32,3 +32,15 @@ export function getMapSerializer(): MapSerializer {
         },
     }
 }
+
+export function percentile(arr:number[], val:number) {
+    let count = 0;
+    arr.forEach(v => {
+        if (v < val) {
+            count++;
+        } else if (v == val) {
+            count += 0.5;
+        }
+    });
+    return Math.floor(100 * count / arr.length);
+}
