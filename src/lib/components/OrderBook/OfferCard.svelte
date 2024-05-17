@@ -219,7 +219,7 @@
         <div class="text-center text-base md:text-lg p-2">
             {offer.description}
         </div>
-        {#if $currentUser}
+        {#if $currentUser && offer.pubkey !== $currentUser.pubkey}
             <div class='flex flex-col items-center'>
                 <h3>Trust Score</h3>
                 <strong>{wotPercentile + '%'}</strong>
