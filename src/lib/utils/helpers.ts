@@ -67,11 +67,11 @@ export async function initializeUser(ndk: NDK) {
     currentUser.set(user);
 
     // Update wot score
-    const $networkFollows = get(networkFollows);
+    const $networkFollows = get(networkFollows) as Map<Hexpubkey, number>;
     console.log('networkFollows: ', $networkFollows)
     const networkSize:number = $networkFollows?.size ?? 0; 
 
-    const $followsUpdated = get(followsUpdated);
+    const $followsUpdated = get(followsUpdated) as number;
     const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 14;
 
     if (networkSize < 1000 || $followsUpdated < twoWeeksAgo) {
