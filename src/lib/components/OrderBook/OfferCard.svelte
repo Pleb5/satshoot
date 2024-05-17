@@ -48,6 +48,7 @@
     let statusColor = 'text-primary-400-500-token';
 
     let wotPercentile: number;
+    let percentileColor: string = 'text-error-500';
 
     function insertThousandSeparator(amount: number) {
         return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -173,6 +174,13 @@
 
     $: if (offer && $wotUpdated) {
         wotPercentile = getWotPercentile($ndk.getUser({pubkey: offer.pubkey}));
+        if (wotPercentile > 25) {
+            percentileColor = 'text-warning-500';
+        } 
+
+       if (wotPercentile > 75) {
+            percentileColor = 'text-success-500';
+        }
     }
 
     function setOfferToSelect() {
@@ -221,8 +229,8 @@
         </div>
         {#if $currentUser && offer.pubkey !== $currentUser.pubkey}
             <div class='flex flex-col items-center'>
-                <h3>Trust Score</h3>
-                <strong>{wotPercentile + '%'}</strong>
+                <h3 class='font-bold text-primary-500'>Trust Score</h3>
+                <strong class='{percentileColor}'>{wotPercentile + '%'}</strong>
             </div>
         {/if}
         <slot name="takeOffer" />
