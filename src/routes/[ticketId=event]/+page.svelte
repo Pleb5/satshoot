@@ -58,9 +58,11 @@
     let npub: string | undefined = undefined;
 
     let myTicket = false;
+    let offerToEdit: OfferEvent | undefined = undefined;
 
     let allowCreateOffer: boolean = true;
     let disallowCreateOfferReason = '';
+    let btnActionText = 'Create Offer';
     let loginAlertShown = false;
 
     let needSetup = true;
@@ -119,14 +121,16 @@
                 // the whole store to find the newest added offer. ndk svelte
                 // stores events in chronological order, not in the order ndk saw the events.
                 // Fine-grained reactivity is still better achieved with a regular subscription
-                offerStore.subscription?.on('event', (event: NDKEvent) => {
-                    const offer = OfferEvent.from(event);
-                    if (offer.pubkey === $currentUser?.pubkey) {
-                        allowCreateOffer = false;
-                        disallowCreateOfferReason = 'You already have an offer on ticket!\
-                            Edit your Offer from the Offers-list if you want to change it!';
-                    }
-                });
+                // The problem is that the storeSubscribe always starts the subscription immediatelyo 
+                // This makes it impossible to reliably attach a fine-grained Callback
+                // on an ndk-svelte store because some events arrive before the callback registration
+                // THIS DOES NOT WORK AT THE MOMENT BUT SHOULD IF NDK SUPPORTED Fine-grained
+                // SUBS ALONG WITH THE STORE SUBSCRIPTION
+                // offerStore.subscription?.on('event', (event: NDKEvent) => {
+                //     const offer = OfferEvent.from(event);
+                //     if (offer.pubkey === $currentUser?.pubkey) {
+                //     }
+                // });
             }
         });
     };
@@ -134,9 +138,8 @@
     $: if ($offerStore) {
         $offerStore.forEach((offer: OfferEvent) => {
             if (offer.pubkey === $currentUser?.pubkey) {
-                allowCreateOffer = false;
-                disallowCreateOfferReason = 'You already have an offer on ticket!\
-                    Edit your Offer from the Offers-list if you want to change it!';
+                offerToEdit = offer;
+                btnActionText = 'Edit Your Offer';
             }
         });
     }
@@ -184,11 +187,14 @@
         }
     }
 
-    async function createOffer() {
+    async function createOffer(offer: OfferEvent | undefined) {
         const offerPosted: boolean = await new Promise<boolean>((resolve) => {
             const modalComponent: ModalComponent = {
                 ref: CreateOfferModal,
-                props: {ticketAddress: ticket?.ticketAddress},
+                props: {
+                    ticketAddress: ticket?.ticketAddress,
+                    offerToEdit: offer,
+                },
             };
 
             const modal: ModalSettings = {
@@ -241,11 +247,11 @@
     <div class="flex justify-center items-center gap-x-2">
         <button 
             type="button"
-            on:click={ createOffer }
+            on:click={ () => createOffer(offerToEdit) }
             class="btn btn-2xl text-xl font-bold bg-primary-300-600-token"
             disabled={!allowCreateOffer}
         >
-            Create Offer
+            { btnActionText }
         </button>
         {#if !allowCreateOffer}
             <i 
@@ -282,7 +288,7 @@
                             <button
                                 type="button"
                                 class="btn btn-lg bg-primary-300-600-token"
-                                on:click={takeOffer(offer)}
+                                on:click={() => takeOffer(offer)}
                             >
                                 Take Offer
                             </button>
