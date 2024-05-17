@@ -1,11 +1,11 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import currentUser from '$lib/stores/login';
+    import currentUser from '$lib/stores/user';
+    import { loginAlert } from '$lib/stores/user';
     import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { connected } from "$lib/stores/ndk";
-    import { loginAlert } from '$lib/stores/login';
     import redirectStore from '$lib/stores/redirect-store';
 
     import UserCard from "$lib/components/User/UserCard.svelte";

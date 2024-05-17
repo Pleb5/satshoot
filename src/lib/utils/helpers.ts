@@ -17,8 +17,8 @@ import {
     firstOrderFollowWot,
     secondOrderFollowWot,
     followsUpdated,
-} from '../stores/login';
-import currentUser from '../stores/login';
+} from '../stores/user';
+import currentUser from '../stores/user';
 import notificationsEnabled from '$lib/stores/notifications';
 
 import { get } from "svelte/store";

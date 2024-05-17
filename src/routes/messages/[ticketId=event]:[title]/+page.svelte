@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import currentUser from "$lib/stores/login";
+    import currentUser from "$lib/stores/user";
     import { page } from "$app/stores";
 
     import { 

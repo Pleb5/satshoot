@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
-    import currentUser from '$lib/stores/login';
+    import currentUser from '$lib/stores/user';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
@@ -22,7 +22,7 @@
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import type { TicketEvent } from '$lib/events/TicketEvent';
-    import { loggedIn } from '$lib/stores/login';
+    import { loggedIn } from '$lib/stores/user';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();

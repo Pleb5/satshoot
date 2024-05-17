@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import currentUser from "$lib/stores/login";
+    import currentUser from "$lib/stores/user";
 
     import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";

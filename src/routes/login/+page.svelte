@@ -3,7 +3,7 @@
     import ndk from "$lib/stores/ndk";
 
     import redirectStore from "$lib/stores/redirect-store";
-    import { loggedIn } from "$lib/stores/login";
+    import { loggedIn } from "$lib/stores/user";
 
     import { browser } from "$app/environment";
 

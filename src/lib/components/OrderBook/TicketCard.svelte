@@ -6,7 +6,7 @@
         NDKEvent
     } from "@nostr-dev-kit/ndk"; 
 
-    import currentUser from '$lib/stores/login';
+    import currentUser from '$lib/stores/user';
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
     import { BTCTroubleshootKind } from "$lib/events/kinds";

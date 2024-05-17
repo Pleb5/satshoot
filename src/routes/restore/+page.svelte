@@ -1,6 +1,7 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
-    import currentUser from "$lib/stores/login";
+    import currentUser from "$lib/stores/user";
+    import { loggedIn } from '$lib/stores/user';
 
     import { RestoreMethod, sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromNsec } from '$lib/utils/nip19';
@@ -16,7 +17,6 @@
 
     import { goto } from '$app/navigation';
     import { tick } from 'svelte';
-    import { loggedIn } from '$lib/stores/login';
     import { initializeUser } from '$lib/utils/helpers';
 
     

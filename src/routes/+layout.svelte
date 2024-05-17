@@ -20,8 +20,8 @@
 
     import { Dexie } from "dexie";
 
-    import { loggedIn } from "$lib/stores/login";
-    import currentUser from "$lib/stores/login";
+    import { loggedIn } from "$lib/stores/user";
+    import currentUser from "$lib/stores/user";
 
     import { 
         allTickets, myTickets, myOffers,

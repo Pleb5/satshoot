@@ -3,7 +3,7 @@
     import ndk from '$lib/stores/ndk';
     import { initializeUser } from '$lib/utils/helpers';
     import { bunkerNDK } from '$lib/stores/ndk';
-    import { loggedIn } from '$lib/stores/login';
+    import { loggedIn } from '$lib/stores/user';
     import { NDKPrivateKeySigner, NDKNip46Signer } from '@nostr-dev-kit/ndk';
 
     import {nip19} from 'nostr-tools';

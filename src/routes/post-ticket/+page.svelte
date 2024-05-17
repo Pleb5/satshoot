@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
-    import currentUser from '$lib/stores/login';
+    import currentUser from '$lib/stores/user';
 
     import type { NDKTag } from '@nostr-dev-kit/ndk';
     import { NDKRelaySet } from '@nostr-dev-kit/ndk';

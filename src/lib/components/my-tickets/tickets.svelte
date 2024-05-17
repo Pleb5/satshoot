@@ -1,5 +1,5 @@
 <script lang="ts">
-import currentUser from "$lib/stores/login";
+import currentUser from "$lib/stores/user";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
