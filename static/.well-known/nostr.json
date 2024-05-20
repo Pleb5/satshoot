@@ -1,12 +1,20 @@
 {
   "names": {
-    "five": "d04ecf33a303a59852fdb681ed8b412201ba85d8d2199aec73cb62681d62aa90"
-  },
+    "five": "d04ecf33a303a59852fdb681ed8b412201ba85d8d2199aec73cb62681d62aa90",
+    "bitcointroubleshoot": "e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650"
+},
   "relays": {
     "d04ecf33a303a59852fdb681ed8b412201ba85d8d2199aec73cb62681d62aa90": [
       "wss://relay.damus.io",
+      "wss://relay.nostr.band",
       "wss://nos.lol",
       "wss://eden.nostr.land",
+      "wss://bitcoiner.social"
+    ],
+    "e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650": [
+      "wss://relay.damus.io",
+      "wss://relay.nostr.band",
+      "wss://nos.lol",
       "wss://bitcoiner.social"
     ]
   }
