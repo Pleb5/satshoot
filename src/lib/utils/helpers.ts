@@ -253,11 +253,12 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
     
 }
 
-export function getWotScore(targetUser: NDKUser): number {
+export function getWotScore(targetUser: NDKUser): number|undefined {
     const $networkFollows = get(networkFollows);
-    if (!$networkFollows) return minWot;
+    // 
+    if (!$networkFollows) return undefined;
 
-    return $networkFollows.get(targetUser.pubkey) || minWot;
+    return $networkFollows.get(targetUser.pubkey);
 }
 
 export function getWotPercentile(targetUser: NDKUser): number {
