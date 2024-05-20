@@ -43,53 +43,57 @@ import { BTCTroubleshootKind } from '$lib/events/kinds';
 import {nip19} from 'nostr-tools';
 
 export async function initializeUser(ndk: NDK) {
-    const user = await (ndk.signer as NDKSigner).user();
-    if (user.npub) {
-        loggedIn.set(true);
-    } else return;
+    try {
+        const user = await (ndk.signer as NDKSigner).user();
+        if (user.npub) {
+            loggedIn.set(true);
+        } else return;
 
-    currentUser.set(user);
+        currentUser.set(user);
 
-    // --------------- User Subscriptions -------------- //
-    ticketsOfMyOffers.startSubscription();
-    offersOfMyTickets.startSubscription();
+        // --------------- User Subscriptions -------------- //
+        ticketsOfMyOffers.startSubscription();
+        offersOfMyTickets.startSubscription();
 
 
-    //
-    // --------- Notifications based on myOffers and myTickets -------- //
+        //
+        // --------- Notifications based on myOffers and myTickets -------- //
 
-    requestNotifications( 
-        (ticketsOfMyOffers as NDKEventStore<ExtendedBaseType<TicketEvent>>).subscription!
-    );
+        requestNotifications( 
+            (ticketsOfMyOffers as NDKEventStore<ExtendedBaseType<TicketEvent>>).subscription!
+        );
 
-    requestNotifications( 
-        (offersOfMyTickets as NDKEventStore<ExtendedBaseType<OfferEvent>>).subscription!
-    );
+        requestNotifications( 
+            (offersOfMyTickets as NDKEventStore<ExtendedBaseType<OfferEvent>>).subscription!
+        );
 
-    myTicketFilter.authors?.push(user.pubkey);
-    myOfferFilter.authors?.push(user.pubkey);
+        myTicketFilter.authors?.push(user.pubkey);
+        myOfferFilter.authors?.push(user.pubkey);
 
-    myTickets.startSubscription();
-    myOffers.startSubscription();
+        myTickets.startSubscription();
+        myOffers.startSubscription();
 
-    // --------- User Profile --------------- //
+        // --------- User Profile --------------- //
 
-    await user.fetchProfile();
-    currentUser.set(user);
+        await user.fetchProfile();
+        currentUser.set(user);
 
-    // Update wot score
-    const $networkFollows = get(networkFollows) as Map<Hexpubkey, number>;
-    console.log('networkFollows: ', $networkFollows)
-    const networkSize:number = $networkFollows?.size ?? 0; 
+        // Update wot score
+        const $networkFollows = get(networkFollows) as Map<Hexpubkey, number>;
+        console.log('networkFollows: ', $networkFollows)
+        const networkSize:number = $networkFollows?.size ?? 0; 
 
-    const $followsUpdated = get(followsUpdated) as number;
-    const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 14;
+        const $followsUpdated = get(followsUpdated) as number;
+        const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 14;
 
-    console.log(networkSize)
-    updateFollowsAndWotScore(ndk);
-    if (networkSize < 1000 || $followsUpdated < twoWeeksAgo) {
-        // console.log(networkSize)
-        // updateFollowsAndWotScore();
+        console.log(networkSize)
+        updateFollowsAndWotScore(ndk);
+        if ($followsUpdated < twoWeeksAgo) {
+            // console.log(networkSize)
+            // updateFollowsAndWotScore();
+        }
+    } catch(e) {
+        console.log('Could not initialize User. Reason: ', e)
     }
 }
 
