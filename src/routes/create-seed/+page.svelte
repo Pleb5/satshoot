@@ -30,7 +30,11 @@
         const privateKey = privateKeyFromSeedWords(seedWords); 
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
-        await initializeUser($ndk);
+        try {
+            await initializeUser($ndk);
+        } catch (e) {
+            console.log('User initialization failed: ', e)
+        }
 
         // Store private key in session storage 
         $sessionPK = privateKey;
