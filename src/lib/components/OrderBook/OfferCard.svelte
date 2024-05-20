@@ -229,8 +229,10 @@
         </div>
         {#if $currentUser && offer.pubkey !== $currentUser.pubkey}
             <div class='flex flex-col items-center'>
-                <h3 class='font-bold text-primary-500'>Trust Score</h3>
-                <strong class='{percentileColor}'>{wotPercentile + '%'}</strong>
+                <div class='card flex flex-col items-center border-1 border-primary-500 p-3'>
+                    <h4 class='h4 font-bold text-primary-500'>Trust Score</h4>
+                    <strong class='text-lg {percentileColor}'>{wotPercentile + '%'}</strong>
+                </div>
             </div>
         {/if}
         <slot name="takeOffer" />
