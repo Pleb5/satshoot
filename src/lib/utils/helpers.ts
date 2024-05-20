@@ -27,6 +27,7 @@ import {
 import { percentile } from '$lib/utils/misc';
 
 import currentUser from '../stores/user';
+import { BTCTroubleshootPubkey } from '../stores/user';
 
 import notificationsEnabled from '$lib/stores/notifications';
 
