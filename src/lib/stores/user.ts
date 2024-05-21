@@ -14,13 +14,21 @@ export const loggedIn = writable(false);
 export const currentUserFollows: Writable<Set<Hexpubkey> | null>
     = localStorageStore('currentUserFollows', null, {serializer: getSetSerializer()});
 
-export const networkFollows: Writable<Map<Hexpubkey, number> | null>
-    = localStorageStore('networkFollows', null, {serializer: getMapSerializer()});
+export const networkWoTScores: Writable<Map<Hexpubkey, number> | null>
+    = localStorageStore('networkWoTScores', null, {serializer: getMapSerializer()});
 
 // Minimum wot percentile to be included in any result
-export let minWot = 0;
+// defined by user
+export const minWot = writable(0);
+
+// WoT scores for follows, mutes and reports
 export const firstOrderFollowWot = 4;
+export const firstOrderMuteWot = -0.5*(firstOrderFollowWot);
+export const firstOrderReportWot = -0.25*(firstOrderFollowWot);
 export const secondOrderFollowWot = 1;
+export const secondOrderMuteWot = -0.5*(secondOrderFollowWot);
+export const secondOrderReportWot = -0.25*(secondOrderFollowWot);
+
 export const bootstrapAccount = BTCTroubleshootPubkey;
 
 export const wotUpdated = writable(false);
