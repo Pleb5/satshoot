@@ -51,6 +51,7 @@ export async function initializeUser(ndk: NDK) {
         } else return;
 
         currentUser.set(user);
+        ndk.outboxTracker.track(user);
 
         // --------------- User Subscriptions -------------- //
         ticketsOfMyOffers.startSubscription();

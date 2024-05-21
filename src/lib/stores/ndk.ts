@@ -13,6 +13,12 @@ export const DEFAULTRELAYURLS = [
     "wss://relay.damus.io/",
 ]
 
+const OUTBOXRELAYURLS = [
+    "wss://purplepag.es/",
+    "wss://relay.damus.io",
+    "wss://relay.primal.net"
+];
+
 export enum RestoreMethod {
     Seed = 1,
     Nsec = 2,
@@ -42,7 +48,7 @@ export const storedPool: Writable<string[] | undefined> = localStorageStore('poo
 // that is, my tickets and tickets I bid on, as well as new messages
 const ndkSvelte = new NDKSvelte({
     enableOutboxModel: true,
-    outboxRelayUrls: ["wss://purplepag.es/"],
+    outboxRelayUrls: OUTBOXRELAYURLS,
     blacklistRelayUrls: [],
     autoConnectUserRelays: true,
     autoFetchUserMutelist: true,
