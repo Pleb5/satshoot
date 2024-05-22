@@ -3,7 +3,7 @@
     import ndk from '$lib/stores/ndk';
     import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
 
-    import { BTCTroubleshootPubkey } from '$lib/stores/user';
+    import { BTCTroubleshootPubkey } from '$lib/utils/misc';
     
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';

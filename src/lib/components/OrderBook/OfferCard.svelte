@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
-    import { wotUpdated, unkownWot } from "$lib/stores/user";
+    import { wotUpdated } from "$lib/stores/wot";
     import { getWotPercentile } from "$lib/utils/helpers";
 
     import { nip19 } from "nostr-tools";

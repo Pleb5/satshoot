@@ -1,3 +1,6 @@
+
+export const BTCTroubleshootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
+
 interface SetSerializer {
       stringify: (set: Set<string>) => string,
       parse: (json: string) => Set<string>,

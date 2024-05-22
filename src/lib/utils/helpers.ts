@@ -21,12 +21,16 @@ import type { NDKSvelte, NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/
 import { TicketEvent } from '$lib/events/TicketEvent';
 import { OfferEvent } from '$lib/events/OfferEvent';
 
+import currentUser from '../stores/user';
 import {
     loggedIn,
     currentUserFollows,
+    followsUpdated,
+} from '../stores/user';
+
+import {
     networkWoTScores,
-    minWot,
-    unkownWot,
+    wot,
     firstOrderFollowWot,
     secondOrderFollowWot,
     firstOrderMuteWot,
@@ -34,13 +38,9 @@ import {
     firstOrderReportWot,
     secondOrderReportWot,
     wotUpdated,
-    followsUpdated,
-} from '../stores/user';
+} from '../stores/wot';
 
-import { percentile } from '$lib/utils/misc';
-
-import currentUser from '../stores/user';
-import { BTCTroubleshootPubkey } from '../stores/user';
+import { BTCTroubleshootPubkey } from '$lib/utils/misc';
 
 import notificationsEnabled from '$lib/stores/notifications';
 
@@ -64,7 +64,6 @@ export async function initializeUser(ndk: NDK) {
         } else return;
 
         currentUser.set(user);
-        ndk.outboxTracker.track(user);
 
         // --------------- User Subscriptions -------------- //
         ticketsOfMyOffers.startSubscription();
@@ -97,11 +96,13 @@ export async function initializeUser(ndk: NDK) {
         const $networkWoTScores = get(networkWoTScores) as Map<Hexpubkey, number>;
         console.log('networkWoTScores: ', $networkWoTScores)
         const networkSize:number = $networkWoTScores?.size ?? 0; 
+        console.log(networkSize)
+        const $wot = get(wot);
+        console.log('wot', $wot);
 
         const $followsUpdated = get(followsUpdated) as number;
         const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 14;
 
-        console.log(networkSize)
         updateFollowsAndWotScore(ndk);
         if ($followsUpdated < twoWeeksAgo) {
             // console.log(networkSize)
