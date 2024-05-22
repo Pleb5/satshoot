@@ -257,6 +257,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             trustBasisFilter,
             {
                 groupable: false,
+                closeOnEose: true,
                 cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
             },
             queryRelaySet,
@@ -269,24 +270,21 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         console.log('authors', Array.from(authors))
 
         // Get a common relay set for the user's network
-        // const aauthors = [ "472f440f29ef996e92a186b8d320ff180c855903882e59d50de1b8bd5669301e", "d04ecf33a303a59852fdb681ed8b412201ba85d8d2199aec73cb62681d62aa90", "c4749eee89ec7ba7f6432e340e033422324c063f68e550fc1b17c3c71ab4be8f", "04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", "6e468422dfb74a5738702a8823b9b28168abab8655faacb6853cd0ee15deee93", "aac07d95089ce6adf08b9156d43c1a4ab594c6130b7dcb12ec199008c5819a2f", "32e1827635450ebb3c5a7d12c1f8e7b2b514439ac10a67eef3d9fd9c5c68e245", "e1ff3bfdd4e40315959b08b4fcc8245eaa514637e1d4ec2ae166b743341be1af", "ba2f394833658475e91680b898f9be0f1d850166c6a839dbe084d0266ad6e20a", "ef151c7a380f40a75d7d1493ac347b6777a9d9b5fa0aa3cddb47fc78fab69a8b"];
-        // const networkQueryRelayMap = await NDKRelayList.forUsers(
-        //     ['472f440f29ef996e92a186b8d320ff180c855903882e59d50de1b8bd5669301e',
-        //     "d04ecf33a303a59852fdb681ed8b412201ba85d8d2199aec73cb62681d62aa90"], ndk);
-        
-        const networkQueryRelayMap = await NDKRelayList.forUsers(Array.from(authors), ndk);
-        console.log('network relay map', networkQueryRelayMap)
-
+        //
+        // The forUsers() method is bugs with many authors for some reason! 
+        // const networkQueryRelayMap = await NDKRelayList.forUsers(Array.from(authors), ndk);
         const networkQueryRelaySet = NDKRelaySet.fromRelayUrls(
             [],
             ndk
         );
-
-        Array.from(networkQueryRelayMap.values()).forEach((relayList: NDKRelayList) => {
-            relayList.writeRelayUrls.forEach(
-                (relay: WebSocket['url']) => networkQueryRelaySet.addRelay(new NDKRelay(relay))
-            );
-        });
+        for (const author of authors) {
+            const relays: NDKRelayList | undefined = await NDKRelayList.forUser(author, ndk);
+            if (relays) {
+                relays.writeRelayUrls.forEach((r: string) => {
+                    networkQueryRelaySet.addRelay(new NDKRelay(r));
+                });
+            }
+        }
 
         console.log('Network query relay set: ', networkQueryRelaySet)
 
@@ -303,6 +301,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             networkFilter,
             {
                 groupable: false,
+                closeOnEose: true,
                 cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
             },
             networkQueryRelaySet,
@@ -317,8 +316,8 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
 
         wotUpdated.set(true);
 
-        console.log("Follows", $currentUserFollows);
-        console.log("Network follows", $networkWoTScores);
+        console.log("Follows", get(currentUserFollows));
+        console.log("Network follows", get(networkWoTScores));
     } catch (e) {
         console.log('Could not update Web of Trust scores: ', e)
     }
@@ -370,6 +369,9 @@ function updateWotScores(events: Set<NDKEvent>, firstOrderFollows: boolean): Set
         if (event.kind === NDKKind.Report) {
             const reportedPerson = filterValidPTags(event.tags).at(0);
             if (reportedPerson) {
+                console.log('reported: ', reportedPerson)
+                const reason = event.getMatchingTags('p')[0][2];
+                console.log('for: ', reason)
                 const currentScore:number = ($networkWoTScores as Map<Hexpubkey, number>)
                     .get(reportedPerson) ?? 0;
                 ($networkWoTScores as Map<Hexpubkey, number>)
