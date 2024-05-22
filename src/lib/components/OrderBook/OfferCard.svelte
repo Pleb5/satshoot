@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
-    import { wotUpdated } from "$lib/stores/user";
+    import { wotUpdated, unkownWot } from "$lib/stores/user";
     import { getWotPercentile } from "$lib/utils/helpers";
 
     import { nip19 } from "nostr-tools";
@@ -16,6 +16,7 @@
     import { BTCTroubleshootKind } from "$lib/events/kinds";
 
     import CreateOfferModal from "../Modals/CreateOfferModal.svelte";
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
 
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
@@ -230,8 +231,19 @@
         {#if $currentUser && offer.pubkey !== $currentUser.pubkey}
             <div class='flex flex-col items-center'>
                 <div class='card flex flex-col items-center border-1 border-primary-500 p-3'>
-                    <h4 class='h4 font-bold text-primary-500'>Trust Score</h4>
-                    <strong class='text-lg {percentileColor}'>{wotPercentile + '%'}</strong>
+                    <h4 class='h4 font-bold text-primary-500'>Social Score</h4>
+                    {#if wotPercentile !== undefined}
+                        {#if wotPercentile >= 0}
+                            <strong class='text-lg {percentileColor}'>{wotPercentile + '%'}</strong>
+                            {:else}
+                            <strong class='text-lg {percentileColor}'>{'UNKOWN'}</strong>
+                        {/if}
+                        {:else}
+                        <span>
+                            <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500"
+                                track="stroke-primary-500/3" width="w-8" strokeLinecap="round"/>
+                        </span>
+                    {/if}
                 </div>
             </div>
         {/if}

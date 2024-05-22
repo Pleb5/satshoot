@@ -21,12 +21,13 @@ export const networkWoTScores: Writable<Map<Hexpubkey, number> | null>
 // defined by user
 export const minWot = writable(0);
 
+export const unkownWot = -1;
 // WoT scores for follows, mutes and reports
 export const firstOrderFollowWot = 4;
 export const firstOrderMuteWot = -0.5*(firstOrderFollowWot);
-export const firstOrderReportWot = -0.25*(firstOrderFollowWot);
+export const firstOrderReportWot = -0.5*(firstOrderFollowWot);
 export const secondOrderFollowWot = 1;
-export const secondOrderMuteWot = -0.5*(secondOrderFollowWot);
+export const secondOrderMuteWot = -0.25*(secondOrderFollowWot);
 export const secondOrderReportWot = -0.25*(secondOrderFollowWot);
 
 export const bootstrapAccount = BTCTroubleshootPubkey;

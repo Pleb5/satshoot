@@ -26,6 +26,7 @@ import {
     currentUserFollows,
     networkWoTScores,
     minWot,
+    unkownWot,
     firstOrderFollowWot,
     secondOrderFollowWot,
     firstOrderMuteWot,
@@ -221,7 +222,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         currentUserFollows.set($currentUserFollows);
         networkWoTScores.set($networkWoTScores);
 
-        let queryRelayMap = await NDKRelayList.forUsers([user.pubkey, BTCTroubleshootPubkey], ndk);
+        const queryRelayMap = await NDKRelayList.forUsers([user.pubkey, BTCTroubleshootPubkey], ndk);
         console.log('relay map', queryRelayMap)
 
         const userWriteRelays = queryRelayMap.get(user.pubkey)?.writeRelayUrls;
@@ -339,7 +340,7 @@ function updateWotScores(events: Set<NDKEvent>, firstOrderFollows: boolean): Set
     events.forEach((event: NDKEvent)=> {
         if (event.kind === NDKKind.Contacts) {
             const follows = filterValidPTags(event.tags);
-            console.log('follows', follows)
+            // console.log('follows', follows)
             const userFollow:boolean = (event.pubkey === user.pubkey);
             follows.forEach((f: Hexpubkey) => {
                 if (userFollow) $currentUserFollows.add(f);
@@ -353,32 +354,41 @@ function updateWotScores(events: Set<NDKEvent>, firstOrderFollows: boolean): Set
                 // Register first order follows for second order follows query
                 authors.add(f);
             });
+            events.delete(event);
         }
+    });
 
+    events.forEach((event: NDKEvent)=> {
         if (event.kind === NDKKind.MuteList) {
             const mutes = filterValidPTags(event.tags);
-            mutes.forEach((f: Hexpubkey) => {
-                // Add first order mute score
-                const currentScore:number = ($networkWoTScores as Map<Hexpubkey, number>)
-                    .get(f) ?? 0;
-                ($networkWoTScores as Map<Hexpubkey, number>)
-                    .set(f, currentScore + muteWot);
+            mutes.forEach((mutedPerson: Hexpubkey) => {
+                const currentScore:number|undefined = ($networkWoTScores as Map<Hexpubkey, number>)
+                    .get(mutedPerson);
+                // Only include score if part of the follow network
+                if (currentScore) {
+                    // Add mute score
+                    ($networkWoTScores as Map<Hexpubkey, number>)
+                        .set(mutedPerson, currentScore + muteWot);
+                }
             });
-        }
-
-        if (event.kind === NDKKind.Report) {
+        } else if (event.kind === NDKKind.Report) {
             const reportedPerson = filterValidPTags(event.tags).at(0);
             if (reportedPerson) {
-                console.log('reported: ', reportedPerson)
-                const reason = event.getMatchingTags('p')[0][2];
-                console.log('for: ', reason)
-                const currentScore:number = ($networkWoTScores as Map<Hexpubkey, number>)
-                    .get(reportedPerson) ?? 0;
-                ($networkWoTScores as Map<Hexpubkey, number>)
-                    .set(reportedPerson, currentScore + reportWot);
+                // console.log('reported: ', reportedPerson)
+                // const reason = event.getMatchingTags('p')[0][2];
+                // console.log('for: ', reason)
+                const currentScore:number|undefined = ($networkWoTScores as Map<Hexpubkey, number>)
+                    .get(reportedPerson);
+                // Only include score if part of the follow network
+                if (currentScore) {
+                    // Add report score
+                    ($networkWoTScores as Map<Hexpubkey, number>)
+                        .set(reportedPerson, currentScore + reportWot);
+                }
             }
         }
     });
+
 
     currentUserFollows.set($currentUserFollows);
     networkWoTScores.set($networkWoTScores);
@@ -396,9 +406,9 @@ export function getWotScore(targetUser: NDKUser): number|undefined {
 
 export function getWotPercentile(targetUser: NDKUser): number {
     const $networkWoTScores:Map<Hexpubkey, number> | null = get(networkWoTScores);
-    if (!$networkWoTScores) return 0;
+    if (!$networkWoTScores) return unkownWot;
 
-    if (!$networkWoTScores.has(targetUser.pubkey)) return 0;
+    if (!$networkWoTScores.has(targetUser.pubkey)) return unkownWot;
 
     const wotValue = $networkWoTScores.get(targetUser.pubkey) as number;
 
