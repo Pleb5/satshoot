@@ -2,6 +2,8 @@
 	import { onMount, tick, type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
     import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
+
+    import { BTCTroubleshootPubkey } from '$lib/stores/user';
     
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
@@ -28,7 +30,9 @@
         const five = $ndk.getUser(
             {npub: 'npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw'}
         );
+        const btcTroubleshootUser = $ndk.getUser({hexpubkey: BTCTroubleshootPubkey});
         kind1Event.tag(five);
+        kind1Event.tag(btcTroubleshootUser);
 
         try {
             posting = true;
