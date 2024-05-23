@@ -1,3 +1,8 @@
+import {nip19} from 'nostr-tools';
+import type { 
+    NDKTag,
+    Hexpubkey,
+} from '@nostr-dev-kit/ndk';
 
 export const BTCTroubleshootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
 
@@ -47,3 +52,13 @@ export function percentile(arr:number[], val:number) {
     });
     return Math.floor(100 * count / arr.length);
 }
+
+export const filterValidPTags = (tags: NDKTag[]) => tags
+    .filter((t: NDKTag) => t[0] === 'p')
+    .map((t: NDKTag) => t[1])
+    .filter((f: Hexpubkey) => {
+        try {
+            nip19.npubEncode(f);
+            return true;
+        } catch { return false; }
+    });
