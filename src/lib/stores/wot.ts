@@ -81,8 +81,6 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         if (!user) throw new Error('Could not get user');
         const $networkWoTScores = new Map<Hexpubkey, number>();
         const $currentUserFollows = new Set<Hexpubkey>();
-        currentUserFollows.set($currentUserFollows);
-        networkWoTScores.set($networkWoTScores);
 
         const queryRelayMap = await NDKRelayList.forUsers([user.pubkey, BTCTroubleshootPubkey], ndk);
         console.log('relay map', queryRelayMap)
@@ -129,7 +127,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         console.log('trustBasisEvents', trustBasisEvents)
 
         // first order scores. Authors for the second order wot score are recorded
-        const authors: Set<Hexpubkey> = updateWotScores(trustBasisEvents, true);
+        const authors: Set<Hexpubkey> = updateWotScores(trustBasisEvents, $networkWoTScores, true);
         // Get a common relay set for the user's network
         //
         // The forUsers() method is bugs with many authors for some reason! 
@@ -185,10 +183,11 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             console.log('Network event store', networkStore)
 
             // Second order scores
-            updateWotScores(networkStore, false);
-            console.log("Updated Network wot scores:", get(networkWoTScores));
+            updateWotScores(networkStore, $networkWoTScores, false);
+            console.log("Updated Network wot scores:", $networkWoTScores);
         }
 
+        networkWoTScores.set($networkWoTScores);
 
         followsUpdated.set(Math.floor(Date.now() / 1000));
 
@@ -206,11 +205,10 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
     }
 }
 
-function updateWotScores(events: Set<NDKEvent>, firstOrderFollows: boolean): Set<Hexpubkey> {
+function updateWotScores(events: Set<NDKEvent>, networkWoTScores:Map<Hexpubkey, number>, firstOrderFollows: boolean): Set<Hexpubkey> {
     const user = get(currentUser);
     const $currentUserFollows = get(currentUserFollows);
-    const $networkWoTScores = get(networkWoTScores);
-    if (!user || !$currentUserFollows || !$networkWoTScores) {
+    if (!user || !$currentUserFollows || !networkWoTScores) {
         throw new Error('Could not get data to update wot scores');
     }
     const followWot = (firstOrderFollows ? firstOrderFollowWot : secondOrderFollowWot);
@@ -228,10 +226,10 @@ function updateWotScores(events: Set<NDKEvent>, firstOrderFollows: boolean): Set
                 if (userFollow) $currentUserFollows.add(f);
 
                 // Add first order follow score
-                const currentScore:number = ($networkWoTScores as Map<Hexpubkey, number>)
+                const currentScore:number = (networkWoTScores as Map<Hexpubkey, number>)
                     .get(f) ?? 0;
 
-                ($networkWoTScores as Map<Hexpubkey, number>)
+                (networkWoTScores as Map<Hexpubkey, number>)
                     .set(f, currentScore + followWot);
                 // Register first order follows for second order follows query
                 authors.add(f);
@@ -244,13 +242,11 @@ function updateWotScores(events: Set<NDKEvent>, firstOrderFollows: boolean): Set
         if (event.kind === NDKKind.MuteList) {
             const mutes = filterValidPTags(event.tags);
             mutes.forEach((mutedPerson: Hexpubkey) => {
-                const currentScore:number|undefined = ($networkWoTScores as Map<Hexpubkey, number>)
-                    .get(mutedPerson);
+                const currentScore:number|undefined = networkWoTScores.get(mutedPerson);
                 // Only include score if part of the follow network
                 if (currentScore) {
                     // Add mute score
-                    ($networkWoTScores as Map<Hexpubkey, number>)
-                        .set(mutedPerson, currentScore + muteWot);
+                    networkWoTScores.set(mutedPerson, currentScore + muteWot);
                 }
             });
         } else if (event.kind === NDKKind.Report) {
@@ -259,21 +255,20 @@ function updateWotScores(events: Set<NDKEvent>, firstOrderFollows: boolean): Set
                 // console.log('reported: ', reportedPerson)
                 // const reason = event.getMatchingTags('p')[0][2];
                 // console.log('for: ', reason)
-                const currentScore:number|undefined = ($networkWoTScores as Map<Hexpubkey, number>)
-                    .get(reportedPerson);
+                const currentScore:number|undefined = networkWoTScores.get(reportedPerson);
                 // Only include score if part of the follow network
                 if (currentScore) {
                     // Add report score
-                    ($networkWoTScores as Map<Hexpubkey, number>)
-                        .set(reportedPerson, currentScore + reportWot);
+                    networkWoTScores.set(reportedPerson, currentScore + reportWot);
                 }
             }
         }
     });
 
 
-    currentUserFollows.set($currentUserFollows);
-    networkWoTScores.set($networkWoTScores);
+    if (firstOrderFollows) {
+        currentUserFollows.set($currentUserFollows);
+    }
 
     return authors;
 }
