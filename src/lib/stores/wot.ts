@@ -52,13 +52,17 @@ export const bootstrapAccount = BTCTroubleshootPubkey;
 export const wotUpdated = writable(false);
 
 export const wot = derived(
-    [networkWoTScores, minWot],
-    ([$networkWoTScores, $minWot]) => {
+    [networkWoTScores, minWot, currentUser],
+    ([$networkWoTScores, $minWot, $currentUser]) => {
         const pubkeys = new Set<Hexpubkey>();
 
         $networkWoTScores?.forEach((score: number, follow: Hexpubkey) => {
             if (score >= $minWot) pubkeys.add(follow);
         });
+
+        if ($currentUser) {
+            pubkeys.add($currentUser.pubkey);
+        }
 
         return pubkeys;
     }

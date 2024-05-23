@@ -6,7 +6,10 @@
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { connected } from "$lib/stores/ndk";
+    
     import redirectStore from '$lib/stores/redirect-store';
+
+    import { wot } from '$lib/stores/wot';
 
     import UserCard from "$lib/components/User/UserCard.svelte";
     import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
@@ -137,6 +140,12 @@
     };
 
     $: if ($offerStore) {
+        // Filtering out offers not in the web of Trust
+        if ($wot) {
+            $offerStore = $offerStore.filter((offer: OfferEvent)=> {
+                return $wot.has(offer.pubkey);
+            });
+        }
         $offerStore.forEach((offer: OfferEvent) => {
             if (offer.pubkey === $currentUser?.pubkey) {
                 offerToEdit = offer;
