@@ -129,58 +129,78 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         console.log('trustBasisEvents', trustBasisEvents)
 
         // first order scores. Authors for the second order wot score are recorded
-        const authors = updateWotScores(trustBasisEvents, true);
-        console.log('authors', Array.from(authors))
-
+        const authors: Set<Hexpubkey> = updateWotScores(trustBasisEvents, true);
         // Get a common relay set for the user's network
         //
         // The forUsers() method is bugs with many authors for some reason! 
         // const networkQueryRelayMap = await NDKRelayList.forUsers(Array.from(authors), ndk);
-        const networkQueryRelaySet = NDKRelaySet.fromRelayUrls(
-            [],
-            ndk
-        );
-        for (const author of authors) {
-            const relays: NDKRelayList | undefined = await NDKRelayList.forUser(author, ndk);
-            if (relays) {
-                relays.writeRelayUrls.forEach((r: string) => {
-                    networkQueryRelaySet.addRelay(new NDKRelay(r));
-                });
-            }
-        }
-
-        console.log('Network query relay set: ', networkQueryRelaySet)
-
 
         // Now get ALL second order follows, mutes and reports
-        const networkFilter = {
-            kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
-            authors: Array.from(authors),
-        };
-
+        const authorsArray = Array.from(authors);
         console.log('authors', authors)
 
-        const networkStore = await ndk.fetchEvents(
-            networkFilter,
-            {
-                groupable: false,
-                closeOnEose: true,
-                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-            },
-            networkQueryRelaySet,
-        );
+        const queryBatchSize = 20;
+        for (let i = 0; i < authorsArray.length; i+= queryBatchSize) {
+            const networkQueryRelaySet = NDKRelaySet.fromRelayUrls(
+                [],
+                ndk
+            );
+            // Calculate relays fo the batch
+            const authorsToQuery = [];
+            for (let j = i; j < i + queryBatchSize; j++) {
+                // dont index out of bound
+                if (j === authors.size) {
+                    console.log('reached end of authors, breaking..')
+                    break;
+                }
 
-        console.log('Network event store', networkStore)
+                authorsToQuery.push(authorsArray[j]);
 
-        // Second order scores
-        updateWotScores(networkStore, false);
+                const relays: NDKRelayList | undefined = await NDKRelayList
+                    .forUser(authorsArray[j], ndk);
+
+                if (relays) {
+                    relays.writeRelayUrls.forEach((r: string) => {
+                        networkQueryRelaySet.addRelay(new NDKRelay(r));
+                    });
+                }
+            }
+            console.log('Network query relay set: ', networkQueryRelaySet)
+            // Fetch data and update wot scores in batch
+            const networkFilter = {
+                kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
+                authors: authorsToQuery,
+            };
+
+            const networkStore = await ndk.fetchEvents(
+                networkFilter,
+                {
+                    groupable: false,
+                    closeOnEose: true,
+                    cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+                },
+                networkQueryRelaySet,
+            );
+
+            console.log('Network event store', networkStore)
+
+            // Second order scores
+            updateWotScores(networkStore, false);
+            console.log("Updated Network wot scores:", get(networkWoTScores));
+        }
+
 
         followsUpdated.set(Math.floor(Date.now() / 1000));
 
         wotUpdated.set(true);
 
         console.log("Follows", get(currentUserFollows));
-        console.log("Network follows", get(networkWoTScores));
+        console.log("wot pubkeys", get(wot));
+        setTimeout(()=>{console.log('ndk pool after 35secs of completion:', ndk.pool)}, 35000);
+        setTimeout(()=>{console.log('ndk pool after 65secs of completion:', ndk.pool)}, 65000);
+        setTimeout(()=>{console.log('ndk pool after 95secs of completion:', ndk.pool)}, 95000);
+        setTimeout(()=>{console.log('ndk pool after 165secs of completion:', ndk.pool)}, 165000);
+        setTimeout(()=>{console.log('ndk pool after 240secs of completion:', ndk.pool)}, 240000);
     } catch (e) {
         console.log('Could not update Web of Trust scores: ', e)
     }
