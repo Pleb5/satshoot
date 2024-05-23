@@ -3,10 +3,11 @@
     import { allTickets } from "$lib/stores/troubleshoot-eventstores";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 
+    import { wot } from '$lib/stores/wot';
+
     import type { NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
-    import { onMount } from "svelte";
 
     let filterInput = '';
     let filterList: string[] = [];
@@ -54,7 +55,16 @@
         if($allTickets || filterList) {
             // We just received a ticket 
             ticketList = new Set($allTickets.filter((t: TicketEvent) => {
-                return t.status === TicketStatus.New;
+                const newTicket = (t.status === TicketStatus.New);
+                if (!$wot) {
+                    return newTicket;
+                } else {
+                    // Filter out tickets that are not in the wot
+                    return (
+                        newTicket
+                        && $wot.has(t.pubkey)
+                    );
+                }
             }));
             if (filterList.length > 0) {
                 filterTickets();
