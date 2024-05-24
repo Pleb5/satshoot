@@ -15,8 +15,8 @@ export const DEFAULTRELAYURLS = [
 
 const OUTBOXRELAYURLS = [
     "wss://purplepag.es/",
-    "wss://relay.damus.io",
-    "wss://relay.primal.net"
+    "wss://relay.damus.io/",
+    "wss://relay.nostr.band/"
 ];
 
 export enum RestoreMethod {
