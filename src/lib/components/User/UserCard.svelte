@@ -20,6 +20,8 @@
     import { clipboard } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
+    import { popup } from '@skeletonlabs/skeleton';
+    import type { PopupSettings } from '@skeletonlabs/skeleton';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -44,6 +46,7 @@
     let editable = false;
     let partOfWoT = false;
     let trustColor = 'text-error-500';
+    let bgTrustColor = 'bg-error-500';
 
     $: if (npub) {
         // if user changed the npub reload profile
@@ -67,7 +70,8 @@
             );
             if ($currentUser && $wot.has(user.pubkey)) {
                 partOfWoT = true;
-                trustColor = 'text-tertiary-400-500-token';
+                trustColor = 'text-tertiary-500';
+                bgTrustColor = 'bg-tertiary-500';
             }
             profilePromise.then((profile:NDKUserProfile | null) => {
                 needProfile = false;
@@ -232,6 +236,14 @@
             });
     }
 
+    // For tooltip    
+    const popupWoT: PopupSettings = {
+        event: 'click',
+        target: 'popupWoT',
+        placement: 'bottom'
+    };
+
+
 </script>
 
 {#await profilePromise}
@@ -269,9 +281,29 @@
                     <h2 class="h2 text-center font-bold text-lg sm:text-2xl">{userProfile?.name ?? 'Name?'}</h2>
                     <span>
                         {#if partOfWoT}
-                            <i class="fa-solid fa-circle-check text-2xl {trustColor}"></i>
+                            <i 
+                                class="fa-solid fa-circle-check text-2xl {trustColor}"
+                                use:popup={popupWoT}
+                            >
+                            </i>
+                            <div data-popup="popupWoT">
+                                <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
+                                    This person is part of your Web of Trust
+                                    <div class="arrow {bgTrustColor}" />
+                                </div>
+                            </div>
                         {:else}
-                            <i class="fa-solid fa-circle-question text-2xl {trustColor}"></i>
+                            <i 
+                                class="fa-solid fa-circle-question text-2xl {trustColor}"
+                                use:popup={popupWoT}
+                            >
+                            </i>
+                            <div data-popup="popupWoT">
+                                <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
+                                    This person is NOT part of your Web of Trust!
+                                    <div class="arrow {bgTrustColor}" />
+                                </div>
+                            </div>
                         {/if}
                     </span>
                 </div>
