@@ -56,7 +56,7 @@
             // We just received a ticket 
             ticketList = new Set($allTickets.filter((t: TicketEvent) => {
                 const newTicket = (t.status === TicketStatus.New);
-                if (!$wot) {
+                if (!$wot || $wot.size === 0) {
                     return newTicket;
                 } else {
                     // Filter out tickets that are not in the wot
