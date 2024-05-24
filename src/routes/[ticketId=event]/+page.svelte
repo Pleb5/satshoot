@@ -97,6 +97,7 @@
         ticketSubscription = $ndk.subscribe(ticketFilter, subOptions);
         ticketSubscription.on('event', (event: NDKEvent) => {
             ticket = TicketEvent.from(event);
+            npub = nip19.npubEncode(ticket.pubkey);
 
             // Scroll to top as soon as ticket arrives
             const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
@@ -189,7 +190,6 @@
     }
 
     $: if ($currentUser && ticket) {
-        npub = nip19.npubEncode(ticket.pubkey);
         // If there is an active user and it is the creator of this ticket
         // We will hide create Offer button and the usercard, but enable taking offers
         if ($currentUser && $currentUser.pubkey === ticket.pubkey) {
