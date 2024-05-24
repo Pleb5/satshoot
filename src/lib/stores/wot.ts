@@ -84,17 +84,16 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
     try {
         if (!user) throw new Error('Could not get user');
         const $networkWoTScores = new Map<Hexpubkey, number>();
-        const $currentUserFollows = new Set<Hexpubkey>();
 
         const queryRelayMap = await NDKRelayList.forUsers([user.pubkey, BTCTroubleshootPubkey], ndk);
         console.log('relay map', queryRelayMap)
 
-        const userWriteRelays = queryRelayMap.get(user.pubkey)?.writeRelayUrls;
-        const bootstrapWriteRelays = queryRelayMap.get(BTCTroubleshootPubkey)?.writeRelayUrls;
+        const userWriteRelays = queryRelayMap.get(user.pubkey)?.writeRelayUrls
+            ?? ndk.pool.urls();
 
-        if (!userWriteRelays || !bootstrapWriteRelays) {
-            throw new Error('Could not get user or bootstrap relays!');
-        }
+        const bootstrapWriteRelays = queryRelayMap.get(BTCTroubleshootPubkey)?.writeRelayUrls
+            ?? ndk.pool.urls();
+
         console.log('user write relays', userWriteRelays)
         console.log('bootstrap write relays', bootstrapWriteRelays)
 
@@ -103,10 +102,10 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             ndk
         );
 
-        userWriteRelays.forEach(
+        userWriteRelays!.forEach(
             (relay: WebSocket['url']) => queryRelaySet.addRelay(new NDKRelay(relay))
         );
-        bootstrapWriteRelays.forEach(
+        bootstrapWriteRelays!.forEach(
             (relay: WebSocket['url']) => queryRelaySet.addRelay(new NDKRelay(relay))
         );
 
@@ -211,10 +210,11 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
 
 function updateWotScores(events: Set<NDKEvent>, networkWoTScores:Map<Hexpubkey, number>, firstOrderFollows: boolean): Set<Hexpubkey> {
     const user = get(currentUser);
-    const $currentUserFollows = get(currentUserFollows);
-    if (!user || !$currentUserFollows || !networkWoTScores) {
+    if (!user || !networkWoTScores) {
         throw new Error('Could not get data to update wot scores');
     }
+    const $currentUserFollows = get(currentUserFollows) ?? new Set<Hexpubkey>;
+
     const followWot = (firstOrderFollows ? firstOrderFollowWot : secondOrderFollowWot);
     const muteWot = (firstOrderFollows ? firstOrderMuteWot : secondOrderMuteWot);
     const reportWot = (firstOrderFollows ? firstOrderReportWot : secondOrderReportWot);

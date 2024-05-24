@@ -31,6 +31,8 @@
 
     import { initializeUser, restartEventStoreWithNotification} from '$lib/utils/helpers';
 
+    import { wot } from '$lib/stores/wot';
+
     import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06";
@@ -43,6 +45,7 @@
     import { AppRail, AppRailAnchor } from '@skeletonlabs/skeleton';
     import { TabGroup, TabAnchor } from '@skeletonlabs/skeleton';
     import { page, updated } from '$app/stores';
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
 
     // Popup menu
     import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
@@ -74,6 +77,15 @@
 
     // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
+
+    // For WoT tooltip    
+    const popupWoT: PopupSettings = {
+        event: 'click',
+        target: 'popupWoT',
+        placement: 'bottom'
+    };
+    const trustColor = 'text-tertiary-500';
+    const bgTrustColor = 'bg-tertiary-500';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -124,7 +136,7 @@
         window.onunhandledrejection = async(event: PromiseRejectionEvent) => {
             event.preventDefault();
             console.log(event.reason)
-            if (event.reason.name === Dexie.errnames.DatabaseClosed) {
+            if (event.reason?.name === Dexie.errnames.DatabaseClosed) {
                 console.log('Could not open Dexie DB, probably version change. Deleting old DB and reloading...')
                 await Dexie.delete('bitcoin-troubleshoot-db');
                 // Must reload to open a brand new DB
@@ -203,9 +215,6 @@
         // We either get the private key from sessionStorage or decrypt from localStorage
                     if ($sessionPK) {
                         $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
-
-                        await initializeUser($ndk);
-
                     } else {
                         try {
                             // Get decrypted seed from a modal prompt where user enters passphrase
@@ -241,7 +250,6 @@
                                             if (privateKey) {
                                                 $ndk.signer = new NDKPrivateKeySigner(privateKey); 
                                                 $sessionPK = privateKey;
-                                                initializeUser($ndk);
                                             } else {
                                                 throw new Error(
                                                     "Could not create hex private key from decrypted secret. \
@@ -287,20 +295,15 @@
                         $ndk.signer = remoteSigner;
 
                         await remoteSigner.blockUntilReady();
-
-                        initializeUser($ndk);
                     }
                 } else if (loginMethod === LoginMethod.NIP07) {
                     if (!$ndk.signer) {
                         $ndk.signer = new NDKNip07Signer();
                     }
-                    initializeUser($ndk);
                 }
+                // Whatever the login method that was restored, init user
+                initializeUser($ndk);
             }
-        } else {
-            // We are logged in, lets fetch profile
-            // await $ndk.activeUser?.fetchProfile();
-            // $ndk.activeUser = $ndk.activeUser;
         }
     });
 
@@ -409,7 +412,47 @@
             </svelte:fragment>
 
             <div class="flex justify-center lg:ml-20">
-                <img class="" src="/bitcoin-troubleshoot.svg" alt="logo" />
+                <div class ='flex gap-x-2 justify-center items-center'>
+                    <img src="/bitcoin-troubleshoot.svg" alt="logo" />
+                    <div class ='flex gap-x-2 items-center'>
+                        <h3 class='h3 font-bold'>WoT:</h3>
+                        <div>
+                            {#if $wot && $wot.size > 1}
+                                <i 
+                                    class="fa-solid fa-circle-check text-2xl {trustColor}"
+                                    use:popup={popupWoT}
+                                >
+                                </i>
+                                <div data-popup="popupWoT">
+                                    <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
+                                        Web of Trust Loaded
+                                    </div>
+                                </div>
+                            {:else if !$loggedIn}
+
+                                <i 
+                                    class="fa-solid fa-circle-question text-2xl text-error-500"
+                                    use:popup={popupWoT}
+                                >
+                                </i>
+                                <div data-popup="popupWoT">
+                                    <div class="card font-bold w-40 p-4 text-error-500 max-h-60 overflow-y-auto">
+                                        Log in to Load your Web of Trust!
+                                    </div>
+                                </div>
+
+                            {:else}
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-error-500"
+                                    track="stroke-error-500/30"
+                                    strokeLinecap="round" width="w-8" 
+                                />
+                            {/if}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <svelte:fragment slot="trail">
@@ -423,7 +466,7 @@
                             border="border-4 border-surface-300-600-token hover:!border-primary-500"
                             cursor="cursor-pointer"
                             src={
-                                $currentUser.profile.image
+                            $currentUser?.profile?.image
                                 ?? `https://robohash.org/${$currentUser.pubkey}`
                             }
                         /> 

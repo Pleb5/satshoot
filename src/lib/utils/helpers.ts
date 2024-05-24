@@ -74,13 +74,10 @@ export async function initializeUser(ndk: NDK) {
 
 
         const $followsUpdated = get(followsUpdated) as number;
-        const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 14;
-
-        await updateFollowsAndWotScore(ndk);
+        const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60// * 60 * 24 * 14;
 
         if ($followsUpdated < twoWeeksAgo) {
-            // await updateFollowsAndWotScore();
-            // console.log(networkSize)
+            updateFollowsAndWotScore(ndk);
         }
     } catch(e) {
         console.log('Could not initialize User. Reason: ', e)

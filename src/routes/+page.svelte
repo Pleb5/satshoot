@@ -16,8 +16,7 @@
     function filterTickets() {
         // We need to check all tickets against all filters
         if (filterList.length > 0) {
-            ticketList = new Set();
-            $allTickets.forEach((ticket: TicketEvent) => {
+            ticketList.forEach((ticket: TicketEvent) => {
                 filterList.forEach((filter: string) => {
                     const lowerCaseFilter = filter.toLowerCase();
 
@@ -56,7 +55,9 @@
             // We just received a ticket 
             ticketList = new Set($allTickets.filter((t: TicketEvent) => {
                 const newTicket = (t.status === TicketStatus.New);
-                if (!$wot || $wot.size === 0) {
+                // wot is always at least 1 if there is a user logged in
+                // only update filter if other users are also present
+                if (!$wot || $wot.size < 2) {
                     return newTicket;
                 } else {
                     // Filter out tickets that are not in the wot

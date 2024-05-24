@@ -88,6 +88,9 @@
     async function encryptAndSaveSecret() {
         statusMessage = 'Encrypting and saving Secret in browser storage...';
         statusColor = 'text-tertiary-200-700-token';
+
+        encrypting = true;
+        await tick();
         try {
 
             let privateKey: string|undefined = undefined; 
@@ -99,81 +102,77 @@
 
             if (privateKey) {
                 $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+                const user = await $ndk.signer.user();
+                const npub = user.npub;
 
                 $sessionPK = privateKey;
+                // Disable Finish button until we get a result from the encryption process
+                // encrypt secret 
+                const cryptWorker = new Worker(
+                    new URL("$lib/utils/crypto.worker.ts", import.meta.url),
+                    { type: 'module' }
+                );
 
-                await initializeUser($ndk);
-
-                if ($loggedIn) {
-                    // Disable Finish button until we get a result from the encryption process
-                    // encrypt secret 
-                    const cryptWorker = new Worker(
-                        new URL("$lib/utils/crypto.worker.ts", import.meta.url),
-                        { type: 'module' }
-                    );
-
-                    cryptWorker.onmessage = (m) => {
-                        // set response and close modal
-                        const encryptedSecret = m.data['encryptedSecret'];
-                        if (encryptedSecret) {
-                            if (restoreMethod === RestoreMethod.Seed) {
-                                localStorage.setItem('nostr-seedwords', encryptedSecret);
-                            } else if (restoreMethod === RestoreMethod.Nsec) {
-                                localStorage.setItem('nostr-nsec', encryptedSecret);
-                            }
-                            localStorage.setItem('nostr-npub', $currentUser!.npub);
-                            localStorage.setItem('login-method', "ephemeral");
-
-                            const t: ToastSettings = {
-                                message: 'Encrypted Secret saved in local storage!',
-                                timeout: 7000,
-                                background: 'bg-success-300-600-token',
-                            };
-                            toastStore.trigger(t);
-                            if ($redirectStore) {
-                                goto($redirectStore);
-                                $redirectStore = '';
-                            } else {
-                                goto('/my-tickets');
-                            }
-                        } else {
-                            statusMessage = 'Unexpected response from encryption process:' + m.data;
-                            setTimeout(()=>{
-                                statusColor = 'text-red-500';
-                            }, 800);            
+                cryptWorker.onmessage = (m) => {
+                    // set response and close modal
+                    const encryptedSecret = m.data['encryptedSecret'];
+                    if (encryptedSecret) {
+                        if (restoreMethod === RestoreMethod.Seed) {
+                            localStorage.setItem('nostr-seedwords', encryptedSecret);
+                        } else if (restoreMethod === RestoreMethod.Nsec) {
+                            localStorage.setItem('nostr-nsec', encryptedSecret);
                         }
-                    };
+                        localStorage.setItem('nostr-npub', npub);
+                        localStorage.setItem('login-method', "ephemeral");
 
-                    cryptWorker.onerror = (e) => {
-                        console.log("Error happened in cryptWorker:", e.message)
-                        statusMessage = `Error while encrypting secret!`;
-                        setTimeout(()=>{
-                            statusColor = 'text-red-500';
-                        }, 800);            
-
-                    };
-
-                    cryptWorker.onmessageerror = (me) => {
-                        console.log('Message error:', me);
-                        statusMessage = 'Received malformed message: ' + me.data;
-
+                        const t: ToastSettings = {
+                            message: 'Encrypted Secret saved in local storage!',
+                            timeout: 7000,
+                            background: 'bg-success-300-600-token',
+                        };
+                        toastStore.trigger(t);
+                        if ($redirectStore) {
+                            goto($redirectStore);
+                            $redirectStore = '';
+                        } else {
+                            goto('/my-tickets');
+                        }
+                    } else {
+                        statusMessage = 'Unexpected response from encryption process:' + m.data;
                         setTimeout(()=>{
                             statusColor = 'text-red-500';
                         }, 800);            
                     }
+                };
 
-                    encrypting = true;
-                    await tick();
+                cryptWorker.onerror = (e) => {
+                    console.log("Error happened in cryptWorker:", e.message)
+                    statusMessage = `Error while encrypting secret!`;
+                    setTimeout(()=>{
+                        statusColor = 'text-red-500';
+                    }, 800);            
 
-                    // Start worker in background and wait for result in onmessage
-                    cryptWorker.postMessage({
-                        // Pass the correct secret to the encryption process
-                        secret: restoreMethod === RestoreMethod.Seed 
-                            ? seedWords.join(' ') : nsec,
-                        passphrase: passphrase,
-                        salt: $currentUser!.npub
-                    });
+                };
+
+                cryptWorker.onmessageerror = (me) => {
+                    console.log('Message error:', me);
+                    statusMessage = 'Received malformed message: ' + me.data;
+
+                    setTimeout(()=>{
+                        statusColor = 'text-red-500';
+                    }, 800);            
                 }
+
+                // Start worker in background and wait for result in onmessage
+                cryptWorker.postMessage({
+                    // Pass the correct secret to the encryption process
+                    secret: restoreMethod === RestoreMethod.Seed 
+                        ? seedWords.join(' ') : nsec,
+                    passphrase: passphrase,
+                    salt: npub
+                });
+
+                initializeUser($ndk);
             } else {
                 throw new Error("Creating Private key from input failed!");
             }

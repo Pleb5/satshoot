@@ -142,7 +142,7 @@
 
     $: if ($offerStore) {
         // Filtering out offers not in the web of Trust
-        if ($wot && $wot.size > 0) {
+        if ($wot && $wot.size > 1) {
             $offerStore = $offerStore.filter((offer: OfferEvent)=> {
                 return $wot.has(offer.pubkey);
             });
