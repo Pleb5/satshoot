@@ -8,6 +8,8 @@
         type NDKUserProfile
     } from "@nostr-dev-kit/ndk";
 
+    import { wot } from '$lib/stores/wot';
+
     import { connected } from "$lib/stores/ndk";
 
     import EditProfileModal from "../Modals/EditProfileModal.svelte";
@@ -40,6 +42,8 @@
     let lud16Text:string;
 
     let editable = false;
+    let partOfWoT = false;
+    let trustColor = 'text-error-500';
 
     $: if (npub) {
         // if user changed the npub reload profile
@@ -61,6 +65,10 @@
             profilePromise = user.fetchProfile(
                 {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY}
             );
+            if ($currentUser && $wot.has(user.pubkey)) {
+                partOfWoT = true;
+                trustColor = 'text-tertiary-400-500-token';
+            }
             profilePromise.then((profile:NDKUserProfile | null) => {
                 needProfile = false;
                 console.log('profile promise arrived')
@@ -257,8 +265,15 @@
                             ?? `https://robohash.org/${user?.pubkey}`}
                     /> 
                 </div>
-                <div class=" flex items-center justify-center gap-x-2 ">
+                <div class="flex items-center justify-center gap-x-4 ">
                     <h2 class="h2 text-center font-bold text-lg sm:text-2xl">{userProfile?.name ?? 'Name?'}</h2>
+                    <span>
+                        {#if partOfWoT}
+                            <i class="fa-solid fa-circle-check text-2xl {trustColor}"></i>
+                        {:else}
+                            <i class="fa-solid fa-circle-question text-2xl {trustColor}"></i>
+                        {/if}
+                    </span>
                 </div>
                 {#if editable}
                     <button class="justify-self-end" on:click={editName}>
