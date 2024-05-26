@@ -3,10 +3,11 @@
     import { allTickets } from "$lib/stores/troubleshoot-eventstores";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 
+    import { wot } from '$lib/stores/wot';
+
     import type { NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
-    import { onMount } from "svelte";
 
     let filterInput = '';
     let filterList: string[] = [];
@@ -15,8 +16,7 @@
     function filterTickets() {
         // We need to check all tickets against all filters
         if (filterList.length > 0) {
-            ticketList = new Set();
-            $allTickets.forEach((ticket: TicketEvent) => {
+            ticketList.forEach((ticket: TicketEvent) => {
                 filterList.forEach((filter: string) => {
                     const lowerCaseFilter = filter.toLowerCase();
 
@@ -54,7 +54,18 @@
         if($allTickets || filterList) {
             // We just received a ticket 
             ticketList = new Set($allTickets.filter((t: TicketEvent) => {
-                return t.status === TicketStatus.New;
+                const newTicket = (t.status === TicketStatus.New);
+                // wot is always at least 1 if there is a user logged in
+                // only update filter if other users are also present
+                if (!$wot || $wot.size < 2) {
+                    return newTicket;
+                } else {
+                    // Filter out tickets that are not in the wot
+                    return (
+                        newTicket
+                        && $wot.has(t.pubkey)
+                    );
+                }
             }));
             if (filterList.length > 0) {
                 filterTickets();

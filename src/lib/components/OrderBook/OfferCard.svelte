@@ -1,8 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
-    import { wotUpdated } from "$lib/stores/user";
-    import { getWotPercentile } from "$lib/utils/helpers";
 
     import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
@@ -16,6 +14,7 @@
     import { BTCTroubleshootKind } from "$lib/events/kinds";
 
     import CreateOfferModal from "../Modals/CreateOfferModal.svelte";
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
 
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
@@ -47,8 +46,7 @@
     let status = '?';
     let statusColor = 'text-primary-400-500-token';
 
-    let wotPercentile: number;
-    let percentileColor: string = 'text-error-500';
+    let trustColor: string = 'text-error-500';
 
     function insertThousandSeparator(amount: number) {
         return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -172,16 +170,16 @@
         }
     }
 
-    $: if (offer && $wotUpdated) {
-        wotPercentile = getWotPercentile($ndk.getUser({pubkey: offer.pubkey}));
-        if (wotPercentile > 25) {
-            percentileColor = 'text-warning-500';
-        } 
-
-       if (wotPercentile > 75) {
-            percentileColor = 'text-success-500';
-        }
-    }
+    // $: if (offer && $wotUpdated) {
+    //     wotPercentile = getWotPercentile($ndk.getUser({pubkey: offer.pubkey}));
+    //     if (wotPercentile > 25) {
+    //         percentileColor = 'text-warning-500';
+    //     } 
+    //
+    //    if (wotPercentile > 75) {
+    //         percentileColor = 'text-success-500';
+    //     }
+    // }
 
     function setOfferToSelect() {
         $offerMakerToSelect = (offer as OfferEvent).pubkey;
@@ -230,8 +228,19 @@
         {#if $currentUser && offer.pubkey !== $currentUser.pubkey}
             <div class='flex flex-col items-center'>
                 <div class='card flex flex-col items-center border-1 border-primary-500 p-3'>
-                    <h4 class='h4 font-bold text-primary-500'>Trust Score</h4>
-                    <strong class='text-lg {percentileColor}'>{wotPercentile + '%'}</strong>
+                    <h4 class='h4 font-bold text-primary-500'>Reputation</h4>
+                    <!-- {#if wotPercentile !== undefined} -->
+                    <!--     {#if wotPercentile >= 0} -->
+                    <!--         <strong class='text-lg {trustColor}'>{wotPercentile + '%'}</strong> -->
+                    <!--         {:else} -->
+                    <!--         <strong class='text-lg {trustColor}'>{'UNKOWN'}</strong> -->
+                    <!--     {/if} -->
+                    <!--     {:else} -->
+                    <!--     <span> -->
+                    <!--         <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500" -->
+                    <!--             track="stroke-primary-500/3" width="w-8" strokeLinecap="round"/> -->
+                    <!--     </span> -->
+                    <!-- {/if} -->
                 </div>
             </div>
         {/if}

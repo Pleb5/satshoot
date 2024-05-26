@@ -30,18 +30,15 @@
         const privateKey = privateKeyFromSeedWords(seedWords); 
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
-        try {
-            await initializeUser($ndk);
-        } catch (e) {
-            console.log('User initialization failed: ', e)
-        }
-
         // Store private key in session storage 
         $sessionPK = privateKey;
 
         seedWordList = seedWords.split(' ');
         nsec = nsecEncode(privateKey);
-        npub = $currentUser!.npub;
+        const user = await $ndk.signer.user();
+        npub = user.npub;
+
+        initializeUser($ndk);
     });
 
     let copied = false;

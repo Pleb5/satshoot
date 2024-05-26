@@ -1,6 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
+    import { wot } from '$lib/stores/wot';
     import { page } from "$app/stores";
 
     import { 
@@ -8,9 +9,7 @@
         myMessageFilter, offerMakerToSelect, selectedPerson
     } from "$lib/stores/messages";
     
-    import { offersOfMyTickets, offersOfMyTicketsFilter } from "$lib/stores/troubleshoot-eventstores";
-
-    import { restartEventStoreWithNotification } from '$lib/utils/helpers';
+    import { offersOfMyTickets } from "$lib/stores/troubleshoot-eventstores";
 
     import { onDestroy, onMount, tick } from "svelte";
 
@@ -152,7 +151,9 @@
         });
     }
 
-    function addPerson(pubkey: string): NDKUser {
+    function addPerson(pubkey: string): NDKUser | undefined {
+        if (!$wot.has(pubkey)) return undefined;
+
         for (const contact of people) {
             if (contact.person.pubkey === pubkey) {
                 return contact.person;
@@ -269,6 +270,7 @@
                 // This only adds person if it is not already added
                 // console.log('add person in updateMessageFeed')
                 personOfMessage = addPerson(dm.pubkey)
+                if (!personOfMessage) return;
             }
 
             try {
@@ -291,7 +293,9 @@
                 const newMessage = {
                     id: dm.id,
                     host: host,
-                    name: (personOfMessage as NDKUser).profile?.name ?? (personOfMessage as NDKUser).npub.substring(0, 10),
+                    name: (personOfMessage as NDKUser)
+                        .profile?.name
+                        ?? (personOfMessage as NDKUser).npub.substring(0, 10),
                     pubkey: (personOfMessage as NDKUser).pubkey,
                     avatar: (personOfMessage as NDKUser).profile?.image ??
                         `https://robohash.org/${(personOfMessage as NDKUser).pubkey}`,
@@ -514,12 +518,12 @@
                                         type="button"
                                         class="btn w-full flex items-center space-x-4 
                                         { contact.selected
-                                        ? 'variant-filled-primary'
-                                        : 'bg-surface-hover-token'
+                                            ? 'variant-filled-primary'
+                                            : 'bg-surface-hover-token'
                                         }
                                         { !contact.selected && arrowDown
-                                        ? 'hidden'
-                                        : ''
+                                            ? 'hidden'
+                                            : ''
                                         }
                                         "
                                         on:click={() => selectCurrentPerson(contact)}

@@ -24,7 +24,7 @@ let hideSearch = true;
 function filterOffersByTicket() {
     showPendingOffer = [];
     for (let i = 0; i < pendingOffers.length; i++) {
-        const ticket: TicketEvent = $ticketsOfMyOffers.find((t: TicketEvent) => 
+        const ticket: TicketEvent|undefined = $ticketsOfMyOffers.find((t: TicketEvent) => 
             t.ticketAddress === pendingOffers[i].referencedTicketAddress
         );
 
@@ -55,7 +55,7 @@ function filterOffersByTicket() {
 
     showWonOffer = [];
     for (let i = 0; i < wonOffers.length; i++) {
-        const ticket: TicketEvent = $ticketsOfMyOffers.find((t: TicketEvent) => 
+        const ticket: TicketEvent|undefined = $ticketsOfMyOffers.find((t: TicketEvent) => 
             t.ticketAddress === wonOffers[i].referencedTicketAddress
         );
 
@@ -86,7 +86,7 @@ function filterOffersByTicket() {
 
     showLostOffer = [];
     for (let i = 0; i < lostOffers.length; i++) {
-        const ticket: TicketEvent = $ticketsOfMyOffers.find((t: TicketEvent) => 
+        const ticket: TicketEvent|undefined = $ticketsOfMyOffers.find((t: TicketEvent) => 
             t.ticketAddress === lostOffers[i].referencedTicketAddress
         );
 

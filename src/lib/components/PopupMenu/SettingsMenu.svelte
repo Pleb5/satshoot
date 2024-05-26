@@ -1,5 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+
     import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import currentUser from '$lib/stores/user';
     import { getModalStore } from '@skeletonlabs/skeleton';
@@ -10,7 +11,15 @@
 
     import notificationsEnabled from '$lib/stores/notifications';
 
-    import {DEFAULTRELAYURLS, blacklistedRelays, storedPool, sessionPK } from "$lib/stores/ndk";
+    import { networkWoTScores } from '$lib/stores/wot';
+
+    import {
+        DEFAULTRELAYURLS,
+        OUTBOXRELAYURLS,
+        blacklistedRelays,
+        storedPool,
+        sessionPK 
+    } from "$lib/stores/ndk";
 
     import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfMyOffers,
         ticketsOfMyOffersFilter, offersOfMyTicketsFilter, offersOfMyTickets 
@@ -23,6 +32,7 @@
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import { loggedIn } from '$lib/stores/user';
+    import type { Hexpubkey } from '@nostr-dev-kit/ndk';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -80,6 +90,8 @@
 
         let logoutResponse = async function(r: boolean){
             if (r) {
+                networkWoTScores.set(new Map());
+
                 localStorage.clear();
                 // Reset local storage pool and blacklist
                 blacklistedRelays.set([]);
@@ -135,7 +147,7 @@
 
                 ndk.set(new NDKSvelte({
                     enableOutboxModel: true,
-                    outboxRelayUrls: ["wss://purplepag.es/"],
+                    outboxRelayUrls: OUTBOXRELAYURLS,
                     blacklistRelayUrls: [],
                     autoConnectUserRelays: true,
                     autoFetchUserMutelist: true,

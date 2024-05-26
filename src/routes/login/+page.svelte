@@ -47,12 +47,9 @@
     async function onNIP07Login() {
         if (browser && window.nostr) {
             $ndk.signer = new NDKNip07Signer();
+            localStorage.setItem('login-method', "nip07");
 
-            await initializeUser($ndk);
-
-            if ($loggedIn){
-                localStorage.setItem('login-method', "nip07");
-            }
+            initializeUser($ndk);
         }
 
         else if (!window.nostr) {

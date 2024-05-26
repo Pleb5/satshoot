@@ -1,12 +1,15 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from '$lib/stores/user';
-    import { loginAlert, networkFollows } from '$lib/stores/user';
+    import { loginAlert } from '$lib/stores/user';
     import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { connected } from "$lib/stores/ndk";
+    
     import redirectStore from '$lib/stores/redirect-store';
+
+    import { wot } from '$lib/stores/wot';
 
     import UserCard from "$lib/components/User/UserCard.svelte";
     import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
@@ -94,6 +97,7 @@
         ticketSubscription = $ndk.subscribe(ticketFilter, subOptions);
         ticketSubscription.on('event', (event: NDKEvent) => {
             ticket = TicketEvent.from(event);
+            npub = nip19.npubEncode(ticket.pubkey);
 
             // Scroll to top as soon as ticket arrives
             const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
@@ -137,6 +141,12 @@
     };
 
     $: if ($offerStore) {
+        // Filtering out offers not in the web of Trust
+        if ($wot && $wot.size > 1) {
+            $offerStore = $offerStore.filter((offer: OfferEvent)=> {
+                return $wot.has(offer.pubkey);
+            });
+        }
         $offerStore.forEach((offer: OfferEvent) => {
             if (offer.pubkey === $currentUser?.pubkey) {
                 offerToEdit = offer;
@@ -180,7 +190,6 @@
     }
 
     $: if ($currentUser && ticket) {
-        npub = nip19.npubEncode(ticket.pubkey);
         // If there is an active user and it is the creator of this ticket
         // We will hide create Offer button and the usercard, but enable taking offers
         if ($currentUser && $currentUser.pubkey === ticket.pubkey) {
