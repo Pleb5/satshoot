@@ -44,9 +44,18 @@ importers:
       '@nostr-dev-kit/ndk-svelte-components':
         specifier: workspace*
         version: link:packages/ndk/ndk-svelte-components
+      '@scure/bip39':
+        specifier: ^1.1.1
+        version: 1.2.1
+      dexie:
+        specifier: ^4.0.2
+        version: 4.0.4
       normalize-url:
         specifier: ^8.0.0
         version: 8.0.1
+      nostr-tools:
+        specifier: ^2.4.0
+        version: 2.5.2(typescript@5.4.5)
     devDependencies:
       '@skeletonlabs/skeleton':
         specifier: ^2.7.0

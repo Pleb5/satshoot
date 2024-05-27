@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 directory_root="./packages/ndk"
 subfolders=("ndk" "ndk-cache-dexie" "ndk-cache-redis" "ndk-svelte" "ndk-svelte-components")

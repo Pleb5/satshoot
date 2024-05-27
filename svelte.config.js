@@ -8,6 +8,14 @@ const config = {
     // This is needed for vite to handle Typescript in svelte components
 	preprocess: vitePreprocess(),
 
+    vite: {
+        server: {
+            fs: {
+                allow: ["./packages/ndk"]
+            }
+        }
+    },
+
 	kit: {
         version: {
             // Every 10 secs this checks if app was updated
