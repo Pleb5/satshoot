@@ -6,11 +6,6 @@ Try it live on:
 bitcointroubleshoot.com
 ```
 
-Try it locally:
-```
-npm install && npm run dev
-```
-
 ## ------ ! Work In Progress ! ------
 
 # The short story:
