@@ -1,4 +1,5 @@
 packages:
+  - 'apps/*'
   - 'packages/ndk/ndk'
   - 'packages/ndk/ndk-cache-dexie'
   - 'packages/ndk/ndk-svelte'

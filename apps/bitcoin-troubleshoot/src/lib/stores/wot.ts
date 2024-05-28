@@ -82,6 +82,7 @@ export function wotFiltered(events: NDKEvent[]):NDKEvent[] {
 export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
     const user = get(currentUser);
     try {
+        console.log('testlog');
         if (!user) throw new Error('Could not get user');
         const $networkWoTScores = new Map<Hexpubkey, number>();
 
