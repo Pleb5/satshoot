@@ -3,7 +3,7 @@ An app for bitcoiners to troubleshoot each other's technical issues for sats, us
 
 Try it live on:
 ```
-bitcointroubleshoot.com
+https://bitcointroubleshoot.com
 ```
 
 ## ------ ! Work In Progress ! ------
