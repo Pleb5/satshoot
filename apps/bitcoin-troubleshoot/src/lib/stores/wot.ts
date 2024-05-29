@@ -32,7 +32,6 @@ import {
     followsUpdated,
 } from '../stores/user';
 
-
 export const networkWoTScores: Writable<Map<Hexpubkey, number> | null>
     = localStorageStore('networkWoTScores', null, {serializer: getMapSerializer()});
 
@@ -86,37 +85,18 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         if (!user) throw new Error('Could not get user');
         const $networkWoTScores = new Map<Hexpubkey, number>();
 
-        const queryRelayMap = await NDKRelayList.forUsers([user.pubkey, BTCTroubleshootPubkey], ndk);
-        console.log('relay map', queryRelayMap)
 
-        const userWriteRelays = queryRelayMap.get(user.pubkey)?.writeRelayUrls
-            ?? ndk.pool.urls();
+        await ndk.outboxTracker.trackUsers([user.pubkey, BTCTroubleshootPubkey])
 
-        const bootstrapWriteRelays = queryRelayMap.get(BTCTroubleshootPubkey)?.writeRelayUrls
-            ?? ndk.pool.urls();
-
-        console.log('user write relays', userWriteRelays)
-        console.log('bootstrap write relays', bootstrapWriteRelays)
-
-        const queryRelaySet = NDKRelaySet.fromRelayUrls(
-            [],
-            ndk
-        );
-
-        userWriteRelays!.forEach(
-            (relay: WebSocket['url']) => queryRelaySet.addRelay(new NDKRelay(relay))
-        );
-        bootstrapWriteRelays!.forEach(
-            (relay: WebSocket['url']) => queryRelaySet.addRelay(new NDKRelay(relay))
-        );
-
-        console.log('write relay for user and bootstrap account: ', queryRelaySet);
+        // log write relays with buitin fn
 
         // user and bootstrap 'trust' basis: follows, mutes and reports
         const trustBasisFilter: NDKFilter = {
             kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
             authors: [user.pubkey, BTCTroubleshootPubkey]
         }
+
+        console.log('outboxPool:', ndk.outboxPool)
 
         const trustBasisEvents = await ndk.fetchEvents(
             trustBasisFilter,
@@ -125,7 +105,6 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
                 closeOnEose: true,
                 cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
             },
-            queryRelaySet,
         );
 
         console.log('trustBasisEvents', trustBasisEvents)
@@ -141,55 +120,29 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         const authorsArray = Array.from(authors);
         console.log('authors', authors)
 
-        const queryBatchSize = 20;
-        for (let i = 0; i < authorsArray.length; i+= queryBatchSize) {
-            const networkQueryRelaySet = NDKRelaySet.fromRelayUrls(
-                [],
-                ndk
-            );
-            // Calculate relays fo the batch
-            const authorsToQuery = [];
-            for (let j = i; j < i + queryBatchSize; j++) {
-                // dont index out of bound
-                if (j === authors.size) {
-                    console.log('reached end of authors, breaking..')
-                    break;
-                }
+        await ndk.outboxTracker.trackUsers(authorsArray);
 
-                authorsToQuery.push(authorsArray[j]);
+        console.log('outboxPool after tracking all authors:', ndk.outboxPool)
 
-                const relays: NDKRelayList | undefined = await NDKRelayList
-                    .forUser(authorsArray[j], ndk);
+        const networkFilter = {
+            kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
+            authors: authorsArray,
+        };
 
-                if (relays) {
-                    relays.writeRelayUrls.forEach((r: string) => {
-                        networkQueryRelaySet.addRelay(new NDKRelay(r));
-                    });
-                }
-            }
-            console.log('Network query relay set: ', networkQueryRelaySet)
-            // Fetch data and update wot scores in batch
-            const networkFilter = {
-                kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
-                authors: authorsToQuery,
-            };
+        const networkStore = await ndk.fetchEvents(
+            networkFilter,
+            {
+                groupable: false,
+                closeOnEose: true,
+                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+            },
+        );
 
-            const networkStore = await ndk.fetchEvents(
-                networkFilter,
-                {
-                    groupable: false,
-                    closeOnEose: true,
-                    cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-                },
-                networkQueryRelaySet,
-            );
+        console.log('Network event store', networkStore)
 
-            console.log('Network event store', networkStore)
-
-            // Second order scores
-            updateWotScores(networkStore, $networkWoTScores, false);
-            console.log("Updated Network wot scores:", $networkWoTScores);
-        }
+        // Second order scores
+        updateWotScores(networkStore, $networkWoTScores, false);
+        console.log("Updated Network wot scores:", $networkWoTScores);
 
         networkWoTScores.set($networkWoTScores);
 
