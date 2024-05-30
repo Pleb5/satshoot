@@ -1,6 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { ReviewEvent, ReviewType } from "$lib/events/ReviewEvent";
 
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
@@ -8,6 +9,7 @@
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { RadioGroup, RadioItem } from '@skeletonlabs/skeleton';
     import { type SvelteComponent, tick } from "svelte";
+    import { NDKEvent } from "@nostr-dev-kit/ndk";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -16,7 +18,9 @@
     export let parent: SvelteComponent;
     export let ticket: TicketEvent;
 
-    let radioGroup = 'close';
+    let expertise = false;
+    let availability = false;
+    let communication = false;
 
     let closing = false;
 
@@ -29,6 +33,19 @@
             ticketToPublish.description = ticket.description;
             // Important part! This also sets status to in progress
             ticketToPublish.status = closingStatus;
+
+            // Post review data if applicable
+            if (ticket.acceptedOfferAddress) {
+                const reviewEvent = new ReviewEvent($ndk);
+                reviewEvent.type = ReviewType.Troubleshooter;
+                reviewEvent.reviewedEventId = ticket.acceptedOfferAddress;
+
+                if (closingStatus === TicketStatus.Resolved) {
+                    reviewEvent.ratings.set();
+                }
+
+            }
+
 
             try {
                 closing = true;
@@ -103,6 +120,25 @@
                             No
                         </RadioItem>
                 </RadioGroup>
+                {#if ticket.acceptedOfferAddress}
+                    <div class="text-center font-bold">
+                        Excellent qualities of the Troubleshooter, if any:
+                    </div>
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2">
+                            <input class="checkbox" type="checkbox" bind:value={expertise} />
+                            <p>A skilled expert</p>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input class="checkbox" type="checkbox" bind:value={availability} />
+                            <p>Highly available, attentive and responsive</p>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input class="checkbox" type="checkbox" bind:value={communication} />
+                            <p>Especially clear and kind communication</p>
+                        </label>
+                    </div>
+                {/if}
                 <div class="grid grid-cols-[30%_1fr] gap-x-2">
                     <button 
                         type="button"

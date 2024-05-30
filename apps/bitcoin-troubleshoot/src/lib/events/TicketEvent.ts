@@ -1,5 +1,6 @@
 import { BTCTroubleshootKind } from "./kinds";
 import { NDKEvent, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
+import NDK from "@nostr-dev-kit/ndk"
 
 export enum TicketStatus {
     New = 0,
@@ -80,9 +81,4 @@ export class TicketEvent extends NDKEvent {
     get tTags(): NDKTag[] {
         return this._tTags;
     }
-
-    set tTags(tags: NDKTag[]) {
-        this._tTags = tags;
-    }
-
 }

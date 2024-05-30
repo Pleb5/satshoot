@@ -152,11 +152,6 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
 
         console.log("Follows", get(currentUserFollows));
         console.log("wot pubkeys", get(wot));
-        setTimeout(()=>{console.log('ndk pool after 35secs of completion:', ndk.pool)}, 35000);
-        setTimeout(()=>{console.log('ndk pool after 65secs of completion:', ndk.pool)}, 65000);
-        setTimeout(()=>{console.log('ndk pool after 95secs of completion:', ndk.pool)}, 95000);
-        setTimeout(()=>{console.log('ndk pool after 165secs of completion:', ndk.pool)}, 165000);
-        setTimeout(()=>{console.log('ndk pool after 240secs of completion:', ndk.pool)}, 240000);
     } catch (e) {
         console.log('Could not update Web of Trust scores: ', e)
     }

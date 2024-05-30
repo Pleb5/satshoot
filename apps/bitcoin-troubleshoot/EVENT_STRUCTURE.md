@@ -112,10 +112,10 @@ points for excellence in communication and availability.
     "tags": [
         ["L", qts/troubleshooting]
         ["l", “troubleshooter”, “qts/troubleshooting”],
-        ["rating", “<0 | 0.5>”, “troubleshooter/success”], 
-        ["rating", “<0 | 0.2>”, “troubleshooter/expertise”], 
-        ["rating", “<0 | 0.15>”, “troubleshooter/availability”], 
-        ["rating", “<0 | 0.15>”, “troubleshooter/communication”], 
+        ["rating", “<0 | 0.5>”, “success”], 
+        ["rating", “<0 | 0.2>”, “expertise”], 
+        ["rating", “<0 | 0.15>”, “availability”], 
+        ["rating", “<0 | 0.15>”, “communication”], 
         ["a", 32768:<hex pubkey of Troubleshooter>:<Offer d-tag>],
     ],
     "content": {
@@ -135,9 +135,9 @@ points for excellence in communication and availability.
     "tags": [
         ["L", qts/troubleshooting]
         ["l", “client”, “qts/troubleshooting”],
-        ["rating", “<0 | 0.5>”, “client/thumb”], 
-        ["rating", “<0 | 0.25>”, “client/availability”], 
-        ["rating", “<0 | 0.25>”, “client/communication”], 
+        ["rating", “<0 | 0.5>”, “thumb”], 
+        ["rating", “<0 | 0.25>”, “availability”], 
+        ["rating", “<0 | 0.25>”, “communication”], 
         ["a", 32767:<hex pubkey of the Client>:<Ticket d-tag>],
     ],
     "content": {
