@@ -13,8 +13,6 @@
     import { connected } from "$lib/stores/ndk";
     import {
         DEFAULTRELAYURLS,
-        blacklistedRelays,
-        storedPool,
         sessionPK,
     } from "$lib/stores/ndk";
 
@@ -110,26 +108,7 @@
         });
 
         // -----------  Set up relays and connect -------------
-
-        // Get user-defined pool from local storage if possible
-        if ($storedPool && $blacklistedRelays) {
-            // Retrieve blacklisted relay urls removed explicitly by the user
-            $blacklistedRelays.forEach((relay:string) => {
-                $ndk.pool.blacklistRelayUrls.add(relay);
-            });
-
-            $storedPool.forEach((relay:string) => {
-                $ndk.addExplicitRelay(relay);
-            });
-        } else {
-            // Initialize stored pool and ndk with default relays
-            $ndk.explicitRelayUrls = DEFAULTRELAYURLS; 
-            storedPool.set(DEFAULTRELAYURLS);
-
-            //init blacklist
-            blacklistedRelays.set([]);
-        }
-        
+        $ndk.explicitRelayUrls = DEFAULTRELAYURLS; 
 
         // Setup client-side caching
         $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'bitcoin-troubleshoot-db' });
@@ -153,6 +132,7 @@
         $connected = true;
 
         $ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
+            if (!relay) return;
             // Disabled for now, too annoying
             // console.log('relay disconnected')
             // const relayName = relay.url.replace("wss://", "").slice(0, -1);
@@ -167,6 +147,10 @@
             if ($ndk.pool.connectedRelays().length === 0
                 && !noConnectedRelaysToastID) {
                 $connected = false;
+                // Trying to reconnect
+                for (const relay of $ndk.pool.relays.values()) {
+                    relay.connect(2000);
+                }
                 const t: ToastSettings = {
                     message:`No Connected Relays!`,
                     background: 'bg-error-500',
@@ -186,13 +170,11 @@
         $ndk.pool.on('relay:connect', (relay: NDKRelay) => {
             if(!relay) return;
 
-            if ($storedPool?.includes(relay.url)) {
-                $connected = true;
-                // console.log('user-defined relay came online')
-                if(noConnectedRelaysToastID) {
-                    toastStore.close(noConnectedRelaysToastID);
-                    noConnectedRelaysToastID = '';
-                }
+            $connected = true;
+            // console.log('user-defined relay came online')
+            if(noConnectedRelaysToastID) {
+                toastStore.close(noConnectedRelaysToastID);
+                noConnectedRelaysToastID = '';
             }
         });
 

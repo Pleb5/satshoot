@@ -16,8 +16,6 @@
     import {
         DEFAULTRELAYURLS,
         OUTBOXRELAYURLS,
-        blacklistedRelays,
-        storedPool,
         sessionPK 
     } from "$lib/stores/ndk";
 
@@ -93,9 +91,6 @@
                 networkWoTScores.set(new Map());
 
                 localStorage.clear();
-                // Reset local storage pool and blacklist
-                blacklistedRelays.set([]);
-                storedPool.set(DEFAULTRELAYURLS);
 
                 $sessionPK = '';
                 sessionStorage.clear();

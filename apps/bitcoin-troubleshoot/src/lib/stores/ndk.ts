@@ -29,19 +29,11 @@ export enum LoginMethod {
     NIP07 = "nip07",
     Ephemeral = "ephemeral",
 }
-// Often in the app, the user profile needs to be restored(page refresh)
-// This tries to add user relays to the pool. If user has set the relays already,
-// We must not add these newly fetched relays back to the pool but conform to the stored pool in local storage
-// This is achieved NOT by trying to remove relays after the fact but keep a black list of removed relays
-export const blacklistedRelays: Writable<string[] | undefined> = localStorageStore('blacklistedRelays', undefined);
 
 // save this in session storage when logging in or restoring cipher pk
 // then check for pk store in login before trying to decrypt
 // Saves us from decryption every time user reloads page during a session
 export const sessionPK: Writable<string> = localStorageStore('pk', '',{ storage:'session' });
-// Save this in local(NOT session) storage when adding or removing relays
-// Always check for relays here when instantiating ndk
-export const storedPool: Writable<string[] | undefined> = localStorageStore('pool', undefined);
 
 // Client-side caching. Used for performance enhancement as well as a solution to identify
 // new data and serve push notifications. Notify user when 'tickets of interest' change,
