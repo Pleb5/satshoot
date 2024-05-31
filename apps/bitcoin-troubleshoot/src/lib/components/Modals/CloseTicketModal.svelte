@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import { ReviewEvent, ReviewType } from "$lib/events/ReviewEvent";
+    import { type TroubleshooterRating , ReviewEvent, ReviewType } from "$lib/events/ReviewEvent";
 
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
@@ -22,6 +22,8 @@
     let availability = false;
     let communication = false;
 
+    let reviewText = '';
+
     let closing = false;
 
     let closingStatus: TicketStatus.Resolved | TicketStatus.Failed = TicketStatus.Resolved;
@@ -34,24 +36,39 @@
             // Important part! This also sets status to in progress
             ticketToPublish.status = closingStatus;
 
-            // Post review data if applicable
-            if (ticket.acceptedOfferAddress) {
-                const reviewEvent = new ReviewEvent($ndk);
-                reviewEvent.type = ReviewType.Troubleshooter;
-                reviewEvent.reviewedEventId = ticket.acceptedOfferAddress;
-
-                if (closingStatus === TicketStatus.Resolved) {
-                    reviewEvent.ratings.set();
-                }
-
-            }
-
-
             try {
                 closing = true;
                 await tick();
 
                 await ticketToPublish.publish();
+
+                // Post review data if applicable
+                if (ticket.acceptedOfferAddress) {
+                    const reviewEvent = new ReviewEvent($ndk);
+                    reviewEvent.reviewedEventId = ticket.acceptedOfferAddress;
+                    reviewEvent.reviewText = reviewText;
+
+                    const rating: TroubleshooterRating = {
+                        success: false,
+                        expertise: false,
+                        availability: false,
+                        communication: false,
+                    }
+
+                    if (closingStatus === TicketStatus.Resolved) {
+                        rating.success = true;
+                    }
+
+                    rating.expertise = expertise;
+                    rating.availability = availability;
+                    rating.communication = communication;
+
+                    reviewEvent.troubleshooterRatings = rating;
+
+                    console.log('review event:', reviewEvent);
+                    const relays = await reviewEvent.publish();
+                    console.log('published relays', relays);
+                }
 
                 modalStore.close();
 
@@ -71,7 +88,7 @@
             } catch(e) {
                 console.log(e)
                 const t: ToastSettings = {
-                    message: 'Error while closing Ticket! Fix connection with Relays and try again!',
+                    message: 'Error while closing Ticket!',
                     timeout: 7000,
                     background: 'bg-error-300-600-token',
                 };
@@ -94,9 +111,9 @@
 {#if $modalStore[0]}
     {#if ticket}
         <div class="card p-4">
-            <h4 class="h4 text-center mb-2">{'Close Ticket'}</h4>
+            <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Close Ticket</h4>
             <div class="flex flex-col justify-center min-w-60 gap-y-4">
-                <div class="text-center font-bold">
+                <div class="text-md sm:text-xl text-center font-bold">
                     Was Your Issue Resolved?
                 </div>
                 <RadioGroup 
@@ -121,23 +138,32 @@
                         </RadioItem>
                 </RadioGroup>
                 {#if ticket.acceptedOfferAddress}
-                    <div class="text-center font-bold">
-                        Excellent qualities of the Troubleshooter, if any:
+                    <div class="text-md sm:text-xl text-center font-bold">
+                        Select excellent qualities of the Troubleshooter, if any:
                     </div>
                     <div class="space-y-2">
-                        <label class="flex items-center space-x-2">
+                        <label class="flex items-center space-x-2 text-sm sm:text-lg">
                             <input class="checkbox" type="checkbox" bind:value={expertise} />
                             <p>A skilled expert</p>
                         </label>
-                        <label class="flex items-center space-x-2">
+                        <label class="flex items-center space-x-2 text-sm sm:text-lg">
                             <input class="checkbox" type="checkbox" bind:value={availability} />
                             <p>Highly available, attentive and responsive</p>
                         </label>
-                        <label class="flex items-center space-x-2">
+                        <label class="flex items-center space-x-2 text-sm sm:text-lg">
                             <input class="checkbox" type="checkbox" bind:value={communication} />
                             <p>Especially clear and kind communication</p>
                         </label>
                     </div>
+                    <label class="label max-w-xl">
+                        <span class="text-md sm:text-xl">Share your experience to help others:</span>
+                        <textarea 
+                        class="textarea"
+                        rows="3"
+                        placeholder="Describe your experience..."
+                        bind:value={reviewText}
+                    />
+                    </label>
                 {/if}
                 <div class="grid grid-cols-[30%_1fr] gap-x-2">
                     <button 
