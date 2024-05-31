@@ -1,7 +1,5 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
-    import currentUser from "$lib/stores/user";
-    import { loggedIn } from '$lib/stores/user';
 
     import { RestoreMethod, sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromNsec } from '$lib/utils/nip19';
