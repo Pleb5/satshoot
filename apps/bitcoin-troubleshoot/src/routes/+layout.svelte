@@ -201,7 +201,7 @@
                         try {
                             // Get decrypted seed from a modal prompt where user enters passphrase
                             // User can dismiss modal in which case decryptedSeed is undefined
-                            new Promise<string|undefined>((resolve) => {
+                            const responseObject: any = await new Promise<string|undefined>((resolve) => {
                                 const modalComponent: ModalComponent = {
                                     ref: DecryptSecretModal,
                                 };
@@ -217,31 +217,30 @@
                                 // This can throw invalid secret if decryption was unsuccessful
                                 modalStore.trigger(modal);
                                 // We got some kind of response from modal
-                            }).then(async (responseObject: any) => {
-                                    if (responseObject) {
-                                        const decryptedSecret = responseObject['decryptedSecret'];
-                                        const restoreMethod = responseObject['restoreMethod'];
-                                        if (decryptedSecret && restoreMethod) {
-                                            let privateKey:string|undefined = undefined;
-                                            if (restoreMethod === RestoreMethod.Seed) {
-                                                privateKey = privateKeyFromSeedWords(decryptedSecret);
-                                            } else if (restoreMethod === RestoreMethod.Nsec) {
-                                                privateKey = privateKeyFromNsec(decryptedSecret);
-                                            }
-
-                                            if (privateKey) {
-                                                $ndk.signer = new NDKPrivateKeySigner(privateKey); 
-                                                $sessionPK = privateKey;
-                                            } else {
-                                                throw new Error(
-                                                    "Could not create hex private key from decrypted secret. \
-                                                    Clear browser local storage and login again."
-                                                );
-                                            }
-
-                                        }
+                            });                      
+                            if (responseObject) {
+                                const decryptedSecret = responseObject['decryptedSecret'];
+                                console.log(decryptedSecret)
+                                const restoreMethod = responseObject['restoreMethod'];
+                                if (decryptedSecret && restoreMethod) {
+                                    let privateKey:string|undefined = undefined;
+                                    if (restoreMethod === RestoreMethod.Seed) {
+                                        privateKey = privateKeyFromSeedWords(decryptedSecret);
+                                    } else if (restoreMethod === RestoreMethod.Nsec) {
+                                        privateKey = privateKeyFromNsec(decryptedSecret);
                                     }
-                                });
+
+                                    if (privateKey) {
+                                        $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+                                        $sessionPK = privateKey;
+                                    } else {
+                                        throw new Error(
+                                            "Could not create hex private key from decrypted secret. \
+                                            Clear browser local storage and login again."
+                                        );
+                                    }
+                                }
+                            }
                         } catch(e) {
                             const t: ToastSettings = {
                                 message:`Could not create private key from local secret, error: ${e}`,
