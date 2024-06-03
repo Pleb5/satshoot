@@ -6,6 +6,7 @@
     import { NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import { sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
+    import { hexToBytes } from "@noble/hashes/utils";
     import { nsecEncode } from "nostr-tools/nip19"
 
     import { clipboard } from '@skeletonlabs/skeleton';
@@ -28,13 +29,13 @@
         // Generate new local private key
         seedWords = generateSeedWords();
         const privateKey = privateKeyFromSeedWords(seedWords); 
+        // Store private key in session storage 
+        $sessionPK = `${privateKey}`;
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
-        // Store private key in session storage 
-        $sessionPK = privateKey;
 
         seedWordList = seedWords.split(' ');
-        nsec = nsecEncode(privateKey);
+        nsec = nsecEncode(hexToBytes(privateKey));
         const user = await $ndk.signer.user();
         npub = user.npub;
 
