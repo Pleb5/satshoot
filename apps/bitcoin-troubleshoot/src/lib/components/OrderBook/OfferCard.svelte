@@ -78,7 +78,7 @@
                 }
             );
             ticketSubscription.on('event', (event: NDKEvent, relay: NDKRelay, sub: NDKSubscription) => {
-                console.log('ticket event arrived. First seen: ', sub.eventFirstSeen)
+                // console.log('ticket event arrived. First seen: ', sub.eventFirstSeen)
                 ticket = TicketEvent.from(event);
                 const winner = ticket.acceptedOfferAddress;
                 if (winner === offer!.offerAddress){
@@ -96,7 +96,7 @@
                 offer = offer;
             });
             ticketSubscription.on('close', () => {
-                console.log('closed ticketSubscription!', offer)
+                // console.log('closed ticketSubscription!', offer)
             })
         } else {
             console.log('Cannot start ticket sub! Filter does not contain a ticket d-tag!')
@@ -105,7 +105,7 @@
 
     $: {
         if (offer) {
-            console.log('offer changed', offer)
+            // console.log('offer changed', offer)
             switch (offer.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';
@@ -138,7 +138,7 @@
 
         
             const dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
-            console.log('ticketfilter', ticketFilter)
+            // console.log('ticketfilter', ticketFilter)
             if (!ticketFilter['#d']!.includes(dTagOfTicket)) {
                 if (ticketSubscription) {
                     console.log('stopping ticket sub...')
@@ -151,7 +151,7 @@
                 startTicketSub();
 
             } else {
-                console.log('dont start ticket sub, ticket filter not changed')
+                // console.log('dont start ticket sub, ticket filter not changed')
             }
         } else {
             console.log('offer is null yet!')

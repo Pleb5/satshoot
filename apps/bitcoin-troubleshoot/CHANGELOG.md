@@ -1,4 +1,4 @@
-# https://bitcointroubleshoot.com
+# https://satshoot.com
 
 ## 0.0.1
 -   Nostr connect(nsecBunker), NIP07 Browser Extension and Local key Login

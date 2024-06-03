@@ -62,14 +62,14 @@
 
     onMount(()=>{
         if (ticket) {
-            shareURL = `https://bitcointroubleshoot.com/${ticket.encode()}`
+            shareURL = `https://satshoot.com/${ticket.encode()}`
             // Set default text
             message = `Hey Nostr,\nPlease help me with this #bitcoin issue and I can pay sats for your time:\n\n`;
             message += `${ticket.title}\n\n`;
             message += `${ticket.description}\n\n`;
             message += `Make an offer on this URL:\n\n`;
             message += `${shareURL}\n\n`;
-            message += `#bitcointroubleshoot #asknostr`;
+            message += `#satshoot #asknostr`;
             ticket.tTags.forEach((tag: NDKTag)=>{
                 message += ` #${(tag as string[])[1]}`;
             });

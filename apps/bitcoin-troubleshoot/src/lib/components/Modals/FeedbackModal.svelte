@@ -63,7 +63,7 @@
     }
 
     onMount(()=>{
-        textArea.value = `\n\n#bitcointroubleshoot #feedback`;
+        textArea.value = `\n\n#satshoot #feedback`;
         textArea.setSelectionRange(0, 0);
         textArea.focus();
     });

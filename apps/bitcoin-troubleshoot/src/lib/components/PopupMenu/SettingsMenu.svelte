@@ -147,7 +147,7 @@
                     autoConnectUserRelays: true,
                     autoFetchUserMutelist: true,
                     explicitRelayUrls: DEFAULTRELAYURLS,
-                    cacheAdapter: new NDKCacheAdapterDexie({ dbName: 'bitcoin-troubleshoot-db' }),
+                    cacheAdapter: new NDKCacheAdapterDexie({ dbName: 'satshoot-db' }),
                 }));
 
                 await $ndk.connect();

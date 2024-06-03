@@ -1,11 +1,11 @@
-# Structure of app-specific events used in Bitcoin Troubleshoot
+# Structure of app-specific events used in SatShoot
 
 
 ## Ticket event
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Bitcoiner>,
+    "pubkey": <hex public key of the Client>,
     "created_at": <unix timestamp in seconds>,
     "kind": 32767,
     "tags": [
@@ -27,15 +27,15 @@
                 ...
         ["p", <hex public keyN>],
 
-        // Preferred languages of the Bitcoiner | string, optional
+        // Preferred languages of the Client | string, optional
         ["languages",<language1>, <language2>, ..., <languageN>],
 
-        // Milestones if the Bitcoiner wants to define multiple steps for the ticket | string, optional
+        // Milestones if the Client wants to define multiple steps for the ticket | string, optional
         ["milestones", <milestone1>, <milestone2>, ...,<milestoneN> ],
 
         ["s", <0(new) OR 1(in progress) OR 2(Resolved) or 3(Failed)>],
 
-        // If Bitcoiner accepts an offer she SHOULD set this tag
+        // If Clien accepts an offer she SHOULD set this tag
         ["a", 32768:<hex pubkey of Troubleshooter>:<Offer ID from a d-tag of an offer>],
     ],
     "content": {
@@ -55,7 +55,7 @@
     "tags": [
         // Replacement is based on this. Allows for multiple updatable/replaceable offers
         ["d", <offer ID, integer, mandatory>],
-        ["a", 32767:<hex pubkey of Bitcoiner>:<ticket ID from a d-tag of a ticket>, mandatory>],
+        ["a", 32767:<hex pubkey of Client>:<ticket ID from a d-tag of a ticket>, mandatory>],
         ["pricing", <pricing strategy, MUST be either 0(absolute price), 1(sats/minute) or 2(sats/milestone), integer, mandatory>],
         // Amount of the price. If more than 1 amount, then it refers to the milestones of the ticket respectively. Else refers to the sats/minute or absolute price | mandatory
         ["amount", [<amount1>, <amount2>, ..., amountN>]]
@@ -69,13 +69,13 @@
 
 ## Review events
 ### Rationale: Web of Trust and Reviews
-In addition to the Web of Trust(WoT) weeding out untrusted people and spam, Bitcoin Troubleshoot
+In addition to the Web of Trust(WoT) weeding out untrusted people and spam, SatShoot
 uses Review events similar to NIP32 in order to bootstrap a reputation network of Troubleshooters
 and Clients. After a Troubleshooting experience both parties rate each other so everyone has more
 confidence in the future that the counterparty is trustworthy enough.
 
 Filtering is based on the user's local perspective (follows, mutes and reports of himself and
-his follows, bootstrapped with the Bitcoin Troubleshoot nostr acccount).
+his follows, bootstrapped with the SatShoot nostr acccount).
 Filtered pubkeys don't show up on the Ticket feed nor are his Offers listed,
 and his direct messages are not shown either.
 
@@ -86,7 +86,7 @@ This also means that reputation is local to the User of the app and is heavily
 dependent on the User's ability to build a trustworthy follow list.
 
 ### QTS: Qualitative Thumb System
-The rating system used in Bitcoin Troubleshoot is based on [QTS](https://habla.news/u/arkinox@arkinox.tech/DLAfzJJpQDS4vj3wSleum).
+The rating system used in SatShoot is based on [QTS](https://habla.news/u/arkinox@arkinox.tech/DLAfzJJpQDS4vj3wSleum).
 This hopefully captures users' sentiments better than 'five-star' systems and 
 allows for better overall UX around this feature.
 
@@ -106,7 +106,7 @@ points for excellence in communication and availability.
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Bitcoiner>,
+    "pubkey": <hex public key of the Client>,
     "created_at": <unix timestamp in seconds>,
     "kind": 1986,
     "tags": [
@@ -129,7 +129,7 @@ points for excellence in communication and availability.
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Bitcoiner>,
+    "pubkey": <hex public key of the Client>,
     "created_at": <unix timestamp in seconds>,
     "kind": 1986,
     "tags": [

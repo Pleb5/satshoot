@@ -1,4 +1,4 @@
-# Notes of ideas for Bitcoin Troubleshoot
+# Notes of ideas for SatShoot
 ## UI
 - Direct message chat: warn user when at least two words of the input matches words from the bip39 list
 - Quick Introduction trip for the user based on role (on demand)

@@ -34,9 +34,9 @@ sw.onmessage = (m) => {
         const granted = Notification.permission === 'granted';
         if(granted) {
             const options = { 
-                icon: '/bitcoin-troubleshoot.svg',
-                badge: '/bitcoin-troubleshoot.svg',
-                image: '/bitcoin-troubleshoot.svg',
+                icon: '/satshoot.svg',
+                badge: '/satshoot.svg',
+                image: '/satshoot.svg',
                 body: body,
                 tag: tag,
             }

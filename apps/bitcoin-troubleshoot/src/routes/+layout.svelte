@@ -111,13 +111,13 @@
         $ndk.explicitRelayUrls = DEFAULTRELAYURLS; 
 
         // Setup client-side caching
-        $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'bitcoin-troubleshoot-db' });
+        $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
         window.onunhandledrejection = async(event: PromiseRejectionEvent) => {
             event.preventDefault();
             console.log(event.reason)
             if (event.reason?.name === Dexie.errnames.DatabaseClosed) {
                 console.log('Could not open Dexie DB, probably version change. Deleting old DB and reloading...')
-                await Dexie.delete('bitcoin-troubleshoot-db');
+                await Dexie.delete('satshoot-db');
                 // Must reload to open a brand new DB
                 window.location.reload();
 
@@ -394,7 +394,7 @@
 
             <div class="flex justify-center lg:ml-20">
                 <div class ='flex gap-x-2 justify-center items-center'>
-                    <img src="/bitcoin-troubleshoot.svg" alt="logo" />
+                    <img src="/satshoot.svg" alt="logo" />
                     <div class ='flex gap-x-2 items-center'>
                         <h3 class='h3 font-bold'>WoT:</h3>
                         <div>
