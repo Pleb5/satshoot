@@ -44,7 +44,7 @@ const ndkSvelte = new NDKSvelte({
     blacklistRelayUrls: [],
     autoConnectUserRelays: true,
     autoFetchUserMutelist: true,
-    explicitRelayUrls:[],
+    explicitRelayUrls: DEFAULTRELAYURLS,
 });
 
 export const connected = writable(false);

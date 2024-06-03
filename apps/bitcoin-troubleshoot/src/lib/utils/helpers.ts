@@ -20,7 +20,9 @@ import {
 } from '../stores/user';
 
 import {
-    updateFollowsAndWotScore
+    updateFollowsAndWotScore,
+    networkWoTScores,
+    wot
 } from '../stores/wot';
 
 import notificationsEnabled from '$lib/stores/notifications';
@@ -30,13 +32,14 @@ import { dev } from '$app/environment';
 
 import { 
     myTicketFilter, myOfferFilter, myTickets, myOffers,
-    ticketsOfMyOffers, offersOfMyTickets,
+    ticketsOfMyOffers, offersOfMyTickets, allTickets
 } from "$lib/stores/troubleshoot-eventstores";
 
 import { BTCTroubleshootKind } from '$lib/events/kinds';
 
 
 export async function initializeUser(ndk: NDK) {
+    console.log('begin user init')
     try {
         const user = await (ndk.signer as NDKSigner).user();
         if (user.npub) {
@@ -44,6 +47,24 @@ export async function initializeUser(ndk: NDK) {
         } else return;
 
         currentUser.set(user);
+
+        myTicketFilter.authors?.push(user.pubkey);
+        myOfferFilter.authors?.push(user.pubkey);
+
+
+        // --------- User Profile --------------- //
+
+        await user.fetchProfile();
+        currentUser.set(user);
+
+        // If we already have wot scores, we track users in wot and restart
+        if (get(networkWoTScores)) {
+            const wotArray = Array.from(get(wot));
+            await ndk.outboxTracker.trackUsers(wotArray);
+        }
+
+        allTickets.unsubscribe();
+        allTickets.startSubscription();
 
         // --------------- User Subscriptions -------------- //
         ticketsOfMyOffers.startSubscription();
@@ -60,25 +81,31 @@ export async function initializeUser(ndk: NDK) {
         requestNotifications( 
             (offersOfMyTickets as NDKEventStore<ExtendedBaseType<OfferEvent>>).subscription!
         );
-
-        myTicketFilter.authors?.push(user.pubkey);
-        myOfferFilter.authors?.push(user.pubkey);
-
         myTickets.startSubscription();
         myOffers.startSubscription();
-
-        // --------- User Profile --------------- //
-
-        await user.fetchProfile();
-        currentUser.set(user);
-
 
         const $followsUpdated = get(followsUpdated) as number;
         const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60// * 60 * 24 * 14;
 
+        // Try to recalculate wot
         if ($followsUpdated < twoWeeksAgo) {
-            updateFollowsAndWotScore(ndk);
+            await updateFollowsAndWotScore(ndk);
         }
+
+        // Restart every subscription after successful wot and follow recalc
+        allTickets.unsubscribe();
+        allTickets.startSubscription();
+
+        ticketsOfMyOffers.unsubscribe();
+        offersOfMyTickets.unsubscribe();
+        ticketsOfMyOffers.startSubscription();
+        offersOfMyTickets.startSubscription();
+
+
+        myTickets.unsubscribe();
+        myOffers.unsubscribe();
+        myTickets.startSubscription();
+        myOffers.startSubscription();
     } catch(e) {
         console.log('Could not initialize User. Reason: ', e)
     }

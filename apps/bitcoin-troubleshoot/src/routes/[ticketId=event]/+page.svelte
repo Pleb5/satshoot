@@ -48,7 +48,6 @@
 
     const subOptions: NDKSubscriptionOptions = { 
         closeOnEose: false,
-        pool: $ndk.pool
     };
     let ticketSubscription: NDKSubscription | undefined = undefined;
     let ticket: TicketEvent | undefined = undefined;
@@ -89,14 +88,21 @@
         const ticketFilter: NDKFilter<BTCTroubleshootKind> = {
             kinds: [BTCTroubleshootKind.Ticket],
             '#d': [dTag],
-            limit: 1,
         };
 
 
         console.log('connected, setting up')
         ticketSubscription = $ndk.subscribe(ticketFilter, subOptions);
         ticketSubscription.on('event', (event: NDKEvent) => {
+            // Dismiss with old tickets
+            if (ticket) {
+                const arrivedTicket = TicketEvent.from(event);
+                if (arrivedTicket.created_at! < ticket.created_at!) {
+                    return;
+                }
+            }
             ticket = TicketEvent.from(event);
+            console.log('ticket', ticket)
             npub = nip19.npubEncode(ticket.pubkey);
 
             // Scroll to top as soon as ticket arrives
