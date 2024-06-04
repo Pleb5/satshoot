@@ -16,7 +16,7 @@
     export let parent: SvelteComponent;
     export let ticketAddress: string;
 
-    let thumb = false;
+    let thumb = true;
     let availability = false;
     let communication = false;
 
@@ -102,17 +102,17 @@
                     hover="hover:variant-soft-primary"
                 >
 						<RadioItem 
+                            class='text-xl'
                             bind:group={thumb}
-                            required
-                            name="status"
+                            name="thumb"
                             value={true}
-
                         >
                             👍
                         </RadioItem>
 						<RadioItem
+                            class='text-xl'
                             bind:group={thumb}
-                            name="status" 
+                            name="thumb" 
                             value={false}
                         >
                             👎
