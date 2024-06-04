@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import { type TroubleshooterRating , ReviewEvent, ReviewType } from "$lib/events/ReviewEvent";
+    import { type TroubleshooterRating , ReviewEvent } from "$lib/events/ReviewEvent";
 
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';

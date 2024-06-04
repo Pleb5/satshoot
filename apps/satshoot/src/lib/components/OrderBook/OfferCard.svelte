@@ -14,14 +14,16 @@
     import { BTCTroubleshootKind } from "$lib/events/kinds";
 
     import CreateOfferModal from "../Modals/CreateOfferModal.svelte";
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-
+    import ReviewClientModal from "../Modals/ReviewClientModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
+    import { popup } from '@skeletonlabs/skeleton';
+    import type { PopupSettings } from '@skeletonlabs/skeleton';
+
     import { onDestroy } from "svelte";
 
     const modalStore = getModalStore();
-    
+
     export let offer: OfferEvent | null = null;
     export let countAllOffers: boolean = false;
     export let showTicket: boolean = true;
@@ -43,6 +45,7 @@
 
     // Because Tickets drive the status of Offers, this is calculated always
     // as soon as the ticket for this offer is fetched
+    let winner = false;
     let status = '?';
     let statusColor = 'text-primary-400-500-token';
 
@@ -67,6 +70,21 @@
         }
     }
 
+    function reviewClient() {
+        if (offer) {
+            const modalComponent: ModalComponent = {
+                ref: ReviewClientModal,
+                props: {ticketAddress: offer.referencedTicketAddress},
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+            };
+            modalStore.trigger(modal);
+        }
+    }
+
     function startTicketSub() {
         if (ticketFilter['#d']!.length > 0) {
             ticketSubscription = $ndk.subscribe(
@@ -80,11 +98,12 @@
             ticketSubscription.on('event', (event: NDKEvent, relay: NDKRelay, sub: NDKSubscription) => {
                 // console.log('ticket event arrived. First seen: ', sub.eventFirstSeen)
                 ticket = TicketEvent.from(event);
-                const winner = ticket.acceptedOfferAddress;
-                if (winner === offer!.offerAddress){
+                const winnerId = ticket.acceptedOfferAddress;
+                if (winnerId === offer!.offerAddress){
+                    winner = true;
                     status = 'Won';
                     statusColor = 'text-warning-500';
-                } else if(winner || ticket.isClosed()) {
+                } else if(winnerId || ticket.isClosed()) {
                     status = 'Lost';
                     statusColor = 'text-error-500';
                 } else {
@@ -182,6 +201,13 @@
         }
     });
 
+    // For context menu: Edit ticket, close ticket, share ticket
+    const contextMenu: PopupSettings = {
+        event: 'click',
+        target: `contextMenu_${offer?.id}`,
+        placement: 'bottom'
+    };
+
 </script>
 
 <div class="card pt-2 bg-surface-200-700-token flex-grow sm:max-w-[70vw] lg:max-w-[60vw]">
@@ -200,15 +226,40 @@
                 { (editOffer ? 'My ' : '') + 'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
             </h3>
             <div class="col-start-3 justify-self-end">
-                {#if editOffer}
-                    <button 
+                <div class="justify-self-end ">
+                    <button
                         type="button"
-                        class="btn btn-icon font-bold " 
-                        on:click = {editMyOffer}
+                        class="btn btn-icon w-8 h-8 bg-primary-400-500-token"
+                        use:popup={contextMenu}
                     >
-                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
+                        <i class="fa text-sm fa-ellipsis-v"></i>
                     </button>
-                {/if}
+                    <div data-popup="contextMenu_{offer.id}">
+                        <div class="card p-2 bg-primary-300-600-token shadow-xl z-50 ">
+                            <ul class="list space-y-4">
+                                <!-- Edit Offer -->
+                                {#if editOffer}
+                                    <li>
+                                        <button class="" on:click={editMyOffer}>
+                                            <span><i class="fa-solid fa-pen-to-square"/></span>
+                                            <span class="flex-auto">Edit</span>
+                                        </button>
+                                    </li>
+                                {/if}
+                                <!-- Review Client -->
+                                <!-- TODO: insert && notYetReviewed condition! -->
+                                {#if winner }
+                                    <li>
+                                        <button class="" on:click={reviewClient}>
+                                            <span><i class="fa-regular fa-star-half-stroke"/></span>
+                                            <span class="flex-auto">Review Client</span>
+                                        </button>
+                                    </li>
+                                {/if}
+                            </ul>
+                        </div>
+                    </div>
+                </div> 
             </div>
         </div>
         <div class="text-center text-base md:text-lg p-2">
