@@ -170,17 +170,6 @@
         }
     }
 
-    // $: if (offer && $wotUpdated) {
-    //     wotPercentile = getWotPercentile($ndk.getUser({pubkey: offer.pubkey}));
-    //     if (wotPercentile > 25) {
-    //         percentileColor = 'text-warning-500';
-    //     } 
-    //
-    //    if (wotPercentile > 75) {
-    //         percentileColor = 'text-success-500';
-    //     }
-    // }
-
     function setOfferToSelect() {
         $offerMakerToSelect = (offer as OfferEvent).pubkey;
     }

@@ -29,7 +29,7 @@
 
     import { initializeUser, restartEventStoreWithNotification} from '$lib/utils/helpers';
 
-    import { wot } from '$lib/stores/wot';
+    import { wot, wotUpdating } from '$lib/stores/wot';
 
     import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
 
@@ -398,19 +398,7 @@
                     <div class ='flex gap-x-2 items-center'>
                         <h3 class='h3 font-bold'>WoT:</h3>
                         <div>
-                            {#if $wot && $wot.size > 1}
-                                <i 
-                                    class="fa-solid fa-circle-check text-2xl {trustColor}"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
-                                        Web of Trust Loaded
-                                    </div>
-                                </div>
-                            {:else if !$loggedIn}
-
+                            {#if !$loggedIn}
                                 <i 
                                     class="fa-solid fa-circle-question text-2xl text-error-500"
                                     use:popup={popupWoT}
@@ -421,8 +409,7 @@
                                         Log in to Load your Web of Trust!
                                     </div>
                                 </div>
-
-                            {:else}
+                            {:else if $wot && $wot.size < 2 && $wotUpdating}
                                 <ProgressRadial
                                     value={undefined}
                                     stroke={60}
@@ -430,6 +417,25 @@
                                     track="stroke-error-500/30"
                                     strokeLinecap="round" width="w-8" 
                                 />
+                            {:else if $wot && $wot.size > 1 && $wotUpdating}
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-success-500"
+                                    track="stroke-success-500/30"
+                                    strokeLinecap="round" width="w-8" 
+                                />
+                            {:else if $wot && $wot.size > 1}
+                                <i 
+                                    class="fa-solid fa-circle-check text-2xl {trustColor}"
+                                    use:popup={popupWoT}
+                                >
+                                </i>
+                                <div data-popup="popupWoT">
+                                    <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
+                                        Web of Trust Loaded
+                                    </div>
+                                </div>
                             {/if}
                         </div>
                     </div>

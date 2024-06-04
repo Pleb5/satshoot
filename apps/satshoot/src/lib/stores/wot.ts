@@ -31,6 +31,7 @@ import {
     currentUserFollows,
     followsUpdated,
 } from '../stores/user';
+import { tick } from 'svelte';
 
 export const networkWoTScores: Writable<Map<Hexpubkey, number> | null>
     = localStorageStore('networkWoTScores', null, {serializer: getMapSerializer()});
@@ -48,7 +49,7 @@ const secondOrderReportWot = -0.5*(secondOrderFollowWot);
 
 export const bootstrapAccount = BTCTroubleshootPubkey;
 
-export const wotUpdated = writable(false);
+export const wotUpdating = writable(false);
 
 export const wot = derived(
     [networkWoTScores, minWot, currentUser],
@@ -81,7 +82,9 @@ export function wotFiltered(events: NDKEvent[]):NDKEvent[] {
 export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
     const user = get(currentUser);
     try {
-        console.log('testlog');
+        wotUpdating.set(true);
+        console.log('wotupdating', get(wotUpdating))
+        await tick();
         if (!user) throw new Error('Could not get user');
         const $networkWoTScores = new Map<Hexpubkey, number>();
 
@@ -148,11 +151,12 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
 
         followsUpdated.set(Math.floor(Date.now() / 1000));
 
-        wotUpdated.set(true);
+        wotUpdating.set(false);
 
         console.log("Follows", get(currentUserFollows));
         console.log("wot pubkeys", get(wot));
     } catch (e) {
+        wotUpdating.set(false);
         console.log('Could not update Web of Trust scores: ', e)
     }
 }
