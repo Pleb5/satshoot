@@ -18,10 +18,7 @@ import type {
 
 import {
     NDKSubscriptionCacheUsage,
-    NDKRelaySet,
     NDKKind,
-    NDKRelayList ,
-    NDKRelay,
 } from '@nostr-dev-kit/ndk';
 
 import type { NDKSvelte } from '@nostr-dev-kit/ndk-svelte';

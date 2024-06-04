@@ -25,6 +25,8 @@ import {
     wot
 } from '../stores/wot';
 
+import { allReviewsFilter, allReviews } from '../stores/reviews.ts';
+
 import notificationsEnabled from '$lib/stores/notifications';
 
 import { get } from "svelte/store";
@@ -77,19 +79,26 @@ export async function initializeUser(ndk: NDK) {
         currentUser.set(user);
 
         const $followsUpdated = get(followsUpdated) as number;
-        const oneWeekAgo= Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 7;
+        // Update wot every 5 hours: Newbies can get followers and after 5 hours
+        // their actions will be visible to a decent amount of people
+        const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
 
         // Try to recalculate wot every week
-        if ($followsUpdated < oneWeekAgo || !get(networkWoTScores)) {
+        let wotArray: string[] = [];
+        if ($followsUpdated < updateDelay || !get(networkWoTScores)) {
             console.log('wot outdated, updating...')
             await updateFollowsAndWotScore(ndk);
             console.log('wot updated')
+            wotArray = Array.from(get(wot));
         } else if (get(networkWoTScores)) {
             // if wot is up to date we just update the outbox relay lists
             console.log('updating relay lists of users...')
-            const wotArray = Array.from(get(wot));
+            wotArray = Array.from(get(wot));
             await ndk.outboxTracker.trackUsers(wotArray);
         }
+
+        allReviewsFilter['authors'] = wotArray;
+        allReviews.startSubscription();
         
         // Restart every subscription after successful wot and follow recalc
         allTickets.unsubscribe();
