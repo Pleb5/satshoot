@@ -52,20 +52,6 @@ export async function initializeUser(ndk: NDK) {
         myOfferFilter.authors?.push(user.pubkey);
 
 
-        // --------- User Profile --------------- //
-
-        await user.fetchProfile();
-        currentUser.set(user);
-
-        // If we already have wot scores, we track users in wot and restart
-        if (get(networkWoTScores)) {
-            const wotArray = Array.from(get(wot));
-            await ndk.outboxTracker.trackUsers(wotArray);
-        }
-
-        allTickets.unsubscribe();
-        allTickets.startSubscription();
-
         // --------------- User Subscriptions -------------- //
         ticketsOfMyOffers.startSubscription();
         offersOfMyTickets.startSubscription();
@@ -81,17 +67,30 @@ export async function initializeUser(ndk: NDK) {
         requestNotifications( 
             (offersOfMyTickets as NDKEventStore<ExtendedBaseType<OfferEvent>>).subscription!
         );
+
         myTickets.startSubscription();
         myOffers.startSubscription();
 
+        // --------- User Profile --------------- //
+
+        await user.fetchProfile();
+        currentUser.set(user);
+
         const $followsUpdated = get(followsUpdated) as number;
-        const twoWeeksAgo = Math.floor(Date.now() / 1000) - 60// * 60 * 24 * 14;
+        const oneWeekAgo= Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 7;
 
-        // Try to recalculate wot
-        if ($followsUpdated < twoWeeksAgo) {
+        // Try to recalculate wot every week
+        if ($followsUpdated < oneWeekAgo || !get(networkWoTScores)) {
+            console.log('wot outdated, updating...')
             await updateFollowsAndWotScore(ndk);
+            console.log('wot updated')
+        } else if (get(networkWoTScores)) {
+            // if wot is up to date we just update the outbox relay lists
+            console.log('updating relay lists of users...')
+            const wotArray = Array.from(get(wot));
+            await ndk.outboxTracker.trackUsers(wotArray);
         }
-
+        
         // Restart every subscription after successful wot and follow recalc
         allTickets.unsubscribe();
         allTickets.startSubscription();

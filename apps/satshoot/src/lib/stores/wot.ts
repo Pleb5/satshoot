@@ -62,6 +62,7 @@ export const wot = derived(
 
         if ($currentUser) {
             pubkeys.add($currentUser.pubkey);
+            pubkeys.add(BTCTroubleshootPubkey);
         }
 
         return pubkeys;
