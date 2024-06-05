@@ -30,7 +30,6 @@
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import { loggedIn } from '$lib/stores/user';
-    import type { Hexpubkey } from '@nostr-dev-kit/ndk';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();

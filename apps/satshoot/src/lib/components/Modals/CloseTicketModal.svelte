@@ -46,13 +46,13 @@
                 if (ticket.acceptedOfferAddress) {
                     const reviewEvent = new ReviewEvent($ndk);
                     reviewEvent.reviewedEventId = ticket.acceptedOfferAddress;
-                    reviewEvent.reviewText = reviewText;
 
                     const rating: TroubleshooterRating = {
                         success: false,
                         expertise: false,
                         availability: false,
                         communication: false,
+                        reviewText: reviewText,
                     }
 
                     if (closingStatus === TicketStatus.Resolved) {

@@ -32,6 +32,7 @@ export interface ClientRating {
     thumb: boolean;
     availability: boolean;
     communication: boolean;
+    reviewText: string;
 }
 
 export interface TroubleshooterRating {
@@ -39,8 +40,12 @@ export interface TroubleshooterRating {
     expertise: boolean;
     availability: boolean;
     communication: boolean;
+    reviewText: string;
 }
 
+// In the future perhaps make the two types of reviews extend a common ReviewEvent
+// this way it would use two different event stores and use common ancestor functions
+// and would not need lots of type checking. More elegant solution overall
 export class ReviewEvent extends NDKEvent {
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
@@ -87,6 +92,8 @@ export class ReviewEvent extends NDKEvent {
 
         const communication = r.communication ? ClientRatings.communication : '0';
         this.tags.push(['rating', communication, 'communication']);
+
+        this.content = r.reviewText;
     }
 
     set troubleshooterRatings(r: TroubleshooterRating) {
@@ -109,6 +116,8 @@ export class ReviewEvent extends NDKEvent {
 
         const communication = r.communication ? TroubleshooterRatings.communication : '0';
         this.tags.push(['rating', communication, 'communication']);
+
+        this.content = r.reviewText;
     }
 
     get ratings(): ClientRating | TroubleshooterRating | undefined{
@@ -117,6 +126,7 @@ export class ReviewEvent extends NDKEvent {
                 thumb: false,
                 availability: false,
                 communication: false,
+                reviewText: this.content,
             }
             this.tags.forEach((tag: NDKTag) => {
                 if (tag.includes('rating') && tag.includes('thumb')) {
@@ -134,6 +144,7 @@ export class ReviewEvent extends NDKEvent {
                 expertise: false,
                 availability: false,
                 communication: false,
+                reviewText: this.content,
             }
             this.tags.forEach((tag: NDKTag) => {
                 if (tag.includes('rating') && tag.includes('success')) {
@@ -232,9 +243,5 @@ export class ReviewEvent extends NDKEvent {
     
     get reviewText(): string {
         return this.content;
-    }
-
-    set reviewText(text: string) {
-        this.content = text;
     }
 }

@@ -66,9 +66,11 @@
     import DecryptSecretModal from "$lib/components/Modals/DecryptSecretModal.svelte";
 
     // Skeleton stores init
-    import { initializeStores } from '@skeletonlabs/skeleton';
+    import { initializeStores, Drawer } from '@skeletonlabs/skeleton';
+    import { drawerID, drawerIDs } from '$lib/stores/drawer';
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import ReviewBreakdown from "$lib/components/DrawerContents/ReviewBreakdown.svelte";
     // Tickets and Offers
 
     initializeStores();
@@ -376,6 +378,13 @@
 
 <Toast />
 <Modal />
+<Drawer >
+    {#if $drawerID === drawerIDs.ReviewBreakdown}
+        <ReviewBreakdown />
+    {:else if $drawerID === drawerIDs.UserMenu}
+        <SettingsMenu/>
+    {/if}
+</Drawer>
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
 	<svelte:fragment slot="header">
         <AppBar gridColumns="grid-cols-3" slotDefault="place-content-center" slotTrail="place-content-end ">
