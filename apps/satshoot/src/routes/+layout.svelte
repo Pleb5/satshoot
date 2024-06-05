@@ -67,7 +67,8 @@
 
     // Skeleton stores init
     import { initializeStores, Drawer } from '@skeletonlabs/skeleton';
-    import { drawerID, drawerIDs } from '$lib/stores/drawer';
+    import drawerID from '$lib/stores/drawer';
+    import { drawerIDs } from '$lib/stores/drawer';
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import ReviewBreakdown from "$lib/components/DrawerContents/ReviewBreakdown.svelte";

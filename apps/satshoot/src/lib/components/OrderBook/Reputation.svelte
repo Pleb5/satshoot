@@ -21,18 +21,19 @@ export let type: ReviewType;
 
 const drawerStore = getDrawerStore();
 
-const reviews = (type === ReviewType.Client ? clientReviews : troubleshooterReviews); 
+const reviews = (type === ReviewType.Client 
+    ? clientReviews : troubleshooterReviews
+); 
+
 let ratings: Map<string, number> | undefined = undefined;
 let userReviewsArr: Array<ClientRating | TroubleshooterRating> | undefined = undefined;
 
-const baseClasses = 'card p-4 m-8 mt-4 bg-surface-200-700-token\
-    flex-grow sm:max-w-[70vw] lg:max-w-[60vw]';
+const baseClasses = 'card p-4 bg-inherit m-8 border-4 border-primary-500';
 
 let ratingConsensus = '';
 let ratingColor = '';
 
 function showReviewBreakdown() {
-    
     const drawerSettings: DrawerSettings = {
         id: $drawerID,
         meta: { ratings: ratings, userReviews: userReviewsArr }
@@ -43,6 +44,8 @@ function showReviewBreakdown() {
 $: if (user && $reviews) {
     ratings = aggregateRatings(user, type);
     const average = ratings.get('average') as number;
+    // we dont display the exact average in the breakdown
+    ratings.delete('average');
     ratingConsensus = 'Excellent';
     ratingColor = 'text-warning-500';
     if (average < 0.9) {
@@ -67,7 +70,7 @@ $: if (user && $reviews) {
 </script>
 
 <div class="{baseClasses}">
-    <h2 class="h2">Reputation</h2>
+    <h3 class="h3 text-center mb-4">Reputation</h3>
     {#if user}
         <div class="flex justify-between mb-2">
             <div class="flex flex-col items-center gap-y-2">
@@ -76,12 +79,10 @@ $: if (user && $reviews) {
             </div>
         </div>
     {:else}
-        <section class="w-[200px] md:w-[400px] p-4">
-            <div class="grid grid-cols-[1fr_1fr_1fr] gap-8 items-center">
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-            </div>
-        </section>
+        <div class="grid grid-cols-[1fr_1fr_1fr] gap-8 items-center">
+            <div class="placeholder animate-pulse" />
+            <div class="placeholder animate-pulse" />
+            <div class="placeholder animate-pulse" />
+        </div>
     {/if}
 </div>

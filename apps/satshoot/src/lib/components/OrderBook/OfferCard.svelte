@@ -21,6 +21,8 @@
     import type { PopupSettings } from '@skeletonlabs/skeleton';
 
     import { onDestroy } from "svelte";
+    import Reputation from "./Reputation.svelte";
+    import { ReviewType } from "$lib/events/ReviewEvent";
 
     const modalStore = getModalStore();
 
@@ -266,23 +268,7 @@
             {offer.description}
         </div>
         {#if $currentUser && offer.pubkey !== $currentUser.pubkey}
-            <div class='flex flex-col items-center'>
-                <div class='card flex flex-col items-center border-1 border-primary-500 p-3'>
-                    <h4 class='h4 font-bold text-primary-500'>Reputation</h4>
-                    <!-- {#if wotPercentile !== undefined} -->
-                    <!--     {#if wotPercentile >= 0} -->
-                    <!--         <strong class='text-lg {trustColor}'>{wotPercentile + '%'}</strong> -->
-                    <!--         {:else} -->
-                    <!--         <strong class='text-lg {trustColor}'>{'UNKOWN'}</strong> -->
-                    <!--     {/if} -->
-                    <!--     {:else} -->
-                    <!--     <span> -->
-                    <!--         <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500" -->
-                    <!--             track="stroke-primary-500/3" width="w-8" strokeLinecap="round"/> -->
-                    <!--     </span> -->
-                    <!-- {/if} -->
-                </div>
-            </div>
+            <Reputation type={ReviewType.Troubleshooter} />
         {/if}
         <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start p-8 pt-2">
