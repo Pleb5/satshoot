@@ -80,16 +80,28 @@ export function userReviews(source: Hexpubkey, target: Hexpubkey, type: ReviewTy
 
 export function aggregateRatings(target: Hexpubkey, type: ReviewType): Map<string, number> {
     const ratings: Map<string, number> = new Map();
+    const thumbString = 'Positive Overall Experience';
+    const successString = 'Successful TroubleShoots';
+    const expertiseString = 'Expertise';
+    const availabilityString = 'Availability';
+    const communicationString = 'Communication';
 
     let $reviews: ReviewEvent[];
     if (type === ReviewType.Client) {
         $reviews = get(clientReviews).filter((r: ReviewEvent) => {
             return r.reviewedPerson === target;
         });
+        ratings.set(thumbString, 0);
+        ratings.set(availabilityString, 0);
+        ratings.set(communicationString, 0);
     } else {
         $reviews = get(troubleshooterReviews).filter((r: ReviewEvent) => {
             return r.reviewedPerson === target;
         });
+        ratings.set(successString, 0);
+        ratings.set(expertiseString, 0);
+        ratings.set(availabilityString, 0);
+        ratings.set(communicationString, 0);
     }
 
     console.log('filtered target reviews', $reviews)
@@ -115,35 +127,35 @@ export function aggregateRatings(target: Hexpubkey, type: ReviewType): Map<strin
             const rating = r.ratings as ClientRating;
             console.log('rating: ', rating)
             if (rating.thumb) {
-                const currentCount = ratings.get('Positive Overall Experience') ?? 0;
-                ratings.set('Positive Overall Experience', currentCount + 1);
+                const currentCount = ratings.get(thumbString) ?? 0;
+                ratings.set(thumbString, currentCount + 1);
             } 
             if (rating.availability) {
-                const currentCount = ratings.get('Availability') ?? 0;
-                ratings.set('Availability', currentCount + 1);
+                const currentCount = ratings.get(availabilityString) ?? 0;
+                ratings.set(availabilityString, currentCount + 1);
             }
             if (rating.communication) {
-                const currentCount = ratings.get('Communication') ?? 0;
-                ratings.set('Communication', currentCount + 1);
+                const currentCount = ratings.get(communicationString) ?? 0;
+                ratings.set(communicationString, currentCount + 1);
             }
         } else {
             const rating = r.ratings as TroubleshooterRating;
             console.log('rating: ', rating)
             if (rating.success) {
-                const currentCount = ratings.get('Successful TroubleShoots') ?? 0;
-                ratings.set('Successful TroubleShoots', currentCount + 1);
+                const currentCount = ratings.get(successString) ?? 0;
+                ratings.set(successString, currentCount + 1);
             } 
             if (rating.expertise) {
-                const currentCount = ratings.get('Expertise') ?? 0;
-                ratings.set('Expertise', currentCount + 1);
+                const currentCount = ratings.get(expertiseString) ?? 0;
+                ratings.set(expertiseString, currentCount + 1);
             } 
             if (rating.availability) {
-                const currentCount = ratings.get('Availability') ?? 0;
-                ratings.set('Availability', currentCount + 1);
+                const currentCount = ratings.get(availabilityString) ?? 0;
+                ratings.set(availabilityString, currentCount + 1);
             }
             if (rating.communication) {
-                const currentCount = ratings.get('Communication') ?? 0;
-                ratings.set('Communication', currentCount + 1);
+                const currentCount = ratings.get(communicationString) ?? 0;
+                ratings.set(communicationString, currentCount + 1);
             }
         }
     }

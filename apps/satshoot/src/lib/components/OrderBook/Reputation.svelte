@@ -30,8 +30,8 @@ const reviews = (type === ReviewType.Client
     ? clientReviews : troubleshooterReviews
 ); 
 
-$: if($troubleshooterReviews) {
-    console.log('review arrived', $troubleshooterReviews)
+$: if($clientReviews) {
+    console.log('client review arrived', $clientReviews)
 }
 
 let ratings: Map<string, number> | undefined = undefined;
@@ -58,23 +58,28 @@ $: if (user && $reviews) {
     const average = ratings.get('average') as number;
     // we dont display the exact average in the breakdown
     ratings.delete('average');
-    ratingConsensus = 'Excellent';
-    ratingColor = 'bg-warning-500';
-    if (average < 0.9) {
-        ratingConsensus = 'Great';
-        ratingColor = 'bg-tertiary-500';
-    } 
-    if (average < 0.75) {
-        ratingConsensus = 'Good';
-        ratingColor = 'bg-success-500';
-    }
-    if (average < 0.5) {
-        ratingConsensus = 'Mixed ratings';
+    if (isNaN(average)) {
+        ratingConsensus = 'No Ratings';
         ratingColor = 'bg-surface-500';
-    }
-    if (average < 0.25) {
-        ratingConsensus = 'Bad';
-        ratingColor = 'bg-error-500';
+    } else {
+        ratingConsensus = 'Excellent';
+        ratingColor = 'bg-warning-500';
+        if (average < 0.9) {
+            ratingConsensus = 'Great';
+            ratingColor = 'bg-tertiary-500';
+        } 
+        if (average < 0.75) {
+            ratingConsensus = 'Good';
+            ratingColor = 'bg-success-500';
+        }
+        if (average < 0.5) {
+            ratingConsensus = 'Mixed ratings';
+            ratingColor = 'bg-surface-500';
+        }
+        if (average < 0.25) {
+            ratingConsensus = 'Bad';
+            ratingColor = 'bg-error-500';
+        }
     }
     userReviewsArr = userReviews($currentUser!.pubkey, user, type);
 }

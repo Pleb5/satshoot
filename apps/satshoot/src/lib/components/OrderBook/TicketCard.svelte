@@ -19,9 +19,13 @@
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
 
     import { ticketToEdit } from "$lib/stores/ticket-to-edit";
-    import { goto } from "$app/navigation";
     import ShareTicketModal from "../Modals/ShareTicketModal.svelte";
     import CloseTicketModal from '$lib/components/Modals/CloseTicketModal.svelte';
+
+    import Reputation from "./Reputation.svelte";
+    import { ReviewType } from "$lib/events/ReviewEvent";
+
+    import { goto } from "$app/navigation";
     import { onDestroy } from "svelte";
 
     const modalStore = getModalStore();
@@ -270,6 +274,12 @@
             <div class="text-center text-base md:text-lg">
                 { generateDescription() }
             </div>
+
+            <hr class="my-4" />
+             
+            {#if $currentUser && ticket.pubkey !== $currentUser.pubkey}
+                <Reputation type={ReviewType.Client} user={ticket.pubkey}/>
+            {/if}
 
             <hr class="my-4" />
 

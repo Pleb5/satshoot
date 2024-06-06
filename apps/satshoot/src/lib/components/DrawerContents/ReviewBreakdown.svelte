@@ -26,6 +26,7 @@ function showUserReviewBreakdown() {
 
 <div class="{baseClasses}">
     <div class="flex flex-col items-center gap-y-4 text-2xl">
+        <h3 class="h3 underline">Review Summary</h3>
         {#if reviews && reviews.size > 0}
             <div class="grid grid-cols-[1fr_auto] gap-x-4">
                 <div>{Array.from(reviews.keys())[0]}:</div>
