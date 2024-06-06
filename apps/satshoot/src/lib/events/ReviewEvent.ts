@@ -129,11 +129,17 @@ export class ReviewEvent extends NDKEvent {
                 reviewText: this.content,
             }
             this.tags.forEach((tag: NDKTag) => {
-                if (tag.includes('rating') && tag.includes('thumb')) {
+                const rating = parseFloat(tag[1]);
+                if (isNaN(rating)) return;
+
+                if (tag.includes('rating')
+                    && tag.includes('thumb') && rating > 0) {
                     clientRating.thumb = true;
-                } else if (tag.includes('rating') && tag.includes('availability')) {
+                } else if (tag.includes('rating')
+                    && tag.includes('availability') && rating > 0) {
                     clientRating.availability = true;
-                } else if (tag.includes('rating') && tag.includes('communication')) {
+                } else if (tag.includes('rating')
+                    && tag.includes('communication') && rating > 0) {
                     clientRating.communication = true;
                 }
             });
@@ -147,13 +153,20 @@ export class ReviewEvent extends NDKEvent {
                 reviewText: this.content,
             }
             this.tags.forEach((tag: NDKTag) => {
-                if (tag.includes('rating') && tag.includes('success')) {
+                const rating = parseFloat(tag[1]);
+                if (isNaN(rating)) return;
+
+                if (tag.includes('rating')
+                    && tag.includes('success') && rating > 0) {
                     troubleshooterRating.success = true;
-                } else if (tag.includes('rating') && tag.includes('expertise')) {
+                } else if (tag.includes('rating')
+                    && tag.includes('expertise') && rating > 0) {
                     troubleshooterRating.expertise = true;
-                } else if (tag.includes('rating') && tag.includes('availability')) {
+                } else if (tag.includes('rating')
+                    && tag.includes('availability') && rating > 0) {
                     troubleshooterRating.availability = true;
-                } else if (tag.includes('rating') && tag.includes('communication')) {
+                } else if (tag.includes('rating')
+                    && tag.includes('communication') && rating > 0) {
                     troubleshooterRating.communication = true;
                 }
             });

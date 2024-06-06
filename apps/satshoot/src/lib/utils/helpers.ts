@@ -17,6 +17,7 @@ import currentUser from '../stores/user';
 import {
     loggedIn,
     followsUpdated,
+    relaysUpdating,
 } from '../stores/user';
 
 import {
@@ -25,7 +26,7 @@ import {
     wot
 } from '../stores/wot';
 
-import { allReviewsFilter, allReviews } from '../stores/reviews.ts';
+import { allReviewsFilter, allReviews } from '$lib/stores/reviews';
 
 import notificationsEnabled from '$lib/stores/notifications';
 
@@ -52,7 +53,6 @@ export async function initializeUser(ndk: NDK) {
 
         myTicketFilter.authors?.push(user.pubkey);
         myOfferFilter.authors?.push(user.pubkey);
-
 
         // --------------- User Subscriptions -------------- //
         ticketsOfMyOffers.startSubscription();
@@ -85,10 +85,11 @@ export async function initializeUser(ndk: NDK) {
 
         // Try to recalculate wot every week
         let wotArray: string[] = [];
+        relaysUpdating.set(true);
         if ($followsUpdated < updateDelay || !get(networkWoTScores)) {
-            console.log('wot outdated, updating...')
+            // console.log('wot outdated, updating...')
             await updateFollowsAndWotScore(ndk);
-            console.log('wot updated')
+            // console.log('wot updated')
             wotArray = Array.from(get(wot));
         } else if (get(networkWoTScores)) {
             // if wot is up to date we just update the outbox relay lists
@@ -96,10 +97,15 @@ export async function initializeUser(ndk: NDK) {
             wotArray = Array.from(get(wot));
             await ndk.outboxTracker.trackUsers(wotArray);
         }
+        relaysUpdating.set(false);
 
         allReviewsFilter['authors'] = wotArray;
+
         allReviews.startSubscription();
         
+        allReviews.subscription?.on('event', (event: NDKEvent)=>{
+            console.log('review arrived', event)
+        })
         // Restart every subscription after successful wot and follow recalc
         allTickets.unsubscribe();
         allTickets.startSubscription();

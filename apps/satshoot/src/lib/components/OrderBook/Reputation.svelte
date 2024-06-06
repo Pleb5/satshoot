@@ -5,16 +5,21 @@ import {
     aggregateRatings,
     userReviews,
 } from "$lib/stores/reviews";
+
 import {
     ReviewType,
     type TroubleshooterRating,
     type ClientRating
 } from "$lib/events/ReviewEvent";
+
 import type { Hexpubkey } from "@nostr-dev-kit/ndk";
 import currentUser from "$lib/stores/user";
+import { relaysUpdating } from "$lib/stores/user";
 
 import { type DrawerSettings, getDrawerStore } from "@skeletonlabs/skeleton";
-import drawerID from '$lib/stores/drawer';
+import { ProgressRadial } from '@skeletonlabs/skeleton';
+import drawerID, { DrawerIDs } from '$lib/stores/drawer';
+import { wotUpdating } from "$lib/stores/wot";
 
 export let user: Hexpubkey | undefined = undefined;
 export let type: ReviewType;
@@ -25,6 +30,10 @@ const reviews = (type === ReviewType.Client
     ? clientReviews : troubleshooterReviews
 ); 
 
+$: if($troubleshooterReviews) {
+    console.log('review arrived', $troubleshooterReviews)
+}
+
 let ratings: Map<string, number> | undefined = undefined;
 let userReviewsArr: Array<ClientRating | TroubleshooterRating> | undefined = undefined;
 
@@ -34,9 +43,12 @@ let ratingConsensus = '';
 let ratingColor = '';
 
 function showReviewBreakdown() {
+    $drawerID = DrawerIDs.ReviewBreakdown;
     const drawerSettings: DrawerSettings = {
         id: $drawerID,
-        meta: { ratings: ratings, userReviews: userReviewsArr }
+        meta: { ratings: ratings, userReviews: userReviewsArr },
+        position: 'top',
+        bgDrawer: 'bg-surface-300-600-token',
     };
     drawerStore.open(drawerSettings);
 }
@@ -47,22 +59,22 @@ $: if (user && $reviews) {
     // we dont display the exact average in the breakdown
     ratings.delete('average');
     ratingConsensus = 'Excellent';
-    ratingColor = 'text-warning-500';
+    ratingColor = 'bg-warning-500';
     if (average < 0.9) {
         ratingConsensus = 'Great';
-        ratingColor = 'text-tertiary-500';
+        ratingColor = 'bg-tertiary-500';
     } 
     if (average < 0.75) {
         ratingConsensus = 'Good';
-        ratingColor = 'text-success-500';
+        ratingColor = 'bg-success-500';
     }
     if (average < 0.5) {
         ratingConsensus = 'Mixed ratings';
-        ratingColor = 'text-surface-500';
+        ratingColor = 'bg-surface-500';
     }
     if (average < 0.25) {
         ratingConsensus = 'Bad';
-        ratingColor = 'text-error-500';
+        ratingColor = 'bg-error-500';
     }
     userReviewsArr = userReviews($currentUser!.pubkey, user, type);
 }
@@ -71,11 +83,42 @@ $: if (user && $reviews) {
 
 <div class="{baseClasses}">
     <h3 class="h3 text-center mb-4">Reputation</h3>
-    {#if user}
+    {#if user && $reviews}
         <div class="flex justify-between mb-2">
-            <div class="flex flex-col items-center gap-y-2">
-                <h3 class="h3">Ratings</h3>
-                <div class="{ratingColor}">{ratingConsensus}</div>
+            <div class="flex gap-x-2">
+                <div class="flex flex-col items-center gap-y-2">
+                    <div class="flex items-center">
+                        <h3 class="h3 underline">Ratings</h3>
+                        {#if $reviews.length > 0}
+                            <button
+                                type="button" 
+                                class="btn btn-icon-lg p-2 text-start text-primary-400-500-token"
+                                on:click={showReviewBreakdown}>
+                                <span>
+                                    <i 
+                                        class="fa-solid fa-arrow-up-right-from-square "
+                                    >
+                                    </i>
+                                </span>
+                            </button>
+                        {/if}
+                    </div>
+                    {#if $reviews.length > 0}
+                        <div class="badge px-4 py-2 text-lg {ratingColor}">
+                            {ratingConsensus}
+                        </div>
+                    {:else if $wotUpdating || $relaysUpdating}
+                        <ProgressRadial
+                        value={undefined}
+                        stroke={60}
+                        meter="stroke-primary-500"
+                        track="stroke-primary-500/30"
+                        strokeLinecap="round" width="w-8" 
+                    />
+                    {:else}
+                        <div class="h3">?</div>
+                    {/if}
+                </div>
             </div>
         </div>
     {:else}

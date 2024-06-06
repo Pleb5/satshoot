@@ -66,7 +66,7 @@
             // ndk.activeUser is undefined at this point but
             // user.ndk.activeUser is the logged in user?!?!
             profilePromise = user.fetchProfile(
-                {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY}
+                {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST}
             );
             if ($currentUser && $wot.has(user.pubkey)) {
                 partOfWoT = true;

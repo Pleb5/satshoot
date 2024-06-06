@@ -292,7 +292,7 @@
 {/if}
 <!-- Offers on Ticket -->
 <h2 class="font-bold text-center text-lg sm:text-2xl mb-4" >
-    {'Current Offers on this Ticket: ' + ($offerStore ? $offerStore.length : '?') }
+    {'Offers on this Ticket: ' + ($offerStore ? $offerStore.length : '?') }
 </h2>
 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
     {#if $offerStore}

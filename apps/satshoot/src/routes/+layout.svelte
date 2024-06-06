@@ -68,10 +68,11 @@
     // Skeleton stores init
     import { initializeStores, Drawer } from '@skeletonlabs/skeleton';
     import drawerID from '$lib/stores/drawer';
-    import { drawerIDs } from '$lib/stores/drawer';
+    import { DrawerIDs } from '$lib/stores/drawer';
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import ReviewBreakdown from "$lib/components/DrawerContents/ReviewBreakdown.svelte";
+    import UserReviewBreakdown from "$lib/components/DrawerContents/UserReviewBreakdown.svelte";
     // Tickets and Offers
 
     initializeStores();
@@ -379,11 +380,13 @@
 
 <Toast />
 <Modal />
-<Drawer >
-    {#if $drawerID === drawerIDs.ReviewBreakdown}
-        <ReviewBreakdown />
-    {:else if $drawerID === drawerIDs.UserMenu}
+<Drawer regionDrawer={'flex justify-center'}>
+    {#if $drawerID === DrawerIDs.UserMenu}
         <SettingsMenu/>
+    {:else if $drawerID === DrawerIDs.ReviewBreakdown}
+        <ReviewBreakdown />
+    {:else if $drawerID === DrawerIDs.UserReviewBreakdown}
+        <UserReviewBreakdown />
     {/if}
 </Drawer>
 <AppShell slotSidebarLeft="bg-surface-100-800-token">

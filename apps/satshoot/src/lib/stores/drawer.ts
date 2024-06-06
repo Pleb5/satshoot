@@ -1,10 +1,11 @@
 import { writable } from 'svelte/store';
 
-export enum drawerIDs {
-    ReviewBreakdown = 0,
-    UserMenu = 1,
+export enum DrawerIDs {
+    UserMenu = 0,
+    ReviewBreakdown = 1,
+    UserReviewBreakdown = 2,
 }
 
-const drawerID = writable(drawerIDs.ReviewBreakdown);
+const drawerID = writable(DrawerIDs.ReviewBreakdown);
 
 export default drawerID;

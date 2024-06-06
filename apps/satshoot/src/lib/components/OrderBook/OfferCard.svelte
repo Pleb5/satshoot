@@ -268,7 +268,7 @@
             {offer.description}
         </div>
         {#if $currentUser && offer.pubkey !== $currentUser.pubkey}
-            <Reputation type={ReviewType.Troubleshooter} />
+            <Reputation type={ReviewType.Troubleshooter} user={offer.pubkey}/>
         {/if}
         <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start p-8 pt-2">

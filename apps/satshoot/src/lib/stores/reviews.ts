@@ -9,7 +9,11 @@ import {
     ReviewType,
 
 } from '$lib/events/ReviewEvent';
-import { NDKKind, type Hexpubkey } from '@nostr-dev-kit/ndk';
+import {
+    NDKKind,
+    type Hexpubkey,
+    type NDKFilter,
+} from '@nostr-dev-kit/ndk';
 
 export const subOptions: NDKSubscriptionOptions = {
     closeOnEose: false,
@@ -17,7 +21,7 @@ export const subOptions: NDKSubscriptionOptions = {
     autoStart: false,
 };
 
-export const allReviewsFilter = {
+export const allReviewsFilter: NDKFilter<NDKKind.Review> = {
     kinds: [NDKKind.Review],
     authors: [],
     '#L': ['qts/troubleshooting'],
@@ -42,6 +46,7 @@ export const clientReviews = derived(
 export const troubleshooterReviews = derived(
     [wot, allReviews],
     ([$wot, $allReviews]) => {
+        console.log('review arrived', get(allReviews))
         return $allReviews.filter((r: ReviewEvent) => {
             return (r.type === ReviewType.Troubleshooter && $wot.has(r.pubkey))
         });
@@ -93,6 +98,7 @@ export function aggregateRatings(target: Hexpubkey, type: ReviewType): Map<strin
     let numberOfReviews = 0;
     for (let i = 0; i < $reviews.length; i++){
         const r = $reviews[i];
+        console.log('rating: ', r)
         // currentUser must exist here bc reivews depend on wot
         // and wot on currentUser(init  user)
         // Users own reviews are counted 4X in the aggregatedAverage score
@@ -107,35 +113,37 @@ export function aggregateRatings(target: Hexpubkey, type: ReviewType): Map<strin
 
         if (type === ReviewType.Client) {
             const rating = r.ratings as ClientRating;
+            console.log('rating: ', rating)
             if (rating.thumb) {
-                const currentCount = ratings.get('thumb') ?? 0;
-                ratings.set('thumb', currentCount + 1);
+                const currentCount = ratings.get('Positive Overall Experience') ?? 0;
+                ratings.set('Positive Overall Experience', currentCount + 1);
             } 
             if (rating.availability) {
-                const currentCount = ratings.get('availability') ?? 0;
-                ratings.set('availability', currentCount + 1);
+                const currentCount = ratings.get('Availability') ?? 0;
+                ratings.set('Availability', currentCount + 1);
             }
             if (rating.communication) {
-                const currentCount = ratings.get('communication') ?? 0;
-                ratings.set('communication', currentCount + 1);
+                const currentCount = ratings.get('Communication') ?? 0;
+                ratings.set('Communication', currentCount + 1);
             }
         } else {
             const rating = r.ratings as TroubleshooterRating;
+            console.log('rating: ', rating)
             if (rating.success) {
-                const currentCount = ratings.get('success') ?? 0;
-                ratings.set('success', currentCount + 1);
+                const currentCount = ratings.get('Successful TroubleShoots') ?? 0;
+                ratings.set('Successful TroubleShoots', currentCount + 1);
             } 
             if (rating.expertise) {
-                const currentCount = ratings.get('expertise') ?? 0;
-                ratings.set('expertise', currentCount + 1);
+                const currentCount = ratings.get('Expertise') ?? 0;
+                ratings.set('Expertise', currentCount + 1);
             } 
             if (rating.availability) {
-                const currentCount = ratings.get('availability') ?? 0;
-                ratings.set('availability', currentCount + 1);
+                const currentCount = ratings.get('Availability') ?? 0;
+                ratings.set('Availability', currentCount + 1);
             }
             if (rating.communication) {
-                const currentCount = ratings.get('communication') ?? 0;
-                ratings.set('communication', currentCount + 1);
+                const currentCount = ratings.get('Communication') ?? 0;
+                ratings.set('Communication', currentCount + 1);
             }
         }
     }
