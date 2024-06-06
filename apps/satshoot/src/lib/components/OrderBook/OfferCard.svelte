@@ -227,42 +227,46 @@
             <h3 class="h4 md:h3 col-start-2 text-center text-tertiary-500">
                 { (editOffer ? 'My ' : '') + 'Offer: ' + insertThousandSeparator(offer.amount) + ' ' + pricing} 
             </h3>
-            <div class="col-start-3 justify-self-end">
-                <div class="justify-self-end ">
-                    <button
-                        type="button"
-                        class="btn btn-icon w-8 h-8 bg-primary-400-500-token"
-                        use:popup={contextMenu}
-                    >
-                        <i class="fa text-sm fa-ellipsis-v"></i>
-                    </button>
-                    <div data-popup="contextMenu_{offer.id}">
-                        <div class="card p-2 bg-primary-300-600-token shadow-xl z-50 ">
-                            <ul class="list space-y-4">
-                                <!-- Edit Offer -->
-                                {#if editOffer}
-                                    <li>
-                                        <button class="" on:click={editMyOffer}>
-                                            <span><i class="fa-solid fa-pen-to-square"/></span>
-                                            <span class="flex-auto">Edit</span>
-                                        </button>
-                                    </li>
-                                {/if}
-                                <!-- Review Client -->
-                                <!-- TODO: insert && notYetReviewed condition! -->
-                                {#if winner }
-                                    <li>
-                                        <button class="" on:click={reviewClient}>
-                                            <span><i class="fa-regular fa-star-half-stroke"/></span>
-                                            <span class="flex-auto">Review Client</span>
-                                        </button>
-                                    </li>
-                                {/if}
-                            </ul>
+            {#if $currentUser
+                && offer.pubkey === $currentUser.pubkey
+            }
+                <div class="col-start-3 justify-self-end">
+                    <div class="justify-self-end ">
+                        <button
+                            type="button"
+                            class="btn btn-icon w-8 h-8 bg-primary-400-500-token"
+                            use:popup={contextMenu}
+                        >
+                            <i class="fa text-sm fa-ellipsis-v"></i>
+                        </button>
+                        <div data-popup="contextMenu_{offer.id}">
+                            <div class="card p-2 bg-primary-300-600-token shadow-xl z-50 ">
+                                <ul class="list space-y-4">
+                                    <!-- Edit Offer -->
+                                    {#if editOffer}
+                                        <li>
+                                            <button class="" on:click={editMyOffer}>
+                                                <span><i class="fa-solid fa-pen-to-square"/></span>
+                                                <span class="flex-auto">Edit</span>
+                                            </button>
+                                        </li>
+                                    {/if}
+                                    <!-- Review Client -->
+                                    <!-- TODO: insert && notYetReviewed condition! -->
+                                    {#if winner }
+                                        <li>
+                                            <button class="" on:click={reviewClient}>
+                                                <span><i class="fa-regular fa-star-half-stroke"/></span>
+                                                <span class="flex-auto">Review Client</span>
+                                            </button>
+                                        </li>
+                                    {/if}
+                                </ul>
+                            </div>
                         </div>
-                    </div>
-                </div> 
-            </div>
+                    </div> 
+                </div>
+            {/if}
         </div>
         <div class="text-center text-base md:text-lg p-2">
             {offer.description}
