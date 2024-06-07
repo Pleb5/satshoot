@@ -22,12 +22,18 @@
     import currentUser from "$lib/stores/user";
 
     import { 
-        allTickets, myTickets, myOffers,
-        offersOfMyTicketsFilter, ticketsOfMyOffersFilter,
-        offersOfMyTickets, ticketsOfMyOffers
+        allTickets,
+        allOffers,
+        myTickets,
+        myOffers,
     } from "$lib/stores/troubleshoot-eventstores";
 
-    import { initializeUser, restartEventStoreWithNotification} from '$lib/utils/helpers';
+    import { 
+        allReviews,
+    } from "$lib/stores/reviews";
+    import { sendNotification } from "$lib/stores/notifications";
+
+    import { initializeUser } from '$lib/utils/helpers';
 
     import { wot, wotUpdating } from '$lib/stores/wot';
 
@@ -73,6 +79,10 @@
     import { goto } from "$app/navigation";
     import ReviewBreakdown from "$lib/components/DrawerContents/ReviewBreakdown.svelte";
     import UserReviewBreakdown from "$lib/components/DrawerContents/UserReviewBreakdown.svelte";
+    import type { TicketEvent } from "$lib/events/TicketEvent";
+    import type { OfferEvent } from "$lib/events/OfferEvent";
+    import type { ReviewEvent } from "$lib/events/ReviewEvent";
+    import { BTCTroubleshootKind } from "$lib/events/kinds";
     // Tickets and Offers
 
     initializeStores();
@@ -189,6 +199,7 @@
         // BUT IT IS IMPORANT THAT THEY ARE STARTED HERE!
         // UPDATE: $connected store helps initialize things at the right time
         allTickets.startSubscription();
+        allOffers.startSubscription();
 
 // ------------------------ Restore Login -----------------------------------
 
@@ -345,35 +356,44 @@
         toastId = toastStore.trigger(t);
     }
 
-    $: if($myTickets) {
-        const offerFilters: string[] = offersOfMyTicketsFilter['#a'];
-        let restartNeeded = false;
-        for(const ticket of $myTickets) {
-            if (!offerFilters.includes(ticket.ticketAddress)) {
-                offerFilters.push(ticket.ticketAddress);
-                restartNeeded = true;
-            }
-        }
-
-        if (restartNeeded) {
-            restartEventStoreWithNotification(offersOfMyTickets);
-        }
+    // ----- Notifications ------ //
+    $: if($allTickets) {
+       $allTickets.forEach((t: TicketEvent) => {
+            $myOffers.forEach((o: OfferEvent) => {
+                if (o.referencedTicketDTag === t.dTag) {
+                    sendNotification(o);
+                }
+            });
+        });
     }
 
-    $: if ($myOffers) {
-        const dTags: string[] = ticketsOfMyOffersFilter['#d'];
-        let restartNeeded = false;
-        for(const offer of $myOffers) {
-            const dTagOfTicket = offer.referencedTicketAddress.split(':')[2] as string;
-            if (!dTags.includes(dTagOfTicket)) {
-                dTags.push(dTagOfTicket);
-                restartNeeded = true;
-            }
-        }
+    $: if ($allOffers) {
+       $allOffers.forEach((o: TicketEvent) => {
+            $myTickets.forEach((t: TicketEvent) => {
+                if (o.referencedTicketDTag === t.dTag) {
+                    sendNotification(t);
+                }
+            });
+        });
+    }
 
-        if (restartNeeded) {
-            restartEventStoreWithNotification(ticketsOfMyOffers);
-        }
+    $: if ($allReviews) {
+        $allReviews.forEach((r: ReviewEvent) => {
+            if (r.reviewedEventKind === BTCTroubleshootKind.Ticket) {
+                $myTickets.forEach((t: TicketEvent) => {
+                    if (t.ticketAddress === r.reviewedEventAddress) {
+                        sendNotification(r);
+                    }
+                });
+
+            } else if (r.reviewedEventKind === BTCTroubleshootKind.Offer) {
+                $myOffers.forEach((o: OfferEvent) => {
+                    if (o.offerAddress === r.reviewedEventAddress) {
+                        sendNotification(r);
+                    }
+                });
+            }
+        });
     }
 
 </script>

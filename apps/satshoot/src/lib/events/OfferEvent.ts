@@ -47,6 +47,13 @@ export class OfferEvent extends NDKEvent {
         this.tags.push(['a', referencedTicketAddress]);
     }
 
+    get referencedTicketDTag(): string | undefined {
+        const aTag = this.tagValue('a');
+        if (!aTag) return undefined;
+
+        return aTag.split(':')[2];
+    }
+
     // No milestones based approach yet
     get pricing(): Pricing {
         return this._pricing;

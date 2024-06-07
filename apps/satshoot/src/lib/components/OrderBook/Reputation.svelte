@@ -14,7 +14,6 @@ import {
 
 import type { Hexpubkey } from "@nostr-dev-kit/ndk";
 import currentUser from "$lib/stores/user";
-import { relaysUpdating } from "$lib/stores/user";
 
 import { type DrawerSettings, getDrawerStore } from "@skeletonlabs/skeleton";
 import { ProgressRadial } from '@skeletonlabs/skeleton';
@@ -112,7 +111,7 @@ $: if (user && $reviews) {
                         <div class="badge px-4 py-2 text-lg {ratingColor}">
                             {ratingConsensus}
                         </div>
-                    {:else if $wotUpdating || $relaysUpdating}
+                    {:else if $wotUpdating}
                         <ProgressRadial
                         value={undefined}
                         stroke={60}

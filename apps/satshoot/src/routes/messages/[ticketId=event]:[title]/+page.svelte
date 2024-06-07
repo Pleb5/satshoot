@@ -399,12 +399,10 @@
             // updateMessageFeed() might be called too soon in reactive statements below
             // Sometimes this throws a very obscure error so try to initiate message subs here
             myMessageFilter['authors'] = [];
-            myMessageFilter['authors'].push(($currentUser as NDKUser).pubkey);
             myMessageFilter['#t'] = [];
             myMessageFilter['#t'].push(ticketAddress);
 
             receivedMessageFilter['#p'] = [];
-            receivedMessageFilter['#p'].push(($currentUser as NDKUser).pubkey);
             receivedMessageFilter['#t'] = [];
             receivedMessageFilter['#t'].push(ticketAddress);
 

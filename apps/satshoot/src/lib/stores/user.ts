@@ -10,8 +10,6 @@ export const loginAlert = writable(true);
 
 export const loggedIn = writable(false);
 
-export const relaysUpdating = writable(false);
-
 export const currentUserFollows: Writable<Set<Hexpubkey> | null>
     = localStorageStore('currentUserFollows', null, {serializer: getSetSerializer()});
 

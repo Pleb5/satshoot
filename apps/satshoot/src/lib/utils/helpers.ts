@@ -1,23 +1,11 @@
 import type { 
     NDKSigner, 
-    NDKEvent,
-    NDKSubscription,
 } from '@nostr-dev-kit/ndk';
-
-import {
-    NDKRelay,
-} from '@nostr-dev-kit/ndk';
-
-import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
-
-import { TicketEvent } from '$lib/events/TicketEvent';
-import { OfferEvent } from '$lib/events/OfferEvent';
 
 import currentUser from '../stores/user';
 import {
     loggedIn,
     followsUpdated,
-    relaysUpdating,
 } from '../stores/user';
 
 import {
@@ -26,19 +14,30 @@ import {
     wot
 } from '../stores/wot';
 
-import { allReviewsFilter, allReviews } from '$lib/stores/reviews';
+import {
+    allReviewsFilter,
+    allReviews,
+} from '$lib/stores/reviews';
 
-import notificationsEnabled from '$lib/stores/notifications';
+import { 
+    messageStore,
+    receivedMessageFilter,
+    myMessageFilter,
+} from '$lib/stores/messages';
 
 import { get } from "svelte/store";
 import { dev } from '$app/environment';
 
 import { 
-    myTicketFilter, myOfferFilter, myTickets, myOffers,
-    ticketsOfMyOffers, offersOfMyTickets, allTickets
+    myTicketFilter,
+    myOfferFilter,
+    myTickets,
+    myOffers,
+    allTicketsFilter,
+    allOffersFilter,
+    allTickets,
+    allOffers,
 } from "$lib/stores/troubleshoot-eventstores";
-
-import { BTCTroubleshootKind } from '$lib/events/kinds';
 
 
 export async function initializeUser(ndk: NDK) {
@@ -51,30 +50,16 @@ export async function initializeUser(ndk: NDK) {
 
         currentUser.set(user);
 
-        myTicketFilter.authors?.push(user.pubkey);
-        myOfferFilter.authors?.push(user.pubkey);
-
-        // --------------- User Subscriptions -------------- //
-        ticketsOfMyOffers.startSubscription();
-        offersOfMyTickets.startSubscription();
-
-
-        //
-        // --------- Notifications based on myOffers and myTickets -------- //
-
-        requestNotifications( 
-            (ticketsOfMyOffers as NDKEventStore<ExtendedBaseType<TicketEvent>>).subscription!
-        );
-
-        requestNotifications( 
-            (offersOfMyTickets as NDKEventStore<ExtendedBaseType<OfferEvent>>).subscription!
-        );
+        myTicketFilter.authors!.push(user.pubkey);
+        myOfferFilter.authors!.push(user.pubkey);
+        myMessageFilter['authors']!.push(user.pubkey);
+        receivedMessageFilter['#p']!.push(user.pubkey);
 
         myTickets.startSubscription();
         myOffers.startSubscription();
-
+        messageStore.startSubscription();
+        
         // --------- User Profile --------------- //
-
         await user.fetchProfile();
         currentUser.set(user);
 
@@ -85,96 +70,38 @@ export async function initializeUser(ndk: NDK) {
 
         // Try to recalculate wot every week
         let wotArray: string[] = [];
-        relaysUpdating.set(true);
+
         if ($followsUpdated < updateDelay || !get(networkWoTScores)) {
             // console.log('wot outdated, updating...')
             await updateFollowsAndWotScore(ndk);
             // console.log('wot updated')
             wotArray = Array.from(get(wot));
-        } else if (get(networkWoTScores)) {
-            // if wot is up to date we just update the outbox relay lists
-            console.log('updating relay lists of users...')
-            wotArray = Array.from(get(wot));
-            await ndk.outboxTracker.trackUsers(wotArray);
-        }
-        relaysUpdating.set(false);
+        } 
 
         allReviewsFilter['authors'] = wotArray;
-
-        allReviews.startSubscription();
+        allTicketsFilter['authors'] = wotArray;
+        allOffersFilter['authors'] = wotArray;
         
-        allReviews.subscription?.on('event', (event: NDKEvent)=>{
-            console.log('review arrived', event)
-        })
+        // allReviews.subscription?.on('event', (event: NDKEvent)=>{
+        //     console.log('review arrived', event)
+        // })
         // Restart every subscription after successful wot and follow recalc
+        allReviews.startSubscription();
+
         allTickets.unsubscribe();
-        allTickets.startSubscription();
-
-        ticketsOfMyOffers.unsubscribe();
-        offersOfMyTickets.unsubscribe();
-        ticketsOfMyOffers.startSubscription();
-        offersOfMyTickets.startSubscription();
-
+        allOffers.unsubscribe();
 
         myTickets.unsubscribe();
         myOffers.unsubscribe();
+
+        allOffers.startSubscription();
+        allTickets.startSubscription();
+
         myTickets.startSubscription();
         myOffers.startSubscription();
     } catch(e) {
         console.log('Could not initialize User. Reason: ', e)
     }
-}
-
-export function restartEventStoreWithNotification<NDKEventStore>(store: NDKEventStore) {
-    store.unsubscribe();
-    store.startSubscription();
-    requestNotifications(store.subscription);
-}
-
-function requestNotifications(subscription: NDKSubscription) {
-    // console.log('requesting notifications...', subscription)
-    subscription.on("event", 
-        async (event: NDKEvent, r: NDKRelay, subscription: NDKSubscription) => {
-            // Check for new unique events not served from cache
-            // console.log('checking notificationsEnabled')
-            if(get(notificationsEnabled) 
-                && subscription.eventFirstSeen.get(event.id) !== 0
-            ) {
-                const activeSW = await getActiveServiceWorker()
-                if(!activeSW) {
-                    console.log('Notifications are only served through Service Workers\
-                        and there is no Service Worker available!')
-                    return;
-                }
-
-                console.log('new unique event arrived in SW', event)
-                // event was NOT received from cache and is not a duplicate
-                // so we Notify the user about a new _unique_ event reveived
-                let title = '';
-                let body = '';
-                let tag = '';
-
-                // The Ticket of our _Offer_ was updated
-                if (event.kind === BTCTroubleshootKind.Ticket) {
-                    title = 'Offer update arrived!';
-                    body = 'Check your Offers!';
-                    tag = BTCTroubleshootKind.Ticket.toString();
-                // The Offer on our _Ticket_ was updated
-                } else if(event.kind === BTCTroubleshootKind.Offer) {
-                    title = 'Ticket update arrived!';
-                    body = 'Check your Tickets!';
-                    tag = BTCTroubleshootKind.Offer.toString();
-                }
-
-                activeSW.postMessage({
-                    notification: 'true',
-                    title: title,
-                    body: body,
-                    tag: tag,
-                });
-            }
-        }
-    );
 }
 
 export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
