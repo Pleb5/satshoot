@@ -1,7 +1,7 @@
 {
-    "name": "Bitcoin Troubleshoot",
-    "short_name": "BTC Troubleshoot",
-    "description": "An app for bitcoiners to troubleshoot each other's technical issues for sats, using nostr",
+    "name": "SatShoot",
+    "short_name": "SatShoot",
+    "description": "Troubleshoot for sats on nostr",
     "display": "standalone",
     "background_color": "#fff",
     "start_url": "/",
@@ -20,42 +20,42 @@
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "btc_troubleshoot_ticket"
+            "label": "satshoot_ticket"
         },
         {
             "src": "/screenshots/desktop/app_screenshot_2_desktop.png",
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "btc_troubleshoot_create_offer"
+            "label": "satshoot_create_offer"
         },
         {
             "src": "/screenshots/desktop/app_screenshot_3_desktop.png",
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "btc_troubleshoot_my_offers"
+            "label": "satshoot_my_offers"
         },
         {
             "src": "/screenshots/desktop/app_screenshot_4_desktop.png",
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "btc_troubleshoot_take_offer"
+            "label": "satshoot_take_offer"
         },
         {
             "src": "/screenshots/desktop/app_screenshot_5_desktop.png",
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "btc_troubleshoot_offer_won"
+            "label": "satshoot_offer_won"
         },
         {
             "src": "/screenshots/desktop/app_screenshot_6_desktop.png",
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "btc_troubleshoot_chat"
+            "label": "satshoot_chat"
         },
 
         {
@@ -63,35 +63,35 @@
             "sizes": "742x1600",
             "type": "image/jpeg",
             "form_factor": "narrow",
-            "label": "btc_troubleshoot_ticket"
+            "label": "satshoot_ticket"
         },
         {
             "src": "/screenshots/mobile/app_screenshot_2.jpeg",
             "sizes": "742x1600",
             "type": "image/jpeg",
             "form_factor": "narrow",
-            "label": "btc_troubleshoot_offer"
+            "label": "satshoot_offer"
         },
         {
             "src": "/screenshots/mobile/app_screenshot_3.jpeg",
             "sizes": "742x1600",
             "type": "image/jpeg",
             "form_factor": "narrow",
-            "label": "btc_troubleshoot_offer_posted"
+            "label": "satshoot_offer_posted"
         },
         {
             "src": "/screenshots/mobile/app_screenshot_4.jpeg",
             "sizes": "742x1600",
             "type": "image/jpeg",
             "form_factor": "narrow",
-            "label": "btc_troubleshoot_offer_won"
+            "label": "satshoot_offer_won"
         },
         {
             "src": "/screenshots/mobile/app_screenshot_5.jpeg",
             "sizes": "742x1600",
             "type": "image/jpeg",
             "form_factor": "narrow",
-            "label": "btc_troubleshoot_chat"
+            "label": "satshoot_chat"
         }
     ]
 }

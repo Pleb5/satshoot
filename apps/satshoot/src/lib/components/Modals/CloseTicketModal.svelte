@@ -45,7 +45,7 @@
                 // Post review data if applicable
                 if (ticket.acceptedOfferAddress) {
                     const reviewEvent = new ReviewEvent($ndk);
-                    reviewEvent.reviewedEventId = ticket.acceptedOfferAddress;
+                    reviewEvent.reviewedEventAddress = ticket.acceptedOfferAddress;
 
                     const rating: TroubleshooterRating = {
                         success: false,

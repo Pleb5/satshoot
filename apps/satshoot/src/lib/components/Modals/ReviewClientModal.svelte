@@ -32,7 +32,7 @@
 
                 // Post review data if applicable
                 const reviewEvent = new ReviewEvent($ndk);
-                reviewEvent.reviewedEventId = ticketAddress;
+                reviewEvent.reviewedEventAddress = ticketAddress;
 
                 const rating: ClientRating = {
                     thumb: false,

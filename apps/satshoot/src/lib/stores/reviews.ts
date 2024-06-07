@@ -104,6 +104,19 @@ export function aggregateRatings(target: Hexpubkey, type: ReviewType): Map<strin
         ratings.set(communicationString, 0);
     }
 
+    // Filter out duplicate reviews: Same person posted
+    // on the same event address but different event ID
+    for (const review of $reviews) {
+        for(let i = 0; i < $reviews.length; i++) {
+            const compareReview = $reviews[i];
+            if (review.pubkey === compareReview.pubkey
+                && review.reviewedEventAddress === compareReview.reviewedEventAddress
+                && review.id !== compareReview.id) {
+                $reviews.splice(i, 1);
+            }
+        }
+    }
+
     console.log('filtered target reviews', $reviews)
 
     let aggregatedAverage = 0;

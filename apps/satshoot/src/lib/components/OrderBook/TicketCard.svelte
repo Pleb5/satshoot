@@ -279,9 +279,9 @@
              
             {#if $currentUser && ticket.pubkey !== $currentUser.pubkey}
                 <Reputation type={ReviewType.Client} user={ticket.pubkey}/>
+                <hr class="my-4" />
             {/if}
 
-            <hr class="my-4" />
 
             <div class="">
                 <span class="pr-1">Status: </span>

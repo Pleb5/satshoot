@@ -176,12 +176,12 @@ export class ReviewEvent extends NDKEvent {
         return undefined;
     }
 
-    get reviewedEventId(): string | undefined{
+    get reviewedEventAddress(): string | undefined{
         return this.tagValue("a");
     }
 
-    set reviewedEventId(eventID: string) {
-        const eventKind = parseInt(eventID.split(':')[0] as string);
+    set reviewedEventAddress(eventAddress: string) {
+        const eventKind = parseInt(eventAddress.split(':')[0] as string);
         if (eventKind === BTCTroubleshootKind.Offer && this.type === ReviewType.Client) {
             throw new Error('Client reviews can only be given on Ticket events');
         }
@@ -191,7 +191,7 @@ export class ReviewEvent extends NDKEvent {
         }
 
         this.removeTag('a');
-        this.tags.push(['a', eventID]);
+        this.tags.push(['a', eventAddress]);
     }
 
     get reviewedEventKind(): BTCTroubleshootKind | number {

@@ -22,7 +22,8 @@
 
     import { onDestroy } from "svelte";
     import Reputation from "./Reputation.svelte";
-    import { ReviewType } from "$lib/events/ReviewEvent";
+    import { ReviewEvent, ReviewType } from "$lib/events/ReviewEvent";
+    import { clientReviews } from "$lib/stores/reviews";
 
     const modalStore = getModalStore();
 
@@ -50,8 +51,7 @@
     let winner = false;
     let status = '?';
     let statusColor = 'text-primary-400-500-token';
-
-    let trustColor: string = 'text-error-500';
+    let canReviewClient = true;
 
     function insertThousandSeparator(amount: number) {
         return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -122,6 +122,14 @@
         } else {
             console.log('Cannot start ticket sub! Filter does not contain a ticket d-tag!')
         }
+    }
+
+    $: if($clientReviews && ticket) {
+        $clientReviews.forEach((review: ReviewEvent) => {
+            if (review.reviewedEventAddress === ticket!.ticketAddress) {
+                canReviewClient = false;
+            }
+        });
     }
 
     $: {
@@ -253,7 +261,7 @@
                                     {/if}
                                     <!-- Review Client -->
                                     <!-- TODO: insert && notYetReviewed condition! -->
-                                    {#if winner }
+                                    {#if winner && canReviewClient}
                                         <li>
                                             <button class="" on:click={reviewClient}>
                                                 <span><i class="fa-regular fa-star-half-stroke"/></span>
