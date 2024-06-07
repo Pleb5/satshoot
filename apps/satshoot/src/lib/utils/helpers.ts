@@ -69,7 +69,7 @@ export async function initializeUser(ndk: NDK) {
         const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
 
         // Try to recalculate wot every week
-        let wotArray: string[] = [];
+        let wotArray: string[] = Array.from(get(wot));
 
         if ($followsUpdated < updateDelay || !get(networkWoTScores)) {
             // console.log('wot outdated, updating...')
@@ -91,14 +91,8 @@ export async function initializeUser(ndk: NDK) {
         allTickets.unsubscribe();
         allOffers.unsubscribe();
 
-        myTickets.unsubscribe();
-        myOffers.unsubscribe();
-
         allOffers.startSubscription();
         allTickets.startSubscription();
-
-        myTickets.startSubscription();
-        myOffers.startSubscription();
     } catch(e) {
         console.log('Could not initialize User. Reason: ', e)
     }

@@ -87,7 +87,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         const $networkWoTScores = new Map<Hexpubkey, number>();
 
 
-        await ndk.outboxTracker.trackUsers([user.pubkey, BTCTroubleshootPubkey])
+        await ndk.outboxTracker.trackUsers([user.pubkey, BTCTroubleshootPubkey]);
 
         // log write relays with buitin fn
 
@@ -104,7 +104,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             {
                 groupable: false,
                 closeOnEose: true,
-                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
             },
         );
 
@@ -126,7 +126,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         console.log('outboxPool after tracking all authors:', ndk.outboxPool)
 
         const networkFilter = {
-            kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
+            kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report, NDKKind.Metadata],
             authors: authorsArray,
         };
 
@@ -135,7 +135,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             {
                 groupable: false,
                 closeOnEose: true,
-                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
             },
         );
 

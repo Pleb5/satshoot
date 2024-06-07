@@ -6,9 +6,9 @@ import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 import { offerTabStore } from "$lib/stores/tab-store";
 
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
-import { myOffers, ticketsOfMyOffers } from '$lib/stores/troubleshoot-eventstores';
+import { allTickets, myOffers } from '$lib/stores/troubleshoot-eventstores';
 import OfferCard from '../OrderBook/OfferCard.svelte';
-import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
+import { type TicketEvent } from '$lib/events/TicketEvent';
 
 let pendingOffers: OfferEvent[] = [];
 let wonOffers: OfferEvent[] = [];
@@ -24,7 +24,7 @@ let hideSearch = true;
 function filterOffersByTicket() {
     showPendingOffer = [];
     for (let i = 0; i < pendingOffers.length; i++) {
-        const ticket: TicketEvent|undefined = $ticketsOfMyOffers.find((t: TicketEvent) => 
+        const ticket: TicketEvent|undefined = $allTickets.find((t: TicketEvent) => 
             t.ticketAddress === pendingOffers[i].referencedTicketAddress
         );
 
@@ -55,7 +55,7 @@ function filterOffersByTicket() {
 
     showWonOffer = [];
     for (let i = 0; i < wonOffers.length; i++) {
-        const ticket: TicketEvent|undefined = $ticketsOfMyOffers.find((t: TicketEvent) => 
+        const ticket: TicketEvent|undefined = $allTickets.find((t: TicketEvent) => 
             t.ticketAddress === wonOffers[i].referencedTicketAddress
         );
 
@@ -86,7 +86,7 @@ function filterOffersByTicket() {
 
     showLostOffer = [];
     for (let i = 0; i < lostOffers.length; i++) {
-        const ticket: TicketEvent|undefined = $ticketsOfMyOffers.find((t: TicketEvent) => 
+        const ticket: TicketEvent|undefined = $allTickets.find((t: TicketEvent) => 
             t.ticketAddress === lostOffers[i].referencedTicketAddress
         );
 
@@ -120,7 +120,7 @@ function filterOffersByTicket() {
 // Do this every time a new offer is received for the user
 $: {
     // If we got a new offer, push it into the collection 
-    if ($myOffers && $ticketsOfMyOffers) {
+    if ($myOffers && $allTickets) {
         pendingOffers = [];
         wonOffers = [];
         lostOffers = [];
@@ -128,7 +128,7 @@ $: {
         $myOffers.forEach((offer: OfferEvent) => {
             // This approach does not display an offer until it has successfully 
             // retrieved its status from its ticket!
-            $ticketsOfMyOffers.forEach((ticket:TicketEvent) => {
+            $allTickets.forEach((ticket:TicketEvent) => {
                 if (ticket.ticketAddress === offer.referencedTicketAddress) {
                     if (ticket.acceptedOfferAddress === offer.offerAddress) {
                         wonOffers.push(offer);

@@ -88,4 +88,4 @@ export async function sendNotification(event: NDKEvent) {
     }
 }
 
-// export default notifications;
+export default notificationsEnabled;

@@ -19,16 +19,17 @@
         sessionPK 
     } from "$lib/stores/ndk";
 
-    import { myTicketFilter, myOfferFilter, myTickets, myOffers, ticketsOfMyOffers,
-        ticketsOfMyOffersFilter, offersOfMyTicketsFilter, offersOfMyTickets 
+    import {
+        myTicketFilter,
+        myOfferFilter,
+        myTickets,
+        myOffers ,
     } from '$lib/stores/troubleshoot-eventstores';
 
-    import { messageStore,  receivedMessageFilter, myMessageFilter } from '$lib/stores/messages';
+    import { messageStore } from '$lib/stores/messages';
 
     import { goto } from '$app/navigation';
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-    import type { OfferEvent } from '$lib/events/OfferEvent';
-    import type { TicketEvent } from '$lib/events/TicketEvent';
     import { loggedIn } from '$lib/stores/user';
 
     const modalStore = getModalStore();
@@ -96,47 +97,17 @@
 
                 $loggedIn = false;
 
-                // Remove offer subscriptions that follow offers on myTickets
-        // also remove those that tracked other offers on tickets I bid on as a Troubleshooter(myOffers #a tag or ticketsOfMyOffers.ticketAddress)
-
-                // helper variables
-                let aTagArray = offersOfMyTicketsFilter['#a'] as string[];
-                let restartSubNeeded = false;
-                for (let i = 0; i < aTagArray.length; i++) {
-                    let ticketAddr: string = aTagArray[i];
-                    $myTickets.forEach((ticket: TicketEvent) => {
-                        if (ticket.ticketAddress === ticketAddr) {
-                            offersOfMyTicketsFilter['#a']?.splice(i, 1);
-                            restartSubNeeded = true;
-                        }
-                    });
-                    $myOffers.forEach((offer: OfferEvent) => {
-                        if (offer.referencedTicketAddress === ticketAddr) {
-                            offersOfMyTicketsFilter['#a']?.splice(i, 1);
-                            restartSubNeeded = true;
-                        }
-                    });
-                }
-
-                if (restartSubNeeded) {
-                    offersOfMyTickets.empty();
-                    offersOfMyTickets.startSubscription();
-                }
-
                 myTickets.empty();
                 myOffers.empty();
                 myTicketFilter.authors = [];
                 myOfferFilter.authors = [];
 
-                ticketsOfMyOffers.empty();
-                ticketsOfMyOffersFilter['#d'] = [];
-
                 messageStore.empty();
-                receivedMessageFilter['#t'] = [];
-                receivedMessageFilter['#p'] = [];
-
-                myMessageFilter['authors'] = [];
-                myMessageFilter['#t'] = [];
+                // receivedMessageFilter['#t'] = [];
+                // receivedMessageFilter['#p'] = [];
+                //
+                // myMessageFilter['authors'] = [];
+                // myMessageFilter['#t'] = [];
 
 
                 ndk.set(new NDKSvelte({

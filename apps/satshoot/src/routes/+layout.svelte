@@ -255,6 +255,8 @@
                                         );
                                     }
                                 }
+                            } else {
+                                return;
                             }
                         } catch(e) {
                             const t: ToastSettings = {
@@ -262,6 +264,7 @@
                                 autohide: false,
                             };
                             toastStore.trigger(t);
+                            return;
                         }
                     }
                 } else if(loginMethod === LoginMethod.Bunker) {
@@ -357,7 +360,7 @@
     }
 
     // ----- Notifications ------ //
-    $: if($allTickets) {
+    $: if($allTickets && $myOffers) {
        $allTickets.forEach((t: TicketEvent) => {
             $myOffers.forEach((o: OfferEvent) => {
                 if (o.referencedTicketDTag === t.dTag) {
@@ -367,7 +370,7 @@
         });
     }
 
-    $: if ($allOffers) {
+    $: if ($allOffers && $myTickets) {
        $allOffers.forEach((o: TicketEvent) => {
             $myTickets.forEach((t: TicketEvent) => {
                 if (o.referencedTicketDTag === t.dTag) {
@@ -377,7 +380,7 @@
         });
     }
 
-    $: if ($allReviews) {
+    $: if ($allReviews && $myTickets && $myOffers) {
         $allReviews.forEach((r: ReviewEvent) => {
             if (r.reviewedEventKind === BTCTroubleshootKind.Ticket) {
                 $myTickets.forEach((t: TicketEvent) => {
