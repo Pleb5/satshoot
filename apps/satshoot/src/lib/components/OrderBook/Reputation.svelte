@@ -32,13 +32,16 @@ const reviews = (type === ReviewType.Client
 $: if($clientReviews) {
     console.log('client review arrived', $clientReviews)
 }
+$: if($troubleshooterReviews) {
+    console.log('troubleshooter review arrived', $troubleshooterReviews)
+}
 
 let ratings: Map<string, number> | undefined = undefined;
 let userReviewsArr: Array<ClientRating | TroubleshooterRating> | undefined = undefined;
 
 const baseClasses = 'card p-4 bg-inherit m-8 border-4 border-primary-500';
 
-let ratingConsensus = '';
+let ratingConsensus = '?';
 let ratingColor = '';
 
 function showReviewBreakdown() {
@@ -107,11 +110,7 @@ $: if (user && $reviews) {
                             </button>
                         {/if}
                     </div>
-                    {#if $reviews.length > 0}
-                        <div class="badge px-4 py-2 text-lg {ratingColor}">
-                            {ratingConsensus}
-                        </div>
-                    {:else if $wotUpdating}
+                    {#if $wotUpdating}
                         <ProgressRadial
                         value={undefined}
                         stroke={60}
@@ -120,7 +119,9 @@ $: if (user && $reviews) {
                         strokeLinecap="round" width="w-8" 
                     />
                     {:else}
-                        <div class="h3">?</div>
+                        <div class="badge px-4 py-2 text-lg {ratingColor}">
+                            {ratingConsensus}
+                        </div>
                     {/if}
                 </div>
             </div>
