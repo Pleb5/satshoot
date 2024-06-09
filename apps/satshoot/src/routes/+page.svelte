@@ -16,6 +16,7 @@
     function filterTickets() {
         // We need to check all tickets against all filters
         if (filterList.length > 0) {
+            const filteredTicketList:Set<TicketEvent> = new Set();
             ticketList.forEach((ticket: TicketEvent) => {
                 filterList.forEach((filter: string) => {
                     const lowerCaseFilter = filter.toLowerCase();
@@ -34,11 +35,11 @@
                     const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
 
                     if (titleContains || descContains || tagsContain) {
-                        ticketList.add(ticket);
+                        filteredTicketList.add(ticket);
                     }
                 });
             });
-            ticketList = ticketList;
+            ticketList = filteredTicketList;
         }
     }
 
