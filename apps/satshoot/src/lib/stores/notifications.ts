@@ -3,20 +3,8 @@ import { localStorageStore } from "@skeletonlabs/skeleton";
 import type { Writable } from 'svelte/store';
 import { getSetSerializer } from '$lib//utils/misc';
 import { get } from "svelte/store";
-import { type NDKEvent, NDKKind, type NDKFilter } from "@nostr-dev-kit/ndk";
+import { type NDKEvent, NDKKind } from "@nostr-dev-kit/ndk";
 import { BTCTroubleshootKind } from "$lib/events/kinds";
-// import { 
-//     reviewsOnMyOffersFilter,
-//     reviewsOnMyTicketsFilter
-// } from './reviews';
-// import {
-//     ticketsOfMyOffersFilter,
-//     offersOfMyTicketsFilter,
-// } from "./troubleshoot-eventstores";
-// import { 
-//     myMessageFilter,
-//     receivedMessageFilter,
-// } from './messages';
 
 import { getActiveServiceWorker } from "$lib/utils/helpers";
 
@@ -28,16 +16,6 @@ export const seenIDs: Writable<Set<string>> = localStorageStore(
     {serializer: getSetSerializer()}
 );
 
-// export const notificationsFilters: Array<NDKFilter<BTCTroubleshootKind | NDKKind>> = [
-//     ticketsOfMyOffersFilter,
-//     offersOfMyTicketsFilter,
-//     myMessageFilter,
-//     receivedMessageFilter,
-//     reviewsOnMyTicketsFilter,
-//     reviewsOnMyOffersFilter,
-//
-// ];
-//
 export async function sendNotification(event: NDKEvent) {
     const $seenIDs = get(seenIDs);
     if(get(notificationsEnabled) 

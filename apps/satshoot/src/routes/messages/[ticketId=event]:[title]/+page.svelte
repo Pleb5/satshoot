@@ -4,14 +4,14 @@
     import { wot } from '$lib/stores/wot';
     import { page } from "$app/stores";
 
+    import { allOffers } from "$lib/stores/troubleshoot-eventstores";
+
     import { 
         messageStore, receivedMessageFilter,
         myMessageFilter, offerMakerToSelect, selectedPerson
     } from "$lib/stores/messages";
     
-    import { offersOfMyTickets } from "$lib/stores/troubleshoot-eventstores";
-
-    import { onDestroy, onMount, tick } from "svelte";
+    import { onMount, tick } from "svelte";
 
 	import { Avatar } from '@skeletonlabs/skeleton';
 
@@ -443,7 +443,7 @@
                 myTicket = true;
                 console.log('this is my ticket')
                 if(ticket) {
-                    $offersOfMyTickets.forEach((offer: OfferEvent) => {
+                    $allOffers.forEach((offer: OfferEvent) => {
                         if (offer.referencedTicketAddress === ticketAddress) {
                             if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
                                 console.log('we got a winner in setup')
@@ -456,8 +456,8 @@
         });
     }
 
-    $: if (ticket && myTicket && $offersOfMyTickets) {
-        $offersOfMyTickets.forEach((offer: OfferEvent) => {
+    $: if (ticket && myTicket && $allOffers) {
+        $allOffers.forEach((offer: OfferEvent) => {
             if (offer.referencedTicketAddress === ticketAddress) {
                 // If this is the winner offer, set winner
                 if (!winner) {
