@@ -50,10 +50,10 @@ export async function initializeUser(ndk: NDK) {
 
         currentUser.set(user);
 
-        myTicketFilter.authors!.push(user.pubkey);
-        myOfferFilter.authors!.push(user.pubkey);
-        myMessageFilter['authors']!.push(user.pubkey);
-        receivedMessageFilter['#p']!.push(user.pubkey);
+        myTicketFilter.authors! = [user.pubkey];
+        myOfferFilter.authors! = [user.pubkey];
+        myMessageFilter.authors! = [user.pubkey];
+        receivedMessageFilter['#p']! = [user.pubkey];
 
         myTickets.startSubscription();
         myOffers.startSubscription();

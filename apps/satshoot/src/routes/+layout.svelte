@@ -121,9 +121,6 @@
             showAppInstallPromotion = true;
         });
 
-        // -----------  Set up relays and connect -------------
-        $ndk.explicitRelayUrls = DEFAULTRELAYURLS; 
-
         // Setup client-side caching
         $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
         window.onunhandledrejection = async(event: PromiseRejectionEvent) => {
@@ -192,12 +189,7 @@
             }
         });
 
-        // Start all tickets sub. Starting this anywhere else seems to break reliability.
-        // User-defined Relays are restored from local storage here and this runs AFTER page onmounts.
-        // This causes the subscription to fail because there are yet no relays to subscribe to
-        // ALL STORE SUBS MUST START IN LAYOUT.SVELTE! CAN RESTART IN PAGES/COMPONENTS LATER
-        // BUT IT IS IMPORANT THAT THEY ARE STARTED HERE!
-        // UPDATE: $connected store helps initialize things at the right time
+        // Start all tickets/offers sub
         allTickets.startSubscription();
         allOffers.startSubscription();
 
@@ -235,7 +227,6 @@
                             });                      
                             if (responseObject) {
                                 const decryptedSecret = responseObject['decryptedSecret'];
-                                console.log(decryptedSecret)
                                 const restoreMethod = responseObject['restoreMethod'];
                                 if (decryptedSecret && restoreMethod) {
                                     let privateKey:string|undefined = undefined;
@@ -255,16 +246,13 @@
                                         );
                                     }
                                 }
-                            } else {
-                                return;
-                            }
+                            } 
                         } catch(e) {
                             const t: ToastSettings = {
                                 message:`Could not create private key from local secret, error: ${e}`,
                                 autohide: false,
                             };
                             toastStore.trigger(t);
-                            return;
                         }
                     }
                 } else if(loginMethod === LoginMethod.Bunker) {
@@ -300,11 +288,14 @@
                         $ndk.signer = new NDKNip07Signer();
                     }
                 }
-                // Whatever the login method that was restored, init user
-                initializeUser($ndk);
             }
         }
     });
+
+    $: if ($ndk.signer) {
+        // Whatever the login method that was restored, init user
+        initializeUser($ndk);
+    }
 
     const settingsMenu: PopupSettings = {
         event: "click",

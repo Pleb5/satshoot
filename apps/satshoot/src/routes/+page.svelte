@@ -51,8 +51,7 @@
     }
 
     $: {
-        if($allTickets || filterList) {
-            console.log('alltickets', $allTickets)
+        if(($allTickets || filterList) && $wot) {
             // We just received a ticket 
             ticketList = new Set($allTickets.filter((t: TicketEvent) => {
                 const newTicket = (t.status === TicketStatus.New);

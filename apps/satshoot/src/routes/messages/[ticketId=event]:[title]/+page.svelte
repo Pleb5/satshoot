@@ -376,15 +376,6 @@
         }
     }
 
-    onDestroy(()=>{
-        myMessageFilter['authors'] = [];
-        myMessageFilter['#t'] = [];
-
-        receivedMessageFilter['#p'] = [];
-        receivedMessageFilter['#t'] = [];
-
-    });
-
     // If there is a logged in user, start receiving messages related to the ticket
     $: if ($currentUser && needSetup) {
         // If my ticket then add all people that created an offer on this ticket
