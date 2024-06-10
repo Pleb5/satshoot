@@ -48,7 +48,7 @@
     let trustColor = 'text-error-500';
     let bgTrustColor = 'bg-error-500';
 
-    $: if (npub) {
+    $: if (npub || $currentUser) {
         // if user changed the npub reload profile
         needProfile = true;
     }
