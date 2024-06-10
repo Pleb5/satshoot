@@ -3,7 +3,6 @@
     import currentUser from '$lib/stores/user';
 
     import type { NDKTag } from '@nostr-dev-kit/ndk';
-    import { NDKRelaySet } from '@nostr-dev-kit/ndk';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 
     import { ticketToEdit } from "$lib/stores/ticket-to-edit";

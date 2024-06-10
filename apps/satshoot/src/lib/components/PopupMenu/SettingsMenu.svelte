@@ -135,9 +135,6 @@
 
                 await $ndk.connect();
 
-                console.log('allticketsfilter', allTicketsFilter)
-                console.log('alltickets', $allTickets)
-
                 allTickets.startSubscription();
                 allOffers.startSubscription();
 

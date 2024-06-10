@@ -123,43 +123,48 @@
 	<div class="card p-8 grid grid-cols-1 justify-center bg-surface-400-500-token">
         <h3 class="h3 text-center font-bold">Decrypt Local Seed</h3>
         <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
-        <form 
-            on:submit|preventDefault={ loadSecret }>
-            <div class="flex justify-between items-center m-4">
-                    <input 
-                        class="input" 
-                        title="Passphrase:" 
-                        required
-                        type={ showPassword ? 'text' : 'password' }
-                        placeholder="Enter Passphrase..."
-                        on:input={(event) => passphrase = event.currentTarget.value}
-                    />
-                    <button
-                        type="button" 
-                        class="btn btn-icon-sm"
-                        on:click={ () => showPassword = !showPassword }>
-                        <span>
-                            <i class="fa-solid { showPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
-                        </span>
-                    </button>
-            </div>
-            <div class="flex justify-center">
-                <button 
-                    type="submit"
-                    class="btn btn-lg h-14 font-bold bg-success-400-500-token"
-                    disabled={!passphrase || decrypting}
-                >
-                    {#if decrypting}
-                        <span>
-                            <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500"
-                                track="stroke-primary-500/30" strokeLinecap="round" width="w-8" />
-                        </span>
-                    {:else}
-                        <span>Decrypt</span>
-                    {/if}
-                </button>
-            </div>
-        </form>
+        <div class="flex justify-between items-center m-4">
+            <input 
+            class="input" 
+            title="Passphrase:" 
+            required
+            type={ showPassword ? 'text' : 'password' }
+            placeholder="Enter Passphrase..."
+            on:input={(event) => passphrase = event.currentTarget.value}
+        />
+            <button
+                type="button" 
+                class="btn btn-icon-sm"
+                on:click={ () => showPassword = !showPassword }>
+                <span>
+                    <i class="fa-solid { showPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                </span>
+            </button>
+        </div>
+        <div class="flex justify-evenly">
+            <button 
+                type="button"
+                class="btn btn-sm sm:btn-md bg-error-300-600-token"
+                on:click={()=> modalStore.close()}
+            >
+                Cancel
+            </button>
+            <button 
+                type="button"
+                on:click={loadSecret}
+                class="btn btn-lg h-14 font-bold bg-success-400-500-token"
+                disabled={!passphrase || decrypting}
+            >
+                {#if decrypting}
+                    <span>
+                        <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500"
+                        track="stroke-primary-500/30" strokeLinecap="round" width="w-8" />
+                    </span>
+                {:else}
+                    <span>Decrypt</span>
+                {/if}
+            </button>
+        </div>
         {#if statusMessage}
             <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
         {/if}

@@ -108,60 +108,66 @@
     {#if ticketAddress}
             <div class="grid grid-cols-1">
                 <h2 class="h2 text-center">Create Offer</h2>
-                <form on:submit|preventDefault={ postOffer }>
-                        <!-- Pricing -->
-                    <label class="m-4">
-                        <span>Pricing Method</span>
-                        <select class="select" bind:value={pricingMethod}>
-                            <option value={Pricing.Absolute}>Absolute Price(sats)</option>
-                            <option value={Pricing.SatsPerMin}>Time-based Price(sats/minute)</option>
-                        </select>
-                    </label>
-                    <!-- Amount -->
-                    <label class="m-4">
-                        <span>Amount</span>
-                        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-                            <div class="input-group-shim">
-                                <i class="fa-brands fa-bitcoin text-3xl"/>
-                            </div>
-                            <input 
-                                class="text-lg max-w-md"
-                                type="number"
-                                min="0"
-                                max="2100000000000000"
-                                placeholder="Amount"
-                                bind:value={amount}
-                            />
-                            <div>{pricingMethod ? 'sats/min' : 'sats'}</div>
+                <!-- Pricing -->
+                <label class="m-4">
+                    <span>Pricing Method</span>
+                    <select class="select" bind:value={pricingMethod}>
+                        <option value={Pricing.Absolute}>Absolute Price(sats)</option>
+                        <option value={Pricing.SatsPerMin}>Time-based Price(sats/minute)</option>
+                    </select>
+                </label>
+                <!-- Amount -->
+                <label class="m-4">
+                    <span>Amount</span>
+                    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
+                        <div class="input-group-shim">
+                            <i class="fa-brands fa-bitcoin text-3xl"/>
                         </div>
-                    </label>
-                    <!-- Description -->
-                    <label class="label max-w-xl m-4">
-                        <span>Offer Description</span>
-                        <textarea 
-                            class="textarea"
-                            rows="4"
-                            placeholder="Describe how you would solve the issue and why you should get the job"
-                            bind:value={description}
-                        />
-                    </label>
-                    <div class="flex justify-center mb-8">
-                        <button 
-                            type="submit"
-                            class="btn font-bold bg-success-400-500-token w-72 mt-4" 
-                            disabled={posting}
-                        >
-                            {#if posting}
-                                <span>
-                                    <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
-                                        track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8"/>
-                                </span>
-                            {:else}
-                                <span>Post Offer</span>
-                            {/if}
-                        </button>
+                        <input 
+                        class="text-lg max-w-md"
+                        type="number"
+                        min="0"
+                        max="2100000000000000"
+                        placeholder="Amount"
+                        bind:value={amount}
+                    />
+                        <div>{pricingMethod ? 'sats/min' : 'sats'}</div>
                     </div>
-                </form>
+                </label>
+                <!-- Description -->
+                <label class="label max-w-xl m-4">
+                    <span>Offer Description</span>
+                    <textarea 
+                    class="textarea"
+                    rows="4"
+                    placeholder="Describe how you would solve the issue and why you should get the job"
+                    bind:value={description}
+                />
+                </label>
+                <div class="flex justify-between items-center mb-2">
+                    <button 
+                        type="button"
+                        class="btn btn-sm sm:btn-md bg-error-300-600-token"
+                        on:click={()=> modalStore.close()}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="button"
+                        class="btn font-bold bg-success-400-500-token w-72" 
+                        on:click={postOffer}
+                        disabled={posting}
+                    >
+                        {#if posting}
+                            <span>
+                                <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
+                                track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8"/>
+                            </span>
+                        {:else}
+                            <span>Post Offer</span>
+                        {/if}
+                    </button>
+                </div>
             </div>
         {#if errorText}
             <h2 class="h2 font-bold text-center text-error-300-600-token">
