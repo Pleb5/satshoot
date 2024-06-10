@@ -39,7 +39,7 @@ $: if($troubleshooterReviews) {
 let ratings: Map<string, number> | undefined = undefined;
 let userReviewsArr: Array<ClientRating | TroubleshooterRating> | undefined = undefined;
 
-const baseClasses = 'card p-4 bg-inherit m-8 border-4 border-primary-500';
+const baseClasses = 'card p-4 bg-surface-300-600-token m-8 ';
 
 let ratingConsensus = '?';
 let ratingColor = '';
@@ -55,7 +55,7 @@ function showReviewBreakdown() {
     drawerStore.open(drawerSettings);
 }
 
-$: if (user && $reviews) {
+$: if ($currentUser && user && $reviews) {
     ratings = aggregateRatings(user, type);
     const average = ratings.get('average') as number;
     // we dont display the exact average in the breakdown
@@ -83,23 +83,23 @@ $: if (user && $reviews) {
             ratingColor = 'bg-error-500';
         }
     }
-    userReviewsArr = userReviews($currentUser!.pubkey, user, type);
+    userReviewsArr = userReviews($currentUser.pubkey, user, type);
 }
 
 </script>
 
 <div class="{baseClasses}">
-    <h3 class="h3 text-center mb-4">Reputation</h3>
+    <h3 class="h4 sm:h3 text-center mb-4">Reputation</h3>
     {#if user && $reviews}
         <div class="flex justify-between mb-2">
             <div class="flex gap-x-2">
                 <div class="flex flex-col items-center gap-y-2">
                     <div class="flex items-center">
-                        <h3 class="h3 underline">Ratings</h3>
+                        <h3 class="h5 sm:h3 underline">Ratings</h3>
                         {#if $reviews.length > 0}
                             <button
                                 type="button" 
-                                class="btn btn-icon-lg p-2 text-start text-primary-400-500-token"
+                                class="btn btn-icon-sm sm:btn-icon-lg p-2 text-start text-primary-400-500-token"
                                 on:click={showReviewBreakdown}>
                                 <span>
                                     <i 
@@ -119,7 +119,7 @@ $: if (user && $reviews) {
                         strokeLinecap="round" width="w-8" 
                     />
                     {:else}
-                        <div class="badge px-4 py-2 text-lg {ratingColor}">
+                        <div class="badge px-4 py-2 sm:text-lg {ratingColor}">
                             {ratingConsensus}
                         </div>
                     {/if}

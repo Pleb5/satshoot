@@ -1,5 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+    import { get } from 'svelte/store';
 
     import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import currentUser from '$lib/stores/user';
@@ -11,7 +12,7 @@
 
     import notificationsEnabled from '$lib/stores/notifications';
 
-    import { networkWoTScores } from '$lib/stores/wot';
+    import { networkWoTScores, wot } from '$lib/stores/wot';
 
     import {
         DEFAULTRELAYURLS,
@@ -23,7 +24,11 @@
         myTicketFilter,
         myOfferFilter,
         myTickets,
-        myOffers ,
+        myOffers, 
+        allTickets,
+        allOffers,
+        allTicketsFilter,
+        allOffersFilter,
     } from '$lib/stores/troubleshoot-eventstores';
 
     import { messageStore } from '$lib/stores/messages';
@@ -88,7 +93,11 @@
 
         let logoutResponse = async function(r: boolean){
             if (r) {
-                networkWoTScores.set(new Map());
+                console.log('logout')
+
+                networkWoTScores.set(null);
+                currentUser.set(null);
+                console.log('wot', get(wot))
 
                 localStorage.clear();
 
@@ -103,6 +112,12 @@
                 myOfferFilter.authors = [];
 
                 messageStore.empty();
+                
+                allTickets.unsubscribe();
+                allOffers.unsubscribe();
+                delete allTicketsFilter.authors;
+                delete allOffersFilter.authors;
+
                 // receivedMessageFilter['#t'] = [];
                 // receivedMessageFilter['#p'] = [];
                 //
@@ -114,13 +129,19 @@
                     enableOutboxModel: true,
                     outboxRelayUrls: OUTBOXRELAYURLS,
                     blacklistRelayUrls: [],
-                    autoConnectUserRelays: true,
-                    autoFetchUserMutelist: true,
                     explicitRelayUrls: DEFAULTRELAYURLS,
                     cacheAdapter: new NDKCacheAdapterDexie({ dbName: 'satshoot-db' }),
                 }));
 
                 await $ndk.connect();
+
+                console.log('allticketsfilter', allTicketsFilter)
+                console.log('alltickets', $allTickets)
+
+                allTickets.startSubscription();
+                allOffers.startSubscription();
+
+                modalStore.close();
 
                 goto('/');
             }
@@ -143,12 +164,14 @@
     <div class="card p-4 w-48 sm:w-60 shadow-xl z-50">
         <nav class="list-nav">
             <ul>
-                <li>
-                    <a href={ "/" + $currentUser.npub }>
-                        <span class="w-6 text-center"><i class="fa-solid fa-user" /></span>
-                        <span>Profile</span>
-                    </a>
-                </li>
+                {#if $currentUser}
+                    <li>
+                        <a href={ "/" + $currentUser.npub }>
+                            <span class="w-6 text-center"><i class="fa-solid fa-user" /></span>
+                            <span>Profile</span>
+                        </a>
+                    </li>
+                {/if}
                 <li>
                     <a href="/network">
                         <span class="w-6 text-center"><i class="fa-solid fa-globe" /></span>

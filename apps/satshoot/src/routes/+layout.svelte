@@ -108,6 +108,7 @@
     onMount(async () => {
 
 // ---------------------------- Basic Init ----------------------------
+        console.log('onMount')
 
         localStorage.debug = 'ndk:*'
         if(!$modeCurrent) {
@@ -289,13 +290,12 @@
                     }
                 }
             }
+            // If signer is defined we can init user
+            if ($ndk.signer) {
+                initializeUser($ndk);
+            }
         }
     });
-
-    $: if ($ndk.signer) {
-        // Whatever the login method that was restored, init user
-        initializeUser($ndk);
-    }
 
     const settingsMenu: PopupSettings = {
         event: "click",

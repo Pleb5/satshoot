@@ -19,20 +19,31 @@ interface MapSerializer {
 export function getSetSerializer(): SetSerializer {
 
     return {
-        stringify: (set: Set<string>) => JSON.stringify(Array.from(set)),
-        parse: (json: string) => new Set(JSON.parse(json)),
+        stringify: (set: Set<string> | null) => {
+            if (!set) return JSON.stringify(null);
+            return JSON.stringify(Array.from(set));
+        },
+        parse: (json: string) => {
+            if (json === 'null') return new Set<string>();
+            return new Set<string>(JSON.parse(json))
+        },
     }
 }
 
 export function getMapSerializer(): MapSerializer {
     return {
-        stringify: (map: Map<string, number>) => {
+        stringify: (map: Map<string, number> | null) => {
+            if (!map) return JSON.stringify(null);
             return JSON.stringify(Array.from(map.entries()));
         },
 
         parse: (json: string) => {
             const map: Map<string, number> = new Map();
-            const array: Array<string[]> = Array.from(JSON.parse(json));
+            const parsedJson = JSON.parse(json);
+
+            if (parsedJson === null) return map;
+
+            const array: Array<string[]> = Array.from(parsedJson);
             array.forEach((elem: string[]) => {
                 map.set(elem[0], parseInt(elem[1]));
             });

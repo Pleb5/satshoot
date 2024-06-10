@@ -191,7 +191,7 @@
     }
 
     onDestroy(()=> {
-        console.log('unsubbing from offers of ticket')
+        // console.log('unsubbing from offers of ticket')
         offerSubscription?.stop();
     });
 

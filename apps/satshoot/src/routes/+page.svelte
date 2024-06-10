@@ -52,7 +52,7 @@
     }
 
     $: {
-        if(($allTickets || filterList) && $wot) {
+        if($allTickets || filterList) {
             // We just received a ticket 
             ticketList = new Set($allTickets.filter((t: TicketEvent) => {
                 const newTicket = (t.status === TicketStatus.New);
