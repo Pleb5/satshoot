@@ -125,7 +125,17 @@
                 // myMessageFilter['authors'] = [];
                 // myMessageFilter['#t'] = [];
 
+                // Remove all relays from pool
+                $ndk.pool.urls().forEach((url: string) => {
+                    $ndk.pool.removeRelay(url);
+                });
 
+                $ndk.outboxPool?.urls().forEach((url: string) => {
+                    $ndk.outboxPool?.removeRelay(url);
+                });
+
+
+                // Fresh start
                 ndk.set(new NDKSvelte({
                     enableOutboxModel: true,
                     outboxRelayUrls: OUTBOXRELAYURLS,
@@ -158,7 +168,7 @@
     }
 </script>
 
-<div class="card p-4 flex-grow shadow-xl md:text-xl">
+<div class="card p-4 flex-grow md:text-xl">
     <nav class="list-nav">
         <ul>
             {#if $currentUser}
@@ -181,7 +191,9 @@
                     href="/network"
                     on:click={()=>{drawerStore.close()}}
                 >
-                    <span class="w-6 text-center"><i class="fa-solid fa-globe" /></span>
+                    <span class="w-6 text-center">
+                        <i class="fa-solid fa-globe" />
+                    </span>
                     <span>Network</span>
                 </a>
             </li>
