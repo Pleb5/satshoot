@@ -134,6 +134,7 @@
                     $ndk.outboxPool?.removeRelay(url);
                 });
 
+                $currentUser = null;
 
                 // Fresh start
                 ndk.set(new NDKSvelte({

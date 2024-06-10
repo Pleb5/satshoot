@@ -6,6 +6,7 @@
     let relayStatusColor: string;
     let relayStatusText: string;
 
+    console.log('relay in relay listelement', relay)
     $: {
         if (relay) {
             if (relay.status == NDKRelayStatus.CONNECTING) {
