@@ -40,7 +40,12 @@
     import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06";
-    import { NDKNip46Signer, NDKNip07Signer, NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
+    import {
+        NDKNip46Signer,
+        NDKNip07Signer, 
+        NDKPrivateKeySigner, 
+        NDKRelay 
+    } from "@nostr-dev-kit/ndk";
     import { privateKeyFromNsec } from "$lib/utils/nip19";
 
     import { AppShell } from '@skeletonlabs/skeleton';
@@ -51,10 +56,20 @@
     import { page, updated } from '$app/stores';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 
-    // Popup menu
-    import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
+    // Popups
+    import {
+        computePosition,
+        autoUpdate, 
+        offset, 
+        shift,
+        flip,
+        arrow 
+    } from '@floating-ui/dom';
+
     import { storePopup, popup, type PopupSettings } from '@skeletonlabs/skeleton';
-    import SettingsMenu from "$lib/components/PopupMenu/SettingsMenu.svelte";
+
+    // App menu in drawer
+    import AppMenu from "$lib/components/DrawerContents/AppMenu.svelte";
 
     // Menu Items 
     import MenuItem_1 from "$lib/components/NavBar/MenuItem_1.svelte";
@@ -72,7 +87,12 @@
     import DecryptSecretModal from "$lib/components/Modals/DecryptSecretModal.svelte";
 
     // Skeleton stores init
-    import { initializeStores, Drawer } from '@skeletonlabs/skeleton';
+    import {
+        initializeStores,
+        Drawer,
+        getDrawerStore,
+        type DrawerSettings,
+    } from '@skeletonlabs/skeleton';
     import drawerID from '$lib/stores/drawer';
     import { DrawerIDs } from '$lib/stores/drawer';
     import { onMount } from "svelte";
@@ -86,6 +106,7 @@
     // Tickets and Offers
 
     initializeStores();
+    const drawerStore = getDrawerStore();
 
     // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
@@ -297,12 +318,6 @@
         }
     });
 
-    const settingsMenu: PopupSettings = {
-        event: "click",
-        target: "settingsMenu",
-        placement: "top"
-    };
-
     // Check for app updates and offer reload option to user in a Toast
     $: if ($updated) {
         let toastId:string;
@@ -362,7 +377,7 @@
     }
 
     $: if ($allOffers && $myTickets) {
-       $allOffers.forEach((o: TicketEvent) => {
+       $allOffers.forEach((o: OfferEvent) => {
             $myTickets.forEach((t: TicketEvent) => {
                 if (o.referencedTicketDTag === t.dTag) {
                     sendNotification(t);
@@ -390,13 +405,25 @@
         });
     }
 
+    function openAppMenu() {
+        $drawerID = DrawerIDs.AppMenu;
+        const drawerSettings: DrawerSettings = {
+            id: $drawerID,
+            width: 'w-[50vw] sm:w-[40vw] md:w-[30vw]',
+            height: 'h-[50vh]',
+            position: 'right',
+            bgDrawer: 'bg-surface-300-600-token',
+        };
+        drawerStore.open(drawerSettings);
+    }
+
 </script>
 
 <Toast />
 <Modal />
 <Drawer regionDrawer={'flex justify-center'}>
-    {#if $drawerID === DrawerIDs.UserMenu}
-        <SettingsMenu/>
+    {#if $drawerID === DrawerIDs.AppMenu}
+        <AppMenu/>
     {:else if $drawerID === DrawerIDs.ReviewBreakdown}
         <ReviewBreakdown />
     {:else if $drawerID === DrawerIDs.UserReviewBreakdown}
@@ -471,8 +498,7 @@
 
             <svelte:fragment slot="trail">
                 {#if $loggedIn}
-                    <!-- Triggers popup settings menu -->
-                    <button use:popup={settingsMenu}>
+                    <button on:click={openAppMenu}>
 
                         <!-- Avatar image -->
                         <Avatar 
@@ -485,8 +511,6 @@
                             }
                         /> 
                     </button>
-                    <!-- Popup menu content -->
-                    <SettingsMenu />
                 {:else}
                     <a href="/login" class="btn btn-md bg-primary-300-600-token ">
                         <span>Login</span>

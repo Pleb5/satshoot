@@ -4,7 +4,7 @@
 
     import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import currentUser from '$lib/stores/user';
-    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { getDrawerStore, getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
     import { SlideToggle } from '@skeletonlabs/skeleton';
@@ -37,6 +37,7 @@
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
     import { loggedIn } from '$lib/stores/user';
 
+    const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
@@ -71,7 +72,6 @@
     }
 
     function feedback() {
-
         const modalComponent: ModalComponent = {
             ref: FeedbackModal,
         };
@@ -94,6 +94,7 @@
         let logoutResponse = async function(r: boolean){
             if (r) {
                 console.log('logout')
+                drawerStore.close();
 
                 networkWoTScores.set(null);
                 currentUser.set(null);
@@ -157,52 +158,73 @@
     }
 </script>
 
-<div data-popup="settingsMenu" >
-    <div class="card p-4 w-48 sm:w-60 shadow-xl z-50">
-        <nav class="list-nav">
-            <ul>
-                {#if $currentUser}
-                    <li>
-                        <a href={ "/" + $currentUser.npub }>
-                            <span class="w-6 text-center"><i class="fa-solid fa-user" /></span>
-                            <span>Profile</span>
-                        </a>
-                    </li>
-                {/if}
+<div class="card p-4 flex-grow shadow-xl md:text-xl">
+    <nav class="list-nav">
+        <ul>
+            {#if $currentUser}
                 <li>
-                    <a href="/network">
-                        <span class="w-6 text-center"><i class="fa-solid fa-globe" /></span>
-                        <span>Network</span>
+                    <a 
+                        class="justify-center"
+                        href={ "/" + $currentUser.npub}
+                        on:click={()=>{drawerStore.close()}}
+                    >
+                        <span class="w-6 text-center">
+                            <i class="fa-solid fa-user" />
+                        </span>
+                        <span>Profile</span>
                     </a>
                 </li>
-                <li>
-                    <SlideToggle name='enable-notifications'
-                        class='text-md'
-                        active="bg-primary-500"
-                        size='sm'
-                        bind:checked={$notificationsEnabled}
-                    >
-                        Notifications
-                    </SlideToggle>
-                </li>
-                <hr class="!my-4" />
-                <li>
-                    <button class="w-full" on:click={feedback}>
-                        <span class="w-6 text-center"><i class="fa-regular fa-comment" /></span>
-                        <span>Feedback</span>
-                    </button>
-                </li>
-                <hr class="!my-4" />
-                <li>
-                    <button class="w-full" on:click={logout}>
-                        <span class="w-6 text-center">
-                            <i class="fa-solid fa-arrow-right-from-bracket" />
-                        </span>
-                        <span>Logout</span>
-                    </button>
-                </li>
-            </ul>
-        </nav>
-    </div>
+            {/if}
+            <li>
+                <a 
+                    class="justify-center"
+                    href="/network"
+                    on:click={()=>{drawerStore.close()}}
+                >
+                    <span class="w-6 text-center"><i class="fa-solid fa-globe" /></span>
+                    <span>Network</span>
+                </a>
+            </li>
+            <li class="flex justify-center">
+                <SlideToggle name='enable-notifications'
+                    class='text-md '
+                    active="bg-primary-500"
+                    size='sm'
+                    bind:checked={$notificationsEnabled}
+                >
+                    Notifications
+                </SlideToggle>
+            </li>
+            <hr class="!my-4" />
+            <li>
+                <a
+                    class="justify-center"
+                    href="/about"
+                    on:click={()=>{drawerStore.close()}}
+                >
+                    <span class="w-6 text-center">
+                        <i class="fa-solid fa-info" />
+                    </span>
+                    <span>About</span>
+                </a>
+            </li>
+            <li>
+                <button class="w-full justify-center" on:click={feedback}>
+                    <span class="w-6 text-center">
+                        <i class="fa-regular fa-comment" />
+                    </span>
+                    <span>Feedback</span>
+                </button>
+            </li>
+            <hr class="!my-4" />
+            <li>
+                <button class="w-full justify-center" on:click={logout}>
+                    <span class="w-6 text-center">
+                        <i class="fa-solid fa-arrow-right-from-bracket" />
+                    </span>
+                    <span>Logout</span>
+                </button>
+            </li>
+        </ul>
+    </nav>
 </div>
-

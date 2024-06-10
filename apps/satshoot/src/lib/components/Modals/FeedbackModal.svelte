@@ -6,10 +6,10 @@
     import { BTCTroubleshootPubkey } from '$lib/utils/misc';
     
     import { ProgressRadial } from '@skeletonlabs/skeleton';
-	import { getModalStore } from '@skeletonlabs/skeleton';
+	import { getModalStore, getToastStore, getDrawerStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
-    import { getToastStore } from '@skeletonlabs/skeleton';
 
+    const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
@@ -49,6 +49,7 @@
             toastStore.trigger(t);
 
             modalStore.close();
+            drawerStore.close();
         } catch(e) {
             posting = false;
             const t: ToastSettings = {
