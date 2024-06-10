@@ -448,7 +448,9 @@
 
             <div class="flex justify-center lg:ml-20">
                 <div class ='flex gap-x-2 justify-center items-center'>
-                    <img src="/satshoot.svg" alt="logo" />
+                    <button class="btn btn-icon" on:click={()=>{goto('/')}}>
+                        <img src="/satshoot.svg" alt="logo" />
+                    </button>
                     <div class ='flex gap-x-2 items-center'>
                         <h3 class='h3 font-bold'>WoT:</h3>
                         <div>
