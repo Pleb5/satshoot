@@ -3,16 +3,21 @@
     import currentUser from '$lib/stores/user';
     import { connected } from "$lib/stores/ndk";
 
+    import normalizeUrl from "normalize-url";
+
     import { NDKRelay, NDKRelayList, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
-    import { onMount } from 'svelte';
-
     import RelayListElement from '$lib/components/Relays/RelayListElement.svelte';
+    import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
 
+    const modalStore = getModalStore();
 
     let needRelays = true;
 
     let readRelays: Set<NDKRelay> = new Set();
     let writeRelays: Set<NDKRelay> = new Set();
+
+    let readRelayInputValue = '';
+    let writeRelayInputValue = '';
 
 
     async function fetchOutboxRelays() {
@@ -41,34 +46,80 @@
 
         readRelays.clear();
         writeRelays.clear();
-        readRelayUrls.forEach((url: string) => {
-            const relay = $ndk.pool.getRelay(url);
-            readRelays.add(relay);
-        });
+        const poolArray = Array.from($ndk.pool.relays.values());
+        poolArray.forEach((poolRelay: NDKRelay) => {
+            readRelayUrls.forEach((url: string) => {
+                if (poolRelay.url === url) {
+                    readRelays.add(poolRelay);
+                }
+            });
 
-        writeRelayUrls.forEach((url: string) => {
-            const relay = $ndk.pool.getRelay(url);
-            writeRelays.add(relay);
+            writeRelayUrls.forEach((url: string) => {
+                if (poolRelay.url === url) {
+                    writeRelays.add(poolRelay);
+                }
+            });
         });
 
         readRelays = readRelays;
         writeRelays = writeRelays;
+        console.log('ndk pool in network', $ndk.pool)
+        console.log('ndk outbox pool in network', $ndk.outboxPool)
         console.log('read relays', readRelays)
         console.log('write relays', writeRelays)
     }
+// Url normalization based on the idea of Coracle.social
+    // https://github.com/coracle-social/paravel/blob/7cb792ba17550f208d3c80773c4822a010139ccb/src/util/nostr.ts#L46
+    const stripProto = (url: string) => url.replace(/.*:\/\//, "")
+    function normalizeRelayUrl(url: string) {
+        url = normalizeUrl(url, {stripHash: true, stripAuthentication: false});
+
+        // Strip protocol
+        url = stripProto(url);
+
+        // Url-s without pathnames are supposed to have a trailing slash
+        if (!url.includes("/")) {
+            url += "/";
+        }
+
+        return "wss://" + url;
+    }
+
+    function addRelay(read: boolean) {
+        const url: string = read 
+            ? normalizeRelayUrl(readRelayInputValue)
+            : normalizeRelayUrl(writeRelayInputValue);
+
+       // TODO: push relay list as 10002 with blastr and reload relays 
+
+    }
 
     function removeRelay(relay: NDKRelay, read: boolean) {
-        if (read) {
-            readRelays.delete(relay);
-            readRelays = readRelays;
-        } else {
-            writeRelays.delete(relay);
-            writeRelays = writeRelays;
+        let removeRelayResponse = function(r: boolean){
+            if (r) {
+                // Removal confirmed
+                if (read) {
+
+                } else {
+
+                }
+                // TODO: push relay list as 10002 with blastr and user relays then reload relays 
+
+            }
         }
+
+        const modal: ModalSettings = {
+            type: 'confirm',
+            title: 'Confirm Removal of Relay',
+            body: `Do you really want to remove ${relay.url.replace("wss://","").slice(0, -1)}?`,
+            response: removeRelayResponse,
+        };
+        modalStore.trigger(modal);
+
     }
 
     $: if ($currentUser && $connected && needRelays) {
-        needRelays = false;
+        // needRelays = false;
         fetchOutboxRelays();
     }
     
@@ -98,7 +149,19 @@
             </button>
         </div> 
     {/each}
+    <div class="w-80 mb-6">
+        <label class="label flex flex-col items-center">
+            <h3 class="h3">Add READ Relay</h3>
+            <input class="input w-full text-center" 
+            bind:value={readRelayInputValue}
+            title="relay input (url)" 
+            type="text" 
+            placeholder="Enter Relay URL(without wss://)"
+        />
+        </label>
+    </div>
 </div>
+<hr class="mb-6"/>
 <h3 class="h3 mb-4 text-center">Your Write Relays(Outbox)</h3>
 <div class="flex flex-col gap-y-4 justify-center items-center mb-6 mx-2">
     {#each writeRelays as relay(relay.url)}
@@ -112,6 +175,17 @@
             </button>
         </div> 
     {/each}
+    <div class="w-80 mb-6">
+        <label class="label flex flex-col items-center">
+            <h3 class="h3">Add WRITE Relay</h3>
+            <input class="input w-full text-center" 
+            bind:value={writeRelayInputValue}
+            title="relay input (url)" 
+            type="text" 
+            placeholder="Enter Relay URL(without wss://)"
+        />
+        </label>
+    </div>
 </div>
 <div class="flex justify-center mb-6" >
     <button class="btn btn-md bg-primary-300-600-token" on:click={() => location.reload()}>
