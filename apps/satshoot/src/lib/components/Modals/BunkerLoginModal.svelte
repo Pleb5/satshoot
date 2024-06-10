@@ -189,7 +189,14 @@
                         placeholder="bunker://..."
                     />
             </div>
-            <div class="flex justify-center">
+            <div class="flex justify-between">
+                <button 
+                    type="button"
+                    class="btn btn-sm sm:btn-md bg-error-300-600-token"
+                    on:click={()=> modalStore.close()}
+                >
+                    Cancel
+                </button>
                 <button 
                     type="submit"
                     class="btn btn-lg h-14 font-bold bg-success-400-500-token"
