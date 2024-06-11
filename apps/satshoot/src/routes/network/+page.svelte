@@ -263,7 +263,7 @@
                 bind:value={readRelayInputValue}
                 title="relay input (url)" 
                 type="text" 
-                placeholder="Relay URL, without 'wss://'"
+                placeholder="Relay URL, without ' wss:// '"
             />
                 <button 
                     class="btn btn-icon"
@@ -334,7 +334,7 @@
                 bind:value={writeRelayInputValue}
                 title="relay input (url)" 
                 type="text" 
-                placeholder="Relay URL, 'without wss://'"
+                placeholder="Relay URL, without ' wss:// '"
             />
                 <button 
                     class="btn btn-icon"
