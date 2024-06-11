@@ -6,6 +6,11 @@
     let relayStatusColor: string;
     let relayStatusText: string;
 
+    setTimeout(
+        ()=>{console.log('relay in relay list element after 8 secs', relay)},
+        8000
+    );
+
     $: {
         if (relay) {
             if (relay.status == NDKRelayStatus.CONNECTING) {
