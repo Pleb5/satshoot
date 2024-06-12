@@ -4,6 +4,13 @@ import { type NDKFilter, type NDKSubscriptionOptions, NDKKind, type NDKUser } fr
 import { get, writable } from "svelte/store";
 
 
+export interface Message {
+    id: string;
+    sender: string,
+    recipient: string;
+    timestamp: string;
+    message: string;
+}
 
 export const subOptions: NDKSubscriptionOptions = { closeOnEose: false, pool: get(ndk).pool };
 
