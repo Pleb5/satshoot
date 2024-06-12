@@ -72,9 +72,9 @@
     import AppMenu from "$lib/components/DrawerContents/AppMenu.svelte";
 
     // Menu Items 
-    import MenuItem_1 from "$lib/components/NavBar/MenuItem_1.svelte";
-    import MenuItem_2 from "$lib/components/NavBar/MenuItem_2.svelte";
-    import MenuItem_3 from "$lib/components/NavBar/MenuItem_3.svelte";
+    import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
+    import PostTicketIcon from "$lib/components/Icons/PostTicketIcon.svelte";
+    import UserTicketsAndOffersIcon from "$lib/components/Icons/UserTicketsAndOffersIcon.svelte";
 
     import { LightSwitch, modeCurrent } from '@skeletonlabs/skeleton';
 
@@ -535,21 +535,21 @@
                         href="/"
                         selected={$page.url.pathname === '/'}
                     >
-                        <MenuItem_1 />
+                    <TroubleshootIcon />
                     </AppRailAnchor>
 
                     <AppRailAnchor
                         href="/post-ticket"
                         selected={$page.url.pathname.includes('/post-ticket')}
                     >
-                        <MenuItem_2 />
+                    <PostTicketIcon />
                     </AppRailAnchor>
 
                     <AppRailAnchor 
                         href="/my-tickets" 
                         selected={$page.url.pathname.includes('/my-tickets')}
                     >
-                        <MenuItem_3 />
+                        <UserTicketsAndOffersIcon />
                     </AppRailAnchor>
                 </svelte:fragment>
             </AppRail>
@@ -574,21 +574,21 @@
                 href="/" 
                 selected={$page.url.pathname === '/'}
             >
-                <MenuItem_1 />
+                <TroubleshootIcon />
             </TabAnchor>
 
             <TabAnchor 
                 href="/post-ticket"
                 selected={$page.url.pathname.includes('/post-ticket')}
             >
-                <MenuItem_2 />
+                <PostTicketIcon />
             </TabAnchor>
 
             <TabAnchor 
                 href="/my-tickets"
                 selected={$page.url.pathname.includes('/my-tickets')}
             >
-                <MenuItem_3 />
+                <UserTicketsAndOffersIcon />
             </TabAnchor>
 
         </TabGroup>

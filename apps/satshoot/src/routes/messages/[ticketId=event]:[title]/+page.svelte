@@ -23,6 +23,7 @@
     import { idFromNaddr } from '$lib/utils/nip19'
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
+    import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
 
 
     const toastStore = getToastStore();
@@ -702,9 +703,7 @@
                 calculateHeights();
             }}
         >
-            <span class="">
-                <i class="fa-solid fa-magnifying-glass text-lg"></i>
-            </span>
+            <SearchIcon />
         </button>
     </div>
 {/if}

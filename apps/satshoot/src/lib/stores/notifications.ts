@@ -1,6 +1,7 @@
 // import ndk from "./ndk";
 import { localStorageStore } from "@skeletonlabs/skeleton";
 import type { Writable } from 'svelte/store';
+import { derived, writable } from "svelte/store";
 import { getSetSerializer } from '$lib//utils/misc';
 import { get } from "svelte/store";
 import { type NDKEvent, NDKKind } from "@nostr-dev-kit/ndk";
@@ -16,13 +17,55 @@ export const seenIDs: Writable<Set<string>> = localStorageStore(
     {serializer: getSetSerializer()}
 );
 
+export const notifications = writable<NDKEvent[]>([]);
+export const ticketNotifications = derived(
+    [notifications],
+    ([$notifications]) => {
+
+        const tickets = $notifications.filter((notification: NDKEvent) => {
+            return notification.kind = BTCTroubleshootKind.Ticket;
+        });
+
+
+        return tickets;
+    }
+);
+export const offerNotifications = derived(
+    [notifications],
+    ([$notifications]) => {
+
+        const offers = $notifications.filter((notification: NDKEvent) => {
+            return notification.kind = BTCTroubleshootKind.Offer;
+        });
+
+
+        return offers;
+    }
+);
+export const messageNotifications = derived(
+    [notifications],
+    ([$notifications]) => {
+
+        const messages = $notifications.filter((notification: NDKEvent) => {
+            return notification.kind = NDKKind.EncryptedDirectMessage;
+        });
+
+
+        return messages;
+    }
+);
+
 export async function sendNotification(event: NDKEvent) {
     const $seenIDs = get(seenIDs);
+    const $notifications = get(notifications);
     if(get(notificationsEnabled) 
         && !$seenIDs.has(event.id)
     ) {
         $seenIDs.add(event.id);
         seenIDs.set($seenIDs);
+        $notifications.push(event);
+        notifications.set($notifications);
+
         const activeSW = await getActiveServiceWorker()
         if(!activeSW) {
             console.log('Notifications are only served through Service Workers\

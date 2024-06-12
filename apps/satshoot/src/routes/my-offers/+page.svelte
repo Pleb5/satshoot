@@ -1,3 +1,4 @@
+
 <script lang="ts">
 import currentUser from "$lib/stores/user";
 
@@ -7,8 +8,9 @@ import { offerTabStore } from "$lib/stores/tab-store";
 
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
 import { allTickets, myOffers } from '$lib/stores/troubleshoot-eventstores';
-import OfferCard from '../OrderBook/OfferCard.svelte';
+import OfferCard from '$lib/components/OrderBook/OfferCard.svelte';
 import { type TicketEvent } from '$lib/events/TicketEvent';
+import SearchIcon from "$lib/components/Icons/SearchIcon.svelte"; 
 
 let pendingOffers: OfferEvent[] = [];
 let wonOffers: OfferEvent[] = [];
@@ -223,9 +225,7 @@ $: {
         on:click={()=> {
             hideSearch = !hideSearch;
         }}
+        <SearchIcon />
     >
-        <span class="">
-            <i class="fa-solid fa-magnifying-glass text-lg"></i>
-        </span>
     </button>
 </div>
