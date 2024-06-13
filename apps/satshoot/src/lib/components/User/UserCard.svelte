@@ -3,6 +3,7 @@
     import currentUser from '$lib/stores/user';
     import {
         NDKEvent, 
+        NDKRelaySet,
         NDKSubscriptionCacheUsage,
         type NDKUser,
         type NDKUserProfile
@@ -140,7 +141,14 @@
         }
         if (user) {
             try {
-                const relaysPublished = await event.publish();
+                const blastrUrl = 'wss://nostr.mutinywallet.com';
+                const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
+                    blastrUrl,
+                    ...$ndk.pool.urls(),
+                    ...$ndk.outboxPool!.urls()
+                ], $ndk);
+                console.log('relays sent to:', broadCastRelaySet)
+                const relaysPublished = await event.publish(broadCastRelaySet);
                 console.log('relaysPublished', relaysPublished)
 
                 profilePromise = user.fetchProfile(

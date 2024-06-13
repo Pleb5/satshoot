@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { connected } from "$lib/stores/ndk";
 
@@ -79,6 +79,19 @@
             relayList.writeRelayUrls.forEach((url: string) => {
                 writeRelayUrls.add(url);
             });
+        } else {
+            // No relays found, set default app relays for both read and write
+            DEFAULTRELAYURLS.forEach((url: string) => {
+                readRelayUrls.add(url);
+                writeRelayUrls.add(url);
+            });
+            const t: ToastSettings = {
+                message: 'Did not find Outbox Relays, setting default values...',
+                timeout: 8000,
+                background: 'bg-warning-300-600-token',
+            };
+            toastStore.trigger(t);
+            broadcastRelays();
         }
         updateRelayValues();
     }
