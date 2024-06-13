@@ -12,7 +12,6 @@
     import { bunkerNDK } from '$lib/stores/ndk';
     import { connected } from "$lib/stores/ndk";
     import {
-        DEFAULTRELAYURLS,
         sessionPK,
     } from "$lib/stores/ndk";
 

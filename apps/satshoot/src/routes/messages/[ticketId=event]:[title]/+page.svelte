@@ -1,28 +1,39 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
-    import { wot } from '$lib/stores/wot';
     import { page } from "$app/stores";
 
     import { allOffers } from "$lib/stores/troubleshoot-eventstores";
 
     import { 
-        messageStore, receivedMessageFilter,
-        myMessageFilter, offerMakerToSelect, selectedPerson
+        wotFilteredMessageFeed,
+        offerMakerToSelect,
+        selectedPerson,
+        type Message,
     } from "$lib/stores/messages";
     
     import { onMount, tick } from "svelte";
 
-	import { Avatar } from '@skeletonlabs/skeleton';
-
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
+    import { Avatar } from '@skeletonlabs/skeleton';
 
-    import { NDKEvent, NDKKind, type NDKUser, type NDKSigner } from "@nostr-dev-kit/ndk";
+    import {
+        NDKEvent,
+        NDKKind,
+        type NDKUser,
+        type NDKSigner,
+        type NDKTag,
+
+        type Hexpubkey
+
+    } from "@nostr-dev-kit/ndk";
 
     import { idFromNaddr } from '$lib/utils/nip19'
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
+    import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
+    import MessageCard from "$lib/components/User/MessageCard.svelte";
 
 
     const toastStore = getToastStore();
@@ -33,18 +44,6 @@
 
     let ticket: TicketEvent | null = null;
     let myTicket = false;
-
-	interface MessageFeed {
-		id: string;
-		host: boolean;
-		avatar: string;
-		name: string;
-        pubkey: string,
-        recipient: string;
-		timestamp: string;
-		message: string;
-		color: string;
-	}
 
     interface Contact {
         person: NDKUser,
@@ -82,16 +81,9 @@
     // The pubkey of the person who made the winning Offer
     let winner = '';
 
-	// All Messages
-	let messages: MessageFeed[] = [];
-
-    // Filtered messages by person but NOT YET by searchText
-    let unfilteredMessageFeed: MessageFeed[] = [];
-
     // Filtered messages by person AND searchText 
-	let filteredMessageFeed: MessageFeed[] = [];
-
-    let seenMessages: string[] = [];
+	let unfilteredMessageFeed: Message[] = [];
+	let filteredMessageFeed: Message[] = [];
 
 	// For some reason, eslint thinks ScrollBehavior is undefined...
 	// eslint-disable-next-line no-undef
@@ -135,46 +127,29 @@
 		}
 	}
 
-    function updateUserProfile(user: NDKUser) {
-        user.fetchProfile().then(() => {
-            // console.log('updateUserProfile', user)
-            people = people;
-            filteredMessageFeed.forEach((message: MessageFeed) => {
-                if (message.pubkey === (user as NDKUser).pubkey) {
-                    message.avatar = (user as NDKUser).profile?.image 
-                        ?? `https://robohash.org/${message.pubkey}`;
-                    message.name = (user as NDKUser).profile?.name 
-                        ?? (user as NDKUser).npub.substring(0,10);
-                }
-            });
-            filteredMessageFeed = filteredMessageFeed;
-        });
-    }
-
-    function addPerson(pubkey: string): NDKUser | undefined {
-        if (!$wot.has(pubkey)) return undefined;
-
+    async function addPerson(pubkey: string) {
         for (const contact of people) {
             if (contact.person.pubkey === pubkey) {
-                return contact.person;
+                return;
             }
         }
         
         // We havent added this person yet
-        const person = $ndk.getUser({hexpubkey: pubkey});
+        const person = $ndk.getUser({pubkey: pubkey});
         // console.log('adding new person', person)
         const contact = {person: person, selected: false};
+
         people.push(contact);
+        // console.log('updateUserProfile', user)
         people = people;
 
-        updateUserProfile(person);
-
-        return person;
+        await person.fetchProfile();
+        people = people;
     }
 
     async function selectCurrentPerson(contact: Contact) {
         if (currentPerson !== contact.person){
-            // console.log('selectCurrentPerson')
+            console.log('selectCurrentPerson')
             if (ticket) {
                 $selectedPerson = contact.person.pubkey + '$' + ticketAddress;
                 console.log($selectedPerson)
@@ -189,129 +164,118 @@
 
             people = people;
 
-            generateCurrentFeed();
-            updateUserProfile(currentPerson);
             resetContactsList();
-
             await tick();
+
             calculateHeights();
         }
     }
 
     function generateCurrentFeed() {
-        if (messages.length > 0) {
-            const unOrderedMessageFeed = messages.filter((message: MessageFeed) => {
-                if (message.pubkey === currentPerson.pubkey) {
-                    return true;
-                } else if(message.recipient === currentPerson.pubkey) {
-                    return true;
-                }
+        // filter by the search bar
+        searchText();
 
-                return false;
-            });
-
-            // Need to reorder feed according to 
-            unfilteredMessageFeed = [];
-            $messageStore.forEach((dm: NDKEvent) => {
-                unOrderedMessageFeed.forEach((message: MessageFeed) => {
-                    if (message.id === dm.id) {
-                        unfilteredMessageFeed.unshift(message);
-                    }
-                });
-            });
-
-            // filter by the search bar
-            searchText();
-
-            // Smooth scroll to bottom
-            // Timeout prevents race condition
-            if (elemChat) {
-                setTimeout(() => {
-                    scrollChatBottom('smooth');
-                }, 0);
-            }
+        // Smooth scroll to bottom
+        // Timeout prevents race condition
+        if (elemChat) {
+            setTimeout(() => {
+                scrollChatBottom('smooth');
+            }, 0);
         }
     }
 
     function searchText() {
-        filteredMessageFeed = unfilteredMessageFeed.filter((message: MessageFeed) => {
+        filteredMessageFeed = unfilteredMessageFeed.filter((message: Message) => {
             if (message.message.includes(searchInput)) {
                 return true;
             }
         });
+        console.log('decrypted, filtered MessageFeed', filteredMessageFeed)
+    }
+
+    async function decryptAndPushMessage(dm: NDKEvent, index: number) {
     }
 
     async function updateMessageFeed() {
-        console.log('update message feeed')
-        for (const dm of $messageStore) {
-            const alreadyHere: boolean = seenMessages.filter((id: string) => {
-                if (dm.id === id) return true;
-                return false;
-            }).length > 0;
+        // The message was either sent from the current chat partner to the user
+        // or it was sent from the user to the current partner. We need both
+        // We also filter messages related to the ticket the conversation is about
+        console.log('wotFilteredMessageFeed', $wotFilteredMessageFeed)
+        const feed = $wotFilteredMessageFeed.filter((message: NDKEvent) =>{
+            let relatedToTicket = false;
+            message.tags.forEach((tag: NDKTag) => {
+                if (tag[0] === 't' && tag[1] === ticket!.ticketAddress) {
+                    relatedToTicket = true;
+                }
+            });
 
-            if (alreadyHere) {
-                continue;
-            } else {
-                seenMessages.push(dm.id);
+            return (
+                relatedToTicket &&
+                (message.pubkey === currentPerson.pubkey ||
+                message.tagValue('p') as string === currentPerson.pubkey)
+            )
+        });
+        console.log('feed to decrypt', feed)
+        console.log('update message feed')
+        for (let i = 0; i < feed.length; i++) {
+            const dm = feed[i];
+            const messageDate = new Date(dm.created_at as number * 1000);
+            // Time is shown in local time zone
+            const dateString = messageDate.toLocaleString();
+
+            // the message iteself is decrypted later, init with empty string for now
+            const message = {
+                id: dm.id,
+                sender: dm.pubkey,
+                recipient: dm.tagValue('p') as string,
+                timestamp: dateString,
+                message: '',
+            };
+
+            // We dont decrypt already decrypted messages
+            let alreadySeen = false;
+            for (const m of unfilteredMessageFeed) {
+                if (dm.id === m.id) alreadySeen = true;
+                console.log('already seen')
+                break;
             }
+            if (alreadySeen) continue;
 
-            let personOfMessage: NDKUser | undefined = undefined;
-            let otherUser: NDKUser;
+            // We insert the new decrypted message in the right place
+            // that is exactly the index where it was in the original feed
+            // because that is inherently ordered by time by ndk-svelte store
+            // This insert is important to happen BEFORE decryption to avoid
+            // race conditions arising from waiting on the decryption
+            // also, ndk has the newest event at the start and we need it to be at the end...
+            unfilteredMessageFeed.splice(unfilteredMessageFeed.length - i, 0, message);
 
-            let host = false;
 
-            if (dm.pubkey === $currentUser?.pubkey) {
-                host = true;
-                personOfMessage = $currentUser;
-                otherUser = $ndk.getUser({hexpubkey: dm.tagValue('p')});
-            } else {
-                otherUser = $ndk.getUser({hexpubkey: dm.pubkey});
+            // ECDH DEMANDS THAT DECRYPTION ALWAYS USES THE PUBKEY OF THE OTHER PARTY
+            // BE IT THE SENDER OR THE RECIPIENT OF THE ACTUAL MESSAGE
+            // 
+            // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
 
-                // This only adds person if it is not already added
-                // console.log('add person in updateMessageFeed')
-                personOfMessage = addPerson(dm.pubkey)
-                if (!personOfMessage) return;
-            }
-
+            // ALWAYS USE OTHER USER REGARDLESS OF WHO SENT THE MESSAGE
+            console.log('start decryption', dm)
             try {
-                // ECDH DEMANDS THAT DECRYPTION ALWAYS USES THE PUBKEY OF THE OTHER PARTY
-                // BE IT THE SENDER OR THE RECIPIENT OF THE ACTUAL MESSAGE
-                // 
-                // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
+                const peerPubkey = (dm.tagValue('p') === $currentUser!.pubkey
+                    ? dm.pubkey : dm.tagValue('p')
+                ) as string;
+                addPerson(peerPubkey);
 
-                // ALWAYS USE OTHER USER REGARDLESS OF WHO SENT THE MESSAGE
-                console.log('start decyption', dm)
-                let message = await ($ndk.signer as NDKSigner).decrypt(otherUser, dm.content); 
+                const peerUser = $ndk.getUser({pubkey: peerPubkey});
+                console.log('peer user', peerUser)
 
-                console.log('message', message)
+                const decryptedDM = await ($ndk.signer as NDKSigner).decrypt(peerUser, dm.content); 
 
-                const messageDate = new Date(dm.created_at as number * 1000);
-                // Time is shown in local time zone
-                const dateString = messageDate.toLocaleString();
-
-
-                const newMessage = {
-                    id: dm.id,
-                    host: host,
-                    name: (personOfMessage as NDKUser)
-                        .profile?.name
-                        ?? (personOfMessage as NDKUser).npub.substring(0, 10),
-                    pubkey: (personOfMessage as NDKUser).pubkey,
-                    avatar: (personOfMessage as NDKUser).profile?.image ??
-                        `https://robohash.org/${(personOfMessage as NDKUser).pubkey}`,
-                    recipient: dm.tagValue('p') as string,
-                    timestamp: dateString,
-                    message: message,
-                    color: 'variant-soft-primary'
-                };
-
-                messages.push(newMessage);
-
+                console.log('decrypted message:', decryptedDM)
+                message.message = decryptedDM;
             } catch (e) {
                 console.log(e);
                 console.trace();
             }
         }
+        console.log('decrypted feed', unfilteredMessageFeed)
 
         // Update the message feed
         if (currentPerson) {
@@ -386,20 +350,6 @@
         // myTickets does not necessarily contain this ticket at this point so it is easier this way
         console.log('fetch ticket...')
         $ndk.fetchEvent(ticketAddress).then((t: NDKEvent|null) => {
-            // Possible problem here to start the start message subscriptions before ticket arrived
-            // updateMessageFeed() might be called too soon in reactive statements below
-            // Sometimes this throws a very obscure error so try to initiate message subs here
-            myMessageFilter['authors'] = [];
-            myMessageFilter['#t'] = [];
-            myMessageFilter['#t'].push(ticketAddress);
-
-            receivedMessageFilter['#p'] = [];
-            receivedMessageFilter['#t'] = [];
-            receivedMessageFilter['#t'].push(ticketAddress);
-
-            messageStore.empty();
-            messageStore.startSubscription();
-
             needSetup = false;
             elemChat = elemChat;
 
@@ -471,8 +421,23 @@
         });
     }
 
-    $: if (!needSetup && $messageStore.length > 0) {
-        updateMessageFeed() 
+    $: if (!needSetup && $wotFilteredMessageFeed.length > 0) {
+        // Add all people to contact list who have messages related to ticket
+        let relatedToTicket = false;
+        $wotFilteredMessageFeed.forEach((message: NDKEvent) => {
+            message.tags.forEach((tag: NDKTag) => {
+                if (tag[0] === 't' && tag[1] === ticket!.ticketAddress) {
+                    relatedToTicket = true;
+                    if (message.pubkey !== $currentUser!.pubkey) {
+                        addPerson(message.pubkey);
+                    }
+                }
+            });
+        });
+
+        if (currentPerson) {
+            updateMessageFeed();
+        }
     }
 
     let innerHeight = 0;
@@ -602,37 +567,29 @@
                         class="p-4 space-y-4 overflow-y-auto {hideChat ? 'hidden' : ''}"
                         style="height: {chatHeight}px;"
                     >
-                        {#each filteredMessageFeed as bubble}
-                            {#if bubble.host === true}
-                                <div class="grid grid-cols-[auto_1fr] gap-2">
-                                    <Avatar
-                                        src={bubble.avatar
-                                            ?? `https://robohash.org/${bubble.pubkey}`}
-                                        width="w-12" />
-                                    <div class="card p-4 variant-soft rounded-tl-none space-y-2">
-                                        <header class="flex justify-between items-center gap-x-4">
-                                            <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
-                                            <small class="opacity-50">{bubble.timestamp}</small>
-                                        </header>
-                                        <p>{bubble.message}</p>
-                                    </div>
+                        {#if $currentUser}
+                            {#each filteredMessageFeed as message}
+                                <MessageCard
+                                avatarRight={message.sender !== $currentUser.pubkey}
+                                message={message}
+                            />
+                            {/each}
+                        {:else}
+                            <div class="p-4 space-y-4">
+                                <div class="placeholder animate-pulse" />
+                                <div class="grid grid-cols-3 gap-8">
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
                                 </div>
-                            {:else}
-                                <div class="grid grid-cols-[1fr_auto] gap-2">
-                                    <div class="card p-4 rounded-tr-none space-y-2 {bubble.color}">
-                                        <header class="flex justify-between items-center gap-x-4">
-                                            <p class="font-bold text-sm md:text-lg">{bubble.name}</p>
-                                            <small class="opacity-50">{bubble.timestamp}</small>
-                                        </header>
-                                        <p>{bubble.message}</p>
-                                    </div>
-                                    <Avatar 
-                                        src={bubble.avatar
-                                            ?? `https://robohash.org/${bubble.pubkey}`}
-                                        width="w-12" />
+                                <div class="grid grid-cols-4 gap-4">
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
                                 </div>
-                            {/if}
-                        {/each}
+                            </div>
+                        {/if}
                     </section>
                 </div>
             </section>
@@ -702,9 +659,7 @@
                 calculateHeights();
             }}
         >
-            <span class="">
-                <i class="fa-solid fa-magnifying-glass text-lg"></i>
-            </span>
+            <SearchIcon />
         </button>
     </div>
 {/if}

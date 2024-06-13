@@ -9,7 +9,7 @@ import type { Message } from '$lib/stores/messages';
 export let avatarRight = true;
 export let message: Message;
 
-const user = $ndk.getUser({hexpubkey: message.sender});
+const user = $ndk.getUser({pubkey: message.sender});
 let name: string = (user as NDKUser).npub.substring(0,10);
 let avatarImage: string = `https://robohash.org/${message.sender}`;
 
@@ -28,11 +28,10 @@ onMount(async () => {
 });
 
 
-
 </script>
 
 {#if message}
-    <div class="grid grid-cols-[auto_1fr] gap-2">
+    <div class="grid grid-cols-{avatarRight ? '[1fr_auto]' : '[auto_1fr]'} gap-2">
         {#if !avatarRight}
             <Avatar
             src={avatarImage}
