@@ -1,19 +1,30 @@
 <script lang="ts">
 import ndk from "$lib/stores/ndk";
+import { type NDKUser } from "@nostr-dev-kit/ndk";
 import { Avatar } from '@skeletonlabs/skeleton';
-import { type NDKSigner } from "@nostr-dev-kit/ndk";
-import currentUser from "$lib/stores/user";
 import { onMount } from "svelte";
 import type { Message } from '$lib/stores/messages';
 
 
 export let avatarRight = true;
 export let message: Message;
-export let name: string;
-export let avatarImage: string;
 
-const color = 'variant-soft-primary'
+const user = $ndk.getUser({hexpubkey: message.sender});
+let name: string = (user as NDKUser).npub.substring(0,10);
+let avatarImage: string = `https://robohash.org/${message.sender}`;
+
+let extraClasses = 'variant-soft-primary rounded-tr-none'
+
 onMount(async () => {
+    if (avatarRight) {
+        extraClasses = 'variant-soft rounded-tl-none'
+    }
+    const profile = await user.fetchProfile();
+    if (profile) {
+        if (profile.name) name = profile.name;
+        if (profile.image) avatarImage = profile.image;
+    }
+
 });
 
 
@@ -24,21 +35,19 @@ onMount(async () => {
     <div class="grid grid-cols-[auto_1fr] gap-2">
         {#if !avatarRight}
             <Avatar
-            src={message.avatar
-                ?? `https://robohash.org/${message.pubkey}`}
+            src={avatarImage}
             width="w-12" />
         {/if}
-        <div class="card p-4 variant-soft rounded-tl-none space-y-2">
+        <div class="card p-4 space-y-2 {extraClasses}">
             <header class="flex justify-between items-center gap-x-4">
-                <p class="font-bold text-sm md:text-lg">{message.name}</p>
+                <p class="font-bold text-sm md:text-lg">{name}</p>
                 <small class="opacity-50">{message.timestamp}</small>
             </header>
             <p>{message.message}</p>
         </div>
         {#if avatarRight}
             <Avatar
-            src={message.avatar
-                ?? `https://robohash.org/${message.pubkey}`}
+            src={avatarImage}
             width="w-12" />
         {/if}
     </div>

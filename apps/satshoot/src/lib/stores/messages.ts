@@ -1,7 +1,13 @@
 import ndk from "./ndk";
-import { type NDKFilter, type NDKSubscriptionOptions, NDKKind, type NDKUser } from '@nostr-dev-kit/ndk';
+import {
+    type NDKFilter,
+    type NDKSubscriptionOptions,
+    NDKKind, 
+    type NDKEvent 
+} from '@nostr-dev-kit/ndk';
 
-import { get, writable } from "svelte/store";
+import { get, writable, derived } from "svelte/store";
+import { wot } from "./wot";
 
 
 export interface Message {
@@ -31,6 +37,24 @@ export const myMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
 }
 
 export const messageStore = get(ndk).storeSubscribe([receivedMessageFilter, myMessageFilter], subOptions);
+// Filter messages by wot 
+export const wotFilteredMessageFeed = derived(
+    [messageStore, wot],
+    ([$messageStore, $wot]) => {
+        const feed = $messageStore.filter((message: NDKEvent) => {
+            if (
+                // Filter messages if they are in the web of trust
+                $wot.has(message.pubkey) 
+            ) {
+                return true;
+            } 
+
+            return false;
+        });
+
+        return feed;
+    }
+);
 
 export const offerMakerToSelect = writable<string>('');
 export const selectedPerson = writable<string>('');
