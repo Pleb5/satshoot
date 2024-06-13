@@ -1,11 +1,18 @@
-import type { 
-    NDKSigner, 
+import { 
+    type NDKSigner, 
+    type NDKEvent,
+    NDKRelayList,
+    NDKRelaySet,
+    NDKSubscriptionCacheUsage,
 } from '@nostr-dev-kit/ndk';
+
+import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 
 import currentUser from '../stores/user';
 import {
     loggedIn,
     followsUpdated,
+    userRelaysUpdated,
 } from '../stores/user';
 
 import {
@@ -38,6 +45,7 @@ import {
     allTickets,
     allOffers,
 } from "$lib/stores/troubleshoot-eventstores";
+import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
 
 
 export async function initializeUser(ndk: NDK) {
@@ -62,6 +70,13 @@ export async function initializeUser(ndk: NDK) {
         // --------- User Profile --------------- //
         await user.fetchProfile();
         currentUser.set(user);
+
+        // fetch users relays. If there are no outbox relays, set default ones
+        const relays = await fetchUserOutboxRelays(ndk);
+        if (!relays) {
+            broadcastRelayList(ndk, DEFAULTRELAYURLS, DEFAULTRELAYURLS);
+            userRelaysUpdated.set(true);
+        }
 
         const $followsUpdated = get(followsUpdated) as number;
         // Update wot every 5 hours: Newbies can get followers and after 5 hours
@@ -146,3 +161,35 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
 
     return null;
 }
+
+
+export async function fetchUserOutboxRelays(ndk: NDKSvelte):Promise<NDKEvent | null> {
+    const $currentUser = get(currentUser);
+    const relays = await ndk.fetchEvent(
+        { kinds: [10002], authors: [$currentUser!.pubkey] },
+        { 
+            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+            groupable: false,
+        }
+    );
+    console.log('outbox relays', relays)
+    return relays;
+}
+
+export async function broadcastRelayList(ndk: NDKSvelte, readRelayUrls: string[], writeRelayUrls: string[]) {
+    const userRelayList = new NDKRelayList(ndk);
+    userRelayList.readRelayUrls = Array.from(readRelayUrls);
+    userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
+
+    const blastrUrl = 'wss://nostr.mutinywallet.com';
+    const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
+        blastrUrl,
+        ...ndk.pool.urls(),
+        ...ndk.outboxPool!.urls()
+    ], ndk);
+    console.log('relays sent to:', broadCastRelaySet)
+
+    const relaysPosted = await userRelayList.publish(broadCastRelaySet);
+    console.log('relays posted to:', relaysPosted)
+}
+

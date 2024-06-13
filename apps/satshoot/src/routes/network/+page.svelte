@@ -3,6 +3,11 @@
     import currentUser from '$lib/stores/user';
     import { connected } from "$lib/stores/ndk";
 
+    import { 
+        fetchUserOutboxRelays,
+        broadcastRelayList,
+    } from '$lib/utils/helpers';
+
     import normalizeUrl from "normalize-url";
 
     import {
@@ -60,15 +65,7 @@
     }
 
     async function fetchOutboxRelays() {
-        const relays = await $ndk.fetchEvent(
-            { kinds: [10002], authors: [$currentUser!.pubkey] },
-            { 
-                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-                groupable: false,
-            }
-        );
-        console.log('outbox relays', relays)
-
+        const relays = await fetchUserOutboxRelays($ndk);
 
         if (relays) {
             const relayList = NDKRelayList.from(relays);
@@ -79,20 +76,8 @@
             relayList.writeRelayUrls.forEach((url: string) => {
                 writeRelayUrls.add(url);
             });
-        } else {
-            // No relays found, set default app relays for both read and write
-            DEFAULTRELAYURLS.forEach((url: string) => {
-                readRelayUrls.add(url);
-                writeRelayUrls.add(url);
-            });
-            const t: ToastSettings = {
-                message: 'Did not find Outbox Relays, setting default values...',
-                timeout: 8000,
-                background: 'bg-warning-300-600-token',
-            };
-            toastStore.trigger(t);
-            broadcastRelays();
-        }
+        } 
+
         updateRelayValues();
     }
 
@@ -130,7 +115,7 @@
         await tick();
 
         try {
-            await broadcastRelays();
+            await broadcastRelayList($ndk, readRelayUrls, writeRelayUrls);
             posting = false;
 
             const t: ToastSettings = {
@@ -173,7 +158,7 @@
                 await tick();
 
                 try {
-                    await broadcastRelays();
+                    await broadcastRelayList($ndk, readRelayUrls, writeRelayUrls);
 
                     posting = false;
 
@@ -206,23 +191,6 @@
         };
         modalStore.trigger(modal);
 
-    }
-
-    async function broadcastRelays() {
-        const userRelayList = new NDKRelayList($ndk);
-        userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
-        userRelayList.readRelayUrls = Array.from(readRelayUrls);
-        
-        const blastrUrl = 'wss://nostr.mutinywallet.com';
-        const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
-                blastrUrl,
-                ...$ndk.pool.urls(),
-                ...$ndk.outboxPool!.urls()
-        ], $ndk);
-        console.log('relays sent to:', broadCastRelaySet)
-            
-        const relaysPosted = await userRelayList.publish(broadCastRelaySet);
-        console.log('relays posted to:', relaysPosted)
     }
 
     $: if ($currentUser && $connected && needRelays) {

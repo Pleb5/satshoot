@@ -13,6 +13,7 @@ export const loggedIn = writable(false);
 export const currentUserFollows: Writable<Set<Hexpubkey> | null>
     = localStorageStore('currentUserFollows', null, {serializer: getSetSerializer()});
 
+export const userRelaysUpdated = writable(false);
 export const followsUpdated: Writable<number> = localStorageStore('followsUpdated', 0);
 
 const currentUser = writable<NDKUser|null>(null);

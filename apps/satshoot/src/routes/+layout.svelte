@@ -17,7 +17,7 @@
 
     import { Dexie } from "dexie";
 
-    import { loggedIn } from "$lib/stores/user";
+    import { loggedIn, userRelaysUpdated } from "$lib/stores/user";
     import currentUser from "$lib/stores/user";
 
     import { 
@@ -362,6 +362,16 @@
             }
         };
         toastId = toastStore.trigger(t);
+    }
+
+    // Relays updated
+    $: if ($userRelaysUpdated) {
+        const t: ToastSettings = {
+            message: 'Did not find Outbox Relays, setting default values...',
+            timeout: 8000,
+            background: 'bg-warning-300-600-token',
+        };
+        toastStore.trigger(t);
     }
 
     // ----- Notifications ------ //
