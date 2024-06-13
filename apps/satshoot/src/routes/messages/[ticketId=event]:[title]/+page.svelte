@@ -193,9 +193,6 @@
         console.log('decrypted, filtered MessageFeed', filteredMessageFeed)
     }
 
-    async function decryptAndPushMessage(dm: NDKEvent, index: number) {
-    }
-
     async function updateMessageFeed() {
         // The message was either sent from the current chat partner to the user
         // or it was sent from the user to the current partner. We need both
@@ -235,9 +232,11 @@
             // We dont decrypt already decrypted messages
             let alreadySeen = false;
             for (const m of unfilteredMessageFeed) {
-                if (dm.id === m.id) alreadySeen = true;
-                console.log('already seen')
-                break;
+                if (dm.id === m.id) {
+                    alreadySeen = true;
+                    console.log('already seen')
+                    break;
+                }
             }
             if (alreadySeen) continue;
 
@@ -264,7 +263,6 @@
                 addPerson(peerPubkey);
 
                 const peerUser = $ndk.getUser({pubkey: peerPubkey});
-                console.log('peer user', peerUser)
 
                 const decryptedDM = await ($ndk.signer as NDKSigner).decrypt(peerUser, dm.content); 
 
