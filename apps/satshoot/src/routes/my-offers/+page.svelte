@@ -225,7 +225,7 @@ $: {
         on:click={()=> {
             hideSearch = !hideSearch;
         }}
-        <SearchIcon />
     >
+        <SearchIcon />
     </button>
 </div>
