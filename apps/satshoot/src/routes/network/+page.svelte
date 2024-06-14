@@ -363,10 +363,10 @@
         </div>
     </div>
 {/if}
-<div class="flex justify-center mb-6" >
-    <button 
-        class="btn btn-md bg-primary-300-600-token" 
-        on:click={() => location.reload()}>
-        Retry Connections
-    </button>
-</div>
+<!-- <div class="flex justify-center mb-6" > -->
+<!--     <button  -->
+<!--         class="btn btn-md bg-primary-300-600-token"  -->
+<!--         on:click={() => location.reload()}> -->
+<!--         Retry Connections -->
+<!--     </button> -->
+<!-- </div> -->

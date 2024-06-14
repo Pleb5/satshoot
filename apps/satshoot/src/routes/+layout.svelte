@@ -183,19 +183,19 @@
                 for (const relay of $ndk.pool.relays.values()) {
                     relay.connect(2000);
                 }
-                const t: ToastSettings = {
-                    message:`No Connected Relays!`,
-                    background: 'bg-error-500',
-                    classes: "text-sm",
-                    autohide: false,
-                    action: {
-                        label: 'Check Network',
-                        response: () => {
-                            goto('/network');
-                        },
-                    },
-                };
-                noConnectedRelaysToastID = toastStore.trigger(t);
+                // const t: ToastSettings = {
+                //     message:`No Connected Relays!`,
+                //     background: 'bg-error-500',
+                //     classes: "text-sm",
+                //     autohide: false,
+                //     action: {
+                //         label: 'Check Network',
+                //         response: () => {
+                //             goto('/network');
+                //         },
+                //     },
+                // };
+                // noConnectedRelaysToastID = toastStore.trigger(t);
             }
         });
 
@@ -204,10 +204,10 @@
 
             $connected = true;
             // console.log('user-defined relay came online')
-            if(noConnectedRelaysToastID) {
-                toastStore.close(noConnectedRelaysToastID);
-                noConnectedRelaysToastID = '';
-            }
+            // if(noConnectedRelaysToastID) {
+            //     toastStore.close(noConnectedRelaysToastID);
+            //     noConnectedRelaysToastID = '';
+            // }
         });
 
         // Start all tickets/offers sub
