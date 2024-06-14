@@ -230,10 +230,10 @@
             <div class="card card-hover grid grid-cols-[1fr_auto] gap-x-2 bg-surface-active-token p-4">
                 <RelayListElement {relay}/>
                 <button 
-                    class="btn bg-error-500"
+                    class="btn btn-icon"
                     type="button" 
                     on:click={()=>{removeRelay(relay.url, true)}}>
-                    Remove
+                    <i class="fa-solid fa-circle-xmark text-3xl text-warning-500"></i>
                 </button>
             </div> 
         {/each}
@@ -301,10 +301,10 @@
             <div class="card card-hover grid grid-cols-[1fr_auto] gap-x-2 bg-surface-active-token p-4">
                 <RelayListElement {relay}/>
                 <button 
-                    class="btn bg-error-500"
+                    class="btn btn-icon"
                     type="button" 
                     on:click={()=>{removeRelay(relay.url, false)}}>
-                    Remove
+                    <i class="fa-solid fa-circle-xmark text-3xl text-warning-500"></i>
                 </button>
             </div> 
         {/each}
