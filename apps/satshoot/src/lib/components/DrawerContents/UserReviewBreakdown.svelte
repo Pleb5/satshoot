@@ -4,6 +4,8 @@ import type { ClientRating, TroubleshooterRating } from "$lib/events/ReviewEvent
 import { type DrawerSettings, getDrawerStore } from "@skeletonlabs/skeleton";
 import { DrawerIDs } from '$lib/stores/drawer';
 import drawerID from '$lib/stores/drawer';
+import currentUser from "$lib/stores/user";
+    import type { NDKUser } from "@nostr-dev-kit/ndk";
 
 const drawerStore = getDrawerStore();
 
@@ -13,6 +15,7 @@ const reviews = $drawerStore.meta['ratings'] as Map<string, number> | undefined;
 const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
     flex-grow sm:max-w-[70vw] lg:max-w-[60vw] overflow-y-auto';
 
+const reviewer = $currentUser as NDKUser;
 
 function backToReviewBreadown() {
     $drawerID = DrawerIDs.ReviewBreakdown;
@@ -44,7 +47,7 @@ function backToReviewBreadown() {
     {#if userReviews && userReviews.length > 0}
         <div class="flex flex-col items-center gap-y-4 text-2xl">
             {#each userReviews as userReview}
-                <UserReviewCard review={userReview}/>
+                <UserReviewCard review={userReview} {reviewer}/>
             {/each}
         </div>
     {:else}

@@ -73,7 +73,7 @@
     // Menu Items 
     import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
     import PostTicketIcon from "$lib/components/Icons/PostTicketIcon.svelte";
-    import UserTicketsAndOffersIcon from "$lib/components/Icons/UserTicketsAndOffersIcon.svelte";
+    import NotificationsIcon from "$lib/components/Icons/NotificationsIcon.svelte";
 
     import { LightSwitch, modeCurrent } from '@skeletonlabs/skeleton';
 
@@ -544,21 +544,20 @@
                         href="/"
                         selected={$page.url.pathname === '/'}
                     >
-                    <TroubleshootIcon />
+                        <TroubleshootIcon sizeClass={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
 
                     <AppRailAnchor
                         href="/post-ticket"
                         selected={$page.url.pathname.includes('/post-ticket')}
                     >
-                    <PostTicketIcon />
+                        <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
-
-                    <AppRailAnchor 
-                        href="/my-tickets" 
-                        selected={$page.url.pathname.includes('/my-tickets')}
+                    <AppRailAnchor
+                        href="/notifications"
+                        selected={$page.url.pathname.includes('/notifications')}
                     >
-                        <UserTicketsAndOffersIcon />
+                        <NotificationsIcon sizeClass={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
                 </svelte:fragment>
             </AppRail>
@@ -583,23 +582,21 @@
                 href="/" 
                 selected={$page.url.pathname === '/'}
             >
-                <TroubleshootIcon />
+                <TroubleshootIcon sizeClass={'text-2xl sm:text-3xl'} />
             </TabAnchor>
 
             <TabAnchor 
                 href="/post-ticket"
                 selected={$page.url.pathname.includes('/post-ticket')}
             >
-                <PostTicketIcon />
+                <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
             </TabAnchor>
-
             <TabAnchor 
-                href="/my-tickets"
-                selected={$page.url.pathname.includes('/my-tickets')}
+                href="/notifications"
+                selected={$page.url.pathname.includes('/notifications')}
             >
-                <UserTicketsAndOffersIcon />
+                <NotificationsIcon sizeClass={'text-2xl sm:text-3xl'} />
             </TabAnchor>
-
         </TabGroup>
     </svelte:fragment>
 </AppShell>

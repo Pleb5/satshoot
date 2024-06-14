@@ -1,2 +1,6 @@
-<i class="fa-solid fa-handshake-angle text-2xl sm:text-3xl"></i>
+<script lang="ts">
+    export let sizeClass = 'text-lg';
+</script>
+
+<i class="fa-solid fa-handshake-angle {sizeClass}"></i>
 

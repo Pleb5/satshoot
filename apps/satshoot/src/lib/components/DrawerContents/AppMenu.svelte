@@ -36,6 +36,8 @@
     import { goto } from '$app/navigation';
     import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
     import { loggedIn } from '$lib/stores/user';
+    import UserTicketsIcon from '../Icons/UserTicketsIcon.svelte';
+    import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -183,6 +185,30 @@
                             <i class="fa-solid fa-user" />
                         </span>
                         <span>Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a 
+                        class="justify-center"
+                        href={ "/my-tickets"}
+                        on:click={()=>{drawerStore.close()}}
+                    >
+                        <span class="w-6 text-center">
+                            <UserTicketsIcon sizeClass={''}/>
+                        </span>
+                        <span>My Tickets</span>
+                    </a>
+                </li>
+                <li>
+                    <a 
+                        class="justify-center"
+                        href={ "/my-offers"}
+                        on:click={()=>{drawerStore.close()}}
+                    >
+                        <span class="w-6 text-center">
+                            <UserOffersIcon sizeClass={'text-lg'}/>
+                        </span>
+                        <span>My Offers</span>
                     </a>
                 </li>
             {/if}

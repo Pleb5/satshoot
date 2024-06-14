@@ -1,8 +1,33 @@
 <script lang="ts">
+import ndk from "$lib/stores/ndk";
+import currentUser from "$lib/stores/user";
 import type { ClientRating, TroubleshooterRating } from "$lib/events/ReviewEvent";
+import type { NDKUser, NDKUserProfile } from "@nostr-dev-kit/ndk";
+import { onMount } from "svelte";
+import { Avatar } from '@skeletonlabs/skeleton';
 
 
 export let review: ClientRating | TroubleshooterRating;
+export let reviewer: NDKUser;
+let reviewerProfile: NDKUserProfile | null;
+let reviewerName = reviewer.npub.substring(0,8);
+let reviewerImage = `https://robohash.org/${reviewer.pubkey}`;
+
+onMount(async() => {
+   reviewerProfile = await reviewer.fetchProfile(); 
+    if (reviewerProfile) {
+        if (reviewerProfile.name) {
+            reviewerName = reviewerProfile.name;
+        }
+        if (reviewerProfile.image) {
+            reviewerImage = reviewerProfile.image;
+        }
+    }
+});
+
+$: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
+    reviewerName = 'You';
+}
 </script>
 
 <div class="card p-2 bg-inherit flex flex-col gap-y-2">
@@ -88,6 +113,9 @@ export let review: ClientRating | TroubleshooterRating;
             </div>
         </div>
     {/if}
-    <div class="text-center mt-4">You wrote:</div>
-    <div class="mt-2 text-xl">"{review.reviewText}"</div>
+    <div class="flex gap-x-2 justify-center items-center">
+        <Avatar src={reviewerImage} width='w-10'/>
+        <div class="text-md sm:text-xl">{reviewerName} wrote:</div>
+    </div>
+    <div class="text-center mt-2 text-lg sm:text-xl">{review.reviewText!=='' ? ('"' + review.reviewText + '"') : 'No text'}</div>
 </div>

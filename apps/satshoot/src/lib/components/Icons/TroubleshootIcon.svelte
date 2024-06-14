@@ -1,1 +1,5 @@
-<i class="fa-solid fa-gear text-2xl sm:text-3xl"></i>
+<script lang="ts">
+    export let sizeClass = 'text-lg';
+</script>
+<i class="fa-solid fa-gear {sizeClass}"></i>
+
