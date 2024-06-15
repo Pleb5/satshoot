@@ -457,7 +457,7 @@
 
             <div class="flex justify-center lg:ml-20">
                 <div class ='flex gap-x-2 justify-center items-center'>
-                    <button class="btn btn-icon" on:click={()=>{goto('/')}}>
+                    <button class="btn btn-icon w-full h-full" on:click={()=>{goto('/')}}>
                         <img src="/satshoot.svg" alt="logo" />
                     </button>
                     <div class ='flex gap-x-2 items-center'>
