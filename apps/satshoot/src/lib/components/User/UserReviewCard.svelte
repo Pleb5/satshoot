@@ -30,7 +30,8 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
 }
 </script>
 
-<div class="card p-2 bg-inherit flex flex-col gap-y-2">
+<div class="card p-2 bg-inherit flex flex-col gap-y-2 text-lg sm:text-xl">
+    <div class="h4 text-center underline">Review:</div>
     <!-- TroubleshooterRating -->
     {#if 'success' in review}
         <div class="grid grid-cols-[1fr_auto] gap-x-4">

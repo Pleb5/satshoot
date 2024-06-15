@@ -14,11 +14,24 @@ import { type Message } from "$lib/stores/messages";
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
 
+let messagesLoading = false;
 
 const toastStore = getToastStore();
 
 const messages: Message[] = [];
 
+$: if ($ticketNotifications) {
+    console.log('ticket notifs', $ticketNotifications);
+}
+$: if ($offerNotifications) {
+    console.log('offer notifs', $offerNotifications);
+}
+$: if ($messageNotifications){
+    console.log('message notifs', $messageNotifications);
+}
+$: if ($reviewNotifications) {
+    console.log('review notifs', $reviewNotifications);
+}
 // Decrypt incoming DM-s
 $: if ($messageNotifications) {
 
@@ -35,19 +48,42 @@ $: if (!$notificationsEnabled) {
 
 </script>
 
-<h3 class="h3 text-center">Notifications</h3>
-<div class="flex flex-col items-center min-w-[60%] gap-y-2 mb-8">
-    {#each $ticketNotifications as ticket}
-        <TicketCard {ticket} />
-    {/each}
-    {#each $offerNotifications as offer}
-        <OfferCard {offer} />
-    {/each}
-    {#if messages.length > 0}
-        {#each messages as message}
-            <MessageCard {message} />
+<h3 class="h3 text-center mb-4 underline">Notifications</h3>
+<div class="grid grid-cols-1 gap-y-2 mb-8">
+    <h3 class="h3 text-center underline my-4">
+        Tickets:
+    </h3>
+    {#if $ticketNotifications.length > 0}
+        {#each $ticketNotifications as ticket}
+            <div class="flex justify-center">
+                <TicketCard {ticket} countAllOffers={true}/>
+            </div>
         {/each}
     {:else}
+        <div class="text-center">No New Tickets!</div>
+    {/if}
+    <h3 class="h3 text-center underline my-4">
+        Offers:
+    </h3>
+    {#if $offerNotifications.length > 0}
+        {#each $offerNotifications as offer}
+            <div class="flex justify-center">
+                <OfferCard {offer} showTicket={true} enableChat={true} countAllOffers={true} />
+            </div>
+        {/each}
+    {:else}
+        <div class="text-center">No New Offers!</div>
+    {/if}
+    <h3 class="h3 text-center underline my-4">
+        Messages:
+    </h3>
+    {#if messages.length > 0}
+        {#each messages as message}
+            <div class="flex justify-center">
+                <MessageCard {message} />
+            </div>
+        {/each}
+    {:else if messagesLoading}
         <div class="p-4 space-y-4">
             <div class="placeholder animate-pulse" />
             <div class="grid grid-cols-3 gap-8">
@@ -62,10 +98,22 @@ $: if (!$notificationsEnabled) {
                 <div class="placeholder animate-pulse" />
             </div>
         </div>
+    {:else}
+        <div class="text-center">No New Messages!</div>
     {/if}
-    {#each $reviewNotifications as review}
-        <div class="text-lg">Review:</div>
-        <UserReviewCard {review} reviewer={review.author} />
-        <hr/>
-    {/each}
+<!-- {#if messages.length > 0} -->
+    <!-- {:else} -->
+    <!-- {/if} -->
+    <h3 class="h3 text-center underline my-4">
+        Reviews:
+    </h3>
+    {#if $reviewNotifications.length > 0}
+        {#each $reviewNotifications as review}
+            <div class="flex justify-center">
+                <UserReviewCard {review} reviewer={review.author} />
+            </div>
+        {/each}
+    {:else}
+        <div class="text-center">No New Reviews!</div>
+    {/if}
 </div>

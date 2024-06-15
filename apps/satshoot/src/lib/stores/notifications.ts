@@ -26,7 +26,7 @@ export const ticketNotifications = derived(
     ([$notifications]) => {
 
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind = BTCTroubleshootKind.Ticket;
+            return notification.kind === BTCTroubleshootKind.Ticket;
         });
 
         const tickets: TicketEvent[] = [];
@@ -40,7 +40,7 @@ export const offerNotifications = derived(
     ([$notifications]) => {
 
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind = BTCTroubleshootKind.Offer;
+            return notification.kind === BTCTroubleshootKind.Offer;
         });
 
         const offers: OfferEvent[] = [];
@@ -54,7 +54,7 @@ export const messageNotifications = derived(
     ([$notifications]) => {
 
         const messages = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind = NDKKind.EncryptedDirectMessage;
+            return notification.kind === NDKKind.EncryptedDirectMessage;
         });
 
         return messages;
@@ -65,7 +65,7 @@ export const reviewNotifications = derived(
     ([$notifications]) => {
 
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind = NDKKind.Review;
+            return notification.kind === NDKKind.Review;
         });
 
         const reviews: ReviewEvent[] = [];
