@@ -55,11 +55,14 @@ export const messageNotifications = derived(
     [notifications, currentUser],
     ([$notifications, $currentUser]) => {
 
-        const messages = $notifications.filter((notification: NDKEvent) => {
-            const dmKind = (notification.kind === NDKKind.EncryptedDirectMessage);
-            const notSentByUser = (notification.pubkey !== $currentUser.pubkey);
-            return dmKind && notSentByUser;
-        });
+        let messages: NDKEvent[] = [];
+        if ($currentUser) {
+            messages = $notifications.filter((notification: NDKEvent) => {
+                const dmKind = (notification.kind === NDKKind.EncryptedDirectMessage);
+                const notSentByUser = (notification.pubkey !== $currentUser.pubkey);
+                return dmKind && notSentByUser;
+            });
+        }
 
         return messages;
     }

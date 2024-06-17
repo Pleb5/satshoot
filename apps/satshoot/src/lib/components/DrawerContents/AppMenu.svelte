@@ -57,7 +57,6 @@
                         <p>Notifications Settings are Disabled in the browser!</p>
                         <p>
                         <span>Click small icon </span>
-                        <span><i class="fa-solid fa-circle-info"></i></span>
                         <span> left of browser search bar to enable this setting!</span>
                         </p>
 `,
