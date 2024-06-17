@@ -245,7 +245,7 @@
             // because that is inherently ordered by time by ndk-svelte store
             // This insert is important to happen BEFORE decryption to avoid
             // race conditions arising from waiting on the decryption
-            // also, ndk has the newest event at the start and we need it to be at the end...
+            // Also, ndk has the newest event at the start and we need it to be at the end...
             unfilteredMessageFeed.splice(unfilteredMessageFeed.length - i, 0, message);
 
 
@@ -264,6 +264,10 @@
 
                 const peerUser = $ndk.getUser({pubkey: peerPubkey});
 
+                // There is no way for now to know if a DM-s content is already
+                // decrypted other than trying to decrypt and fail deep down
+                // in the process. Might be a good idea to keep track of this
+                // info in ndk events where stuff could be encrypted/decrypted
                 const decryptedDM = await ($ndk.signer as NDKSigner).decrypt(peerUser, dm.content); 
 
                 console.log('decrypted message:', decryptedDM)

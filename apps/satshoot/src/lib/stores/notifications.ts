@@ -11,6 +11,7 @@ import { OfferEvent } from "$lib/events/OfferEvent";
 import { ReviewEvent } from "$lib/events/ReviewEvent";
 
 import { getActiveServiceWorker } from "$lib/utils/helpers";
+import { goto } from "$app/navigation";
 
 export const notificationsEnabled: Writable<boolean> = localStorageStore('notificationsEnabled', false) ;
 
@@ -86,19 +87,10 @@ export async function sendNotification(event: NDKEvent) {
         $notifications.push(event);
         notifications.set($notifications);
 
-        const activeSW = await getActiveServiceWorker()
-        if(!activeSW) {
-            console.log('Notifications are only served through Service Workers\
-                and there is no Service Worker available!')
-            return;
-        }
-
-        console.log('new unique event arrived in SW', event)
-        // event was NOT received from cache and is not a duplicate
-        // so we Notify the user about a new _unique_ event reveived
         let title = '';
         let body = '';
         let tag = '';
+        let icon = '/satshoot.svg'
 
         // The Ticket of our _Offer_ was updated
         if (event.kind === BTCTroubleshootKind.Ticket) {
@@ -120,12 +112,28 @@ export async function sendNotification(event: NDKEvent) {
             tag = NDKKind.Review.toString();
         }
 
-        activeSW.postMessage({
-            notification: 'true',
-            title: title,
-            body: body,
-            tag: tag,
-        });
+        const activeSW = await getActiveServiceWorker()
+        if(activeSW) {
+            activeSW.postMessage({
+                notification: 'true',
+                title: title,
+                body: body,
+                tag: tag,
+            });
+        } else {
+            const options = {
+                icon: icon,
+                badge: icon,
+                image: icon,
+                body: body,
+                tag: tag,
+            };
+            const notification = new Notification(title, options);
+            notification.onclick = (e) => {
+                goto('/notifications/');
+            };
+        }
+
     }
 }
 

@@ -6,6 +6,7 @@
 import { build, files } from '$service-worker';
 
 import { BTCTroubleshootKind } from '../lib/events/kinds.ts';
+import { NDKKind } from '@nostr-dev-kit/ndk';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -55,11 +56,19 @@ sw.onmessage = (m) => {
 };
 
 sw.onnotificationclick = async(event: NotificationEvent) => {
-    const urlToVisit = '/my-tickets/';
+    const urlToVisit = '/notifications/';
 
-    const ticketNotification = event.notification.tag === BTCTroubleshootKind.Ticket.toString();
-    const offerNotification = event.notification.tag === BTCTroubleshootKind.Offer.toString();
-    if(!ticketNotification && !offerNotification) {
+    const ticketNotification = 
+        (event.notification.tag === BTCTroubleshootKind.Ticket.toString());
+    const offerNotification = 
+        (event.notification.tag === BTCTroubleshootKind.Offer.toString());
+    const messageNotification = 
+        (event.notification.tag === NDKKind.EncryptedDirectMessage.toString());
+    const reviewNotification = 
+        (event.notification.tag === NDKKind.Review.toString());
+
+    if(!ticketNotification && !offerNotification
+        && !messageNotification && !reviewNotification) {
         console.log('This type of notification is not implemented yet!')
         return;
     }
