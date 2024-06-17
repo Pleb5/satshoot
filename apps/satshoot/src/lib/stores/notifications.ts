@@ -9,6 +9,7 @@ import { BTCTroubleshootKind } from "$lib/events/kinds";
 import { TicketEvent } from "$lib/events/TicketEvent";
 import { OfferEvent } from "$lib/events/OfferEvent";
 import { ReviewEvent } from "$lib/events/ReviewEvent";
+import currentUser from "./user";
 
 import { getActiveServiceWorker } from "$lib/utils/helpers";
 import { goto } from "$app/navigation";
@@ -51,11 +52,13 @@ export const offerNotifications = derived(
     }
 );
 export const messageNotifications = derived(
-    [notifications],
-    ([$notifications]) => {
+    [notifications, currentUser],
+    ([$notifications, $currentUser]) => {
 
         const messages = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === NDKKind.EncryptedDirectMessage;
+            const dmKind = (notification.kind === NDKKind.EncryptedDirectMessage);
+            const notSentByUser = (notification.pubkey !== $currentUser.pubkey);
+            return dmKind && notSentByUser;
         });
 
         return messages;

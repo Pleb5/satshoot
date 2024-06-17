@@ -28,8 +28,8 @@ import {
 
 import { 
     messageStore,
+    sentMessageFilter,
     receivedMessageFilter,
-    myMessageFilter,
 } from '$lib/stores/messages';
 
 import { get } from "svelte/store";
@@ -60,12 +60,9 @@ export async function initializeUser(ndk: NDK) {
 
         myTicketFilter.authors! = [user.pubkey];
         myOfferFilter.authors! = [user.pubkey];
-        myMessageFilter.authors! = [user.pubkey];
-        receivedMessageFilter['#p']! = [user.pubkey];
 
         myTickets.startSubscription();
         myOffers.startSubscription();
-        messageStore.startSubscription();
         
         // --------- User Profile --------------- //
         await user.fetchProfile();
@@ -83,7 +80,6 @@ export async function initializeUser(ndk: NDK) {
         // their actions will be visible to a decent amount of people
         const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
 
-        // Try to recalculate wot every week
         let wotArray: string[] = Array.from(get(wot));
 
         if ($followsUpdated < updateDelay || !get(networkWoTScores)) {
@@ -93,14 +89,15 @@ export async function initializeUser(ndk: NDK) {
             wotArray = Array.from(get(wot));
         } 
 
+        receivedMessageFilter['#p']! = [user.pubkey];
+        receivedMessageFilter['authors'] = wotArray;
+        sentMessageFilter['authors'] = [user.pubkey];
         allReviewsFilter['authors'] = wotArray;
         allTicketsFilter['authors'] = wotArray;
         allOffersFilter['authors'] = wotArray;
         
-        // allReviews.subscription?.on('event', (event: NDKEvent)=>{
-        //     console.log('review arrived', event)
-        // })
-        // Restart every subscription after successful wot and follow recalc
+        // (Re)start every subscription after successful wot and follow recalc
+        messageStore.startSubscription();
         allReviews.startSubscription();
 
         allTickets.unsubscribe();

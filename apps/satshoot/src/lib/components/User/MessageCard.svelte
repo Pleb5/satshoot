@@ -1,6 +1,6 @@
 <script lang="ts">
 import ndk from "$lib/stores/ndk";
-import { type NDKUser } from "@nostr-dev-kit/ndk";
+import { type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { Avatar } from '@skeletonlabs/skeleton';
 import { onMount } from "svelte";
 import type { Message } from '$lib/stores/messages';
@@ -10,8 +10,8 @@ export let avatarRight = true;
 export let message: Message;
 
 const user = $ndk.getUser({pubkey: message.sender});
-let name: string = (user as NDKUser).npub.substring(0,10);
-let avatarImage: string = `https://robohash.org/${message.sender}`;
+let name: string;
+let avatarImage: string;
 
 let extraClasses = 'variant-soft-primary rounded-tr-none'
 
@@ -19,12 +19,30 @@ onMount(async () => {
     if (avatarRight) {
         extraClasses = 'variant-soft rounded-tl-none'
     }
-    const profile = await user.fetchProfile();
-    if (profile) {
+
+    name = (user as NDKUser).npub.substring(0,10);
+    avatarImage = `https://robohash.org/${message.sender}`
+
+    await user.fetchProfile();
+    if (user.profile) {
+        console.log('user profile', user.profile)
+        let profile:NDKUserProfile;
+        // NDK bug: If user profile is not in LRU cache iti is served from 
+        // dexie which stores profiles NOT identically to an NDKEvent but 
+        // {pubkey:...; created_at:...; ... ; profile: ... instead of content:...}
+        if (user.profile.name) {
+            profile = user.profile;
+        } else {
+            profile = user.profile.profile;
+        }
+
+        if (profile.displayName) name = profile.displayName;
         if (profile.name) name = profile.name;
         if (profile.image) avatarImage = profile.image;
-    }
 
+    } else {
+        console.log('no profile')
+    }
 });
 
 

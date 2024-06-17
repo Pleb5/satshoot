@@ -121,12 +121,6 @@
                 delete allTicketsFilter.authors;
                 delete allOffersFilter.authors;
 
-                // receivedMessageFilter['#t'] = [];
-                // receivedMessageFilter['#p'] = [];
-                //
-                // myMessageFilter['authors'] = [];
-                // myMessageFilter['#t'] = [];
-
                 // Remove all relays from pool
                 $ndk.pool.urls().forEach((url: string) => {
                     $ndk.pool.removeRelay(url);

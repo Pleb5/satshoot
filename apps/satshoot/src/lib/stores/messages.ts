@@ -20,22 +20,24 @@ export interface Message {
 
 export const subOptions: NDKSubscriptionOptions = { closeOnEose: false, pool: get(ndk).pool };
 
-// Stores ALL messages of ALL Troubleshoot sessions for a user
 export const receivedMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
     kinds: [NDKKind.EncryptedDirectMessage],
-    // All messages, be it client or troubleshooter, are tagged with the ticket address
+    authors: [],
     '#p' : [],
-    limit: 21_000,
+    limit: 50_000,
 };
 
-export const myMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
+export const sentMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
     kinds: [NDKKind.EncryptedDirectMessage],
+    // set to user as soon as login happens
     authors: [],
-    limit: 21_000,
+    limit: 50_000,
 }
 
-export const messageStore = get(ndk).storeSubscribe([receivedMessageFilter, myMessageFilter], subOptions);
-// Filter messages by wot 
+export const messageStore = get(ndk).storeSubscribe([receivedMessageFilter, sentMessageFilter], subOptions);
+// Filter messages by wot. Question: is this necessary? After login the user 
+// web of trust is set for the [authors] filter anywway so messages should already
+// be filtered on the relay side. Client side filtering might be unnecessary this way.
 export const wotFilteredMessageFeed = derived(
     [messageStore, wot],
     ([$messageStore, $wot]) => {

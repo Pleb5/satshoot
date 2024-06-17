@@ -30,6 +30,7 @@
     import { 
         allReviews,
     } from "$lib/stores/reviews";
+    import { wotFilteredMessageFeed } from "$lib/stores/messages";
     import { sendNotification } from "$lib/stores/notifications";
 
     import { initializeUser } from '$lib/utils/helpers';
@@ -43,7 +44,8 @@
         NDKNip46Signer,
         NDKNip07Signer, 
         NDKPrivateKeySigner, 
-        NDKRelay 
+        NDKRelay,
+        type NDKEvent,
     } from "@nostr-dev-kit/ndk";
     import { privateKeyFromNsec } from "$lib/utils/nip19";
 
@@ -102,7 +104,6 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import type { ReviewEvent } from "$lib/events/ReviewEvent";
     import { BTCTroubleshootKind } from "$lib/events/kinds";
-    // Tickets and Offers
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -392,6 +393,15 @@
                     sendNotification(t);
                 }
             });
+        });
+    }
+
+    $: if ($wotFilteredMessageFeed) {
+        $wotFilteredMessageFeed.forEach((dm: NDKEvent) => {
+            // This is somewhat wasteful: If there was a nice way to attach
+            // a callback on uniquely new events in NDKEventStore-s
+            // We would not have to iterate over the whole array
+            sendNotification(dm);
         });
     }
 
