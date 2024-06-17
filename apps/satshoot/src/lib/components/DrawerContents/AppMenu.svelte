@@ -3,7 +3,7 @@
     import { get } from 'svelte/store';
 
     import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
-    import currentUser from '$lib/stores/user';
+    import currentUser, { followsUpdated } from '$lib/stores/user';
     import { getDrawerStore, getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
@@ -97,6 +97,7 @@
                 console.log('logout')
                 drawerStore.close();
 
+                followsUpdated.set(0);
                 networkWoTScores.set(null);
                 currentUser.set(null);
                 console.log('wot', get(wot))

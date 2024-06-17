@@ -101,7 +101,7 @@ $: if (!$notificationsEnabled) {
     <h3 class="h3 text-center mb-4 underline">Notifications</h3>
     <div class="grid grid-cols-1 gap-y-2 mb-8">
         <h3 class="h3 text-center underline my-4">
-            Tickets:
+            Tickets
         </h3>
         {#if $ticketNotifications.length > 0}
             {#each $ticketNotifications as ticket}
@@ -113,7 +113,7 @@ $: if (!$notificationsEnabled) {
             <div class="text-center">No New Tickets!</div>
         {/if}
         <h3 class="h3 text-center underline my-4">
-            Offers:
+            Offers
         </h3>
         {#if $offerNotifications.length > 0}
             {#each $offerNotifications as offer}
@@ -125,7 +125,7 @@ $: if (!$notificationsEnabled) {
             <div class="text-center">No New Offers!</div>
         {/if}
         <h3 class="h3 text-center underline my-4">
-            Messages:
+            Messages
         </h3>
         {#if messages.length > 0}
             {#each messages as message}
@@ -155,7 +155,7 @@ $: if (!$notificationsEnabled) {
         <!-- {:else} -->
         <!-- {/if} -->
         <h3 class="h3 text-center underline my-4">
-            Reviews:
+            Reviews
         </h3>
         {#if $reviewNotifications.length > 0}
             {#each $reviewNotifications as review}

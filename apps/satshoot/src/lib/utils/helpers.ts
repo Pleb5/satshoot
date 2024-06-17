@@ -82,7 +82,7 @@ export async function initializeUser(ndk: NDK) {
 
         let wotArray: string[] = Array.from(get(wot));
 
-        if ($followsUpdated < updateDelay || !get(networkWoTScores)) {
+        if ( ($followsUpdated < updateDelay) || !(get(networkWoTScores)) ) {
             // console.log('wot outdated, updating...')
             await updateFollowsAndWotScore(ndk);
             // console.log('wot updated')
