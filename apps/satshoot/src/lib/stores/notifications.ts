@@ -96,7 +96,7 @@ export async function sendNotification(event: NDKEvent) {
         let title = '';
         let body = '';
         let tag = '';
-        let icon = '/satshoot.svg'
+        const icon = '/satshoot.svg'
 
         // The Ticket of our _Offer_ was updated
         if (event.kind === BTCTroubleshootKind.Ticket) {
