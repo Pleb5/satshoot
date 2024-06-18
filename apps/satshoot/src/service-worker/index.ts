@@ -9,6 +9,7 @@ import { BTCTroubleshootKind } from '../lib/events/kinds.ts';
 import { NDKKind } from '@nostr-dev-kit/ndk';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
+let openAllowed = true;
 
 const ASSETS = [
     ...build, // the app itself	
@@ -55,17 +56,17 @@ sw.onmessage = (m) => {
     }
 };
 
-sw.onnotificationclick = async(event: NotificationEvent) => {
+async function openNotificationWindow(tag: string) {
     const urlToVisit = '/notifications/';
 
     const ticketNotification = 
-        (event.notification.tag === BTCTroubleshootKind.Ticket.toString());
+        (tag === BTCTroubleshootKind.Ticket.toString());
     const offerNotification = 
-        (event.notification.tag === BTCTroubleshootKind.Offer.toString());
+        (tag === BTCTroubleshootKind.Offer.toString());
     const messageNotification = 
-        (event.notification.tag === NDKKind.EncryptedDirectMessage.toString());
+        (tag === NDKKind.EncryptedDirectMessage.toString());
     const reviewNotification = 
-        (event.notification.tag === NDKKind.Review.toString());
+        (tag === NDKKind.Review.toString());
 
     if(!ticketNotification && !offerNotification
         && !messageNotification && !reviewNotification) {
@@ -73,20 +74,34 @@ sw.onnotificationclick = async(event: NotificationEvent) => {
         return;
     }
 
-    let clientOpenWithUrl = false;
+    // let clientOpenWithUrl = false;
+    //
+    // const allClients = await sw.clients.matchAll({type: "window"});
+    //
+    // for(const client of allClients) {
+    //     const url = new URL(client.url);
+    //     console.log('client url:', client.url)
+    //     console.log('compare', url.pathname)
+    //     if(url.pathname.includes(urlToVisit)) {
+    //         console.log('client already there with url')
+    //         await client.focus();
+    //         clientOpenWithUrl = true;
+    //         break;
+    //     }
+    // }
+    // if (!clientOpenWithUrl) {
+    // }
 
-    const allClients = await sw.clients.matchAll({type: "window"});
-    for(const client of allClients) {
-        const url = new URL(client.url);
-        if(url.pathname.includes('urlToVisit')) {
-            client.focus();
-            clientOpenWithUrl = true;
-            break;
-        }
-    }
+    await sw.clients.openWindow(urlToVisit);
+}
 
-    if (!clientOpenWithUrl) {
-        sw.clients.openWindow(urlToVisit);
+sw.onnotificationclick = (event: NotificationEvent) => {
+    event.notification.close();
+    console.log('asdf')
+    if (openAllowed) {
+        openAllowed = false;
+        event.waitUntil(openNotificationWindow(event.notification.tag));
+        openAllowed = true;
     }
 }
 
