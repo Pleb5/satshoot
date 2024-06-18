@@ -129,8 +129,6 @@
     onMount(async () => {
 
 // ---------------------------- Basic Init ----------------------------
-        console.log('onMount')
-
         localStorage.debug = 'ndk:*'
         if(!$modeCurrent) {
             localStorage.setItem('modeCurrent', 'false');
@@ -322,7 +320,7 @@
     $: if ($updated) {
         let toastId:string;
         const t: ToastSettings = {
-            message: 'New version of the app just dropped!',
+            message: 'New version of the app is available!',
             autohide: false,
             action: {
                 label: 'Reload',
@@ -429,7 +427,7 @@
         const drawerSettings: DrawerSettings = {
             id: $drawerID,
             width: 'w-[50vw] sm:w-[40vw] md:w-[30vw]',
-            height: 'h-[50vh]',
+            // height: 'h-[50vh]',
             position: 'right',
             bgDrawer: 'bg-surface-300-600-token',
         };

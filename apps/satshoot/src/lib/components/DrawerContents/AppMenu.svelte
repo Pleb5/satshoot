@@ -165,7 +165,7 @@
     }
 </script>
 
-<div class="card p-4 flex-grow md:text-xl">
+<div class="card p-4 flex-grow flex flex-col justify-between md:text-xl">
     <nav class="list-nav">
         <ul>
             {#if $currentUser}
@@ -249,7 +249,10 @@
                     <span>Feedback</span>
                 </button>
             </li>
-            <hr class="!my-4" />
+        </ul>
+    </nav>
+    <nav class="list-nav">
+        <ul>
             <li>
                 <button class="w-full justify-center" on:click={logout}>
                     <span class="w-6 text-center">
