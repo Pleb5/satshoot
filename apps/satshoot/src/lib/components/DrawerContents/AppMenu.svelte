@@ -7,7 +7,7 @@
     import { getDrawerStore, getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
-    import { SlideToggle } from '@skeletonlabs/skeleton';
+    import { SlideToggle, LightSwitch } from '@skeletonlabs/skeleton';
     import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 
     import notificationsEnabled from '$lib/stores/notifications';
@@ -165,13 +165,13 @@
     }
 </script>
 
-<div class="card p-4 flex-grow flex flex-col justify-between md:text-xl">
-    <nav class="list-nav">
-        <ul>
+<div class="card p-4 flex-grow flex flex-col justify-between md:text-xl bg-inherit">
+    <nav class="list-nav" style="line-height: 2.5rem;">
+        <ul class="">
             {#if $currentUser}
                 <li>
                     <a 
-                        class="justify-center"
+                        class="justify-start"
                         href={ "/" + $currentUser.npub}
                         on:click={()=>{drawerStore.close()}}
                     >
@@ -183,7 +183,7 @@
                 </li>
                 <li>
                     <a 
-                        class="justify-center"
+                        class="justify-start"
                         href={ "/my-tickets"}
                         on:click={()=>{drawerStore.close()}}
                     >
@@ -195,7 +195,7 @@
                 </li>
                 <li>
                     <a 
-                        class="justify-center"
+                        class="justify-start"
                         href={ "/my-offers"}
                         on:click={()=>{drawerStore.close()}}
                     >
@@ -208,7 +208,7 @@
             {/if}
             <li>
                 <a 
-                    class="justify-center"
+                    class="justify-start"
                     href="/network"
                     on:click={()=>{drawerStore.close()}}
                 >
@@ -218,7 +218,7 @@
                     <span>Network</span>
                 </a>
             </li>
-            <li class="flex justify-center">
+            <li class="flex justify-start">
                 <SlideToggle name='enable-notifications'
                     class='text-md '
                     active="bg-primary-500"
@@ -229,9 +229,13 @@
                 </SlideToggle>
             </li>
             <hr class="!my-4" />
+            <li class="flex justify-start gap-x-2 items-center">
+                <LightSwitch />
+                <span>Theme</span>
+            </li>
             <li>
                 <a
-                    class="justify-center"
+                    class="justify-start"
                     href="/about"
                     on:click={()=>{drawerStore.close()}}
                 >
@@ -242,7 +246,7 @@
                 </a>
             </li>
             <li>
-                <button class="w-full justify-center" on:click={feedback}>
+                <button class="w-full justify-start" on:click={feedback}>
                     <span class="w-6 text-center">
                         <i class="fa-regular fa-comment" />
                     </span>
@@ -254,7 +258,7 @@
     <nav class="list-nav">
         <ul>
             <li>
-                <button class="w-full justify-center" on:click={logout}>
+                <button class="w-full justify-start" on:click={logout}>
                     <span class="w-6 text-center">
                         <i class="fa-solid fa-arrow-right-from-bracket" />
                     </span>

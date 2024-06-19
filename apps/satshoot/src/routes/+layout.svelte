@@ -77,7 +77,7 @@
     import PostTicketIcon from "$lib/components/Icons/PostTicketIcon.svelte";
     import NotificationsIcon from "$lib/components/Icons/NotificationsIcon.svelte";
 
-    import { LightSwitch, modeCurrent } from '@skeletonlabs/skeleton';
+    import { modeCurrent } from '@skeletonlabs/skeleton';
 
     // Skeleton Toast
     import { Toast, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
@@ -450,67 +450,58 @@
 	<svelte:fragment slot="header">
         <AppBar gridColumns="grid-cols-3" slotDefault="place-content-center" slotTrail="place-content-end ">
             <svelte:fragment slot="lead">
-                <div class="flex flex-col gap-y-2">
-                    <LightSwitch />
-                    <a href="/about">
-                        <div class="badge bg-tertiary-200-700-token flex justify-center items-center">
-                            <span class="w-6 text-center">
-                                <i class="fa-solid fa-info text-lg" />
-                            </span>
-                        </div>
-                    </a>
+                <div class ='flex gap-x-2 items-center'>
+                    <h3 class='h3 font-bold'>WoT:</h3>
+                    <div>
+                        {#if !$loggedIn}
+                            <i 
+                                class="fa-solid fa-circle-question text-2xl text-error-500"
+                                use:popup={popupWoT}
+                            >
+                            </i>
+                            <div data-popup="popupWoT">
+                                <div class="card font-bold w-40 p-4 text-error-500 max-h-60 overflow-y-auto">
+                                    Log in to Load your Web of Trust!
+                                </div>
+                            </div>
+                        {:else if $wot && $wot.size < 2 && $wotUpdating}
+                            <ProgressRadial
+                            value={undefined}
+                            stroke={60}
+                            meter="stroke-error-500"
+                            track="stroke-error-500/30"
+                            strokeLinecap="round" width="w-8" 
+                        />
+                            {:else if $wot && $wot.size > 1 && $wotUpdating}
+                            <ProgressRadial
+                            value={undefined}
+                            stroke={60}
+                            meter="stroke-success-500"
+                            track="stroke-success-500/30"
+                            strokeLinecap="round" width="w-8" 
+                        />
+                            {:else if $wot && $wot.size > 1}
+                            <i 
+                                class="fa-solid fa-circle-check text-2xl {trustColor}"
+                                use:popup={popupWoT}
+                            >
+                            </i>
+                            <div data-popup="popupWoT">
+                                <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
+                                    Web of Trust Loaded
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
                 </div>
             </svelte:fragment>
 
             <div class="flex justify-center lg:ml-20">
                 <div class ='flex gap-x-2 justify-center items-center'>
-                    <button class="btn btn-icon" on:click={()=>{goto('/')}}>
+                    <button class="btn btn-icon w-16" on:click={()=>{goto('/')}}>
                         <img src="/satshoot.svg" alt="logo" />
                     </button>
-                    <div class ='flex gap-x-2 items-center'>
-                        <h3 class='h3 font-bold'>WoT:</h3>
-                        <div>
-                            {#if !$loggedIn}
-                                <i 
-                                    class="fa-solid fa-circle-question text-2xl text-error-500"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div class="card font-bold w-40 p-4 text-error-500 max-h-60 overflow-y-auto">
-                                        Log in to Load your Web of Trust!
-                                    </div>
-                                </div>
-                            {:else if $wot && $wot.size < 2 && $wotUpdating}
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-error-500"
-                                    track="stroke-error-500/30"
-                                    strokeLinecap="round" width="w-8" 
-                                />
-                            {:else if $wot && $wot.size > 1 && $wotUpdating}
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-success-500"
-                                    track="stroke-success-500/30"
-                                    strokeLinecap="round" width="w-8" 
-                                />
-                            {:else if $wot && $wot.size > 1}
-                                <i 
-                                    class="fa-solid fa-circle-check text-2xl {trustColor}"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
-                                        Web of Trust Loaded
-                                    </div>
-                                </div>
-                            {/if}
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
 

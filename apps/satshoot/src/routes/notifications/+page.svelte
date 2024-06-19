@@ -97,7 +97,6 @@ $: if (!$notificationsEnabled) {
 </script>
 
 {#if $currentUser}
-    
     <h3 class="h3 text-center mb-4 underline">Notifications</h3>
     <div class="grid grid-cols-1 gap-y-2 mb-8">
         <h3 class="h3 text-center underline my-4">
