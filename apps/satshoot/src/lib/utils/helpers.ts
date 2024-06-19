@@ -90,11 +90,7 @@ export async function initializeUser(ndk: NDK) {
         } 
 
         receivedMessageFilter['#p']! = [user.pubkey];
-        // receivedMessageFilter['authors'] = wotArray;
-        // sentMessageFilter['authors'] = [user.pubkey];
-        // allReviewsFilter['authors'] = wotArray;
-        // allTicketsFilter['authors'] = wotArray;
-        // allOffersFilter['authors'] = wotArray;
+        sentMessageFilter['authors'] = [user.pubkey];
         
         // (Re)start every subscription after successful wot and follow recalc
         messageStore.startSubscription();

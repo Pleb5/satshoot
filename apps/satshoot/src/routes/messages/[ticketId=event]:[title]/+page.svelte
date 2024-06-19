@@ -108,15 +108,14 @@
             dm.tags.push(['t', ticketAddress]);
             dm.tags.push(['p', currentPerson.pubkey]);
 
-            // console.log('dm', dm)
-
             console.log('dm before encryption', dm)
             dm.content = await ($ndk.signer as NDKSigner).encrypt(currentPerson, currentMessage);
             console.log('encrypted dm', dm)
             // Clear prompt
             currentMessage = '';
 
-            await dm.publish();
+            const relays = await dm.publish();
+            console.log('relays published', relays)
         }
 	}
 

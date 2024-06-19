@@ -14,10 +14,12 @@ let name: string;
 let avatarImage: string;
 
 let extraClasses = 'variant-soft-primary rounded-tr-none'
+let templateColumn = 'grid-cols-[auto_1fr]';
 
 onMount(async () => {
     if (avatarRight) {
         extraClasses = 'variant-soft rounded-tl-none'
+        templateColumn = 'grid-cols-[1fr_auto]';
     }
 
     name = (user as NDKUser).npub.substring(0,10);
@@ -49,7 +51,7 @@ onMount(async () => {
 </script>
 
 {#if message}
-    <div class="grid grid-cols-{avatarRight ? '[1fr_auto]' : '[auto_1fr]'} gap-2">
+    <div class="grid {templateColumn} gap-x-2">
         {#if !avatarRight}
             <Avatar
             src={avatarImage}
