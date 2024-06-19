@@ -76,7 +76,6 @@ async function openNotificationWindow(tag: string) {
 
     // let clientOpenWithUrl = false;
     //
-    // const allClients = await sw.clients.matchAll({type: "window"});
     //
     // for(const client of allClients) {
     //     const url = new URL(client.url);
@@ -92,12 +91,16 @@ async function openNotificationWindow(tag: string) {
     // if (!clientOpenWithUrl) {
     // }
 
-    await sw.clients.openWindow(urlToVisit);
+    const allClients = await sw.clients.matchAll({type: "window"});
+    if (allClients.length === 0) {
+        await sw.clients.openWindow(urlToVisit);
+    } else {
+        await allClients[0].focus();
+    }
 }
 
 sw.onnotificationclick = (event: NotificationEvent) => {
     event.notification.close();
-    console.log('asdf')
     if (openAllowed) {
         openAllowed = false;
         event.waitUntil(openNotificationWindow(event.notification.tag));
