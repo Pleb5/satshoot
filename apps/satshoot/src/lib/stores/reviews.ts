@@ -24,7 +24,6 @@ export const subOptions: NDKSubscriptionOptions = {
 export const allReviewsFilter: NDKFilter<NDKKind.Review> = {
     kinds: [NDKKind.Review],
     '#L': ['qts/troubleshooting'],
-    authors: [],
 };
 
 // export const reviewsOnMyTicketsFilter: NDKFilter<NDKKind.Review> = {

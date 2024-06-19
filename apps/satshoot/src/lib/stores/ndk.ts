@@ -7,7 +7,7 @@ import type { Writable } from 'svelte/store';
 
 
 export const DEFAULTRELAYURLS = [
-    "wss://relay.nostr.band/",
+    // "wss://relay.nostr.band/",
     "wss://nos.lol/",
     "wss://bitcoiner.social/",
     "wss://relay.damus.io/",
@@ -17,10 +17,10 @@ export const DEFAULTRELAYURLS = [
 export const OUTBOXRELAYURLS = [
     "wss://purplepag.es/",
     "wss://relay.damus.io/",
-    "wss://relay.nostr.band/",
     "wss://relay.primal.net/",
-    "wss://nos.lol/",
-    "wss://bitcoiner.social/",
+    // "wss://relay.nostr.band/",
+    // "wss://nos.lol/",
+    // "wss://bitcoiner.social/",
 ];
 
 export enum RestoreMethod {

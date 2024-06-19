@@ -90,21 +90,21 @@ export async function initializeUser(ndk: NDK) {
         } 
 
         receivedMessageFilter['#p']! = [user.pubkey];
-        receivedMessageFilter['authors'] = wotArray;
-        sentMessageFilter['authors'] = [user.pubkey];
-        allReviewsFilter['authors'] = wotArray;
-        allTicketsFilter['authors'] = wotArray;
-        allOffersFilter['authors'] = wotArray;
+        // receivedMessageFilter['authors'] = wotArray;
+        // sentMessageFilter['authors'] = [user.pubkey];
+        // allReviewsFilter['authors'] = wotArray;
+        // allTicketsFilter['authors'] = wotArray;
+        // allOffersFilter['authors'] = wotArray;
         
         // (Re)start every subscription after successful wot and follow recalc
         messageStore.startSubscription();
         allReviews.startSubscription();
 
-        allTickets.unsubscribe();
-        allOffers.unsubscribe();
-
-        allOffers.startSubscription();
-        allTickets.startSubscription();
+        // allTickets.unsubscribe();
+        // allOffers.unsubscribe();
+        //
+        // allOffers.startSubscription();
+        // allTickets.startSubscription();
     } catch(e) {
         console.log('Could not initialize User. Reason: ', e)
     }
@@ -165,7 +165,7 @@ export async function fetchUserOutboxRelays(ndk: NDKSvelte):Promise<NDKEvent | n
     const relays = await ndk.fetchEvent(
         { kinds: [10002], authors: [$currentUser!.pubkey] },
         { 
-            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             groupable: false,
         }
     );

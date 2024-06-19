@@ -38,6 +38,7 @@
     import { loggedIn } from '$lib/stores/user';
     import UserTicketsIcon from '../Icons/UserTicketsIcon.svelte';
     import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
+    import { allReviews } from '$lib/stores/reviews';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -115,36 +116,32 @@
                 myOfferFilter.authors = [];
 
                 messageStore.empty();
+                allReviews.empty();
                 
-                allTickets.unsubscribe();
-                allOffers.unsubscribe();
-                delete allTicketsFilter.authors;
-                delete allOffersFilter.authors;
-
-                // Remove all relays from pool
-                $ndk.pool.urls().forEach((url: string) => {
-                    $ndk.pool.removeRelay(url);
-                });
-
-                $ndk.outboxPool?.urls().forEach((url: string) => {
-                    $ndk.outboxPool?.removeRelay(url);
-                });
+                // // Remove all relays from pool
+                // $ndk.pool.urls().forEach((url: string) => {
+                //     $ndk.pool.removeRelay(url);
+                // });
+                //
+                // $ndk.outboxPool?.urls().forEach((url: string) => {
+                //     $ndk.outboxPool?.removeRelay(url);
+                // });
 
                 $currentUser = null;
 
                 // Fresh start
-                ndk.set(new NDKSvelte({
-                    enableOutboxModel: true,
-                    outboxRelayUrls: OUTBOXRELAYURLS,
-                    blacklistRelayUrls: [],
-                    explicitRelayUrls: DEFAULTRELAYURLS,
-                    cacheAdapter: new NDKCacheAdapterDexie({ dbName: 'satshoot-db' }),
-                }));
-
-                await $ndk.connect();
-
-                allTickets.startSubscription();
-                allOffers.startSubscription();
+                // ndk.set(new NDKSvelte({
+                //     enableOutboxModel: true,
+                //     outboxRelayUrls: OUTBOXRELAYURLS,
+                //     blacklistRelayUrls: [],
+                //     explicitRelayUrls: DEFAULTRELAYURLS,
+                //     cacheAdapter: new NDKCacheAdapterDexie({ dbName: 'satshoot-db' }),
+                // }));
+                //
+                // await $ndk.connect();
+                //
+                // allTickets.startSubscription();
+                // allOffers.startSubscription();
 
                 modalStore.close();
 

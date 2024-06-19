@@ -22,7 +22,6 @@ export const subOptions: NDKSubscriptionOptions = { closeOnEose: false, pool: ge
 
 export const receivedMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
     kinds: [NDKKind.EncryptedDirectMessage],
-    authors: [],
     '#p' : [],
     limit: 50_000,
 };
