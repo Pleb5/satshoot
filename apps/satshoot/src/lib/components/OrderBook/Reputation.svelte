@@ -39,7 +39,7 @@ $: if($troubleshooterReviews) {
 let ratings: Map<string, number> | undefined = undefined;
 let userReviewsArr: Array<ClientRating | TroubleshooterRating> | undefined = undefined;
 
-const baseClasses = 'card p-4 bg-surface-300-600-token m-8 ';
+const baseClasses = 'card p-4 bg-surface-300-600-token';
 
 let ratingConsensus = '?';
 let ratingColor = '';
@@ -91,7 +91,7 @@ $: if ($currentUser && user && $reviews) {
 <div class="{baseClasses}">
     <h3 class="h4 sm:h3 text-center mb-4">Reputation</h3>
     {#if user && $reviews}
-        <div class="flex justify-between mb-2">
+        <div class="flex flex-grow justify-between mb-2">
             <div class="flex gap-x-2">
                 <div class="flex flex-col items-center gap-y-2">
                     <div class="flex items-center">

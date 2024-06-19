@@ -99,7 +99,7 @@
     </div>
 
     {#if ticketList.size > 0}
-        <div class="grid grid-cols-1 gap-y-4 mx-8 mb-8">
+        <div class="grid grid-cols-1 gap-y-4 mb-8">
             {#each ticketList as ticket (ticket.id)}
                 <div class="flex justify-center">
                     <TicketCard {ticket}
