@@ -7,6 +7,7 @@ import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 import MessageCard from "$lib/components/User/MessageCard.svelte";
 import {
         notificationsEnabled,
+        notifications,
         ticketNotifications,
         offerNotifications,
         messageNotifications,
@@ -15,6 +16,7 @@ import {
 import { type Message } from "$lib/stores/messages";
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
+    import { onDestroy } from "svelte";
 
 let messagesLoading = false;
 
@@ -63,7 +65,7 @@ $: if ($messageNotifications) {
         // because that is inherently ordered by time by ndk-svelte store
         // This insert is important to happen BEFORE decryption to avoid
         // race conditions arising from waiting on the decryption
-        messages.splice(messages.length, 0, message);
+        messages.splice(0, 0, message);
 
         // Decryption
         try {
@@ -93,6 +95,10 @@ $: if (!$notificationsEnabled) {
     };
     toastStore.trigger(t);
 }
+
+onDestroy(()=>{
+    $notifications = [];
+});
 
 </script>
 
