@@ -16,7 +16,7 @@ import {
 import { type Message } from "$lib/stores/messages";
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
-    import { onDestroy } from "svelte";
+import { onDestroy } from "svelte";
 
 let messagesLoading = false;
 
@@ -165,7 +165,7 @@ onDestroy(()=>{
         {#if $reviewNotifications.length > 0}
             {#each $reviewNotifications as review}
                 <div class="flex justify-center">
-                    <UserReviewCard {review} reviewer={review.author} />
+                    <UserReviewCard review={review.ratings} reviewer={review.author} />
                 </div>
             {/each}
         {:else}
