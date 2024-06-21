@@ -18,7 +18,7 @@ export interface Message {
     message: string;
 }
 
-export const subOptions: NDKSubscriptionOptions = { closeOnEose: false, pool: get(ndk).pool };
+export const subOptions: NDKSubscriptionOptions = { closeOnEose: false };
 
 export const receivedMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
     kinds: [NDKKind.EncryptedDirectMessage],
@@ -40,6 +40,7 @@ export const messageStore = get(ndk).storeSubscribe([receivedMessageFilter, sent
 export const wotFilteredMessageFeed = derived(
     [messageStore, wot],
     ([$messageStore, $wot]) => {
+        console.log('wotFilteredMessageFeed', wotFilteredMessageFeed)
         const feed = $messageStore.filter((message: NDKEvent) => {
             if (
                 // Filter messages if they are in the web of trust
