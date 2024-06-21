@@ -1,15 +1,10 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import type {
-        NDKSubscription,
-        NDKFilter,
-        NDKEvent
-    } from "@nostr-dev-kit/ndk"; 
 
     import currentUser from '$lib/stores/user';
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
-    import { BTCTroubleshootKind } from "$lib/events/kinds";
+    import { allOffers, wotFilteredOffers } from '$lib/stores/troubleshoot-eventstores';
 
     import { nip19 } from "nostr-tools";
 
@@ -46,12 +41,7 @@
     let timeSincePosted: string; 
     let ticketStatus: string;
 
-    let offerSubscription: NDKSubscription | undefined = undefined;
-    let offersFilter: NDKFilter<BTCTroubleshootKind> = {
-        kinds: [BTCTroubleshootKind.Offer],
-        '#a': [],
-        limit: 10_000,
-    }
+    let offerStore = allOffers;
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';
     let offersAlreadyColor: string = 'text-primary-400-500-token';
@@ -65,79 +55,66 @@
 
     let statusColor: string = '';
 
+    $: if (currentUser) {
+        offerStore = wotFilteredOffers;
+    }
+
     $: if ($currentUser && showChat) {
         ticketChat = true;
     } else ticketChat = false;
 
-    $: {
-        if (ticket) {
-            bech32ID = ticket.encode()
-            npub = nip19.npubEncode(ticket.pubkey);
-            popupHover.target = 'popupHover_' + ticket.id;
+    $: if (ticket) {
+        bech32ID = ticket.encode()
+        npub = nip19.npubEncode(ticket.pubkey);
+        popupHover.target = 'popupHover_' + ticket.id;
 
-            if (ticket.created_at) {
-                // Created_at is in Unix time seconds
-                let seconds = Math.floor(Date.now() / 1000 - ticket.created_at);
-                let minutes = Math.floor(seconds / 60);
-                let hours = Math.floor(minutes / 60);
-                let days = Math.floor(hours / 24);
-                if (days >= 1) {
-                    timeSincePosted = days.toString() + ' day(s) ago';
-                } else if(hours >= 1) {
-                    timeSincePosted = hours.toString() + ' hour(s) ago';
-                } else if(minutes >= 1) {
-                    timeSincePosted = minutes.toString() + ' minute(s) ago';
-                } else if(seconds >= 20) {
-                    timeSincePosted = seconds.toString() + ' second(s) ago';
-                } else {
-                    timeSincePosted = 'just now';
-                }
-            }
-
-            if (ticket.status >= 0) {
-                if (ticket.status === TicketStatus.New) {
-                    ticketStatus = 'New';
-                    statusColor = 'text-primary-400-500-token'
-                } else if (ticket.status === TicketStatus.InProgress) {
-                    ticketStatus = 'In Progress';
-                    statusColor = 'text-success-500';
-                } else if (ticket.status === TicketStatus.Resolved) {
-                    ticketStatus = 'Resolved';
-                    statusColor = 'text-tertiary-500';
-                } else if (ticket.status === TicketStatus.Failed) {
-                    ticketStatus = 'Failed';
-                    statusColor = 'text-error-500';
-                }
-
-            }
-            // console.log('new tickets address: ', ticket.ticketAddress)
-
-            if (countAllOffers) {
-                // If ticket arrived or ticket was changed then start/restart offer sub
-                if (!offersFilter['#a']!.includes(ticket.ticketAddress)) {
-                    if (offerSubscription){
-                        // console.log('Stopping obsolete offersub and change filter...')
-                        offerSubscription.stop();
-                    }
-                    // console.log('old offer filter tracked: ', offersFilter['#a'])
-                    // console.log('new offer filter tracks: ', ticket.ticketAddress)
-
-                    offersFilter['#a'] = [ticket.ticketAddress];
-
-                    offerSubscription = $ndk.subscribe(
-                        offersFilter,
-                        {closeOnEose: false, pool: $ndk.pool}
-                    );
-
-                    offerSubscription.on('event', (event: NDKEvent) => {
-                        const offer = OfferEvent.from(event);
-                        offers.push(offer);
-                        offerCount = offers.length.toString();
-                        offersAlreadyColor = 'text-tertiary-400-500-token';
-                    });
-                } 
+        if (ticket.created_at) {
+            // Created_at is in Unix time seconds
+            let seconds = Math.floor(Date.now() / 1000 - ticket.created_at);
+            let minutes = Math.floor(seconds / 60);
+            let hours = Math.floor(minutes / 60);
+            let days = Math.floor(hours / 24);
+            if (days >= 1) {
+                timeSincePosted = days.toString() + ' day(s) ago';
+            } else if(hours >= 1) {
+                timeSincePosted = hours.toString() + ' hour(s) ago';
+            } else if(minutes >= 1) {
+                timeSincePosted = minutes.toString() + ' minute(s) ago';
+            } else if(seconds >= 20) {
+                timeSincePosted = seconds.toString() + ' second(s) ago';
+            } else {
+                timeSincePosted = 'just now';
             }
         }
+
+        if (ticket.status >= 0) {
+            if (ticket.status === TicketStatus.New) {
+                ticketStatus = 'New';
+                statusColor = 'text-primary-400-500-token'
+            } else if (ticket.status === TicketStatus.InProgress) {
+                ticketStatus = 'In Progress';
+                statusColor = 'text-success-500';
+            } else if (ticket.status === TicketStatus.Resolved) {
+                ticketStatus = 'Resolved';
+                statusColor = 'text-tertiary-500';
+            } else if (ticket.status === TicketStatus.Failed) {
+                ticketStatus = 'Failed';
+                statusColor = 'text-error-500';
+            }
+
+        }
+        // console.log('new tickets address: ', ticket.ticketAddress)
+    }
+
+    $: if (countAllOffers && ticket && $offerStore) {
+        offers = [];
+        $offerStore.forEach((offer: OfferEvent) => {
+            if (ticket.dTag === offer.referencedTicketDTag) {
+                offers.push(offer);
+                offerCount = offers.length.toString();
+                offersAlreadyColor = 'text-tertiary-400-500-token';
+            }
+        });
     }
 
     function shareTicket() {
@@ -192,7 +169,6 @@
 
     onDestroy(()=> {
         // console.log('unsubbing from offers of ticket')
-        offerSubscription?.stop();
     });
 
 </script>

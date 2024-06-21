@@ -100,21 +100,21 @@ export async function sendNotification(event: NDKEvent) {
 
         // The Ticket of our _Offer_ was updated
         if (event.kind === BTCTroubleshootKind.Ticket) {
-            title = 'Offer update arrived!';
-            body = 'Check your Notifications!';
+            title = 'Update!';
+            body = '🔔 Check your Notifications!';
             tag = BTCTroubleshootKind.Ticket.toString();
             // The Offer on our _Ticket_ was updated
         } else if(event.kind === BTCTroubleshootKind.Offer) {
-            title = 'Ticket update arrived!';
-            body = 'Check your Notifications!';
+            title = 'Update!';
+            body = '🔔 Check your Notifications!';
             tag = BTCTroubleshootKind.Offer.toString();
         } else if (event.kind === NDKKind.EncryptedDirectMessage) {
-            title = 'Message arrived!';
-            body = 'Check your Notifications!';
+            title = 'New Message!';
+            body = '🔔 Check your Notifications!';
             tag = NDKKind.EncryptedDirectMessage.toString();
         } else if (event.kind === NDKKind.Review) {
             title = 'Someone left a Review!';
-            body = 'Check your Notifications!';
+            body = '🔔 Check your Notifications!';
             tag = NDKKind.Review.toString();
         }
 

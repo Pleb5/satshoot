@@ -1,5 +1,4 @@
 <script lang="ts">
-import ndk from "$lib/stores/ndk";
 import currentUser from "$lib/stores/user";
 import type { ClientRating, TroubleshooterRating } from "$lib/events/ReviewEvent";
 import type { NDKUser, NDKUserProfile } from "@nostr-dev-kit/ndk";

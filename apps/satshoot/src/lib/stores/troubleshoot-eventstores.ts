@@ -6,7 +6,9 @@ import { BTCTroubleshootKind } from '$lib/events/kinds';
 import { TicketEvent } from '$lib/events/TicketEvent';
 import { OfferEvent } from '$lib/events/OfferEvent';
 
-import { get } from "svelte/store";
+import { wot } from '$lib/stores/wot';
+
+import { get, derived } from "svelte/store";
 
 // Export necessary when restarting a subscription with a new filter
 export const subOptions: NDKSubscriptionOptions = {
@@ -37,6 +39,43 @@ export const allTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
 
 export const allOffers:NDKEventStore<ExtendedBaseType<OfferEvent>>
         = get(ndk).storeSubscribe<OfferEvent>(allOffersFilter, subOptions, OfferEvent);
+
+
+export const wotFilteredTickets = derived(
+    [allTickets, wot],
+    ([$allTickets, $wot]) => {
+        const tickets = $allTickets.filter((ticket: TicketEvent) => {
+            if (
+                // Filter messages if they are in the web of trust
+                $wot.has(ticket.pubkey) 
+            ) {
+                return true;
+            } 
+
+            return false;
+        });
+
+        return tickets;
+    }
+);
+
+export const wotFilteredOffers = derived(
+    [allOffers, wot],
+    ([$allOffers, $wot]) => {
+        const offers = $allOffers.filter((offer: OfferEvent) => {
+            if (
+                // Filter messages if they are in the web of trust
+                $wot.has(offer.pubkey) 
+            ) {
+                return true;
+            } 
+
+            return false;
+        });
+
+        return offers;
+    }
+);
 
 export const myTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
         = get(ndk).storeSubscribe<TicketEvent>(myTicketFilter, subOptions, TicketEvent);

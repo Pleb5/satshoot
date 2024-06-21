@@ -23,12 +23,15 @@
     import { 
         allTickets,
         allOffers,
+        wotFilteredTickets,
+        wotFilteredOffers,
         myTickets,
         myOffers,
     } from "$lib/stores/troubleshoot-eventstores";
 
     import { 
-        allReviews,
+        clientReviews,
+        troubleshooterReviews,
     } from "$lib/stores/reviews";
     import { wotFilteredMessageFeed } from "$lib/stores/messages";
     import { sendNotification } from "$lib/stores/notifications";
@@ -374,9 +377,22 @@
     }
 
     // ----- Notifications ------ //
-    $: if($allTickets && $myOffers) {
-       $allTickets.forEach((t: TicketEvent) => {
+    $: if($wotFilteredTickets && $myOffers) {
+        console.log('all tickets change:', $wotFilteredTickets)
+       $wotFilteredTickets.forEach((t: TicketEvent) => {
             $myOffers.forEach((o: OfferEvent) => {
+                if (o.referencedTicketDTag === t.dTag) {
+                    sendNotification(o);
+                    sendNotification(t);
+                }
+            });
+        });
+    }
+
+    $: if ($wotFilteredOffers && $myTickets) {
+        console.log('all offers change:', $wotFilteredOffers)
+       $wotFilteredOffers.forEach((o: OfferEvent) => {
+            $myTickets.forEach((t: TicketEvent) => {
                 if (o.referencedTicketDTag === t.dTag) {
                     sendNotification(o);
                 }
@@ -384,41 +400,33 @@
         });
     }
 
-    $: if ($allOffers && $myTickets) {
-       $allOffers.forEach((o: OfferEvent) => {
+    $: if ($wotFilteredMessageFeed && $currentUser) {
+        $wotFilteredMessageFeed.forEach((dm: NDKEvent) => {
+            // This is somewhat wasteful: If there was a nice way to attach
+            // a callback on uniquely new events in NDKEventStore-s
+            // We would not have to iterate over the whole array
+            if (dm.pubkey !== $currentUser.pubkey)
+            sendNotification(dm);
+        });
+    }
+
+    $: if ($clientReviews) {
+        $clientReviews.forEach((r: ReviewEvent) => {
             $myTickets.forEach((t: TicketEvent) => {
-                if (o.referencedTicketDTag === t.dTag) {
-                    sendNotification(t);
+                if (t.ticketAddress === r.reviewedEventAddress) {
+                    sendNotification(r);
                 }
             });
         });
     }
 
-    $: if ($wotFilteredMessageFeed) {
-        $wotFilteredMessageFeed.forEach((dm: NDKEvent) => {
-            // This is somewhat wasteful: If there was a nice way to attach
-            // a callback on uniquely new events in NDKEventStore-s
-            // We would not have to iterate over the whole array
-            sendNotification(dm);
-        });
-    }
-
-    $: if ($allReviews && $myTickets && $myOffers) {
-        $allReviews.forEach((r: ReviewEvent) => {
-            if (r.reviewedEventKind === BTCTroubleshootKind.Ticket) {
-                $myTickets.forEach((t: TicketEvent) => {
-                    if (t.ticketAddress === r.reviewedEventAddress) {
-                        sendNotification(r);
-                    }
-                });
-
-            } else if (r.reviewedEventKind === BTCTroubleshootKind.Offer) {
-                $myOffers.forEach((o: OfferEvent) => {
-                    if (o.offerAddress === r.reviewedEventAddress) {
-                        sendNotification(r);
-                    }
-                });
-            }
+    $: if ($troubleshooterReviews) {
+        $troubleshooterReviews.forEach((r: ReviewEvent) => {
+            $myOffers.forEach((o: OfferEvent) => {
+                if (o.offerAddress === r.reviewedEventAddress) {
+                    sendNotification(r);
+                }
+            });
         });
     }
 

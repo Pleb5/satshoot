@@ -76,7 +76,7 @@
 
             modalStore.close();
 
-            goto('/my-tickets');
+            goto('/my-offers');
         } catch(e) {
             posting = false;
             errorText = 'Error happened while publishing Offer!';
