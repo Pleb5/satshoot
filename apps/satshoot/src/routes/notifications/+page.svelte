@@ -1,7 +1,7 @@
 <script lang="ts">
 import ndk from "$lib/stores/ndk";
 import currentUser from "$lib/stores/user";
-import type { NDKSigner } from "@nostr-dev-kit/ndk";
+import type { NDKSigner, NDKTag } from "@nostr-dev-kit/ndk";
 import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
 import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 import MessageCard from "$lib/components/User/MessageCard.svelte";
@@ -17,6 +17,7 @@ import { type Message } from "$lib/stores/messages";
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
 import { onDestroy } from "svelte";
+    import { BTCTroubleshootKind } from "$lib/events/kinds";
 
 let messagesLoading = false;
 
@@ -53,12 +54,19 @@ $: if ($messageNotifications) {
             }
         }
         if (alreadySeen) continue;
+        let tTag = '';
+        dm.tags.forEach((tag: NDKTag) => {
+            if (tag[0] === 't' && tag[1].includes(BTCTroubleshootKind.Ticket.toString())) {
+                tTag = tag[1];
+            }
+        });
         const message = {
             id: dm.id,
             sender: dm.pubkey,
             recipient: dm.tagValue('p') as string,
             timestamp: dateString,
             message: '',
+            ticket: tTag,
         };
         // We insert the new decrypted message in the right place
         // that is exactly the index where it was in the original feed

@@ -16,6 +16,7 @@ export interface Message {
     recipient: string;
     timestamp: string;
     message: string;
+    ticket: string;
 }
 
 export const subOptions: NDKSubscriptionOptions = { closeOnEose: false };

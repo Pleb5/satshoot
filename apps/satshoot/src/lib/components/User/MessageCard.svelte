@@ -4,6 +4,9 @@ import { type NDKUser, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { Avatar } from '@skeletonlabs/skeleton';
 import { onMount } from "svelte";
 import type { Message } from '$lib/stores/messages';
+import { TicketEvent } from "$lib/events/TicketEvent";
+
+import { goto } from "$app/navigation";
 
 
 export let avatarRight = true;
@@ -12,6 +15,8 @@ export let message: Message;
 const user = $ndk.getUser({pubkey: message.sender});
 let name: string;
 let avatarImage: string;
+const ticket: string = message['ticket'] ?? '';
+let messageLink = '';
 
 let extraClasses = 'variant-soft-primary rounded-tr-none'
 let templateColumn = 'grid-cols-[auto_1fr]';
@@ -45,6 +50,15 @@ onMount(async () => {
     } else {
         console.log('no profile')
     }
+
+    if (ticket) {
+        const event = await $ndk.fetchEvent(ticket);
+        if (event) {
+            const ticketEvent = TicketEvent.from(event);
+            messageLink = "/messages/"
+                + ticketEvent.encode() + ":" + ticketEvent.title;
+        }
+    }
 });
 
 
@@ -63,6 +77,20 @@ onMount(async () => {
                 <small class="opacity-50">{message.timestamp}</small>
             </header>
             <p>{message.message}</p>
+            {#if messageLink}
+                <div class="flex justify-center mr-4">
+                    <button
+                        type="button" 
+                        class="btn btn-icon-lg p-2 text-primary-400-500-token"
+                        on:click={()=>{goto(messageLink)}}
+                    >
+                        <span>Reply</span>
+                        <span>
+                            <i class="fa-solid fa-reply"></i>
+                        </span>
+                    </button>
+                </div>
+            {/if}
         </div>
         {#if avatarRight}
             <Avatar
