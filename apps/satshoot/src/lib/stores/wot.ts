@@ -114,8 +114,6 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         const authors: Set<Hexpubkey> = updateWotScores(trustBasisEvents, $networkWoTScores, true);
         // Get a common relay set for the user's network
         //
-        // The forUsers() method is bugs with many authors for some reason! 
-        // const networkQueryRelayMap = await NDKRelayList.forUsers(Array.from(authors), ndk);
 
         // Now get ALL second order follows, mutes and reports
         const authorsArray = Array.from(authors);
