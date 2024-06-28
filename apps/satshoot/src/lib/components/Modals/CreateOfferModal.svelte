@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount, type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
+    import { NDKEvent, NDKKind, type NDKSigner } from '@nostr-dev-kit/ndk';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
+    import { TicketEvent } from '$lib/events/TicketEvent';
     
 	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
@@ -18,7 +20,8 @@
 	/** Exposes parent props to this component. */
 	// export let parent: SvelteComponent;
 
-    export let ticketAddress: string | undefined = undefined;
+    export let ticket: TicketEvent;
+    const ticketAddress = ticket.ticketAddress;
 
     export let offerToEdit: OfferEvent | undefined = undefined;
 
@@ -30,11 +33,12 @@
     let amount: number = 0;
 
     let description: string = '';
+    let sendDm = true;
 
     let errorText = '';
     let posting = false;
     
-    const cBase = 'card bg-surface-100-800-token w-screen/2 h-screen/2 p-8 flex justify-center items-center';
+    const cBase = 'card bg-surface-100-800-token w-screen/2 h-screen/2 p-4 flex justify-center items-center';
 
     async function postOffer() {
         posting = true;
@@ -58,6 +62,31 @@
         try {
             const relaysPublished = await offer.publish();
 
+
+            if (sendDm) {
+                const dm = new NDKEvent($ndk);
+                dm.kind = NDKKind.EncryptedDirectMessage;
+                dm.tags.push(['t', ticketAddress!]);
+                const ticketHolder = ticket.pubkey;
+                const ticketHolderUser = $ndk.getUser({pubkey: ticketHolder});
+
+                if (!ticketHolder || !ticketHolderUser){
+                    throw new Error('Could not identify Ticket Holder, sending DM failed!');
+                }
+
+                dm.tags.push(['p', ticketHolder]);
+
+                const content = `SatShoot Offer update on Ticket: ${ticket.title} | \n\n`
+                    + `Amount: ${offer.amount}${offer.pricing === Pricing.Absolute ? 'sats' : 'sats/min'} | \n`
+                    + `Description: ${offer.description}`;
+                console.log('dm content', content)
+                dm.content = await ($ndk.signer as NDKSigner).encrypt(ticketHolderUser, content);
+                console.log('encrypted dm', dm)
+
+                const relays = await dm.publish();
+                console.log('relays published', relays)
+            }
+
             posting = false;
             
             $offerTabStore = OfferStatus.Pending;
@@ -79,7 +108,7 @@
             goto('/my-offers');
         } catch(e) {
             posting = false;
-            errorText = 'Error happened while publishing Offer!';
+            errorText = 'Error happened while publishing Offer:' + e;
             if ($modalStore[0].response) {
                 $modalStore[0].response(false);
                 modalStore.close();
@@ -106,10 +135,10 @@
 {#if $modalStore[0]}
 <div class="{cBase}">
     {#if ticketAddress}
-            <div class="grid grid-cols-1">
+            <div class="grid grid-cols-1 p-4">
                 <h2 class="h2 text-center">Create Offer</h2>
                 <!-- Pricing -->
-                <label class="m-4">
+                <label class="my-4">
                     <span>Pricing Method</span>
                     <select class="select" bind:value={pricingMethod}>
                         <option value={Pricing.Absolute}>Absolute Price(sats)</option>
@@ -117,7 +146,7 @@
                     </select>
                 </label>
                 <!-- Amount -->
-                <label class="m-4">
+                <label class="my-4">
                     <span>Amount</span>
                     <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
                         <div class="input-group-shim">
@@ -135,15 +164,26 @@
                     </div>
                 </label>
                 <!-- Description -->
-                <label class="label max-w-xl m-4">
+                <label class="label max-w-xl my-4">
                     <span>Offer Description</span>
                     <textarea 
                     class="textarea"
                     rows="4"
-                    placeholder="Describe how you would solve the issue and why you should get the job"
+                    placeholder="Describe why you should get the job"
                     bind:value={description}
                 />
                 </label>
+                <!-- Send DM -->
+                <div class="mb-8">
+                    <label class="flex items-center space-x-2">
+                        <input
+                            class="checkbox"
+                            type="checkbox" 
+                            bind:checked={sendDm}
+                        />
+                        <p>Send Offer as NIP04 DM to Ticket Holder</p>
+                    </label>
+                </div>
                 <div class="flex justify-between items-center mb-2">
                     <button 
                         type="button"

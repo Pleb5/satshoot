@@ -58,10 +58,10 @@
     }
 
     function editMyOffer() {
-        if (offer) {
+        if (ticket && offer) {
             const modalComponent: ModalComponent = {
                 ref: CreateOfferModal,
-                props: {ticketAddress: offer.referencedTicketAddress, offerToEdit: offer},
+                props: {ticket: ticket, offerToEdit: offer},
             };
 
             const modal: ModalSettings = {

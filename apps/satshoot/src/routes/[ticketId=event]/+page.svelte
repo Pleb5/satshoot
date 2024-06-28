@@ -208,7 +208,7 @@
             const modalComponent: ModalComponent = {
                 ref: CreateOfferModal,
                 props: {
-                    ticketAddress: ticket?.ticketAddress,
+                    ticket: ticket,
                     offerToEdit: offer,
                 },
             };

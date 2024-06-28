@@ -89,13 +89,13 @@ $: if ($currentUser && user && $reviews) {
 </script>
 
 <div class="{baseClasses}">
-    <h3 class="h4 sm:h3 text-center mb-4">Reputation</h3>
+    <h3 class="h3 sm:h4 text-center mb-4">Reputation</h3>
     {#if user && $reviews}
         <div class="flex flex-grow justify-between mb-2">
             <div class="flex gap-x-2">
                 <div class="flex flex-col items-center gap-y-2">
                     <div class="flex items-center">
-                        <h3 class="h5 sm:h3 underline">Ratings</h3>
+                        <h5 class="h4 sm:h5 underline">Ratings</h5>
                         {#if $reviews.length > 0}
                             <button
                                 type="button" 
@@ -119,7 +119,7 @@ $: if ($currentUser && user && $reviews) {
                         strokeLinecap="round" width="w-8" 
                     />
                     {:else}
-                        <div class="badge px-4 py-2 sm:text-lg {ratingColor}">
+                        <div class="badge px-4 py-2 {ratingColor}">
                             {ratingConsensus}
                         </div>
                     {/if}
