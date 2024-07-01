@@ -3,7 +3,7 @@
     import ndk from '$lib/stores/ndk';
     import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
 
-    import { BTCTroubleshootPubkey } from '$lib/utils/misc';
+    import { SatShootPubkey } from '$lib/utils/misc';
     
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 	import { getModalStore, getToastStore, getDrawerStore } from '@skeletonlabs/skeleton';
@@ -30,7 +30,7 @@
         const five = $ndk.getUser(
             {npub: 'npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw'}
         );
-        const btcTroubleshootUser = $ndk.getUser({pubkey: BTCTroubleshootPubkey});
+        const btcTroubleshootUser = $ndk.getUser({pubkey: SatShootPubkey});
         kind1Event.tag(five);
         kind1Event.tag(btcTroubleshootUser);
 

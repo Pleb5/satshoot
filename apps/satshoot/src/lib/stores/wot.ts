@@ -4,7 +4,7 @@ import type { Writable } from 'svelte/store';
 
 import {
     getMapSerializer,
-    BTCTroubleshootPubkey ,
+    SatShootPubkey,
     filterValidPTags,
     percentile,
 } from '../utils/misc';
@@ -44,7 +44,7 @@ const secondOrderFollowWot = 1;
 const secondOrderMuteWot = -0.5*(secondOrderFollowWot);
 const secondOrderReportWot = -0.5*(secondOrderFollowWot);
 
-export const bootstrapAccount = BTCTroubleshootPubkey;
+export const bootstrapAccount = SatShootPubkey;
 
 export const wotUpdating = writable(false);
 
@@ -59,7 +59,7 @@ export const wot = derived(
 
         if ($currentUser) {
             pubkeys.add($currentUser.pubkey);
-            pubkeys.add(BTCTroubleshootPubkey);
+            pubkeys.add(SatShootPubkey);
         }
 
         return pubkeys;
@@ -87,14 +87,14 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         const $networkWoTScores = new Map<Hexpubkey, number>();
 
 
-        await ndk.outboxTracker.trackUsers([user.pubkey, BTCTroubleshootPubkey]);
+        await ndk.outboxTracker.trackUsers([user.pubkey, SatShootPubkey]);
 
         // log write relays with buitin fn
 
         // user and bootstrap 'trust' basis: follows, mutes and reports
         const trustBasisFilter: NDKFilter = {
             kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
-            authors: [user.pubkey, BTCTroubleshootPubkey]
+            authors: [user.pubkey, SatShootPubkey]
         }
 
         console.log('outboxPool:', ndk.outboxPool)

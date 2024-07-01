@@ -93,7 +93,6 @@
                 ticketFilter,
                 {
                     closeOnEose: false,
-                    pool: $ndk.pool,
                     groupable: false,
                 }
             );
@@ -134,7 +133,7 @@
 
     $: {
         if (offer) {
-            // console.log('offer changed', offer)
+            console.log('offer changed', offer)
             switch (offer.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';
@@ -218,6 +217,12 @@
         placement: 'bottom'
     };
 
+    const pledgeInfoPopup: PopupSettings = {
+        event: 'click',
+        target: `pledgeInfo_${offer?.id}`,
+        placement: 'bottom'
+    };
+
 </script>
 
 <div class="card pt-2 bg-surface-200-700-token flex-grow sm:max-w-[70vw] lg:max-w-[60vw]">
@@ -275,6 +280,25 @@
                     </div> 
                 </div>
             {/if}
+        </div>
+        <div class="flex justify-center items-center gap-x-2">
+            <h4 class="h5 md:h4 col-start-2 text-center text-tertiary-500">
+                {'Pledged: ' + offer.pledgeSplit + ' %'}
+            </h4>
+            <i 
+                class="text-primary-300-600-token fa-solid fa-circle-question text-xl
+                [&>*]:pointer-events-none" 
+                use:popup={pledgeInfoPopup}
+            />
+            <div data-popup="pledgeInfo_{offer.id}">
+                <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
+                    <p>
+                        Revenue share percentage the Troubleshooter pledged to SatShoot
+                        to support development.
+                    </p>
+                    <div class="arrow bg-primary-300-600-token" />
+                </div>
+            </div>
         </div>
         <div class="text-center text-base md:text-lg p-2">
             {offer.description}

@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { onMount, type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
+    import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKSigner } from '@nostr-dev-kit/ndk';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
     
-	// Stores
 	import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
+    import { popup } from '@skeletonlabs/skeleton';
+    import type { PopupSettings } from '@skeletonlabs/skeleton';
 
     import { goto } from '$app/navigation';
     import { navigating } from '$app/stores';
@@ -29,10 +31,13 @@
     const toastStore = getToastStore();
 
     let pricingMethod: Pricing;
+    let amount = 0;
+    let pledgeSplit = 0;
 
-    let amount: number = 0;
+    $: pledgedShare = Math.floor(amount * (pledgeSplit / 100));
+    $: troubleshooterShare = amount - pledgedShare;
 
-    let description: string = '';
+    let description = '';
     let sendDm = true;
 
     let errorText = '';
@@ -41,11 +46,15 @@
     const cBase = 'card bg-surface-100-800-token w-screen/2 h-screen/2 p-4 flex justify-center items-center';
 
     async function postOffer() {
+        if (!validate()) {
+            return;
+        }
         posting = true;
         const offer = new OfferEvent($ndk)
 
         offer.pricing = pricingMethod;
         offer.amount = amount;
+        offer.setPledgeSplit(pledgeSplit, $currentUser!.pubkey);
         offer.description = description;
 
         offer.referencedTicketAddress = ticketAddress as string;
@@ -60,8 +69,8 @@
         }
 
         try {
+            console.log('offer', offer)
             const relaysPublished = await offer.publish();
-
 
             if (sendDm) {
                 const dm = new NDKEvent($ndk);
@@ -108,12 +117,39 @@
             goto('/my-offers');
         } catch(e) {
             posting = false;
-            errorText = 'Error happened while publishing Offer:' + e;
+            const errorMessage = 'Error happened while publishing Offer:' + e;
+            
+            const t: ToastSettings = {
+                message: errorMessage,
+                timeout: 7000,
+                background: 'bg-error-300-600-token',
+            };
+            toastStore.trigger(t);
+
             if ($modalStore[0].response) {
                 $modalStore[0].response(false);
                 modalStore.close();
             }
         }
+    }
+
+    function validate():boolean {
+        let valid = true;
+        errorText = '';
+        if (amount < 0) {
+            valid = false;
+            errorText = 'Amount below 0!'
+        } else if (amount > 100_000_000) {
+            valid = false;
+            errorText = 'Amount cannot exceed 100M sats!'
+        } else if (pledgeSplit < 0) {
+            valid = false;
+            errorText = 'Pledge split below 0!';
+        } else if (pledgeSplit > 100) {
+            valid = false;
+            errorText = 'Pledge split above 100% !';
+        }
+        return valid;
     }
 
     $: if($navigating) {
@@ -129,6 +165,13 @@
             description = offerToEdit.description;
         }
     });
+
+    // For tooltip    
+    const popupPlegdeSplit: PopupSettings = {
+        event: 'click',
+        target: 'popupPledgeSplit',
+        placement: 'bottom'
+    };
 
 </script>
 
@@ -156,25 +199,83 @@
                         class="text-lg max-w-md"
                         type="number"
                         min="0"
-                        max="2100000000000000"
+                        max="100_000000"
                         placeholder="Amount"
                         bind:value={amount}
                     />
                         <div>{pricingMethod ? 'sats/min' : 'sats'}</div>
                     </div>
                 </label>
+                <!-- Pledge Split -->
+                <div class="flex justify-start gap-x-1">
+                    <span class="mr-2">Pledge Split</span>
+                    <i 
+                    class="text-primary-300-600-token fa-solid fa-circle-question text-xl
+                    [&>*]:pointer-events-none" 
+                    use:popup={popupPlegdeSplit}
+                />
+                    <div data-popup="popupPledgeSplit">
+                        <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
+                            <p>
+                                Pledge a percentage of your potential revenue to support development.
+                            </p>
+                            <br/>
+                            <p>
+                                The percentage pledged will show up for the potential Client.
+                            </p>
+                            <div class="arrow bg-primary-300-600-token" />
+                        </div>
+                    </div>
+                </div>
+                <label class="mb-4 mt-1">
+                    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
+                        <div class="input-group-shim">
+                            <i class="fa-brands fa-bitcoin text-3xl"/>
+                        </div>
+                        <input 
+                        class="text-lg max-w-md"
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="Percentage"
+                        bind:value={pledgeSplit}
+                    />
+                        <div>%</div>
+                    </div>
+                </label>
+                <div class="flex justify-between">
+                    <div class="flex flex-col">
+                        <div class="underline">You get:</div>
+                        <div class="font-bold">
+                            {
+                                troubleshooterShare + 
+                                (pricingMethod ? 'sats/min' : 'sats')
+                            }
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <div class="underline">You pledge:</div>
+                        <div class="font-bold">
+                            {
+                                pledgedShare + 
+                                (pricingMethod ? 'sats/min' : 'sats')
+                            }
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Description -->
-                <label class="label max-w-xl my-4">
+                <label class="label max-w-xl mt-4 mb-2">
                     <span>Offer Description</span>
                     <textarea 
                     class="textarea"
-                    rows="4"
+                    rows="3"
                     placeholder="Describe why you should get the job"
                     bind:value={description}
                 />
                 </label>
                 <!-- Send DM -->
-                <div class="mb-8">
+                <div class="mb-6">
                     <label class="flex items-center space-x-2">
                         <input
                             class="checkbox"
@@ -184,7 +285,7 @@
                         <p>Send Offer as NIP04 DM to Ticket Holder</p>
                     </label>
                 </div>
-                <div class="flex justify-between items-center mb-2">
+                <div class="flex gap-x-4 mb-2">
                     <button 
                         type="button"
                         class="btn btn-sm sm:btn-md bg-error-300-600-token"
@@ -208,12 +309,12 @@
                         {/if}
                     </button>
                 </div>
+                {#if errorText}
+                    <h4 class="h4 font-bold text-center text-error-300-600-token">
+                        {errorText}
+                    </h4>
+                {/if}
             </div>
-        {#if errorText}
-            <h2 class="h2 font-bold text-center text-error-300-600-token">
-                {errorText}
-            </h2>
-        {/if}
     {:else}
         <h2 class="h2 font-bold text-center text-error-300-600-token">
             Error: Ticket is missing!
