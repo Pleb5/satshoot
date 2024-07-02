@@ -102,10 +102,27 @@
 
             const t: ToastSettings = {
                 message: 'Offer Posted!',
-                timeout: 7000,
+                timeout: 4000,
                 background: 'bg-success-300-600-token',
             };
             toastStore.trigger(t);
+
+            if ( !($currentUser?.profile?.lud16) ) {
+                let toastId:string;
+                const t: ToastSettings = {
+                    message: 'Set up an LN Address to receive payments!',
+                    background: 'bg-warning-300-600-token',
+                    autohide: false,
+                    action: {
+                        label: 'Go to Profile',
+                        response: () => {
+                            toastStore.close(toastId);
+                            goto("/" + $currentUser!.npub);
+                        },
+                    }
+                }
+                toastId = toastStore.trigger(t);
+            }
 
             if ($modalStore[0].response) {
                 $modalStore[0].response(true);
@@ -162,6 +179,7 @@
         if (offerToEdit) {
             pricingMethod = offerToEdit.pricing;
             amount = offerToEdit.amount;
+            pledgeSplit = offerToEdit.pledgeSplit;
             description = offerToEdit.description;
         }
     });
@@ -285,7 +303,8 @@
                         <p>Send Offer as NIP04 DM to Ticket Holder</p>
                     </label>
                 </div>
-                <div class="flex gap-x-4 mb-2">
+                <!-- Cancel and Post Offer buttons -->
+                <div class="flex gap-x-4 justify-center mb-2">
                     <button 
                         type="button"
                         class="btn btn-sm sm:btn-md bg-error-300-600-token"
