@@ -12,7 +12,7 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-4 ">
+    <div class="card p-4 w-80">
         <h4 class="h4 text-center mb-2 underline">You accepted the Offer!</h4>
         <strong class='text-error-500'>
             It is strongly recommended you use specialized E2EE(e.g. SimpleX chat)
