@@ -1,6 +1,4 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
-
     import currentUser from '$lib/stores/user';
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
@@ -21,7 +19,6 @@
     import { ReviewType } from "$lib/events/ReviewEvent";
 
     import { goto } from "$app/navigation";
-    import { onDestroy } from "svelte";
 
     const modalStore = getModalStore();
 			
@@ -33,6 +30,7 @@
     export let titleSize: string = 'xl';
     export let titleLink: boolean = true;
     export let shortenDescription = true;
+    let generatedDescription = '';
     export let countAllOffers: boolean = false;
     export let tagCallback: ((tag:string) => void) | null = null;
 
@@ -55,7 +53,7 @@
 
     let statusColor: string = '';
 
-    $: if (currentUser) {
+    $: if ($currentUser) {
         offerStore = wotFilteredOffers;
     }
 
@@ -67,6 +65,29 @@
         bech32ID = ticket.encode()
         npub = nip19.npubEncode(ticket.pubkey);
         popupHover.target = 'popupHover_' + ticket.id;
+
+
+        if (ticket?.description) {
+            if (shortenDescription && ticket.description.length > 80) {
+                generatedDescription =  ticket.description.substring(0, 80) + '...';
+            } else {
+                generatedDescription = ticket.description;
+            }
+
+            const words = generatedDescription.split(' ');
+            let needProcessing = false;
+            for (let i = 0; i < words.length; i++) {
+                if (words[i].length > 25) {
+                    needProcessing = true;
+                    words[i] = words[i].substring(0,24) + ' - ' + words[i].substring(25, words[i].length - 1);
+                }
+            }
+            if (needProcessing) {
+                generatedDescription = words.join(' ')
+            }
+        } else {
+            generatedDescription = 'No description!';
+        }
 
         if (ticket.created_at) {
             // Created_at is in Unix time seconds
@@ -157,24 +178,10 @@
         }
     }
 
-    function generateDescription(): string {
-        if (ticket?.description) {
-            if (shortenDescription && ticket.description.length > 80) {
-                return ticket.description.substring(0, 80) + '...';
-            } else {
-                return ticket.description;
-            }
-        } else return 'No description!';
-    }
-
-    onDestroy(()=> {
-        // console.log('unsubbing from offers of ticket')
-    });
-
 </script>
 
 
-<div class="card bg-surface-200-700-token sm:max-w-[70vw] lg:max-w-[60vw] flex-grow">
+<div class="card bg-surface-200-700-token sm:max-w-[70vw] lg:max-w-[60vw] flex-grow text-wrap">
     {#if ticket}
         <header class="card-header grid grid-cols-[15%_1fr_15%] items-start">
             {#if ticketChat}
@@ -248,7 +255,7 @@
 
         <section class="p-4">
             <div class="text-center text-base md:text-lg">
-                { generateDescription() }
+                { generatedDescription }
             </div>
 
             <hr class="my-4" />
