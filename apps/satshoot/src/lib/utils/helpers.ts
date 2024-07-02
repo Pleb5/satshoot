@@ -45,7 +45,7 @@ import {
     allTickets,
     allOffers,
 } from "$lib/stores/troubleshoot-eventstores";
-import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
+import { DEFAULTRELAYURLS, OUTBOXRELAYURLS } from '$lib/stores/ndk';
 
 
 export async function initializeUser(ndk: NDK) {
@@ -65,7 +65,14 @@ export async function initializeUser(ndk: NDK) {
         myOffers.startSubscription();
         
         // --------- User Profile --------------- //
-        await user.fetchProfile();
+        const profile = await user.fetchProfile(
+            {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY}
+        );
+        // for now loading profile from cache disabled but if reenabled, this bug
+        // that profile returned is a strangely nested object should be handled
+        if (profile) {
+            user.profile = profile;
+        }
         currentUser.set(user);
 
         // fetch users relays. If there are no outbox relays, set default ones
@@ -158,12 +165,19 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
 
 export async function fetchUserOutboxRelays(ndk: NDKSvelte):Promise<NDKEvent | null> {
     const $currentUser = get(currentUser);
+
+    const queryRelays = NDKRelaySet.fromRelayUrls([
+        ...ndk.pool.urls(),
+        ...ndk.outboxPool!.urls()
+    ], ndk);
+
     const relays = await ndk.fetchEvent(
         { kinds: [10002], authors: [$currentUser!.pubkey] },
         { 
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             groupable: false,
-        }
+        },
+        queryRelays,
     );
     console.log('outbox relays', relays)
     return relays;

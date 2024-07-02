@@ -59,7 +59,7 @@ export const clientReviews = derived(
 export const troubleshooterReviews = derived(
     [wot, allReviews],
     ([$wot, $allReviews]) => {
-        console.log('review arrived', get(allReviews))
+        // console.log('review arrived', get(allReviews))
         return $allReviews.filter((r: ReviewEvent) => {
             return (r.type === ReviewType.Troubleshooter && $wot.has(r.pubkey))
         });

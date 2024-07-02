@@ -30,10 +30,10 @@ const reviews = (type === ReviewType.Client
 ); 
 
 $: if($clientReviews) {
-    console.log('client review arrived', $clientReviews)
+    // console.log('client review arrived', $clientReviews)
 }
 $: if($troubleshooterReviews) {
-    console.log('troubleshooter review arrived', $troubleshooterReviews)
+    // console.log('troubleshooter review arrived', $troubleshooterReviews)
 }
 
 let ratings: Map<string, number> | undefined = undefined;

@@ -108,6 +108,8 @@
             toastStore.trigger(t);
 
             if ( !($currentUser?.profile?.lud16) ) {
+                console.log($currentUser?.profile)
+
                 let toastId:string;
                 const t: ToastSettings = {
                     message: 'Set up an LN Address to receive payments!',
@@ -116,7 +118,9 @@
                     action: {
                         label: 'Go to Profile',
                         response: () => {
-                            toastStore.close(toastId);
+                            if (toastId) {
+                                toastStore.close(toastId);
+                            }
                             goto("/" + $currentUser!.npub);
                         },
                     }

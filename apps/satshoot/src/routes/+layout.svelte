@@ -378,7 +378,7 @@
 
     // ----- Notifications ------ //
     $: if($wotFilteredTickets && $myOffers) {
-        console.log('all tickets change:', $wotFilteredTickets)
+        // console.log('all tickets change:', $wotFilteredTickets)
        $wotFilteredTickets.forEach((t: TicketEvent) => {
             $myOffers.forEach((o: OfferEvent) => {
                 if (o.referencedTicketDTag === t.dTag) {
@@ -390,7 +390,7 @@
     }
 
     $: if ($wotFilteredOffers && $myTickets) {
-        console.log('all offers change:', $wotFilteredOffers)
+        // console.log('all offers change:', $wotFilteredOffers)
        $wotFilteredOffers.forEach((o: OfferEvent) => {
             $myTickets.forEach((t: TicketEvent) => {
                 if (o.referencedTicketDTag === t.dTag) {

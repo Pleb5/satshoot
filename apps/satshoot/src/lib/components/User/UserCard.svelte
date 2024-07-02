@@ -3,6 +3,7 @@
     import currentUser from '$lib/stores/user';
     import {
         NDKEvent, 
+        NDKKind, 
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
         type NDKUser,
@@ -27,22 +28,12 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    /**
-     * The npub of the user you want to display a user card for
-     */
     export let npub: string | undefined = undefined;
-
-    /**
-     * The user object of the user you want to display a user card for
-     */
     export let user: NDKUser | undefined = undefined;
-    let profilePromise:Promise<NDKUserProfile | null>;
+    let userProfile:NDKUserProfile;
 
 // Because of the two-way binding AND reactivity, we must ensure to run reactive profile fetch exactly ONCE
     let needProfile = true;
-    let aboutText: string;
-    let userNameText: string;
-    let lud16Text:string;
 
     let editable = false;
     let partOfWoT = false;
@@ -64,83 +55,53 @@
             // console.log('user is undefined, setting user')
             user = $ndk.getUser(opts);
             editable = $currentUser?.npub === npub;
-            // ndk.activeUser is undefined at this point but
-            // user.ndk.activeUser is the logged in user?!?!
-            profilePromise = user.fetchProfile(
-                {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST}
+
+            const profilePromise = user.fetchProfile(
+                {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY},
             );
+
             if ($currentUser && $wot.has(user.pubkey)) {
                 partOfWoT = true;
                 trustColor = 'text-tertiary-500';
                 bgTrustColor = 'bg-tertiary-500';
             }
+
             profilePromise.then((profile:NDKUserProfile | null) => {
-                needProfile = false;
-                console.log('profile promise arrived')
-                aboutText = profile?.about ?? profile?.bio ?? ""; 
-                userNameText = profile?.name ?? profile?.displayName ?? "";
-                lud16Text = profile?.lud16 ?? '';
+                if (profile) {
+                    // console.log('profile promise arrived', profile)
+                    needProfile = false;
+                    // ndk bug here: profile is NOT saved in indexedDb as regualar
+                    // event causing ndk to sometimes load profile in a weird way
+                    userProfile = profile;
+                }
             });
         } catch (e) {
             console.error(`error trying to get user`, { opts }, e);
         }
     }
 
-    // Represents the part of the profile to be updated
-    interface ProfileUpdate {
-       name: boolean;
-       about: boolean,
-       lud16: boolean,
-    }
-
-    async function editProfile(fieldsToUpdate: Partial<ProfileUpdate>) {
+    async function editProfile() {
         const event = new NDKEvent($ndk);
-        event.kind = 0;
-        if (fieldsToUpdate['name']) {
-            event.content = JSON.stringify({
-                name: userNameText,
-                display_name: userNameText,
-                about: user?.profile?.about,
-                bio: user?.profile?.bio,
-                picture: user?.profile?.image,
-                banner: user?.profile?.banner,
-                nip05: user?.profile?.nip05,
-                lud16: user?.profile?.lud16,
-                website: user?.profile?.website,
-            });
-        } else if (fieldsToUpdate['about']) {
-            event.content = JSON.stringify({
-                name: user?.profile?.name,
-                display_name: user?.profile?.displayName,
-                about: aboutText,
-                bio: aboutText,
-                picture: user?.profile?.image,
-                banner: user?.profile?.banner,
-                nip05: user?.profile?.nip05,
-                lud16: user?.profile?.lud16,
-                website: user?.profile?.website,
-            });
-        } else if (fieldsToUpdate['lud16']) {
-            event.content = JSON.stringify({
-                name: user?.profile?.name,
-                display_name: user?.profile?.displayName,
-                about: user?.profile?.about,
-                bio: user?.profile?.bio,
-                picture: user?.profile?.image,
-                banner: user?.profile?.banner,
-                nip05: user?.profile?.nip05,
-                lud16: lud16Text,
-                website: user?.profile?.website,
-            });
-        } else {
-            const t: ToastSettings = {
-                message:`Profile update failed! Reason: No profile param provided for update!`,
-            };
-            toastStore.trigger(t);
-            return;
-        }
-        if (user) {
+        event.kind = NDKKind.Metadata;
+        event.content = JSON.stringify({
+            // ! //
+            name: userProfile.name,
+            displayName: userProfile.name,
+            // ! //
+            about: userProfile.about,
+            bio: userProfile.about,
+            // ! //
+            lud16: userProfile.lud16,
+
+            picture: userProfile?.image,
+            banner: userProfile?.banner,
+            nip05: userProfile?.nip05,
+            website: userProfile?.website,
+        });
+        if ($currentUser) {
             try {
+                $currentUser.profile = userProfile;
+
                 const blastrUrl = 'wss://nostr.mutinywallet.com';
                 const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
                     blastrUrl,
@@ -151,14 +112,11 @@
                 const relaysPublished = await event.publish(broadCastRelaySet);
                 console.log('relaysPublished', relaysPublished)
 
-                profilePromise = user.fetchProfile(
-                    {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY}
-                );
-
                 const t: ToastSettings = {
                     message:`Profile changed!`,
                 };
                 toastStore.trigger(t);
+
             } catch(e) {
                 const t: ToastSettings = {
                     message:`Profile update failed! Reason: ${e}`,
@@ -168,13 +126,13 @@
         }
     }
 
-    // Here we overwrite both name and display_name
     function editName() {
         // If user confirms modal do the editing
         new Promise<string|undefined>((resolve) => {
+            const data = userProfile.name ?? userProfile.displayName ?? "";
             const modalComponent: ModalComponent = {
                 ref: EditProfileModal,
-                props: {dataToEdit: userNameText, fieldName: 'Name'},
+                props: {dataToEdit: data, fieldName: 'Name'},
             };
 
             const modal: ModalSettings = {
@@ -188,19 +146,19 @@
             // We got some kind of response from modal
         }).then((editedData: string|undefined) => {
                 if (editedData) {
-                    userNameText = editedData;
-                    editProfile({name:true});
+                    userProfile.name = editedData;
+                    editProfile();
                 }
             });
 
     }
 
-    // Here we overwrite both about and bio if possible
     function editAbout() {
         new Promise<string|undefined>((resolve) => {
+            const data = userProfile.about ?? userProfile.bio ?? "";
             const modalComponent: ModalComponent = {
                 ref: EditProfileModal,
-                props: {dataToEdit: aboutText, fieldName: 'About'},
+                props: {dataToEdit: data, fieldName: 'About'},
             };
 
             const modal: ModalSettings = {
@@ -214,17 +172,18 @@
             // We got some kind of response from modal
         }).then((editedData: string|undefined) => {
                 if (editedData) {
-                    aboutText = editedData;
-                    editProfile({about:true});
+                    userProfile.about = editedData;
+                    editProfile();
                 }
             });
     }
 
     function editLud16() {
         new Promise<string|undefined>((resolve) => {
+            const data = userProfile.lud16 ?? "";
             const modalComponent: ModalComponent = {
                 ref: EditProfileModal,
-                props: {dataToEdit: lud16Text, fieldName: 'LN Address'},
+                props: {dataToEdit: data, fieldName: 'LN Address'},
             };
 
             const modal: ModalSettings = {
@@ -238,8 +197,8 @@
             // We got some kind of response from modal
         }).then((editedData: string|undefined) => {
                 if (editedData) {
-                    lud16Text = editedData;
-                    editProfile({lud16:true});
+                    userProfile.lud16 = editedData;
+                    editProfile();
                 }
             });
     }
@@ -247,46 +206,30 @@
     // For tooltip    
     const popupWoT: PopupSettings = {
         event: 'click',
-        target: 'popupWoT',
+        target: 'partOfWoT',
         placement: 'bottom'
     };
 
 
 </script>
 
-{#await profilePromise}
-    <section class="w-[300px] md:w-[400px]">
-        <div class="p-4 space-y-4">
-            <div class="grid grid-cols-[20%_1fr] gap-8 items-center">
-                <div class="placeholder-circle animate-pulse" />
-                <div class="placeholder animate-pulse" />
-            </div>
-            <div class="grid grid-cols-3 gap-8">
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-            </div>
-            <div class="grid grid-cols-4 gap-4">
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-            </div>
-        </div>
-    </section>
-{:then userProfile}
+{#if userProfile}
     <div class="card p-4 m-8 mt-4 bg-surface-200-700-token flex-grow sm:max-w-[70vw] lg:max-w-[60vw]">
         <header class="mb-8">
             <div class="grid grid-cols-[auto_1fr_auto] items-center justify-center gap-x-2">
                 <div>
                     <Avatar 
                         class="rounded-full border-white"
-                        src={userProfile?.image 
-                            ?? `https://robohash.org/${user?.pubkey}`}
+                        src={
+                            userProfile.image 
+                                ?? `https://robohash.org/${user?.pubkey}`
+                        }
                     /> 
                 </div>
                 <div class="flex items-center justify-center gap-x-4 ">
-                    <h2 class="h2 text-center font-bold text-lg sm:text-2xl">{userProfile?.name ?? 'Name?'}</h2>
+                    <h2 class="h2 text-center font-bold text-lg sm:text-2xl">
+                        {userProfile.name ?? userProfile.displayName ?? 'Name?'}
+                    </h2>
                     <span>
                         {#if partOfWoT}
                             <i 
@@ -294,7 +237,7 @@
                                 use:popup={popupWoT}
                             >
                             </i>
-                            <div data-popup="popupWoT">
+                            <div data-popup="partOfWoT">
                                 <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
                                     This person is part of your Web of Trust
                                     <div class="arrow {bgTrustColor}" />
@@ -330,7 +273,7 @@
                 </button>
             {/if}
         </div>
-        <div>{userProfile?.bio ?? userProfile?.about ?? '?'}</div>
+        <div>{userProfile.about ?? userProfile.bio ?? '?'}</div>
         <footer class="mt-4">
             <h4 class="h4">Other:</h4>
             <div class="flex flex-col gap-y-1">
@@ -351,9 +294,9 @@
                 </div>
                 <div class="flex items-center gap-x-2">
                     <div>
-                        Nip05: {userProfile?.nip05 ?? '?'}
+                        Nip05: {userProfile.nip05 ?? '?'}
                     </div>
-                    {#if userProfile?.nip05}
+                    {#if userProfile.nip05}
                         <div>
                             <button 
                                 class="btn btn-icon "
@@ -367,7 +310,7 @@
                     {/if}
                 </div>
                 <div class=" flex items-center gap-x-2 ">
-                    <div>LN address(lud16): {userProfile?.lud16 ?? '?'}</div>
+                    <div>LN address(lud16): {userProfile.lud16 ?? '?'}</div>
                     {#if editable}
                         <button on:click={editLud16}>
                             <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
@@ -377,7 +320,25 @@
             </div>
         </footer>
     </div>
-{:catch error}
-    <div class="text-error-400-500-token">Error fetching user: {error}</div>
-{/await}
+{:else}
+    <section class="w-[300px] md:w-[400px]">
+        <div class="p-4 space-y-4">
+            <div class="grid grid-cols-[20%_1fr] gap-8 items-center">
+                <div class="placeholder-circle animate-pulse" />
+                <div class="placeholder animate-pulse" />
+            </div>
+            <div class="grid grid-cols-3 gap-8">
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+            </div>
+            <div class="grid grid-cols-4 gap-4">
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse" />
+            </div>
+        </div>
+    </section>
+{/if}
 
