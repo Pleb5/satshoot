@@ -147,12 +147,13 @@
     }
 
     async function selectCurrentPerson(contact: Contact) {
-        if (currentPerson !== contact.person){
+        if (currentPerson !== contact.person) {
             console.log('selectCurrentPerson')
             if (ticket) {
                 $selectedPerson = contact.person.pubkey + '$' + ticketAddress;
                 console.log($selectedPerson)
             }
+
             currentPerson = contact.person;
             
             people.forEach((c: Contact) => {
@@ -167,6 +168,9 @@
             await tick();
 
             calculateHeights();
+
+            unfilteredMessageFeed = [];
+            updateMessageFeed();
         }
     }
 
@@ -204,15 +208,17 @@
                     relatedToTicket = true;
                 }
             });
+            const senderIsCurrentPerson = (message.pubkey === currentPerson.pubkey);
+            const recipientIsCurrentPerson = (message.tagValue('p') as string === currentPerson.pubkey);
+            const relatedToCurrentPerson = senderIsCurrentPerson || recipientIsCurrentPerson;
 
             return (
-                relatedToTicket &&
-                (message.pubkey === currentPerson.pubkey ||
-                message.tagValue('p') as string === currentPerson.pubkey)
-            )
+                relatedToTicket && relatedToCurrentPerson
+            );
         });
         console.log('feed to decrypt', feed)
         console.log('update message feed')
+
         for (let i = 0; i < feed.length; i++) {
             const dm = feed[i];
             const messageDate = new Date(dm.created_at as number * 1000);
@@ -424,11 +430,9 @@
 
     $: if (!needSetup && $wotFilteredMessageFeed.length > 0) {
         // Add all people to contact list who have messages related to ticket
-        let relatedToTicket = false;
         $wotFilteredMessageFeed.forEach((message: NDKEvent) => {
             message.tags.forEach((tag: NDKTag) => {
                 if (tag[0] === 't' && tag[1] === ticket!.ticketAddress) {
-                    relatedToTicket = true;
                     if (message.pubkey !== $currentUser!.pubkey) {
                         addPerson(message.pubkey);
                     }
@@ -569,7 +573,7 @@
                         style="height: {chatHeight}px;"
                     >
                         {#if $currentUser}
-                            {#each filteredMessageFeed as message}
+                            {#each filteredMessageFeed as message(message.id)}
                                 <MessageCard
                                 avatarRight={message.sender !== $currentUser.pubkey}
                                 message={message}
