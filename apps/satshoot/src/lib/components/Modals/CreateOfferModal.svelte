@@ -17,6 +17,7 @@
     import { navigating } from '$app/stores';
     import tabStore from '$lib/stores/tab-store';
     import { offerTabStore } from "$lib/stores/tab-store";
+    import { insertThousandSeparator } from '$lib/utils/misc';
 
 	// Props
 	/** Exposes parent props to this component. */
@@ -221,7 +222,7 @@
                         class="text-lg max-w-md"
                         type="number"
                         min="0"
-                        max="100_000000"
+                        max="100_000_000"
                         placeholder="Amount"
                         bind:value={amount}
                     />
@@ -270,7 +271,7 @@
                         <div class="underline">You get:</div>
                         <div class="font-bold">
                             {
-                                troubleshooterShare + 
+                                insertThousandSeparator(troubleshooterShare) + 
                                 (pricingMethod ? 'sats/min' : 'sats')
                             }
                         </div>
@@ -279,7 +280,7 @@
                         <div class="underline">You pledge:</div>
                         <div class="font-bold">
                             {
-                                pledgedShare + 
+                                insertThousandSeparator(pledgedShare) + 
                                 (pricingMethod ? 'sats/min' : 'sats')
                             }
                         </div>

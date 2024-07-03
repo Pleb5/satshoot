@@ -73,3 +73,9 @@ export const filterValidPTags = (tags: NDKTag[]) => tags
             return true;
         } catch { return false; }
     });
+
+
+export function insertThousandSeparator(amount: number) {
+    return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+

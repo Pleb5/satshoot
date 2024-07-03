@@ -1,6 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
+    import { type NDKUser } from "@nostr-dev-kit/ndk";
 
     import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
@@ -22,8 +23,11 @@
 
     import { onDestroy } from "svelte";
     import Reputation from "./Reputation.svelte";
-    import { ReviewEvent, ReviewType } from "$lib/events/ReviewEvent";
-    import { clientReviews } from "$lib/stores/reviews";
+    import { ReviewEvent, ReviewType, type TroubleshooterRating } from "$lib/events/ReviewEvent";
+    import UserReviewCard from "../User/UserReviewCard.svelte";
+    import { clientReviews, troubleshooterReviews } from "$lib/stores/reviews";
+
+    import { insertThousandSeparator } from '$lib/utils/misc';
 
     const modalStore = getModalStore();
 
@@ -32,6 +36,10 @@
     export let showTicket: boolean = true;
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
+
+    export let showOfferReview = true;
+    let troubleshooterReview: TroubleshooterRating | null = null;
+    let reviewer: NDKUser;
 
     let ticketFilter: NDKFilter<BTCTroubleshootKind> = {
         kinds: [BTCTroubleshootKind.Ticket],
@@ -52,10 +60,6 @@
     let status = '?';
     let statusColor = 'text-primary-400-500-token';
     let canReviewClient = true;
-
-    function insertThousandSeparator(amount: number) {
-        return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    }
 
     function editMyOffer() {
         if (ticket && offer) {
@@ -194,6 +198,16 @@
                 editOffer = true;
             } else {
                 editOffer = false;
+            }
+
+            if (winner) {
+                $troubleshooterReviews.forEach((review: ReviewEvent) => {
+                    if (review.reviewedEventAddress === offer!.offerAddress) {
+                        troubleshooterReview = review.ratings as TroubleshooterRating;
+                        const reviewerPubkey = review.pubkey;
+                        reviewer = $ndk.getUser({pubkey: reviewerPubkey});
+                    }
+                });
             }
         }
     }
@@ -348,6 +362,9 @@
                         </div>
                     </section>
                 {/if}
+            {/if}
+            {#if showOfferReview && troubleshooterReview && reviewer}
+                <UserReviewCard review={troubleshooterReview} {reviewer} />
             {/if}
         </div>
     {:else}
