@@ -29,90 +29,92 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
 }
 </script>
 
-<div class="card p-2 bg-inherit flex flex-col gap-y-2 text-lg sm:text-xl">
+<div class="card p-2 bg-inherit flex flex-col items-center gap-y-2 text-lg sm:text-xl">
     <div class="h4 text-center underline">Review:</div>
-    <!-- TroubleshooterRating -->
-    {#if 'success' in review}
-        <div class="grid grid-cols-[1fr_auto] gap-x-4">
-            <div class="justify-self-start">
-                Ticket Resolved:
+    <div class="flex flex-col justify-center mb-4">
+        <!-- TroubleshooterRating -->
+        {#if 'success' in review}
+            <div class="grid grid-cols-[1fr_auto] gap-x-8">
+                <div class="justify-self-start">
+                    Ticket Resolved:
+                </div>
+                <div class="flex gap-x-2">
+                    {
+                    ((review)['success'])
+                        ? '👍' : '❌'
+                    }
+                </div>
             </div>
-            <div class="flex gap-x-2">
-                {
-                ((review)['success'])
-                    ? '👍' : '❌'
-                }
+            <div class="grid grid-cols-[1fr_auto] gap-x-8">
+                <div class="justify-self-start">
+                    Expertise:
+                </div>
+                <div class="flex gap-x-2">
+                    {
+                    ((review)['expertise'])
+                        ? '👍' : '❌'
+                    }
+                </div>
             </div>
-        </div>
-        <div class="grid grid-cols-[1fr_auto] gap-x-4">
-            <div class="justify-self-start">
-                Expertise:
+            <div class="grid grid-cols-[1fr_auto] gap-x-8">
+                <div class="justify-self-start">
+                    Availability:
+                </div>
+                <div class="flex gap-x-2">
+                    {
+                    ((review)['availability'])
+                        ? '👍' : '❌'
+                    }
+                </div>
             </div>
-            <div class="flex gap-x-2">
-                {
-                ((review)['expertise'])
-                    ? '👍' : '❌'
-                }
+            <div class="grid grid-cols-[1fr_auto] gap-x-8">
+                <div class="justify-self-start">
+                    Communication:
+                </div>
+                <div class="flex gap-x-2">
+                    {
+                    ((review)['communication'])
+                        ? '👍' : '❌'
+                    }
+                </div>
             </div>
-        </div>
-        <div class="grid grid-cols-[1fr_auto] gap-x-4">
-            <div class="justify-self-start">
-                Availability:
+            <!-- ClientRating -->
+        {:else}
+            <div class="grid grid-cols-[1fr_auto] gap-x-8">
+                <div class="justify-self-start">
+                    Overall Experience:
+                </div>
+                <div class="flex gap-x-2">
+                    {
+                    ((review)['thumb'])
+                        ? '👍' : '❌'
+                    }
+                </div>
             </div>
-            <div class="flex gap-x-2">
-                {
-                ((review)['availability'])
-                    ? '👍' : '❌'
-                }
+            <div class="grid grid-cols-[1fr_auto] gap-x-8">
+                <div class="justify-self-start">
+                    Availability:
+                </div>
+                <div class="flex gap-x-2">
+                    {
+                    ((review)['availability'])
+                        ? '👍' : '❌'
+                    }
+                </div>
             </div>
-        </div>
-        <div class="grid grid-cols-[1fr_auto] gap-x-4">
-            <div class="justify-self-start">
-                Communication:
+            <div class="grid grid-cols-[1fr_auto] gap-x-8">
+                <div class="justify-self-start">
+                    Communication:
+                </div>
+                <div class="flex gap-x-2">
+                    {
+                    ((review)['communication'])
+                        ? '👍' : '❌'
+                    }
+                </div>
             </div>
-            <div class="flex gap-x-2">
-                {
-                ((review)['communication'])
-                    ? '👍' : '❌'
-                }
-            </div>
-        </div>
-        <!-- ClientRating -->
-    {:else}
-        <div class="grid grid-cols-[1fr_auto] gap-x-4">
-            <div class="justify-self-start">
-                Overall Experience:
-            </div>
-            <div class="flex gap-x-2">
-                {
-                ((review)['thumb'])
-                    ? '👍' : '❌'
-                }
-            </div>
-        </div>
-        <div class="grid grid-cols-[1fr_auto] gap-x-4">
-            <div class="justify-self-start">
-                Availability:
-            </div>
-            <div class="flex gap-x-2">
-                {
-                ((review)['availability'])
-                    ? '👍' : '❌'
-                }
-            </div>
-        </div>
-        <div class="grid grid-cols-[1fr_auto] gap-x-4">
-            <div class="justify-self-start">
-                Communication:
-            </div>
-            <div class="flex gap-x-2">
-                {
-                ((review)['communication'])
-                    ? '👍' : '❌'
-                }
-            </div>
-        </div>
-    {/if}
+        {/if}
+    </div>
     <div class="flex gap-x-2 justify-center items-center">
         <Avatar src={reviewerImage} width='w-10'/>
         <div class="text-md sm:text-xl">{reviewerName} wrote:</div>

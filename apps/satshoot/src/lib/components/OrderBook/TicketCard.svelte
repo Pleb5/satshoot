@@ -1,5 +1,6 @@
 <script lang="ts">
     import currentUser from '$lib/stores/user';
+    import { type NDKUser } from '@nostr-dev-kit/ndk';
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
     import { allOffers, wotFilteredOffers } from '$lib/stores/troubleshoot-eventstores';
@@ -16,9 +17,12 @@
     import CloseTicketModal from '$lib/components/Modals/CloseTicketModal.svelte';
 
     import Reputation from "./Reputation.svelte";
-    import { ReviewType } from "$lib/events/ReviewEvent";
+    import { ReviewEvent, ReviewType, type ClientRating } from "$lib/events/ReviewEvent";
 
     import { goto } from "$app/navigation";
+    import { clientReviews } from '$lib/stores/reviews';
+    import UserReviewCard from '../User/UserReviewCard.svelte';
+    import ndk from '$lib/stores/ndk';
 
     const modalStore = getModalStore();
 			
@@ -33,6 +37,7 @@
     let generatedDescription = '';
     export let countAllOffers: boolean = false;
     export let tagCallback: ((tag:string) => void) | null = null;
+    export let showReview = true;
 
     let bech32ID = '';
     let npub: string;
@@ -43,6 +48,9 @@
     let offers: OfferEvent[] = [];
     let offerCount: string = '?';
     let offersAlreadyColor: string = 'text-primary-400-500-token';
+
+    let clientReview: ClientRating | null = null;
+    let reviewer: NDKUser | null = null;
 
     // For context menu: Edit ticket, close ticket, share ticket
     const popupHover: PopupSettings = {
@@ -122,7 +130,16 @@
                 ticketStatus = 'Failed';
                 statusColor = 'text-error-500';
             }
+        }
 
+        if (ticket.status !== TicketStatus.New) {
+            $clientReviews.forEach((review: ReviewEvent) => {
+                if (review.reviewedEventAddress === ticket.ticketAddress) {
+                    clientReview = review.ratings as ClientRating;
+                    const reviewerPubkey = review.pubkey;
+                    reviewer = $ndk.getUser({pubkey: reviewerPubkey});
+                }
+            });
         }
         // console.log('new tickets address: ', ticket.ticketAddress)
     }
@@ -265,7 +282,6 @@
                 <hr class="my-4" />
             {/if}
 
-
             <div class="">
                 <span class="pr-1">Status: </span>
                 <span class="font-bold {statusColor}">{ticketStatus}</span>
@@ -286,7 +302,7 @@
         {/if}
         </section>
         <footer class="card-footer">
-            <div class="flex justify-between">
+            <div class="flex justify-between mb-4">
                 <div class="items-center flex flex-wrap gap-y-1">
                     {#each ticket.tTags as tag }
                         <div class="pr-3 rounded-token">
@@ -303,6 +319,9 @@
                     {/each}
                 </div>
             </div>
+            {#if showReview && clientReview && reviewer}
+                <UserReviewCard review={clientReview} {reviewer} />
+            {/if}
         </footer>
     {:else}
         <section class="w-full">

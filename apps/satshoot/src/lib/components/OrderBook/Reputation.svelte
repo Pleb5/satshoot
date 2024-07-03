@@ -89,7 +89,7 @@ $: if ($currentUser && user && $reviews) {
 </script>
 
 <div class="{baseClasses}">
-    <h3 class="h3 sm:h4 text-center mb-4">Reputation</h3>
+    <h3 class="h3 sm:h4 text-center mb-4">User Reputation</h3>
     {#if user && $reviews}
         <div class="flex flex-grow justify-between mb-2">
             <div class="flex gap-x-2">

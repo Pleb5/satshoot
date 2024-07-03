@@ -327,6 +327,7 @@
                         titleSize={'md md:text-xl'}
                         showChat={false}
                         {countAllOffers}
+                        showReview={false}
                     >
                     </TicketCard>
                 {:else}

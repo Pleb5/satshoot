@@ -172,9 +172,11 @@ onDestroy(()=>{
         </h3>
         {#if $reviewNotifications.length > 0}
             {#each $reviewNotifications as review}
-                <div class="flex justify-center">
-                    <UserReviewCard review={review.ratings} reviewer={review.author} />
-                </div>
+                {#if review.ratings}
+                    <div class="flex justify-center">
+                        <UserReviewCard review={review.ratings} reviewer={review.author} />
+                    </div>
+                {/if}
             {/each}
         {:else}
             <div class="text-center">No New Reviews!</div>
