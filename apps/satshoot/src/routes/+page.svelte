@@ -8,6 +8,12 @@
     import type { NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
+    import ReadyToTroubleshootIcon from "$lib/components/Icons/ReadyToTroubleshootIcon.svelte";
+    import ReadyToTroubleshootModal from "$lib/components/Modals/ReadyToTroubleshootModal.svelte";
+    import { getModalStore } from "@skeletonlabs/skeleton";
+    import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
+
+    const modalStore = getModalStore();
 
     let filterInput = '';
     let filterList: string[] = [];
@@ -49,6 +55,18 @@
             filterList = filterList;
             filterTickets();
         }
+    }
+
+    function readyToTroubleshoot() {
+        const modalComponent: ModalComponent = {
+            ref: ReadyToTroubleshootModal,
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
     }
 
     $: {
@@ -131,4 +149,13 @@
             {/each}
         </div>
     {/if}
+</div>
+<div class="fixed bottom-20 right-8">
+    <button class="btn btn-icon-xl bg-primary-300-600-token"
+        on:click={()=> {
+            readyToTroubleshoot();
+        }}
+    >
+        <ReadyToTroubleshootIcon extraClasses={'text-3xl '}/>
+    </button>
 </div>
