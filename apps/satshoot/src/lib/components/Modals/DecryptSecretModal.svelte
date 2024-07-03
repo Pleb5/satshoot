@@ -141,10 +141,10 @@
                 </span>
             </button>
         </div>
-        <div class="flex justify-evenly">
+        <div class="flex justify-between h-10">
             <button 
                 type="button"
-                class="btn btn-sm sm:btn-md bg-error-300-600-token"
+                class="btn btn-sm px-4 sm:btn-md bg-error-300-600-token"
                 on:click={()=> modalStore.close()}
             >
                 Cancel
@@ -152,7 +152,7 @@
             <button 
                 type="button"
                 on:click={loadSecret}
-                class="btn btn-lg h-14 font-bold bg-success-400-500-token"
+                class="btn btn-lg font-bold bg-success-400-500-token"
                 disabled={!passphrase || decrypting}
             >
                 {#if decrypting}
