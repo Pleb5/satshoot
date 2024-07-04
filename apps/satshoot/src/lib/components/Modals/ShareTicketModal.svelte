@@ -64,7 +64,7 @@
         if (ticket) {
             shareURL = `https://satshoot.com/${ticket.encode()}`
             // Set default text
-            message = `Hey Nostr,\nPlease help me with this #bitcoin issue and I can pay sats for your time:\n\n`;
+            message = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
             message += `${ticket.title}\n\n`;
             message += `${ticket.description}\n\n`;
             message += `Make an offer on this URL:\n\n`;
@@ -98,7 +98,7 @@
                     {copied ? 'Copied!' : 'Copy Ticket URL'}
                 </button>
             </div>
-            <h4 class="h4 text-center mb-2">{'Post Ticket as Text Note'}</h4>
+            <h4 class="h4 text-center mb-2">{'Broadcast Ticket on Nostr'}</h4>
             <div class="flex flex-col justify-center gap-y-4">
                 <textarea 
                     rows="10"
