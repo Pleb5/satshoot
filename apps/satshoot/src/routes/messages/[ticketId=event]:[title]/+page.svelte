@@ -24,12 +24,10 @@
         type NDKUser,
         type NDKSigner,
         type NDKTag,
-
-        type Hexpubkey
-
     } from "@nostr-dev-kit/ndk";
 
     import { idFromNaddr } from '$lib/utils/nip19'
+    import { wordlist } from "@scure/bip39/wordlists/english";
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
     import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
@@ -71,6 +69,7 @@
 
 
     let searchInput = '';
+    let warned = false;
 
     let needSetup = true;
 
@@ -118,12 +117,28 @@
             console.log('relays published', relays)
         }
 	}
+    $: if(currentMessage && !warned) {
+        wordlist.forEach((bip39Word: string) => {
+            if (currentMessage.toLowerCase().includes(bip39Word)) {
+                const t: ToastSettings = {
+                    message: 'WARNING SECRET WORD TYPED IN!\
+                    NEVER SHARE SECRETS IN THIS CHAT!',
+                    autohide: false,
+                    background: 'bg-error-300-600-token',
+                };
+                toastStore.trigger(t);
+                warned = true;
+            }
+        });
+    }
 
 	function onPromptKeyDown(event: KeyboardEvent) {
-		if (['Enter'].includes(event.code)) {
-			event.preventDefault();
-			sendMessage();
-		}
+        if (currentMessage) {
+            if (['Enter'].includes(event.code)) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
 	}
 
     async function addPerson(pubkey: string) {
@@ -623,7 +638,7 @@
                             class="bg-transparent border-0 ring-0 text-sm"
                             name="prompt"
                             id="prompt"
-                            placeholder="Write a message..."
+                            placeholder="DON'T TYPE SECRETS HERE"
                             rows="1"
                             on:keydown={onPromptKeyDown}
                         />
