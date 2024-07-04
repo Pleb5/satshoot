@@ -190,7 +190,7 @@
     });
 
     // For tooltip    
-    const popupPlegdeSplit: PopupSettings = {
+    const popupPledgeSplit: PopupSettings = {
         event: 'click',
         target: 'popupPledgeSplit',
         placement: 'bottom'
@@ -235,7 +235,7 @@
                     <i 
                     class="text-primary-300-600-token fa-solid fa-circle-question text-xl
                     [&>*]:pointer-events-none" 
-                    use:popup={popupPlegdeSplit}
+                    use:popup={popupPledgeSplit}
                 />
                     <div data-popup="popupPledgeSplit">
                         <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
