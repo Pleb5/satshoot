@@ -27,7 +27,7 @@
     const modalStore = getModalStore();
 			
     
-    export let ticket: TicketEvent | null = null;
+    export let ticket: TicketEvent;
     // Can disable chat from outside manually
     export let showChat = true;
     let ticketChat = false;
@@ -61,19 +61,10 @@
 
     let statusColor: string = '';
 
-    $: if ($currentUser) {
-        offerStore = wotFilteredOffers;
-    }
-
-    $: if ($currentUser && showChat) {
-        ticketChat = true;
-    } else ticketChat = false;
-
-    $: if (ticket) {
+    if (ticket) {
         bech32ID = ticket.encode()
         npub = nip19.npubEncode(ticket.pubkey);
         popupHover.target = 'popupHover_' + ticket.id;
-
 
         if (ticket?.description) {
             if (shortenDescription && ticket.description.length > 80) {
@@ -141,8 +132,17 @@
                 }
             });
         }
-        // console.log('new tickets address: ', ticket.ticketAddress)
+    } else {
+        console.log('Ticket undefined!')
     }
+
+    $: if ($currentUser) {
+        offerStore = wotFilteredOffers;
+    }
+
+    $: if ($currentUser && showChat) {
+        ticketChat = true;
+    } else ticketChat = false;
 
     $: if (countAllOffers && ticket && $offerStore) {
         offers = [];
@@ -323,23 +323,6 @@
                 <UserReviewCard review={clientReview} {reviewer} />
             {/if}
         </footer>
-    {:else}
-        <section class="w-full">
-            <div class="p-4 space-y-4">
-                <div class="placeholder animate-pulse" />
-                <div class="grid grid-cols-3 gap-8">
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                </div>
-                <div class="grid grid-cols-4 gap-4">
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                </div>
-            </div>
-        </section>
     {/if}
 </div>
 
