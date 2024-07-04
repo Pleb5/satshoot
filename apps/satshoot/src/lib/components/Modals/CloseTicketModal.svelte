@@ -9,7 +9,6 @@
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { RadioGroup, RadioItem } from '@skeletonlabs/skeleton';
     import { type SvelteComponent, tick } from "svelte";
-    import { NDKEvent } from "@nostr-dev-kit/ndk";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();

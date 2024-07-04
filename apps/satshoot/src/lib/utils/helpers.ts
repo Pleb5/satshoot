@@ -40,12 +40,8 @@ import {
     myOfferFilter,
     myTickets,
     myOffers,
-    allTicketsFilter,
-    allOffersFilter,
-    allTickets,
-    allOffers,
 } from "$lib/stores/troubleshoot-eventstores";
-import { DEFAULTRELAYURLS, OUTBOXRELAYURLS } from '$lib/stores/ndk';
+import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
 
 
 export async function initializeUser(ndk: NDK) {
@@ -99,15 +95,9 @@ export async function initializeUser(ndk: NDK) {
         receivedMessageFilter['#p']! = [user.pubkey];
         sentMessageFilter['authors'] = [user.pubkey];
         
-        // (Re)start every subscription after successful wot and follow recalc
+        // Start message and review subs after successful wot and follow recalc
         messageStore.startSubscription();
         allReviews.startSubscription();
-
-        // allTickets.unsubscribe();
-        // allOffers.unsubscribe();
-        //
-        // allOffers.startSubscription();
-        // allTickets.startSubscription();
     } catch(e) {
         console.log('Could not initialize User. Reason: ', e)
     }
