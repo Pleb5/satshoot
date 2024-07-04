@@ -15,7 +15,7 @@ const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
 function showUserReviewBreakdown() {
     $drawerID = DrawerIDs.UserReviewBreakdown;
     const drawerSettings: DrawerSettings = {
-        id: $drawerID,
+        id: $drawerID.toString(),
         meta: { ratings: reviews, userReviews: userReviews },
         position: 'top',
         bgDrawer: 'bg-surface-300-600-token',
@@ -25,15 +25,15 @@ function showUserReviewBreakdown() {
 </script>
 
 <div class="{baseClasses}">
-    <div class="flex flex-col items-center gap-y-4 text-2xl">
+    <div class="flex flex-col items-center gap-y-4">
         <h3 class="h3 underline">Review Summary</h3>
         {#if reviews && reviews.size > 0}
-            <div class="grid grid-cols-[1fr_auto] gap-x-4">
+            <div class="grid grid-cols-[1fr_auto] gap-x-4 text-lg">
                 <div>{Array.from(reviews.keys())[0]}:</div>
                 <div>{Array.from(reviews.values())[0] + 'X'}</div>
             </div>
             <h3 class="h3 mt-4 mb-2 underline">Exceptional Qualities Received:</h3>
-            <div class="grid grid-cols-[1fr_auto] gap-y-2 gap-x-6 mb-4">
+            <div class="grid grid-cols-[1fr_auto] gap-y-2 gap-x-6 mb-4 text-lg">
                 {#each Array.from(reviews.keys()) as key, i}
                     {#if i > 0}
                         <div>{key}:</div>
