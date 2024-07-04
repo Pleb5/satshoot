@@ -1,9 +1,16 @@
 <script lang="ts">
     import currentUser from '$lib/stores/user';
-    import { type NDKUser } from '@nostr-dev-kit/ndk';
+    import ndk from '$lib/stores/ndk';
+    import { BTCTroubleshootKind } from '$lib/events/kinds';
+    import {
+        type NDKFilter,
+        type NDKUser,
+        type NDKSubscriptionOptions
+    } from '@nostr-dev-kit/ndk';
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
-    import { allOffers, wotFilteredOffers } from '$lib/stores/troubleshoot-eventstores';
+    import { derived } from 'svelte/store';
+    import { wot } from '$lib/stores/wot';
 
     import { nip19 } from "nostr-tools";
 
@@ -22,7 +29,7 @@
     import { goto } from "$app/navigation";
     import { clientReviews } from '$lib/stores/reviews';
     import UserReviewCard from '../User/UserReviewCard.svelte';
-    import ndk from '$lib/stores/ndk';
+    import { onDestroy, onMount } from 'svelte';
 
     const modalStore = getModalStore();
 			
@@ -44,9 +51,36 @@
     let timeSincePosted: string; 
     let ticketStatus: string;
 
-    let offerStore = allOffers;
-    let offers: OfferEvent[] = [];
-    let offerCount: string = '?';
+    let offersFilter: NDKFilter<BTCTroubleshootKind> = {
+        kinds: [BTCTroubleshootKind.Offer],
+        '#a': [ticket.ticketAddress],
+    }
+    const subOptions: NDKSubscriptionOptions = { 
+        closeOnEose: false,
+        groupable: true,
+        groupableDelay: 1000,
+    };
+    const allOffers = $ndk.storeSubscribe<OfferEvent>(
+        offersFilter, subOptions, OfferEvent
+    );
+    const offerStore = derived(
+        [allOffers, wot],
+        ([$allOffers, $wot]) => {
+            const offers = $allOffers.filter((offer: OfferEvent) => {
+                if ($wot.size > 1) {
+                    return $wot.has(offer.pubkey);
+                } else {
+                    // Dont filter when wot is not initialized
+                    return true;
+                }
+            });
+
+            return offers;
+        }
+    );
+    
+    let winnerOffer:OfferEvent | null = null;
+
     let offersAlreadyColor: string = 'text-primary-400-500-token';
 
     let clientReview: ClientRating | null = null;
@@ -78,7 +112,8 @@
             for (let i = 0; i < words.length; i++) {
                 if (words[i].length > 25) {
                     needProcessing = true;
-                    words[i] = words[i].substring(0,24) + ' - ' + words[i].substring(25, words[i].length - 1);
+                    words[i] = words[i].substring(0,24) +
+                        ' - ' + words[i].substring(25, words[i].length - 1);
                 }
             }
             if (needProcessing) {
@@ -136,23 +171,17 @@
         console.log('Ticket undefined!')
     }
 
-    $: if ($currentUser) {
-        offerStore = wotFilteredOffers;
-    }
-
     $: if ($currentUser && showChat) {
         ticketChat = true;
     } else ticketChat = false;
 
-    $: if (countAllOffers && ticket && $offerStore) {
-        offers = [];
-        $offerStore.forEach((offer: OfferEvent) => {
-            if (ticket.dTag === offer.referencedTicketDTag) {
-                offers.push(offer);
-                offerCount = offers.length.toString();
-                offersAlreadyColor = 'text-tertiary-400-500-token';
-            }
-        });
+    $: if ($offerStore) {
+        // ?
+    }
+
+    $: offerCount = $offerStore.length;
+    $: if (offerCount > 0) {
+        offersAlreadyColor = 'text-tertiary-400-500-token';
     }
 
     function shareTicket() {
@@ -183,7 +212,7 @@
         if (ticket) {
             const modalComponent: ModalComponent = {
                 ref: CloseTicketModal,
-                props: {ticket: ticket},
+                props: {ticket: ticket, offer: winnerOffer},
             };
 
             const modal: ModalSettings = {
@@ -194,6 +223,19 @@
 
         }
     }
+
+    onMount(async ()=>{
+        if (ticket.acceptedOfferAddress) {
+            const winnerOfferEvent = await $ndk.fetchEvent(ticket.acceptedOfferAddress);
+            if (winnerOfferEvent) {
+                winnerOffer = OfferEvent.from(winnerOfferEvent);
+            }
+        }
+    });
+
+    onDestroy(()=>{
+        allOffers.empty();
+    });
 
 </script>
 
@@ -297,7 +339,7 @@
                 <div 
                     class="text-md font-bold {offersAlreadyColor} mt-2"
                 >
-                    {'Offers on ticket: ' + offerCount}
+                    {'Offers on ticket: ' + (offerCount > 0 ? offerCount : '?')}
                 </div>
         {/if}
         </section>

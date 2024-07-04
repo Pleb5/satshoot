@@ -32,8 +32,11 @@
     const modalStore = getModalStore();
 
     export let offer: OfferEvent;
-    export let countAllOffers: boolean = false;
-    export let showTicket: boolean = true;
+    export let countAllOffers = false;
+    export let showDescription = true;
+    export let showTicket = true;
+    export let showReputation = true;
+    export let showDetails = true;
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
 
@@ -300,25 +303,29 @@
                 </div>
             </div>
         </div>
-        <div class="text-center text-base md:text-lg p-2">
-            {offer.description}
-        </div>
-        {#if $currentUser && offer.pubkey !== $currentUser.pubkey}
+        {#if showDescription}
+            <div class="text-center text-base md:text-lg p-2">
+                {offer.description}
+            </div>
+        {/if}
+        {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
             <Reputation type={ReviewType.Troubleshooter} user={offer.pubkey}/>
         {/if}
         <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start p-8 pt-2">
-            <div class="">
-                <span class="">Status: </span>
-                <span class="font-bold {statusColor}">{status}</span>
-            </div>
-            <div class="">
-                <span class="">Posted by: </span>
-                <span>
-                    <a class="anchor" href={'/' + npub}>{npub.slice(0, 10) + '...'}</a>
-                </span>
-            </div>
-            <div class="">{timeSincePosted}</div>
+            {#if showDetails}
+                <div class="">
+                    <span class="">Status: </span>
+                    <span class="font-bold {statusColor}">{status}</span>
+                </div>
+                <div class="">
+                    <span class="">Posted by: </span>
+                    <span>
+                        <a class="anchor" href={'/' + npub}>{npub.slice(0, 10) + '...'}</a>
+                    </span>
+                </div>
+                <div class="">{timeSincePosted}</div>
+            {/if}
             {#if showTicket}
                 <hr class="my-2"/>
                 {#if ticket}

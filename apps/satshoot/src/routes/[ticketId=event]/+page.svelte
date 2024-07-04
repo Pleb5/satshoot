@@ -254,8 +254,26 @@
 </script>
 
 <div class="m-6 flex justify-center">
-    <TicketCard {ticket} titleSize='md sm:text-lg' titleLink={false} shortenDescription={false} />
-
+    {#if ticket}
+        <TicketCard {ticket} titleSize='md sm:text-lg' titleLink={false} shortenDescription={false} />
+    {:else}
+        <div class="w-full">
+            <div class="p-4 space-y-4">
+                <div class="placeholder animate-pulse" />
+                <div class="grid grid-cols-3 gap-8">
+                    <div class="placeholder animate-pulse" />
+                    <div class="placeholder animate-pulse" />
+                    <div class="placeholder animate-pulse" />
+                </div>
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="placeholder animate-pulse" />
+                    <div class="placeholder animate-pulse" />
+                    <div class="placeholder animate-pulse" />
+                    <div class="placeholder animate-pulse" />
+                </div>
+            </div>
+        </div>
+    {/if}
 </div>
 
 {#if !myTicket}
