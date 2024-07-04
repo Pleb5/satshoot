@@ -21,7 +21,7 @@
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
 
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import Reputation from "./Reputation.svelte";
     import { ReviewEvent, ReviewType, type TroubleshooterRating } from "$lib/events/ReviewEvent";
     import UserReviewCard from "../User/UserReviewCard.svelte";
@@ -31,7 +31,7 @@
 
     const modalStore = getModalStore();
 
-    export let offer: OfferEvent | null = null;
+    export let offer: OfferEvent;
     export let countAllOffers: boolean = false;
     export let showTicket: boolean = true;
     let ticket: TicketEvent | undefined = undefined;
@@ -44,10 +44,9 @@
     let ticketFilter: NDKFilter<BTCTroubleshootKind> = {
         kinds: [BTCTroubleshootKind.Ticket],
         '#d': [],
-        limit: 1,
     }
+    let dTagOfTicket: string;
     let ticketSubscription: NDKSubscription | undefined = undefined;
-
     let npub: string;
     let timeSincePosted: string; 
     let pricing: string = '';
@@ -60,6 +59,45 @@
     let status = '?';
     let statusColor = 'text-primary-400-500-token';
     let canReviewClient = true;
+
+
+    if (offer) {
+        dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
+        ticketFilter['#d'] = [dTagOfTicket];
+
+        console.log('offer in onMount', offer)
+        switch (offer.pricing) {
+            case Pricing.Absolute:
+                pricing = 'sats';
+                break;
+            case Pricing.SatsPerMin:
+                pricing = 'sats/min';
+                break;
+        }
+
+        npub = nip19.npubEncode(offer.pubkey);
+
+        if (offer.created_at) {
+            // Created_at is in Unix time seconds
+            let seconds = Math.floor(Date.now() / 1000 - offer.created_at);
+            let minutes = Math.floor(seconds / 60);
+            let hours = Math.floor(minutes / 60);
+            let days = Math.floor(hours / 24);
+            if (days >= 1) {
+                timeSincePosted = days.toString() + ' day(s) ago';
+            } else if(hours >= 1) {
+                timeSincePosted = hours.toString() + ' hour(s) ago';
+            } else if(minutes >= 1) {
+                timeSincePosted = minutes.toString() + ' minute(s) ago';
+            } else if(seconds >= 20) {
+                timeSincePosted = seconds.toString() + ' second(s) ago';
+            } else {
+                timeSincePosted = 'just now';
+            }
+        }
+    } else {
+        console.log('offer is null yet!')
+    }
 
     function editMyOffer() {
         if (ticket && offer) {
@@ -97,10 +135,11 @@
                 ticketFilter,
                 {
                     closeOnEose: false,
-                    groupable: false,
+                    groupable: true,
+                    groupableDelay: 1000,
                 }
             );
-            ticketSubscription.on('event', (event: NDKEvent, relay: NDKRelay, sub: NDKSubscription) => {
+            ticketSubscription.on('event', (event: NDKEvent) => {
                 // console.log('ticket event arrived. First seen: ', sub.eventFirstSeen)
                 ticket = TicketEvent.from(event);
                 const winnerId = ticket.acceptedOfferAddress;
@@ -135,80 +174,25 @@
         });
     }
 
-    $: {
-        if (offer) {
-            console.log('offer changed', offer)
-            switch (offer.pricing) {
-                case Pricing.Absolute:
-                    pricing = 'sats';
-                    break;
-                case Pricing.SatsPerMin:
-                    pricing = 'sats/min';
-                    break;
-            }
-
-            npub = nip19.npubEncode(offer.pubkey);
-
-            if (offer.created_at) {
-                // Created_at is in Unix time seconds
-                let seconds = Math.floor(Date.now() / 1000 - offer.created_at);
-                let minutes = Math.floor(seconds / 60);
-                let hours = Math.floor(minutes / 60);
-                let days = Math.floor(hours / 24);
-                if (days >= 1) {
-                    timeSincePosted = days.toString() + ' day(s) ago';
-                } else if(hours >= 1) {
-                    timeSincePosted = hours.toString() + ' hour(s) ago';
-                } else if(minutes >= 1) {
-                    timeSincePosted = minutes.toString() + ' minute(s) ago';
-                } else if(seconds >= 20) {
-                    timeSincePosted = seconds.toString() + ' second(s) ago';
-                } else {
-                    timeSincePosted = 'just now';
-                }
-            }
-
-        
-            const dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
-            // console.log('ticketfilter', ticketFilter)
-            if (!ticketFilter['#d']!.includes(dTagOfTicket)) {
-                if (ticketSubscription) {
-                    console.log('stopping ticket sub...')
-                    ticketSubscription.stop();
-                    ticketSubscription = undefined;
-                }
-
-                ticketFilter['#d'] = [dTagOfTicket];
-
-                startTicketSub();
-
-            } else {
-                // console.log('dont start ticket sub, ticket filter not changed')
-            }
+    // Only allow editing offer if the ticket still accepts offers(no winner yet)
+    $: if (offer && ticket) {
+        if ($currentUser
+            && $currentUser.npub === npub
+            && ticket.status === TicketStatus.New
+        ) {
+            editOffer = true;
         } else {
-            console.log('offer is null yet!')
+            editOffer = false;
         }
 
-        // Only allow editing offer if the ticket still accepts offers(no winner yet)
-        if (offer && ticket) {
-            if ($currentUser
-                && $currentUser.npub === npub
-                && ticket.status === TicketStatus.New
-            ) {
-                editOffer = true;
-            } else {
-                editOffer = false;
-            }
-
-            if (winner) {
-                $troubleshooterReviews.forEach((review: ReviewEvent) => {
-                    if (review.reviewedEventAddress === offer!.offerAddress) {
-                        troubleshooterReview = review.ratings as TroubleshooterRating;
-                        const reviewerPubkey = review.pubkey;
-                        reviewer = $ndk.getUser({pubkey: reviewerPubkey});
-                    }
-                });
-            }
+        if (winner) {
+            $troubleshooterReviews.forEach((review: ReviewEvent) => {
+                if (review.reviewedEventAddress === offer!.offerAddress) {
+                    troubleshooterReview = review.ratings as TroubleshooterRating;
+                    const reviewerPubkey = review.pubkey;
+                    reviewer = $ndk.getUser({pubkey: reviewerPubkey});
+                }
+            });
         }
     }
 
@@ -216,9 +200,11 @@
         $offerMakerToSelect = (offer as OfferEvent).pubkey;
     }
 
+    onMount(()=>{
+        startTicketSub();
+    });
+
     onDestroy(() => {
-        // console.log('Unsubbing from Ticket updates of this Offer')
-        // console.log('onDestroy', offer)
         if (ticketSubscription) {
             ticketSubscription.stop();
         }
