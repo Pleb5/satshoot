@@ -241,11 +241,11 @@
             <h3 class="h3">Add READ Relay</h3>
             <div class="flex gap-x-2">
                 <input class="input w-full text-center" 
-                bind:value={readRelayInputValue}
-                title="relay input (url)" 
-                type="text" 
-                placeholder="Relay URL, without ' wss:// '"
-            />
+                    bind:value={readRelayInputValue}
+                    title="relay input (url)" 
+                    type="text" 
+                    placeholder="Relay URL, without ' wss:// '"
+                />
                 <button 
                     class="btn btn-icon"
                     type="button" 

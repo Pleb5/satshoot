@@ -125,13 +125,13 @@
         <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
         <div class="flex justify-between items-center m-4">
             <input 
-            class="input" 
-            title="Passphrase:" 
-            required
-            type={ showPassword ? 'text' : 'password' }
-            placeholder="Enter Passphrase..."
-            on:input={(event) => passphrase = event.currentTarget.value}
-        />
+                class="input" 
+                title="Passphrase:" 
+                required
+                type={ showPassword ? 'text' : 'password' }
+                placeholder="Enter Passphrase..."
+                on:input={(event) => passphrase = event.currentTarget.value}
+            />
             <button
                 type="button" 
                 class="btn btn-icon-sm"

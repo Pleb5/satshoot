@@ -59,7 +59,6 @@
         let tagValue = event.detail.value;
         // Run validation checks here(dont allow duplicates, max=5 tags) 
         // and modify underlying data structure
-        // Cannot explicitly call submit of InputChips component without nasty workarounds
         // Modify conditions if validity checks ever change
         if (tagList.length < maxTags && tagList.includes(tagValue) === false) {
             tagList = [...tagList, tagValue];
