@@ -9,10 +9,12 @@
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { RadioGroup, RadioItem } from '@skeletonlabs/skeleton';
     import { popup } from '@skeletonlabs/skeleton';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { type SvelteComponent, tick } from "svelte";
     import type { OfferEvent } from "$lib/events/OfferEvent";
-    import OfferCard from "../OrderBook/OfferCard.svelte";
+
+    import { insertThousandSeparator } from '$lib/utils/misc';
+    import PaymentModal from "./PaymentModal.svelte";
+    import { type ModalComponent } from "@skeletonlabs/skeleton";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -21,9 +23,6 @@
     export let parent: SvelteComponent;
     export let ticket: TicketEvent;
     export let offer: OfferEvent | null = null;
-
-    let amount = 0;
-    let pledgedAmount = 0;
 
     let expertise = false;
     let availability = false;
@@ -36,14 +35,8 @@
     let closingStatus: TicketStatus.Resolved | TicketStatus.Failed = TicketStatus.Resolved;
 
     const popupClasses = 'card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto';
+    let errorMessage = '';
      
-    // For tooltip    
-    const popupPledge: PopupSettings = {
-        event: 'click',
-        target: 'popupPledge',
-        placement: 'bottom'
-    };
-
     async function closeTicket() {
         if (ticket) {
             let ticketToPublish = new TicketEvent($ndk);
@@ -86,30 +79,37 @@
                     console.log('published relays', relays);
                 }
 
-                const closedToast: ToastSettings = {
-                    message: 'Ticket Closed!',
-                    timeout: 7000,
-                    background: 'bg-success-300-600-token',
-                };
-                toastStore.trigger(closedToast);
+                // const closedToast: ToastSettings = {
+                //     message: 'Ticket Closed!',
+                //     timeout: 7000,
+                //     background: 'bg-success-300-600-token',
+                // };
+                // toastStore.trigger(closedToast);
+                //
+                // const checkWallet: ToastSettings = {
+                //     message: 'Check your Wallet to make sure the Payment is complete!',
+                //     autohide: false,
+                //     background: 'bg-warning-300-600-token',
+                // };
+                // toastStore.trigger(checkWallet);
 
-                const checkWallet: ToastSettings = {
-                    message: 'Check your Wallet to make sure the Payment is complete!',
-                    autohide: false,
-                    background: 'bg-warning-300-600-token',
-                };
-                toastStore.trigger(checkWallet);
-
+                // Close this modal and Open payment modal
                 modalStore.close();
+
+                const modalComponent: ModalComponent = {
+                    ref: PaymentModal,
+                    props: {ticket: ticket, offer: offer},
+                };
+
+                const modal: ModalSettings = {
+                    type: 'component',
+                    component: modalComponent,
+                };
+                modalStore.trigger(modal);
+
             } catch(e) {
                 console.log(e)
                 closing = false;
-                const t: ToastSettings = {
-                    message: 'Error while closing Ticket!',
-                    timeout: 7000,
-                    background: 'bg-error-300-600-token',
-                };
-                toastStore.trigger(t);
             }
         } else {
             closing = false;
@@ -180,72 +180,6 @@
                         bind:value={reviewText}
                     />
                     </label>
-                    <!-- Offer -->
-                    <div class="h4 sm:h3">Agreed Offer:</div>
-                    <OfferCard 
-                        {offer}
-                        showReputation={false}
-                        showDetails={false}
-                        showTicket={false} 
-                        showOfferReview={false}
-                    />
-                    <!-- Payment -->
-                    <label class="">
-                        <span>Pay for the Troubleshooting</span>
-                        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-                            <div class="input-group-shim">
-                                <i class="fa-brands fa-bitcoin text-3xl"/>
-                            </div>
-                            <input 
-                            class="text-lg max-w-md"
-                            type="number"
-                            min="0"
-                            max="100_000_000"
-                            placeholder="Amount"
-                            bind:value={amount}
-                        />
-                            <div>sats</div>
-                        </div>
-                    </label>
-                    <!-- Pledge support for development -->
-                    <div>
-                        <div>
-                            <span>Support SatShoot</span>
-                            <i 
-                            class="text-primary-300-600-token fa-solid fa-circle-question text-xl
-                            [&>*]:pointer-events-none" 
-                            use:popup={popupPledge}
-                        />
-
-                            <div data-popup="popupPledge">
-                                <div class="{popupClasses}">
-                                    <p>
-                                        Support the development of SatShoot.
-                                    </p>
-                                    <p>
-                                        Your support will be visible as part of your Reputation
-                                    </p>
-                                    <div class="arrow bg-primary-300-600-token" />
-                                </div>
-                            </div>
-                        </div>
-                        <label class="mb-4">
-                            <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-                                <div class="input-group-shim">
-                                    <i class="fa-brands fa-bitcoin text-3xl"/>
-                                </div>
-                                <input 
-                                class="text-lg max-w-md"
-                                type="number"
-                                min="0"
-                                max="100_000_000"
-                                placeholder="Amount"
-                                bind:value={pledgedAmount}
-                            />
-                                <div>sats</div>
-                            </div>
-                        </label>
-                    </div>
                 {/if}
                 <div class="grid grid-cols-[30%_1fr] gap-x-2">
                     <button 
@@ -267,10 +201,13 @@
                                     track="stroke-error-500/30" strokeLinecap="round" width="w-8" />
                             </span>
                         {:else}
-                            <span>Close Ticket</span>
+                            <span class="font-bold">{'Close Ticket' + (offer ? ' and Pay' : '')}</span>
                         {/if}
                     </button>
                 </div>
+                {#if errorMessage}
+                    <div class="text-error-500 text-center">{errorMessage}</div>
+                {/if}
             </div>
         </div>
     {:else}

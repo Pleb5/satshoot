@@ -30,6 +30,7 @@
     import { clientReviews } from '$lib/stores/reviews';
     import UserReviewCard from '../User/UserReviewCard.svelte';
     import { onDestroy, onMount } from 'svelte';
+    import PaymentModal from '../Modals/PaymentModal.svelte';
 
     const modalStore = getModalStore();
 			
@@ -220,8 +221,20 @@
                 component: modalComponent,
             };
             modalStore.trigger(modal);
-
         }
+    }
+
+    async function pay() {
+        const modalComponent: ModalComponent = {
+            ref: PaymentModal,
+            props: {ticket: ticket, offer: winnerOffer},
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
     }
 
     onMount(async ()=>{
@@ -302,6 +315,14 @@
                                         <button class="" on:click={closeTicket}>
                                             <span><i class="fa-solid fa-lock"/></span>
                                             <span class="flex-auto">Close</span>
+                                        </button>
+                                    </li>
+                                {/if}
+                                {#if ticket.isClosed()}
+                                    <li>
+                                        <button class="" on:click={pay}>
+                                            <span><i class="fa-brands fa-bitcoin"/></span>
+                                            <span class="flex-auto">Pay</span>
                                         </button>
                                     </li>
                                 {/if}
