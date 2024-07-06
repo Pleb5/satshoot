@@ -1,13 +1,12 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import { type TroubleshooterRating , ReviewEvent } from "$lib/events/ReviewEvent";
+    import {init, launchPaymentModal, onModalClosed} from "@getalby/bitcoin-connect";
+    import { TicketEvent } from '$lib/events/TicketEvent';
 
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings, ModalSettings } from '@skeletonlabs/skeleton';
+    import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
-    import { RadioGroup, RadioItem } from '@skeletonlabs/skeleton';
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { type SvelteComponent, tick } from "svelte";
@@ -69,10 +68,14 @@
                 if (offer) {
                     const troubleshooterShareMillisats = troubleshooterShare * 1000;
                     const satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
+                    const invoices: string[] = [];
 
                     try {
-                        const troubleshooterInvoice = await $ndk.zap(offer, troubleshooterShareMillisats)
+                        const troubleshooterInvoice = await $ndk.zap(offer, troubleshooterShareMillisats);
                         console.log('troubleshooterInvoice', troubleshooterInvoice)
+                        if (troubleshooterInvoice) {
+                            invoices.push(troubleshooterInvoice);
+                        }
                     } catch {
                         errorMessage = 'Could not zap Troubleshooter: Failed to fetch payment invoice'
                     }
@@ -85,9 +88,30 @@
                             satShootUser, satshootSumMillisats,
                             undefined, [['e', ticket.id]]
                         );
+                        if (satshootInvoice) {
+                            invoices.push(satshootInvoice);
+                        }
                         console.log('satshootInvoice', satshootInvoice)
                     } catch {
                         errorMessage = 'Could not zap SatShoot: Failed to fetch payment invoice'
+                    }
+
+                    for (const invoice of invoices) {
+                        launchPaymentModal({invoice: invoice})
+
+                        await new Promise<void>(resolve => {
+                            const unsub = onModalClosed(() => {
+                                resolve();
+                                unsub();
+                            });
+                        });
+
+                        // TODO: Load invoices like Coracle but with ndk
+                        // load({
+                        //     relays,
+                        //     onEvent: callback,
+                        //     filters: [{kinds: [9735], authors: [zapper.nostrPubkey], "#p": [pubkey], since}],
+                        // })
                     }
                 }
 
@@ -107,6 +131,8 @@
         }
     }
 
+    // Init getalby bitcoin-connect
+    init({appName: 'SatShoot'})
 </script>
 
 {#if $modalStore[0]}

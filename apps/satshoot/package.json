@@ -44,6 +44,7 @@
 		"normalize-url": "^8.0.0",
         "dexie": "^4.0.2",
         "nostr-tools": "~2.5.2",
-        "@scure/bip39": "^1.1.1"
+        "@scure/bip39": "^1.1.1",
+        "@getalby/bitcoin-connect": "^3.2.2"
 	}
 }
