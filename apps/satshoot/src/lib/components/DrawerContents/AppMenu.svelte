@@ -1,8 +1,6 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
     import { get } from 'svelte/store';
 
-    import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import currentUser, { followsUpdated } from '$lib/stores/user';
     import { getDrawerStore, getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
@@ -15,8 +13,6 @@
     import { networkWoTScores, wot } from '$lib/stores/wot';
 
     import {
-        DEFAULTRELAYURLS,
-        OUTBOXRELAYURLS,
         sessionPK 
     } from "$lib/stores/ndk";
 
@@ -25,20 +21,16 @@
         myOfferFilter,
         myTickets,
         myOffers, 
-        allTickets,
-        allOffers,
-        allTicketsFilter,
-        allOffersFilter,
     } from '$lib/stores/troubleshoot-eventstores';
 
+    import { allReviews } from '$lib/stores/reviews';
+    import { allReceivedZaps } from '$lib/stores/zaps';
     import { messageStore } from '$lib/stores/messages';
 
     import { goto } from '$app/navigation';
-    import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
     import { loggedIn } from '$lib/stores/user';
     import UserTicketsIcon from '../Icons/UserTicketsIcon.svelte';
     import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
-    import { allReviews } from '$lib/stores/reviews';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -117,31 +109,9 @@
 
                 messageStore.empty();
                 allReviews.empty();
+                allReceivedZaps.empty();
                 
-                // // Remove all relays from pool
-                // $ndk.pool.urls().forEach((url: string) => {
-                //     $ndk.pool.removeRelay(url);
-                // });
-                //
-                // $ndk.outboxPool?.urls().forEach((url: string) => {
-                //     $ndk.outboxPool?.removeRelay(url);
-                // });
-
                 $currentUser = null;
-
-                // Fresh start
-                // ndk.set(new NDKSvelte({
-                //     enableOutboxModel: true,
-                //     outboxRelayUrls: OUTBOXRELAYURLS,
-                //     blacklistRelayUrls: [],
-                //     explicitRelayUrls: DEFAULTRELAYURLS,
-                //     cacheAdapter: new NDKCacheAdapterDexie({ dbName: 'satshoot-db' }),
-                // }));
-                //
-                // await $ndk.connect();
-                //
-                // allTickets.startSubscription();
-                // allOffers.startSubscription();
 
                 modalStore.close();
 

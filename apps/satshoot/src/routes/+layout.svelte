@@ -34,6 +34,7 @@
         troubleshooterReviews,
     } from "$lib/stores/reviews";
     import { wotFilteredMessageFeed } from "$lib/stores/messages";
+    import { wotFilteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from "$lib/stores/notifications";
 
     import { initializeUser } from '$lib/utils/helpers';
@@ -427,6 +428,12 @@
                     sendNotification(r);
                 }
             });
+        });
+    }
+
+    $: if ($wotFilteredReceivedZaps && $currentUser) {
+        $wotFilteredReceivedZaps.forEach((zap: NDKEvent) => {
+            sendNotification(zap);
         });
     }
 

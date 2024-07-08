@@ -34,7 +34,9 @@ export const sentMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
     limit: 50_000,
 }
 
-export const messageStore = get(ndk).storeSubscribe([receivedMessageFilter, sentMessageFilter], subOptions);
+export const messageStore = get(ndk).storeSubscribe(
+    [receivedMessageFilter, sentMessageFilter], subOptions
+);
 // Filter messages by wot. Question: is this necessary? After login the user 
 // web of trust is set for the [authors] filter anywway so messages should already
 // be filtered on the relay side. Client side filtering might be unnecessary this way.

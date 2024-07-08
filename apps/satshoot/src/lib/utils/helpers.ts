@@ -22,9 +22,13 @@ import {
 } from '../stores/wot';
 
 import {
-    allReviewsFilter,
     allReviews,
 } from '$lib/stores/reviews';
+
+import {
+    allReceivedZapsFilter,
+    allReceivedZaps,
+} from '$lib/stores/zaps';
 
 import { 
     messageStore,
@@ -93,11 +97,13 @@ export async function initializeUser(ndk: NDK) {
         } 
 
         receivedMessageFilter['#p']! = [user.pubkey];
+        allReceivedZapsFilter['#p']! = [user.pubkey];
         sentMessageFilter['authors'] = [user.pubkey];
         
         // Start message and review subs after successful wot and follow recalc
         messageStore.startSubscription();
         allReviews.startSubscription();
+        allReceivedZaps.startSubscription();
     } catch(e) {
         console.log('Could not initialize User. Reason: ', e)
     }
