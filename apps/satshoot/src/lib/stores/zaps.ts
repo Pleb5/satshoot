@@ -8,26 +8,31 @@ import {
     type NDKEvent,
 } from '@nostr-dev-kit/ndk';
 
-export const subOptions: NDKSubscriptionOptions = {
-    closeOnEose: false,
-    groupable: false,
-    autoStart: false,
-};
-
 export const allReceivedZapsFilter: NDKFilter<NDKKind.Zap> = {
     kinds: [NDKKind.Zap],
 };
 
 export const allReceivedZaps = get(ndk).storeSubscribe(
     allReceivedZapsFilter,
-    subOptions,
+    {
+        closeOnEose: false,
+        groupable: false,
+        autoStart: false,
+    },
 );
 
 export const wotFilteredReceivedZaps = derived(
     [wot, allReceivedZaps],
     ([$wot, $allReceivedZaps]) => {
+        // console.log('wotFilteredReceivedZaps', $allReceivedZaps)
         return $allReceivedZaps.filter((z: NDKEvent) => {
-            return $wot.has(z.pubkey);
+            // Check zappee(zap sender, who initiatied the zap request,
+            // NOT the zapper pubkey!
+            const zapper = z.tagValue('P');
+            if (!zapper) {
+                return false;
+            }
+            return $wot.has(zapper);
         });
     }
 );

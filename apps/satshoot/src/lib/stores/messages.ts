@@ -43,7 +43,7 @@ export const messageStore = get(ndk).storeSubscribe(
 export const wotFilteredMessageFeed = derived(
     [messageStore, wot],
     ([$messageStore, $wot]) => {
-        console.log('wotFilteredMessageFeed', wotFilteredMessageFeed)
+        // console.log('wotFilteredMessageFeed', wotFilteredMessageFeed)
         const feed = $messageStore.filter((message: NDKEvent) => {
             if (
                 // Filter messages if they are in the web of trust

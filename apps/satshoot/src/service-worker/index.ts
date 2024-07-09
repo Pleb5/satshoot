@@ -67,9 +67,16 @@ async function openNotificationWindow(tag: string) {
         (tag === NDKKind.EncryptedDirectMessage.toString());
     const reviewNotification = 
         (tag === NDKKind.Review.toString());
+    const receivedZapNotification = 
+        (tag === NDKKind.Zap.toString());
 
-    if(!ticketNotification && !offerNotification
-        && !messageNotification && !reviewNotification) {
+    if(
+        !ticketNotification 
+        && !offerNotification
+        && !messageNotification 
+        && !reviewNotification
+        && !receivedZapNotification
+    ) {
         console.log('This type of notification is not implemented yet!')
         return;
     }

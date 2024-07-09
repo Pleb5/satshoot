@@ -67,14 +67,14 @@
                 //     background: 'bg-warning-300-600-token',
                 // };
                 // toastStore.trigger(checkWallet);
-                if (troubleshooterShare === 0) {
+
+                const troubleshooterShareMillisats = troubleshooterShare * 1000;
+                const satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
+                if ( (troubleshooterShareMillisats + satshootSumMillisats) === 0) {
                     errorMessage = 'Cannot pay 0 sats!';
                     paying = false;
                     return;
                 }
-
-                const troubleshooterShareMillisats = troubleshooterShare * 1000;
-                const satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
                 const invoices: Map<string, string> = new Map();
                 const paid: Map<string, boolean> = new Map();
                 paid.set('troubleshooter', false);
@@ -86,15 +86,16 @@
                 const satshootZapConfig = await satShootUser.getZapConfiguration();
 
                 try {
-
-                    const troubleshooterInvoice = await $ndk.zap(
-                        offer,
-                        troubleshooterShareMillisats,
-                        'satshoot',
-                    );
-                    console.log('troubleshooterInvoice', troubleshooterInvoice)
-                    if (troubleshooterInvoice) {
-                        invoices.set('troubleshooter', troubleshooterInvoice);
+                    if (troubleshooterShareMillisats > 0) {
+                        const troubleshooterInvoice = await $ndk.zap(
+                            offer,
+                            troubleshooterShareMillisats,
+                            'satshoot',
+                        );
+                        console.log('troubleshooterInvoice', troubleshooterInvoice)
+                        if (troubleshooterInvoice) {
+                            invoices.set('troubleshooter', troubleshooterInvoice);
+                        }
                     }
                 } catch {
                     errorMessage = 'Could not zap Troubleshooter: Failed to fetch payment invoice'
@@ -203,7 +204,7 @@
                         background: 'bg-success-300-600-token',
                     };
                     toastStore.trigger(t);
-                } else {
+                } else if (troubleshooterShareMillisats > 0) {
                     const t: ToastSettings = {
                         message: 'Troubleshooter Payment might have failed!',
                         autohide: false,
@@ -218,7 +219,7 @@
                         background: 'bg-success-300-600-token',
                     };
                     toastStore.trigger(t);
-                } else {
+                } else if (satshootSumMillisats > 0) {
                     const t: ToastSettings = {
                         message: 'SatShoot Payment might have failed!',
                         autohide: false,

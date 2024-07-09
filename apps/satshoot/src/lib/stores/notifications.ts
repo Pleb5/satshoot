@@ -23,6 +23,7 @@ export const seenIDs: Writable<Set<string>> = localStorageStore(
 );
 
 export const notifications = writable<NDKEvent[]>([]);
+
 export const ticketNotifications = derived(
     [notifications],
     ([$notifications]) => {
@@ -37,6 +38,7 @@ export const ticketNotifications = derived(
         return tickets;
     }
 );
+
 export const offerNotifications = derived(
     [notifications],
     ([$notifications]) => {
@@ -51,6 +53,7 @@ export const offerNotifications = derived(
         return offers;
     }
 );
+
 export const messageNotifications = derived(
     [notifications, currentUser],
     ([$notifications, $currentUser]) => {
@@ -67,6 +70,7 @@ export const messageNotifications = derived(
         return messages;
     }
 );
+
 export const reviewNotifications = derived(
     [notifications],
     ([$notifications]) => {
@@ -79,6 +83,37 @@ export const reviewNotifications = derived(
         filteredEvents.forEach((r: NDKEvent)=>{reviews.push(ReviewEvent.from(r))});
 
         return reviews;
+    }
+);
+
+export const receivedZapsNotifications = derived(
+    [notifications],
+    ([$notifications]) => {
+        // Check for zap kinds and if zap has an 'a' tag referring to an Offer
+        const filteredEvents = $notifications.filter((notification: NDKEvent) => {
+            const zapKind = (notification.kind === NDKKind.Zap);
+            if (!zapKind) {
+                return false;
+            }
+            let offerEventZapped = false;
+            const aTag = notification.tagValue('a');
+            if (aTag) {
+                const kindFromATag = aTag.split(':')[0];
+                if (kindFromATag) {
+                    offerEventZapped = (
+                        parseInt(kindFromATag) === BTCTroubleshootKind.Offer
+                    );
+
+                    if (!offerEventZapped) return false;
+                }
+            } else {
+                console.log('notification atag undefined', notification)
+            }
+
+            return true;
+        });
+
+        return filteredEvents;
     }
 );
 
@@ -116,6 +151,10 @@ export async function sendNotification(event: NDKEvent) {
             title = 'Someone left a Review!';
             body = '🔔 Check your Notifications!';
             tag = NDKKind.Review.toString();
+        } else if (event.kind === NDKKind.Zap) {
+            title = 'Payment arrived!';
+            body = '🔔 Check your Notifications!';
+            tag = NDKKind.Zap.toString();
         }
 
         const activeSW = await getActiveServiceWorker()

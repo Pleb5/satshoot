@@ -34,11 +34,13 @@
     export let offer: OfferEvent;
     export let countAllOffers = false;
     export let showDescription = true;
-    export let showTicket = true;
     export let showReputation = true;
     export let showDetails = true;
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
+    export let showTicket = true;
+    export let showTicketReputation = true;
+    export let showTicketReview = true;
 
     export let showOfferReview = true;
     let troubleshooterReview: TroubleshooterRating | null = null;
@@ -334,7 +336,8 @@
                         titleSize={'md md:text-xl'}
                         showChat={false}
                         {countAllOffers}
-                        showReview={false}
+                        showReputation={showTicketReputation}
+                        showReview={showTicketReview}
                     >
                     </TicketCard>
                 {:else}

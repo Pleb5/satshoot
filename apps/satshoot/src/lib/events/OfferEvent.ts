@@ -34,10 +34,10 @@ export class OfferEvent extends NDKEvent {
         this._amount = parseInt(this.tagValue("amount") ?? '0');
         this.tags.forEach((tag:NDKTag) => {
             if (tag[0] === "zap") {
-                console.log('offer zap tag:', tag)
+                // console.log('offer zap tag:', tag)
                 if (tag[1] === SatShootPubkey) {
                     this._pledgeSplit = parseInt(tag[3] ?? '0');
-                    console.log('offer pledge split:', this._pledgeSplit)
+                    // console.log('offer pledge split:', this._pledgeSplit)
                     // Enforce range
                     if (this._pledgeSplit < 0 || this._pledgeSplit > 100) {
                         this._pledgeSplit = 0;

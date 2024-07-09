@@ -6,18 +6,20 @@ import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
 import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 import MessageCard from "$lib/components/User/MessageCard.svelte";
 import {
-        notificationsEnabled,
-        notifications,
-        ticketNotifications,
-        offerNotifications,
-        messageNotifications,
-        reviewNotifications,
+    notificationsEnabled,
+    notifications,
+    ticketNotifications,
+    offerNotifications,
+    messageNotifications,
+    reviewNotifications,
+    receivedZapsNotifications,
 } from "$lib/stores/notifications";
 import { type Message } from "$lib/stores/messages";
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
 import { onDestroy } from "svelte";
     import { BTCTroubleshootKind } from "$lib/events/kinds";
+    import ZapCard from "$lib/components/User/ZapCard.svelte";
 
 let messagesLoading = false;
 
@@ -37,6 +39,11 @@ $: if ($messageNotifications){
 $: if ($reviewNotifications) {
     console.log('review notifs', $reviewNotifications);
 }
+
+$: if ($receivedZapsNotifications) {
+    console.log('received a zap notification', $receivedZapsNotifications);
+}
+
 // Decrypt incoming DM-s
 $: if ($messageNotifications) {
     for (const dm of $messageNotifications) {
@@ -113,6 +120,18 @@ onDestroy(()=>{
 {#if $currentUser}
     <h3 class="h3 text-center mb-4 underline">Notifications</h3>
     <div class="grid grid-cols-1 gap-y-2 mb-8">
+        <h3 class="h3 text-center underline my-4">
+            Zaps
+        </h3>
+        {#if $receivedZapsNotifications.length > 0}
+            {#each $receivedZapsNotifications as zap}
+                <div class="flex justify-center">
+                    <ZapCard {zap} />
+                </div>
+            {/each}
+            {:else}
+            <div class="text-center">No New Zaps!</div>
+        {/if}
         <h3 class="h3 text-center underline my-4">
             Tickets
         </h3>

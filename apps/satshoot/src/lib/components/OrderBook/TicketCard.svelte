@@ -45,6 +45,7 @@
     let generatedDescription = '';
     export let countAllOffers: boolean = false;
     export let tagCallback: ((tag:string) => void) | null = null;
+    export let showReputation = true;
     export let showReview = true;
 
     let bech32ID = '';
@@ -318,7 +319,7 @@
                                         </button>
                                     </li>
                                 {/if}
-                                {#if ticket.isClosed()}
+                                {#if ticket.status !== TicketStatus.New}
                                     <li>
                                         <button class="" on:click={pay}>
                                             <span><i class="fa-brands fa-bitcoin"/></span>
@@ -340,7 +341,7 @@
 
             <hr class="my-4" />
              
-            {#if $currentUser && ticket.pubkey !== $currentUser.pubkey}
+            {#if showReputation && $currentUser && ticket.pubkey !== $currentUser.pubkey}
                 <Reputation type={ReviewType.Client} user={ticket.pubkey}/>
                 <hr class="my-4" />
             {/if}

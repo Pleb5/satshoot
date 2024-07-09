@@ -88,7 +88,7 @@ export function userReviews(source: Hexpubkey, target: Hexpubkey, type: ReviewTy
         }
     });
 
-    console.log('user reviews', userReviews)
+    // console.log('user reviews', userReviews)
     return userReviews;
 }
 
@@ -131,13 +131,13 @@ export function aggregateRatings(target: Hexpubkey, type: ReviewType): Map<strin
         }
     }
 
-    console.log('filtered target reviews', $reviews)
+    // console.log('filtered target reviews', $reviews)
 
     let aggregatedAverage = 0;
     let numberOfReviews = 0;
     for (let i = 0; i < $reviews.length; i++){
         const r = $reviews[i];
-        console.log('rating: ', r)
+        // console.log('rating: ', r)
         // currentUser must exist here bc reivews depend on wot
         // and wot on currentUser(init  user)
         // Users own reviews are counted 4X in the aggregatedAverage score
@@ -152,7 +152,7 @@ export function aggregateRatings(target: Hexpubkey, type: ReviewType): Map<strin
 
         if (type === ReviewType.Client) {
             const rating = r.ratings as ClientRating;
-            console.log('rating: ', rating)
+            // console.log('rating: ', rating)
             if (rating.thumb) {
                 const currentCount = ratings.get(thumbString) ?? 0;
                 ratings.set(thumbString, currentCount + 1);
@@ -167,7 +167,7 @@ export function aggregateRatings(target: Hexpubkey, type: ReviewType): Map<strin
             }
         } else {
             const rating = r.ratings as TroubleshooterRating;
-            console.log('rating: ', rating)
+            // console.log('rating: ', rating)
             if (rating.success) {
                 const currentCount = ratings.get(successString) ?? 0;
                 ratings.set(successString, currentCount + 1);
@@ -189,7 +189,7 @@ export function aggregateRatings(target: Hexpubkey, type: ReviewType): Map<strin
 
     aggregatedAverage /= numberOfReviews;
     ratings.set("average", aggregatedAverage);
-    console.log('ratings', ratings)
+    // console.log('ratings', ratings)
 
     return ratings;
 }

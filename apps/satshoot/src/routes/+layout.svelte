@@ -406,8 +406,9 @@
             // This is somewhat wasteful: If there was a nice way to attach
             // a callback on uniquely new events in NDKEventStore-s
             // We would not have to iterate over the whole array
-            if (dm.pubkey !== $currentUser.pubkey)
-            sendNotification(dm);
+            if (dm.pubkey !== $currentUser.pubkey) {
+                sendNotification(dm);
+            }
         });
     }
 

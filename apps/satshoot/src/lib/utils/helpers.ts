@@ -97,8 +97,8 @@ export async function initializeUser(ndk: NDK) {
         } 
 
         receivedMessageFilter['#p']! = [user.pubkey];
-        allReceivedZapsFilter['#p']! = [user.pubkey];
         sentMessageFilter['authors'] = [user.pubkey];
+        allReceivedZapsFilter['#p']! = [user.pubkey];
         
         // Start message and review subs after successful wot and follow recalc
         messageStore.startSubscription();
