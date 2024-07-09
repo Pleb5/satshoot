@@ -182,7 +182,12 @@ $: {
                 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
                     {#each pendingOffers as offer, i (offer.id) }
                         <div class="flex justify-center {showPendingOffer[i] ? '' : 'hidden'}">
-                            <OfferCard {offer} countAllOffers={true} enableChat={true}/>
+                            <OfferCard
+                                {offer}
+                                countAllOffers={true}
+                                enableChat={true}
+                            >
+                            </OfferCard>
                         </div>
                     {/each}
                 </div>

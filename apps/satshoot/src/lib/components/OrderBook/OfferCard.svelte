@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
-    import { type NDKUser } from "@nostr-dev-kit/ndk";
+    import { NDKKind, zapInvoiceFromEvent, type NDKUser } from "@nostr-dev-kit/ndk";
 
     import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
@@ -28,6 +28,8 @@
     import { clientReviews, troubleshooterReviews } from "$lib/stores/reviews";
 
     import { insertThousandSeparator } from '$lib/utils/misc';
+    import type { NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
+    import { wot } from "$lib/stores/wot";
 
     const modalStore = getModalStore();
 
@@ -45,6 +47,9 @@
     export let showOfferReview = true;
     let troubleshooterReview: TroubleshooterRating | null = null;
     let reviewer: NDKUser;
+
+    let paid = 0;
+    let paymentStore: NDKEventStore<NDKEvent>;
 
     let ticketFilter: NDKFilter<BTCTroubleshootKind> = {
         kinds: [BTCTroubleshootKind.Ticket],
@@ -100,6 +105,16 @@
                 timeSincePosted = 'just now';
             }
         }
+
+        paymentStore = $ndk.storeSubscribe(
+            {kinds: [NDKKind.Zap], '#a': [offer.offerAddress]},
+            {
+                closeOnEose: false,
+                groupable: true,
+                groupableDelay: 1500,
+                autoStart: true
+            }
+        );
     } else {
         console.log('offer is null yet!')
     }
@@ -179,6 +194,18 @@
         });
     }
 
+    $: if ($paymentStore) {
+        paid = 0;
+        $paymentStore.forEach((zap: NDKEvent)=>{
+            const zappee = zap.tagValue('P')
+            if (zappee && $wot.has(zappee)) {
+                const zapInvoice = zapInvoiceFromEvent(zap);
+                if (zapInvoice && zapInvoice.amount) {
+                    paid += Math.round(zapInvoice.amount / 1000);            }
+            }
+        });
+    }
+
     // Only allow editing offer if the ticket still accepts offers(no winner yet)
     $: if (offer && ticket) {
         if ($currentUser
@@ -213,6 +240,7 @@
         if (ticketSubscription) {
             ticketSubscription.stop();
         }
+        paymentStore.empty();
     });
 
     // For context menu: Edit ticket, close ticket, share ticket
@@ -304,6 +332,11 @@
                     <div class="arrow bg-primary-300-600-token" />
                 </div>
             </div>
+        </div>
+        <div class="flex justify-center items-center gap-x-2">
+            <h4 class="h5 md:h4 col-start-2 text-center text-success-500">
+                {'Paid: ' + (insertThousandSeparator(paid) ?? '?') + ' sats'}
+            </h4>
         </div>
         {#if showDescription}
             <div class="text-center text-base md:text-lg p-2">
