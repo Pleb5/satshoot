@@ -13,6 +13,7 @@ import currentUser from "./user";
 
 import { getActiveServiceWorker } from "$lib/utils/helpers";
 import { goto } from "$app/navigation";
+import { troubleshootZap } from "../utils/helpers.ts";
 
 export const notificationsEnabled: Writable<boolean> = localStorageStore('notificationsEnabled', false) ;
 
@@ -91,26 +92,7 @@ export const receivedZapsNotifications = derived(
     ([$notifications]) => {
         // Check for zap kinds and if zap has an 'a' tag referring to an Offer
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            const zapKind = (notification.kind === NDKKind.Zap);
-            if (!zapKind) {
-                return false;
-            }
-            let offerEventZapped = false;
-            const aTag = notification.tagValue('a');
-            if (aTag) {
-                const kindFromATag = aTag.split(':')[0];
-                if (kindFromATag) {
-                    offerEventZapped = (
-                        parseInt(kindFromATag) === BTCTroubleshootKind.Offer
-                    );
-
-                    if (!offerEventZapped) return false;
-                }
-            } else {
-                console.log('notification atag undefined', notification)
-            }
-
-            return true;
+            return troubleshootZap(notification);
         });
 
         return filteredEvents;

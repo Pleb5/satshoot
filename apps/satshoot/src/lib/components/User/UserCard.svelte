@@ -249,7 +249,7 @@
                                 use:popup={popupWoT}
                             >
                             </i>
-                            <div data-popup="popupWoT">
+                            <div data-popup="partOfWoT">
                                 <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
                                     This person is NOT part of your Web of Trust!
                                     <div class="arrow {bgTrustColor}" />

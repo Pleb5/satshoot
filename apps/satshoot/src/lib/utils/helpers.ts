@@ -1,6 +1,7 @@
 import { 
     type NDKSigner, 
     type NDKEvent,
+    NDKKind,
     NDKRelayList,
     NDKRelaySet,
     NDKSubscriptionCacheUsage,
@@ -46,6 +47,7 @@ import {
     myOffers,
 } from "$lib/stores/troubleshoot-eventstores";
 import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
+import { BTCTroubleshootKind } from '../events/kinds.ts';
 
 
 export async function initializeUser(ndk: NDK) {
@@ -196,3 +198,27 @@ export async function broadcastRelayList(ndk: NDKSvelte, readRelayUrls: string[]
     console.log('relays posted to:', relaysPosted)
 }
 
+export function troubleshootZap(zap: NDKEvent): boolean {
+    const zapKind = (zap.kind === NDKKind.Zap);
+    if (!zapKind) {
+        return false;
+    }
+
+    const aTag = zap.tagValue('a');
+
+    if (!aTag) return false;
+
+    const kindFromATag = aTag.split(':')[0];
+
+    if (!kindFromATag) return false;
+
+    if (kindFromATag) {
+        const offerEventZapped = (
+            parseInt(kindFromATag) === BTCTroubleshootKind.Offer
+        );
+
+        if (!offerEventZapped) return false;
+    }
+
+    return true;
+}

@@ -227,7 +227,9 @@
                     };
                     toastStore.trigger(t);
                 }
-                modalStore.close();
+                if (modalStore) {
+                    modalStore.close();
+                }
             } catch(e) {
                 console.log(e)
                 paying = false;
