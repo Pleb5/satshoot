@@ -1,6 +1,15 @@
 # https://satshoot.com
-# 0.0.2
-- 
+## 0.0.2
+- Rebranded to SatShoot
+- Web of Trust based Spam Filtering
+- Outbox Model
+- 'Qualitative Thumb system'-based Reviews
+- Broadcast troubleshooter availability
+- App menu options and feature accessibility reworked
+- Payments with public Zaps
+- Notifications reworked.
+    - Zaps, Review, DM, Ticket and Offer notifications
+
 
 ## 0.0.1
 -   Nostr connect(nsecBunker), NIP07 Browser Extension and Local key Login
@@ -18,5 +27,5 @@
 -   Browse 'My Tickets' and 'My Offers'
 -   Basic notifications (change in Tickets/Offers of interest to user)
 -   Caching events locally using ndk-cache-dexie
--   Post Feedback on BTC Troubleshoot for logged in users
+-   Post Feedback on SatShoot for logged in users
 -   Dark/Light theme
