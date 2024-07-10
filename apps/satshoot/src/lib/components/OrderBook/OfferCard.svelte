@@ -333,11 +333,13 @@
                 </div>
             </div>
         </div>
-        <div class="flex justify-center items-center gap-x-2">
-            <h4 class="h5 md:h4 col-start-2 text-center text-success-500">
-                {'Paid: ' + (insertThousandSeparator(paid) ?? '?') + ' sats'}
-            </h4>
-        </div>
+        {#if winner}
+            <div class="flex justify-center items-center gap-x-2">
+                <h4 class="h5 md:h4 col-start-2 text-center text-success-500">
+                    {'Paid: ' + (insertThousandSeparator(paid) ?? '?') + ' sats'}
+                </h4>
+            </div>
+        {/if}
         {#if showDescription}
             <div class="text-center text-base md:text-lg p-2">
                 {offer.description}
