@@ -9,7 +9,6 @@
         wotFilteredMessageFeed,
         offerMakerToSelect,
         selectedPerson,
-        type Message,
     } from "$lib/stores/messages";
     
     import { onMount, tick } from "svelte";
@@ -81,8 +80,7 @@
     let winner = '';
 
     // Filtered messages by person AND searchText 
-	let unfilteredMessageFeed: Message[] = [];
-	let filteredMessageFeed: Message[] = [];
+	let filteredMessageFeed: NDKEvent[] = [];
 
 	// For some reason, eslint thinks ScrollBehavior is undefined...
 	// eslint-disable-next-line no-undef
@@ -120,6 +118,7 @@
     $: if(currentMessage && !warned) {
         wordlist.forEach((bip39Word: string) => {
             if (currentMessage.toLowerCase().includes(bip39Word)) {
+                console.log('current message', currentMessage)
                 const t: ToastSettings = {
                     message: 'WARNING SECRET WORD TYPED IN!\
                     NEVER SHARE SECRETS IN THIS CHAT!',
@@ -184,31 +183,9 @@
 
             calculateHeights();
 
-            unfilteredMessageFeed = [];
+            filteredMessageFeed = [];
             updateMessageFeed();
         }
-    }
-
-    function generateCurrentFeed() {
-        // filter by the search bar
-        searchText();
-
-        // Smooth scroll to bottom
-        // Timeout prevents race condition
-        if (elemChat) {
-            setTimeout(() => {
-                scrollChatBottom('smooth');
-            }, 0);
-        }
-    }
-
-    function searchText() {
-        filteredMessageFeed = unfilteredMessageFeed.filter((message: Message) => {
-            if (message.message.includes(searchInput)) {
-                return true;
-            }
-        });
-        console.log('decrypted, filtered MessageFeed', filteredMessageFeed)
     }
 
     async function updateMessageFeed() {
@@ -216,92 +193,46 @@
         // or it was sent from the user to the current partner. We need both
         // We also filter messages related to the ticket the conversation is about
         console.log('wotFilteredMessageFeed', $wotFilteredMessageFeed)
-        const feed = $wotFilteredMessageFeed.filter((message: NDKEvent) =>{
+        filteredMessageFeed = $wotFilteredMessageFeed.filter((message: NDKEvent) =>{
             let relatedToTicket = false;
             message.tags.forEach((tag: NDKTag) => {
                 if (tag[0] === 't' && tag[1] === ticket!.ticketAddress) {
                     relatedToTicket = true;
                 }
             });
-            const senderIsCurrentPerson = (message.pubkey === currentPerson.pubkey);
-            const recipientIsCurrentPerson = (message.tagValue('p') as string === currentPerson.pubkey);
-            const relatedToCurrentPerson = senderIsCurrentPerson || recipientIsCurrentPerson;
+
+            const senderIsCurrentPerson = 
+                (message.pubkey === currentPerson.pubkey);
+            const recipientIsCurrentPerson = 
+                (message.tagValue('p') as string === currentPerson.pubkey);
+            const relatedToCurrentPerson = 
+                senderIsCurrentPerson || recipientIsCurrentPerson;
 
             return (
                 relatedToTicket && relatedToCurrentPerson
             );
         });
-        console.log('feed to decrypt', feed)
+
+        filteredMessageFeed.reverse();
+
         console.log('update message feed')
-
-        for (let i = 0; i < feed.length; i++) {
-            const dm = feed[i];
-            const messageDate = new Date(dm.created_at as number * 1000);
-            // Time is shown in local time zone
-            const dateString = messageDate.toLocaleString();
-
-            // the message iteself is decrypted later, init with empty string for now
-            const message = {
-                id: dm.id,
-                sender: dm.pubkey,
-                recipient: dm.tagValue('p') as string,
-                timestamp: dateString,
-                message: '',
-            };
-
-            // We dont decrypt already decrypted messages
-            let alreadySeen = false;
-            for (const m of unfilteredMessageFeed) {
-                if (dm.id === m.id) {
-                    alreadySeen = true;
-                    console.log('already seen')
-                    break;
-                }
-            }
-            if (alreadySeen) continue;
-
-            // We insert the new decrypted message in the right place
-            // that is exactly the index where it was in the original feed
-            // because that is inherently ordered by time by ndk-svelte store
-            // This insert is important to happen BEFORE decryption to avoid
-            // race conditions arising from waiting on the decryption
-            // Also, ndk has the newest event at the start and we need it to be at the end...
-            unfilteredMessageFeed.splice(unfilteredMessageFeed.length - i, 0, message);
-
-
-            // ECDH DEMANDS THAT DECRYPTION ALWAYS USES THE PUBKEY OF THE OTHER PARTY
-            // BE IT THE SENDER OR THE RECIPIENT OF THE ACTUAL MESSAGE
-            // 
-            // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
-
-            // ALWAYS USE OTHER USER REGARDLESS OF WHO SENT THE MESSAGE
-            console.log('start decryption', dm)
-            try {
-                const peerPubkey = (dm.tagValue('p') === $currentUser!.pubkey
-                    ? dm.pubkey : dm.tagValue('p')
-                ) as string;
-                addPerson(peerPubkey);
-
-                const peerUser = $ndk.getUser({pubkey: peerPubkey});
-
-                // There is no way for now to know if a DM-s content is already
-                // decrypted other than trying to decrypt and fail deep down
-                // in the process. Might be a good idea to keep track of this
-                // info in ndk events where stuff could be encrypted/decrypted
-                const decryptedDM = await ($ndk.signer as NDKSigner).decrypt(peerUser, dm.content); 
-
-                console.log('decrypted message:', decryptedDM)
-                message.message = decryptedDM;
-            } catch (e) {
-                console.log(e);
-                console.trace();
-            }
+        // Try to add new people to contacts
+        for (const dm of filteredMessageFeed) {
+            const peerPubkey = (
+                dm.tagValue('p') === $currentUser!.pubkey
+                ? dm.pubkey : dm.tagValue('p')
+            ) as string;
+            addPerson(peerPubkey);
         }
-        console.log('decrypted feed', unfilteredMessageFeed)
 
-        // Update the message feed
         if (currentPerson) {
-            generateCurrentFeed();
+            // Smooth scroll to bottom
+            // Timeout prevents race condition
+            if (elemChat) {
+                setTimeout(() => {
+                    scrollChatBottom('smooth');
+                }, 0);
+            }
         }
     }
 
@@ -543,7 +474,6 @@
                                 type="search"
                                 placeholder="Search Messages..."
                                 bind:value={searchInput}
-                                on:keyup={searchText}
                             />
                         </header>
                         <!-- Contact List -->
@@ -590,9 +520,10 @@
                         {#if $currentUser}
                             {#each filteredMessageFeed as message(message.id)}
                                 <MessageCard
-                                avatarRight={message.sender !== $currentUser.pubkey}
-                                message={message}
-                            />
+                                    avatarRight={message.pubkey !== $currentUser.pubkey}
+                                    {message}
+                                    searchText={searchInput}
+                                />
                             {/each}
                         {:else}
                             <div class="p-4 space-y-4">
@@ -627,8 +558,6 @@
                             type="search"
                             placeholder="Search Messages..."
                             bind:value={searchInput}
-                            on:keyup={searchText}
-                            on:search={searchText}
                         />
                     </div>
                     <div class="input-group input-group-divider grid-cols-[1fr_auto] rounded-container-token">

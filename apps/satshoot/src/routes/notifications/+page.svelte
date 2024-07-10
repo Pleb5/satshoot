@@ -1,7 +1,5 @@
 <script lang="ts">
-import ndk from "$lib/stores/ndk";
 import currentUser from "$lib/stores/user";
-import type { NDKSigner, NDKTag } from "@nostr-dev-kit/ndk";
 import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
 import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 import MessageCard from "$lib/components/User/MessageCard.svelte";
@@ -14,18 +12,12 @@ import {
     reviewNotifications,
     receivedZapsNotifications,
 } from "$lib/stores/notifications";
-import { type Message } from "$lib/stores/messages";
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
 import { onDestroy } from "svelte";
-    import { BTCTroubleshootKind } from "$lib/events/kinds";
-    import ZapCard from "$lib/components/User/ZapCard.svelte";
-
-let messagesLoading = false;
+import ZapCard from "$lib/components/User/ZapCard.svelte";
 
 const toastStore = getToastStore();
-
-let messages: Message[] = [];
 
 $: if ($ticketNotifications) {
     console.log('ticket notifs', $ticketNotifications);
@@ -46,60 +38,7 @@ $: if ($receivedZapsNotifications) {
 
 // Decrypt incoming DM-s
 $: if ($messageNotifications) {
-    for (const dm of $messageNotifications) {
-        const messageDate = new Date(dm.created_at as number * 1000);
-        // Time is shown in local time zone
-        const dateString = messageDate.toLocaleString();
-
-        // We dont decrypt already decrypted messages
-        let alreadySeen = false;
-        for (const m of messages) {
-            if (dm.id === m.id) {
-                alreadySeen = true;
-                console.log('already seen')
-                break;
-            }
-        }
-        if (alreadySeen) continue;
-        let tTag = '';
-        dm.tags.forEach((tag: NDKTag) => {
-            if (tag[0] === 't' && tag[1].includes(BTCTroubleshootKind.Ticket.toString())) {
-                tTag = tag[1];
-            }
-        });
-        const message = {
-            id: dm.id,
-            sender: dm.pubkey,
-            recipient: dm.tagValue('p') as string,
-            timestamp: dateString,
-            message: '',
-            ticket: tTag,
-        };
-        // We insert the new decrypted message in the right place
-        // that is exactly the index where it was in the original feed
-        // because that is inherently ordered by time by ndk-svelte store
-        // This insert is important to happen BEFORE decryption to avoid
-        // race conditions arising from waiting on the decryption
-        messages.splice(0, 0, message);
-
-        // Decryption
-        try {
-            const peerPubkey = (dm.tagValue('p') === $currentUser!.pubkey
-                ? dm.pubkey : dm.tagValue('p')
-            ) as string;
-            const peerUser = $ndk.getUser({pubkey: peerPubkey});
-            ($ndk.signer as NDKSigner).decrypt(peerUser, dm.content).then((decryptedDM: string)=>{
-                console.log('decrypted message:', decryptedDM)
-                message.message = decryptedDM;
-                messages = messages;
-            }); 
-        } catch (e) {
-            // Don't bother if it fails. DM could already be decrypted which
-            // makes the double-decryption attempts fail
-            console.log(e);
-            console.trace();
-        }
-    };
+    console.log('received message notification')
 }
 
 $: if (!$notificationsEnabled) {
@@ -159,33 +98,15 @@ onDestroy(()=>{
         <h3 class="h3 text-center underline my-4">
             Messages
         </h3>
-        {#if messages.length > 0}
-            {#each messages as message}
+        {#if $messageNotifications.length > 0}
+            {#each $messageNotifications as message}
                 <div class="flex justify-center">
                     <MessageCard {message} />
                 </div>
             {/each}
-        {:else if messagesLoading}
-            <div class="p-4 space-y-4">
-                <div class="placeholder animate-pulse" />
-                <div class="grid grid-cols-3 gap-8">
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                </div>
-                <div class="grid grid-cols-4 gap-4">
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                    <div class="placeholder animate-pulse" />
-                </div>
-            </div>
             {:else}
             <div class="text-center">No New Messages!</div>
         {/if}
-        <!-- {#if messages.length > 0} -->
-        <!-- {:else} -->
-        <!-- {/if} -->
         <h3 class="h3 text-center underline my-4">
             Reviews
         </h3>

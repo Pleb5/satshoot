@@ -3,21 +3,14 @@ import {
     type NDKFilter,
     type NDKSubscriptionOptions,
     NDKKind, 
-    type NDKEvent 
+    type NDKEvent, 
+    type NDKTag
 } from '@nostr-dev-kit/ndk';
 
 import { get, writable, derived } from "svelte/store";
 import { wot } from "./wot";
+import { BTCTroubleshootKind } from "$lib/events/kinds";
 
-
-export interface Message {
-    id: string;
-    sender: string,
-    recipient: string;
-    timestamp: string;
-    message: string;
-    ticket?: string;
-}
 
 export const subOptions: NDKSubscriptionOptions = { closeOnEose: false };
 
@@ -45,14 +38,20 @@ export const wotFilteredMessageFeed = derived(
     ([$messageStore, $wot]) => {
         // console.log('wotFilteredMessageFeed', wotFilteredMessageFeed)
         const feed = $messageStore.filter((message: NDKEvent) => {
-            if (
-                // Filter messages if they are in the web of trust
-                $wot.has(message.pubkey) 
-            ) {
-                return true;
-            } 
+            let relatedToTicket = false;
+            message.tags.forEach((tag: NDKTag) => {
+                if (tag[0] === 't' && tag[1]
+                        .includes(BTCTroubleshootKind.Ticket.toString())
+                ) {
+                    relatedToTicket = true;
+                }
+            });
 
-            return false;
+            if (!relatedToTicket) return false;
+
+            if ( !($wot.has(message.pubkey)) ) return false;
+
+            return true;
         });
 
         return feed;
