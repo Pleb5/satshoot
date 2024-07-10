@@ -27,14 +27,14 @@
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
 
-    import { nip19 } from "nostr-tools";
-    
     import {
         NDKRelay,
         type NDKFilter,
         type NDKSubscriptionOptions,
         NDKEvent,
-        NDKSubscription 
+        NDKSubscription, 
+        NDKUser
+
     } from "@nostr-dev-kit/ndk";
 
     import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
@@ -57,7 +57,7 @@
     }
     let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
     let alreadySubscribedToOffers = false;
-    let npub: string | undefined = undefined;
+    let user: NDKUser | undefined = undefined;
 
     let myTicket = false;
     let offerToEdit: OfferEvent | undefined = undefined;
@@ -90,7 +90,6 @@
             '#d': [dTag],
         };
 
-
         console.log('connected, setting up')
         ticketSubscription = $ndk.subscribe(ticketFilter, subOptions);
         ticketSubscription.on('event', (event: NDKEvent) => {
@@ -103,7 +102,7 @@
             }
             ticket = TicketEvent.from(event);
             console.log('ticket', ticket)
-            npub = nip19.npubEncode(ticket.pubkey);
+            user = $ndk.getUser({pubkey: ticket.pubkey});
 
             // Scroll to top as soon as ticket arrives
             const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
@@ -125,23 +124,6 @@
                 offerStore = $ndk.storeSubscribe<OfferEvent>(
                     offersFilter, subOptions, OfferEvent
                 );
-
-                // Although the store has all the events we could check with svelte
-                // reactive statements but this way we don't have to iterate though
-                // the whole store to find the newest added offer. ndk svelte
-                // stores events in chronological order, not in the order ndk saw the events.
-                // Fine-grained reactivity is still better achieved with a regular subscription
-                // The problem is that the storeSubscribe leaves the subscription UNDEFINED 
-                // and only assigns value in startSubscription function
-                // This makes it impossible to reliably attach a fine-grained Callback
-                // on an ndk-svelte store because some events arrive before the callback registration
-                // THIS DOES NOT WORK AT THE MOMENT BUT SHOULD IF NDK SUPPORTED Fine-grained
-                // SUBS ALONG WITH THE STORE SUBSCRIPTION
-                // offerStore.subscription?.on('event', (event: NDKEvent) => {
-                //     const offer = OfferEvent.from(event);
-                //     if (offer.pubkey === $currentUser?.pubkey) {
-                //     }
-                // });
             }
         });
     };
@@ -305,7 +287,31 @@
     <!-- User -->
     <h2 class="font-bold text-center text-lg sm:text-2xl mt-4" >Posted by:</h2>
     <div class="flex justify-center">
-        <UserCard npub={npub} />
+        <div class="m-4">
+            {#if user}
+                <UserCard {user} />
+            {:else}
+                <section class="w-[300px] md:w-[400px]">
+                    <div class="p-4 space-y-4">
+                        <div class="grid grid-cols-[20%_1fr] gap-8 items-center">
+                            <div class="placeholder-circle animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                        </div>
+                        <div class="grid grid-cols-3 gap-8">
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                        </div>
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse" />
+                        </div>
+                    </div>
+                </section>
+            {/if}
+        </div>
     </div>
 {/if}
 <!-- Offers on Ticket -->

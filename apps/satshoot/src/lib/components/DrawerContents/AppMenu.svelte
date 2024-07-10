@@ -140,7 +140,9 @@
                     <a 
                         class="justify-start"
                         href={ "/" + $currentUser.npub}
-                        on:click={()=>{drawerStore.close()}}
+                        on:click={()=>{
+                            drawerStore.close();
+                        }}
                     >
                         <span class="w-6 text-center">
                             <i class="fa-solid fa-user" />

@@ -12,8 +12,6 @@
 
     import { wot } from '$lib/stores/wot';
 
-    import { connected } from "$lib/stores/ndk";
-
     import EditProfileModal from "../Modals/EditProfileModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
@@ -24,59 +22,39 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
+    import { onMount } from "svelte";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    export let npub: string | undefined = undefined;
-    export let user: NDKUser | undefined = undefined;
+    export let user: NDKUser;
     let userProfile:NDKUserProfile;
+    $: npub = user.npub;
+    $: editable = ($currentUser?.npub === npub);
+    $: avatarImage = `https://robohash.org/${user.pubkey}`;
 
-// Because of the two-way binding AND reactivity, we must ensure to run reactive profile fetch exactly ONCE
-    let needProfile = true;
+    $: partOfWoT = ($wot.has(user.pubkey));
+    $: trustColor = partOfWoT ? 'text-tertiary-500' : 'text-error-500';
+    $: bgTrustColor = partOfWoT ? 'bg-tertiary-500' : 'bg-error-500';
 
-    let editable = false;
-    let partOfWoT = false;
-    let trustColor = 'text-error-500';
-    let bgTrustColor = 'bg-error-500';
-
-    $: if (npub || $currentUser) {
-        // if user changed the npub reload profile
-        needProfile = true;
+    $: if (user) {
+        console.log('setProfile')
+        setProfile();
     }
 
-    // Some strange behavior around ndk, user and ndk.activeUser when recursively
-    // assigning ndk.getUser(npub) -> user.ndk = this -> user.ndk.activeUser = ...?
-    // user.ndk.activeUser.ndk = .... ???!!! infinte recursion of assignments?
-    $: if (npub && needProfile && $connected) {
-        console.log('setting user and profile')
-        let opts = { npub: npub };
-        try {
-            // console.log('user is undefined, setting user')
-            user = $ndk.getUser(opts);
-            editable = $currentUser?.npub === npub;
+    onMount(async () => {
+        // await setProfile();
+        console.log('onmount')
+    });
 
-            const profilePromise = user.fetchProfile(
-                {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY},
-            );
-
-            if ($currentUser && $wot.has(user.pubkey)) {
-                partOfWoT = true;
-                trustColor = 'text-tertiary-500';
-                bgTrustColor = 'bg-tertiary-500';
+    async function setProfile() {
+        const profile = await user.fetchProfile();
+        //     {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY},
+        if (profile) {
+            userProfile = profile;
+            if (userProfile.image) {
+                avatarImage = userProfile.image;
             }
-
-            profilePromise.then((profile:NDKUserProfile | null) => {
-                if (profile) {
-                    // console.log('profile promise arrived', profile)
-                    needProfile = false;
-                    // ndk bug here: profile is NOT saved in indexedDb as regualar
-                    // event causing ndk to sometimes load profile in a weird way
-                    userProfile = profile;
-                }
-            });
-        } catch (e) {
-            console.error(`error trying to get user`, { opts }, e);
         }
     }
 
@@ -213,132 +191,108 @@
 
 </script>
 
-{#if userProfile}
-    <div class="card p-4 m-8 mt-4 bg-surface-200-700-token flex-grow sm:max-w-[70vw] lg:max-w-[60vw]">
-        <header class="mb-8">
-            <div class="grid grid-cols-[auto_1fr_auto] items-center justify-center gap-x-2">
-                <div>
-                    <Avatar 
-                        class="rounded-full border-white"
-                        src={
-                            userProfile.image 
-                                ?? `https://robohash.org/${user?.pubkey}`
-                        }
-                    /> 
-                </div>
-                <div class="flex items-center justify-center gap-x-4 ">
-                    <h2 class="h2 text-center font-bold text-lg sm:text-2xl">
-                        {userProfile.name ?? userProfile.displayName ?? 'Name?'}
-                    </h2>
-                    <span>
-                        {#if partOfWoT}
-                            <i 
-                                class="fa-solid fa-circle-check text-2xl {trustColor}"
-                                use:popup={popupWoT}
-                            >
-                            </i>
-                            <div data-popup="partOfWoT">
-                                <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
-                                    This person is part of your Web of Trust
-                                    <div class="arrow {bgTrustColor}" />
-                                </div>
-                            </div>
-                        {:else}
-                            <i 
-                                class="fa-solid fa-circle-question text-2xl {trustColor}"
-                                use:popup={popupWoT}
-                            >
-                            </i>
-                            <div data-popup="partOfWoT">
-                                <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
-                                    This person is NOT part of your Web of Trust!
-                                    <div class="arrow {bgTrustColor}" />
-                                </div>
-                            </div>
-                        {/if}
-                    </span>
-                </div>
-                {#if editable}
-                    <button class="justify-self-end" on:click={editName}>
-                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
-                    </button>
-                {/if}
+<div class="card p-4 bg-surface-200-700-token flex-grow ">
+    <header class="mb-8">
+        <div class="grid grid-cols-[auto_1fr_auto] items-center justify-center gap-x-2">
+            <div>
+                <Avatar 
+                class="rounded-full border-white"
+                src={avatarImage}
+            /> 
             </div>
-        </header>
-        <div class="flex items-center gap-x-2">
-            <h4 class="h4">About</h4>
+            <div class="flex items-center justify-center gap-x-4 ">
+                <h2 class="h2 text-center font-bold text-lg sm:text-2xl">
+                    {userProfile?.name ?? userProfile?.displayName ?? npub.substring(0,10)}
+                </h2>
+                <span>
+                    {#if partOfWoT}
+                        <i 
+                            class="fa-solid fa-circle-check text-2xl {trustColor}"
+                            use:popup={popupWoT}
+                        >
+                        </i>
+                        <div data-popup="partOfWoT">
+                            <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
+                                This person is part of your Web of Trust
+                                <div class="arrow {bgTrustColor}" />
+                            </div>
+                        </div>
+                    {:else}
+                        <i 
+                            class="fa-solid fa-circle-question text-2xl {trustColor}"
+                            use:popup={popupWoT}
+                        >
+                        </i>
+                        <div data-popup="partOfWoT">
+                            <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
+                                This person is NOT part of your Web of Trust!
+                                <div class="arrow {bgTrustColor}" />
+                            </div>
+                        </div>
+                    {/if}
+                </span>
+            </div>
             {#if editable}
-                <button on:click={editAbout}>
-                    <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
+                <button class="justify-self-end" on:click={editName}>
+                    <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
                 </button>
             {/if}
         </div>
-        <div>{userProfile.about ?? userProfile.bio ?? '?'}</div>
-        <footer class="mt-4">
-            <h4 class="h4">Other:</h4>
-            <div class="flex flex-col gap-y-1">
-                <div class="flex items-center gap-x-2">
-                    <div>Npub: {npub?.substring(0,20) + '...'}</div>
-                    {#if npub}
-                        <div>
-                            <button 
-                                class="btn btn-icon"
-                                use:clipboard={npub}
-                            >
-                                <span>
-                                    <i class='fa-regular fa-copy'/>
-                                </span>
-                            <button>
-                        </div>
-                    {/if}
-                </div>
-                <div class="flex items-center gap-x-2">
-                    <div>
-                        Nip05: {userProfile.nip05 ?? '?'}
-                    </div>
-                    {#if userProfile.nip05}
-                        <div>
-                            <button 
-                                class="btn btn-icon "
-                                use:clipboard={userProfile.nip05}
-                            >
-                                <span>
-                                    <i class='fa-regular fa-copy'/>
-                                </span>
-                            <button>
-                        </div>
-                    {/if}
-                </div>
-                <div class=" flex items-center gap-x-2 ">
-                    <div>LN address(lud16): {userProfile.lud16 ?? '?'}</div>
-                    {#if editable}
-                        <button on:click={editLud16}>
-                            <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
-                        </button>
-                    {/if}
-                </div>
-            </div>
-        </footer>
+    </header>
+    <div class="flex items-center gap-x-2 ">
+        <h4 class="h4">About</h4>
+        {#if editable}
+            <button on:click={editAbout}>
+                <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
+            </button>
+        {/if}
     </div>
-{:else}
-    <section class="w-[300px] md:w-[400px]">
-        <div class="p-4 space-y-4">
-            <div class="grid grid-cols-[20%_1fr] gap-8 items-center">
-                <div class="placeholder-circle animate-pulse" />
-                <div class="placeholder animate-pulse" />
+    <div class="max-w-80">
+        {userProfile?.about ?? userProfile?.bio ?? '?'}
+    </div>
+    <footer class="mt-4">
+        <h4 class="h4">Other:</h4>
+        <div class="flex flex-col gap-y-1">
+            <div class="flex items-center gap-x-2">
+                <div>Npub: {npub?.substring(0,20) + '...'}</div>
+                {#if npub}
+                    <div>
+                        <button 
+                            class="btn btn-icon"
+                            use:clipboard={npub}
+                        >
+                            <span>
+                                <i class='fa-regular fa-copy'/>
+                            </span>
+                            <button>
+                    </div>
+                {/if}
             </div>
-            <div class="grid grid-cols-3 gap-8">
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
+            <div class="flex items-center gap-x-2">
+                <div>
+                    Nip05: {userProfile?.nip05 ?? '?'}
+                </div>
+                {#if userProfile?.nip05}
+                    <div>
+                        <button 
+                            class="btn btn-icon "
+                            use:clipboard={userProfile.nip05}
+                        >
+                            <span>
+                                <i class='fa-regular fa-copy'/>
+                            </span>
+                            <button>
+                    </div>
+                {/if}
             </div>
-            <div class="grid grid-cols-4 gap-4">
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
-                <div class="placeholder animate-pulse" />
+            <div class=" flex items-center gap-x-2 ">
+                <div>LN address(lud16): {userProfile?.lud16 ?? '?'}</div>
+                {#if editable}
+                    <button on:click={editLud16}>
+                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
+                    </button>
+                {/if}
             </div>
         </div>
-    </section>
-{/if}
-
+    </footer>
+</div>
