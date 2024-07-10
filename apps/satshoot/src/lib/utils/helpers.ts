@@ -90,8 +90,12 @@ export async function initializeUser(ndk: NDK) {
         const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
 
         let wotArray: string[] = Array.from(get(wot));
+        const $networkWoTScores = get(networkWoTScores);
 
-        if ( ($followsUpdated < updateDelay) || !(get(networkWoTScores)) ) {
+        if ( ($followsUpdated < updateDelay)
+            || !($networkWoTScores)
+            || $networkWoTScores.size === 0
+        ) {
             // console.log('wot outdated, updating...')
             await updateFollowsAndWotScore(ndk);
             // console.log('wot updated')
