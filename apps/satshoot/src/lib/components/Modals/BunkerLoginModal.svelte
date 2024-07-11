@@ -5,6 +5,7 @@
     import { bunkerNDK } from '$lib/stores/ndk';
     import { loggedIn } from '$lib/stores/user';
     import { NDKPrivateKeySigner, NDKNip46Signer } from '@nostr-dev-kit/ndk';
+    import { bunkerPerms } from '$lib/utils/misc';
 
     import {nip19} from 'nostr-tools';
     
@@ -107,9 +108,18 @@
                 // NDK parses 'remoteUserOrToken' using a '#' as a separator
                 // 'Token is mistakenly called like this though. It is the SECRET according to nip46 spec'
                 connectionParams += '#' + secret;
+            } else {
+                // splitting this without a secret gives an empty string
+                connectionParams += '##'
             }
 
-            const remoteSigner = new NDKNip46Signer($bunkerNDK, connectionParams, localSigner);
+            connectionParams += '#' + bunkerPerms.join(',');
+
+            const remoteSigner = new NDKNip46Signer(
+                $bunkerNDK,
+                connectionParams,
+                localSigner
+            );
             // remoteSigner.on('authUrl', (url) => { 
             //     window.open(url, "auth", "width=600, height=600"); 
             // });
@@ -189,7 +199,7 @@
                         placeholder="bunker://..."
                     />
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between h-10">
                 <button 
                     type="button"
                     class="btn btn-sm sm:btn-md bg-error-300-600-token"
@@ -199,7 +209,7 @@
                 </button>
                 <button 
                     type="submit"
-                    class="btn btn-lg h-14 font-bold bg-success-400-500-token"
+                    class="btn btn-lg font-bold bg-success-400-500-token"
                     disabled={!token || attemptingConnection}
                 >
                     {#if attemptingConnection}

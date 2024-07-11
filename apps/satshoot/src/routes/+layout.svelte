@@ -283,7 +283,6 @@
                     const localBunkerKey = localStorage.getItem("bunkerLocalSignerPK");
                     const bunkerTargetNpub = localStorage.getItem("bunkerTargetNpub");
                     const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
-                    const bunkerConnectionSecret = localStorage.getItem('bunkerConnectionSecret');
 
                     if (localBunkerKey && bunkerTargetNpub && bunkerRelayURLsString) {
                         const bunkerRelayURLs = bunkerRelayURLsString.split(',');
@@ -295,14 +294,13 @@
                         await $bunkerNDK.connect();
                         console.log("ndk connected to specified bunker relays");
                         
-                        let connectionParams = bunkerTargetNpub;
-                        if (bunkerConnectionSecret) {
-                            connectionParams += '#' + bunkerConnectionSecret;
-                        }
 
                         const localSigner = new NDKPrivateKeySigner(localBunkerKey);
-                        const targetUser = $ndk.getUser({ npub: bunkerTargetNpub });
-                        const remoteSigner = new NDKNip46Signer($bunkerNDK, targetUser!.pubkey, localSigner);
+                        const remoteSigner = new NDKNip46Signer(
+                            $bunkerNDK,
+                            bunkerTargetNpub,
+                            localSigner
+                        );
                         $ndk.signer = remoteSigner;
 
                         await remoteSigner.blockUntilReady();

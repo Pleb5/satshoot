@@ -1,10 +1,28 @@
 import {nip19} from 'nostr-tools';
-import type { 
-    NDKTag,
-    Hexpubkey,
+import { 
+    type NDKTag,
+    type Hexpubkey,
+    NDKKind,
 } from '@nostr-dev-kit/ndk';
+import { BTCTroubleshootKind } from '$lib/events/kinds';
 
 export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
+
+export const bunkerPerms = [
+    'get_public_key',
+    'get_relays',
+    'nip04_encrypt',
+    'nip04_decrypt',
+    'sign_event:' + BTCTroubleshootKind.Ticket.toString(),
+    'sign_event:' + BTCTroubleshootKind.Offer.toString(),
+    'sign_event:' + NDKKind.Metadata.toString(),
+    'sign_event:' + NDKKind.Text.toString(),
+    'sign_event:' + NDKKind.EncryptedDirectMessage.toString(),
+    'sign_event:' + NDKKind.Review.toString(),
+    'sign_event:' + NDKKind.ZapRequest.toString(),
+    'sign_event:' + NDKKind.RelayList.toString(),
+    'sign_event:' + NDKKind.HttpAuth.toString(),
+]
 
 interface SetSerializer {
       stringify: (set: Set<string>) => string,
