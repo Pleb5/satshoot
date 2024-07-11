@@ -1,6 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from '$lib/stores/user';
+    import { Nip05 } from '@nostr-dev-kit/ndk-svelte-components';
     import {
         NDKEvent, 
         NDKKind, 
@@ -22,7 +23,6 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { onMount } from "svelte";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -32,24 +32,32 @@
     $: npub = user.npub;
     $: editable = ($currentUser?.npub === npub);
     $: avatarImage = `https://robohash.org/${user.pubkey}`;
+    $: nip05 = userProfile?.nip05;
+    let validNIP05 = false;
 
     $: partOfWoT = ($wot.has(user.pubkey));
     $: trustColor = partOfWoT ? 'text-tertiary-500' : 'text-error-500';
     $: bgTrustColor = partOfWoT ? 'bg-tertiary-500' : 'bg-error-500';
+    $: nip05TrustColor = validNIP05 ? 'text-tertiary-500' : 'text-error-500';
+    $: bgNip05TrustColor = validNIP05 ? 'bg-tertiary-500' : 'bg-error-500';
 
     $: if (user) {
         console.log('setProfile')
         setProfile();
     }
 
-    onMount(async () => {
-        // await setProfile();
-        console.log('onmount')
-    });
+    $: if (user && nip05) {
+        console.log('nip05 to validate:', nip05)
+        user.validateNip05(nip05).then((response:boolean|null)=>{
+            console.log('nip05', response);
+            if (response) {
+                validNIP05 = true;
+            }
+        });
+    }
 
     async function setProfile() {
         const profile = await user.fetchProfile();
-        //     {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY},
         if (profile) {
             userProfile = profile;
             if (userProfile.image) {
@@ -188,6 +196,11 @@
         placement: 'bottom'
     };
 
+    const popupNip05: PopupSettings = {
+        event: 'click',
+        target: 'popupNip05',
+        placement: 'bottom'
+    };
 
 </script>
 
@@ -269,19 +282,58 @@
                 {/if}
             </div>
             <div class="flex items-center gap-x-2">
+                <!-- <Nip05 -->
+                <!--     ndk={$ndk} -->
+                <!--     npub={npub} -->
+                <!--      -->
+                <!-- > -->
+                <!--     <div  -->
+                <!--         slot="badge" -->
+                <!--         let:nip05Valid={valid} -->
+                <!--     > -->
+                <!--         {valid ? 'valid' : 'invalid'} -->
+                <!--     </div> -->
+                <!-- </Nip05> -->
                 <div>
-                    Nip05: {userProfile?.nip05 ?? '?'}
+                    Nip05: {nip05 ?? '?'}
                 </div>
-                {#if userProfile?.nip05}
+                {#if nip05}
                     <div>
                         <button 
                             class="btn btn-icon "
-                            use:clipboard={userProfile.nip05}
+                            use:clipboard={nip05}
                         >
                             <span>
                                 <i class='fa-regular fa-copy'/>
                             </span>
                             <button>
+                    </div>
+                    <div>
+                        {#if validNIP05}
+                            <i 
+                                class="fa-solid fa-circle-check text-xl {nip05TrustColor}"
+                                use:popup={popupNip05}
+                            >
+                            </i>
+                            <div data-popup="popupNip05">
+                                <div class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto">
+                                    Valid Nip05
+                                    <div class="arrow {bgNip05TrustColor}" />
+                                </div>
+                            </div>
+                        {:else}
+                            <i 
+                                class="fa-solid fa-circle-question text-xl {nip05TrustColor}"
+                                use:popup={popupNip05}
+                            >
+                            </i>
+                            <div data-popup="popupNip05">
+                                <div class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto">
+                                    Could NOT validate Nip05!
+                                    <div class="arrow {bgNip05TrustColor}" />
+                                </div>
+                            </div>
+                        {/if}
                     </div>
                 {/if}
             </div>
