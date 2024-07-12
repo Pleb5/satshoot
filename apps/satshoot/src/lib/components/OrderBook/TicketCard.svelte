@@ -278,20 +278,18 @@
                     </div>
                 {/if}
             </div>
-            {#if $currentUser
-                && ticket.pubkey === $currentUser.pubkey
-            }
-                <div class="justify-self-end ">
-                    <button
-                        type="button"
-                        class="btn btn-icon w-8 h-8 bg-primary-400-500-token"
-                        use:popup={popupHover}
-                    >
-                        <i class="fa text-sm fa-ellipsis-v"></i>
-                    </button>
-                    <div data-popup="popupHover_{ticket.id}">
-                        <div class="card p-2 bg-primary-300-600-token shadow-xl z-50 ">
-                            <ul class="list space-y-4">
+            <div class="justify-self-end ">
+                <button
+                    type="button"
+                    class="btn btn-icon w-8 h-8 bg-primary-400-500-token"
+                    use:popup={popupHover}
+                >
+                    <i class="fa text-sm fa-ellipsis-v"></i>
+                </button>
+                <div data-popup="popupHover_{ticket.id}">
+                    <div class="card p-2 bg-primary-300-600-token shadow-xl z-50 ">
+                        <ul class="list space-y-4">
+                            {#if $currentUser}
                                 <!-- Share Ticket -->
                                 <li>
                                     <button class="" on:click={shareTicket}>
@@ -299,6 +297,10 @@
                                         <span class="flex-auto">Share</span>
                                     </button>
                                 </li>
+                            {/if}
+                            {#if $currentUser
+                                && ticket.pubkey === $currentUser.pubkey
+                            }
                                 <!-- Edit Ticket -->
                                 {#if ticket.status === TicketStatus.New}
                                     <li>
@@ -319,7 +321,10 @@
                                         </button>
                                     </li>
                                 {/if}
-                                {#if ticket.status !== TicketStatus.New}
+                                <!-- Pay -->
+                                {#if ticket.status !== TicketStatus.New
+                                    && winnerOffer
+                                }
                                     <li>
                                         <button class="" on:click={pay}>
                                             <span><i class="fa-brands fa-bitcoin"/></span>
@@ -327,11 +332,11 @@
                                         </button>
                                     </li>
                                 {/if}
-                            </ul>
-                        </div>
+                            {/if }
+                        </ul>
                     </div>
-                </div> 
-            {/if }
+                </div>
+            </div> 
         </header>
 
         <section class="p-4">

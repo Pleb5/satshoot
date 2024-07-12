@@ -10,6 +10,7 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { TicketEvent } from '$lib/events/TicketEvent';
+    import currentUser from '$lib/stores/user';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -98,39 +99,42 @@
                     {copied ? 'Copied!' : 'Copy Ticket URL'}
                 </button>
             </div>
-            <h4 class="h4 text-center mb-2">{'Broadcast Ticket on Nostr'}</h4>
-            <div class="flex flex-col justify-center gap-y-4">
-                <textarea 
+            {#if ticket.pubkey === $currentUser?.pubkey}
+                
+                <h4 class="h4 text-center mb-2">{'Broadcast Ticket on Nostr'}</h4>
+                <div class="flex flex-col justify-center gap-y-4">
+                    <textarea 
                     rows="10"
                     class="textarea"
                     bind:value={message}
                 />
-                <div class="grid grid-cols-[30%_1fr] gap-x-2">
-                    <button 
-                        type="button"
-                        class="btn btn-sm sm:btn-md bg-error-300-600-token"
-                        on:click={()=> modalStore.close()}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        on:click={postTicket}
-                        class="btn btn-sm sm:btn-md bg-success-300-600-token"
-                        disabled={posting}
-                    >
-                        {#if posting}
-                            <span>
-                                <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
+                    <div class="grid grid-cols-[30%_1fr] gap-x-2">
+                        <button 
+                            type="button"
+                            class="btn btn-sm sm:btn-md bg-error-300-600-token"
+                            on:click={()=> modalStore.close()}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            on:click={postTicket}
+                            class="btn btn-sm sm:btn-md bg-success-300-600-token"
+                            disabled={posting}
+                        >
+                            {#if posting}
+                                <span>
+                                    <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
                                     track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8" />
-                            </span>
-                        {:else}
-                            <span>Post</span>
-                        {/if}
+                                </span>
+                            {:else}
+                                <span>Post</span>
+                            {/if}
 
-                    </button>
+                        </button>
+                    </div>
                 </div>
-            </div>
+            {/if}
         </div>
     {:else}
         <h2 class="h2 font-bold text-center text-error-300-600-token">
