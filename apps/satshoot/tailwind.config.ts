@@ -6,8 +6,7 @@ import { skeleton } from '@skeletonlabs/tw-plugin';
 
 				
 const config = {
-	// 2. Opt for dark mode to be handled via the class method
-	darkMode: 'class',
+	darkMode: 'selector',
 	content: [
 		'./src/**/*.{html,js,svelte,ts}',
 		join(require.resolve(

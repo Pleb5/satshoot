@@ -81,7 +81,7 @@
     import PostTicketIcon from "$lib/components/Icons/PostTicketIcon.svelte";
     import NotificationsIcon from "$lib/components/Icons/NotificationsIcon.svelte";
 
-    import { modeCurrent } from '@skeletonlabs/skeleton';
+    import { setModeCurrent, modeCurrent } from '@skeletonlabs/skeleton';
 
     // Skeleton Toast
     import { Toast, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
@@ -107,7 +107,6 @@
     import type { TicketEvent } from "$lib/events/TicketEvent";
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import type { ReviewEvent } from "$lib/events/ReviewEvent";
-    import { BTCTroubleshootKind } from "$lib/events/kinds";
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -127,16 +126,12 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-
-    let noConnectedRelaysToastID: string;
-
     onMount(async () => {
 
 // ---------------------------- Basic Init ----------------------------
         localStorage.debug = 'ndk:*'
         if(!$modeCurrent) {
-            localStorage.setItem('modeCurrent', 'false');
-            $modeCurrent = false;
+            setModeCurrent(false);
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
