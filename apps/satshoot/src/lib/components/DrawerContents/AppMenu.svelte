@@ -81,7 +81,7 @@
         const modalBody = `
                 <p>Do really you wish to log out?</p>
                 <strong class="text-error-400-500-token">
-                    If you are logged in with an local keypair,
+                    If you are logged in with a Local Keypair,
                     it will be deleted from local storage!
                 </strong>`;
 
@@ -118,7 +118,6 @@
                 goto('/');
             }
         }
-
 
         const modal: ModalSettings = {
             type: 'confirm',
