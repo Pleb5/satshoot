@@ -46,6 +46,7 @@ import {
     myTickets,
     myOffers,
 } from "$lib/stores/troubleshoot-eventstores";
+import { connected } from '$lib/stores/ndk';
 import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
 import { BTCTroubleshootKind } from '../events/kinds.ts';
 
@@ -53,6 +54,15 @@ import { BTCTroubleshootKind } from '../events/kinds.ts';
 export async function initializeUser(ndk: NDK) {
     console.log('begin user init')
     try {
+
+        connected.set((ndk.pool.stats().connected > 0));
+        if ( !(get(connected)) ) {
+            console.log('ndk NOT connected in user init', ndk.pool.stats())
+            await ndk.connect();
+        } else {
+            console.log('ndk connected in user init', ndk.pool.stats())
+        }
+
         const user = await (ndk.signer as NDKSigner).user();
         if (user.npub) {
             loggedIn.set(true);
@@ -68,7 +78,7 @@ export async function initializeUser(ndk: NDK) {
         
         // --------- User Profile --------------- //
         const profile = await user.fetchProfile(
-            {cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY}
+            {cacheUsage: NDKSubscriptionCacheUsage.PARALLEL}
         );
         // for now loading profile from cache disabled but if reenabled, this bug
         // that profile returned is a strangely nested object should be handled
@@ -176,7 +186,7 @@ export async function fetchUserOutboxRelays(ndk: NDKSvelte):Promise<NDKEvent | n
     const relays = await ndk.fetchEvent(
         { kinds: [10002], authors: [$currentUser!.pubkey] },
         { 
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
             groupable: false,
         },
         queryRelays,
