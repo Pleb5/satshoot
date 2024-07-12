@@ -126,6 +126,123 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
+    // TODO: Detect when browser reconnects and connect ndk
+
+    $ndk.pool.on('relay:connect', () => {
+        if ($ndk.pool.stats().connected > 1) {
+            console.log('connected')
+            if (!$connected) {
+                restoreLogin();
+            }
+            $connected = true;
+        }
+    });
+
+    $ndk.pool.on('relay:disconnect', () => {
+        if ($ndk.pool.stats().connected === 0) {
+            console.log('disconnected')
+            $connected = false;
+        }
+    });
+
+    async function restoreLogin() {
+        // Try to get saved Login method from localStorage and login that way
+        const loginMethod = localStorage.getItem("login-method");
+
+        if (loginMethod){
+            if (loginMethod === LoginMethod.Ephemeral) {
+                // We either get the private key from sessionStorage or decrypt from localStorage
+                if ($sessionPK) {
+                    $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
+                } else {
+                    try {
+                        // Get decrypted seed from a modal prompt where user enters passphrase
+                        // User can dismiss modal in which case decryptedSeed is undefined
+                        const responseObject: any = await new Promise<string|undefined>((resolve) => {
+                            const modalComponent: ModalComponent = {
+                                ref: DecryptSecretModal,
+                            };
+
+                            const modal: ModalSettings = {
+                                type: 'component',
+                                component: modalComponent,
+                                response: (responseObject: any) => {
+                                    resolve(responseObject); 
+                                },
+                            };
+                            // Call DecryptSecret Modal to prompt for passphrase
+                            // This can throw invalid secret if decryption was unsuccessful
+                            modalStore.trigger(modal);
+                            // We got some kind of response from modal
+                        });                      
+                        if (responseObject) {
+                            const decryptedSecret = responseObject['decryptedSecret'];
+                            const restoreMethod = responseObject['restoreMethod'];
+                            if (decryptedSecret && restoreMethod) {
+                                let privateKey:string|undefined = undefined;
+                                if (restoreMethod === RestoreMethod.Seed) {
+                                    privateKey = privateKeyFromSeedWords(decryptedSecret);
+                                } else if (restoreMethod === RestoreMethod.Nsec) {
+                                    privateKey = privateKeyFromNsec(decryptedSecret);
+                                }
+
+                                if (privateKey) {
+                                    $ndk.signer = new NDKPrivateKeySigner(privateKey); 
+                                    $sessionPK = privateKey;
+                                } else {
+                                    throw new Error(
+                                        "Could not create hex private key from decrypted secret. \
+                                        Clear browser local storage and login again."
+                                    );
+                                }
+                            }
+                        } 
+                    } catch(e) {
+                        const t: ToastSettings = {
+                            message:`Could not create private key from local secret, error: ${e}`,
+                            autohide: false,
+                        };
+                        toastStore.trigger(t);
+                    }
+                }
+            } else if(loginMethod === LoginMethod.Bunker) {
+                const localBunkerKey = localStorage.getItem("bunkerLocalSignerPK");
+                const bunkerTargetNpub = localStorage.getItem("bunkerTargetNpub");
+                const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
+
+                if (localBunkerKey && bunkerTargetNpub && bunkerRelayURLsString) {
+                    const bunkerRelayURLs = bunkerRelayURLsString.split(',');
+                    bunkerRelayURLs.forEach((url: string) => {
+                        // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
+                        $bunkerNDK.addExplicitRelay(url);
+                    });
+
+                    await $bunkerNDK.connect();
+                    console.log("ndk connected to specified bunker relays");
+
+
+                    const localSigner = new NDKPrivateKeySigner(localBunkerKey);
+                    const remoteSigner = new NDKNip46Signer(
+                        $bunkerNDK,
+                        bunkerTargetNpub,
+                        localSigner
+                    );
+                    $ndk.signer = remoteSigner;
+
+                    await remoteSigner.blockUntilReady();
+                }
+            } else if (loginMethod === LoginMethod.NIP07) {
+                if (!$ndk.signer) {
+                    $ndk.signer = new NDKNip07Signer();
+                }
+            }
+        }
+        // If signer is defined we can init user
+        if ($ndk.signer) {
+            initializeUser($ndk);
+        }
+    }
+
     onMount(async () => {
 
 // ---------------------------- Basic Init ----------------------------
@@ -161,108 +278,10 @@
         await $ndk.connect();
         $connected = ($ndk.pool.stats().connected > 0);
 
-        // Start all tickets/offers sub
-        allTickets.startSubscription();
-        allOffers.startSubscription();
-
 // ------------------------ Restore Login -----------------------------------
 
         if (!$loggedIn) {
-            // Try to get saved Login method from localStorage and login that way
-            const loginMethod = localStorage.getItem("login-method");
-
-            if (loginMethod){
-                if (loginMethod === LoginMethod.Ephemeral) {
-        // We either get the private key from sessionStorage or decrypt from localStorage
-                    if ($sessionPK) {
-                        $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
-                    } else {
-                        try {
-                            // Get decrypted seed from a modal prompt where user enters passphrase
-                            // User can dismiss modal in which case decryptedSeed is undefined
-                            const responseObject: any = await new Promise<string|undefined>((resolve) => {
-                                const modalComponent: ModalComponent = {
-                                    ref: DecryptSecretModal,
-                                };
-
-                                const modal: ModalSettings = {
-                                    type: 'component',
-                                    component: modalComponent,
-                                    response: (responseObject: any) => {
-                                        resolve(responseObject); 
-                                    },
-                                };
-                                // Call DecryptSecret Modal to prompt for passphrase
-                                // This can throw invalid secret if decryption was unsuccessful
-                                modalStore.trigger(modal);
-                                // We got some kind of response from modal
-                            });                      
-                            if (responseObject) {
-                                const decryptedSecret = responseObject['decryptedSecret'];
-                                const restoreMethod = responseObject['restoreMethod'];
-                                if (decryptedSecret && restoreMethod) {
-                                    let privateKey:string|undefined = undefined;
-                                    if (restoreMethod === RestoreMethod.Seed) {
-                                        privateKey = privateKeyFromSeedWords(decryptedSecret);
-                                    } else if (restoreMethod === RestoreMethod.Nsec) {
-                                        privateKey = privateKeyFromNsec(decryptedSecret);
-                                    }
-
-                                    if (privateKey) {
-                                        $ndk.signer = new NDKPrivateKeySigner(privateKey); 
-                                        $sessionPK = privateKey;
-                                    } else {
-                                        throw new Error(
-                                            "Could not create hex private key from decrypted secret. \
-                                            Clear browser local storage and login again."
-                                        );
-                                    }
-                                }
-                            } 
-                        } catch(e) {
-                            const t: ToastSettings = {
-                                message:`Could not create private key from local secret, error: ${e}`,
-                                autohide: false,
-                            };
-                            toastStore.trigger(t);
-                        }
-                    }
-                } else if(loginMethod === LoginMethod.Bunker) {
-                    const localBunkerKey = localStorage.getItem("bunkerLocalSignerPK");
-                    const bunkerTargetNpub = localStorage.getItem("bunkerTargetNpub");
-                    const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
-
-                    if (localBunkerKey && bunkerTargetNpub && bunkerRelayURLsString) {
-                        const bunkerRelayURLs = bunkerRelayURLsString.split(',');
-                        bunkerRelayURLs.forEach((url: string) => {
-                            // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
-                            $bunkerNDK.addExplicitRelay(url);
-                        });
-
-                        await $bunkerNDK.connect();
-                        console.log("ndk connected to specified bunker relays");
-                        
-
-                        const localSigner = new NDKPrivateKeySigner(localBunkerKey);
-                        const remoteSigner = new NDKNip46Signer(
-                            $bunkerNDK,
-                            bunkerTargetNpub,
-                            localSigner
-                        );
-                        $ndk.signer = remoteSigner;
-
-                        await remoteSigner.blockUntilReady();
-                    }
-                } else if (loginMethod === LoginMethod.NIP07) {
-                    if (!$ndk.signer) {
-                        $ndk.signer = new NDKNip07Signer();
-                    }
-                }
-            }
-            // If signer is defined we can init user
-            if ($ndk.signer) {
-                initializeUser($ndk);
-            }
+            restoreLogin();
         }
     });
 

@@ -4,6 +4,7 @@
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 
     import { wot } from '$lib/stores/wot';
+    import { connected } from "$lib/stores/ndk";
 
     import type { NDKTag } from "@nostr-dev-kit/ndk";
 
@@ -152,15 +153,17 @@
             </div>
         {/if}
     </div>
-    <div class="fixed bottom-20 right-8">
-        <button class="btn btn-icon-xl bg-primary-300-600-token"
-            on:click={()=> {
-                readyToTroubleshoot();
-            }}
-        >
-            <ReadyToTroubleshootIcon extraClasses={'text-3xl '}/>
-        </button>
-    </div>
+    {#if $connected}
+        <div class="fixed bottom-20 right-8">
+            <button class="btn btn-icon-xl bg-primary-300-600-token"
+                on:click={()=> {
+                    readyToTroubleshoot();
+                }}
+            >
+                <ReadyToTroubleshootIcon extraClasses={'text-3xl '}/>
+            </button>
+        </div>
+    {/if}
 {:else} 
     <h2 class="h2 mt-12 text-center font-bold">Login to view Ticket feed!</h2>
 {/if}

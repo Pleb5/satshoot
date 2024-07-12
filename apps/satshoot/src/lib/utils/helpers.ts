@@ -41,6 +41,8 @@ import { get } from "svelte/store";
 import { dev } from '$app/environment';
 
 import { 
+    allTickets,
+    allOffers,
     myTicketFilter,
     myOfferFilter,
     myTickets,
@@ -111,6 +113,11 @@ export async function initializeUser(ndk: NDK) {
             // console.log('wot updated')
             wotArray = Array.from(get(wot));
         } 
+
+
+        // Start all tickets/offers sub
+        allTickets.startSubscription();
+        allOffers.startSubscription();
 
         receivedMessageFilter['#p']! = [user.pubkey];
         sentMessageFilter['authors'] = [user.pubkey];
