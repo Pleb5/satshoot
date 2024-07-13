@@ -258,12 +258,24 @@
 
         window.addEventListener('offline', (e) => {
             console.log('offline')
+            const t: ToastSettings = {
+                message: 'Offline',
+                autohide: false,
+                background: 'bg-warning-300-600-token',
+            };
+            toastStore.trigger(t);
             $online = false;
         });
 
         window.addEventListener('online', (e) => {
             console.log('online')
             $online = true;
+            const t: ToastSettings = {
+                message: 'Online',
+                autohide: false,
+                background: 'bg-success-300-600-token',
+            };
+            toastStore.trigger(t);
             restoreLogin();
         });
 
