@@ -19,10 +19,9 @@
 
     import { loggedIn, userRelaysUpdated } from "$lib/stores/user";
     import currentUser from "$lib/stores/user";
+    import { online } from '$lib/stores/network';
 
     import { 
-        allTickets,
-        allOffers,
         wotFilteredTickets,
         wotFilteredOffers,
         myTickets,
@@ -255,6 +254,17 @@
             e.preventDefault();
             deferredInstallPrompt = e;
             showAppInstallPromotion = true;
+        });
+
+        window.addEventListener('offline', (e) => {
+            console.log('offline')
+            $online = false;
+        });
+
+        window.addEventListener('online', (e) => {
+            console.log('online')
+            $online = true;
+            restoreLogin();
         });
 
         // Setup client-side caching

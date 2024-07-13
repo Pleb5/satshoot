@@ -1,8 +1,8 @@
 <script lang='ts'>
-    import { NDKNip07Signer, NDKUser } from "@nostr-dev-kit/ndk";
+    import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
     import ndk from "$lib/stores/ndk";
 
-    import redirectStore from "$lib/stores/redirect-store";
+    import redirectStore from "$lib/stores/network";
     import { loggedIn } from "$lib/stores/user";
 
     import { browser } from "$app/environment";

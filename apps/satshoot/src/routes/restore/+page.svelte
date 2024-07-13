@@ -7,7 +7,7 @@
     import { privateKeyFromSeedWords, validateWords } from "nostr-tools/nip06";
     import { wordlist } from '@scure/bip39/wordlists/english';
 
-    import redirectStore from '$lib/stores/redirect-store';
+    import redirectStore from '$lib/stores/network';
     
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';

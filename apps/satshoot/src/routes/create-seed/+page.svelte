@@ -1,8 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import currentUser from "$lib/stores/user";
 
-    import redirectStore from "$lib/stores/redirect-store";
+    import redirectStore from "$lib/stores/network";
     import { NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
     import { sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"

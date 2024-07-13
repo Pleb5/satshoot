@@ -7,7 +7,7 @@
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { connected } from "$lib/stores/ndk";
     
-    import redirectStore from '$lib/stores/redirect-store';
+    import redirectStore from '$lib/stores/network';
 
     import { wot } from '$lib/stores/wot';
 
