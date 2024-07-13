@@ -127,15 +127,15 @@
 
     // TODO: Detect when browser reconnects and connect ndk
 
-    $ndk.pool.on('relay:connect', () => {
-        if ($ndk.pool.stats().connected > 1) {
-            console.log('connected')
-            if (!$connected) {
-                restoreLogin();
-            }
-            $connected = true;
-        }
-    });
+    // $ndk.pool.on('relay:connect', () => {
+    //     if ($ndk.pool.stats().connected > 1) {
+    //         console.log('connected')
+    //         if (!$connected) {
+    //             restoreLogin();
+    //         }
+    //         $connected = true;
+    //     }
+    // });
 
     $ndk.pool.on('relay:disconnect', () => {
         if ($ndk.pool.stats().connected === 0) {
@@ -258,6 +258,7 @@
 
         window.addEventListener('offline', (e) => {
             console.log('offline')
+            toastStore.clear();
             const t: ToastSettings = {
                 message: 'Offline',
                 autohide: false,
@@ -270,6 +271,7 @@
         window.addEventListener('online', (e) => {
             console.log('online')
             $online = true;
+            toastStore.clear();
             const t: ToastSettings = {
                 message: 'Online',
                 autohide: false,
