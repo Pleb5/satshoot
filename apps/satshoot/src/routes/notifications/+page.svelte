@@ -51,30 +51,14 @@ $: if (!$notificationsEnabled) {
 }
 
 async function removeNotification(event: NDKEvent) {
-    let found = false;
-    for (let i = 0; i < $notifications.length; i++) {
-        const notif = $notifications[i];
-        if (notif.id === event.id) {
-            found = true;
-            $notifications.splice(i, 1);
-            $notifications = $notifications;
-            $ticketNotifications = $ticketNotifications;
-            $offerNotifications = $offerNotifications;
-            $messageNotifications = $messageNotifications;
-            $reviewNotifications = $reviewNotifications;
-            $receivedZapsNotifications = $receivedZapsNotifications;
-            await tick();
-            break;
-        }
-    }
-    if (!found) {
-        console.log('event not found in notifications');
-    }
+    $notifications = $notifications.filter(
+        (e: NDKEvent) => e.id !== event.id
+    );
 }
 
-onDestroy(()=>{
-    // $notifications = [];
-});
+function clearAll() {
+    $notifications = [];
+}
 
 </script>
 
@@ -92,7 +76,7 @@ onDestroy(()=>{
                         <button 
                             class="btn btn-icon"
                             type="button" 
-                            on:click={()=>{removeNotification(zap)}}>
+                            on:click={()=>{removeNotification(zap);}}>
                             <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
                         </button>
                     </div>
@@ -156,7 +140,7 @@ onDestroy(()=>{
                         <button 
                             class="btn btn-icon"
                             type="button" 
-                            on:click={()=>{removeNotification(message)}}>
+                            on:click={()=>{removeNotification(message);}}>
                             <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
                         </button>
                     </div>
@@ -188,6 +172,15 @@ onDestroy(()=>{
         {:else}
             <div class="text-center">No New Reviews!</div>
         {/if}
+        <div class="justify-self-center mt-4">
+            <button class="btn sm:btn-xl bg-primary-300-600-token"
+                on:click={()=> {
+                    clearAll();
+                }}
+            >
+                Clear all
+            </button>
+        </div>
     </div>
 {:else}
     <h2 class="h2 text-center">No logged in User!</h2>

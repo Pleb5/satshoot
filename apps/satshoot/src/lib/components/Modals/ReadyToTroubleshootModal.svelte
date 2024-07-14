@@ -105,7 +105,7 @@
                     >
                         <span>
                             <i 
-                                class="text-3xl text-primary-500 fa-solid fa-circle-plus"
+                                class="text-3xl text-success-500 fa-solid fa-circle-plus"
                             >
                             </i>
                         </span>
