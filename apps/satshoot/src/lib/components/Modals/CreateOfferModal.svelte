@@ -119,9 +119,6 @@
                     action: {
                         label: 'Go to Profile',
                         response: () => {
-                            if (toastId) {
-                                toastStore.close(toastId);
-                            }
                             goto("/" + $currentUser!.npub);
                         },
                     }

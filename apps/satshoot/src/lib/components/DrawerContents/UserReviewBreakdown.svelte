@@ -20,7 +20,7 @@ const reviewer = $currentUser as NDKUser;
 function backToReviewBreadown() {
     $drawerID = DrawerIDs.ReviewBreakdown;
     const drawerSettings: DrawerSettings = {
-        id: $drawerID,
+        id: $drawerID.toString(),
         meta: { ratings: reviews, userReviews: userReviews },
         position: 'top',
         bgDrawer: 'bg-surface-300-600-token',

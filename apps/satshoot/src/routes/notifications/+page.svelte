@@ -1,4 +1,5 @@
 <script lang="ts">
+import { type NDKEvent } from "@nostr-dev-kit/ndk";
 import currentUser from "$lib/stores/user";
 import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
 import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
@@ -14,7 +15,7 @@ import {
 } from "$lib/stores/notifications";
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
-import { onDestroy } from "svelte";
+import { onDestroy, tick } from "svelte";
 import ZapCard from "$lib/components/User/ZapCard.svelte";
 
 const toastStore = getToastStore();
@@ -36,7 +37,6 @@ $: if ($receivedZapsNotifications) {
     console.log('received a zap notification', $receivedZapsNotifications);
 }
 
-// Decrypt incoming DM-s
 $: if ($messageNotifications) {
     console.log('received message notification')
 }
@@ -50,8 +50,30 @@ $: if (!$notificationsEnabled) {
     toastStore.trigger(t);
 }
 
+async function removeNotification(event: NDKEvent) {
+    let found = false;
+    for (let i = 0; i < $notifications.length; i++) {
+        const notif = $notifications[i];
+        if (notif.id === event.id) {
+            found = true;
+            $notifications.splice(i, 1);
+            $notifications = $notifications;
+            $ticketNotifications = $ticketNotifications;
+            $offerNotifications = $offerNotifications;
+            $messageNotifications = $messageNotifications;
+            $reviewNotifications = $reviewNotifications;
+            $receivedZapsNotifications = $receivedZapsNotifications;
+            await tick();
+            break;
+        }
+    }
+    if (!found) {
+        console.log('event not found in notifications');
+    }
+}
+
 onDestroy(()=>{
-    $notifications = [];
+    // $notifications = [];
 });
 
 </script>
@@ -63,9 +85,17 @@ onDestroy(()=>{
             Zaps
         </h3>
         {#if $receivedZapsNotifications.length > 0}
-            {#each $receivedZapsNotifications as zap}
+            {#each $receivedZapsNotifications as zap(zap.id)}
                 <div class="flex justify-center">
                     <ZapCard {zap} />
+                    <div>
+                        <button 
+                            class="btn btn-icon"
+                            type="button" 
+                            on:click={()=>{removeNotification(zap)}}>
+                            <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                        </button>
+                    </div>
                 </div>
             {/each}
             {:else}
@@ -75,9 +105,17 @@ onDestroy(()=>{
             Tickets
         </h3>
         {#if $ticketNotifications.length > 0}
-            {#each $ticketNotifications as ticket}
+            {#each $ticketNotifications as ticket(ticket.id)}
                 <div class="flex justify-center">
                     <TicketCard {ticket} countAllOffers={true}/>
+                    <div>
+                        <button 
+                            class="btn btn-icon"
+                            type="button" 
+                            on:click={()=>{removeNotification(ticket)}}>
+                            <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                        </button>
+                    </div>
                 </div>
             {/each}
         {:else}
@@ -87,9 +125,22 @@ onDestroy(()=>{
             Offers
         </h3>
         {#if $offerNotifications.length > 0}
-            {#each $offerNotifications as offer}
+            {#each $offerNotifications as offer(offer.id)}
                 <div class="flex justify-center">
-                    <OfferCard {offer} showTicket={true} enableChat={true} countAllOffers={true} />
+                    <OfferCard 
+                        {offer}
+                        showTicket={true}
+                        enableChat={true}
+                        countAllOffers={true}
+                    />
+                    <div>
+                        <button 
+                            class="btn btn-icon"
+                            type="button" 
+                            on:click={()=>{removeNotification(offer)}}>
+                            <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                        </button>
+                    </div>
                 </div>
             {/each}
         {:else}
@@ -99,8 +150,16 @@ onDestroy(()=>{
             Messages
         </h3>
         {#if $messageNotifications.length > 0}
-            {#each $messageNotifications as message}
+            {#each $messageNotifications as message(message.id)}
                 <div class="flex justify-center">
+                    <div>
+                        <button 
+                            class="btn btn-icon"
+                            type="button" 
+                            on:click={()=>{removeNotification(message)}}>
+                            <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                        </button>
+                    </div>
                     <MessageCard {message} />
                 </div>
             {/each}
@@ -111,10 +170,18 @@ onDestroy(()=>{
             Reviews
         </h3>
         {#if $reviewNotifications.length > 0}
-            {#each $reviewNotifications as review}
+            {#each $reviewNotifications as review(review.id)}
                 {#if review.ratings}
                     <div class="flex justify-center">
                         <UserReviewCard review={review.ratings} reviewer={review.author} />
+                        <div>
+                            <button 
+                                class="btn btn-icon"
+                                type="button" 
+                                on:click={()=>{removeNotification(review)}}>
+                                <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                            </button>
+                        </div>
                     </div>
                 {/if}
             {/each}

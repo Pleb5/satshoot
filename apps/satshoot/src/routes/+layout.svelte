@@ -282,7 +282,9 @@
         });
 
         // Setup client-side caching
-        $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
+        if ( !($ndk.cacheAdapter) ) {
+            $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
+        }
         window.onunhandledrejection = async(event: PromiseRejectionEvent) => {
             event.preventDefault();
             console.log(event.reason)
@@ -372,8 +374,12 @@
        $wotFilteredTickets.forEach((t: TicketEvent) => {
             $myOffers.forEach((o: OfferEvent) => {
                 if (o.referencedTicketDTag === t.dTag) {
-                    sendNotification(o);
-                    sendNotification(t);
+                    // If users offer won send that else just send relevant ticket
+                    if (t.acceptedOfferAddress === o.offerAddress) {
+                        sendNotification(o);
+                    } else {
+                        sendNotification(t);
+                    }
                 }
             });
         });
@@ -430,7 +436,7 @@
     function openAppMenu() {
         $drawerID = DrawerIDs.AppMenu;
         const drawerSettings: DrawerSettings = {
-            id: $drawerID,
+            id: $drawerID.toString(),
             width: 'w-[50vw] sm:w-[40vw] md:w-[30vw]',
             position: 'right',
             bgDrawer: 'bg-surface-300-600-token',

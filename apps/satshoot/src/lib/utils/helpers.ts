@@ -114,7 +114,6 @@ export async function initializeUser(ndk: NDK) {
             wotArray = Array.from(get(wot));
         } 
 
-
         // Start all tickets/offers sub
         allTickets.startSubscription();
         allOffers.startSubscription();

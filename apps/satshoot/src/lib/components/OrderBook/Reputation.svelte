@@ -22,15 +22,16 @@ import {
     NDKKind, 
     type Hexpubkey, 
 } from "@nostr-dev-kit/ndk";
+
 import currentUser from "$lib/stores/user";
 
 import { type DrawerSettings, getDrawerStore } from "@skeletonlabs/skeleton";
 import { ProgressRadial } from '@skeletonlabs/skeleton';
 import drawerID, { DrawerIDs } from '$lib/stores/drawer';
 import { wotUpdating } from "$lib/stores/wot";
-    import type { NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
-    import { SatShootPubkey } from "$lib/utils/misc";
-    import { onDestroy } from "svelte";
+import type { NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
+import { SatShootPubkey } from "$lib/utils/misc";
+import { onDestroy } from "svelte";
 
 export let user: Hexpubkey | undefined = undefined;
 export let type: ReviewType;
@@ -74,7 +75,7 @@ let ratingColor = '';
 function showReviewBreakdown() {
     $drawerID = DrawerIDs.ReviewBreakdown;
     const drawerSettings: DrawerSettings = {
-        id: $drawerID,
+        id: $drawerID.toString(),
         meta: { ratings: ratings, userReviews: userReviewsArr },
         position: 'top',
         bgDrawer: 'bg-surface-300-600-token',
