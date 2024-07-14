@@ -5,6 +5,7 @@
     import {
         NDKEvent, 
         NDKKind, 
+        NDKRelay, 
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
         type NDKUser,
@@ -67,36 +68,15 @@
     }
 
     async function editProfile() {
-        const event = new NDKEvent($ndk);
-        event.kind = NDKKind.Metadata;
-        event.content = JSON.stringify({
-            // ! //
-            name: userProfile.name,
-            displayName: userProfile.name,
-            // ! //
-            about: userProfile.about,
-            bio: userProfile.about,
-            // ! //
-            lud16: userProfile.lud16,
-
-            picture: userProfile?.image,
-            banner: userProfile?.banner,
-            nip05: userProfile?.nip05,
-            website: userProfile?.website,
-        });
         if ($currentUser) {
             try {
                 $currentUser.profile = userProfile;
 
                 const blastrUrl = 'wss://nostr.mutinywallet.com';
-                const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
-                    blastrUrl,
-                    ...$ndk.pool.urls(),
-                    ...$ndk.outboxPool!.urls()
-                ], $ndk);
-                console.log('relays sent to:', broadCastRelaySet)
-                const relaysPublished = await event.publish(broadCastRelaySet);
-                console.log('relaysPublished', relaysPublished)
+                $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl));
+
+                console.log('relays sending to:', $ndk.pool)
+                await $currentUser.publish();
 
                 const t: ToastSettings = {
                     message:`Profile changed!`,

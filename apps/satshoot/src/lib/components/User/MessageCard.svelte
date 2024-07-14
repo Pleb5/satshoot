@@ -3,6 +3,7 @@ import ndk from "$lib/stores/ndk";
 import currentUser from "$lib/stores/user";
 import { 
     NDKEvent,
+    NDKSubscriptionCacheUsage,
     type NDKSigner, 
     type NDKUser, 
     type NDKUserProfile 
@@ -59,22 +60,20 @@ onMount(async () => {
         console.trace(e);
     }
 
-    await senderUser.fetchProfile();
-    if (senderUser.profile) {
-        console.log('user profile', senderUser.profile)
-        let profile:NDKUserProfile;
-        // NDK bug: If user profile is not in LRU cache iti is served from 
-        // dexie which stores profiles NOT identically to an NDKEvent but 
-        // {pubkey:...; created_at:...; ... ; profile: ... instead of content:...}
-        if (senderUser.profile.name) {
-            profile = senderUser.profile;
-        } else {
-            profile = senderUser.profile.profile;
+    const profile = await senderUser.fetchProfile(
+        {
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+            closeOnEose: true,
+            groupable: true,
+            groupableDelay: 300,
         }
-
-        if (profile.displayName) name = profile.displayName;
-        if (profile.name) name = profile.name;
-        if (profile.image) avatarImage = profile.image;
+    );
+    if (senderUser.profile) {
+        console.log('profile', profile)
+        console.log('pubkey', senderUser.pubkey)
+        if (senderUser.profile.displayName) name = senderUser.profile.displayName;
+        if (senderUser.profile.name) name = senderUser.profile.name;
+        if (senderUser.profile.image) avatarImage = senderUser.profile.image;
 
     } else {
         console.log('no profile')
