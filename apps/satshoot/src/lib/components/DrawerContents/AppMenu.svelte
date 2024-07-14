@@ -221,6 +221,18 @@
                     <span>Feedback</span>
                 </button>
             </li>
+            <li>
+                <a
+                    class="justify-start"
+                    href="/settings"
+                    on:click={()=>{drawerStore.close()}}
+                >
+                    <span class="w-6 text-center">
+                        <i class="fa-solid fa-gear"></i>
+                    </span>
+                    <span>Settings</span>
+                </a>
+            </li>
         </ul>
     </nav>
     <nav class="list-nav">

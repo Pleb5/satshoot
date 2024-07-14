@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/ndk';
+    import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { connected } from "$lib/stores/ndk";
 
@@ -13,8 +13,6 @@
     import {
         NDKRelay,
         NDKRelayList,
-        NDKSubscriptionCacheUsage,
-        NDKRelaySet
     } from '@nostr-dev-kit/ndk';
     import RelayListElement from '$lib/components/Relays/RelayListElement.svelte';
     import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
