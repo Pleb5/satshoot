@@ -117,17 +117,21 @@
 	}
     $: if(currentMessage && !warned) {
         wordlist.forEach((bip39Word: string) => {
-            if (currentMessage.toLowerCase().includes(bip39Word)) {
-                console.log('current message', currentMessage)
-                const t: ToastSettings = {
-                    message: 'WARNING SECRET WORD TYPED IN!\
-                    NEVER SHARE SECRETS IN THIS CHAT!',
-                    autohide: false,
-                    background: 'bg-error-300-600-token',
-                };
-                toastStore.trigger(t);
-                warned = true;
-            }
+            const lowerCaseText = currentMessage.toLowerCase();
+            const words = lowerCaseText.split(' ');
+            words.forEach((word:string) => {
+                if (word === bip39Word) {
+                    console.log('current message', currentMessage)
+                    const t: ToastSettings = {
+                        message: 'WARNING SECRET WORD TYPED IN!\
+                        NEVER SHARE SECRETS IN THIS CHAT!',
+                        autohide: false,
+                        background: 'bg-error-300-600-token',
+                    };
+                    toastStore.trigger(t);
+                    warned = true;
+                }
+            });
         });
     }
 
