@@ -8,11 +8,9 @@
     import type { ToastSettings, ModalSettings } from '@skeletonlabs/skeleton';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { RadioGroup, RadioItem } from '@skeletonlabs/skeleton';
-    import { popup } from '@skeletonlabs/skeleton';
     import { type SvelteComponent, tick } from "svelte";
     import type { OfferEvent } from "$lib/events/OfferEvent";
 
-    import { insertThousandSeparator } from '$lib/utils/misc';
     import PaymentModal from "./PaymentModal.svelte";
     import { type ModalComponent } from "@skeletonlabs/skeleton";
 
@@ -34,7 +32,6 @@
 
     let closingStatus: TicketStatus.Resolved | TicketStatus.Failed = TicketStatus.Resolved;
 
-    const popupClasses = 'card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto';
     let errorMessage = '';
      
     async function closeTicket() {
@@ -110,6 +107,7 @@
             } catch(e) {
                 console.log(e)
                 closing = false;
+                errorMessage = 'Error while closing: ' + e;
             }
         } else {
             closing = false;
@@ -119,6 +117,7 @@
                 background: 'bg-error-300-600-token',
             };
             toastStore.trigger(t);
+            modalStore.close();
         }
     }
 
