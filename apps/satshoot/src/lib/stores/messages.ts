@@ -12,7 +12,10 @@ import { wot } from "./wot";
 import { BTCTroubleshootKind } from "$lib/events/kinds";
 
 
-export const subOptions: NDKSubscriptionOptions = { closeOnEose: false };
+export const subOptions: NDKSubscriptionOptions = {
+    closeOnEose: false,
+    groupable: false,
+};
 
 export const receivedMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
     kinds: [NDKKind.EncryptedDirectMessage],
