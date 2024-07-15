@@ -44,7 +44,7 @@ const secondOrderFollowWot = 1;
 const secondOrderMuteWot = -0.5*(secondOrderFollowWot);
 const secondOrderReportWot = -0.5*(secondOrderFollowWot);
 
-export const bootstrapAccount = SatShootPubkey;
+export const useBootstrapAccount = true;
 
 export const wotUpdating = writable(false);
 

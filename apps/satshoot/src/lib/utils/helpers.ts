@@ -48,7 +48,7 @@ import {
     myTickets,
     myOffers,
 } from "$lib/stores/troubleshoot-eventstores";
-import { connected } from '$lib/stores/ndk';
+
 import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
 import { BTCTroubleshootKind } from '../events/kinds.ts';
 
@@ -56,14 +56,6 @@ import { BTCTroubleshootKind } from '../events/kinds.ts';
 export async function initializeUser(ndk: NDK) {
     console.log('begin user init')
     try {
-
-        connected.set((ndk.pool.stats().connected > 0));
-        if ( !(get(connected)) ) {
-            console.log('ndk NOT connected in user init', ndk.pool.stats())
-            await ndk.connect();
-        } else {
-            console.log('ndk connected in user init', ndk.pool.stats())
-        }
 
         const user = await (ndk.signer as NDKSigner).user();
         if (user.npub) {
