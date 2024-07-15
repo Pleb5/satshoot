@@ -289,15 +289,13 @@
                 <div data-popup="popupHover_{ticket.id}">
                     <div class="card p-2 bg-primary-300-600-token shadow-xl z-50 ">
                         <ul class="list space-y-4">
-                            {#if $currentUser}
-                                <!-- Share Ticket -->
-                                <li>
-                                    <button class="" on:click={shareTicket}>
-                                        <span><i class="fa-solid fa-share-nodes"/></span>
-                                        <span class="flex-auto">Share</span>
-                                    </button>
-                                </li>
-                            {/if}
+                            <!-- Share Ticket -->
+                            <li>
+                                <button class="" on:click={shareTicket}>
+                                    <span><i class="fa-solid fa-share-nodes"/></span>
+                                    <span class="flex-auto">Share</span>
+                                </button>
+                            </li>
                             {#if $currentUser
                                 && ticket.pubkey === $currentUser.pubkey
                             }
