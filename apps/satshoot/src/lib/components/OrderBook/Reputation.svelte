@@ -7,6 +7,11 @@ import {
     troubleshooterReviews,
     aggregateRatings,
     userReviews,
+    reviewType,
+    clientRatings,
+    troubleshooterRatings,
+    userClientReviews,
+    userTroubleshooterReviews
 } from "$lib/stores/reviews";
 
 import {
@@ -33,24 +38,23 @@ import type { NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
 import { SatShootPubkey } from "$lib/utils/misc";
 import { onDestroy } from "svelte";
 
-export let user: Hexpubkey | undefined = undefined;
-export let type: ReviewType;
+export let user: Hexpubkey;
+export let type: ReviewType | undefined;
 
 const drawerStore = getDrawerStore();
 
-const reviews = (type === ReviewType.Client 
-    ? clientReviews : troubleshooterReviews
-); 
+// $: if($clientReviews) {
+//     // console.log('client review arrived', $clientReviews)
+// }
+// $: if($troubleshooterReviews) {
+//     // console.log('troubleshooter review arrived', $troubleshooterReviews)
+// }
 
-$: if($clientReviews) {
-    // console.log('client review arrived', $clientReviews)
-}
-$: if($troubleshooterReviews) {
-    // console.log('troubleshooter review arrived', $troubleshooterReviews)
-}
+$: reviewsArraysExist = $clientReviews && $troubleshooterReviews;
+$: reviewsExist = reviewsArraysExist && 
+            ($clientReviews.length > 0 || $troubleshooterReviews.length > 0);
 
 let ratings: Map<string, number> | undefined = undefined;
-let userReviewsArr: Array<ClientRating | TroubleshooterRating> | undefined = undefined;
 
 const subOptions = {
     closeOnEose: false,
@@ -76,15 +80,30 @@ function showReviewBreakdown() {
     $drawerID = DrawerIDs.ReviewBreakdown;
     const drawerSettings: DrawerSettings = {
         id: $drawerID.toString(),
-        meta: { ratings: ratings, userReviews: userReviewsArr },
         position: 'top',
         bgDrawer: 'bg-surface-300-600-token',
     };
+
     drawerStore.open(drawerSettings);
 }
 
-$: if ($currentUser && user && $reviews) {
-    ratings = aggregateRatings(user, type);
+$: if (
+    $currentUser
+    && user
+    && reviewsArraysExist
+) {
+    if (type === undefined) {
+        // type is undefined we show the aggregate ratings of the review store
+        // that has more reviews in it. Expecting to have substantially more in one of them
+        if ($clientReviews.length > $troubleshooterReviews.length) {
+            type = ReviewType.Client;
+        } else {
+            type = ReviewType.Troubleshooter;
+        }
+    } 
+    $reviewType = type;
+
+    ratings = aggregateRatings(user, $reviewType);
     const average = ratings.get('average') as number;
     // we dont display the exact average in the breakdown
     ratings.delete('average');
@@ -111,7 +130,30 @@ $: if ($currentUser && user && $reviews) {
             ratingColor = 'bg-error-500';
         }
     }
-    userReviewsArr = userReviews($currentUser.pubkey, user, type);
+
+    if ($reviewType === ReviewType.Client) {
+        $clientRatings = ratings;
+        $troubleshooterRatings = aggregateRatings(
+            user, ReviewType.Troubleshooter
+        );
+        $troubleshooterRatings.delete('average')
+    } else {
+        $troubleshooterRatings = ratings;
+        $clientRatings = aggregateRatings(user, ReviewType.Client);
+        $clientRatings.delete('average')
+    }
+
+    $userClientReviews = userReviews(
+        $currentUser.pubkey,
+        user,
+        ReviewType.Client
+    ) as Array<ClientRating>;
+
+    $userTroubleshooterReviews = userReviews(
+        $currentUser.pubkey,
+        user,
+        ReviewType.Troubleshooter
+    ) as Array<TroubleshooterRating>;
 }
 
 $: if($currentUser && user && $wot) {
@@ -174,22 +216,27 @@ $: if ($allPledgesStore) {
 }
 
 onDestroy(()=>{
-    allEarningsStore.empty();
-    allPaymentsStore.empty();
-    allPledgesStore.empty();
+    if (allEarningsStore) allEarningsStore.empty();
+    if (allPaymentsStore) allPaymentsStore.empty();
+    if (allPledgesStore) allPledgesStore.empty();
 });
 
 </script>
 
 <div class="{baseClasses}">
     <h3 class="h3 sm:h4 text-center mb-4">User Reputation</h3>
-    {#if user && $reviews && $allEarningsStore && $allPaymentsStore && $allPledgesStore}
+    {#if user
+        && reviewsArraysExist
+        && $allEarningsStore
+        && $allPaymentsStore
+        && $allPledgesStore
+    }
         <div class="flex flex-grow justify-between flex-wrap gap-y-2">
             <div class="flex gap-x-2">
                 <div class="flex flex-col items-center gap-y-2">
                     <div class="flex items-center">
                         <h5 class="h4 sm:h5 underline">Ratings</h5>
-                        {#if $reviews.length > 0}
+                        {#if reviewsExist}
                             <button
                                 type="button" 
                                 class="btn btn-icon-sm p-2 sm:btn-icon-lg text-start text-primary-400-500-token"
@@ -229,7 +276,12 @@ onDestroy(()=>{
                     </h5>
                     <div>
                         <span>
-                            {(allEarnings ? insertThousandSeparator(allEarnings) : '?') + ' sats'}
+                            {
+                                (allEarnings 
+                                    ? insertThousandSeparator(allEarnings)
+                                    : '?'
+                                ) + ' sats'
+                            }
                         </span>
                     </div>
                 </div>
@@ -245,7 +297,12 @@ onDestroy(()=>{
                     </h5>
                     <div>
                         <span>
-                            {(allPayments ? insertThousandSeparator(allPayments) : '?') + ' sats'}
+                            {
+                                (allPayments
+                                    ? insertThousandSeparator(allPayments)
+                                    : '?'
+                                ) + ' sats'
+                            }
                         </span>
                     </div>
                 </div>
@@ -260,7 +317,12 @@ onDestroy(()=>{
                     </h5>
                     <div>
                         <span>
-                            {(allPledges ? insertThousandSeparator(allPledges) : '?') + ' sats'}
+                            {
+                                (allPledges
+                                    ? insertThousandSeparator(allPledges)
+                                    : '?'
+                                ) + ' sats'
+                            }
                         </span>
                     </div>
                 </div>

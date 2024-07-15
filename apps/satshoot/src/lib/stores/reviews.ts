@@ -1,4 +1,4 @@
-import { get, derived } from 'svelte/store';
+import { writable, get, derived } from 'svelte/store';
 import ndk from '$lib/stores/ndk';
 import { wot } from '$lib/stores/wot';
 import currentUser from '$lib/stores/user';
@@ -66,6 +66,13 @@ export const troubleshooterReviews = derived(
         });
     }
 );
+
+export const clientRatings = writable<Map<string, number>>();
+export const troubleshooterRatings = writable<Map<string, number>>();
+
+export const userClientReviews = writable<Array<ClientRating>>();
+export const userTroubleshooterReviews = writable<Array<TroubleshooterRating>>();
+export const reviewType = writable<ReviewType>();
 
 export function userReviews(source: Hexpubkey, target: Hexpubkey, type: ReviewType):
     Array<ClientRating | TroubleshooterRating> {
