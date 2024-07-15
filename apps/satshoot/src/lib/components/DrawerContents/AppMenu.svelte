@@ -20,7 +20,9 @@
         myTicketFilter,
         myOfferFilter,
         myTickets,
-        myOffers, 
+        myOffers,
+        allTickets,
+        allOffers, 
     } from '$lib/stores/troubleshoot-eventstores';
 
     import { allReviews } from '$lib/stores/reviews';
@@ -106,6 +108,9 @@
                 myOffers.empty();
                 myTicketFilter.authors = [];
                 myOfferFilter.authors = [];
+
+                allTickets.empty();
+                allOffers.empty();
 
                 messageStore.empty();
                 allReviews.empty();

@@ -26,14 +26,17 @@
         wotFilteredOffers,
         myTickets,
         myOffers,
+        allOffers,
+        allTickets,
     } from "$lib/stores/troubleshoot-eventstores";
 
     import { 
+        allReviews,
         clientReviews,
         troubleshooterReviews,
     } from "$lib/stores/reviews";
-    import { wotFilteredMessageFeed } from "$lib/stores/messages";
-    import { wotFilteredReceivedZaps } from '$lib/stores/zaps';
+    import { messageStore, wotFilteredMessageFeed } from "$lib/stores/messages";
+    import { allReceivedZaps, wotFilteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from "$lib/stores/notifications";
 
     import { initializeUser } from '$lib/utils/helpers';
@@ -47,7 +50,6 @@
         NDKNip46Signer,
         NDKNip07Signer, 
         NDKPrivateKeySigner, 
-        NDKRelay,
         type NDKEvent,
     } from "@nostr-dev-kit/ndk";
     import { privateKeyFromNsec } from "$lib/utils/nip19";
@@ -99,7 +101,7 @@
     } from '@skeletonlabs/skeleton';
     import drawerID from '$lib/stores/drawer';
     import { DrawerIDs } from '$lib/stores/drawer';
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { goto } from "$app/navigation";
     import ReviewBreakdown from "$lib/components/DrawerContents/ReviewBreakdown.svelte";
     import UserReviewBreakdown from "$lib/components/DrawerContents/UserReviewBreakdown.svelte";
@@ -269,16 +271,9 @@
         });
 
         window.addEventListener('online', (e) => {
-            console.log('online')
             $online = true;
-            toastStore.clear();
-            const t: ToastSettings = {
-                message: 'Online',
-                autohide: false,
-                background: 'bg-success-300-600-token',
-            };
-            toastStore.trigger(t);
-            restoreLogin();
+
+            window.location.reload();
         });
 
         // Setup client-side caching
@@ -309,6 +304,18 @@
         if (!$loggedIn) {
             restoreLogin();
         }
+    });
+
+    onDestroy(() => {
+        console.log('layout on destroy')
+        allTickets.empty();
+        allOffers.empty();
+        myTickets.empty();
+        myOffers.empty();
+
+        messageStore.empty();
+        allReceivedZaps.empty();
+        allReviews.empty();
     });
 
     // Check for app updates and offer reload option to user in a Toast
