@@ -156,7 +156,11 @@
                 await tick();
 
                 try {
-                    await broadcastRelayList($ndk, readRelayUrls, writeRelayUrls);
+                    await broadcastRelayList(
+                        $ndk,
+                        Array.from(readRelayUrls),
+                        Array.from(writeRelayUrls)
+                    );
 
                     posting = false;
 
@@ -223,9 +227,9 @@
 
 <h3 class="h3 mb-4 text-center">Your Read Relays(Inbox)</h3>
 {#if readRelays && readRelays.size > 0}
-    <div class="flex flex-col gap-y-4 justify-center items-center mb-6 mx-2">
+    <div class="flex flex-col gap-y-4 justify-center mb-6 mx-2">
         {#each readRelays as relay(relay.url)}
-            <div class="card card-hover grid grid-cols-[1fr_auto] gap-x-2 bg-surface-active-token p-4">
+            <div class="card card-hover grid grid-cols-[1fr_auto] gap-x-2 bg-surface-active-token p-2">
                 <RelayListElement {relay}/>
                 <button 
                     class="btn btn-icon"
@@ -294,9 +298,9 @@
 <h3 class="h3 mb-4 text-center">Your Write Relays(Outbox)</h3>
 {#if writeRelays && writeRelays.size > 0}
 
-    <div class="flex flex-col gap-y-4 justify-center items-center mb-6 mx-2">
+    <div class="flex flex-col gap-y-4 justify-center mb-6 mx-2">
         {#each writeRelays as relay(relay.url)}
-            <div class="card card-hover grid grid-cols-[1fr_auto] gap-x-2 bg-surface-active-token p-4">
+            <div class="card card-hover grid grid-cols-[1fr_auto] gap-x-4 bg-surface-active-token p-2">
                 <RelayListElement {relay}/>
                 <button 
                     class="btn btn-icon"
