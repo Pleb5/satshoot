@@ -60,7 +60,7 @@
     const subOptions: NDKSubscriptionOptions = { 
         closeOnEose: false,
         groupable: true,
-        groupableDelay: 1000,
+        groupableDelay: 1500,
     };
     const allOffers = $ndk.storeSubscribe<OfferEvent>(
         offersFilter, subOptions, OfferEvent
