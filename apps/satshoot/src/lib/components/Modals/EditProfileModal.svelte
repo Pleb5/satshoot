@@ -44,7 +44,7 @@
             />
             </div>
         {/if}
-        <div class="flex justify-between mt-4 ">
+        <div class="flex justify-between mt-4 h-10">
             <button 
                 type="button"
                 class="btn btn-sm sm:btn-md bg-error-300-600-token"

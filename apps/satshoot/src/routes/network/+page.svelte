@@ -246,7 +246,7 @@
                     bind:value={readRelayInputValue}
                     title="relay input (url)" 
                     type="text" 
-                    placeholder="Relay URL, without ' wss:// '"
+                    placeholder="Relay URL without ' wss:// '"
                 />
                 <button 
                     class="btn btn-icon"
@@ -297,7 +297,6 @@
 <hr class="mb-6"/>
 <h3 class="h3 mb-4 text-center">Your Write Relays(Outbox)</h3>
 {#if writeRelays && writeRelays.size > 0}
-
     <div class="flex flex-col gap-y-4 justify-center mb-6 mx-2">
         {#each writeRelays as relay(relay.url)}
             <div class="card card-hover grid grid-cols-[1fr_auto] gap-x-4 bg-surface-active-token p-2">
@@ -310,14 +309,14 @@
                 </button>
             </div> 
         {/each}
-        <label class="label flex flex-col items-center w-96 mb-6">
+        <label class="label flex flex-col items-center mb-6">
             <h3 class="h3">Add WRITE Relay</h3>
             <div class="flex gap-x-2">
                 <input class="input w-full text-center" 
                 bind:value={writeRelayInputValue}
                 title="relay input (url)" 
                 type="text" 
-                placeholder="Relay URL, without ' wss:// '"
+                placeholder="Relay URL without ' wss:// '"
             />
                 <button 
                     class="btn btn-icon"

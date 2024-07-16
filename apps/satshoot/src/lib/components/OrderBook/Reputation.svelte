@@ -193,7 +193,7 @@ onDestroy(()=>{
         && $allPaymentsStore
         && $allPledgesStore
     }
-        <div class="flex flex-grow justify-between flex-wrap gap-y-2 gap-x-2">
+        <div class="flex flex-grow justify-center sm:justify-between flex-wrap gap-y-2 gap-x-4">
             <div class="flex gap-x-2">
                 <div class="flex flex-col items-center gap-y-2">
                     <div class="flex items-center">

@@ -95,7 +95,6 @@
                 followsUpdated.set(0);
                 networkWoTScores.set(null);
                 currentUser.set(null);
-                console.log('wot', get(wot))
 
                 localStorage.clear();
 

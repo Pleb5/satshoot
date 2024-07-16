@@ -21,24 +21,24 @@ import ZapCard from "$lib/components/User/ZapCard.svelte";
 const toastStore = getToastStore();
 
 $: if ($ticketNotifications) {
-    console.log('ticket notifs', $ticketNotifications);
+    // console.log('ticket notifs', $ticketNotifications);
 }
 $: if ($offerNotifications) {
-    console.log('offer notifs', $offerNotifications);
+    // console.log('offer notifs', $offerNotifications);
 }
 $: if ($messageNotifications){
-    console.log('message notifs', $messageNotifications);
+    // console.log('message notifs', $messageNotifications);
 }
 $: if ($reviewNotifications) {
-    console.log('review notifs', $reviewNotifications);
+    // console.log('review notifs', $reviewNotifications);
 }
 
 $: if ($receivedZapsNotifications) {
-    console.log('received a zap notification', $receivedZapsNotifications);
+    // console.log('received a zap notification', $receivedZapsNotifications);
 }
 
 $: if ($messageNotifications) {
-    console.log('received message notification')
+    // console.log('received message notification')
 }
 
 $: if (!$notificationsEnabled) {
@@ -64,114 +64,137 @@ function clearAll() {
 
 {#if $currentUser}
     <h3 class="h3 text-center mb-4 underline">Notifications</h3>
-    <div class="grid grid-cols-1 gap-y-2 mb-8">
-        <h3 class="h3 text-center underline my-4">
-            Zaps
-        </h3>
-        {#if $receivedZapsNotifications.length > 0}
-            {#each $receivedZapsNotifications as zap(zap.id)}
-                <div class="flex justify-center">
-                    <ZapCard {zap} />
-                    <div>
-                        <button 
-                            class="btn btn-icon"
-                            type="button" 
-                            on:click={()=>{removeNotification(zap);}}>
-                            <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
-                        </button>
-                    </div>
-                </div>
-            {/each}
-            {:else}
-            <div class="text-center">No New Zaps!</div>
-        {/if}
-        <h3 class="h3 text-center underline my-4">
-            Tickets
-        </h3>
-        {#if $ticketNotifications.length > 0}
-            {#each $ticketNotifications as ticket(ticket.id)}
-                <div class="flex justify-center">
-                    <TicketCard {ticket} countAllOffers={true}/>
-                    <div>
-                        <button 
-                            class="btn btn-icon"
-                            type="button" 
-                            on:click={()=>{removeNotification(ticket)}}>
-                            <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
-                        </button>
-                    </div>
-                </div>
-            {/each}
-        {:else}
-            <div class="text-center">No New Tickets!</div>
-        {/if}
-        <h3 class="h3 text-center underline my-4">
-            Offers
-        </h3>
-        {#if $offerNotifications.length > 0}
-            {#each $offerNotifications as offer(offer.id)}
-                <div class="flex justify-center">
-                    <OfferCard 
-                        {offer}
-                        showTicket={true}
-                        enableChat={true}
-                        countAllOffers={true}
-                    />
-                    <div>
-                        <button 
-                            class="btn btn-icon"
-                            type="button" 
-                            on:click={()=>{removeNotification(offer)}}>
-                            <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
-                        </button>
-                    </div>
-                </div>
-            {/each}
-        {:else}
-            <div class="text-center">No New Offers!</div>
-        {/if}
-        <h3 class="h3 text-center underline my-4">
-            Messages
-        </h3>
-        {#if $messageNotifications.length > 0}
-            {#each $messageNotifications as message(message.id)}
-                <div class="flex justify-center">
-                    <div>
-                        <button 
-                            class="btn btn-icon"
-                            type="button" 
-                            on:click={()=>{removeNotification(message);}}>
-                            <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
-                        </button>
-                    </div>
-                    <MessageCard {message} />
-                </div>
-            {/each}
-            {:else}
-            <div class="text-center">No New Messages!</div>
-        {/if}
-        <h3 class="h3 text-center underline my-4">
-            Reviews
-        </h3>
-        {#if $reviewNotifications.length > 0}
-            {#each $reviewNotifications as review(review.id)}
-                {#if review.ratings}
-                    <div class="flex justify-center">
-                        <UserReviewCard review={review.ratings} reviewer={review.author} />
-                        <div>
-                            <button 
-                                class="btn btn-icon"
-                                type="button" 
-                                on:click={()=>{removeNotification(review)}}>
-                                <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
-                            </button>
+    <div class="grid grid-cols-1 gap-y-8 mb-8">
+        <div>
+            <h3 class="h3 text-center underline my-4">
+                Zaps
+            </h3>
+            {#if $receivedZapsNotifications.length > 0}
+                <div class="space-y-4">
+                    {#each $receivedZapsNotifications as zap(zap.id)}
+                        <div class="flex flex-col items-center">
+                            <ZapCard {zap} />
+                            <div>
+                                <button 
+                                    class="btn btn-icon"
+                                    type="button" 
+                                    on:click={()=>{removeNotification(zap);}}>
+                                    <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                {/if}
-            {/each}
-        {:else}
-            <div class="text-center">No New Reviews!</div>
-        {/if}
+                    {/each}
+                </div>
+            {:else}
+                <div class="text-center">No New Zaps!</div>
+            {/if}
+        </div>
+        <div>
+            <h3 class="h3 text-center underline my-4">
+                Tickets
+            </h3>
+            {#if $ticketNotifications.length > 0}
+                <div class="space-y-4">
+                    {#each $ticketNotifications as ticket(ticket.id)}
+                        <div class="flex flex-col items-center">
+                            <TicketCard {ticket} countAllOffers={true}/>
+                            <div>
+                                <button 
+                                    class="btn btn-icon"
+                                    type="button" 
+                                    on:click={()=>{removeNotification(ticket)}}>
+                                    <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {/each}
+                </div>
+            {:else}
+                <div class="text-center">No New Tickets!</div>
+            {/if}
+        </div>
+        <div>
+            <h3 class="h3 text-center underline my-4">
+                Offers
+            </h3>
+            {#if $offerNotifications.length > 0}
+                <div class="space-y-4">
+                    {#each $offerNotifications as offer(offer.id)}
+                        <div class="flex flex-col items-center">
+                            <OfferCard 
+                            {offer}
+                            showTicket={true}
+                            enableChat={true}
+                            countAllOffers={true}
+                        />
+                            <div>
+                                <button 
+                                    class="btn btn-icon"
+                                    type="button" 
+                                    on:click={()=>{removeNotification(offer)}}>
+                                    <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {/each}
+                </div>
+            {:else}
+                <div class="text-center">No New Offers!</div>
+            {/if}
+        </div>
+        <div>
+            <h3 class="h3 text-center underline my-4">
+                Messages
+            </h3>
+            {#if $messageNotifications.length > 0}
+                <div class="space-y-4">
+                    {#each $messageNotifications as message(message.id)}
+                        <div class="flex flex-col items-center">
+                            <MessageCard {message} />
+                            <div>
+                                <button 
+                                    class="btn btn-icon"
+                                    type="button" 
+                                    on:click={()=>{removeNotification(message);}}>
+                                    <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {/each}
+                </div>
+            {:else}
+                <div class="text-center">No New Messages!</div>
+            {/if}
+        </div>
+        <div>
+            <h3 class="h3 text-center underline my-4">
+                Reviews
+            </h3>
+            {#if $reviewNotifications.length > 0}
+                <div class="space-y-4">
+                    {#each $reviewNotifications as review(review.id)}
+                        {#if review.ratings}
+                            <div class="flex flex-col items-center">
+                                <UserReviewCard 
+                                    review={review.ratings} 
+                                    reviewer={review.author}
+                                />
+                                <div>
+                                    <button 
+                                        class="btn btn-icon"
+                                        type="button" 
+                                        on:click={()=>{removeNotification(review)}}>
+                                        <i class="fa-solid fa-circle-xmark text-3xl text-error-500"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {/if}
+                    {/each}
+                </div>
+            {:else}
+                <div class="text-center">No New Reviews!</div>
+            {/if}
+        </div>
         <div class="justify-self-center mt-4">
             <button class="btn sm:btn-xl bg-primary-300-600-token"
                 on:click={()=> {

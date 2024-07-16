@@ -19,6 +19,13 @@ async function clearCache() {
                 // Must reload to open a brand new DB
                 window.location.reload();
                 $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
+
+                const t: ToastSettings = {
+                    message: 'Cache cleared! ',
+                    timeout: 5000,
+                    background: 'bg-primary-300-600-token',
+                };
+                toastStore.trigger(t);
             } catch (e) {
                 const t: ToastSettings = {
                     message: 'Could not clear cache: ' + e,
@@ -32,9 +39,13 @@ async function clearCache() {
 
     const modal: ModalSettings = {
         type: 'confirm',
-        title: 'Confirm',
-        body: `Clear Cache and Delete Database?
-\ This can slow down App until cache is filled again`,
+        title: `<p class='text-center'>Clear local Cache?</p>`,
+        body: `
+            <p>
+                This can solve some data loading problems but will slow down App
+                until cache is filled again
+            </p>
+        `,
         response: clearCacheResponse,
     };
     modalStore.trigger(modal);

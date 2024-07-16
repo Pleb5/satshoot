@@ -10,7 +10,7 @@ import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte'
 import { OfferEvent } from '$lib/events/OfferEvent';
 import TicketCard from '$lib/components/OrderBook/TicketCard.svelte';
 import OfferCard from '$lib/components/OrderBook/OfferCard.svelte';
-    import { onDestroy } from 'svelte';
+    import { onDestroy, onMount } from 'svelte';
 
 $: npub = $page.params.npub;
 $: user = $ndk.getUser({npub: npub});
@@ -45,6 +45,12 @@ $: if (user) {
     );
 }
 
+onMount(() => {
+    // Scroll to top as soon as ticket arrives
+    const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+    elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+});
+
 onDestroy(()=>{
     if (allTicketsOfUser) allTicketsOfUser.empty();
     if (allOffersOfUser) allOffersOfUser.empty();
@@ -61,7 +67,7 @@ onDestroy(()=>{
         <Reputation user={user.pubkey} type={undefined}/>
     {/if}
 
-    <h3 class="h3 text-center">
+    <h3 class="h3 text-center underline">
         Tickets of User
     </h3>
     {#if $allTicketsOfUser.length > 0}
@@ -77,7 +83,7 @@ onDestroy(()=>{
     {:else}
         <h4>No Tickets found!</h4>
     {/if}
-    <h3 class="h3 text-center">
+    <h3 class="h3 text-center underline">
         Offers of User
     </h3>
     {#if $allOffersOfUser.length > 0}
