@@ -129,12 +129,12 @@
         </div>
         <!-- Restore Local keypair -->
         <a href="/restore/" class="btn btn-md lg:btn-lg mx-4 mt-4 bg-primary-300-600-token">
-            <span>RESTORE Local Keypair</span>
+            <span>LOGIN with Local Keypair</span>
         </a>
         <!-- New local keypair -->
         <div class="flex gap-x-4 items-center mx-4 mt-4">
             <a href="/create-seed/" class="btn btn-md lg:btn-lg bg-primary-300-600-token ">
-                <span>NEW Local Nostr Keypair</span>
+                <span>NEW Local Keypair</span>
             </a>
             <i 
                 class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
