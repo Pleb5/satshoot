@@ -308,14 +308,14 @@
 
     onDestroy(() => {
         console.log('layout on destroy')
-        allTickets.empty();
-        allOffers.empty();
-        myTickets.empty();
-        myOffers.empty();
+        if (allTickets) allTickets.empty();
+        if (allOffers) allOffers.empty();
+        if (myTickets) myTickets.empty();
+        if (myOffers) myOffers.empty();
 
-        messageStore.empty();
-        allReceivedZaps.empty();
-        allReviews.empty();
+        if (messageStore) messageStore.empty();
+        if (allReceivedZaps) allReceivedZaps.empty();
+        if (allReviews) allReviews.empty();
     });
 
     // Check for app updates and offer reload option to user in a Toast
