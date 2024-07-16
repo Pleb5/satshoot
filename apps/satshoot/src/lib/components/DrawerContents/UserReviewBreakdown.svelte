@@ -1,6 +1,5 @@
 <script lang="ts">
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
-import { ReviewType, type ClientRating, type TroubleshooterRating } from "$lib/events/ReviewEvent";
 import { type DrawerSettings, getDrawerStore } from "@skeletonlabs/skeleton";
 import { DrawerIDs } from '$lib/stores/drawer';
 import drawerID from '$lib/stores/drawer';
@@ -8,28 +7,27 @@ import currentUser from "$lib/stores/user";
 import type { NDKUser } from "@nostr-dev-kit/ndk";
 
 import {
-    reviewType,
-    userClientReviews,
-    userTroubleshooterReviews,
+    userReviews,
 } from '$lib/stores/reviews';
 
 const drawerStore = getDrawerStore();
 
-const userReviews = (
-    reviewType === ReviewType.Client
-    ? $userClientReviews
-    : $userTroubleshooterReviews
-);
+const reviewType = $drawerStore.meta['reviewType'];
+const userHex = $drawerStore.meta['user'];
+
+const reviewer = $currentUser as NDKUser;
+
+const reviews = userReviews(reviewer.pubkey, userHex, reviewType); 
 
 const baseClasses = 'card p-2 m-8 bg-surface-200-700-token\
     flex-grow sm:max-w-[70vw] lg:max-w-[60vw] overflow-y-auto';
 
-const reviewer = $currentUser as NDKUser;
 
 function backToReviewBreadown() {
     $drawerID = DrawerIDs.ReviewBreakdown;
     const drawerSettings: DrawerSettings = {
         id: $drawerID.toString(),
+        meta: {reviewType: reviewType, user: userHex},
         position: 'top',
         bgDrawer: 'bg-surface-300-600-token',
     };
@@ -50,9 +48,9 @@ function backToReviewBreadown() {
         </span>
     </button>
     <h2 class="h2 text-center mb-2">User Reviews</h2>
-    {#if userReviews && userReviews.length > 0}
+    {#if reviews && reviews.length > 0}
         <div class="flex flex-col items-center gap-y-4 text-2xl">
-            {#each userReviews as userReview}
+            {#each reviews as userReview}
                 <UserReviewCard review={userReview} {reviewer}/>
             {/each}
         </div>

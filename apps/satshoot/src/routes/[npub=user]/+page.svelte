@@ -3,6 +3,7 @@
     import Reputation from '$lib/components/OrderBook/Reputation.svelte';
     import UserCard from "$lib/components/User/UserCard.svelte";
     import ndk from '$lib/stores/ndk';
+    import currentUser from '$lib/stores/user';
 
     $: npub = $page.params.npub;
     $: user = $ndk.getUser({npub: npub});
@@ -18,5 +19,7 @@
     <UserCard {user} />
     <!-- Show reputation defaulting ratings to the type of review
     <!-- that contains more reviews -->
-    <Reputation user={user.pubkey} type={undefined}/>
+    {#if $currentUser}
+        <Reputation user={user.pubkey} type={undefined}/>
+    {/if}
 </div>

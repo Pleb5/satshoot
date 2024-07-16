@@ -1,5 +1,6 @@
 <script lang="ts">
 import {
+    ReviewType,
     type ClientRating,
     type TroubleshooterRating 
 } from "$lib/events/ReviewEvent";
@@ -13,15 +14,20 @@ import {
 export let ratings: Map<string, number>;
 export let userReviews: Array<ClientRating | TroubleshooterRating>;
 
-console.log('ratings', ratings)
-console.log('userReviews', userReviews)
-
 const drawerStore = getDrawerStore();
+
+const reviewType = $drawerStore.meta['reviewType'];
+const reviewTypeText = (
+    reviewType === ReviewType.Client 
+    ? 'Client' : 'Troubleshooter'
+);
+const userHex = $drawerStore.meta['user'];
 
 function showUserReviewBreakdown() {
     $drawerID = DrawerIDs.UserReviewBreakdown;
     const drawerSettings: DrawerSettings = {
         id: $drawerID.toString(),
+        meta: {reviewType: reviewType, user: userHex},
         position: 'top',
         bgDrawer: 'bg-surface-300-600-token',
     };
@@ -49,7 +55,7 @@ function showUserReviewBreakdown() {
     {/if}
     {#if userReviews && userReviews.length > 0}
         <div class="flex gap-x-4 items-center">
-            <h3 class="h3">Your Reviews: {userReviews.length}</h3>
+            <h3 class="h4 sm:h3">Your Reviews: {userReviews.length}</h3>
             <button
                 type="button" 
                 class="btn btn-icon-xl p-2 text-start text-primary-400-500-token"
@@ -63,6 +69,8 @@ function showUserReviewBreakdown() {
             </button>
         </div>
     {:else}
-        <h3 class="h3">You have not reviewed this person yet.</h3>
+        <h4 class="h4 text-center">
+            You have not reviewed this person as a {reviewTypeText} yet.
+        </h4>
     {/if}
 </div>

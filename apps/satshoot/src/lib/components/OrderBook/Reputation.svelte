@@ -6,18 +6,10 @@ import {
     clientReviews,
     troubleshooterReviews,
     aggregateRatings,
-    userReviews,
-    reviewType,
-    clientRatings,
-    troubleshooterRatings,
-    userClientReviews,
-    userTroubleshooterReviews
 } from "$lib/stores/reviews";
 
 import {
     ReviewType,
-    type TroubleshooterRating,
-    type ClientRating
 } from "$lib/events/ReviewEvent";
 
 import { insertThousandSeparator } from '$lib/utils/misc';
@@ -42,13 +34,6 @@ export let user: Hexpubkey;
 export let type: ReviewType | undefined;
 
 const drawerStore = getDrawerStore();
-
-// $: if($clientReviews) {
-//     // console.log('client review arrived', $clientReviews)
-// }
-// $: if($troubleshooterReviews) {
-//     // console.log('troubleshooter review arrived', $troubleshooterReviews)
-// }
 
 $: reviewsArraysExist = $clientReviews && $troubleshooterReviews;
 $: reviewsExist = reviewsArraysExist && 
@@ -80,6 +65,7 @@ function showReviewBreakdown() {
     $drawerID = DrawerIDs.ReviewBreakdown;
     const drawerSettings: DrawerSettings = {
         id: $drawerID.toString(),
+        meta: {reviewType: type, user: user},
         position: 'top',
         bgDrawer: 'bg-surface-300-600-token',
     };
@@ -101,9 +87,8 @@ $: if (
             type = ReviewType.Troubleshooter;
         }
     } 
-    $reviewType = type;
 
-    ratings = aggregateRatings(user, $reviewType);
+    ratings = aggregateRatings(user, type);
     const average = ratings.get('average') as number;
     // we dont display the exact average in the breakdown
     ratings.delete('average');
@@ -131,29 +116,6 @@ $: if (
         }
     }
 
-    if ($reviewType === ReviewType.Client) {
-        $clientRatings = ratings;
-        $troubleshooterRatings = aggregateRatings(
-            user, ReviewType.Troubleshooter
-        );
-        $troubleshooterRatings.delete('average')
-    } else {
-        $troubleshooterRatings = ratings;
-        $clientRatings = aggregateRatings(user, ReviewType.Client);
-        $clientRatings.delete('average')
-    }
-
-    $userClientReviews = userReviews(
-        $currentUser.pubkey,
-        user,
-        ReviewType.Client
-    ) as Array<ClientRating>;
-
-    $userTroubleshooterReviews = userReviews(
-        $currentUser.pubkey,
-        user,
-        ReviewType.Troubleshooter
-    ) as Array<TroubleshooterRating>;
 }
 
 $: if($currentUser && user && $wot) {
@@ -231,15 +193,15 @@ onDestroy(()=>{
         && $allPaymentsStore
         && $allPledgesStore
     }
-        <div class="flex flex-grow justify-between flex-wrap gap-y-2">
+        <div class="flex flex-grow justify-between flex-wrap gap-y-2 gap-x-2">
             <div class="flex gap-x-2">
                 <div class="flex flex-col items-center gap-y-2">
                     <div class="flex items-center">
-                        <h5 class="h4 sm:h5 underline">Ratings</h5>
+                        <h5 class="h5 sm:h4 underline">Ratings</h5>
                         {#if reviewsExist}
                             <button
                                 type="button" 
-                                class="btn btn-icon-sm p-2 sm:btn-icon-lg text-start text-primary-400-500-token"
+                                class="btn btn-icon text-start text-primary-400-500-token"
                                 on:click={showReviewBreakdown}>
                                 <span>
                                     <i 
@@ -268,7 +230,7 @@ onDestroy(()=>{
             <!-- Earnings -->
             <div class="flex items-center">
                 <div class="flex flex-col items-center gap-y-2">
-                    <h5 class="h4 sm:h5 underline">
+                    <h5 class="h5 sm:h4 underline">
                         <span class="text-warning-500">
                             <i class="fa-solid fa-bolt"></i>
                         </span>
@@ -289,7 +251,7 @@ onDestroy(()=>{
             <!-- Payments -->
             <div class="flex items-center">
                 <div class="flex flex-col items-center gap-y-2">
-                    <h5 class="h4 sm:h5 underline">
+                    <h5 class="h5 sm:h4 underline">
                         <span class="text-warning-500">
                             <i class="fa-solid fa-bolt"></i>
                         </span>
@@ -309,7 +271,7 @@ onDestroy(()=>{
             </div>
             <div class="flex items-center">
                 <div class="flex flex-col items-center gap-y-2">
-                    <h5 class="h4 sm:h5 underline">
+                    <h5 class="h5 sm:h4 underline">
                         <span class="text-warning-500">
                             <i class="fa-solid fa-bolt"></i>
                         </span>

@@ -67,13 +67,6 @@ export const troubleshooterReviews = derived(
     }
 );
 
-export const clientRatings = writable<Map<string, number>>();
-export const troubleshooterRatings = writable<Map<string, number>>();
-
-export const userClientReviews = writable<Array<ClientRating>>();
-export const userTroubleshooterReviews = writable<Array<TroubleshooterRating>>();
-export const reviewType = writable<ReviewType>();
-
 export function userReviews(source: Hexpubkey, target: Hexpubkey, type: ReviewType):
     Array<ClientRating | TroubleshooterRating> {
     const userReviews: Array<ClientRating | TroubleshooterRating> = [];
