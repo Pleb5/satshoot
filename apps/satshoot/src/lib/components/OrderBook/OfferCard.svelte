@@ -11,7 +11,7 @@
 
     import { offerMakerToSelect } from "$lib/stores/messages";
 
-    import type { NDKFilter, NDKEvent, NDKSubscription, NDKRelay } from "@nostr-dev-kit/ndk";
+    import type { NDKFilter, NDKEvent, NDKSubscription } from "@nostr-dev-kit/ndk";
     import { BTCTroubleshootKind } from "$lib/events/kinds";
 
     import CreateOfferModal from "../Modals/CreateOfferModal.svelte";
@@ -28,7 +28,7 @@
     import { clientReviews, troubleshooterReviews } from "$lib/stores/reviews";
 
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import type { NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
+    import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
     import { wot } from "$lib/stores/wot";
 
     const modalStore = getModalStore();
@@ -51,12 +51,12 @@
     let paid = 0;
     let paymentStore: NDKEventStore<NDKEvent>;
 
-    let ticketFilter: NDKFilter<BTCTroubleshootKind> = {
-        kinds: [BTCTroubleshootKind.Ticket],
+    let ticketFilter: NDKFilter<NDKKind.TroubleshootTicket> = {
+        kinds: [NDKKind.TroubleshootTicket],
         '#d': [],
     }
     let dTagOfTicket: string;
-    let ticketSubscription: NDKSubscription | undefined = undefined;
+    let ticketStore: NDKEventStore<ExtendedBaseType<TicketEvent>>;
     let npub: string;
     let timeSincePosted: string; 
     let pricing: string = '';
@@ -151,39 +151,38 @@
 
     function startTicketSub() {
         if (ticketFilter['#d']!.length > 0) {
-            ticketSubscription = $ndk.subscribe(
+            ticketStore = $ndk.storeSubscribe<TicketEvent>(
                 ticketFilter,
                 {
+                    autoStart: true,
                     closeOnEose: false,
                     groupable: true,
                     groupableDelay: 1000,
-                }
+                },
+                TicketEvent
             );
-            ticketSubscription.on('event', (event: NDKEvent) => {
-                // console.log('ticket event arrived. First seen: ', sub.eventFirstSeen)
-                ticket = TicketEvent.from(event);
-                const winnerId = ticket.acceptedOfferAddress;
-                if (winnerId === offer!.offerAddress){
-                    winner = true;
-                    status = 'Won';
-                    statusColor = 'text-warning-500';
-                } else if(winnerId || ticket.isClosed()) {
-                    status = 'Lost';
-                    statusColor = 'text-error-500';
-                } else {
-                    // The winner is defined but it is not us so our offer lost
-                    // OR the ticket does not have a winner but it is closed
-                    status = 'Pending';
-                    statusColor = 'text-primary-400-500-token';
-                }
-                offer = offer;
-            });
-            ticketSubscription.on('close', () => {
-                // console.log('closed ticketSubscription!', offer)
-            })
         } else {
             console.log('Cannot start ticket sub! Filter does not contain a ticket d-tag!')
         }
+    }
+
+    $: if ($ticketStore?.length > 0) {
+        ticket = $ticketStore[0];
+        const winnerId = ticket.acceptedOfferAddress;
+        if (winnerId === offer!.offerAddress){
+            winner = true;
+            status = 'Won';
+            statusColor = 'text-warning-500';
+        } else if(winnerId || ticket.isClosed()) {
+            status = 'Lost';
+            statusColor = 'text-error-500';
+        } else {
+            // The winner is defined but it is not us so our offer lost
+            // OR the ticket does not have a winner but it is closed
+            status = 'Pending';
+            statusColor = 'text-primary-400-500-token';
+        }
+        offer = offer;
     }
 
     $: if($clientReviews && ticket) {
@@ -237,10 +236,8 @@
     });
 
     onDestroy(() => {
-        if (ticketSubscription) {
-            ticketSubscription.stop();
-        }
-        paymentStore.empty();
+        if (ticketStore) ticketStore.empty();
+        if (paymentStore) paymentStore.empty();
     });
 
     // For context menu: Edit ticket, close ticket, share ticket
@@ -297,8 +294,6 @@
                                             </button>
                                         </li>
                                     {/if}
-                                    <!-- Review Client -->
-                                    <!-- TODO: insert && notYetReviewed condition! -->
                                     {#if winner && canReviewClient}
                                         <li>
                                             <button class="" on:click={reviewClient}>
