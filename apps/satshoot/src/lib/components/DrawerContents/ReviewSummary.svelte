@@ -41,14 +41,17 @@ function showUserReviewBreakdown() {
     <h3 class="h3 underline">Review Summary</h3>
     {#if ratings.size > 0}
         <div class="grid grid-cols-[1fr_auto] gap-x-4 text-lg">
-            <div>{Array.from(ratings.keys())[0]}:</div>
+            <div class="flex gap-x-2">
+                <div>👍</div>
+                <div>{Array.from(ratings.keys())[0]}:</div>
+            </div>
             <div>{Array.from(ratings.values())[0] + 'X'}</div>
         </div>
         <h3 class="h3 mt-4 mb-2 underline">Exceptional Qualities Received:</h3>
         <div class="grid grid-cols-[1fr_auto] gap-y-2 gap-x-6 mb-4 text-lg">
             {#each Array.from(ratings.keys()) as key, i}
                 {#if i > 0}
-                    <div>{key}:</div>
+                    <div>⭐ {key}:</div>
                     <div>{ratings.get(key) + 'X'}</div>
                 {/if}
             {/each}
