@@ -17,14 +17,21 @@ async function clearCache() {
             try {
                 await Dexie.delete('satshoot-db');
                 // Must reload to open a brand new DB
-                window.location.reload();
-                $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
-
                 const t: ToastSettings = {
-                    message: 'Cache cleared! ',
-                    timeout: 5000,
+                    message: '\
+                                <p class="text-center">Cache cleared!</p>\
+                                <p>Refreshing page in 4 seconds...</p>\
+                    ',
+                    timeout: 4000,
                     background: 'bg-primary-300-600-token',
                 };
+                setTimeout(
+                    ()=>{window.location.reload();},
+                    4000,
+                );
+                
+                $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
+
                 toastStore.trigger(t);
             } catch (e) {
                 const t: ToastSettings = {
@@ -58,7 +65,7 @@ async function clearCache() {
         type="button"
         on:click={ clearCache }
     >
-        Clear Cache and Database
+        Clear Cache
     </button>
 </div>
 
