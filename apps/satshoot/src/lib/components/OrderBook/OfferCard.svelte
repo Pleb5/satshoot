@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
-    import { NDKKind, zapInvoiceFromEvent, type NDKUser } from "@nostr-dev-kit/ndk";
+    import { NDKKind, NDKSubscriptionCacheUsage, zapInvoiceFromEvent, type NDKUser } from "@nostr-dev-kit/ndk";
 
     import { nip19 } from "nostr-tools";
     import { OfferEvent, Pricing } from "$lib/events/OfferEvent";
@@ -15,7 +15,7 @@
 
     import CreateOfferModal from "../Modals/CreateOfferModal.svelte";
     import ReviewClientModal from "../Modals/ReviewClientModal.svelte";
-    import { getModalStore } from "@skeletonlabs/skeleton";
+    import { Avatar, getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
@@ -35,6 +35,8 @@
     const modalStore = getModalStore();
 
     export let offer: OfferEvent;
+    let avatarImage = `https://robohash.org/${offer.pubkey}`;
+    let name = '';
     export let countAllOffers = false;
     export let showDescription = true;
     export let showReputation = true;
@@ -234,8 +236,22 @@
         $offerMakerToSelect = (offer as OfferEvent).pubkey;
     }
 
-    onMount(()=>{
+    onMount(async () => {
         startTicketSub();
+        const user = $ndk.getUser({pubkey: offer.pubkey});
+        
+        const profile = await user.fetchProfile(
+            {
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                closeOnEose: true,
+                groupable: true,
+                groupableDelay: 1000,
+            }
+        );
+        if (profile) {
+            if (profile.name) name = profile.name;
+            if (profile.image) avatarImage = profile.image;
+        }
     });
 
     onDestroy(() => {
@@ -343,21 +359,29 @@
                 {offer.description}
             </div>
         {/if}
-        {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
-            <Reputation type={ReviewType.Troubleshooter} user={offer.pubkey}/>
-        {/if}
         <slot name="takeOffer" />
-        <div class="flex flex-col gap-y-1 justify-start p-8 pt-2">
+        <div class="flex flex-col gap-y-1 justify-start px-4 pt-2 pb-4">
+            <div class="flex flex-col items-center sm:grid sm:grid-cols-[20%_1fr_20%] mb-4">
+                <div class="flex items-center">
+                    <h4 class="h5 sm:h4">Posted by:</h4> 
+                </div>
+                <div class="flex justify-center items-center gap-x-2">
+                    <Avatar
+                    src={avatarImage}
+                    width="w-12" 
+                />
+                    <a class="anchor text-lg sm:text-xl " href={'/' + npub}>
+                        {name ? name : npub.slice(0, 10) + '...'}
+                    </a>
+                </div>
+            </div>
+            {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
+                <Reputation type={ReviewType.Troubleshooter} user={offer.pubkey}/>
+            {/if}
             {#if showDetails}
                 <div class="">
                     <span class="">Status: </span>
                     <span class="font-bold {statusColor}">{status}</span>
-                </div>
-                <div class="">
-                    <span class="">Posted by: </span>
-                    <span>
-                        <a class="anchor" href={'/' + npub}>{npub.slice(0, 10) + '...'}</a>
-                    </span>
                 </div>
                 <div class="">{timeSincePosted}</div>
             {/if}

@@ -5,7 +5,10 @@
     import {
         type NDKFilter,
         type NDKUser,
-        type NDKSubscriptionOptions
+        type NDKSubscriptionOptions,
+
+        NDKSubscriptionCacheUsage
+
     } from '@nostr-dev-kit/ndk';
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketStatus, TicketEvent, } from "$lib/events/TicketEvent";
@@ -14,7 +17,7 @@
 
     import { nip19 } from "nostr-tools";
 
-    import { popup } from '@skeletonlabs/skeleton';
+    import { Avatar, popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
@@ -51,6 +54,8 @@
 
     let bech32ID = '';
     let npub: string;
+    let avatarImage = `https://robohash.org/${ticket.pubkey}`;
+    let name = '';
     let timeSincePosted: string; 
     let ticketStatus: string;
 
@@ -246,6 +251,20 @@
                 winnerOffer = OfferEvent.from(winnerOfferEvent);
             }
         }
+        const user = $ndk.getUser({pubkey: ticket.pubkey});
+        
+        const profile = await user.fetchProfile(
+            {
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                closeOnEose: true,
+                groupable: true,
+                groupableDelay: 1000,
+            }
+        );
+        if (profile) {
+            if (profile.name) name = profile.name;
+            if (profile.image) avatarImage = profile.image;
+        }
     });
 
     onDestroy(()=>{
@@ -344,25 +363,34 @@
             </div>
 
             <hr class="my-4" />
-             
+
+            <div class="flex flex-col items-center sm:grid sm:grid-cols-[20%_1fr_20%] mb-4">
+                <div class="flex items-center">
+                    <h4 class="h5 sm:h4">Posted by:</h4> 
+                </div>
+                <div class="flex justify-center items-center gap-x-2">
+                    <Avatar
+                        src={avatarImage}
+                        width="w-12" 
+                    />
+                    <a class="anchor text-lg sm:text-xl " href={'/' + npub}>
+                        {name ? name : npub.slice(0, 10) + '...'}
+                    </a>
+                </div>
+            </div>
             {#if showReputation && $currentUser && ticket.pubkey !== $currentUser.pubkey}
                 <Reputation 
                     type={ReviewType.Client}
                     user={ticket.pubkey}
                     open={openReputation}
                 />
-                <hr class="my-4" />
             {/if}
+             
+            <hr class="my-4" />
 
             <div class="">
                 <span class="pr-1">Status: </span>
                 <span class="font-bold {statusColor}">{ticketStatus}</span>
-            </div>
-            <div class="">
-                <span class="">Posted by: </span>
-                <span>
-                    <a class="anchor" href={'/' + npub}>{npub.slice(0, 10) + '...'}</a>
-                </span>
             </div>
             <div class="">{timeSincePosted}</div>
         {#if countAllOffers}
