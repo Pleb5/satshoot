@@ -22,9 +22,10 @@ import {
 
 import currentUser from "$lib/stores/user";
 
-import { type DrawerSettings, getDrawerStore } from "@skeletonlabs/skeleton";
-import { ProgressRadial } from '@skeletonlabs/skeleton';
 import drawerID, { DrawerIDs } from '$lib/stores/drawer';
+import { type DrawerSettings, getDrawerStore } from "@skeletonlabs/skeleton";
+import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
+import { ProgressRadial } from '@skeletonlabs/skeleton';
 import { wotUpdating } from "$lib/stores/wot";
 import type { NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
 import { SatShootPubkey } from "$lib/utils/misc";
@@ -32,6 +33,7 @@ import { onDestroy } from "svelte";
 
 export let user: Hexpubkey;
 export let type: ReviewType | undefined;
+export let open = true;
 
 const drawerStore = getDrawerStore();
 
@@ -186,116 +188,127 @@ onDestroy(()=>{
 
 </script>
 
-<div class="{baseClasses}">
-    <h3 class="h3 sm:h4 text-center mb-4">User Reputation</h3>
-    {#if user
-        && reviewsArraysExist
-        && $allEarningsStore
-        && $allPaymentsStore
-        && $allPledgesStore
-    }
-        <div class="flex flex-grow justify-center sm:justify-between flex-wrap gap-y-2 gap-x-4">
-            <div class="flex gap-x-2">
-                <div class="flex flex-col items-center gap-y-2">
-                    <div class="flex items-center">
-                        <h5 class="h5 sm:h4 underline">Ratings</h5>
-                        {#if reviewsExist}
-                            <button
-                                type="button" 
-                                class="btn btn-icon text-start text-primary-400-500-token"
-                                on:click={showReviewBreakdown}>
-                                <span>
-                                    <i 
-                                        class="fa-solid fa-arrow-up-right-from-square "
-                                    >
-                                    </i>
-                                </span>
-                            </button>
-                        {/if}
-                    </div>
-                    {#if $wotUpdating}
-                        <ProgressRadial
-                        value={undefined}
-                        stroke={60}
-                        meter="stroke-primary-500"
-                        track="stroke-primary-500/30"
-                        strokeLinecap="round" width="w-8" 
-                    />
-                    {:else}
-                        <div class="badge px-4 py-2 {ratingColor}">
-                            {ratingConsensus}
+<Accordion class="{baseClasses}">
+    <AccordionItem bind:open={open}>
+        <svelte:fragment slot="lead">
+            <i class="fa-solid text-2xl text-warning-500 fa-handshake-simple"></i>
+        </svelte:fragment>
+        <svelte:fragment slot="summary">
+            <div class="flex items-center justify-center">
+                <h3 class="h4 sm:h3 text-center">User Reputation</h3>
+            </div>
+        </svelte:fragment>
+        <svelte:fragment slot="content">
+            {#if user
+                && reviewsArraysExist
+                && $allEarningsStore
+                && $allPaymentsStore
+                && $allPledgesStore
+            }
+                <div class="flex flex-grow justify-center sm:justify-between flex-wrap gap-y-2 gap-x-4">
+                    <div class="flex gap-x-2">
+                        <div class="flex flex-col items-center gap-y-2">
+                            <div class="flex items-center">
+                                <h5 class="h5 sm:h4 underline">Ratings</h5>
+                                {#if reviewsExist}
+                                    <button
+                                        type="button" 
+                                        class="btn btn-icon text-start text-primary-400-500-token"
+                                        on:click={showReviewBreakdown}>
+                                        <span>
+                                            <i 
+                                                class="fa-solid fa-arrow-up-right-from-square "
+                                            >
+                                            </i>
+                                        </span>
+                                    </button>
+                                {/if}
+                            </div>
+                            {#if $wotUpdating}
+                                <ProgressRadial
+                                value={undefined}
+                                stroke={60}
+                                meter="stroke-primary-500"
+                                track="stroke-primary-500/30"
+                                strokeLinecap="round" width="w-8" 
+                            />
+                            {:else}
+                                <div class="badge px-4 py-2 {ratingColor}">
+                                    {ratingConsensus}
+                                </div>
+                            {/if}
                         </div>
-                    {/if}
-                </div>
-            </div>
-            <!-- Earnings -->
-            <div class="flex items-center">
-                <div class="flex flex-col items-center gap-y-2">
-                    <h5 class="h5 sm:h4 underline">
-                        <span class="text-warning-500">
-                            <i class="fa-solid fa-bolt"></i>
-                        </span>
-                        <span>All Earnings</span>
-                    </h5>
-                    <div>
-                        <span>
-                            {
-                                (allEarnings 
-                                    ? insertThousandSeparator(allEarnings)
-                                    : '?'
-                                ) + ' sats'
-                            }
-                        </span>
+                    </div>
+                    <!-- Earnings -->
+                    <div class="flex items-center">
+                        <div class="flex flex-col items-center gap-y-2">
+                            <h5 class="h5 sm:h4 underline">
+                                <span class="text-warning-500">
+                                    <i class="fa-solid fa-bolt"></i>
+                                </span>
+                                <span>All Earnings</span>
+                            </h5>
+                            <div>
+                                <span>
+                                    {
+                                    (allEarnings 
+                                        ? insertThousandSeparator(allEarnings)
+                                        : '?'
+                                    ) + ' sats'
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Payments -->
+                    <div class="flex items-center">
+                        <div class="flex flex-col items-center gap-y-2">
+                            <h5 class="h5 sm:h4 underline">
+                                <span class="text-warning-500">
+                                    <i class="fa-solid fa-bolt"></i>
+                                </span>
+                                <span>All Payments</span>
+                            </h5>
+                            <div>
+                                <span>
+                                    {
+                                    (allPayments
+                                        ? insertThousandSeparator(allPayments)
+                                        : '?'
+                                    ) + ' sats'
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="flex flex-col items-center gap-y-2">
+                            <h5 class="h5 sm:h4 underline">
+                                <span class="text-warning-500">
+                                    <i class="fa-solid fa-bolt"></i>
+                                </span>
+                                <span>All Pledges</span>
+                            </h5>
+                            <div>
+                                <span>
+                                    {
+                                    (allPledges
+                                        ? insertThousandSeparator(allPledges)
+                                        : '?'
+                                    ) + ' sats'
+                                    }
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <!-- Payments -->
-            <div class="flex items-center">
-                <div class="flex flex-col items-center gap-y-2">
-                    <h5 class="h5 sm:h4 underline">
-                        <span class="text-warning-500">
-                            <i class="fa-solid fa-bolt"></i>
-                        </span>
-                        <span>All Payments</span>
-                    </h5>
-                    <div>
-                        <span>
-                            {
-                                (allPayments
-                                    ? insertThousandSeparator(allPayments)
-                                    : '?'
-                                ) + ' sats'
-                            }
-                        </span>
-                    </div>
+            {:else}
+                <div class="grid grid-cols-[1fr_1fr_1fr] gap-8 items-center">
+                    <div class="placeholder animate-pulse" />
+                    <div class="placeholder animate-pulse" />
+                    <div class="placeholder animate-pulse" />
                 </div>
-            </div>
-            <div class="flex items-center">
-                <div class="flex flex-col items-center gap-y-2">
-                    <h5 class="h5 sm:h4 underline">
-                        <span class="text-warning-500">
-                            <i class="fa-solid fa-bolt"></i>
-                        </span>
-                        <span>All Pledges</span>
-                    </h5>
-                    <div>
-                        <span>
-                            {
-                                (allPledges
-                                    ? insertThousandSeparator(allPledges)
-                                    : '?'
-                                ) + ' sats'
-                            }
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {:else}
-        <div class="grid grid-cols-[1fr_1fr_1fr] gap-8 items-center">
-            <div class="placeholder animate-pulse" />
-            <div class="placeholder animate-pulse" />
-            <div class="placeholder animate-pulse" />
-        </div>
-    {/if}
-</div>
+            {/if}
+        </svelte:fragment>
+    </AccordionItem>
+</Accordion>

@@ -46,6 +46,7 @@
     export let countAllOffers: boolean = false;
     export let tagCallback: ((tag:string) => void) | null = null;
     export let showReputation = true;
+    export let openReputation = true;
     export let showReview = true;
 
     let bech32ID = '';
@@ -345,7 +346,11 @@
             <hr class="my-4" />
              
             {#if showReputation && $currentUser && ticket.pubkey !== $currentUser.pubkey}
-                <Reputation type={ReviewType.Client} user={ticket.pubkey}/>
+                <Reputation 
+                    type={ReviewType.Client}
+                    user={ticket.pubkey}
+                    open={openReputation}
+                />
                 <hr class="my-4" />
             {/if}
 

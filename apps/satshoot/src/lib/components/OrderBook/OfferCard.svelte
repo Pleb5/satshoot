@@ -11,8 +11,7 @@
 
     import { offerMakerToSelect } from "$lib/stores/messages";
 
-    import type { NDKFilter, NDKEvent, NDKSubscription } from "@nostr-dev-kit/ndk";
-    import { BTCTroubleshootKind } from "$lib/events/kinds";
+    import type { NDKFilter, NDKEvent } from "@nostr-dev-kit/ndk";
 
     import CreateOfferModal from "../Modals/CreateOfferModal.svelte";
     import ReviewClientModal from "../Modals/ReviewClientModal.svelte";
@@ -20,6 +19,7 @@
     import type { ModalComponent,  ModalSettings} from "@skeletonlabs/skeleton";
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
+    import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
 
     import { onDestroy, onMount } from "svelte";
     import Reputation from "./Reputation.svelte";
@@ -30,6 +30,7 @@
     import { insertThousandSeparator } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
     import { wot } from "$lib/stores/wot";
+    import UserTicketsIcon from "../Icons/UserTicketsIcon.svelte";
 
     const modalStore = getModalStore();
 
@@ -43,8 +44,10 @@
     export let showTicket = true;
     export let showTicketReputation = true;
     export let showTicketReview = true;
-
     export let showOfferReview = true;
+    export let openTicket = false;
+    export let openTicketReputation = false;
+
     let troubleshooterReview: TroubleshooterRating | null = null;
     let reviewer: NDKUser;
 
@@ -360,34 +363,49 @@
             {/if}
             {#if showTicket}
                 <hr class="my-2"/>
-                {#if ticket}
-                    <TicketCard 
-                        {ticket}
-                        titleSize={'md md:text-xl'}
-                        showChat={false}
-                        {countAllOffers}
-                        showReputation={showTicketReputation}
-                        showReview={showTicketReview}
-                    >
-                    </TicketCard>
-                {:else}
-                    <section class="w-full">
-                        <div class="p-4 space-y-4">
-                            <div class="placeholder animate-pulse" />
-                            <div class="grid grid-cols-3 gap-8">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                <Accordion>
+                    <AccordionItem bind:open={openTicket}>
+                        <svelte:fragment slot="lead">
+                            <UserTicketsIcon sizeClass={'text-xl'}/>
+                        </svelte:fragment>
+                        <svelte:fragment slot="summary">
+                            <div class="flex items-center justify-center">
+                                <h3 class="h4 sm:h3 text-center">Ticket</h3>
                             </div>
-                            <div class="grid grid-cols-4 gap-4">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                            </div>
-                        </div>
-                    </section>
-                {/if}
+                        </svelte:fragment>
+                        <svelte:fragment slot="content">
+                            {#if ticket}
+                                <TicketCard 
+                                    {ticket}
+                                    titleSize={'md md:text-xl'}
+                                    showChat={false}
+                                    {countAllOffers}
+                                    showReputation={showTicketReputation}
+                                    openReputation={openTicketReputation}
+                                    showReview={showTicketReview}
+                                >
+                                </TicketCard>
+                            {:else}
+                                <section class="w-full">
+                                    <div class="p-4 space-y-4">
+                                        <div class="placeholder animate-pulse" />
+                                        <div class="grid grid-cols-3 gap-8">
+                                            <div class="placeholder animate-pulse" />
+                                            <div class="placeholder animate-pulse" />
+                                            <div class="placeholder animate-pulse" />
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-4">
+                                            <div class="placeholder animate-pulse" />
+                                            <div class="placeholder animate-pulse" />
+                                            <div class="placeholder animate-pulse" />
+                                            <div class="placeholder animate-pulse" />
+                                        </div>
+                                    </div>
+                                </section>
+                            {/if}
+                        </svelte:fragment>
+                    </AccordionItem>
+                </Accordion>
             {/if}
             {#if showOfferReview && troubleshooterReview && reviewer}
                 <UserReviewCard review={troubleshooterReview} {reviewer} />
