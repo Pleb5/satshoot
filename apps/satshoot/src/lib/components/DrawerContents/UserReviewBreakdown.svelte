@@ -29,6 +29,7 @@ function backToReviewBreadown() {
         id: $drawerID.toString(),
         meta: {reviewType: reviewType, user: userHex},
         position: 'top',
+        height: 'h-[70vh]',
         bgDrawer: 'bg-surface-300-600-token',
     };
     drawerStore.open(drawerSettings);

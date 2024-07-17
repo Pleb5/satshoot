@@ -67,6 +67,7 @@ function showReviewBreakdown() {
         id: $drawerID.toString(),
         meta: {reviewType: type, user: user},
         position: 'top',
+        height: 'h-[70vh]',
         bgDrawer: 'bg-surface-300-600-token',
     };
 
