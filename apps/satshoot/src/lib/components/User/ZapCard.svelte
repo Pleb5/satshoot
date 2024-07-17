@@ -55,7 +55,7 @@ onMount(async() => {
 </script>
 
 <div class="grid grid-cols-[1fr_auto] gap-x-2">
-    <div class="card p-4 space-y-2 variant-soft-primary rounded-tl-none">
+    <div class="card p-4 space-y-2 bg-surface-300-600-token rounded-tl-none">
         <header class="flex justify-between items-center gap-x-4">
             <p class="font-bold text-sm md:text-lg">{zapperName}</p>
             <small class="opacity-50">{zapTimestamp}</small>
@@ -69,7 +69,7 @@ onMount(async() => {
             </span>
         </h4>
         {#if zappedOffer}
-            <div class="flex justify-center mr-4">
+            <div class="flex justify-center">
                 <OfferCard
                     offer={zappedOffer}
                     showOfferReview={false}

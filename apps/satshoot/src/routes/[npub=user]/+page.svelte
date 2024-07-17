@@ -72,7 +72,7 @@ onDestroy(()=>{
     </h3>
     {#if $allTicketsOfUser.length > 0}
         {#each $allTicketsOfUser as ticket (ticket.id)}
-            <div class="flex justify-center">
+            <div class="flex justify-center min-w-[40vw]">
                 <TicketCard
                     {ticket}
                     titleSize={'md lg:text-xl'}

@@ -73,7 +73,9 @@ function clearAll() {
                 <div class="space-y-4">
                     {#each $receivedZapsNotifications as zap(zap.id)}
                         <div class="flex flex-col items-center">
-                            <ZapCard {zap} />
+                            <div class=" min-w-[50vw]">
+                                <ZapCard {zap} />
+                            </div>
                             <div>
                                 <button 
                                     class="btn btn-icon"
@@ -97,7 +99,9 @@ function clearAll() {
                 <div class="space-y-4">
                     {#each $ticketNotifications as ticket(ticket.id)}
                         <div class="flex flex-col items-center">
-                            <TicketCard {ticket} countAllOffers={true}/>
+                            <div class=" min-w-[50vw]">
+                                <TicketCard {ticket} countAllOffers={true}/>
+                            </div>
                             <div>
                                 <button 
                                     class="btn btn-icon"
@@ -121,12 +125,14 @@ function clearAll() {
                 <div class="space-y-4">
                     {#each $offerNotifications as offer(offer.id)}
                         <div class="flex flex-col items-center">
-                            <OfferCard 
-                            {offer}
-                            showTicket={true}
-                            enableChat={true}
-                            countAllOffers={true}
-                        />
+                            <div class=" min-w-[50vw]">
+                                <OfferCard 
+                                    {offer}
+                                    showTicket={true}
+                                    enableChat={true}
+                                    countAllOffers={true}
+                                />
+                            </div>
                             <div>
                                 <button 
                                     class="btn btn-icon"

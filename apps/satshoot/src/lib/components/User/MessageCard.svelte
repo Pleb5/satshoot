@@ -98,50 +98,52 @@ $: if (decryptedDM) {
 
 </script>
 
-{#if decryptedDM}
-    <div class="grid {templateColumn} gap-x-2 {showMyself ? '' : 'hidden'}">
-        {#if !avatarRight}
-            <Avatar
-            src={avatarImage}
-            width="w-12" />
-        {/if}
-        <div class="card p-4 space-y-2 {extraClasses}">
-            <header class="flex justify-between items-center gap-x-4">
-                <p class="font-bold text-sm md:text-lg">{name}</p>
-                <small class="opacity-50">{timestamp}</small>
-            </header>
-            <p>{decryptedDM}</p>
-            {#if messageLink && !$page.url.pathname.includes('/messages')}
-                <div class="flex justify-center mr-4">
-                    <button
-                        type="button" 
-                        class="btn btn-icon-lg p-2 text-primary-400-500-token"
-                        on:click={()=>{goto(messageLink)}}
-                    >
-                        <span>Reply</span>
-                        <span>
-                            <i class="fa-solid fa-reply"></i>
-                        </span>
-                    </button>
-                </div>
+<div class="{showMyself ? '' : 'hidden'}">
+    {#if decryptedDM}
+        <div class="grid {templateColumn} gap-x-2 ">
+            {#if !avatarRight}
+                <Avatar
+                src={avatarImage}
+                width="w-12" />
+            {/if}
+            <div class="card p-4 space-y-2 {extraClasses}">
+                <header class="flex justify-between items-center gap-x-4">
+                    <p class="font-bold text-sm md:text-lg">{name}</p>
+                    <small class="opacity-50">{timestamp}</small>
+                </header>
+                <p>{decryptedDM}</p>
+                {#if messageLink && !$page.url.pathname.includes('/messages')}
+                    <div class="flex justify-center mr-4">
+                        <button
+                            type="button" 
+                            class="btn btn-icon-lg p-2 text-primary-400-500-token"
+                            on:click={()=>{goto(messageLink)}}
+                        >
+                            <span>Reply</span>
+                            <span>
+                                <i class="fa-solid fa-reply"></i>
+                            </span>
+                        </button>
+                    </div>
+                {/if}
+            </div>
+            {#if avatarRight}
+                <Avatar
+                src={avatarImage}
+                width="w-12" />
             {/if}
         </div>
-        {#if avatarRight}
-            <Avatar
-            src={avatarImage}
-            width="w-12" />
-        {/if}
-    </div>
-{:else} 
-    <div class="p-4 space-y-4 w-32">
-        <div class="grid grid-cols-1">
-            <div class="placeholder animate-pulse" />
+    {:else} 
+        <div class="p-4 space-y-4 w-32">
+            <div class="grid grid-cols-1">
+                <div class="placeholder animate-pulse" />
+            </div>
+            <div class="grid grid-cols-1">
+                <div class="placeholder animate-pulse" />
+            </div>
+            <div class="grid grid-cols-1">
+                <div class="placeholder animate-pulse" />
+            </div>
         </div>
-        <div class="grid grid-cols-1">
-            <div class="placeholder animate-pulse" />
-        </div>
-        <div class="grid grid-cols-1">
-            <div class="placeholder animate-pulse" />
-        </div>
-    </div>
-{/if}
+    {/if}
+</div>
