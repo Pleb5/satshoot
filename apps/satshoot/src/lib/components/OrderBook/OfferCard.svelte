@@ -43,12 +43,15 @@
     export let showDetails = true;
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
+
     export let showTicket = true;
     export let showTicketReputation = true;
     export let showTicketReview = true;
-    export let showOfferReview = true;
     export let openTicket = false;
     export let openTicketReputation = false;
+
+    export let showOfferReview = true;
+    export let openReview = false;
 
     let troubleshooterReview: TroubleshooterRating | null = null;
     let reviewer: NDKUser;
@@ -432,7 +435,11 @@
                 </Accordion>
             {/if}
             {#if showOfferReview && troubleshooterReview && reviewer}
-                <UserReviewCard review={troubleshooterReview} {reviewer} />
+                <UserReviewCard 
+                    review={troubleshooterReview} 
+                    {reviewer}
+                    open={openReview}
+                />
             {/if}
         </div>
     {:else}

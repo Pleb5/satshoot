@@ -51,6 +51,7 @@
     export let showReputation = true;
     export let openReputation = true;
     export let showReview = true;
+    export let openReview = false;
 
     let bech32ID = '';
     let npub: string;
@@ -420,7 +421,7 @@
                 </div>
             </div>
             {#if showReview && clientReview && reviewer}
-                <UserReviewCard review={clientReview} {reviewer} />
+                <UserReviewCard review={clientReview} {reviewer} open={openReview} />
             {/if}
         </footer>
     {/if}
