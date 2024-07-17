@@ -269,7 +269,7 @@
     const pledgeInfoPopup: PopupSettings = {
         event: 'click',
         target: `pledgeInfo_${offer?.id}`,
-        placement: 'bottom'
+        placement: 'top'
     };
 
 </script>
