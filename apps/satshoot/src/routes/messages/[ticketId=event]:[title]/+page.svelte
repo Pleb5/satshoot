@@ -1,9 +1,9 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
+    import ndk, { connected } from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
     import { page } from "$app/stores";
 
-    import { allOffers } from "$lib/stores/troubleshoot-eventstores";
+    import { wot } from "$lib/stores/wot";
 
     import { 
         wotFilteredMessageFeed,
@@ -11,7 +11,7 @@
         selectedPerson,
     } from "$lib/stores/messages";
     
-    import { onMount, tick } from "svelte";
+    import { onDestroy, onMount, tick } from "svelte";
 
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
@@ -23,21 +23,40 @@
         type NDKUser,
         type NDKSigner,
         type NDKTag,
+        NDKRelay,
+        type NDKFilter,
+        NDKSubscriptionCacheUsage,
     } from "@nostr-dev-kit/ndk";
 
-    import { idFromNaddr } from '$lib/utils/nip19'
+    import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
     import { wordlist } from "@scure/bip39/wordlists/english";
-    import type { OfferEvent } from "$lib/events/OfferEvent";
+    import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
     import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
     import MessageCard from "$lib/components/User/MessageCard.svelte";
+    import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
 
 
     const toastStore = getToastStore();
 
     const ticketAddress = idFromNaddr($page.params.ticketId);
+    const relaysFromURL = relaysFromNaddr(ticketAddress).split(',');
     let titleLink = '/' + $page.params.ticketId;
     let ticketTitle:string = 'Ticket: ?';
+    if (relaysFromURL.length > 0) {
+        relaysFromURL.forEach((relayURL: string) => {
+            if (relayURL) {
+                $ndk.pool.addRelay(new NDKRelay(relayURL));
+            }
+        });
+    }
+
+    let offersFilter: NDKFilter<NDKKind.TroubleshootOffer> = {
+        kinds: [NDKKind.TroubleshootOffer],
+        '#a': [ticketAddress],
+    }
+
+    let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
 
     let ticket: TicketEvent | null = null;
     let myTicket = false;
@@ -79,6 +98,9 @@
     // The pubkey of the person who made the winning Offer
     let winner = '';
 
+    // Messages related to the ticket
+    let ticketMessages: NDKEventStore<NDKEvent>;
+
     // Filtered messages by person AND searchText 
 	let filteredMessageFeed: NDKEvent[] = [];
 
@@ -115,6 +137,7 @@
             console.log('relays published', relays)
         }
 	}
+
     $: if(currentMessage && !warned) {
         wordlist.forEach((bip39Word: string) => {
             const lowerCaseText = currentMessage.toLowerCase();
@@ -198,13 +221,6 @@
         // We also filter messages related to the ticket the conversation is about
         console.log('wotFilteredMessageFeed', $wotFilteredMessageFeed)
         filteredMessageFeed = $wotFilteredMessageFeed.filter((message: NDKEvent) =>{
-            let relatedToTicket = false;
-            message.tags.forEach((tag: NDKTag) => {
-                if (tag[0] === 't' && tag[1] === ticket!.ticketAddress) {
-                    relatedToTicket = true;
-                }
-            });
-
             const senderIsCurrentPerson = 
                 (message.pubkey === currentPerson.pubkey);
             const recipientIsCurrentPerson = 
@@ -212,9 +228,7 @@
             const relatedToCurrentPerson = 
                 senderIsCurrentPerson || recipientIsCurrentPerson;
 
-            return (
-                relatedToTicket && relatedToCurrentPerson
-            );
+            return relatedToCurrentPerson;
         });
 
         filteredMessageFeed.reverse();
@@ -298,96 +312,29 @@
     }
 
     // If there is a logged in user, start receiving messages related to the ticket
-    $: if ($currentUser && needSetup) {
+    $: if ($connected && needSetup) {
         // If my ticket then add all people that created an offer on this ticket
         // and highlight winner offer if there is one
         // else add the ticket creator to people
         //  We must fetch this ticket once
         // to get the winner and the ticket title. 
         // myTickets does not necessarily contain this ticket at this point so it is easier this way
-        console.log('fetch ticket...')
-        $ndk.fetchEvent(ticketAddress).then((t: NDKEvent|null) => {
-            needSetup = false;
-            elemChat = elemChat;
-
-            let ticketPubkey = ticketAddress.split(':')[1];
-            if (t) {
-                console.log('got ticket')
-                ticket = TicketEvent.from(t);
-                ticketTitle = 'Ticket: ' + ticket.title.substring(0, 20) + '...';
-            }
-            if (($currentUser as NDKUser).pubkey !== ticketPubkey) {
-                console.log('addperson in fetchevent, NOT my ticket')
-                addPerson(ticketPubkey);
-                const contact: Contact|undefined = people.find((c: Contact) =>
-                    c.person.pubkey == ticketPubkey
-                );
-
-                if(contact) selectCurrentPerson(contact);
-            } else {
-                // This is my ticket.
-                if($offerMakerToSelect) {
-                    console.log('offerMakerToSelect')
-                    addPerson($offerMakerToSelect)
-                    const contact: Contact|undefined = people.find((c: Contact) =>
-                        c.person.pubkey == $offerMakerToSelect
-                    );
-                    // console.log('contact', contact)
-
-                    if(contact) selectCurrentPerson(contact);
-
-                    $offerMakerToSelect = '';
-                } else if($selectedPerson && ($selectedPerson.split('$')[1] == ticketAddress)) {
-                    console.log('select person that was previously selected', $selectedPerson)
-                    const pubkey = $selectedPerson.split('$')[0];
-                    addPerson(pubkey);
-                    const contact: Contact|undefined = people.find((c: Contact) =>
-                        c.person.pubkey == pubkey
-                    );
-
-                    if(contact) selectCurrentPerson(contact);
-                }
-                myTicket = true;
-                console.log('this is my ticket')
-                if(ticket) {
-                    $allOffers.forEach((offer: OfferEvent) => {
-                        if (offer.referencedTicketAddress === ticketAddress) {
-                            if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
-                                console.log('we got a winner in setup')
-                                winner = offer.pubkey;
-                            }
-                        }
-                    });
-                }
-            }
-        });
     }
 
-    $: if (ticket && myTicket && $allOffers) {
-        $allOffers.forEach((offer: OfferEvent) => {
-            if (offer.referencedTicketAddress === ticketAddress) {
-                // If this is the winner offer, set winner
-                if (!winner) {
-                    if ((ticket as TicketEvent).acceptedOfferAddress === offer.offerAddress) {
-                        console.log('we got a winner in arrived offers')
-                        winner = offer.pubkey;
-                    }
-                }
+    $: if (myTicket && $offerStore) {
+        $offerStore.forEach((offer: OfferEvent) => {
+            if ($wot?.size > 1 && $wot.has(offer.pubkey)) {
                 addPerson(offer.pubkey);
             }
         });
     }
 
-    $: if (!needSetup && $wotFilteredMessageFeed.length > 0) {
+    $: if ($ticketMessages?.length > 0) {
         // Add all people to contact list who have messages related to ticket
-        $wotFilteredMessageFeed.forEach((message: NDKEvent) => {
-            message.tags.forEach((tag: NDKTag) => {
-                if (tag[0] === 't' && tag[1] === ticket!.ticketAddress) {
-                    if (message.pubkey !== $currentUser!.pubkey) {
-                        addPerson(message.pubkey);
-                    }
-                }
-            });
+        $ticketMessages.forEach((message: NDKEvent) => {
+            if (message.pubkey !== $currentUser!.pubkey) {
+                addPerson(message.pubkey);
+            }
         });
 
         if (currentPerson) {
@@ -401,8 +348,105 @@
         calculateHeights();
     }
 
-    onMount(() => {
+    $: if ($currentUser && ticket) {
+        // START MESSAGE STORE SUB
+        const receivedMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
+            kinds: [NDKKind.EncryptedDirectMessage],
+            '#p': [$currentUser.pubkey],
+            '#t': [ticketAddress], 
+            limit: 50_000,
+        };
+
+        const sentMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
+            kinds: [NDKKind.EncryptedDirectMessage],
+            // set to user as soon as login happens
+            authors: [$currentUser.pubkey],
+            '#t': [ticketAddress], 
+            limit: 50_000,
+        }
+        ticketMessages = $ndk.storeSubscribe(
+            [receivedMessageFilter, sentMessageFilter],
+            {
+                autoStart: true,
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                closeOnEose: false,
+                groupable: false
+            },
+        );
+
+        // Add the right people to the contact list and select current chat partner
+        if (($currentUser as NDKUser).pubkey !== ticket.pubkey) {
+            // Not the users ticket
+            console.log('NOT my ticket, adding ticket holder to persons...')
+            addPerson(ticket.pubkey);
+            const contact: Contact|undefined = people.find((c: Contact) =>
+                c.person.pubkey === ticket!.pubkey
+            );
+
+            if(contact) selectCurrentPerson(contact);
+        } else {
+            // This is the users ticket
+            myTicket = true;
+            console.log('this is my ticket')
+            if (ticket.acceptedOfferAddress) {
+                $ndk.fetchEvent(ticket.acceptedOfferAddress).then((offer) => {
+                    if (offer) {
+                        winner = offer.pubkey;
+                    }
+                });
+            }
+
+            if($offerMakerToSelect) {
+                console.log('offerMakerToSelect')
+                addPerson($offerMakerToSelect)
+                const contact: Contact|undefined = people.find((c: Contact) =>
+                    c.person.pubkey == $offerMakerToSelect
+                );
+                // console.log('contact', contact)
+
+                if(contact) selectCurrentPerson(contact);
+
+                $offerMakerToSelect = '';
+            } else if($selectedPerson && ($selectedPerson.split('$')[1] == ticketAddress)) {
+                console.log('select person that was previously selected', $selectedPerson)
+                const pubkey = $selectedPerson.split('$')[0];
+                addPerson(pubkey);
+                const contact: Contact|undefined = people.find((c: Contact) =>
+                    c.person.pubkey == pubkey
+                );
+
+                if(contact) selectCurrentPerson(contact);
+            }
+        }
+    }
+
+
+    onMount(async () => {
         expandContacts();
+        console.log('fetch ticket...')
+        const ticketEvent = await $ndk.fetchEvent(
+            ticketAddress,
+            // Try to fetch latest state of the ticket
+            // but fall back to cache
+            {cacheUsage: NDKSubscriptionCacheUsage.PARALLEL}
+        );
+        if (ticketEvent) {
+            console.log('got ticket')
+            ticket = TicketEvent.from(ticketEvent);
+            ticketTitle = 'Ticket: ' + ticket.title.substring(0, 20) + '...';
+            offerStore = $ndk.storeSubscribe<OfferEvent>(
+                offersFilter,
+                {closeOnEose: false, cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+                OfferEvent
+            );
+
+            elemChat = elemChat;
+        }
+    });
+
+    onDestroy(() => {
+        if (ticketMessages) ticketMessages.empty();
+        if (offerStore) offerStore.empty();
     });
 
 </script>
@@ -410,7 +454,7 @@
 <svelte:window bind:innerHeight={innerHeight} bind:innerWidth={innerWidth}/>
 <div class="h-full overflow-hidden">
     <div class="w-full h-full flex flex-col overflow-hidden card bg-surface-100-800-token">
-        {#if ticket}
+        {#if $currentUser && ticket}
             <section class="flex-none pt-2" bind:this={elemHeader}>
                 <a class="anchor" href={titleLink}>
                     <h4 class="h4 mb-2 text-center font-bold">{ticketTitle ?? '?'}</h4>
@@ -575,7 +619,14 @@
                             rows="1"
                             on:keydown={onPromptKeyDown}
                         />
-                        <button class={currentMessage ? 'variant-filled-primary' : 'input-group-shim'} on:click={sendMessage}>
+                        <button 
+                            class={
+                                currentMessage 
+                                ? 'variant-filled-primary' 
+                                : 'input-group-shim'
+                            }
+                            on:click={sendMessage}
+                        >
                             <i class="fa-solid fa-paper-plane" />
                         </button>
                     </div>
