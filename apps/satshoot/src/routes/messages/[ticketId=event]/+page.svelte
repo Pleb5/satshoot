@@ -1,12 +1,11 @@
 <script lang="ts">
-    import ndk, { connected } from "$lib/stores/ndk";
+    import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
     import { page } from "$app/stores";
 
     import { wot } from "$lib/stores/wot";
 
     import { 
-        wotFilteredMessageFeed,
         offerMakerToSelect,
         selectedPerson,
     } from "$lib/stores/messages";
@@ -22,7 +21,6 @@
         NDKKind,
         type NDKUser,
         type NDKSigner,
-        type NDKTag,
         NDKRelay,
         type NDKFilter,
         NDKSubscriptionCacheUsage,
@@ -40,7 +38,7 @@
     const toastStore = getToastStore();
 
     const ticketAddress = idFromNaddr($page.params.ticketId);
-    const relaysFromURL = relaysFromNaddr(ticketAddress).split(',');
+    const relaysFromURL = relaysFromNaddr($page.params.ticketId).split(',');
     let titleLink = '/' + $page.params.ticketId;
     let ticketTitle:string = 'Ticket: ?';
     if (relaysFromURL.length > 0) {
@@ -88,8 +86,6 @@
 
     let searchInput = '';
     let warned = false;
-
-    let needSetup = true;
 
 	// Contact List
 	let people: Contact[] = [];
@@ -211,46 +207,6 @@
             calculateHeights();
 
             filteredMessageFeed = [];
-            updateMessageFeed();
-        }
-    }
-
-    async function updateMessageFeed() {
-        // The message was either sent from the current chat partner to the user
-        // or it was sent from the user to the current partner. We need both
-        // We also filter messages related to the ticket the conversation is about
-        console.log('wotFilteredMessageFeed', $wotFilteredMessageFeed)
-        filteredMessageFeed = $wotFilteredMessageFeed.filter((message: NDKEvent) =>{
-            const senderIsCurrentPerson = 
-                (message.pubkey === currentPerson.pubkey);
-            const recipientIsCurrentPerson = 
-                (message.tagValue('p') as string === currentPerson.pubkey);
-            const relatedToCurrentPerson = 
-                senderIsCurrentPerson || recipientIsCurrentPerson;
-
-            return relatedToCurrentPerson;
-        });
-
-        filteredMessageFeed.reverse();
-
-        console.log('update message feed')
-        // Try to add new people to contacts
-        for (const dm of filteredMessageFeed) {
-            const peerPubkey = (
-                dm.tagValue('p') === $currentUser!.pubkey
-                ? dm.pubkey : dm.tagValue('p')
-            ) as string;
-            addPerson(peerPubkey);
-        }
-
-        if (currentPerson) {
-            // Smooth scroll to bottom
-            // Timeout prevents race condition
-            if (elemChat) {
-                setTimeout(() => {
-                    scrollChatBottom('smooth');
-                }, 0);
-            }
         }
     }
 
@@ -311,16 +267,16 @@
         }
     }
 
-    // If there is a logged in user, start receiving messages related to the ticket
-    $: if ($connected && needSetup) {
-        // If my ticket then add all people that created an offer on this ticket
-        // and highlight winner offer if there is one
-        // else add the ticket creator to people
-        //  We must fetch this ticket once
-        // to get the winner and the ticket title. 
-        // myTickets does not necessarily contain this ticket at this point so it is easier this way
+    function peerFromMessage(message: NDKEvent):string | undefined {
+        const peerPubkey = (
+            message.tagValue('p') === $currentUser!.pubkey
+            ? message.pubkey : message.tagValue('p')
+        );
+
+        return peerPubkey;
     }
 
+    // New offer arrived: Add person if offer maker is part of WoT
     $: if (myTicket && $offerStore) {
         $offerStore.forEach((offer: OfferEvent) => {
             if ($wot?.size > 1 && $wot.has(offer.pubkey)) {
@@ -329,16 +285,50 @@
         });
     }
 
-    $: if ($ticketMessages?.length > 0) {
-        // Add all people to contact list who have messages related to ticket
-        $ticketMessages.forEach((message: NDKEvent) => {
-            if (message.pubkey !== $currentUser!.pubkey) {
-                addPerson(message.pubkey);
+    // New message arrived that is related to the ticket
+    // If part of wot add message peer to Contacts
+    // Render new message if there is a current chat partner selected
+    $: if ($currentUser && $ticketMessages?.length > 0) {
+        $ticketMessages = $ticketMessages.filter((message: NDKEvent) => {
+            const peer = peerFromMessage(message);
+
+            // We always should have a peer defined
+            if (!peer) return false;
+
+            if ($wot?.size > 1 && $wot.has(peer)) {
+                // Only try to add person if part of wot
+                addPerson(peer);
+                // Message can be displayed: It is related to ticket
+                // AND it is related to user AND the peer is part of WoT
+                return true;
             }
+
+            return false;
         });
 
         if (currentPerson) {
-            updateMessageFeed();
+            // Only render conversation with current person
+            filteredMessageFeed = $ticketMessages.filter((message: NDKEvent) =>{
+                const senderIsCurrentPerson = 
+                    (message.pubkey === currentPerson.pubkey);
+                const recipientIsCurrentPerson = 
+                    (message.tagValue('p') as string === currentPerson.pubkey);
+                const relatedToCurrentPerson = 
+                    senderIsCurrentPerson || recipientIsCurrentPerson;
+
+                return relatedToCurrentPerson;
+            });
+
+            // We need messages in reverse chronological order
+            filteredMessageFeed.reverse();
+
+            // Smooth scroll to bottom
+            // Timeout prevents race condition
+            if (elemChat) {
+                setTimeout(() => {
+                    scrollChatBottom('smooth');
+                }, 0);
+            }
         }
     }
 
@@ -420,7 +410,6 @@
         }
     }
 
-
     onMount(async () => {
         expandContacts();
         console.log('fetch ticket...')
@@ -439,9 +428,8 @@
                 {closeOnEose: false, cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
                 OfferEvent
             );
-
-            elemChat = elemChat;
         }
+        elemChat = elemChat;
     });
 
     onDestroy(() => {

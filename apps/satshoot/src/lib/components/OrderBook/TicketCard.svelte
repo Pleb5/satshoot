@@ -280,7 +280,7 @@
         <header class="card-header grid grid-cols-[15%_1fr_15%] items-start">
             {#if ticketChat}
                 <a
-                    href={"/messages/" + bech32ID + ":" + ticket.title}
+                    href={"/messages/" + bech32ID}
                     class="btn btn-icon btn-sm md:btn-md justify-self-start"
                 >
                     <i class="fa-solid fa-comment text-2xl md:text-3xl"></i>

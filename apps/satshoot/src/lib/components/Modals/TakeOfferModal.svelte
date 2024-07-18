@@ -52,7 +52,7 @@
                 modalStore.trigger(modal);
 
                 // Navigate to ticket messages
-                goto('/messages/' + ticket.encode() + ":" + ticket.title);
+                goto('/messages/' + ticket.encode());
 
             } catch(e) {
                 console.log(e)

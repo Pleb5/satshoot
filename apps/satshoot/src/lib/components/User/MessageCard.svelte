@@ -83,8 +83,7 @@ onMount(async () => {
         const event = await $ndk.fetchEvent(ticketAddress);
         if (event) {
             const ticketEvent = TicketEvent.from(event);
-            messageLink = "/messages/"
-                + ticketEvent.encode() + ":" + ticketEvent.title;
+            messageLink = "/messages/" + ticketEvent.encode();
         }
         console.log('message link', messageLink)
     }

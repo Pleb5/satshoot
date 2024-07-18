@@ -283,7 +283,7 @@
             {#if $currentUser && enableChat && ticket}
                 <a
                     on:click={setOfferToSelect}
-                    href={"/messages/" + ticket.encode() + ":" + ticket.title}
+                    href={"/messages/" + ticket.encode()}
                     class="btn btn-icon btn-sm justify-self-start"
                 >
                     <i class="fa-solid fa-comment text-2xl"></i>
