@@ -320,22 +320,24 @@
 </h2>
 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
     {#if $offerStore}
-        {#each $offerStore as offer}
-            <div class="flex justify-center">
-                <OfferCard {offer} showTicket={false} enableChat={myTicket}>
-                    <div slot="takeOffer" class="flex justify-center mt-2">
-                        {#if ticket && myTicket && ticket.status === TicketStatus.New}
-                            <button
-                                type="button"
-                                class="btn btn-lg bg-primary-300-600-token"
-                                on:click={() => takeOffer(offer)}
-                            >
-                                Take Offer
-                            </button>
-                        {/if}
-                    </div>
-                </OfferCard>
-            </div>
-        {/each}
+        <div class="flex flex-col items-center gap-y-8">
+            {#each $offerStore as offer}
+                <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
+                    <OfferCard {offer} showTicket={false} enableChat={myTicket}>
+                        <div slot="takeOffer" class="flex justify-center mt-2">
+                            {#if ticket && myTicket && ticket.status === TicketStatus.New}
+                                <button
+                                    type="button"
+                                    class="btn btn-lg bg-primary-300-600-token"
+                                    on:click={() => takeOffer(offer)}
+                                >
+                                    Take Offer
+                                </button>
+                            {/if}
+                        </div>
+                    </OfferCard>
+                </div>
+            {/each}
+        </div>
     {/if}
 </div>

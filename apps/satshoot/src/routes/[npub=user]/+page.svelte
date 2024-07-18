@@ -60,26 +60,32 @@ onDestroy(()=>{
 </script>
 
 <div class="flex flex-col gap-y-4 items-center p-4">
-    <UserCard {user} />
+    <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
+        <UserCard {user} />
+    </div>
     <!-- Show reputation defaulting ratings to the type of review
     <!-- that contains more reviews -->
     {#if $currentUser}
-        <Reputation user={user.pubkey} type={undefined}/>
+    <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
+            <Reputation user={user.pubkey} type={undefined}/>
+    </div>
     {/if}
 
     <h3 class="h3 text-center underline">
         Tickets of User
     </h3>
     {#if $allTicketsOfUser.length > 0}
-        {#each $allTicketsOfUser as ticket (ticket.id)}
-            <div class="flex justify-center min-w-[40vw]">
-                <TicketCard
+        <div class="flex flex-col items-center gap-y-8">
+            {#each $allTicketsOfUser as ticket (ticket.id)}
+                <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
+                    <TicketCard
                     {ticket}
                     titleSize={'md lg:text-xl'}
                     showReputation={false}
                 />
-            </div>
-        {/each}
+                </div>
+            {/each}
+        </div>
     {:else}
         <h4>No Tickets found!</h4>
     {/if}
@@ -87,15 +93,17 @@ onDestroy(()=>{
         Offers of User
     </h3>
     {#if $allOffersOfUser.length > 0}
-        {#each $allOffersOfUser as offer (offer.id)}
-            <div class="flex justify-center">
-                <OfferCard 
+        <div class="flex flex-col items-center gap-y-8">
+            {#each $allOffersOfUser as offer (offer.id)}
+                <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
+                    <OfferCard 
                     {offer}
                     enableChat={false}
                     showReputation={false}
                 />
-            </div>
-        {/each}
+                </div>
+            {/each}
+        </div>
     {:else}
         <h4>No Offers found!</h4>
     {/if}

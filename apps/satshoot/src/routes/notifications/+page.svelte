@@ -73,7 +73,7 @@ function clearAll() {
                 <div class="space-y-4">
                     {#each $receivedZapsNotifications as zap(zap.id)}
                         <div class="flex flex-col items-center">
-                            <div class=" min-w-[50vw]">
+                            <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
                                 <ZapCard {zap} />
                             </div>
                             <div>
@@ -99,7 +99,7 @@ function clearAll() {
                 <div class="space-y-4">
                     {#each $ticketNotifications as ticket(ticket.id)}
                         <div class="flex flex-col items-center">
-                            <div class=" min-w-[50vw]">
+                            <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
                                 <TicketCard {ticket} countAllOffers={true}/>
                             </div>
                             <div>
@@ -125,7 +125,7 @@ function clearAll() {
                 <div class="space-y-4">
                     {#each $offerNotifications as offer(offer.id)}
                         <div class="flex flex-col items-center">
-                            <div class=" min-w-[50vw]">
+                            <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
                                 <OfferCard 
                                     {offer}
                                     showTicket={true}
@@ -156,7 +156,9 @@ function clearAll() {
                 <div class="space-y-4">
                     {#each $messageNotifications as message(message.id)}
                         <div class="flex flex-col items-center">
-                            <MessageCard {message} />
+                            <div class="w-[90vw] sm:w-[40vw]">
+                                <MessageCard {message} />
+                            </div>
                             <div>
                                 <button 
                                     class="btn btn-icon"
@@ -181,10 +183,12 @@ function clearAll() {
                     {#each $reviewNotifications as review(review.id)}
                         {#if review.ratings}
                             <div class="flex flex-col items-center">
+                            <div class="w-[90vw] sm:w-[40vw]">
                                 <UserReviewCard 
                                     review={review.ratings} 
                                     reviewer={review.author}
                                 />
+                            </div>
                                 <div>
                                     <button 
                                         class="btn btn-icon"
