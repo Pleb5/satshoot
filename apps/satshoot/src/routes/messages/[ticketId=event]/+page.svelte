@@ -27,7 +27,6 @@
     } from "@nostr-dev-kit/ndk";
 
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
-    import { wordlist } from "@scure/bip39/wordlists/english";
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
     import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
@@ -85,7 +84,6 @@
 
 
     let searchInput = '';
-    let warned = false;
 
 	// Contact List
 	let people: Contact[] = [];
@@ -133,26 +131,6 @@
             console.log('relays published', relays)
         }
 	}
-
-    $: if(currentMessage && !warned) {
-        wordlist.forEach((bip39Word: string) => {
-            const lowerCaseText = currentMessage.toLowerCase();
-            const words = lowerCaseText.split(' ');
-            words.forEach((word:string) => {
-                if (word === bip39Word) {
-                    console.log('current message', currentMessage)
-                    const t: ToastSettings = {
-                        message: 'WARNING SECRET WORD TYPED IN!\
-                        NEVER SHARE SECRETS IN THIS CHAT!',
-                        autohide: false,
-                        background: 'bg-error-300-600-token',
-                    };
-                    toastStore.trigger(t);
-                    warned = true;
-                }
-            });
-        });
-    }
 
 	function onPromptKeyDown(event: KeyboardEvent) {
         if (currentMessage) {
