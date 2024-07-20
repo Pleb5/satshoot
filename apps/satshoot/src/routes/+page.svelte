@@ -91,7 +91,7 @@
 
 {#if $currentUser}
     <div class="flex flex-col justify-center gap-y-2 mt-2">
-        <div class="sticky top-2 w-80 z-50 mx-auto flex gap-x-2 items-center justify-center">
+        <div class="sticky top-2 w-80 z-40 mx-auto flex gap-x-2 items-center justify-center">
             <InputChip
             bind:value={filterList}
             bind:input={filterInput}

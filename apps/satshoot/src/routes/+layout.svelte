@@ -455,7 +455,7 @@
 
 <Toast />
 <Modal />
-<Drawer regionDrawer={'flex justify-center'}>
+<Drawer regionDrawer={'flex justify-center'} zIndex={'z-50'}>
     {#if $drawerID === DrawerIDs.AppMenu}
         <AppMenu/>
     {:else if $drawerID === DrawerIDs.ReviewBreakdown}
