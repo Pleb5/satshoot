@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { get } from 'svelte/store';
-
     import currentUser, { followsUpdated } from '$lib/stores/user';
     import { getDrawerStore, getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
@@ -8,9 +6,9 @@
     import { SlideToggle, LightSwitch } from '@skeletonlabs/skeleton';
     import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 
-    import notificationsEnabled from '$lib/stores/notifications';
+    import notificationsEnabled, { notifications } from '$lib/stores/notifications';
 
-    import { networkWoTScores, wot } from '$lib/stores/wot';
+    import { networkWoTScores } from '$lib/stores/wot';
 
     import {
         sessionPK 
@@ -94,6 +92,8 @@
 
                 followsUpdated.set(0);
                 networkWoTScores.set(null);
+
+                $currentUser = null;
                 currentUser.set(null);
 
                 localStorage.clear();
@@ -114,8 +114,8 @@
                 messageStore.empty();
                 allReviews.empty();
                 allReceivedZaps.empty();
-                
-                $currentUser = null;
+
+                notifications.set([]);
 
                 modalStore.close();
 
