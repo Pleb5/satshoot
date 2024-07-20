@@ -15,6 +15,7 @@
     import { getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { Avatar } from '@skeletonlabs/skeleton';
+    import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
 
     import {
         NDKEvent,
@@ -32,6 +33,7 @@
     import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
     import MessageCard from "$lib/components/User/MessageCard.svelte";
     import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
+    import { SatShootPubkey } from "$lib/utils/misc";
 
 
     const toastStore = getToastStore();
@@ -73,10 +75,10 @@
     let chatHeight: number;
     let sideContactsHeight: number;
 
+    let contactsOpen = false;
     let hideChat:boolean;
     let hidePrompt:boolean;
     let contactsHeight:string;
-    let arrowDown:boolean;
     let hideSearch:boolean = true;
     let hideSearchIcon:boolean;
 
@@ -159,6 +161,7 @@
 
         await person.fetchProfile();
         people = people;
+        currentPerson = currentPerson;
     }
 
     async function selectCurrentPerson(contact: Contact) {
@@ -179,7 +182,7 @@
 
             people = people;
 
-            resetContactsList();
+            contactsOpen = false;
             await tick();
 
             calculateHeights();
@@ -193,8 +196,6 @@
         hideChat = true;
         hidePrompt = true;
         hideSearchIcon = true;
-        arrowDown = false;
-        contactsHeight = 'h-full';
     }
 
     function resetContactsList() {
@@ -211,8 +212,6 @@
         hideChat = false;
         hidePrompt = false;
         hideSearchIcon = false;
-        arrowDown = true;
-        contactsHeight = 'h-14';
     }
 
     function calculateHeights() {
@@ -273,7 +272,7 @@
             // We always should have a peer defined
             if (!peer) return false;
 
-            if ($wot?.size > 1 && $wot.has(peer)) {
+            if ($wot?.size > 2 && $wot.has(peer)) {
                 // Only try to add person if part of wot
                 addPerson(peer);
                 // Message can be displayed: It is related to ticket
@@ -300,6 +299,7 @@
             // We need messages in reverse chronological order
             filteredMessageFeed.reverse();
 
+            calculateHeights();
             // Smooth scroll to bottom
             // Timeout prevents race condition
             if (elemChat) {
@@ -388,6 +388,14 @@
         }
     }
 
+    $: if (contactsOpen) {
+        expandContacts();
+        calculateHeights();
+    } else if (!contactsOpen) {
+        resetContactsList();
+        calculateHeights();
+    }
+
     onMount(async () => {
         expandContacts();
         console.log('fetch ticket...')
@@ -426,56 +434,76 @@
                     <h4 class="h4 mb-2 text-center font-bold">{ticketTitle ?? '?'}</h4>
                 </a>
                 <!-- Top Navigation -->
-                <div class="flex flex-col items-center md:hidden">
-                    <div class="flex gap-x-2 ">
-                        <!-- Contact List -->
-                        <div class="flex flex-col items-center p-2 pb-0 space-x-2">
-                            <small class="opacity-50">Contacts</small>
-                            <div class="flex flex-col space-y-1 overflow-y-hidden {contactsHeight}">
-                                {#each people as contact, i}
-                                    <button
-                                        type="button"
-                                        class="btn w-full flex items-center space-x-4 
-                                        { contact.selected
-                                            ? 'variant-filled-primary'
-                                            : 'bg-surface-hover-token'
-                                        }
-                                        { !contact.selected && arrowDown
-                                            ? 'hidden'
-                                            : ''
-                                        }
-                                        "
-                                        on:click={() => selectCurrentPerson(contact)}
-                                    >
-                                        <Avatar
+                <Accordion class="flex flex-col items-center md:hidden">
+                    <!-- <small class="opacity-50">Contacts</small> -->
+                    <AccordionItem bind:open={contactsOpen}>
+                        <svelte:fragment slot="lead">
+                            {#if currentPerson}
+                                <Avatar
+                                    src={
+                                        currentPerson.profile?.image
+                                        ?? `https://robohash.org/${currentPerson.pubkey}`
+                                    }
+                                    width="w-8"
+                                />
+                            {/if}
+                        </svelte:fragment>
+                        <svelte:fragment slot="summary">
+                            {#if currentPerson}
+                                <span class="flex-1 text-start 
+                                    {
+                                        currentPerson.pubkey === winner 
+                                        ? 'text-warning-400 font-bold' : ''
+                                    }"
+                                >
+                                    {
+                                        currentPerson.profile?.name 
+                                        ?? currentPerson.npub.substring(0,15)
+                                    }
+                                </span>
+                            {:else if people.length > 0}
+                                <div class="">Contacts</div>
+                                {:else}
+                                <div>No Contacts</div>
+                            {/if}
+                        </svelte:fragment>
+                        <svelte:fragment slot="content">
+                            <div class="flex flex-col items-center p-2 pb-0 space-x-2">
+                                <div class="flex flex-col space-y-1 overflow-y-hidden {contactsHeight}">
+                                    {#each people as contact, i}
+                                        <button
+                                            type="button"
+                                            class="btn w-full flex items-center space-x-4 
+                                            {   contact.selected
+                                                ? 'variant-filled-primary'
+                                                : 'bg-surface-hover-token'
+                                            }
+                                            "
+                                            on:click={() => selectCurrentPerson(contact)}
+                                        >
+                                            <Avatar
                                             src={contact.person.profile?.image
                                                 ?? `https://robohash.org/${contact.person.pubkey}`}
                                             width="w-8"
                                         />
-                                        <span class="flex-1 text-start {contact.person.pubkey === winner 
-                                            ? 'text-warning-400 font-bold' : ''}">
-                                            {contact.person.profile?.name ?? contact.person.npub.substring(0,15)}
-                                        </span>
-                                    </button>
-                                {/each}
+                                            <span class="flex-1 text-start 
+                                                {
+                                                    contact.person.pubkey === winner 
+                                                    ? 'text-warning-400 font-bold' : ''
+                                                }"
+                                            >
+                                                {
+                                                    contact.person.profile?.name
+                                                    ?? contact.person.npub.substring(0,15)
+                                                }
+                                            </span>
+                                        </button>
+                                    {/each}
+                                </div>
                             </div>
-                            <div class="flex w-full justify-center {arrowDown ? '' : 'sticky bottom-0'}">
-                                <button 
-                                    class="btn btn-icon "
-                                    on:click={()=>{
-                                        if (arrowDown) {
-                                            expandContacts();
-                                        } else {
-                                            resetContactsList();
-                                        }
-                                    }}
-                                >
-                                    <i class="fa-solid fa-chevron-{arrowDown ? 'down' : 'up'} text-xl"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        </svelte:fragment>
+                    </AccordionItem>
+                </Accordion>
             </section>
             <section class="flex-auto overflow-hidden" >
                 <div class="chat w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
