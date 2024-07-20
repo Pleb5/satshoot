@@ -71,26 +71,19 @@
         modalStore.trigger(modal);
     }
 
-    $: {
-        if($allTickets || filterList) {
-            // We just received a ticket 
-            ticketList = new Set($allTickets.filter((t: TicketEvent) => {
-                const newTicket = (t.status === TicketStatus.New);
-                // wot is always at least 1 if there is a user logged in
-                // only update filter if other users are also present
-                if (!$wot || $wot.size < 2) {
-                    return newTicket;
-                } else {
-                    // Filter out tickets that are not in the wot
-                    return (
-                        newTicket
-                        && $wot.has(t.pubkey)
-                    );
-                }
-            }));
-            if (filterList.length > 0) {
-                filterTickets();
-            }
+    $: if($allTickets || filterList) {
+        // We just received a ticket 
+        ticketList = new Set($allTickets.filter((t: TicketEvent) => {
+            const newTicket = (t.status === TicketStatus.New);
+            // wot is always at least 3 if there is a user logged in
+            // only update filter if other users are also present
+            const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
+
+            return newTicket && partOfWot;
+        }));
+
+        if (filterList.length > 0) {
+            filterTickets();
         }
     }
 
@@ -98,7 +91,7 @@
 
 {#if $currentUser}
     <div class="flex flex-col justify-center gap-y-2 mt-2">
-        <div class="sticky top-2 w-80 mx-auto flex gap-x-2 items-center justify-center">
+        <div class="sticky top-2 w-80 z-50 mx-auto flex gap-x-2 items-center justify-center">
             <InputChip
             bind:value={filterList}
             bind:input={filterInput}

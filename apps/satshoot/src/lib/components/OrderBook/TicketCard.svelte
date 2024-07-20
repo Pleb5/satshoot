@@ -76,7 +76,7 @@
         [allOffers, wot],
         ([$allOffers, $wot]) => {
             const offers = $allOffers.filter((offer: OfferEvent) => {
-                if ($wot.size > 1) {
+                if ($wot.size > 2) {
                     return $wot.has(offer.pubkey);
                 } else {
                     // Dont filter when wot is not initialized
@@ -369,7 +369,7 @@
                 <div class="flex items-center">
                     <h4 class="h5 sm:h4">Posted by:</h4> 
                 </div>
-                <div class="flex justify-center items-center gap-x-2">
+                <div class="flex justify-center items-center gap-x-2 z-0">
                     <Avatar
                         src={avatarImage}
                         width="w-12" 

@@ -482,7 +482,7 @@
                                     Log in to Load your Web of Trust!
                                 </div>
                             </div>
-                        {:else if $wot && $wot.size < 2 && $wotUpdating}
+                        {:else if $wot && $wot.size < 3 && $wotUpdating}
                             <ProgressRadial
                             value={undefined}
                             stroke={60}
@@ -490,7 +490,7 @@
                             track="stroke-error-500/30"
                             strokeLinecap="round" width="w-8" 
                         />
-                            {:else if $wot && $wot.size > 1 && $wotUpdating}
+                            {:else if $wot && $wot.size > 2 && $wotUpdating}
                             <ProgressRadial
                             value={undefined}
                             stroke={60}
@@ -498,7 +498,7 @@
                             track="stroke-success-500/30"
                             strokeLinecap="round" width="w-8" 
                         />
-                            {:else if $wot && $wot.size > 1}
+                            {:else if $wot && $wot.size > 2}
                             <i 
                                 class="fa-solid fa-circle-check text-2xl {trustColor}"
                                 use:popup={popupWoT}
