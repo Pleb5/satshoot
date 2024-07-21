@@ -31,10 +31,15 @@
     import { loggedIn } from '$lib/stores/user';
     import UserTicketsIcon from '../Icons/UserTicketsIcon.svelte';
     import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
+    import { page } from '$app/stores';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
     const toastStore = getToastStore();
+
+    $: classesActive = (href: string) => {
+        href === $page.url.pathname ? 'variant-filled-primary' : ''
+    }
 
     $: if($notificationsEnabled || !$notificationsEnabled) {
         console.log('set notifications permission')
@@ -141,8 +146,8 @@
             {#if $currentUser}
                 <li>
                     <a 
-                        class="justify-start"
                         href={ "/" + $currentUser.npub}
+                        class="justify-start {classesActive('/' + $currentUser.npub)}"
                         on:click={()=>{
                             drawerStore.close();
                         }}
