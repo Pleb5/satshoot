@@ -104,11 +104,15 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             {
                 groupable: false,
                 closeOnEose: true,
-                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
             },
         );
 
         console.log('trustBasisEvents', trustBasisEvents)
+
+        if (trustBasisEvents.length === 0) {
+            throw new Error('Could not fetch events to build trust network!');
+        }
 
         // first order scores. Authors for the second order wot score are recorded
         const authors: Set<Hexpubkey> = updateWotScores(trustBasisEvents, $networkWoTScores, true);
@@ -133,11 +137,15 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             {
                 groupable: false,
                 closeOnEose: true,
-                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
             },
         );
 
         console.log('Network event store', networkStore)
+
+        if (networkStore.length === 0) {
+            throw new Error('Could not fetch events to build trust network from INDIRECT follows!');
+        }
 
         // Second order scores
         updateWotScores(networkStore, $networkWoTScores, false);

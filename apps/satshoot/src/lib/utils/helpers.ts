@@ -38,7 +38,7 @@ import {
 } from '$lib/stores/messages';
 
 import { get } from "svelte/store";
-import { dev } from '$app/environment';
+import { dev, browser } from '$app/environment';
 
 import { 
     allTickets,
@@ -120,6 +120,9 @@ export async function initializeUser(ndk: NDK) {
         allReceivedZaps.startSubscription();
     } catch(e) {
         console.log('Could not initialize User. Reason: ', e)
+        if (browser) {
+            window.location.reload();
+        }
     }
 }
 
