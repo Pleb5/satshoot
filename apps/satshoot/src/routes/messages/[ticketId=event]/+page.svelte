@@ -390,10 +390,8 @@
 
     $: if (contactsOpen) {
         expandContacts();
-        calculateHeights();
     } else if (!contactsOpen) {
         resetContactsList();
-        calculateHeights();
     }
 
     onMount(async () => {
