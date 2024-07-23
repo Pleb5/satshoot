@@ -127,8 +127,6 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    // TODO: Detect when browser reconnects and connect ndk
-
     // $ndk.pool.on('relay:connect', () => {
     //     if ($ndk.pool.stats().connected > 1) {
     //         console.log('connected')

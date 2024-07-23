@@ -32,8 +32,11 @@
     import { TicketEvent } from "$lib/events/TicketEvent";
     import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
     import MessageCard from "$lib/components/User/MessageCard.svelte";
-    import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
-    import { SatShootPubkey } from "$lib/utils/misc";
+    import type { 
+        ExtendedBaseType, 
+        NDKEventStore 
+    } from "@nostr-dev-kit/ndk-svelte";
+    import { browser } from "$app/environment";
 
 
     const toastStore = getToastStore();
@@ -65,6 +68,7 @@
         selected: boolean,
     }
 
+    let elemPage: HTMLElement;
 	let elemChat: HTMLElement;
     let elemHeader:HTMLElement;
     let elemSideHeader:HTMLElement;
@@ -77,7 +81,7 @@
 
     let contactsOpen = false;
     let hideChat:boolean;
-    let hidePrompt:boolean;
+    let disablePrompt:boolean;
     let contactsHeight:string;
     let hideSearch:boolean = true;
     let hideSearchIcon:boolean;
@@ -183,9 +187,8 @@
             people = people;
 
             contactsOpen = false;
-            await tick();
-
-            calculateHeights();
+            hideChat = false;
+            disablePrompt = false;
 
             filteredMessageFeed = [];
         }
@@ -194,40 +197,46 @@
     function expandContacts() {
         // console.log('expandContacts')
         hideChat = true;
-        hidePrompt = true;
+        disablePrompt = true;
         hideSearchIcon = true;
     }
 
-    function resetContactsList() {
+    async function resetContactsList() {
         let anyoneSelected = false;
         people.forEach((contact: Contact) => {
             if(contact.selected) {
                 anyoneSelected = true;
             }
         });
-        if(!anyoneSelected && people.length > 0) {
-           selectCurrentPerson(people[0]); 
-        }
-         
+
         hideChat = false;
-        hidePrompt = false;
+        disablePrompt = false;
         hideSearchIcon = false;
     }
 
-    function calculateHeights() {
-        const elemPage = document.querySelector('#page');
-        if (elemPage && elemPrompt && elemHeader && elemSideHeader) {
-            // console.log('recalculate chat and sideContactsHeight')
-            const promptHeight = elemPrompt.offsetHeight;
-            const headerHeight = elemHeader.offsetHeight;
-            chatHeight = (elemPage as HTMLElement).offsetHeight - promptHeight - headerHeight;
+    async function calculateHeights() {
+        // console.log('calculateHeights')
 
-            const sideHeaderHeight = elemSideHeader.offsetHeight;
-            const sideContactsListDivPaddingHeight = parseInt(window.getComputedStyle(
-                elemSideContactListDiv).paddingTop) * 2;
+        await tick();
 
-            sideContactsHeight = chatHeight - sideHeaderHeight
-                - sideContactsLabelOffsetHeight - sideContactsListDivPaddingHeight;
+        if (elemPage && elemPrompt && elemHeader) {
+            // console.log('headerheight', elemHeader.offsetHeight)
+            // console.log('contactsOpen', contactsOpen)
+            chatHeight = elemPage.offsetHeight 
+                        - elemPrompt.offsetHeight
+                        - elemHeader.offsetHeight;
+            // console.log('chatHeight', chatHeight)
+
+            if (elemSideHeader) {
+                const sideHeaderHeight = elemSideHeader.offsetHeight;
+                const sideContactsListDivPaddingHeight = parseInt(
+                    window.getComputedStyle(elemSideContactListDiv).paddingTop
+                ) * 2;
+
+                sideContactsHeight = chatHeight - sideHeaderHeight
+                    - sideContactsLabelOffsetHeight - sideContactsListDivPaddingHeight;
+                elemSideHeader = elemSideHeader;
+            }
             // console.log('promptHeight', promptHeight)
             // console.log('headerHeight', headerHeight)
             // console.log('sideHeaderHeight', sideHeaderHeight)
@@ -236,11 +245,11 @@
             // console.log('chatHeight', chatHeight)
             // console.log('sideContactsHeight', sideContactsHeight)
         } else {
-            // console.log('not calculateHeights, reason:')
-            // console.log(elemPage)
-            // console.log(elemPrompt)
-            // console.log(elemHeader)
-            // console.log(elemSideHeader)
+            console.log('calculateHeights skipped, reason:')
+            console.log(elemPage)
+            console.log(elemPrompt)
+            console.log(elemHeader)
+            console.log(elemSideHeader)
         }
     }
 
@@ -299,7 +308,6 @@
             // We need messages in reverse chronological order
             filteredMessageFeed.reverse();
 
-            calculateHeights();
             // Smooth scroll to bottom
             // Timeout prevents race condition
             if (elemChat) {
@@ -388,13 +396,16 @@
         }
     }
 
-    $: if (contactsOpen) {
-        expandContacts();
-    } else if (!contactsOpen) {
-        resetContactsList();
+    $: if (browser) {
+        if (contactsOpen) {
+            expandContacts();
+        } else if (!contactsOpen) {
+            resetContactsList();
+        } 
     }
 
     onMount(async () => {
+        elemPage = document.querySelector('#page') as HTMLElement;
         expandContacts();
         console.log('fetch ticket...')
         const ticketEvent = await $ndk.fetchEvent(
@@ -412,8 +423,9 @@
                 {closeOnEose: false, cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
                 OfferEvent
             );
+            // Fix chatHeight, recalc only on window resize or search text on mobile
+            calculateHeights();
         }
-        elemChat = elemChat;
     });
 
     onDestroy(() => {
@@ -427,12 +439,14 @@
 <div class="h-full overflow-hidden">
     <div class="w-full h-full flex flex-col overflow-hidden card bg-surface-100-800-token">
         {#if $currentUser && ticket}
-            <section class="flex-none pt-2" bind:this={elemHeader}>
+            <div class="flex-none pt-2" bind:this={elemHeader}>
                 <a class="anchor" href={titleLink}>
                     <h4 class="h4 mb-2 text-center font-bold">{ticketTitle ?? '?'}</h4>
                 </a>
                 <!-- Top Navigation -->
-                <Accordion class="flex flex-col items-center md:hidden">
+                <Accordion 
+                    class="flex flex-col items-center md:hidden"
+                >
                     <!-- <small class="opacity-50">Contacts</small> -->
                     <AccordionItem bind:open={contactsOpen}>
                         <svelte:fragment slot="lead">
@@ -466,7 +480,9 @@
                             {/if}
                         </svelte:fragment>
                         <svelte:fragment slot="content">
-                            <div class="flex flex-col items-center p-2 pb-0 space-x-2">
+                            <div 
+                                class="flex flex-col items-center p-2 pb-0 space-x-2"
+                            >
                                 <div class="flex flex-col space-y-1 overflow-y-hidden {contactsHeight}">
                                     {#each people as contact, i}
                                         <button
@@ -502,8 +518,8 @@
                         </svelte:fragment>
                     </AccordionItem>
                 </Accordion>
-            </section>
-            <section class="flex-auto overflow-hidden" >
+            </div>
+            <div class="flex-auto overflow-hidden" >
                 <div class="chat w-full grid grid-cols-1 md:grid-cols-[30%_1fr]">
                     <!-- Side Navigation -->
                     <div class="hidden md:grid grid-rows-[auto_1fr_auto] border-r border-surface-500/30">
@@ -552,7 +568,7 @@
                     </div>
                     <!-- Conversation -->
                     <!-- Inline css needed to adjust height reactively -->
-                    <section 
+                    <div 
                         bind:this={elemChat}
                         class="p-4 space-y-4 overflow-y-auto {hideChat ? 'hidden' : ''}"
                         style="height: {chatHeight}px;"
@@ -581,51 +597,50 @@
                                 </div>
                             </div>
                         {/if}
-                    </section>
+                    </div>
                 </div>
-            </section>
+            </div>
             <!-- Prompt -->
-            {#if !hidePrompt}
-                <section
-                    bind:this={elemPrompt}
-                    class="flex-none flex flex-col w-full border-t border-surface-500/30
-                    bg-surface-100-800-token p-2"
-                >
-                    <div class="{hideSearch ? 'hidden' : ''} md:hidden p-2">
-                        <!-- On some devices a little 'x' icon clears the input, triggering on:search event -->
-                        <input
-                            class="input"
-                            type="search"
-                            placeholder="Search Messages..."
-                            bind:value={searchInput}
-                        />
-                    </div>
-                    <div class="input-group input-group-divider grid-cols-[1fr_auto] rounded-container-token">
-                        <!-- <button class="input-group-shim">+</button> -->
-                        <textarea
-                            bind:value={currentMessage}
-                            class="bg-transparent border-0 ring-0 text-sm"
-                            name="prompt"
-                            id="prompt"
-                            placeholder="DON'T TYPE SECRETS HERE"
-                            rows="1"
-                            on:keydown={onPromptKeyDown}
-                        />
-                        <button 
-                            class={
-                                currentMessage 
-                                ? 'variant-filled-primary' 
-                                : 'input-group-shim'
-                            }
-                            on:click={sendMessage}
-                        >
-                            <i class="fa-solid fa-paper-plane" />
-                        </button>
-                    </div>
-                </section>
-            {/if}
+            <div
+                bind:this={elemPrompt}
+                class="flex-none flex flex-col w-full border-t border-surface-500/30
+                bg-surface-100-800-token p-2 "
+            >
+                <div class="{hideSearch ? 'hidden' : ''} md:hidden p-2">
+                    <!-- On some devices a little 'x' icon clears the input, triggering on:search event -->
+                    <input
+                    class="input"
+                    type="search"
+                    placeholder="Search Messages..."
+                    bind:value={searchInput}
+                />
+                </div>
+                <div class="input-group input-group-divider grid-cols-[1fr_auto] rounded-container-token">
+                    <!-- <button class="input-group-shim">+</button> -->
+                    <textarea
+                        bind:value={currentMessage}
+                        class="bg-transparent border-0 ring-0 text-sm"
+                        name="prompt"
+                        id="prompt"
+                        placeholder="DON'T TYPE SECRETS HERE"
+                        rows="1"
+                        on:keydown={onPromptKeyDown}
+                        disabled={disablePrompt}
+                    />
+                    <button 
+                        class={
+                        currentMessage 
+                            ? 'variant-filled-primary' 
+                            : 'input-group-shim'
+                        }
+                        on:click={sendMessage}
+                    >
+                        <i class="fa-solid fa-paper-plane" />
+                    </button>
+                </div>
+            </div>
         {:else }
-            <section class="w-full ">
+            <div class="w-full ">
                 <div class="p-4 space-y-4">
                     <div class="placeholder animate-pulse" />
                     <div class="grid grid-cols-3 gap-8">
@@ -640,7 +655,7 @@
                         <div class="placeholder animate-pulse" />
                     </div>
                 </div>
-            </section>
+            </div>
         {/if}
     </div>
 </div>
