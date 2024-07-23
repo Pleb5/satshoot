@@ -327,8 +327,9 @@
             action: {
                 label: 'Reload',
                 response: () => {
-                    toastStore.close(toastId);
-                    location.reload();
+                    // Reload new page circumventing browser cache
+                    location.href = location.pathname + '?v='
+                    + new Date().getTime();
                 },
             }
         };
