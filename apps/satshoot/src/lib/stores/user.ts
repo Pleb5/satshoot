@@ -9,6 +9,7 @@ import { getSetSerializer } from '../utils/misc';
 export const loginAlert = writable(true);
 
 export const loggedIn = writable(false);
+export const retryUserInit = localStorageStore('retryUserInit', false);
 
 export const currentUserFollows: Writable<Set<Hexpubkey> | null>
     = localStorageStore('currentUserFollows', null, {serializer: getSetSerializer()});

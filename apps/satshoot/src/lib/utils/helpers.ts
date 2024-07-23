@@ -3,7 +3,8 @@ import {
     type NDKEvent,
     NDKKind,
     NDKRelayList,
-    NDKRelaySet,
+    // NDKRelaySet,
+    NDKRelay,
     NDKSubscriptionCacheUsage,
 } from '@nostr-dev-kit/ndk';
 
@@ -12,6 +13,7 @@ import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import currentUser from '../stores/user';
 import {
     loggedIn,
+    retryUserInit,
     followsUpdated,
     userRelaysUpdated,
 } from '../stores/user';
@@ -93,7 +95,7 @@ export async function initializeUser(ndk: NDK) {
         // their actions will be visible to a decent amount of people
         const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
 
-        let wotArray: string[] = Array.from(get(wot));
+        // let wotArray: string[] = Array.from(get(wot));
         const $networkWoTScores = get(networkWoTScores);
 
         if ( ($followsUpdated < updateDelay)
@@ -103,7 +105,7 @@ export async function initializeUser(ndk: NDK) {
             // console.log('wot outdated, updating...')
             await updateFollowsAndWotScore(ndk);
             // console.log('wot updated')
-            wotArray = Array.from(get(wot));
+            // wotArray = Array.from(get(wot));
         } 
 
         // Start all tickets/offers sub
@@ -118,9 +120,13 @@ export async function initializeUser(ndk: NDK) {
         messageStore.startSubscription();
         allReviews.startSubscription();
         allReceivedZaps.startSubscription();
+
+        retryUserInit.set(false);
     } catch(e) {
         console.log('Could not initialize User. Reason: ', e)
-        if (browser) {
+        if (browser && !get(retryUserInit)) {
+            retryUserInit.set(true);
+            console.log('Retrying...');
             window.location.reload();
         }
     }
@@ -179,10 +185,10 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
 export async function fetchUserOutboxRelays(ndk: NDKSvelte):Promise<NDKEvent | null> {
     const $currentUser = get(currentUser);
 
-    const queryRelays = NDKRelaySet.fromRelayUrls([
-        ...ndk.pool.urls(),
-        ...ndk.outboxPool!.urls()
-    ], ndk);
+    // const queryRelays = NDKRelaySet.fromRelayUrls([
+    //     ...ndk.pool.urls(),
+    //     ...ndk.outboxPool!.urls()
+    // ], ndk);
 
     const relays = await ndk.fetchEvent(
         { kinds: [10002], authors: [$currentUser!.pubkey] },
@@ -190,7 +196,7 @@ export async function fetchUserOutboxRelays(ndk: NDKSvelte):Promise<NDKEvent | n
             cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
             groupable: false,
         },
-        queryRelays,
+        // queryRelays,
     );
     console.log('outbox relays', relays)
     return relays;
@@ -202,14 +208,15 @@ export async function broadcastRelayList(ndk: NDKSvelte, readRelayUrls: string[]
     userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
 
     const blastrUrl = 'wss://nostr.mutinywallet.com';
-    const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
-        blastrUrl,
-        ...ndk.pool.urls(),
-        ...ndk.outboxPool!.urls()
-    ], ndk);
-    console.log('relays sent to:', broadCastRelaySet)
+    ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl));
+    // const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
+    //     blastrUrl,
+    //     ...ndk.pool.urls(),
+    //     ...ndk.outboxPool!.urls()
+    // ], ndk);
+    console.log('relays sending to:', ndk.pool.urls());
 
-    const relaysPosted = await userRelayList.publish(broadCastRelaySet);
+    const relaysPosted = await userRelayList.publish();
     console.log('relays posted to:', relaysPosted)
 }
 
