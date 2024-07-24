@@ -1,10 +1,9 @@
 <script lang="ts">
-import { beforeNavigate } from "$app/navigation";
-import { navigating } from '$app/stores';
 import type { TicketEvent } from "$lib/events/TicketEvent";
-    import { offerMakerToSelect } from "$lib/stores/messages";
-    import ndk from "$lib/stores/ndk";
-    import currentUser from "$lib/stores/user";
+import { offerMakerToSelect } from "$lib/stores/messages";
+import ndk from "$lib/stores/ndk";
+import currentUser from "$lib/stores/user";
+import { loggedIn } from "$lib/stores/user";
 import {
     NDKKind,
     type NDKUser,
@@ -13,6 +12,7 @@ import {
 
 import { Avatar } from "@skeletonlabs/skeleton";
 
+import { navigating } from '$app/stores';
 import { onMount } from "svelte";
 
 export let user: NDKUser;
@@ -32,12 +32,18 @@ onMount(async() => {
         }
     }
 
+});
+
+async function fetchLatestMessage() {
+    console.log('ticket address', ticket.ticketAddress)
+    console.log('user pubkey', user.pubkey)
+    console.log('currentUser pubkey', $currentUser?.pubkey)
+
     const ticketMessages = await $ndk.fetchEvents(
         {
             kinds: [NDKKind.EncryptedDirectMessage],
             authors: [user.pubkey, $currentUser!.pubkey],
             '#t': [ticket.ticketAddress],
-            since: ticket.created_at
         },
     );
     console.log('ticketMessages', ticketMessages)
@@ -56,7 +62,11 @@ onMount(async() => {
     } else {
         latestMessage = 'No messages';
     }
-});
+}
+
+$: if ($loggedIn) {
+    fetchLatestMessage();
+}
 
 $: if ($navigating) {
     if ($navigating.to?.url.pathname === '/messages/' + naddr) {
@@ -80,13 +90,17 @@ $: if ($navigating) {
         <div class="flex flex-col items-start">
             <div class="h5 sm:h4 text-center font-bold text-lg sm:text-2xl">
                 {
-                userProfile?.name
+                    userProfile?.name
                     ?? userProfile?.displayName 
-                    ?? user.npub.substring(0,10)
+                    ?? user.npub.substring(0,15)
                 }
             </div>
             <div class="">
-                {ticket.title.substring(0,15) + '...'}
+                {(
+                    ticket.title.length > 20
+                    ? ticket.title.substring(0,20) + '...'
+                    : ticket.title
+                )}
             </div>
             <!-- Latest message -->
             {#if latestMessage}

@@ -61,7 +61,7 @@
             if (ticketEvent) {
                 const ticket = TicketEvent.from(ticketEvent);
                 if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                    const user = $ndk.getUser({pubkey: offer.pubkey});
+                    const user = $ndk.getUser({pubkey: ticket.pubkey});
                     clients.push(user);
                     ticketsWithClients.push(ticket);
                 }
@@ -122,11 +122,13 @@
                 {:else if conversationType === ConversationType.Client}
                     {#if troubleshooters.length > 0}
                         {#each clients as client, i}
-                            <ChatHead 
-                                user={client}
-                                ticket={ticketsWithClients[i]}
-                            >
-                            </ChatHead>
+                            <div class="col-start-2">
+                                <ChatHead 
+                                    user={client}
+                                    ticket={ticketsWithClients[i]}
+                                >
+                                </ChatHead>
+                            </div>
                         {/each}
                     {:else}
                         {#each {length: 4} as _ }
