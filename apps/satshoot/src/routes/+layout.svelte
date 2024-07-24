@@ -570,10 +570,13 @@
                         <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
                     <AppRailAnchor
-                        href="/post-ticket"
-                        selected={$page.url.pathname.includes('/post-ticket')}
+                        href="/messages"
+                        selected={
+                        $page.url.pathname.includes('/messages')
+                            && !($page.url.pathname.includes('naddr'))
+                        }
                     >
-                    <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
+                    <MessagesIcon sizeClass={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
                     <AppRailAnchor
                         href="/notifications"
