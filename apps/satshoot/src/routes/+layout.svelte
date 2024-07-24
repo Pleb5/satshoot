@@ -108,6 +108,7 @@
     import type { TicketEvent } from "$lib/events/TicketEvent";
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import type { ReviewEvent } from "$lib/events/ReviewEvent";
+    import MessagesIcon from "$lib/components/Icons/MessagesIcon.svelte";
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -569,6 +570,12 @@
                         <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
                     <AppRailAnchor
+                        href="/post-ticket"
+                        selected={$page.url.pathname.includes('/post-ticket')}
+                    >
+                    <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
+                    </AppRailAnchor>
+                    <AppRailAnchor
                         href="/notifications"
                         selected={$page.url.pathname.includes('/notifications')}
                     >
@@ -605,6 +612,15 @@
                 selected={$page.url.pathname.includes('/post-ticket')}
             >
                 <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
+            </TabAnchor>
+            <TabAnchor 
+                href="/messages"
+                selected={
+                    $page.url.pathname.includes('/messages')
+                    && !($page.url.pathname.includes('naddr'))
+                }
+            >
+                <MessagesIcon sizeClass={'text-2xl sm:text-3xl'} />
             </TabAnchor>
             <TabAnchor 
                 href="/notifications"

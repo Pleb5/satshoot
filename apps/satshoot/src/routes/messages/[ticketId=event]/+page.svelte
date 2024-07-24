@@ -451,13 +451,15 @@
                     <AccordionItem bind:open={contactsOpen}>
                         <svelte:fragment slot="lead">
                             {#if currentPerson}
-                                <Avatar
-                                    src={
+                                <a href={'/' + currentPerson.npub}>
+                                    <Avatar
+                                        src={
                                         currentPerson.profile?.image
-                                        ?? `https://robohash.org/${currentPerson.pubkey}`
-                                    }
-                                    width="w-8"
-                                />
+                                            ?? `https://robohash.org/${currentPerson.pubkey}`
+                                        }
+                                        width="w-8"
+                                    />
+                                </a>
                             {/if}
                         </svelte:fragment>
                         <svelte:fragment slot="summary">
@@ -474,7 +476,7 @@
                                     }
                                 </span>
                             {:else if people.length > 0}
-                                <div class="">Contacts</div>
+                                <div class="">Select Contact</div>
                                 {:else}
                                 <div>No Contacts</div>
                             {/if}

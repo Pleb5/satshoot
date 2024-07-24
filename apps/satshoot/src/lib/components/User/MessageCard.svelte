@@ -101,9 +101,11 @@ $: if (decryptedDM) {
     {#if decryptedDM}
         <div class="grid {templateColumn} gap-x-2 ">
             {#if !avatarRight}
-                <Avatar
-                src={avatarImage}
-                width="w-12" />
+                <a href={'/' + senderUser.npub}>
+                    <Avatar
+                    src={avatarImage}
+                    width="w-12" />
+                </a>
             {/if}
             <div class="card p-4 space-y-2 {extraClasses}">
                 <header class="flex justify-between items-center gap-x-4">

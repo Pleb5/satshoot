@@ -81,6 +81,8 @@ onMount(async() => {
             </div>
         {/if}
     </div>
-    <Avatar src={zapperImage} width="w-12" />
+    <a href={'/' + zapperUser.npub}>
+        <Avatar src={zapperImage} width="w-12" />
+    </a>
 </div>
 
