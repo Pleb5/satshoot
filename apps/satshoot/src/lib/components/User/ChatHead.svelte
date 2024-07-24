@@ -1,5 +1,12 @@
 <script lang="ts">
+import { beforeNavigate } from "$app/navigation";
+import { navigating } from '$app/stores';
+import type { TicketEvent } from "$lib/events/TicketEvent";
+    import { offerMakerToSelect } from "$lib/stores/messages";
+    import ndk from "$lib/stores/ndk";
+    import currentUser from "$lib/stores/user";
 import {
+    NDKKind,
     type NDKUser,
     type NDKUserProfile
 } from "@nostr-dev-kit/ndk";
@@ -8,10 +15,12 @@ import { Avatar } from "@skeletonlabs/skeleton";
 
 import { onMount } from "svelte";
 
-
 export let user: NDKUser;
-let userProfile: NDKUserProfile;
+export let ticket: TicketEvent;
+const naddr = ticket.encode();
 
+let userProfile: NDKUserProfile;
+let latestMessage = '';
 $: avatarImage = `https://robohash.org/${user.pubkey}`;
 
 onMount(async() => {
@@ -22,27 +31,71 @@ onMount(async() => {
             avatarImage = userProfile.image;
         }
     }
+
+    const ticketMessages = await $ndk.fetchEvents(
+        {
+            kinds: [NDKKind.EncryptedDirectMessage],
+            authors: [user.pubkey, $currentUser!.pubkey],
+            '#t': [ticket.ticketAddress],
+            since: ticket.created_at
+        },
+    );
+    console.log('ticketMessages', ticketMessages)
+    if (ticketMessages.size > 0) {
+        const encryptedMessage = Array.from(ticketMessages)[0];
+        const decryptedMessage = await $ndk.signer?.decrypt(user, encryptedMessage.content);
+        if (decryptedMessage) {
+            latestMessage = (
+                decryptedMessage.length > 20
+                ? decryptedMessage.substring(0,20) + '...'
+                : decryptedMessage
+            );
+        } else {
+            latestMessage = 'Could not decrypt latest message!';
+        }
+    } else {
+        latestMessage = 'No messages';
+    }
 });
+
+$: if ($navigating) {
+    if ($navigating.to?.url.pathname === '/messages/' + naddr) {
+        if (ticket.acceptedOfferAddress) {
+            $offerMakerToSelect = ticket.acceptedOfferAddress.split(':')[1];
+        }
+    }
+}
 
 
 </script>
 
-<div>
-    <a href={'/' + user.npub}>
-        <Avatar
+<a href={'/messages/' + naddr}>
+    <div class="flex gap-x-2">
+        <div>
+            <Avatar
             class="rounded-full border-white"
             src={avatarImage}
         /> 
-    </a>
-</div>
-<div class="flex flex-col gap-y-2">
-    <div class="h5 sm:h4 text-center font-bold text-lg sm:text-2xl">
-        {
-        userProfile?.name
-            ?? userProfile?.displayName 
-            ?? user.npub.substring(0,10)
-        }
+        </div>
+        <div class="flex flex-col items-start">
+            <div class="h5 sm:h4 text-center font-bold text-lg sm:text-2xl">
+                {
+                userProfile?.name
+                    ?? userProfile?.displayName 
+                    ?? user.npub.substring(0,10)
+                }
+            </div>
+            <div class="">
+                {ticket.title.substring(0,15) + '...'}
+            </div>
+            <!-- Latest message -->
+            {#if latestMessage}
+                <div class="opacity-50">
+                    {latestMessage}
+                </div>
+            {:else}
+                <div class="placeholder animate-pulse w-40" />
+            {/if}
+        </div>
     </div>
-    <!-- For latest message -->
-    <slot />
-</div>
+</a>
