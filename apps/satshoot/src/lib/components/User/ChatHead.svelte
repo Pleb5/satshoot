@@ -48,7 +48,16 @@ async function fetchLatestMessage() {
     );
     console.log('ticketMessages', ticketMessages)
     if (ticketMessages.size > 0) {
-        const encryptedMessage = Array.from(ticketMessages)[0];
+        const ticketMessagesArr = Array.from(ticketMessages);
+        let encryptedMessage = ticketMessagesArr[0];
+        ticketMessagesArr.splice(0, 1);
+        // Get the latest message event
+        for (const msg of ticketMessagesArr) {
+            if (msg.created_at! > encryptedMessage.created_at!) {
+                encryptedMessage = msg;
+            }
+        }
+
         const decryptedMessage = await $ndk.signer?.decrypt(user, encryptedMessage.content);
         if (decryptedMessage) {
             latestMessage = (
