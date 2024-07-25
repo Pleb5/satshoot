@@ -19,6 +19,8 @@
     let ticketsWithClients: TicketEvent[] = [];
     let conversationType: ConversationType = ConversationType.Troubleshooter;
     let initialized = false;
+    let noTicketsWithTroubleshooters = false;
+    let noTicketsWithClients = false;
 
     $: if ($currentUser && !initialized) {
         init();
@@ -40,6 +42,8 @@
         );
 
         console.log('my tickets in messages page:', tickets)
+
+        if (tickets.size === 0) noTicketsWithTroubleshooters = true;
 
         tickets.forEach((ticketEvent: NDKEvent) => {
             const ticket = TicketEvent.from(ticketEvent);
@@ -67,27 +71,43 @@
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
             },
         );
+
+        if (offers.size === 0) noTicketsWithClients = true;
+
         console.log('my offers in messages page:', offers)
 
+        // Batching tickets to fetch
+        const ticketsToFetch: string[] = [];
         for (const offerEvent of offers) {
             const offer = OfferEvent.from(offerEvent);
-            const ticketEvent = await $ndk.fetchEvent(
-                offer.referencedTicketAddress,
-                {
-                    groupable: true,
-                    groupableDelay: 800,
-                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-                }
-            );
-            if (ticketEvent) {
-                const ticket = TicketEvent.from(ticketEvent);
+            if (offer.referencedTicketDTag) {
+                ticketsToFetch.push(offer.referencedTicketDTag);
+            }
+        }
+
+        const ticketEvents = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.TroubleshootTicket],
+                '#d': ticketsToFetch,
+            },
+            {
+                groupable: true,
+                groupableDelay: 800,
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+            }
+        );
+        console.log('tickets of offers in message page', ticketEvents)
+        ticketEvents.forEach((t: NDKEvent) => {
+            const ticket = TicketEvent.from(t);
+            offers.forEach((o: NDKEvent) => {
+                const offer = OfferEvent.from(o);
                 if (ticket.acceptedOfferAddress === offer.offerAddress) {
                     const user = $ndk.getUser({pubkey: ticket.pubkey});
                     clients.push(user);
                     ticketsWithClients.push(ticket);
                 }
-            }
-        }
+            });
+        });
 
         clients = clients;
         ticketsWithClients = ticketsWithClients;
@@ -113,7 +133,7 @@
         <svelte:fragment slot="panel">
             <div class="grid grid-cols-[10%_1fr_10%] sm:grid-cols-[30%_1fr_30%] gap-y-4">
                 {#if conversationType === ConversationType.Troubleshooter}
-                    {#if troubleshooters.length > 0}
+                    {#if troubleshooters?.length > 0}
                         {#each troubleshooters as troubleshooter, i}
                             <div class="col-start-2">
                                 <ChatHead 
@@ -123,6 +143,8 @@
                                 </ChatHead>
                             </div>
                         {/each}
+                    {:else if noTicketsWithTroubleshooters}
+                        <div class="h4 text-center col-start-2">No Conversations!</div>
                     {:else}
                         {#each {length: 4} as _ }
                             <section class="w-[300px] md:w-[400px] col-start-2">
@@ -147,7 +169,7 @@
                         {/each}
                     {/if}
                 {:else if conversationType === ConversationType.Client}
-                    {#if troubleshooters.length > 0}
+                    {#if clients.length > 0}
                         {#each clients as client, i}
                             <div class="col-start-2">
                                 <ChatHead 
@@ -157,6 +179,8 @@
                                 </ChatHead>
                             </div>
                         {/each}
+                    {:else if noTicketsWithClients}
+                        <div class="h4 text-center col-start-2">No Conversations!</div>
                     {:else}
                         {#each {length: 4} as _ }
                             <section class="w-[300px] md:w-[400px] col-start-2">
