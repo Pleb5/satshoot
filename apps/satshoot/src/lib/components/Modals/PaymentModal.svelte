@@ -14,7 +14,7 @@
     import { SatShootPubkey } from "$lib/utils/misc";
 
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import { NDKKind, type NDKFilter } from "@nostr-dev-kit/ndk";
+    import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from "@nostr-dev-kit/ndk";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -160,7 +160,12 @@
                         // for param repl. events. we look for the offer's 'e' tag
                         filter['#e'] = [offer.id];
                         try {
-                            const zapReceiptEvent = await $ndk.fetchEvent(filter);
+                            const zapReceiptEvent = await $ndk.fetchEvent(
+                                filter,
+                                {
+                                    cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY
+                                }
+                            );
                             console.log(zapReceiptEvent)
                             if (zapReceiptEvent) {
                                 const validReceipt = (
@@ -181,7 +186,12 @@
                         // for param repl. events. we look for the ticket's 'e' tag
                         filter['#e'] = [ticket.id];
                         try {
-                            const zapReceiptEvent = await $ndk.fetchEvent(filter);
+                            const zapReceiptEvent = await $ndk.fetchEvent(
+                                filter,
+                                {
+                                    cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY
+                                }
+                            );
                             console.log(zapReceiptEvent)
                             if (zapReceiptEvent) {
                                 const validReceipt = (
