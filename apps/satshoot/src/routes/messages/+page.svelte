@@ -53,6 +53,9 @@
             }
         });
 
+        troubleshooters = troubleshooters;
+        ticketsWithTroubleshooters = ticketsWithTroubleshooters;
+
         const offers = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.TroubleshootOffer],
@@ -86,8 +89,8 @@
             }
         }
 
-        troubleshooters = troubleshooters;
         clients = clients;
+        ticketsWithClients = ticketsWithClients;
     }
 
     onMount(() => {
