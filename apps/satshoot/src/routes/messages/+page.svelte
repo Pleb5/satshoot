@@ -4,7 +4,7 @@
     import { TicketEvent } from "$lib/events/TicketEvent";
     import ndk from "$lib/stores/ndk";
     import currentUser from "$lib/stores/user";
-    import { NDKEvent, NDKKind, type NDKUser } from "@nostr-dev-kit/ndk";
+    import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from "@nostr-dev-kit/ndk";
     import { Tab, TabGroup } from "@skeletonlabs/skeleton";
 
     enum ConversationType {
@@ -31,6 +31,11 @@
                 kinds: [NDKKind.TroubleshootTicket],
                 authors: [$currentUser!.pubkey],
             },
+            {
+                groupable: true,
+                groupableDelay: 800,
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+            },
         );
 
         console.log('my tickets in messages page:', tickets)
@@ -52,12 +57,20 @@
                 kinds: [NDKKind.TroubleshootOffer],
                 authors: [$currentUser!.pubkey],
             },
+            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
         );
         console.log('my offers in messages page:', offers)
 
         for (const offerEvent of offers) {
             const offer = OfferEvent.from(offerEvent);
-            const ticketEvent = await $ndk.fetchEvent(offer.referencedTicketAddress);
+            const ticketEvent = await $ndk.fetchEvent(
+                offer.referencedTicketAddress,
+                {
+                    groupable: true,
+                    groupableDelay: 800,
+                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+                }
+            );
             if (ticketEvent) {
                 const ticket = TicketEvent.from(ticketEvent);
                 if (ticket.acceptedOfferAddress === offer.offerAddress) {

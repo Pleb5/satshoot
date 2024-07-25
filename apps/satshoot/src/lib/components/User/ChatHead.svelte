@@ -6,6 +6,7 @@ import currentUser from "$lib/stores/user";
 import { loggedIn } from "$lib/stores/user";
 import {
     NDKKind,
+    NDKSubscriptionCacheUsage,
     type NDKUser,
     type NDKUserProfile
 } from "@nostr-dev-kit/ndk";
@@ -24,7 +25,13 @@ let latestMessage = '';
 $: avatarImage = `https://robohash.org/${user.pubkey}`;
 
 onMount(async() => {
-    const profile = await user.fetchProfile();
+    const profile = await user.fetchProfile(
+        {
+            groupable: true,
+            groupableDelay: 800,
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+        },
+    );
     if (profile) {
         userProfile = profile;
         if (userProfile.image) {
@@ -44,6 +51,11 @@ async function fetchLatestMessage() {
             kinds: [NDKKind.EncryptedDirectMessage],
             authors: [user.pubkey, $currentUser!.pubkey],
             '#t': [ticket.ticketAddress],
+        },
+        {
+            groupable: true,
+            groupableDelay: 1000,
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
         },
     );
     console.log('ticketMessages', ticketMessages)
