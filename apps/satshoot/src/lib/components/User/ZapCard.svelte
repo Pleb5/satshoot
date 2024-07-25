@@ -2,6 +2,7 @@
 import ndk from "$lib/stores/ndk";
 import { OfferEvent } from "$lib/events/OfferEvent";
 import { 
+    NDKSubscriptionCacheUsage,
     zapInvoiceFromEvent,
     type NDKEvent,
     type NDKUserProfile,
@@ -41,7 +42,14 @@ onMount(async() => {
     }
     if (zapInvoice) {
         if (zapInvoice.zappedEvent) {
-            const offerEvent = await $ndk.fetchEvent(zapInvoice.zappedEvent);
+            const offerEvent = await $ndk.fetchEvent(
+                zapInvoice.zappedEvent,
+                {
+                    groupable: true,
+                    groupableDelay: 400,
+                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+                },
+            );
             if (offerEvent) {
                 zappedOffer = OfferEvent.from(offerEvent);
             }
