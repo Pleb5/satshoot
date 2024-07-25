@@ -6,6 +6,7 @@
     import currentUser from "$lib/stores/user";
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from "@nostr-dev-kit/ndk";
     import { Tab, TabGroup } from "@skeletonlabs/skeleton";
+    import { onMount } from "svelte";
 
     enum ConversationType {
         Troubleshooter = 0,
@@ -89,9 +90,15 @@
         clients = clients;
     }
 
+    onMount(() => {
+        // Scroll to top as soon as ticket arrives
+        const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+        elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+    });
+
 </script>
 
-{#if currentUser}
+{#if $currentUser}
     <TabGroup justify='justify-evenly' flex='flex-grow'>
         <Tab bind:group={conversationType} name="tab1" value={ConversationType.Troubleshooter}>
             Conversations with Troubleshooters
@@ -174,7 +181,7 @@
         </svelte:fragment>
     </TabGroup>
 {:else}
-    <div class="h3 sm:h2 text-center">
+    <div class="h3 sm:h2 text-center mt-8">
         Log in to View your Conversations!
     </div>
 {/if}
