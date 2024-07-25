@@ -15,7 +15,6 @@ import {
 } from "$lib/stores/notifications";
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
-import { onDestroy, tick } from "svelte";
 import ZapCard from "$lib/components/User/ZapCard.svelte";
 
 const toastStore = getToastStore();

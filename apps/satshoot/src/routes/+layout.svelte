@@ -576,7 +576,7 @@
                             && !($page.url.pathname.includes('naddr'))
                         }
                     >
-                    <MessagesIcon sizeClass={'text-2xl sm:text-3xl'} />
+                        <MessagesIcon sizeClass={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
                     <AppRailAnchor
                         href="/notifications"
