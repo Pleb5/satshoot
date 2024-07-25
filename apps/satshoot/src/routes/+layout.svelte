@@ -17,7 +17,7 @@
 
     import { Dexie } from "dexie";
 
-    import { loggedIn, userRelaysUpdated } from "$lib/stores/user";
+    import { mounted, loggedIn, userRelaysUpdated } from "$lib/stores/user";
     import currentUser from "$lib/stores/user";
     import { online } from '$lib/stores/network';
 
@@ -246,6 +246,7 @@
     onMount(async () => {
 
 // ---------------------------- Basic Init ----------------------------
+        $mounted = true;
         localStorage.debug = 'ndk:*'
         if(!$modeCurrent) {
             setModeCurrent(false);

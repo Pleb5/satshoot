@@ -3,7 +3,7 @@
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
     import ndk from "$lib/stores/ndk";
-    import currentUser from "$lib/stores/user";
+    import currentUser, { mounted, loggedIn } from "$lib/stores/user";
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from "@nostr-dev-kit/ndk";
     import { Tab, TabGroup } from "@skeletonlabs/skeleton";
     import { onMount } from "svelte";
@@ -22,7 +22,7 @@
     let noTicketsWithTroubleshooters = false;
     let noTicketsWithClients = false;
 
-    $: if ($currentUser && !initialized) {
+    $: if ($loggedIn && $mounted) {
         init();
     }
 

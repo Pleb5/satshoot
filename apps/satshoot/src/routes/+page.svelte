@@ -12,8 +12,9 @@
     import ReadyToTroubleshootModal from "$lib/components/Modals/ReadyToTroubleshootModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
-    import currentUser, { loggedIn } from "$lib/stores/user";
+    import currentUser, { mounted, loggedIn } from "$lib/stores/user";
     import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
+    import { onDestroy } from "svelte";
 
     const modalStore = getModalStore();
 
@@ -89,7 +90,7 @@
         }
     }
 
-    $: if ($loggedIn) {
+    $: if ($loggedIn && $mounted) {
         if (newTickets) newTickets.empty();
 
         newTickets = $ndk.storeSubscribe(
@@ -105,6 +106,10 @@
             TicketEvent
         );
     }
+
+    onDestroy(() => {
+        if (newTickets) newTickets.empty();
+    });
 
 </script>
 
