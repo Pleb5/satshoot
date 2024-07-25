@@ -25,6 +25,10 @@ let latestMessage = '';
 $: avatarImage = `https://robohash.org/${user.pubkey}`;
 
 onMount(async() => {
+
+});
+
+async function fetchProfile() {
     const profile = await user.fetchProfile(
         {
             groupable: true,
@@ -38,14 +42,9 @@ onMount(async() => {
             avatarImage = userProfile.image;
         }
     }
-
-});
+}
 
 async function fetchLatestMessage() {
-    console.log('ticket address', ticket.ticketAddress)
-    console.log('user pubkey', user.pubkey)
-    console.log('currentUser pubkey', $currentUser?.pubkey)
-
     const ticketMessages = await $ndk.fetchEvents(
         {
             kinds: [NDKKind.EncryptedDirectMessage],
@@ -58,11 +57,9 @@ async function fetchLatestMessage() {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
         },
     );
-    console.log('ticketMessages', ticketMessages)
     if (ticketMessages.size > 0) {
         const ticketMessagesArr = Array.from(ticketMessages);
         let encryptedMessage = ticketMessagesArr[0];
-        ticketMessagesArr.splice(0, 1);
         // Get the latest message event
         for (const msg of ticketMessagesArr) {
             if (msg.created_at! > encryptedMessage.created_at!) {
@@ -86,6 +83,7 @@ async function fetchLatestMessage() {
 }
 
 $: if ($loggedIn) {
+    fetchProfile();
     fetchLatestMessage();
 }
 
