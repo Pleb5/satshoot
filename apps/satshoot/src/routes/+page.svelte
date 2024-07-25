@@ -1,22 +1,23 @@
 <script lang="ts">
-    import { TicketStatus, type TicketEvent } from "$lib/events/TicketEvent";
-    import { allTickets } from "$lib/stores/troubleshoot-eventstores";
+    import { TicketStatus, TicketEvent } from "$lib/events/TicketEvent";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
 
     import { wot } from '$lib/stores/wot';
-    import { connected } from "$lib/stores/ndk";
+    import ndk, { connected } from "$lib/stores/ndk";
 
-    import type { NDKTag } from "@nostr-dev-kit/ndk";
+    import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
     import ReadyToTroubleshootIcon from "$lib/components/Icons/ReadyToTroubleshootIcon.svelte";
     import ReadyToTroubleshootModal from "$lib/components/Modals/ReadyToTroubleshootModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
-    import currentUser from "$lib/stores/user";
+    import currentUser, { loggedIn } from "$lib/stores/user";
+    import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
 
     const modalStore = getModalStore();
 
+    let newTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>;
     let filterInput = '';
     let filterList: string[] = [];
     let ticketList: Set<TicketEvent> = new Set;
@@ -71,9 +72,10 @@
         modalStore.trigger(modal);
     }
 
-    $: if($allTickets || filterList) {
+    $: if($newTickets && filterList) {
         // We just received a ticket 
-        ticketList = new Set($allTickets.filter((t: TicketEvent) => {
+        ticketList = new Set($newTickets.filter((t: TicketEvent) => {
+            // New ticket check: if a ticket status is changed this removes not new tickets
             const newTicket = (t.status === TicketStatus.New);
             // wot is always at least 3 if there is a user logged in
             // only update filter if other users are also present
@@ -85,6 +87,23 @@
         if (filterList.length > 0) {
             filterTickets();
         }
+    }
+
+    $: if ($loggedIn) {
+        if (newTickets) newTickets.empty();
+
+        newTickets = $ndk.storeSubscribe(
+            {
+                kinds: [NDKKind.TroubleshootTicket],
+            },
+            {
+                autoStart: true,
+                closeOnEose: false,
+                groupable: false,
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            },
+            TicketEvent
+        );
     }
 
 </script>
