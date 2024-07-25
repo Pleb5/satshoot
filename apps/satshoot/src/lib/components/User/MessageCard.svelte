@@ -62,10 +62,10 @@ onMount(async () => {
 
     const profile = await senderUser.fetchProfile(
         {
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             closeOnEose: true,
             groupable: true,
-            groupableDelay: 300,
+            groupableDelay: 500,
         }
     );
     if (senderUser.profile) {
@@ -80,7 +80,14 @@ onMount(async () => {
     }
 
     if (ticketAddress) {
-        const event = await $ndk.fetchEvent(ticketAddress);
+        const event = await $ndk.fetchEvent(
+            ticketAddress,
+            {
+                groupable: true,
+                groupableDelay: 800,
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+            },
+        );
         if (event) {
             const ticketEvent = TicketEvent.from(event);
             messageLink = "/messages/" + ticketEvent.encode();
@@ -129,9 +136,11 @@ $: if (decryptedDM) {
                 {/if}
             </div>
             {#if avatarRight}
-                <Avatar
-                src={avatarImage}
-                width="w-12" />
+                <a href={'/' + senderUser.npub}>
+                    <Avatar
+                    src={avatarImage}
+                    width="w-12" />
+                </a>
             {/if}
         </div>
     {:else} 
