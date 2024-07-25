@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import currentUser from '$lib/stores/user';
+    import currentUser, { loggedIn } from '$lib/stores/user';
     import { loginAlert } from '$lib/stores/user';
     import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
@@ -315,29 +315,33 @@
     </div>
 {/if}
 <!-- Offers on Ticket -->
-<h2 class="font-bold text-center text-lg sm:text-2xl mb-4" >
-    {'Offers on this Ticket: ' + ($offerStore ? $offerStore.length : '?') }
-</h2>
-<div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
-    {#if $offerStore}
-        <div class="flex flex-col items-center gap-y-8">
-            {#each $offerStore as offer}
-                <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-                    <OfferCard {offer} showTicket={false} enableChat={myTicket}>
-                        <div slot="takeOffer" class="flex justify-center mt-2">
-                            {#if ticket && myTicket && ticket.status === TicketStatus.New}
-                                <button
-                                    type="button"
-                                    class="btn btn-lg bg-primary-300-600-token"
-                                    on:click={() => takeOffer(offer)}
-                                >
-                                    Take Offer
-                                </button>
-                            {/if}
-                        </div>
-                    </OfferCard>
-                </div>
-            {/each}
-        </div>
-    {/if}
-</div>
+{#if $loggedIn}
+    <h2 class="font-bold text-center text-lg sm:text-2xl mb-4" >
+        {'Offers on this Ticket: ' + ($offerStore ? $offerStore.length : '?') }
+    </h2>
+    <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+        {#if $offerStore}
+            <div class="flex flex-col items-center gap-y-8">
+                {#each $offerStore as offer}
+                    <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
+                        <OfferCard {offer} showTicket={false} enableChat={myTicket}>
+                            <div slot="takeOffer" class="flex justify-center mt-2">
+                                {#if ticket && myTicket && ticket.status === TicketStatus.New}
+                                    <button
+                                        type="button"
+                                        class="btn btn-lg bg-primary-300-600-token"
+                                        on:click={() => takeOffer(offer)}
+                                    >
+                                        Take Offer
+                                    </button>
+                                {/if}
+                            </div>
+                        </OfferCard>
+                    </div>
+                {/each}
+            </div>
+        {/if}
+    </div>
+{:else}
+    <div class="h3 text-center">Login to view Offers on Ticket!</div>
+{/if}
