@@ -12,9 +12,9 @@
     import ReadyToTroubleshootModal from "$lib/components/Modals/ReadyToTroubleshootModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
-    import currentUser, { mounted, loggedIn } from "$lib/stores/user";
+    import currentUser, { loggedIn } from "$lib/stores/user";
     import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     const modalStore = getModalStore();
 
@@ -22,6 +22,7 @@
     let filterInput = '';
     let filterList: string[] = [];
     let ticketList: Set<TicketEvent> = new Set;
+    let mounted = false;
 
     function filterTickets() {
         // We need to check all tickets against all filters
@@ -90,7 +91,7 @@
         }
     }
 
-    $: if ($loggedIn && $mounted) {
+    $: if ($loggedIn && mounted) {
         if (newTickets) newTickets.empty();
 
         newTickets = $ndk.storeSubscribe(
@@ -106,6 +107,10 @@
             TicketEvent
         );
     }
+
+    onMount(() => {
+        mounted = true;
+    });
 
     onDestroy(() => {
         if (newTickets) newTickets.empty();

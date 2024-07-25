@@ -3,7 +3,7 @@
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
     import ndk from "$lib/stores/ndk";
-    import currentUser, { mounted, loggedIn } from "$lib/stores/user";
+    import currentUser, { loggedIn } from "$lib/stores/user";
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from "@nostr-dev-kit/ndk";
     import { Tab, TabGroup } from "@skeletonlabs/skeleton";
     import { onMount } from "svelte";
@@ -18,16 +18,15 @@
     let clients: NDKUser[] = [];
     let ticketsWithClients: TicketEvent[] = [];
     let conversationType: ConversationType = ConversationType.Troubleshooter;
-    let initialized = false;
+    let mounted = false;
     let noTicketsWithTroubleshooters = false;
     let noTicketsWithClients = false;
 
-    $: if ($loggedIn && $mounted) {
+    $: if ($loggedIn && mounted) {
         init();
     }
 
     async function init() {
-        initialized = true;
         console.log('init')
         const tickets = await $ndk.fetchEvents(
             {
@@ -117,6 +116,8 @@
         // Scroll to top as soon as ticket arrives
         const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
         elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+        
+        mounted = true;
     });
 
 </script>
