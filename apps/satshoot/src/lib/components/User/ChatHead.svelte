@@ -116,7 +116,7 @@ $: if ($navigating) {
                     ?? user.npub.substring(0,15)
                 }
             </div>
-            <div class="">
+            <div class="sm:text-lg">
                 {(
                     ticket.title.length > 20
                     ? ticket.title.substring(0,20) + '...'
