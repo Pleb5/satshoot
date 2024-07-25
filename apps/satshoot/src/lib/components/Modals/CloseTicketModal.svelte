@@ -92,18 +92,19 @@
 
                 // Close this modal and Open payment modal
                 modalStore.close();
+                
+                if (offer) {
+                    const modalComponent: ModalComponent = {
+                        ref: PaymentModal,
+                        props: {ticket: ticket, offer: offer},
+                    };
 
-                const modalComponent: ModalComponent = {
-                    ref: PaymentModal,
-                    props: {ticket: ticket, offer: offer},
-                };
-
-                const modal: ModalSettings = {
-                    type: 'component',
-                    component: modalComponent,
-                };
-                modalStore.trigger(modal);
-
+                    const modal: ModalSettings = {
+                        type: 'component',
+                        component: modalComponent,
+                    };
+                    modalStore.trigger(modal);
+                }
             } catch(e) {
                 console.log(e)
                 closing = false;
