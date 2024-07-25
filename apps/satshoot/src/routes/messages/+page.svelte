@@ -57,7 +57,11 @@
                 kinds: [NDKKind.TroubleshootOffer],
                 authors: [$currentUser!.pubkey],
             },
-            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+            {
+                groupable: true,
+                groupableDelay: 400,
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+            },
         );
         console.log('my offers in messages page:', offers)
 
