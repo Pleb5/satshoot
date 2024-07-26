@@ -146,8 +146,10 @@
             if (browser && !$showedDisconnectToast) {
                 $showedDisconnectToast = true;
                 const t: ToastSettings = {
-                    message: 'Disconnected from ALL Relays!',
+                    message: 'Disconnected!',
                     autohide: false,
+                    background: 'bg-error-500',
+                    classes: 'flex flex-col items-center gap-y-2 text-lg font-bold max-w-[90vw]',
                     action: {
                         label: 'Reload to Reconnect',
                         response: () => {
