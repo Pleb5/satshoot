@@ -54,7 +54,7 @@ $: if (user) {
     );
 }
 
-$: if (loggedIn) {
+$: if ($loggedIn) {
     ticketsWithUser = derived(
         [allTicketsOfUser, currentUser],
         ([$allTicketsOfUser, $currentUser]) => {
@@ -139,7 +139,7 @@ onDestroy(()=>{
                                     </svelte:fragment>
                                     <svelte:fragment slot="summary">
                                         <h3 class="h3 text-center underline">
-                                            Tickets
+                                            You as a Troubleshooter
                                         </h3>
                                     </svelte:fragment>
                                     <svelte:fragment slot="content">
@@ -156,7 +156,9 @@ onDestroy(()=>{
                                                 {/each}
                                             </div>
                                         {:else}
-                                            <h4 class="text-center">No Tickets with User!</h4>
+                                            <h4 class="text-center">
+                                                No Tickets troubleshot!
+                                            </h4>
                                         {/if}
                                     </svelte:fragment>
                                 </AccordionItem>
@@ -168,7 +170,7 @@ onDestroy(()=>{
                                     </svelte:fragment>
                                     <svelte:fragment slot="summary">
                                         <h3 class="h3 text-center underline">
-                                            Offers
+                                            You as a Client
                                         </h3>
                                     </svelte:fragment>
                                     <svelte:fragment slot="content">
@@ -185,7 +187,9 @@ onDestroy(()=>{
                                                 {/each}
                                             </div>
                                         {:else}
-                                            <h4 class="text-center">No Offers found!</h4>
+                                            <h4 class="text-center">
+                                                This user did not make Offers on your Tickets!
+                                            </h4>
                                         {/if}
                                     </svelte:fragment>
                                 </AccordionItem>
