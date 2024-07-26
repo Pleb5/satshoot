@@ -229,7 +229,7 @@
     onDestroy(() => {
         ticketSubscription?.stop()
         if (offerStore) {
-            offerStore.empty();
+            offerStore.unsubscribe();
         }
     });
 

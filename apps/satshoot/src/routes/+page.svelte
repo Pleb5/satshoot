@@ -75,6 +75,7 @@
     }
 
     $: if($newTickets && filterList) {
+        console.log('filtering tickets...')
         // We just received a ticket 
         ticketList = new Set($newTickets.filter((t: TicketEvent) => {
             // New ticket check: if a ticket status is changed this removes not new tickets
@@ -92,8 +93,7 @@
     }
 
     $: if ($loggedIn && mounted) {
-        if (newTickets) newTickets.empty();
-
+        console.log('starting new tickets sub')
         newTickets = $ndk.storeSubscribe(
             {
                 kinds: [NDKKind.TroubleshootTicket],
@@ -113,7 +113,8 @@
     });
 
     onDestroy(() => {
-        if (newTickets) newTickets.empty();
+        console.log('stopping new tickets sub')
+        if (newTickets) newTickets.unsubscribe();
     });
 
 </script>
