@@ -19,7 +19,7 @@
 
     import { mounted, loggedIn, userRelaysUpdated } from "$lib/stores/user";
     import currentUser from "$lib/stores/user";
-    import { online } from '$lib/stores/network';
+    import { online, showedDisconnectToast } from '$lib/stores/network';
 
     import { 
         wotFilteredTickets,
@@ -109,6 +109,7 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import type { ReviewEvent } from "$lib/events/ReviewEvent";
     import MessagesIcon from "$lib/components/Icons/MessagesIcon.svelte";
+    import { browser } from "$app/environment";
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -142,6 +143,22 @@
         if ($ndk.pool.stats().connected === 0) {
             console.log('disconnected')
             $connected = false;
+            if (browser && !$showedDisconnectToast) {
+                $showedDisconnectToast = true;
+                const t: ToastSettings = {
+                    message: 'Disconnected from ALL Relays!',
+                    autohide: false,
+                    action: {
+                        label: 'Reload to Reconnect',
+                        response: () => {
+                            // Reload new page circumventing browser cache
+                            location.href = location.pathname + '?v='
+                                + new Date().getTime();
+                        },
+                    }
+                };
+                toastStore.trigger(t);
+            }
         }
     });
 
