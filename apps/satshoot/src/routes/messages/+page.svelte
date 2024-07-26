@@ -35,7 +35,7 @@
             },
             {
                 groupable: true,
-                groupableDelay: 800,
+                groupableDelay: 500,
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
             },
         );
@@ -66,7 +66,7 @@
             },
             {
                 groupable: true,
-                groupableDelay: 400,
+                groupableDelay: 500,
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
             },
         );
