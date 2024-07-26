@@ -100,25 +100,23 @@ function filterTickets() {
 }
 
 // Sort tickets into buckets according to state. Do this every time a new ticket is received for the user
-$: {
-    if ($myTickets) {
-        newTickets = [];
-        inProgressTickets = [];
-        closedTickets = [];
+$: if ($myTickets) {
+    newTickets = [];
+    inProgressTickets = [];
+    closedTickets = [];
 
-        $myTickets.forEach((ticket: TicketEvent) => {
-            if (ticket.status === TicketStatus.New) {
-                newTickets.push(ticket);
-            } else if (ticket.status === TicketStatus.InProgress) {
-                inProgressTickets.push(ticket);
-            } else if (ticket.isClosed()) {
-                closedTickets.push(ticket);
-            }
-        });
-        filterTickets();
-    } else {
-        console.log('My tickets is null!')
-    }
+    $myTickets.forEach((ticket: TicketEvent) => {
+        if (ticket.status === TicketStatus.New) {
+            newTickets.push(ticket);
+        } else if (ticket.status === TicketStatus.InProgress) {
+            inProgressTickets.push(ticket);
+        } else if (ticket.isClosed()) {
+            closedTickets.push(ticket);
+        }
+    });
+    filterTickets();
+} else {
+    console.log('My tickets is null!')
 }
 
 </script>

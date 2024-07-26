@@ -120,34 +120,32 @@ function filterOffersByTicket() {
 
 // Sort offers into buckets according to state
 // Do this every time a new offer is received for the user
-$: {
-    // If we got a new offer, push it into the collection 
-    if ($myOffers && $allTickets) {
-        pendingOffers = [];
-        wonOffers = [];
-        lostOffers = [];
+// If we got a new offer, push it into the collection 
+$: if ($myOffers && $allTickets) {
+    pendingOffers = [];
+    wonOffers = [];
+    lostOffers = [];
 
-        $myOffers.forEach((offer: OfferEvent) => {
-            // This approach does not display an offer until it has successfully 
-            // retrieved its status from its ticket!
-            $allTickets.forEach((ticket:TicketEvent) => {
-                if (ticket.ticketAddress === offer.referencedTicketAddress) {
-                    if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                        wonOffers.push(offer);
-                    } else if (ticket.acceptedOfferAddress
-                            || ticket.isClosed()
-                    ) {
-                        lostOffers.push(offer);
-                    } else {
-                        pendingOffers.push(offer);
-                    }
+    $myOffers.forEach((offer: OfferEvent) => {
+        // This approach does not display an offer until it has successfully 
+        // retrieved its status from its ticket!
+        $allTickets.forEach((ticket:TicketEvent) => {
+            if (ticket.ticketAddress === offer.referencedTicketAddress) {
+                if (ticket.acceptedOfferAddress === offer.offerAddress) {
+                    wonOffers.push(offer);
+                } else if (ticket.acceptedOfferAddress
+                    || ticket.isClosed()
+                ) {
+                    lostOffers.push(offer);
+                } else {
+                    pendingOffers.push(offer);
                 }
-            });
+            }
         });
-        filterOffersByTicket();
-    } else {
-        console.log('My offers is null or size equals 0!')
-    }
+    });
+    filterOffersByTicket();
+} else {
+    console.log('My offers is null or size equals 0!')
 }
 
 </script>
