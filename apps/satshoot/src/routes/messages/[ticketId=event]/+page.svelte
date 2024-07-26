@@ -63,6 +63,8 @@
     let ticket: TicketEvent | null = null;
     let myTicket = false;
 
+    let initialized = false;
+
     interface Contact {
         person: NDKUser,
         selected: boolean,
@@ -194,21 +196,14 @@
         }
     }
 
-    function expandContacts() {
+    function onContactListExpanded() {
         // console.log('expandContacts')
         hideChat = true;
         disablePrompt = true;
         hideSearchIcon = true;
     }
 
-    async function resetContactsList() {
-        let anyoneSelected = false;
-        people.forEach((contact: Contact) => {
-            if(contact.selected) {
-                anyoneSelected = true;
-            }
-        });
-
+    async function onContactListCOllapsed() {
         hideChat = false;
         disablePrompt = false;
         hideSearchIcon = false;
@@ -324,7 +319,8 @@
         calculateHeights();
     }
 
-    $: if ($currentUser && ticket) {
+    $: if ($currentUser && ticket && !initialized) {
+        initialized = true;
         // START MESSAGE STORE SUB
         const receivedMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
             kinds: [NDKKind.EncryptedDirectMessage],
@@ -398,15 +394,15 @@
 
     $: if (browser) {
         if (contactsOpen) {
-            expandContacts();
+            onContactListExpanded();
         } else if (!contactsOpen) {
-            resetContactsList();
+            onContactListCOllapsed();
         } 
     }
 
     onMount(async () => {
         elemPage = document.querySelector('#page') as HTMLElement;
-        expandContacts();
+        onContactListExpanded();
         console.log('fetch ticket...')
         const ticketEvent = await $ndk.fetchEvent(
             ticketAddress,
@@ -429,8 +425,8 @@
     });
 
     onDestroy(() => {
-        if (ticketMessages) ticketMessages.empty();
-        if (offerStore) offerStore.empty();
+        if (ticketMessages) ticketMessages.unsubscribe();
+        if (offerStore) offerStore.unsubscribe();
     });
 
 </script>
