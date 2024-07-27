@@ -407,7 +407,7 @@
                             />
                         </svelte:fragment>
                         <svelte:fragment slot="summary">
-                            <div class="text-center">Winner Offer</div>
+                            <div class="h5 sm:h4 text-center">Winning Offer</div>
                         </svelte:fragment>
                         <svelte:fragment slot="content">
                             <OfferCard
