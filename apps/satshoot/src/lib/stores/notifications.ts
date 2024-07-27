@@ -5,7 +5,6 @@ import { derived, writable } from "svelte/store";
 import { getSetSerializer } from '$lib//utils/misc';
 import { get } from "svelte/store";
 import { type NDKEvent, NDKKind } from "@nostr-dev-kit/ndk";
-import { BTCTroubleshootKind } from "$lib/events/kinds";
 import { TicketEvent } from "$lib/events/TicketEvent";
 import { OfferEvent } from "$lib/events/OfferEvent";
 import { ReviewEvent } from "$lib/events/ReviewEvent";
@@ -30,7 +29,7 @@ export const ticketNotifications = derived(
     ([$notifications]) => {
 
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === BTCTroubleshootKind.Ticket;
+            return notification.kind === NDKKind.TroubleshootTicket;
         });
 
         const tickets: TicketEvent[] = [];
@@ -45,7 +44,7 @@ export const offerNotifications = derived(
     ([$notifications]) => {
 
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === BTCTroubleshootKind.Offer;
+            return notification.kind === NDKKind.TroubleshootOffer;
         });
 
         const offers: OfferEvent[] = [];
@@ -116,15 +115,15 @@ export async function sendNotification(event: NDKEvent) {
         const icon = '/satshoot.svg'
 
         // The Ticket of our _Offer_ was updated
-        if (event.kind === BTCTroubleshootKind.Ticket) {
+        if (event.kind === NDKKind.TroubleshootTicket) {
             title = 'Update!';
             body = '🔔 Check your Notifications!';
-            tag = BTCTroubleshootKind.Ticket.toString();
+            tag = NDKKind.TroubleshootTicket.toString();
             // The Offer on our _Ticket_ was updated
-        } else if(event.kind === BTCTroubleshootKind.Offer) {
+        } else if(event.kind === NDKKind.TroubleshootOffer) {
             title = 'Update!';
             body = '🔔 Check your Notifications!';
-            tag = BTCTroubleshootKind.Offer.toString();
+            tag = NDKKind.TroubleshootOffer.toString();
         } else if (event.kind === NDKKind.EncryptedDirectMessage) {
             title = 'New Message!';
             body = '🔔 Check your Notifications!';

@@ -4,7 +4,6 @@ import {
     type Hexpubkey,
     NDKKind,
 } from '@nostr-dev-kit/ndk';
-import { BTCTroubleshootKind } from '$lib/events/kinds';
 
 export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
 
@@ -13,8 +12,8 @@ export const bunkerPerms = [
     'get_relays',
     'nip04_encrypt',
     'nip04_decrypt',
-    'sign_event:' + BTCTroubleshootKind.Ticket.toString(),
-    'sign_event:' + BTCTroubleshootKind.Offer.toString(),
+    'sign_event:' + NDKKind.TroubleshootTicket.toString(),
+    'sign_event:' + NDKKind.TroubleshootOffer.toString(),
     'sign_event:' + NDKKind.Metadata.toString(),
     'sign_event:' + NDKKind.Text.toString(),
     'sign_event:' + NDKKind.EncryptedDirectMessage.toString(),

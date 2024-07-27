@@ -52,7 +52,6 @@ import {
 } from "$lib/stores/troubleshoot-eventstores";
 
 import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
-import { BTCTroubleshootKind } from '../events/kinds.ts';
 
 
 export async function initializeUser(ndk: NDK) {
@@ -236,7 +235,7 @@ export function troubleshootZap(zap: NDKEvent): boolean {
 
     if (kindFromATag) {
         const offerEventZapped = (
-            parseInt(kindFromATag) === BTCTroubleshootKind.Offer
+            parseInt(kindFromATag) === NDKKind.TroubleshootOffer
         );
 
         if (!offerEventZapped) return false;

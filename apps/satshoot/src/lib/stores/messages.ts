@@ -9,7 +9,6 @@ import {
 
 import { get, writable, derived } from "svelte/store";
 import { wot } from "./wot";
-import { BTCTroubleshootKind } from "$lib/events/kinds";
 
 
 export const subOptions: NDKSubscriptionOptions = {
@@ -44,7 +43,7 @@ export const wotFilteredMessageFeed = derived(
             let relatedToTicket = false;
             message.tags.forEach((tag: NDKTag) => {
                 if (tag[0] === 't' && tag[1]
-                        .includes(BTCTroubleshootKind.Ticket.toString())
+                        .includes(NDKKind.TroubleshootTicket.toString())
                 ) {
                     relatedToTicket = true;
                 }

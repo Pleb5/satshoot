@@ -5,7 +5,6 @@
 
 import { build, files } from '$service-worker';
 
-import { BTCTroubleshootKind } from '../lib/events/kinds.ts';
 import { NDKKind } from '@nostr-dev-kit/ndk';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
@@ -60,9 +59,9 @@ async function openNotificationWindow(tag: string) {
     const urlToVisit = '/notifications/';
 
     const ticketNotification = 
-        (tag === BTCTroubleshootKind.Ticket.toString());
+        (tag === NDKKind.TroubleshootTicket.toString());
     const offerNotification = 
-        (tag === BTCTroubleshootKind.Offer.toString());
+        (tag === NDKKind.TroubleshootOffer.toString());
     const messageNotification = 
         (tag === NDKKind.EncryptedDirectMessage.toString());
     const reviewNotification = 

@@ -8,8 +8,6 @@ import {
 
 import NDK from "@nostr-dev-kit/ndk"
 
-import { BTCTroubleshootKind } from "./kinds";
-
 enum TroubleshooterRatings {
     success = '0.5',
     expertise = '0.2',
@@ -182,11 +180,11 @@ export class ReviewEvent extends NDKEvent {
 
     set reviewedEventAddress(eventAddress: string) {
         const eventKind = parseInt(eventAddress.split(':')[0] as string);
-        if (eventKind === BTCTroubleshootKind.Offer && this.type === ReviewType.Client) {
+        if (eventKind === NDKKind.TroubleshootOffer && this.type === ReviewType.Client) {
             throw new Error('Client reviews can only be given on Ticket events');
         }
 
-        if (eventKind === BTCTroubleshootKind.Ticket && this.type === ReviewType.Troubleshooter) {
+        if (eventKind === NDKKind.TroubleshootTicket && this.type === ReviewType.Troubleshooter) {
             throw new Error('Troubleshooter reviews can only be given on Offer events');
         }
 
@@ -194,13 +192,13 @@ export class ReviewEvent extends NDKEvent {
         this.tags.push(['a', eventAddress]);
     }
 
-    get reviewedEventKind(): BTCTroubleshootKind | number {
+    get reviewedEventKind(): NDKKind | number {
         const aTag = this.tagValue('a');
         if (!aTag) return this.kind;
         if ( ((aTag as string).split(':')[0] as number)
-            === BTCTroubleshootKind.Ticket ) {
-            return BTCTroubleshootKind.Ticket;
-        } else return BTCTroubleshootKind.Offer;
+            === NDKKind.TroubleshootTicket ) {
+            return NDKKind.TroubleshootTicket;
+        } else return NDKKind.TroubleshootOffer;
     }
 
     // Handle udnefined everywhere !!!

@@ -13,7 +13,6 @@
 
     import UserCard from "$lib/components/User/UserCard.svelte";
     import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
-    import { BTCTroubleshootKind } from "$lib/events/kinds";
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
 
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
@@ -33,7 +32,10 @@
         type NDKSubscriptionOptions,
         NDKEvent,
         NDKSubscription, 
-        NDKUser
+        NDKUser,
+
+        NDKKind
+
 
     } from "@nostr-dev-kit/ndk";
 
@@ -51,8 +53,8 @@
     };
     let ticketSubscription: NDKSubscription | undefined = undefined;
     let ticket: TicketEvent | undefined = undefined;
-    let offersFilter: NDKFilter<BTCTroubleshootKind> = {
-        kinds: [BTCTroubleshootKind.Offer],
+    let offersFilter: NDKFilter = {
+        kinds: [NDKKind.TroubleshootOffer],
         '#a': [],
     }
     let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
@@ -85,8 +87,8 @@
 
         // Create new subscription on this ticket 
         const dTag = idFromNaddr(naddr).split(':')[2];
-        const ticketFilter: NDKFilter<BTCTroubleshootKind> = {
-            kinds: [BTCTroubleshootKind.Ticket],
+        const ticketFilter: NDKFilter = {
+            kinds: [NDKKind.TroubleshootTicket],
             '#d': [dTag],
         };
 

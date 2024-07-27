@@ -1,13 +1,15 @@
 <script lang="ts">
     import currentUser from '$lib/stores/user';
     import ndk from '$lib/stores/ndk';
-    import { BTCTroubleshootKind } from '$lib/events/kinds';
     import {
         type NDKFilter,
         type NDKUser,
         type NDKSubscriptionOptions,
 
-        NDKSubscriptionCacheUsage
+        NDKSubscriptionCacheUsage,
+
+        NDKKind
+
 
     } from '@nostr-dev-kit/ndk';
     import { OfferEvent } from "$lib/events/OfferEvent";
@@ -60,8 +62,8 @@
     let timeSincePosted: string; 
     let ticketStatus: string;
 
-    let offersFilter: NDKFilter<BTCTroubleshootKind> = {
-        kinds: [BTCTroubleshootKind.Offer],
+    let offersFilter: NDKFilter = {
+        kinds: [NDKKind.TroubleshootOffer],
         '#a': [ticket.ticketAddress],
     }
     const subOptions: NDKSubscriptionOptions = { 

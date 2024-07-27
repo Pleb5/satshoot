@@ -1,10 +1,10 @@
-import { BTCTroubleshootKind } from "./kinds";
 import { NDKEvent, type Hexpubkey, type NDK, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
 import { SatShootPubkey } from "$lib/utils/misc";
 
 import { OUTBOXRELAYURLS } from "$lib/stores/ndk";
 
 import {nip19} from 'nostr-tools';
+import { NDKKind } from "@nostr-dev-kit/ndk";
 
 // Offer Status is implicitly set by the TicketEvent referenced by this offer's 'a' tag.
 // When ticket updates its 'a' tag, ALL offers statuses change that referenced this ticket
@@ -29,7 +29,7 @@ export class OfferEvent extends NDKEvent {
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
-        this.kind ??= BTCTroubleshootKind.Offer;
+        this.kind ??= NDKKind.TroubleshootOffer;
         this._pricing = parseInt(this.tagValue('pricing') ?? Pricing.Absolute.toString());
         this._amount = parseInt(this.tagValue("amount") ?? '0');
         this.tags.forEach((tag:NDKTag) => {

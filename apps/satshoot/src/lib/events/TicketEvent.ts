@@ -1,6 +1,6 @@
-import { BTCTroubleshootKind } from "./kinds";
 import { NDKEvent, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
 import NDK from "@nostr-dev-kit/ndk"
+import { NDKKind } from "@nostr-dev-kit/ndk";
 
 export enum TicketStatus {
     New = 0,
@@ -17,7 +17,7 @@ export class TicketEvent extends NDKEvent {
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
-        this.kind ??= BTCTroubleshootKind.Ticket;
+        this.kind ??= NDKKind.TroubleshootTicket;
         this._status = parseInt(this.tagValue('s') as string);
         this._title = this.tagValue('title') as string;
         this._tTags = this.tags.filter((tag:NDKTag) => tag[0]==='t');
