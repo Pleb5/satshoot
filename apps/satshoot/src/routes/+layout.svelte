@@ -154,8 +154,7 @@
                         label: 'Reload to Reconnect',
                         response: () => {
                             // Reload new page circumventing browser cache
-                            location.href = location.pathname + '?v='
-                                + new Date().getTime();
+                            location.reload();
                         },
                     }
                 };
