@@ -139,29 +139,21 @@
     //     }
     // });
 
+    let shouldReloadPage = false;
     $ndk.pool.on('relay:disconnect', () => {
         if ($ndk.pool.stats().connected === 0) {
-            console.log('disconnected')
+            console.log('disconnected, set shouldReloadPage')
             $connected = false;
-            if (browser && !$showedDisconnectToast) {
-                $showedDisconnectToast = true;
-                const t: ToastSettings = {
-                    message: 'Disconnected!',
-                    autohide: false,
-                    background: 'bg-error-500',
-                    classes: 'flex flex-col items-center gap-y-2 text-lg font-bold max-w-[90vw]',
-                    action: {
-                        label: 'Reload to Reconnect',
-                        response: () => {
-                            // Reload new page circumventing browser cache
-                            location.reload();
-                        },
-                    }
-                };
-                toastStore.trigger(t);
-            }
+            if (!shouldReloadPage) shouldReloadPage = true;
         }
     });
+
+    $: if (browser && shouldReloadPage) {
+        shouldReloadPage = false;
+        console.log('Reloading page...')
+        window.location.reload();
+    }
+
 
     async function restoreLogin() {
         // Try to get saved Login method from localStorage and login that way
@@ -262,6 +254,7 @@
     }
 
     onMount(async () => {
+        console.log('onMount layout')
 
 // ---------------------------- Basic Init ----------------------------
         $mounted = true;
