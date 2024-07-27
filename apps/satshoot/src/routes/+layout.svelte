@@ -350,7 +350,8 @@
                     location.href = location.pathname + '?v='
                     + new Date().getTime();
                 },
-            }
+            },
+            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold'
         };
         toastId = toastStore.trigger(t);
     }
