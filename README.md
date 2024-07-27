@@ -6,7 +6,7 @@ Try it live on:
 https://satshoot.com
 ```
 
-## ------ ! Work In Progress ! ------
+## ! Work In Progress !
 
 - Clients post tickets about technical issues they have. This is basically a Request For Quote (RFQ)
 - Troubleshooters send Offers to resolve the problem for sats. It can be an absolute or a time-based price
