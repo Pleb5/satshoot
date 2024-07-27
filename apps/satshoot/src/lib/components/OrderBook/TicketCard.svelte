@@ -21,7 +21,11 @@
 
     import { Avatar, popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
+    import {
+        getModalStore,
+        Accordion,
+        AccordionItem
+    } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
 
     import { ticketToEdit } from "$lib/stores/ticket-to-edit";
@@ -36,6 +40,8 @@
     import UserReviewCard from '../User/UserReviewCard.svelte';
     import { onDestroy, onMount } from 'svelte';
     import PaymentModal from '../Modals/PaymentModal.svelte';
+    import OfferCard from './OfferCard.svelte';
+    import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
 
     const modalStore = getModalStore();
 			
@@ -390,6 +396,35 @@
             {/if}
              
             <hr class="my-4" />
+
+            {#if winnerOffer}
+                <Accordion>
+                    <AccordionItem>
+                        <svelte:fragment slot="lead">
+                            <UserOffersIcon
+                                sizeClass={'text-xl sm:text-2xl'}
+                                extraClasses={'text-warning-500'}
+                            />
+                        </svelte:fragment>
+                        <svelte:fragment slot="summary">
+                            <div class="text-center">Winner Offer</div>
+                        </svelte:fragment>
+                        <svelte:fragment slot="content">
+                            <OfferCard
+                                offer={winnerOffer}
+                                showTicket={false}
+                                showReputation={false}
+                                showDetails={false}
+                                showDescription={false}
+                                showOfferReview={false}
+                            >
+                            </OfferCard>
+                        </svelte:fragment>
+                    </AccordionItem>
+                </Accordion>
+                <hr class="my-4" />
+            {/if}
+
 
             <div class="">
                 <span class="pr-1">Status: </span>
