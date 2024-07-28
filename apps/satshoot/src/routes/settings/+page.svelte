@@ -1,15 +1,21 @@
 <script lang="ts">
-import ndk from '$lib/stores/ndk';
+import ndk, { sessionPK } from '$lib/stores/ndk';
 import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
 import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
 import { getToastStore } from '@skeletonlabs/skeleton';
 import type { ToastSettings } from '@skeletonlabs/skeleton';
+import { clipboard } from '@skeletonlabs/skeleton';
 import Dexie from 'dexie';
+import { onDestroy } from 'svelte';
+import { nsecEncode } from "nostr-tools/nip19"
+import { hexToBytes } from '@noble/ciphers/utils';
 
 
 const modalStore = getModalStore();
 const toastStore = getToastStore();
 
+let nsec = '';
+let showing = false;
 
 async function clearCache() {
     let clearCacheResponse = async function(r: boolean){
@@ -57,6 +63,26 @@ async function clearCache() {
     };
     modalStore.trigger(modal);
 }
+
+function showPrivateKey() {
+    showing = !showing;
+    if ($sessionPK) {
+        nsec = nsecEncode(hexToBytes($sessionPK));
+    }
+}
+
+let copiedNsec = false;
+function onCopyNsec(): void {
+    copiedNsec = true;
+    setTimeout(() => {
+        copiedNsec = false;
+    }, 1000);
+}
+
+onDestroy(() => {
+    nsec = '';
+});
+
 </script>
 
 <div class="flex flex-col items-center gap-y-4 my-4">
@@ -67,5 +93,34 @@ async function clearCache() {
     >
         Clear Cache
     </button>
+
+    {#if $sessionPK}
+        <button 
+            class="btn bg-primary-300-600-token"
+            type="button"
+            on:click={ showPrivateKey }
+        >
+            Show Private key (nSec)
+        </button>
+        {#if nsec && showing}
+            <div class="flex flex-col items-center gap-y-4">
+                <div class="font-bold">
+                    {
+                        nsec.substring(0,10) 
+                        + '...' 
+                        + nsec.substring(nsec.length - 11, nsec.length - 1)
+                    }
+                </div>
+            <button 
+                class="btn text-sm btn-sm bg-red-500 font-bold"
+                use:clipboard={nsec}
+                on:click={onCopyNsec}
+            >
+                {copiedNsec ? 'Copied!' : 'Dangerously Copy'}
+            </button>
+            </div>
+        {/if}
+    {/if}
+
 </div>
 
