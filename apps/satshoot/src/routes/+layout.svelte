@@ -137,7 +137,7 @@
     //         }
     //         $connected = true;
     //     }
-    // });
+    // }); 
 
     let shouldReloadPage = false;
     $ndk.pool.on('relay:disconnect', () => {
@@ -255,6 +255,7 @@
 
     onMount(async () => {
         console.log('onMount layout')
+        shouldReloadPage = false;
 
 // ---------------------------- Basic Init ----------------------------
         $mounted = true;
@@ -319,6 +320,8 @@
 
     onDestroy(() => {
         console.log('layout on destroy')
+        shouldReloadPage = false;
+
         if (allTickets) allTickets.empty();
         if (allOffers) allOffers.empty();
         if (myTickets) myTickets.empty();
