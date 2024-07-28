@@ -410,6 +410,7 @@
                                     showReputation={showTicketReputation}
                                     openReputation={openTicketReputation}
                                     showReview={showTicketReview}
+                                    showWinner={!winner}
                                 >
                                 </TicketCard>
                             {:else}

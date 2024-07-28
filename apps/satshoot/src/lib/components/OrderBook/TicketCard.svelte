@@ -60,6 +60,7 @@
     export let openReputation = true;
     export let showReview = true;
     export let openReview = false;
+    export let showWinner = true;
 
     let bech32ID = '';
     let npub: string;
@@ -397,7 +398,7 @@
              
             <hr class="my-4" />
 
-            {#if winnerOffer}
+            {#if winnerOffer && showWinner}
                 <Accordion>
                     <AccordionItem>
                         <svelte:fragment slot="lead">
