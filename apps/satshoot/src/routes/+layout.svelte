@@ -19,7 +19,7 @@
 
     import { mounted, loggedIn, userRelaysUpdated } from "$lib/stores/user";
     import currentUser from "$lib/stores/user";
-    import { online, showedDisconnectToast } from '$lib/stores/network';
+    import { online, retryConnection } from '$lib/stores/network';
 
     import { 
         wotFilteredTickets,
@@ -142,17 +142,21 @@
     let shouldReloadPage = false;
     $ndk.pool.on('relay:disconnect', () => {
         if ($ndk.pool.stats().connected === 0) {
-            console.log('disconnected, set shouldReloadPage')
+            console.log('Disconnected, set shouldReloadPage')
             $connected = false;
-            if (!shouldReloadPage) shouldReloadPage = true;
+            if (browser && $retryConnection > 0) {
+                $retryConnection--;
+                retryConnection.set($retryConnection);
+                console.log('Reloading page, shouldReload reset...')
+                window.location.reload();
+            }
+            // shouldReloadPage = true;
         }
     });
 
-    $: if (browser && shouldReloadPage) {
-        shouldReloadPage = false;
-        console.log('Reloading page...')
-        window.location.reload();
-    }
+    // $: if (browser && shouldReloadPage) {
+    //     shouldReloadPage = false;
+    // }
 
 
     async function restoreLogin() {
@@ -310,6 +314,9 @@
 
         await $ndk.connect();
         $connected = ($ndk.pool.stats().connected > 0);
+
+        // If we managed to connect reset max connection retry attempts
+        if ($connected) $retryConnection = 2;
 
 // ------------------------ Restore Login -----------------------------------
 
