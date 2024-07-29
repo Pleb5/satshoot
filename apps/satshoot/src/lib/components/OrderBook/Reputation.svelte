@@ -5,7 +5,8 @@ import { troubleshootZap } from '$lib/utils/helpers';
 import { 
     clientReviews,
     troubleshooterReviews,
-    aggregateRatings,
+    aggregateClientRatings,
+    aggregateTroubleshooterRatings
 } from "$lib/stores/reviews";
 
 import {
@@ -33,13 +34,24 @@ import { onDestroy } from "svelte";
 
 export let user: Hexpubkey;
 export let type: ReviewType | undefined;
+let reviewType: ReviewType;
 export let open = true;
 
 const drawerStore = getDrawerStore();
 
-$: reviewsArraysExist = $clientReviews && $troubleshooterReviews;
-$: reviewsExist = reviewsArraysExist && 
+$: reviewArraysExist = $clientReviews && $troubleshooterReviews;
+$: reviewsExist = reviewArraysExist && 
             ($clientReviews.length > 0 || $troubleshooterReviews.length > 0);
+
+$: if (!type && reviewArraysExist) {
+    if ($clientReviews.length > $troubleshooterReviews.length) {
+        reviewType = ReviewType.Client;
+    } else {
+        reviewType = ReviewType.Troubleshooter;
+    }
+} else if (type) {
+    reviewType = type;
+}
 
 let ratings: Map<string, number> | undefined = undefined;
 
@@ -67,7 +79,7 @@ function showReviewBreakdown() {
     $drawerID = DrawerIDs.ReviewBreakdown;
     const drawerSettings: DrawerSettings = {
         id: $drawerID.toString(),
-        meta: {reviewType: type, user: user},
+        meta: {reviewType: reviewType, user: user},
         position: 'top',
         height: 'h-[70vh]',
         bgDrawer: 'bg-surface-300-600-token',
@@ -76,48 +88,69 @@ function showReviewBreakdown() {
     drawerStore.open(drawerSettings);
 }
 
+// $: if ($clientReviews) {
+//     console.log('currentUser', $currentUser)
+//     console.log('user', user)
+//     console.log('clientReviews', $clientReviews)
+//     console.log('troubleshooterReviews', $troubleshooterReviews)
+// }
+// $: console.log($troubleshooterReviews)
+
 $: if (
     $currentUser
     && user
-    && reviewsArraysExist
+    && $clientReviews
+    && $troubleshooterReviews
 ) {
-    if (type === undefined) {
-        // type is undefined we show the aggregate ratings of the review store
-        // that has more reviews in it. Expecting to have substantially more in one of them
-        if ($clientReviews.length > $troubleshooterReviews.length) {
-            type = ReviewType.Client;
-        } else {
-            type = ReviewType.Troubleshooter;
-        }
-    } 
 
-    ratings = aggregateRatings(user, type);
-    const average = ratings.get('average') as number;
-    // we dont display the exact average in the breakdown
-    ratings.delete('average');
-    if (isNaN(average)) {
-        ratingConsensus = 'No Ratings';
-        ratingColor = 'bg-surface-500';
+    // console.log('review type', reviewType)
+    // console.log('clientreviews length', $clientReviews.length)
+    // console.log('troubleshooterReviews length', $troubleshooterReviews.length)
+
+    if (reviewType === ReviewType.Client) {
+        ratings = aggregateClientRatings(user);
+        console.log('client')
     } else {
-        ratingConsensus = 'Excellent';
-        ratingColor = 'bg-warning-500';
-        if (average < 0.9) {
-            ratingConsensus = 'Great';
-            ratingColor = 'bg-tertiary-500';
-        } 
-        if (average < 0.75) {
-            ratingConsensus = 'Good';
-            ratingColor = 'bg-success-500';
-        }
-        if (average < 0.5) {
-            ratingConsensus = 'Mixed ratings';
-            ratingColor = 'bg-surface-500';
-        }
-        if (average < 0.25) {
-            ratingConsensus = 'Bad';
-            ratingColor = 'bg-error-500';
-        }
+        ratings = aggregateTroubleshooterRatings(user);
+        console.log('troubleshooter')
     }
+
+    console.log('ratings', ratings)
+    if (ratings) {
+        const average = ratings.get('average') as number;
+        // we dont display the exact average in the breakdown
+        ratings.delete('average');
+        if (isNaN(average)) {
+            ratingConsensus = 'No Ratings';
+            ratingColor = 'bg-surface-500';
+        } else {
+            ratingConsensus = 'Excellent';
+            ratingColor = 'bg-warning-500';
+            if (average < 0.9) {
+                ratingConsensus = 'Great';
+                ratingColor = 'bg-tertiary-500';
+            } 
+            if (average < 0.75) {
+                ratingConsensus = 'Good';
+                ratingColor = 'bg-success-500';
+            }
+            if (average < 0.5) {
+                ratingConsensus = 'Mixed ratings';
+                ratingColor = 'bg-surface-500';
+            }
+            if (average < 0.25) {
+                ratingConsensus = 'Bad';
+                ratingColor = 'bg-error-500';
+            }
+        }
+    } else {
+        console.log('Could not aggregate ratings!')
+    }
+
+} else {
+    'Not updating, reason'
+    console.log($clientReviews)
+    console.log($troubleshooterReviews)
 
 }
 
@@ -200,7 +233,7 @@ onDestroy(()=>{
         </svelte:fragment>
         <svelte:fragment slot="content">
             {#if user
-                && reviewsArraysExist
+                && reviewArraysExist
                 && $allEarningsStore
                 && $allPaymentsStore
                 && $allPledgesStore

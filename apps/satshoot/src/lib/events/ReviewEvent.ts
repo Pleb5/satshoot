@@ -94,6 +94,35 @@ export class ReviewEvent extends NDKEvent {
         this.content = r.reviewText;
     }
 
+    get clientRatings(): ClientRating {
+        if (this.type !== ReviewType.Client) {
+            throw new Error('Requested Client ratings but review type is NOT Client!');
+        }
+        const clientRating: ClientRating = {
+            thumb: false,
+            availability: false,
+            communication: false,
+            reviewText: this.content,
+        }
+        this.tags.forEach((tag: NDKTag) => {
+            const rating = parseFloat(tag[1]);
+            if (isNaN(rating)) return;
+
+            if (tag.includes('rating')
+                && tag.includes('thumb') && rating > 0) {
+                clientRating.thumb = true;
+            } else if (tag.includes('rating')
+                && tag.includes('availability') && rating > 0) {
+                clientRating.availability = true;
+            } else if (tag.includes('rating')
+                && tag.includes('communication') && rating > 0) {
+                clientRating.communication = true;
+            }
+        });
+        return clientRating;
+    } 
+
+
     set troubleshooterRatings(r: TroubleshooterRating) {
         if (this.type === ReviewType.Client) {
             throw new Error('Forbidden: Trying to set troubleshooter rating of a Client review event!');
@@ -118,60 +147,36 @@ export class ReviewEvent extends NDKEvent {
         this.content = r.reviewText;
     }
 
-    get ratings(): ClientRating | TroubleshooterRating | undefined{
-        if (this.type === ReviewType.Client) {
-            const clientRating: ClientRating = {
-                thumb: false,
-                availability: false,
-                communication: false,
-                reviewText: this.content,
-            }
-            this.tags.forEach((tag: NDKTag) => {
-                const rating = parseFloat(tag[1]);
-                if (isNaN(rating)) return;
-
-                if (tag.includes('rating')
-                    && tag.includes('thumb') && rating > 0) {
-                    clientRating.thumb = true;
-                } else if (tag.includes('rating')
-                    && tag.includes('availability') && rating > 0) {
-                    clientRating.availability = true;
-                } else if (tag.includes('rating')
-                    && tag.includes('communication') && rating > 0) {
-                    clientRating.communication = true;
-                }
-            });
-            return clientRating;
-        } else if (this.type === ReviewType.Troubleshooter) {
-            const troubleshooterRating: TroubleshooterRating = {
-                success: false,
-                expertise: false,
-                availability: false,
-                communication: false,
-                reviewText: this.content,
-            }
-            this.tags.forEach((tag: NDKTag) => {
-                const rating = parseFloat(tag[1]);
-                if (isNaN(rating)) return;
-
-                if (tag.includes('rating')
-                    && tag.includes('success') && rating > 0) {
-                    troubleshooterRating.success = true;
-                } else if (tag.includes('rating')
-                    && tag.includes('expertise') && rating > 0) {
-                    troubleshooterRating.expertise = true;
-                } else if (tag.includes('rating')
-                    && tag.includes('availability') && rating > 0) {
-                    troubleshooterRating.availability = true;
-                } else if (tag.includes('rating')
-                    && tag.includes('communication') && rating > 0) {
-                    troubleshooterRating.communication = true;
-                }
-            });
-            return troubleshooterRating;
+    get troubleshooterRatings(): TroubleshooterRating {
+        if (this.type !== ReviewType.Troubleshooter) {
+            throw new Error('Requested troubleshooter ratings but review type is NOT Troubleshooter!')
         }
+        const troubleshooterRating: TroubleshooterRating = {
+            success: false,
+            expertise: false,
+            availability: false,
+            communication: false,
+            reviewText: this.content,
+        }
+        this.tags.forEach((tag: NDKTag) => {
+            const rating = parseFloat(tag[1]);
+            if (isNaN(rating)) return;
 
-        return undefined;
+            if (tag.includes('rating')
+                && tag.includes('success') && rating > 0) {
+                troubleshooterRating.success = true;
+            } else if (tag.includes('rating')
+                && tag.includes('expertise') && rating > 0) {
+                troubleshooterRating.expertise = true;
+            } else if (tag.includes('rating')
+                && tag.includes('availability') && rating > 0) {
+                troubleshooterRating.availability = true;
+            } else if (tag.includes('rating')
+                && tag.includes('communication') && rating > 0) {
+                troubleshooterRating.communication = true;
+            }
+        });
+        return troubleshooterRating;
     }
 
     get reviewedEventAddress(): string | undefined{

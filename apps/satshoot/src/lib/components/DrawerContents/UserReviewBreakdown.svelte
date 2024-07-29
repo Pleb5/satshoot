@@ -7,8 +7,11 @@ import currentUser from "$lib/stores/user";
 import type { NDKUser } from "@nostr-dev-kit/ndk";
 
 import {
-    userReviews,
+    userClientRatings,
+    userTroubleshooterRatings,
 } from '$lib/stores/reviews';
+
+import { ReviewType } from "$lib/events/ReviewEvent";
 
 const drawerStore = getDrawerStore();
 
@@ -17,7 +20,10 @@ const userHex = $drawerStore.meta['user'];
 
 const reviewer = $currentUser as NDKUser;
 
-const reviews = userReviews(reviewer.pubkey, userHex, reviewType); 
+const reviews = (reviewType === ReviewType.Client
+    ? userClientRatings(reviewer.pubkey, userHex)
+    : userTroubleshooterRatings(reviewer.pubkey, userHex)
+);
 
 const baseClasses = 'card p-2 m-8 bg-surface-200-700-token\
     flex-grow sm:max-w-[70vw] lg:max-w-[60vw] overflow-y-auto';

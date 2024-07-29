@@ -12,7 +12,7 @@ import {
 } from "@skeletonlabs/skeleton";
 
 export let ratings: Map<string, number>;
-export let userReviews: Array<ClientRating | TroubleshooterRating>;
+export let userRatings: Array<ClientRating> | Array<TroubleshooterRating>;
 
 const drawerStore = getDrawerStore();
 
@@ -57,9 +57,9 @@ function showUserReviewBreakdown() {
             {/each}
         </div>
     {/if}
-    {#if userReviews && userReviews.length > 0}
+    {#if userRatings && userRatings.length > 0}
         <div class="flex gap-x-4 items-center">
-            <h3 class="h4 sm:h3">Your Reviews: {userReviews.length}</h3>
+            <h3 class="h4 sm:h3">Your Reviews: {userRatings.length}</h3>
             <button
                 type="button" 
                 class="btn btn-icon-xl p-2 text-start text-primary-400-500-token"

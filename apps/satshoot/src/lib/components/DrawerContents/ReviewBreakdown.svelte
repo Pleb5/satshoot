@@ -2,6 +2,8 @@
 import currentUser from "$lib/stores/user";
 import {
     ReviewType,
+    type ClientRating,
+    type TroubleshooterRating,
 } from "$lib/events/ReviewEvent";
  
 import { 
@@ -10,8 +12,12 @@ import {
 } from "@skeletonlabs/skeleton";
 
 import {
-    aggregateRatings,
-    userReviews
+    clientReviews,
+    troubleshooterReviews,
+    aggregateClientRatings,
+    aggregateTroubleshooterRatings,
+    userClientRatings,
+    userTroubleshooterRatings,
 } from '$lib/stores/reviews'
 
 import ReviewSummary from "./ReviewSummary.svelte";
@@ -26,21 +32,25 @@ $: if (reviewType) {
 
 const userHex = $drawerStore.meta['user'];
 
-const clientRatings = aggregateRatings(
-    userHex, ReviewType.Client
-);
-const troubleshooterRatings = aggregateRatings(
-    userHex, ReviewType.Troubleshooter
-);
-clientRatings.delete('average');
-troubleshooterRatings.delete('average');
+let clientRatingsMap: Map<string, number>;
+let troubleshooterRatingsMap: Map<string, number>;
+let userClientRatingsArr: Array<ClientRating>;
+let userTroubleshooterRatingsArr: Array<TroubleshooterRating>;
 
-const userClientReviews = userReviews(
-    $currentUser!.pubkey, userHex, ReviewType.Client
-);
-const userTroubleshooterReviews = userReviews(
-    $currentUser!.pubkey, userHex, ReviewType.Troubleshooter
-);
+$: if ($clientReviews) {
+    clientRatingsMap = aggregateClientRatings(userHex);
+    clientRatingsMap.delete('average');
+    userClientRatingsArr = userClientRatings($currentUser!.pubkey, userHex);
+}
+
+$: if ($troubleshooterReviews) {
+    troubleshooterRatingsMap = aggregateTroubleshooterRatings(userHex);
+    troubleshooterRatingsMap.delete('average');
+    userTroubleshooterRatingsArr = userTroubleshooterRatings(
+        $currentUser!.pubkey,
+        userHex
+    );
+}
 
 const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
     flex-grow sm:max-w-[70vw] lg:max-w-[60vw] overflow-y-auto';
@@ -57,15 +67,15 @@ const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
     <!-- Tab Panels --->
     <svelte:fragment slot="panel">
         <div class="{baseClasses}">
-            {#if reviewType === ReviewType.Client}
+            {#if clientRatingsMap && reviewType === ReviewType.Client}
                 <ReviewSummary 
-                    ratings={clientRatings}
-                    userReviews={userClientReviews}
+                    ratings={clientRatingsMap}
+                    userRatings={userClientRatingsArr}
                 />
-            {:else if reviewType === ReviewType.Troubleshooter}
+            {:else if troubleshooterRatingsMap && reviewType === ReviewType.Troubleshooter}
                 <ReviewSummary 
-                    ratings={troubleshooterRatings}
-                    userReviews={userTroubleshooterReviews}
+                    ratings={troubleshooterRatingsMap}
+                    userRatings={userTroubleshooterRatingsArr}
                 />
             {/if}
         </div>
