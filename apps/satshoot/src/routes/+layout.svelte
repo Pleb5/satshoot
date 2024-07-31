@@ -19,7 +19,7 @@
 
     import { mounted, loggedIn, userRelaysUpdated } from "$lib/stores/user";
     import currentUser from "$lib/stores/user";
-    import { online, retryConnection } from '$lib/stores/network';
+    import { online, retryConnection, retryAttempts } from '$lib/stores/network';
 
     import { 
         wotFilteredTickets,
@@ -316,7 +316,10 @@
         $connected = ($ndk.pool.stats().connected > 0);
 
         // If we managed to connect reset max connection retry attempts
-        if ($connected) $retryConnection = 2;
+        if ($connected) {
+            $retryConnection = $retryAttempts;
+            retryConnection.set($retryAttempts);
+        }
 
 // ------------------------ Restore Login -----------------------------------
 
