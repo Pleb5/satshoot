@@ -10,8 +10,11 @@ import {
     getDrawerStore,
     type DrawerSettings,
 } from "@skeletonlabs/skeleton";
+import { onMount } from "svelte";
 
 export let ratings: Map<string, number>;
+const average = ratings.get('average') as number;
+
 export let userRatings: Array<ClientRating> | Array<TroubleshooterRating>;
 
 const drawerStore = getDrawerStore();
@@ -22,6 +25,9 @@ const reviewTypeText = (
     ? 'Client' : 'Troubleshooter'
 );
 const userHex = $drawerStore.meta['user'];
+
+let ratingConsensus = '';
+let ratingColor = '';
 
 function showUserReviewBreakdown() {
     $drawerID = DrawerIDs.UserReviewBreakdown;
@@ -35,9 +41,43 @@ function showUserReviewBreakdown() {
     drawerStore.open(drawerSettings);
 }
 
+onMount(() => {
+    if (isNaN(average)) {
+        ratingConsensus = 'No Ratings';
+        ratingColor = 'bg-surface-500';
+    } else {
+        ratingConsensus = 'Excellent';
+        ratingColor = 'bg-warning-500';
+        if (average < 0.9) {
+            ratingConsensus = 'Great';
+            ratingColor = 'bg-tertiary-500';
+        } 
+        if (average < 0.75) {
+            ratingConsensus = 'Good';
+            ratingColor = 'bg-success-500';
+        }
+        if (average < 0.5) {
+            ratingConsensus = 'Mixed ratings';
+            ratingColor = 'bg-surface-500';
+        }
+        if (average < 0.25) {
+            ratingConsensus = 'Bad';
+            ratingColor = 'bg-error-500';
+        }
+    }
+});
+
 </script>
 
 <div class="flex flex-col items-center gap-y-4">
+    {#if ratings.size > 0}
+        <h3 class="h3 underline">Rating Consensus</h3>
+        <div class="badge text-lg sm:text-xl {ratingColor}">
+            {ratingConsensus}
+        </div>
+    {:else}
+        <h3 class="h3 underline">No Ratings found!</h3>
+    {/if}
     <h3 class="h3 underline">Review Summary</h3>
     {#if ratings.size > 0}
         <div class="grid grid-cols-[1fr_auto] gap-x-4 text-lg">
@@ -50,7 +90,7 @@ function showUserReviewBreakdown() {
         <h3 class="h3 mt-4 mb-2 underline">Exceptional Qualities Received:</h3>
         <div class="grid grid-cols-[1fr_auto] gap-y-2 gap-x-6 mb-4 text-lg">
             {#each Array.from(ratings.keys()) as key, i}
-                {#if i > 0}
+                {#if i > 0 && key !== 'average'}
                     <div>⭐ {key}:</div>
                     <div>{ratings.get(key) + 'X'}</div>
                 {/if}

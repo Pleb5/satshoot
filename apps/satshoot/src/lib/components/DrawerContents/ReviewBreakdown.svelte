@@ -39,13 +39,11 @@ let userTroubleshooterRatingsArr: Array<TroubleshooterRating>;
 
 $: if ($clientReviews) {
     clientRatingsMap = aggregateClientRatings(userHex);
-    clientRatingsMap.delete('average');
     userClientRatingsArr = userClientRatings($currentUser!.pubkey, userHex);
 }
 
 $: if ($troubleshooterReviews) {
     troubleshooterRatingsMap = aggregateTroubleshooterRatings(userHex);
-    troubleshooterRatingsMap.delete('average');
     userTroubleshooterRatingsArr = userTroubleshooterRatings(
         $currentUser!.pubkey,
         userHex

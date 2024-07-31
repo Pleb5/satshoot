@@ -103,55 +103,56 @@ $: if (
     && $troubleshooterReviews
 ) {
 
-    // console.log('review type', reviewType)
-    // console.log('clientreviews length', $clientReviews.length)
-    // console.log('troubleshooterReviews length', $troubleshooterReviews.length)
-
+    let otherTypeOfRatings;
     if (reviewType === ReviewType.Client) {
         ratings = aggregateClientRatings(user);
-        console.log('client')
+        otherTypeOfRatings = aggregateTroubleshooterRatings(user);
     } else {
         ratings = aggregateTroubleshooterRatings(user);
-        console.log('troubleshooter')
+        otherTypeOfRatings = aggregateClientRatings(user);
     }
 
-    console.log('ratings', ratings)
-    if (ratings) {
-        const average = ratings.get('average') as number;
-        // we dont display the exact average in the breakdown
-        ratings.delete('average');
-        if (isNaN(average)) {
-            ratingConsensus = 'No Ratings';
-            ratingColor = 'bg-surface-500';
+    const average = ratings!.get('average') as number;
+    const otherTypeOfaverage = otherTypeOfRatings.get('average') as number;
+    let overallAverage: number;
+
+    // We take the average of both types of ratings if type is undefined
+    if (type === undefined) {
+        if (!isNaN(average) && !(isNaN(otherTypeOfaverage))) {
+            overallAverage = (average + otherTypeOfaverage) / 2;
+        } else if (isNaN(average) && !isNaN(otherTypeOfaverage)) {
+            overallAverage = otherTypeOfaverage;
+        } else if (isNaN(otherTypeOfaverage) && !isNaN(average)) {
+            overallAverage = average;
         } else {
-            ratingConsensus = 'Excellent';
-            ratingColor = 'bg-warning-500';
-            if (average < 0.9) {
-                ratingConsensus = 'Great';
-                ratingColor = 'bg-tertiary-500';
-            } 
-            if (average < 0.75) {
-                ratingConsensus = 'Good';
-                ratingColor = 'bg-success-500';
-            }
-            if (average < 0.5) {
-                ratingConsensus = 'Mixed ratings';
-                ratingColor = 'bg-surface-500';
-            }
-            if (average < 0.25) {
-                ratingConsensus = 'Bad';
-                ratingColor = 'bg-error-500';
-            }
+            overallAverage = NaN;
         }
     } else {
-        console.log('Could not aggregate ratings!')
+        overallAverage = average;
     }
-
-} else {
-    'Not updating, reason'
-    console.log($clientReviews)
-    console.log($troubleshooterReviews)
-
+    if (isNaN(overallAverage)) {
+        ratingConsensus = 'No Ratings';
+        ratingColor = 'bg-surface-500';
+    } else {
+        ratingConsensus = 'Excellent';
+        ratingColor = 'bg-warning-500';
+        if (overallAverage < 0.9) {
+            ratingConsensus = 'Great';
+            ratingColor = 'bg-tertiary-500';
+        } 
+        if (overallAverage < 0.75) {
+            ratingConsensus = 'Good';
+            ratingColor = 'bg-success-500';
+        }
+        if (overallAverage < 0.5) {
+            ratingConsensus = 'Mixed ratings';
+            ratingColor = 'bg-surface-500';
+        }
+        if (overallAverage < 0.25) {
+            ratingConsensus = 'Bad';
+            ratingColor = 'bg-error-500';
+        }
+    }
 }
 
 $: if($currentUser && user && $wot) {
