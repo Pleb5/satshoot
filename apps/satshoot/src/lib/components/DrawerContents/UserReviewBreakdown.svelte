@@ -20,7 +20,7 @@ const userHex = $drawerStore.meta['user'];
 
 const reviewer = $currentUser as NDKUser;
 
-const reviews = (reviewType === ReviewType.Client
+const ratings = (reviewType === ReviewType.Client
     ? userClientRatings(reviewer.pubkey, userHex)
     : userTroubleshooterRatings(reviewer.pubkey, userHex)
 );
@@ -55,10 +55,10 @@ function backToReviewBreadown() {
         </span>
     </button>
     <h2 class="h2 text-center mb-2">User Reviews</h2>
-    {#if reviews && reviews.length > 0}
+    {#if ratings && ratings.length > 0}
         <div class="flex flex-col items-center gap-y-4 text-2xl">
-            {#each reviews as userReview}
-                <UserReviewCard review={userReview} {reviewer}/>
+            {#each ratings as userRating}
+                <UserReviewCard rating={userRating} {reviewer}/>
             {/each}
         </div>
     {:else}

@@ -16,6 +16,7 @@ import {
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
 import ZapCard from "$lib/components/User/ZapCard.svelte";
+import { ReviewType } from "$lib/events/ReviewEvent";
 
 const toastStore = getToastStore();
 
@@ -180,11 +181,15 @@ function clearAll() {
             {#if $reviewNotifications.length > 0}
                 <div class="space-y-4">
                     {#each $reviewNotifications as review(review.id)}
-                        {#if review.ratings}
+                        {#if review.type}
                             <div class="flex flex-col items-center">
                             <div class="w-[90vw] sm:w-[40vw]">
                                 <UserReviewCard 
-                                    review={review.ratings} 
+                                    rating={
+                                        review.type === ReviewType.Client
+                                        ? review.clientRatings
+                                        : review.troubleshooterRatings
+                                    } 
                                     reviewer={review.author}
                                 />
                             </div>

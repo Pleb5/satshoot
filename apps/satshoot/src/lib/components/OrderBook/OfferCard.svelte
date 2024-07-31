@@ -437,7 +437,7 @@
             {/if}
             {#if showOfferReview && troubleshooterReview && reviewer}
                 <UserReviewCard 
-                    review={troubleshooterReview} 
+                    rating={troubleshooterReview} 
                     {reviewer}
                     open={openReview}
                 />

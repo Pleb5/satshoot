@@ -7,7 +7,7 @@ import { Avatar } from '@skeletonlabs/skeleton';
 import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
 
 
-export let review: ClientRating | TroubleshooterRating;
+export let rating: ClientRating | TroubleshooterRating;
 export let reviewer: NDKUser;
 export let open = true;
 let reviewerProfile: NDKUserProfile | null;
@@ -45,14 +45,14 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
             <div class="flex flex-col items-center gap-y-2 text-lg sm:text-xl">
                 <div class="flex flex-col justify-center mb-4">
                     <!-- TroubleshooterRating -->
-                    {#if 'success' in review}
+                    {#if 'success' in rating}
                         <div class="grid grid-cols-[1fr_auto] gap-x-8">
                             <div class="justify-self-start">
                                 Ticket Resolved:
                             </div>
                             <div class="flex gap-x-2">
                                 {
-                                ((review)['success'])
+                                ((rating)['success'])
                                     ? '👍' : '❌'
                                 }
                             </div>
@@ -63,7 +63,7 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
                             </div>
                             <div class="flex gap-x-2">
                                 {
-                                ((review)['expertise'])
+                                ((rating)['expertise'])
                                     ? '👍' : '❌'
                                 }
                             </div>
@@ -74,7 +74,7 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
                             </div>
                             <div class="flex gap-x-2">
                                 {
-                                ((review)['availability'])
+                                ((rating)['availability'])
                                     ? '👍' : '❌'
                                 }
                             </div>
@@ -85,7 +85,7 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
                             </div>
                             <div class="flex gap-x-2">
                                 {
-                                ((review)['communication'])
+                                ((rating)['communication'])
                                     ? '👍' : '❌'
                                 }
                             </div>
@@ -98,7 +98,7 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
                             </div>
                             <div class="flex gap-x-2">
                                 {
-                                ((review)['thumb'])
+                                ((rating)['thumb'])
                                     ? '👍' : '❌'
                                 }
                             </div>
@@ -109,7 +109,7 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
                             </div>
                             <div class="flex gap-x-2">
                                 {
-                                ((review)['availability'])
+                                ((rating)['availability'])
                                     ? '👍' : '❌'
                                 }
                             </div>
@@ -120,7 +120,7 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
                             </div>
                             <div class="flex gap-x-2">
                                 {
-                                ((review)['communication'])
+                                ((rating)['communication'])
                                     ? '👍' : '❌'
                                 }
                             </div>
@@ -132,7 +132,7 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
                 <Avatar src={reviewerImage} width='w-10'/>
                 <div class="text-md sm:text-xl">{reviewerName} wrote:</div>
             </div>
-            <div class="text-center mt-2 text-lg sm:text-xl">{review.reviewText!=='' ? ('"' + review.reviewText + '"') : 'No text'}</div>
+            <div class="text-center mt-2 text-lg sm:text-xl">{rating.reviewText!=='' ? ('"' + rating.reviewText + '"') : 'No text'}</div>
         </svelte:fragment>
     </AccordionItem>
 </Accordion>

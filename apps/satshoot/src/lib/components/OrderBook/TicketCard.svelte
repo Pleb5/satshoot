@@ -459,7 +459,7 @@
                 </div>
             </div>
             {#if showReview && clientReview && reviewer}
-                <UserReviewCard review={clientReview} {reviewer} open={openReview} />
+                <UserReviewCard rating={clientReview} {reviewer} open={openReview} />
             {/if}
         </footer>
     {/if}
