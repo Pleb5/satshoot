@@ -54,7 +54,7 @@
     export let titleLink: boolean = true;
     export let shortenDescription = true;
     let generatedDescription = '';
-    export let countAllOffers: boolean = false;
+    export let countAllOffers = true;
     export let tagCallback: ((tag:string) => void) | null = null;
     export let showReputation = true;
     export let openReputation = true;

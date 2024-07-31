@@ -37,7 +37,7 @@
     export let offer: OfferEvent;
     let avatarImage = `https://robohash.org/${offer.pubkey}`;
     let name = '';
-    export let countAllOffers = false;
+    export let countAllOffers = true;
     export let showDescription = true;
     export let showReputation = true;
     export let showDetails = true;
