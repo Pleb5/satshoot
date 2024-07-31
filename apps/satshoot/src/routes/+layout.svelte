@@ -129,35 +129,16 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    // $ndk.pool.on('relay:connect', () => {
-    //     if ($ndk.pool.stats().connected > 1) {
-    //         console.log('connected')
-    //         if (!$connected) {
-    //             restoreLogin();
-    //         }
-    //         $connected = true;
-    //     }
-    // }); 
-
-    let shouldReloadPage = false;
     $ndk.pool.on('relay:disconnect', () => {
         if ($ndk.pool.stats().connected === 0) {
-            console.log('Disconnected, set shouldReloadPage')
             $connected = false;
             if (browser && $retryConnection > 0) {
                 $retryConnection--;
                 retryConnection.set($retryConnection);
-                console.log('Reloading page, shouldReload reset...')
                 window.location.reload();
             }
-            // shouldReloadPage = true;
         }
     });
-
-    // $: if (browser && shouldReloadPage) {
-    //     shouldReloadPage = false;
-    // }
-
 
     async function restoreLogin() {
         // Try to get saved Login method from localStorage and login that way
@@ -259,7 +240,6 @@
 
     onMount(async () => {
         console.log('onMount layout')
-        shouldReloadPage = false;
 
 // ---------------------------- Basic Init ----------------------------
         $mounted = true;
@@ -330,7 +310,6 @@
 
     onDestroy(() => {
         console.log('layout on destroy')
-        shouldReloadPage = false;
 
         if (allTickets) allTickets.empty();
         if (allOffers) allOffers.empty();

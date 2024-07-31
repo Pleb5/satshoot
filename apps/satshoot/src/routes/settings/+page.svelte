@@ -100,7 +100,7 @@ onDestroy(() => {
             type="button"
             on:click={ showPrivateKey }
         >
-            Show Private key (nSec)
+            Show Private key (nsec)
         </button>
         {#if nsec && showing}
             <div class="flex flex-col items-center gap-y-4">

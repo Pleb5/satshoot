@@ -93,8 +93,8 @@ $: if ($loggedIn) {
 }
 
 onMount(() => {
-    // Scroll to top as soon as ticket arrives
     const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+    // Scroll to top as soon as ticket arrives
     elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
 });
 

@@ -9,6 +9,7 @@ import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
 import { myTickets } from '$lib/stores/troubleshoot-eventstores';
 import TicketCard from '$lib/components/OrderBook/TicketCard.svelte';
 import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
+    import { onMount } from "svelte";
 
 
 let newTickets: TicketEvent[] = [];
@@ -118,6 +119,12 @@ $: if ($myTickets) {
 } else {
     console.log('My tickets is null!')
 }
+
+onMount(() => {
+    const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+    // Scroll to top as soon as ticket arrives
+    elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+});
 
 </script>
 

@@ -11,6 +11,7 @@ import { allTickets, myOffers } from '$lib/stores/troubleshoot-eventstores';
 import OfferCard from '$lib/components/OrderBook/OfferCard.svelte';
 import { type TicketEvent } from '$lib/events/TicketEvent';
 import SearchIcon from "$lib/components/Icons/SearchIcon.svelte"; 
+import { onMount } from "svelte";
 
 let pendingOffers: OfferEvent[] = [];
 let wonOffers: OfferEvent[] = [];
@@ -147,6 +148,13 @@ $: if ($myOffers && $allTickets) {
 } else {
     console.log('My offers is null or size equals 0!')
 }
+
+
+onMount(() => {
+    const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+    // Scroll to top as soon as ticket arrives
+    elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+});
 
 </script>
 

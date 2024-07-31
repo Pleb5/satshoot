@@ -22,6 +22,7 @@ import {
 
 import ReviewSummary from "./ReviewSummary.svelte";
 import { getDrawerStore } from "@skeletonlabs/skeleton";
+import { onMount } from "svelte";
 
 const drawerStore = getDrawerStore();
 
@@ -49,6 +50,13 @@ $: if ($troubleshooterReviews) {
         userHex
     );
 }
+
+
+onMount(() => {
+    const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
+    // Scroll to top as soon as ticket arrives
+    elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+});
 
 const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
     flex-grow sm:max-w-[70vw] lg:max-w-[60vw] overflow-y-auto';
