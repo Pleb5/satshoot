@@ -62,7 +62,8 @@ $: if ($loggedIn) {
                 const winner = ticket.acceptedOfferAddress;
                 if (
                     winner
-                    && winner.split(':')[1] === $currentUser!.pubkey
+                    && $currentUser
+                    && winner.split(':')[1] === $currentUser.pubkey
                 ) {
                     return true;
                 } 
@@ -79,7 +80,7 @@ $: if ($loggedIn) {
         ([$allOffersOfUser, $currentUser]) => {
             const offers = $allOffersOfUser.filter((offer: OfferEvent) => {
                 const ticketPubkey = offer.referencedTicketAddress.split(':')[1];
-                if (ticketPubkey === $currentUser!.pubkey) {
+                if (ticketPubkey === $currentUser?.pubkey) {
                     return true;
                 }
 

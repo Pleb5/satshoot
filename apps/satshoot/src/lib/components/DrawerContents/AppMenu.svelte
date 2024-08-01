@@ -107,6 +107,9 @@
         let logoutResponse = async function(r: boolean){
             if (r) {
                 console.log('logout')
+
+                $loggedIn = false;
+
                 drawerStore.close();
 
                 followsUpdated.set(0);
@@ -119,9 +122,6 @@
 
                 $sessionPK = '';
                 sessionStorage.clear();
-
-                $loggedIn = false;
-
                 myTickets.empty();
                 myOffers.empty();
                 myTicketFilter.authors = [];
