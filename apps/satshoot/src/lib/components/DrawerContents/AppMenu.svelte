@@ -32,13 +32,27 @@
     import UserTicketsIcon from '../Icons/UserTicketsIcon.svelte';
     import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
     import { page } from '$app/stores';
+    import { onMount, tick } from 'svelte';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
+    const profileHref = "/" + $currentUser!.npub + '/';
+    const myTicketsHref = '/my-tickets/';
+    const myOffersHref = '/my-offers/';
+    const networkHref = '/network/';
+    const aboutHref = '/about/';
+    const settingsHref = '/settings/';
+
+    let profileAnchor: HTMLElement;
+
     $: classesActive = (href: string) => {
-        href === $page.url.pathname ? 'variant-filled-primary' : ''
+        const activeStr = (href === $page.url.pathname
+                ? '!variant-filled-primary'
+                : ''
+        );
+        return activeStr;
     }
 
     $: if($notificationsEnabled || !$notificationsEnabled) {
@@ -138,6 +152,13 @@
         modalStore.trigger(modal);
 
     }
+
+    onMount(async () => {
+        // Clicking the Avatar button focuses this element by default
+        // we undo this unwanted behavior here
+        profileAnchor.blur();
+        profileAnchor = profileAnchor;
+    }); 
 </script>
 
 <div class="card p-4 flex-grow flex flex-col justify-between md:text-xl bg-inherit">
@@ -146,8 +167,9 @@
             {#if $currentUser}
                 <li>
                     <a 
-                        href={ "/" + $currentUser.npub}
-                        class="justify-start {classesActive('/' + $currentUser.npub)}"
+                        bind:this={profileAnchor}
+                        href={ profileHref }
+                        class="justify-start {classesActive(profileHref)}"
                         on:click={()=>{
                             drawerStore.close();
                         }}
@@ -160,8 +182,8 @@
                 </li>
                 <li>
                     <a 
-                        class="justify-start"
-                        href={ "/my-tickets"}
+                        class="justify-start {classesActive(myTicketsHref)}"
+                        href={ myTicketsHref }
                         on:click={()=>{drawerStore.close()}}
                     >
                         <span class="w-6 text-center">
@@ -172,8 +194,8 @@
                 </li>
                 <li>
                     <a 
-                        class="justify-start"
-                        href={ "/my-offers"}
+                        class="justify-start {classesActive(myOffersHref)}"
+                        href={ myOffersHref }
                         on:click={()=>{drawerStore.close()}}
                     >
                         <span class="w-6 text-center">
@@ -185,8 +207,8 @@
             {/if}
             <li>
                 <a 
-                    class="justify-start"
-                    href="/network"
+                    class="justify-start {classesActive(networkHref)}"
+                    href={ networkHref }
                     on:click={()=>{drawerStore.close()}}
                 >
                     <span class="w-6 text-center">
@@ -212,8 +234,8 @@
             </li>
             <li>
                 <a
-                    class="justify-start"
-                    href="/about"
+                    class="justify-start {classesActive(aboutHref)}"
+                    href= { aboutHref }
                     on:click={()=>{drawerStore.close()}}
                 >
                     <span class="w-6 text-center">
@@ -232,8 +254,8 @@
             </li>
             <li>
                 <a
-                    class="justify-start"
-                    href="/settings"
+                    class="justify-start {classesActive(settingsHref)}"
+                    href= { settingsHref }
                     on:click={()=>{drawerStore.close()}}
                 >
                     <span class="w-6 text-center">

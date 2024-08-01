@@ -22,7 +22,7 @@
     let textArea:HTMLTextAreaElement;
 
     let tagInput = '';
-    let messageResult = 'Ready for Troubleshooting!\nGo to https://satshoot.com'; 
+    let messageResult = 'Ready for Troubleshooting!\nGo to https://satshoot.com/post-ticket/'; 
     messageResult += ' and post your issues in these topics:\n';
 
     let posting = false;
