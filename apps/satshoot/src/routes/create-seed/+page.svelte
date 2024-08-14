@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
+    import ndk, { LoginMethod } from "$lib/stores/ndk";
 
     import redirectStore from "$lib/stores/network";
     import { NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
@@ -16,6 +16,8 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { initializeUser } from "$lib/utils/helpers";
+
+    import { loginMethod } from "$lib/stores/user";
 
     const toastStore = getToastStore();
 
@@ -107,7 +109,8 @@
                     // Save encrypted seed words in browser localStorage
                     localStorage.setItem('nostr-seedwords', encryptedSeed);
                     localStorage.setItem('nostr-npub', npub);
-                    localStorage.setItem('login-method', "ephemeral");
+                    $loginMethod = LoginMethod.Ephemeral;
+                    localStorage.setItem('login-method', $loginMethod);
 
                     const t: ToastSettings = {
                         message: '<strong>Nostr Keypair Created!</strong>',

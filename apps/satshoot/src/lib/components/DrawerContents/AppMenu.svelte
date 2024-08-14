@@ -1,38 +1,19 @@
 <script lang="ts">
-    import currentUser, { followsUpdated } from '$lib/stores/user';
+    import currentUser from '$lib/stores/user';
     import { getDrawerStore, getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
     import { SlideToggle, LightSwitch } from '@skeletonlabs/skeleton';
     import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 
-    import notificationsEnabled, { notifications } from '$lib/stores/notifications';
+    import notificationsEnabled from '$lib/stores/notifications';
 
-    import { networkWoTScores } from '$lib/stores/wot';
+    import { logout } from '$lib/utils/helpers';
 
-    import {
-        sessionPK 
-    } from "$lib/stores/ndk";
-
-    import {
-        myTicketFilter,
-        myOfferFilter,
-        myTickets,
-        myOffers,
-        allTickets,
-        allOffers, 
-    } from '$lib/stores/troubleshoot-eventstores';
-
-    import { allReviews } from '$lib/stores/reviews';
-    import { allReceivedZaps } from '$lib/stores/zaps';
-    import { messageStore } from '$lib/stores/messages';
-
-    import { goto } from '$app/navigation';
-    import { loggedIn } from '$lib/stores/user';
     import UserTicketsIcon from '../Icons/UserTicketsIcon.svelte';
     import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
     import { page } from '$app/stores';
-    import { onMount, tick } from 'svelte';
+    import { onMount } from 'svelte';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -96,7 +77,7 @@
         modalStore.trigger(modal);
     }
 
-    function logout() {
+    function onLogout() {
         const modalBody = `
                 <p>Do really you wish to log out?</p>
                 <strong class="text-error-400-500-token">
@@ -106,39 +87,9 @@
 
         let logoutResponse = async function(r: boolean){
             if (r) {
-                console.log('logout')
-
-                $loggedIn = false;
-
-                drawerStore.close();
-
-                followsUpdated.set(0);
-                networkWoTScores.set(null);
-
-                $currentUser = null;
-                currentUser.set(null);
-
-                localStorage.clear();
-
-                $sessionPK = '';
-                sessionStorage.clear();
-                myTickets.empty();
-                myOffers.empty();
-                myTicketFilter.authors = [];
-                myOfferFilter.authors = [];
-
-                allTickets.empty();
-                allOffers.empty();
-
-                messageStore.empty();
-                allReviews.empty();
-                allReceivedZaps.empty();
-
-                notifications.set([]);
-
                 modalStore.close();
-
-                goto('/');
+                drawerStore.close();
+                logout();            
             }
         }
 
@@ -269,7 +220,7 @@
     <nav class="list-nav">
         <ul>
             <li>
-                <button class="w-full justify-start" on:click={logout}>
+                <button class="w-full justify-start" on:click={onLogout}>
                     <span class="w-6 text-center">
                         <i class="fa-solid fa-arrow-right-from-bracket" />
                     </span>

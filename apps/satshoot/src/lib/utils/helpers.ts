@@ -8,12 +8,15 @@ import {
     NDKSubscriptionCacheUsage,
 } from '@nostr-dev-kit/ndk';
 
+import ndk from '$lib/stores/ndk';
+
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 
 import currentUser from '../stores/user';
 import {
     loggedIn,
     loggingIn,
+    loginMethod,
     retryUserInit,
     followsUpdated,
     userRelaysUpdated,
@@ -39,9 +42,6 @@ import {
     receivedMessageFilter,
 } from '$lib/stores/messages';
 
-import { get } from "svelte/store";
-import { dev, browser } from '$app/environment';
-
 import { 
     allTickets,
     allOffers,
@@ -52,6 +52,13 @@ import {
 } from "$lib/stores/troubleshoot-eventstores";
 
 import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
+import { notifications } from '../stores/notifications.ts';
+
+import { tick } from 'svelte';
+import { goto } from '$app/navigation';
+import { get } from "svelte/store";
+import { dev, browser } from '$app/environment';
+import { sessionPK } from '../stores/ndk.ts';
 
 
 export async function initializeUser(ndk: NDK) {
@@ -130,6 +137,42 @@ export async function initializeUser(ndk: NDK) {
             window.location.reload();
         }
     }
+}
+
+export async function logout() {
+    console.log('logout')
+
+    loggedIn.set(false);
+
+    loginMethod.set(null);
+
+    followsUpdated.set(0);
+    networkWoTScores.set(null);
+
+    currentUser.set(null);
+
+    localStorage.clear();
+    sessionStorage.clear();
+
+    sessionPK.set('');
+
+    myTickets.empty();
+    myOffers.empty();
+    myTicketFilter.authors = [];
+    myOfferFilter.authors = [];
+
+    allTickets.empty();
+    allOffers.empty();
+
+    messageStore.empty();
+    allReviews.empty();
+    allReceivedZaps.empty();
+
+    notifications.set([]);
+
+    get(ndk).signer = undefined;
+
+    goto('/');
 }
 
 export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {

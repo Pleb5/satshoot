@@ -1,13 +1,13 @@
 <script lang="ts">
     import { type SvelteComponent } from 'svelte';
-	import { getModalStore } from '@skeletonlabs/skeleton';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-
     import { tick } from 'svelte';
 
-    import { DataLoadError } from '$lib/utils/errors';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
 
+    import { DataLoadError } from '$lib/utils/errors';
     import { RestoreMethod } from "$lib/stores/ndk";
+    import { logout } from '$lib/utils/helpers';
 
 	// Props
 	/** Exposes parent props to this component. */
@@ -141,13 +141,26 @@
                 </span>
             </button>
         </div>
-        <div class="flex justify-between h-10">
+        <div class="flex justify-between h-10 mt-4">
             <button 
                 type="button"
                 class="btn btn-sm px-4 sm:btn-md bg-error-300-600-token"
-                on:click={()=> modalStore.close()}
+                on:click={
+                    ()=> {
+                        if ($modalStore[0].response) {
+                            $modalStore[0].response(
+                                {
+                                    decryptedSecret: undefined,
+                                    restoreMethod: undefined
+                                }
+                            );
+                        };
+                        modalStore.close();
+                        logout();
+                    }
+                }
             >
-                Cancel
+                Logout
             </button>
             <button 
                 type="button"

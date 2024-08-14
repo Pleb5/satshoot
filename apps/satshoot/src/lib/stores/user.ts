@@ -4,6 +4,7 @@ import { localStorageStore } from "@skeletonlabs/skeleton";
 import type { Writable } from 'svelte/store';
 
 import { getSetSerializer } from '../utils/misc';
+import { LoginMethod } from '$lib/stores/ndk';
 
 
 export const loginAlert = writable(true);
@@ -11,6 +12,7 @@ export const loginAlert = writable(true);
 export const mounted = writable(false);
 export const loggingIn = writable(false);
 export const loggedIn = writable(false);
+export const loginMethod = writable<LoginMethod | null>(null);
 export const retryUserInit = localStorageStore('retryUserInit', false);
 
 export const currentUserFollows: Writable<Set<Hexpubkey> | null>

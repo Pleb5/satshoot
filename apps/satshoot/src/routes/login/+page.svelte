@@ -1,9 +1,9 @@
 <script lang='ts'>
     import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
-    import ndk from "$lib/stores/ndk";
+    import ndk, { LoginMethod } from "$lib/stores/ndk";
 
     import redirectStore from "$lib/stores/network";
-    import { loggedIn } from "$lib/stores/user";
+    import { loggedIn, loginMethod } from "$lib/stores/user";
 
     import { browser } from "$app/environment";
 
@@ -11,7 +11,7 @@
 
     import { getToastStore,  popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings, ToastSettings } from '@skeletonlabs/skeleton';
-    import type { ProgressRadial, ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import BunkerLoginModal from "$lib/components/Modals/BunkerLoginModal.svelte";
     import { initializeUser } from "$lib/utils/helpers";
@@ -51,7 +51,6 @@
         if (browser && window.nostr) {
             const nip07Signer = new NDKNip07Signer();
 
-
             try {
                 const modalComponent: ModalComponent = {
                     ref: Nip07LoginModal,
@@ -69,8 +68,9 @@
 
                 if (returnedUser.npub) {
                     modalStore.clear();
+                    $loginMethod = LoginMethod.NIP07;
                     $ndk.signer = nip07Signer;
-                    localStorage.setItem('login-method', "nip07");
+                    localStorage.setItem('login-method', $loginMethod);
                     initializeUser($ndk);
                 }
             } catch(e) {

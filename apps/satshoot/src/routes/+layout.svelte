@@ -18,7 +18,7 @@
     import { Dexie } from "dexie";
 
     import { mounted, loggedIn, userRelaysUpdated } from "$lib/stores/user";
-    import currentUser, {loggingIn} from "$lib/stores/user";
+    import currentUser, {loggingIn, loginMethod} from "$lib/stores/user";
     import { online, retryConnection, retryAttempts } from '$lib/stores/network';
 
     import { 
@@ -39,7 +39,7 @@
     import { allReceivedZaps, wotFilteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from "$lib/stores/notifications";
 
-    import { initializeUser } from '$lib/utils/helpers';
+    import { initializeUser, logout } from '$lib/utils/helpers';
 
     import { wot, wotUpdating } from '$lib/stores/wot';
 
@@ -142,15 +142,15 @@
     });
 
     async function restoreLogin() {
+        // For UI feedback
         $loggingIn = true;
         await tick();
 
         // Try to get saved Login method from localStorage and login that way
-        const loginMethod = localStorage.getItem("login-method");
+        $loginMethod = localStorage.getItem("login-method") ?? null;
 
-        if (loginMethod){
-            if (loginMethod === LoginMethod.Ephemeral) {
-                console.log('Restore local key')
+        if ($loginMethod){
+            if ($loginMethod === LoginMethod.Ephemeral) {
                 // We either get the private key from sessionStorage or decrypt from localStorage
                 if ($sessionPK) {
                     $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
@@ -174,7 +174,8 @@
                             // This can throw invalid secret if decryption was unsuccessful
                             modalStore.trigger(modal);
                             // We got some kind of response from modal
-                        });                      
+                        });   
+
                         if (responseObject) {
                             const decryptedSecret = responseObject['decryptedSecret'];
                             const restoreMethod = responseObject['restoreMethod'];
@@ -195,8 +196,14 @@
                                         Clear browser local storage and login again."
                                     );
                                 }
+                            } else {
+                                $loggingIn = false;
+                                return;
                             }
-                        } 
+                        } else {
+                            $loggingIn = false;
+                            return;
+                        }
                     } catch(e) {
                         const t: ToastSettings = {
                             message:`Could not create private key from local secret, error: ${e}`,
@@ -205,7 +212,7 @@
                         toastStore.trigger(t);
                     }
                 }
-            } else if(loginMethod === LoginMethod.Bunker) {
+            } else if($loginMethod === LoginMethod.Bunker) {
                 const localBunkerKey = localStorage.getItem("bunkerLocalSignerPK");
                 const bunkerTargetNpub = localStorage.getItem("bunkerTargetNpub");
                 const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
@@ -252,10 +259,7 @@
                                     action: {
                                         label: 'Delete Bunker Connection',
                                         response: () => {
-                                            localStorage.removeItem('login-method');
-                                            localStorage.removeItem('bunkerLocalSignerPK');
-                                            localStorage.removeItem('bunkerTargetNpub');
-                                            localStorage.removeItem('bunkerRelayURLs');
+                                            logout()
                                         },
                                     },
                                     classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
@@ -293,7 +297,7 @@
                     }
 
                 }
-            } else if (loginMethod === LoginMethod.NIP07) {
+            } else if ($loginMethod === LoginMethod.NIP07) {
                 if (!$ndk.signer) {
                     $ndk.signer = new NDKNip07Signer();
                 }
@@ -304,6 +308,7 @@
             initializeUser($ndk);
         }
 
+        console.log('setting loggingIn to false')
         $loggingIn = false;
     }
 
@@ -600,7 +605,6 @@
             <svelte:fragment slot="trail">
                 {#if $loggedIn}
                     <button on:click={openAppMenu}>
-
                         <!-- Avatar image -->
                         <Avatar 
                             class="rounded-full border-white placeholder-white"
@@ -613,13 +617,21 @@
                         /> 
                     </button>
                 {:else if $loggingIn}
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={80}
-                                meter="stroke-primary-500"
-                                track="stroke-primary-500/30"
-                                strokeLinecap="round" width="w-12" 
-                            />
+                    <ProgressRadial
+                        value={undefined}
+                        stroke={80}
+                        meter="stroke-primary-500"
+                        track="stroke-primary-500/30"
+                        strokeLinecap="round" width="w-12" 
+                    />
+                {:else if $loginMethod === LoginMethod.Ephemeral}
+                    <button 
+                        class="btn bg-primary-300-600-token"
+                        type="button"
+                        on:click={ restoreLogin }
+                    >
+                        Login
+                    </button>
                 {:else}
                     <a href="/login" class="btn btn-md bg-primary-300-600-token ">
                         <span>Login</span>
