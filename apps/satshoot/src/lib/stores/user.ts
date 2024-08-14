@@ -9,6 +9,7 @@ import { getSetSerializer } from '../utils/misc';
 export const loginAlert = writable(true);
 
 export const mounted = writable(false);
+export const loggingIn = writable(false);
 export const loggedIn = writable(false);
 export const retryUserInit = localStorageStore('retryUserInit', false);
 

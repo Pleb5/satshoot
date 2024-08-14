@@ -107,7 +107,6 @@
                     // Save encrypted seed words in browser localStorage
                     localStorage.setItem('nostr-seedwords', encryptedSeed);
                     localStorage.setItem('nostr-npub', npub);
-                    // todo: enum for signing methods
                     localStorage.setItem('login-method', "ephemeral");
 
                     const t: ToastSettings = {

@@ -4,6 +4,7 @@
 
     import { wot } from '$lib/stores/wot';
     import ndk, { connected } from "$lib/stores/ndk";
+    import { online } from "$lib/stores/network";
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from "@nostr-dev-kit/ndk";
 
@@ -175,7 +176,7 @@
             </div>
         {/if}
     </div>
-    {#if $connected}
+    {#if $connected && $online}
         <div class="fixed bottom-20 right-8">
             <button class="btn btn-icon-xl bg-primary-300-600-token"
                 on:click={()=> {

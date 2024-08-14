@@ -13,6 +13,7 @@ import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import currentUser from '../stores/user';
 import {
     loggedIn,
+    loggingIn,
     retryUserInit,
     followsUpdated,
     userRelaysUpdated,
@@ -21,7 +22,6 @@ import {
 import {
     updateFollowsAndWotScore,
     networkWoTScores,
-    wot
 } from '../stores/wot';
 
 import {
@@ -57,6 +57,7 @@ import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
 export async function initializeUser(ndk: NDK) {
     console.log('begin user init')
     try {
+        loggingIn.set(false);
 
         const user = await (ndk.signer as NDKSigner).user();
         if (user.npub) {

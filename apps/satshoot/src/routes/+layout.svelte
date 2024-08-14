@@ -18,7 +18,7 @@
     import { Dexie } from "dexie";
 
     import { mounted, loggedIn, userRelaysUpdated } from "$lib/stores/user";
-    import currentUser from "$lib/stores/user";
+    import currentUser, {loggingIn} from "$lib/stores/user";
     import { online, retryConnection, retryAttempts } from '$lib/stores/network';
 
     import { 
@@ -52,6 +52,7 @@
         NDKPrivateKeySigner, 
         type NDKEvent,
     } from "@nostr-dev-kit/ndk";
+
     import { privateKeyFromNsec } from "$lib/utils/nip19";
 
     import { AppShell } from '@skeletonlabs/skeleton';
@@ -101,7 +102,7 @@
     } from '@skeletonlabs/skeleton';
     import drawerID from '$lib/stores/drawer';
     import { DrawerIDs } from '$lib/stores/drawer';
-    import { onMount, onDestroy } from "svelte";
+    import { onMount, onDestroy, tick } from "svelte";
     import { goto } from "$app/navigation";
     import ReviewBreakdown from "$lib/components/DrawerContents/ReviewBreakdown.svelte";
     import UserReviewBreakdown from "$lib/components/DrawerContents/UserReviewBreakdown.svelte";
@@ -141,6 +142,9 @@
     });
 
     async function restoreLogin() {
+        $loggingIn = true;
+        await tick();
+
         // Try to get saved Login method from localStorage and login that way
         const loginMethod = localStorage.getItem("login-method");
 
@@ -213,18 +217,62 @@
                     });
 
                     await $bunkerNDK.connect();
-                    console.log("ndk connected to specified bunker relays");
+                    console.log("ndk connected to specified bunker relays", $bunkerNDK.pool.connectedRelays());
+                    if ($bunkerNDK.pool.connectedRelays().length === 0) {
+                        const t: ToastSettings = {
+                            message: 'Could not connect to Bunker!',
+                            autohide: false,
+                            background: 'bg-warning-300-600-token',
+                            classes: 'font-bold',
+                        };
+                        toastStore.trigger(t);
+                        $loggingIn = false;
+                        return;
+                    }
 
+                    let connectionParams = bunkerTargetNpub;
 
                     const localSigner = new NDKPrivateKeySigner(localBunkerKey);
                     const remoteSigner = new NDKNip46Signer(
                         $bunkerNDK,
-                        bunkerTargetNpub,
+                        connectionParams,
                         localSigner
                     );
-                    $ndk.signer = remoteSigner;
 
-                    await remoteSigner.blockUntilReady();
+                    setTimeout(
+                        ()=>{
+                            if (!$ndk.signer) {
+                                const t: ToastSettings = {
+                                    autohide: false,
+                                    message: '\
+                                    <p class="text-center">Bunker connection took too long!</p>\
+                                    <p>Fix or Remove Bunker Connection!</p>\
+                                    ',
+                                    action: {
+                                        label: 'Delete Bunker Connection',
+                                        response: () => {
+                                            localStorage.removeItem('login-method');
+                                            localStorage.removeItem('bunkerLocalSignerPK');
+                                            localStorage.removeItem('bunkerTargetNpub');
+                                            localStorage.removeItem('bunkerRelayURLs');
+                                        },
+                                    },
+                                    classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
+                                    background: 'bg-warning-300-600-token',
+                                };
+                                toastStore.trigger(t);
+
+                                $loggingIn = false;
+                                tick();
+                            }
+                        },
+                        10000,
+                    );
+                    const returnedUser = await remoteSigner.blockUntilReady();
+
+                    if (returnedUser) {
+                        $ndk.signer = remoteSigner;
+                    }
                 }
             } else if (loginMethod === LoginMethod.NIP07) {
                 if (!$ndk.signer) {
@@ -236,6 +284,8 @@
         if ($ndk.signer) {
             initializeUser($ndk);
         }
+
+        $loggingIn = false;
     }
 
     onMount(async () => {
@@ -489,20 +539,20 @@
                             </div>
                         {:else if $wot && $wot.size < 3 && $wotUpdating}
                             <ProgressRadial
-                            value={undefined}
-                            stroke={60}
-                            meter="stroke-error-500"
-                            track="stroke-error-500/30"
-                            strokeLinecap="round" width="w-8" 
-                        />
+                                value={undefined}
+                                stroke={60}
+                                meter="stroke-error-500"
+                                track="stroke-error-500/30"
+                                strokeLinecap="round" width="w-8" 
+                            />
                             {:else if $wot && $wot.size > 2 && $wotUpdating}
                             <ProgressRadial
-                            value={undefined}
-                            stroke={60}
-                            meter="stroke-success-500"
-                            track="stroke-success-500/30"
-                            strokeLinecap="round" width="w-8" 
-                        />
+                                value={undefined}
+                                stroke={60}
+                                meter="stroke-success-500"
+                                track="stroke-success-500/30"
+                                strokeLinecap="round" width="w-8" 
+                            />
                             {:else if $wot && $wot.size > 2}
                             <i 
                                 class="fa-solid fa-circle-check text-2xl {trustColor}"
@@ -543,6 +593,14 @@
                             }
                         /> 
                     </button>
+                {:else if $loggingIn}
+                            <ProgressRadial
+                                value={undefined}
+                                stroke={80}
+                                meter="stroke-primary-500"
+                                track="stroke-primary-500/30"
+                                strokeLinecap="round" width="w-12" 
+                            />
                 {:else}
                     <a href="/login" class="btn btn-md bg-primary-300-600-token ">
                         <span>Login</span>

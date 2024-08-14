@@ -3,7 +3,6 @@
     import ndk from '$lib/stores/ndk';
     import { initializeUser } from '$lib/utils/helpers';
     import { bunkerNDK } from '$lib/stores/ndk';
-    import { loggedIn } from '$lib/stores/user';
     import { NDKPrivateKeySigner, NDKNip46Signer } from '@nostr-dev-kit/ndk';
     import { bunkerPerms } from '$lib/utils/misc';
 
@@ -101,16 +100,16 @@
             console.log('remote signer bunker connected!', $bunkerNDK.pool.connectedRelays());
 
             // Here we transform pubkey to npub for NDK to transform it back to pubkey...
-            // NDK should actually handle pubkeys directly bc the token strings contain just that
+            // NDK should actually handle pubkeys directly 
+            // bc the token strings contain just that
             const remoteUserNpub = nip19.npubEncode(remotePubkey);
             let connectionParams = remoteUserNpub;
+
             if (secret) {
                 // NDK parses 'remoteUserOrToken' using a '#' as a separator
-                // 'Token is mistakenly called like this though. It is the SECRET according to nip46 spec'
+                // 'Token is mistakenly called like this though.
+                // It is the SECRET according to nip46 spec'
                 connectionParams += '#' + secret;
-            } else {
-                // splitting this without a secret gives an empty string
-                connectionParams += '##'
             }
 
             connectionParams += '#' + bunkerPerms.join(',');
@@ -120,6 +119,7 @@
                 connectionParams,
                 localSigner
             );
+
             // remoteSigner.on('authUrl', (url) => { 
             //     window.open(url, "auth", "width=600, height=600"); 
             // });
@@ -128,23 +128,18 @@
             await tick();
 
             try {
-                // Connect to remote signer(optional requested permissions are not available in NDK)
+                // Connect to remote signer
                 console.log('remoteSigner', remoteSigner)
-                await remoteSigner.blockUntilReady();
-                $ndk.signer = remoteSigner;
+                const returnedUser = await remoteSigner.blockUntilReady();
 
-                await initializeUser($ndk);
-
-                if ($loggedIn) {
+                if (returnedUser) {
+                    $ndk.signer = remoteSigner;
                     console.log('user logged in')
 
                     localStorage.setItem('login-method', 'bunker');
                     localStorage.setItem("bunkerLocalSignerPK", localSigner.privateKey as string);
                     localStorage.setItem("bunkerTargetNpub", remoteUserNpub);
                     localStorage.setItem("bunkerRelayURLs", relayURLs.join(','));
-                    if (secret) {
-                        localStorage.setItem("bunkerConnectionSecret", secret);
-                    }
 
                     const t: ToastSettings = {
                         message: 'Bunker Connection Successful!',
@@ -152,6 +147,9 @@
                         background: 'bg-success-300-600-token',
                     };
                     toastStore.trigger(t);
+
+                    initializeUser($ndk);
+
                     modalStore.close();
                 } else {
                     const t: ToastSettings = {
