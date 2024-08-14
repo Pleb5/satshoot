@@ -132,7 +132,9 @@
                 console.log('remoteSigner', remoteSigner)
                 const returnedUser = await remoteSigner.blockUntilReady();
 
-                if (returnedUser) {
+                // Since the blockUntilReady could reject with error
+                // this check is necessary
+                if (returnedUser.npub) {
                     $ndk.signer = remoteSigner;
                     console.log('user logged in')
 
@@ -162,9 +164,16 @@
                 }
             } catch (error) {
                 const t: ToastSettings = {
-                    message: 'Error while connecting to Bunker: ' + error as string,
+                    message:`
+                        <p>Could not connect to Bunker!</p>
+                        <p>
+                        <span> Reason: </span>
+                        <span> ${error} </span>
+                        </p>
+                    `,
                     autohide: false,
                     background: 'bg-error-300-600-token',
+                    classes: 'font-bold',
                 };
                 toastStore.trigger(t);
                 console.error(error);

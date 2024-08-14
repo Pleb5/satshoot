@@ -150,6 +150,7 @@
 
         if (loginMethod){
             if (loginMethod === LoginMethod.Ephemeral) {
+                console.log('Restore local key')
                 // We either get the private key from sessionStorage or decrypt from localStorage
                 if ($sessionPK) {
                     $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
@@ -268,11 +269,29 @@
                         },
                         10000,
                     );
-                    const returnedUser = await remoteSigner.blockUntilReady();
-
-                    if (returnedUser) {
-                        $ndk.signer = remoteSigner;
+                    try {
+                        const returnedUser = await remoteSigner.blockUntilReady();
+                        if (returnedUser.npub) {
+                            $ndk.signer = remoteSigner;
+                        }
+                    } catch(e) {
+                        const t: ToastSettings = {
+                        message:`
+                        <p>Could not connect to Bunker!</p>
+                        <p>
+                        <span> Reason: </span>
+                        <span> ${e} </span>
+                        </p>
+`,
+                            autohide: false,
+                            background: 'bg-error-300-600-token',
+                            classes: 'font-bold',
+                        };
+                        toastStore.trigger(t);
+                        $loggingIn = false;
+                        return;
                     }
+
                 }
             } else if (loginMethod === LoginMethod.NIP07) {
                 if (!$ndk.signer) {
