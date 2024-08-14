@@ -9,15 +9,18 @@
 
     import { goto } from '$app/navigation';
 
-    import { popup } from '@skeletonlabs/skeleton';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import { getToastStore,  popup } from '@skeletonlabs/skeleton';
+    import type { PopupSettings, ToastSettings } from '@skeletonlabs/skeleton';
+    import type { ProgressRadial, ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import BunkerLoginModal from "$lib/components/Modals/BunkerLoginModal.svelte";
     import { initializeUser } from "$lib/utils/helpers";
+    import { tick } from "svelte";
+    import Nip07LoginModal from "$lib/components/Modals/Nip07LoginModal.svelte";
 
     // Retrieve Modal Store at the top level
     const modalStore = getModalStore();
+    const toastStore = getToastStore();
 
     // Navigate to Home page if user is already logged in(needs to log out first)
     $: {
@@ -46,13 +49,41 @@
 
     async function onNIP07Login() {
         if (browser && window.nostr) {
-            $ndk.signer = new NDKNip07Signer();
-            localStorage.setItem('login-method', "nip07");
+            const nip07Signer = new NDKNip07Signer();
 
-            initializeUser($ndk);
-        }
 
-        else if (!window.nostr) {
+            try {
+                const modalComponent: ModalComponent = {
+                    ref: Nip07LoginModal,
+                };
+
+                const modal: ModalSettings = {
+                    type: 'component',
+                    component: modalComponent,
+                };
+
+                modalStore.trigger(modal);
+                await tick();
+
+                const returnedUser = await nip07Signer.blockUntilReady();
+
+                if (returnedUser.npub) {
+                    modalStore.clear();
+                    $ndk.signer = nip07Signer;
+                    localStorage.setItem('login-method', "nip07");
+                    initializeUser($ndk);
+                }
+            } catch(e) {
+                const t: ToastSettings = {
+                    message: 'Browser extension rejected access!',
+                    autohide: false,
+                    background: 'bg-error-300-600-token',
+                };
+                toastStore.trigger(t);
+                modalStore.clear();
+            }
+
+        } else if (!window.nostr) {
             const modal: ModalSettings = {
                 type: 'alert',
                 title: 'No Compatible Extension!',
