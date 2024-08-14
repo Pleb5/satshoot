@@ -44,28 +44,28 @@
             "label": "satshoot_post_ticket"
         },
         {
-            "src": "/screenshots/mobile/app_screenshot_1.jpeg",
+            "src": "/screenshots/mobile/app_screenshot_1.jpg",
             "sizes": "723x1452",
             "type": "image/jpeg",
             "form_factor": "narrow",
             "label": "satshoot_tickets"
         },
         {
-            "src": "/screenshots/mobile/app_screenshot_2.jpeg",
+            "src": "/screenshots/mobile/app_screenshot_2.jpg",
             "sizes": "723x1452",
             "type": "image/jpeg",
             "form_factor": "narrow",
             "label": "satshoot_create_offer"
         },
         {
-            "src": "/screenshots/mobile/app_screenshot_3.jpeg",
+            "src": "/screenshots/mobile/app_screenshot_3.jpg",
             "sizes": "723x1452",
             "type": "image/jpeg",
             "form_factor": "narrow",
             "label": "satshoot_chat"
         },
         {
-            "src": "/screenshots/mobile/app_screenshot_4.jpeg",
+            "src": "/screenshots/mobile/app_screenshot_4.jpg",
             "sizes": "723x1452",
             "type": "image/jpeg",
             "form_factor": "narrow",
