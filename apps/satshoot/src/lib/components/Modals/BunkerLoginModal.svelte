@@ -105,15 +105,17 @@
             // NDK should actually handle pubkeys directly 
             // bc the token strings contain just that
             const remoteUserNpub = nip19.npubEncode(remotePubkey);
-            let connectionParams = remoteUserNpub;
+            let connectionParams = remoteUserNpub + '#';
 
             if (secret) {
                 // NDK parses 'remoteUserOrToken' using a '#' as a separator
                 // 'Token is mistakenly called like this though.
                 // It is the SECRET according to nip46 spec'
-                connectionParams += '#' + secret;
+                connectionParams += secret;
             }
 
+            // The connectionParams eventually is split into 3 parts:
+            // [<target user npub>, <secret || ''>, <default perms>]
             connectionParams += '#' + bunkerPerms.join(',');
 
             const remoteSigner = new NDKNip46Signer(
