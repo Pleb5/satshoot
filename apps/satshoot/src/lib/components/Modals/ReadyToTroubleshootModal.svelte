@@ -85,7 +85,7 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-4 bg-primary-300-600-token">
+    <div class="card p-4 bg-primary-500">
         <h4 class="h4 text-center mb-2 underline">Broadcast to Nostr</h4>
         <div class="flex flex-col justify-center gap-y-4">
             <label class="label">
