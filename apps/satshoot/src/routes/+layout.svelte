@@ -617,13 +617,16 @@
                         /> 
                     </button>
                 {:else if $loggingIn}
-                    <ProgressRadial
-                        value={undefined}
-                        stroke={80}
-                        meter="stroke-primary-500"
-                        track="stroke-primary-500/30"
-                        strokeLinecap="round" width="w-12" 
-                    />
+                    <div class="flex gap-x-2">
+                        <h3 class='h6 md:h3 font-bold'>Logging in...</h3>
+                        <ProgressRadial
+                            value={undefined}
+                            stroke={80}
+                            meter="stroke-primary-500"
+                            track="stroke-primary-500/30"
+                            strokeLinecap="round" width="w-12" 
+                        />
+                    </div>
                 {:else if $loginMethod === LoginMethod.Ephemeral}
                     <button 
                         class="btn bg-primary-300-600-token"
