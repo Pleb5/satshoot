@@ -196,8 +196,8 @@
 {#if $modalStore[0]}
 	<div class="card p-8 grid grid-cols-1 justify-center bg-surface-400-500-token">
         <h3 class="h3 text-center font-bold">Connect Nsec Bunker</h3>
-        <h4 class="h4 mt-2">
-            Enter your Bunker connection token:
+        <h4 class="h4 mt-2 text-center">
+            Enter your Bunker URI:
         </h4>
         <form 
             on:submit|preventDefault={ connectBunker }>

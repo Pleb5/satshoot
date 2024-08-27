@@ -104,12 +104,23 @@
 
 </script>
 
-<div class="flex items-center mt-4">
-
-    <div class="flex flex-col items-start gap-y-5 mx-auto">
+<div class="flex justify-center mt-4">
+    <div class="flex flex-col items-center gap-y-5 m-4">
         <!-- Nsec bunker remote signer -->
-        <button class="btn btn-md lg:btn-lg bg-primary-300-600-token mx-4" on:click={onBunkerLogin}>
-            <span>Nsec Bunker(most secure)</span>
+        <button
+            class="btn btn-icon btn-md lg:btn-lg bg-primary-300-600-token w-full h-20"
+            on:click={onBunkerLogin}
+        >
+            <div class="flex flex-col items-center">
+                <div class="flex items-center gap-x-2">
+                    <i class="fa-solid fa-box fa-xl"></i>
+                    <div>Bunker URL</div>
+                </div>
+                <div class="font-bold">
+                    <span class="mr-2 text-2xl">🔒</span>
+                    Most secure
+                </div>
+            </div>
         </button>
         <div class="grid grid-cols-2 gap-x-2 gap-y-4 mx-4">
             <a 
@@ -119,10 +130,26 @@
             >
                 <span>See Nsec.app</span>
             </a>
+            <a 
+                class="btn btn-md bg-warning-300-600-token"
+                href="https://github.com/greenart7c3/Amber"
+                target="_blank"
+            >
+                <div class="flex flex-col">
+                    <div>See Amber</div>
+                    <div>(Android)</div>
+                </div>
+            </a>
         </div>
         <!-- Nip07 browser extension -->
-        <button class="btn btn-md lg:btn-lg bg-primary-300-600-token mx-4 mt-4" on:click={onNIP07Login}>
-            <span>NIP07 Browser Extension </span>
+        <button
+            class="btn btn-icon btn-md lg:btn-lg bg-primary-300-600-token mx-4 w-full h-20"
+            on:click={onNIP07Login}
+        >
+            <div class="flex items-center gap-x-2">
+                <i class="fa-solid fa-puzzle-piece fa-xl"></i>
+                <div>Extension</div>
+            </div>
         </button>
         <div class="grid grid-cols-2 gap-x-2 gap-y-4 mx-4">
             <a 
@@ -159,16 +186,36 @@
             </a>
         </div>
         <!-- Restore Local keypair -->
-        <a href="/restore/" class="btn btn-md lg:btn-lg mx-4 mt-4 bg-primary-300-600-token">
-            <span>LOGIN with Local Keypair</span>
+        <a 
+            href="/restore/"
+            class="btn btn-icon btn-md lg:btn-lg w-full h-20 bg-primary-300-600-token"
+        >
+            <div class="flex flex-col items-center gap-y-2">
+                <div class="flex gap-x-2 items-center">
+                    <i class="fa-solid fa-key fa-xl"></i>
+                    <div>Secret key</div>
+                </div>
+                <div 
+                    class="text-error-300-600-token bg-warning-500 font-bold p-2
+                            badge"
+                >
+                    Stored in the Browser
+                </div>
+            </div>
         </a>
         <!-- New local keypair -->
-        <div class="flex gap-x-4 items-center mx-4 mt-4">
-            <a href="/create-seed/" class="btn btn-md lg:btn-lg bg-primary-300-600-token ">
-                <span>NEW Local Keypair</span>
+        <div class="flex w-full h-20 gap-x-4 justify-center items-center">
+            <a 
+                href="/create-seed/" 
+                class="btn btn-icon btn-md lg:btn-lg w-full h-full bg-tertiary-300-600-token "
+            >
+                <div class="flex gap-x-2 items-center">
+                    <i class="fa-solid fa-circle-plus fa-xl"></i>
+                    <div> New Secret Key</div>
+                </div>
             </a>
             <i 
-                class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
+                class="text-tertiary-300-600-token fa-solid fa-circle-question text-2xl
                 [&>*]:pointer-events-none" 
                 use:popup={popupHover}
             />
