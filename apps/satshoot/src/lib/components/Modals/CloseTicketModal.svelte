@@ -36,7 +36,7 @@
      
     async function closeTicket() {
         if (ticket) {
-            let ticketToPublish = new TicketEvent($ndk);
+            const ticketToPublish = new TicketEvent($ndk);
             ticketToPublish.tags = ticket.tags;
             ticketToPublish.description = ticket.description;
             // Important part! This also sets status to in progress
@@ -44,9 +44,14 @@
 
             try {
                 closing = true;
+                console.log('connected relays before closing ticket:',
+                    $ndk.pool.connectedRelays()
+                );
                 await tick();
 
-                await ticketToPublish.publish();
+                const relays = await ticketToPublish.publish();
+
+                console.log('published relays', relays);
 
                 // Post review data if applicable
                 if (ticket.acceptedOfferAddress) {
