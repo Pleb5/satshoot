@@ -13,14 +13,12 @@ export enum TicketStatus {
 export class TicketEvent extends NDKEvent {
     private _status: TicketStatus;
     private _title: string;
-    private _tTags: NDKTag[];
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= NDKKind.TroubleshootTicket;
         this._status = parseInt(this.tagValue('s') as string);
         this._title = this.tagValue('title') as string;
-        this._tTags = this.tags.filter((tag:NDKTag) => tag[0]==='t');
     }
 
     static from(event:NDKEvent){
@@ -79,6 +77,6 @@ export class TicketEvent extends NDKEvent {
     }
 
     get tTags(): NDKTag[] {
-        return this._tTags;
+        return this.tags.filter((tag:NDKTag) => tag[0]==='t');
     }
 }
