@@ -257,17 +257,17 @@
 
 {#if $modalStore[0]}
     {#if ticket && offer}
-        <div class="card p-4 flex flex-col gap-y-4">
+        <div class="card p-4 flex flex-col gap-y-4 items-center">
             <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Make Payment</h4>
             <!-- Offer -->
             <OfferCard 
-            {offer}
-            showReputation={false}
-            showDetails={false}
-            showTicket={false} 
-            showOfferReview={false}
-            showDescription={false}
-        />
+                {offer}
+                showReputation={false}
+                showDetails={false}
+                showTicket={false} 
+                showOfferReview={false}
+                showDescription={false}
+            />
             <!-- Payment -->
             <label class="max-w-60">
                 <span class="font-bold">Pay for the Troubleshooting</span>
@@ -337,7 +337,7 @@
                     }
                 </div>
             </div>
-            <div class="flex justify-between gap-x-12">
+            <div class="flex w-full justify-between">
                 <button 
                     type="button"
                     class="btn btn-sm sm:btn-md min-w-24 bg-error-300-600-token"
@@ -357,8 +357,11 @@
                             track="stroke-error-500/30" strokeLinecap="round" width="w-8" />
                         </span>
                     {:else}
-                        <span class="font-bold">Pay</span>
+                        <div class="flex flex-col items-center gap-y-1">
+                            <div class="font-bold">Pay</div>
+                        </div>
                     {/if}
+                    <div class="font-bold">(Public Zap)</div>
                 </button>
             </div>
             {#if errorMessage}
