@@ -271,7 +271,7 @@
                                 tick();
                             }
                         },
-                        10000,
+                        20000,
                     );
                     try {
                         const returnedUser = await remoteSigner.blockUntilReady();
