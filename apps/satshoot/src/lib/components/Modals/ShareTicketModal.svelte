@@ -66,7 +66,7 @@
             shareURL = `https://satshoot.com/${ticket.encode()}`
             // Set default text
             message = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
-            message += `${ticket.title}\n\n`;
+            message += `## ${ticket.title}\n\n`;
             message += `${ticket.description}\n\n`;
             message += `Make an offer on this URL:\n\n`;
             message += `${shareURL}\n\n`;
