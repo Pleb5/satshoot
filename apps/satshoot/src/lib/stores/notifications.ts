@@ -1,5 +1,5 @@
 // import ndk from "./ndk";
-import { localStorageStore } from "@skeletonlabs/skeleton";
+import { persisted } from "svelte-persisted-store";
 import type { Writable } from 'svelte/store';
 import { derived, writable } from "svelte/store";
 import { getSetSerializer } from '$lib//utils/misc';
@@ -14,9 +14,9 @@ import { getActiveServiceWorker } from "$lib/utils/helpers";
 import { goto } from "$app/navigation";
 import { troubleshootZap } from "../utils/helpers.ts";
 
-export const notificationsEnabled: Writable<boolean> = localStorageStore('notificationsEnabled', false) ;
+export const notificationsEnabled: Writable<boolean> = persisted('notificationsEnabled', false) ;
 
-export const seenIDs: Writable<Set<string>> = localStorageStore(
+export const seenIDs: Writable<Set<string>> = persisted(
     'seenIDs',
     new Set(),
     {serializer: getSetSerializer()}

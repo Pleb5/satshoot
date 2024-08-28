@@ -1,5 +1,6 @@
 import { writable, get, derived } from 'svelte/store';
-import { localStorageStore } from "@skeletonlabs/skeleton";
+import { persisted } from 'svelte-persisted-store';
+import * as devalue from "devalue";
 import type { Writable } from 'svelte/store';
 
 import {
@@ -8,6 +9,7 @@ import {
     filterValidPTags,
     percentile,
 } from '../utils/misc';
+
 
 import type { 
     NDKEvent,
@@ -31,7 +33,7 @@ import {
 import { tick } from 'svelte';
 
 export const networkWoTScores: Writable<Map<Hexpubkey, number> | null>
-    = localStorageStore('networkWoTScores', null, {serializer: getMapSerializer()});
+    = persisted('networkWoTScores', null, {serializer: getMapSerializer()});
 
 // Minimum wot to be included in any result
 export const minWot = writable(3);

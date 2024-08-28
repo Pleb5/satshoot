@@ -2,7 +2,7 @@ import NDKSvelte from "@nostr-dev-kit/ndk-svelte";
 import NDK from "@nostr-dev-kit/ndk";
 import { writable } from "svelte/store";
 
-import { localStorageStore } from '@skeletonlabs/skeleton';
+import { persisted } from "svelte-persisted-store";
 import type { Writable } from 'svelte/store';
 
 
@@ -38,7 +38,7 @@ export enum LoginMethod {
 // then check for pk store in login before trying to decrypt
 // Saves us from decryption every time user reloads page during a session
 export const sessionPK: Writable<string> = 
-        localStorageStore('pk', '',{ storage:'session' });
+        persisted('pk', '',{ storage:'session' });
 
 // Client-side caching. Used for performance enhancement as well as a solution to identify
 // new data and serve push notifications. Notify user when 'tickets of interest' change,
