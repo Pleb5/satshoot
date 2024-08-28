@@ -196,7 +196,7 @@
                     <div>Secret key</div>
                 </div>
                 <div 
-                    class="text-error-300-600-token bg-warning-500 font-bold p-2
+                    class="text-error-500 bg-warning-500 font-bold p-2
                             badge"
                 >
                     Stored in the Browser
