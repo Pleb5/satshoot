@@ -147,10 +147,7 @@
         await tick();
 
         // Try to get saved Login method from localStorage and login that way
-        $loginMethod = LoginMethod[
-                            localStorage.getItem("login-method") as keyof typeof LoginMethod
-                       ]
-                        ?? null;
+        $loginMethod = localStorage.getItem("login-method")?? null;
 
         if ($loginMethod){
             if ($loginMethod === LoginMethod.Ephemeral) {
