@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
-    import currentUser, { loggedIn } from '$lib/stores/user';
+    import currentUser, { loggedIn, loggingIn } from '$lib/stores/user';
     import { loginAlert } from '$lib/stores/user';
     import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
     import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
@@ -149,7 +149,7 @@
     }
 
     $: {
-        if (!$currentUser){
+        if (!$currentUser || $loggingIn){
             allowCreateOffer = false;
             disallowCreateOfferReason = 'Need to log in before creating an offer!'; 
             
