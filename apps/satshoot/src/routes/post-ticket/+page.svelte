@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
-    import currentUser from '$lib/stores/user';
+    import currentUser, { loggingIn, loginAlert } from '$lib/stores/user';
 
     import type { NDKTag } from '@nostr-dev-kit/ndk';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
@@ -24,7 +24,8 @@
 
     import { onMount, tick } from 'svelte';
     import { beforeNavigate, goto } from '$app/navigation';
-    import { navigating } from '$app/stores';
+    import { navigating, page } from '$app/stores';
+    import redirectStore from '$lib/stores/network';
 
     // Retrieve Toast store at the top level
     const toastStore = getToastStore();
@@ -52,6 +53,8 @@
     let titleState = '';
     let descriptionState = '';
 
+    let allowPostTicket: boolean = true;
+    let loginAlertShown = false;
     let posting = false;
 
     // Tag validation on tag selection from autocomplete
@@ -170,7 +173,7 @@
 
             } else {
                 const t: ToastSettings = {
-                    message: 'No Active User to post the Ticket!',
+                    message: 'Log in to post the Ticket!',
                     timeout: 7000,
                     background: 'bg-error-300-600-token',
                 };
@@ -184,6 +187,12 @@
             };
             toastStore.trigger(t);
         }
+    }
+
+    $: if (!$currentUser || $loggingIn) {
+        allowPostTicket = false;
+    } else {
+        allowPostTicket = true;
     }
 
     onMount(() => {
@@ -262,9 +271,11 @@
     <button type="button"
         class="btn btn-lg bg-success-400-500-token"
         on:click={postTicket}
-        disabled={posting}
+        disabled={!allowPostTicket || posting}
     >
-        {#if posting}
+        {#if !allowPostTicket}
+            Log in To Post
+        {:else if posting}
             <span>
                 <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500"
                     track="stroke-primary-500/3" width="w-8" strokeLinecap="round"/>
