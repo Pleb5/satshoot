@@ -1,5 +1,8 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
+    import currentUser from "$lib/stores/user";
+    // import type { NDKZapMethod } from "@nostr-dev-kit/ndk";
+    import { generateZapRequest } from "@nostr-dev-kit/ndk";
     import { TicketEvent } from '$lib/events/TicketEvent';
 
     import { getToastStore } from '@skeletonlabs/skeleton';
@@ -66,8 +69,8 @@
                 // };
                 // toastStore.trigger(checkWallet);
 
-                const troubleshooterShareMillisats = troubleshooterShare * 1000;
-                const satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
+                let troubleshooterShareMillisats = troubleshooterShare * 1000;
+                let satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
                 if ( (troubleshooterShareMillisats + satshootSumMillisats) === 0) {
                     errorMessage = 'Cannot pay 0 sats!';
                     paying = false;
@@ -83,13 +86,37 @@
                 const troubleshooterZapConfig = await troubleshooterUser.getZapConfiguration();
                 const satshootZapConfig = await satShootUser.getZapConfiguration();
 
+                if (troubleshooterShareMillisats > 0 && !troubleshooterZapConfig) {
+                    errorMessage = 'Could not fetch Troubleshooter zap info!';
+                }
+                if (satshootSumMillisats > 0 && !satshootZapConfig) {
+                    errorMessage = 'Could not fetch SatShoot zap info!';
+                }
+
                 try {
-                    if (troubleshooterShareMillisats > 0) {
-                        const troubleshooterInvoice = await $ndk.zap(
+                    if (troubleshooterShareMillisats > 0 && troubleshooterZapConfig) {
+                        // Get NDKZapper object
+                        const zapper = $ndk.zap(
                             offer,
                             troubleshooterShareMillisats,
-                            'satshoot',
+                            {tags: [['satshoot']]},
                         );
+                        const relays = await zapper.relays(offer.pubkey);
+                        const troubleshooterZapRequest = await generateZapRequest(
+                            offer, $ndk, troubleshooterZapConfig!, $currentUser!.pubkey,
+                            troubleshooterShareMillisats, relays
+                            
+                        );
+
+                        // zapper.zapMethod = 'nip57';
+                        console.log('ndk troubleshooter zapper', zapper)
+                        let troubleshooterInvoice = null;
+                        if (troubleshooterZapRequest) {
+                             troubleshooterInvoice = await zapper.getLnInvoice(
+                                troubleshooterZapRequest, troubleshooterShareMillisats,
+                                troubleshooterZapConfig
+                            );
+                        }
                         console.log('troubleshooterInvoice', troubleshooterInvoice)
                         if (troubleshooterInvoice) {
                             invoices.set('troubleshooter', troubleshooterInvoice);
@@ -102,18 +129,32 @@
                 }
 
                 try {
-                    // TEST
-                    // const pablof7z = $ndk.getUser({
-                        // npub: 'npub1l2vyh47mk2p0qlsku7hg0vn29faehy9hy34ygaclpn66ukqp3afqutajft'
-                    // });
-                    if (satshootSumMillisats > 0) {
-                        const satshootInvoice = await $ndk.zap(
+                    if (satshootSumMillisats > 0 && satshootZapConfig) {
+                        // Get NDKZapper object
+                        const zapper = $ndk.zap(
                             satShootUser,
                             satshootSumMillisats,
-                            'satshoot',
-                            // Tagging ticket
-                            [['e', ticket.id]]
+                            {
+                                comment: 'satshoot',
+                                tags: [['e', ticket.id]],
+                            }
                         );
+                        const relays = await zapper.relays(SatShootPubkey);
+                        const satshootZapRequest = await generateZapRequest(
+                            offer, $ndk, troubleshooterZapConfig!, $currentUser!.pubkey,
+                            troubleshooterShareMillisats, relays
+
+                        );
+
+                        // zapper.zapMethod = 'nip57';
+                        console.log('ndk satshoot zapper', zapper)
+                        let satshootInvoice = null;
+                        if (satshootZapRequest) {
+                            satshootInvoice = await zapper.getLnInvoice(
+                                satshootZapRequest, satshootSumMillisats,
+                                satshootZapConfig
+                            );
+                        }
                         if (satshootInvoice) {
                             invoices.set('satshoot', satshootInvoice);
                         }
