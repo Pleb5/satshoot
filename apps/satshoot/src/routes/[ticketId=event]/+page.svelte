@@ -72,7 +72,9 @@
     let needSetup = true;
 
     // Wait for ndk to connect then setup subscription on ticket from URL params
-    $: if ($connected && needSetup) {
+
+    // Also check for existing ndk because we try to add relays from the naddr here
+    $: if ($ndk && $connected && needSetup) {
         needSetup = false;
         const naddr = $page.params.ticketId;
         const relaysFromURL = relaysFromNaddr(naddr).split(',');
@@ -80,7 +82,8 @@
         if (relaysFromURL.length > 0) {
             relaysFromURL.forEach((relayURL: string) => {
                 if (relayURL) {
-                    $ndk.pool.addRelay(new NDKRelay(relayURL));
+                    // url, authopolicy and ndk. authopolicy is not important yet
+                    $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
                 }
             });
         }

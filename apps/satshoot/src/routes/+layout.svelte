@@ -141,6 +141,19 @@
         }
     });
 
+    $ndk.pool.on('relay:connect', () => {
+        if ($ndk.pool.stats().connected > 0) {
+            $connected = true;
+            // If we managed to connect reset max connection retry attempts
+            if ($connected) {
+                $retryConnection = $retryAttempts;
+                retryConnection.set($retryAttempts);
+            }
+        }
+    });
+
+
+
     async function restoreLogin() {
         // For UI feedback
         $loggingIn = true;
@@ -367,13 +380,6 @@
         // });
 
         await $ndk.connect();
-        $connected = ($ndk.pool.stats().connected > 0);
-
-        // If we managed to connect reset max connection retry attempts
-        if ($connected) {
-            $retryConnection = $retryAttempts;
-            retryConnection.set($retryAttempts);
-        }
 
 // ------------------------ Restore Login -----------------------------------
 
