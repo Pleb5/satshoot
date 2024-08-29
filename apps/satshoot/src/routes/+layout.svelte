@@ -239,17 +239,6 @@
 
                     await $bunkerNDK.connect();
                     console.log("ndk connected to specified bunker relays", $bunkerNDK.pool.connectedRelays());
-                    if ($bunkerNDK.pool.connectedRelays().length === 0) {
-                        const t: ToastSettings = {
-                            message: 'Could not connect to Bunker!',
-                            autohide: false,
-                            background: 'bg-warning-300-600-token',
-                            classes: 'font-bold',
-                        };
-                        toastStore.trigger(t);
-                        $loggingIn = false;
-                        return;
-                    }
 
                     let connectionParams = bunkerTargetNpub;
 
