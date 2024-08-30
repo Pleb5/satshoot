@@ -8,7 +8,7 @@ import { offerTabStore } from "$lib/stores/tab-store";
 
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
 import { allTickets, myOffers } from '$lib/stores/troubleshoot-eventstores';
-import OfferCard from '$lib/components/OrderBook/OfferCard.svelte';
+import OfferCard from '$lib/components/Cards/OfferCard.svelte';
 import { type TicketEvent } from '$lib/events/TicketEvent';
 import SearchIcon from "$lib/components/Icons/SearchIcon.svelte"; 
 import { onMount } from "svelte";

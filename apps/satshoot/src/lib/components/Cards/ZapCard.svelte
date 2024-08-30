@@ -12,7 +12,7 @@ import {
 import { onMount } from "svelte";
 
 import { Avatar } from '@skeletonlabs/skeleton';
-import OfferCard from "../OrderBook/OfferCard.svelte";
+import OfferCard from "../Cards/OfferCard.svelte";
 import { insertThousandSeparator } from '$lib/utils/misc';
 
 

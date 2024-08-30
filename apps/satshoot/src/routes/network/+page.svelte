@@ -14,7 +14,7 @@
         NDKRelay,
         NDKRelayList,
     } from '@nostr-dev-kit/ndk';
-    import RelayListElement from '$lib/components/Relays/RelayListElement.svelte';
+    import RelayListElement from '$lib/components/RelayListElement.svelte';
     import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
     import { onMount, tick } from 'svelte';
 
@@ -297,7 +297,7 @@
 <hr class="mb-6"/>
 <h3 class="h3 mb-4 text-center">Your Write Relays(Outbox)</h3>
 {#if writeRelays && writeRelays.size > 0}
-    <div class="flex flex-col gap-y-4 justify-center mb-6 mx-2">
+    <div class="flex flex-col gap-y-4 justify-center mb-6 mx-2 m-auto">
         {#each writeRelays as relay(relay.url)}
             <div class="card card-hover grid grid-cols-[1fr_auto] gap-x-4 bg-surface-active-token p-2">
                 <RelayListElement {relay}/>

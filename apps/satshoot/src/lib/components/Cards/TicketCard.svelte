@@ -32,12 +32,12 @@
     import ShareTicketModal from "../Modals/ShareTicketModal.svelte";
     import CloseTicketModal from '$lib/components/Modals/CloseTicketModal.svelte';
 
-    import Reputation from "./Reputation.svelte";
+    import ReputationCard from "./ReputationCard.svelte";
     import { ReviewEvent, ReviewType, type ClientRating } from "$lib/events/ReviewEvent";
 
     import { goto } from "$app/navigation";
     import { clientReviews } from '$lib/stores/reviews';
-    import UserReviewCard from '../User/UserReviewCard.svelte';
+    import UserReviewCard from '../Cards/UserReviewCard.svelte';
     import { onDestroy, onMount } from 'svelte';
     import PaymentModal from '../Modals/PaymentModal.svelte';
     import OfferCard from './OfferCard.svelte';
@@ -389,7 +389,7 @@
                 </div>
             </div>
             {#if showReputation && $currentUser && ticket.pubkey !== $currentUser.pubkey}
-                <Reputation 
+                <ReputationCard 
                     type={ReviewType.Client}
                     user={ticket.pubkey}
                     open={openReputation}

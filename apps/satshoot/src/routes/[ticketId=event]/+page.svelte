@@ -3,7 +3,7 @@
     import currentUser, { loggedIn, loggingIn } from '$lib/stores/user';
     import { loginAlert } from '$lib/stores/user';
     import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
-    import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
+    import TicketCard from "$lib/components/Cards/TicketCard.svelte";
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { connected } from "$lib/stores/ndk";
     
@@ -11,8 +11,8 @@
 
     import { wot } from '$lib/stores/wot';
 
-    import UserCard from "$lib/components/User/UserCard.svelte";
-    import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
+    import UserCard from "$lib/components/Cards/UserCard.svelte";
+    import OfferCard from "$lib/components/Cards/OfferCard.svelte";
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
 
     import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";

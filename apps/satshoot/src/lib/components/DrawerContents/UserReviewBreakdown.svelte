@@ -1,5 +1,5 @@
 <script lang="ts">
-import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
+import UserReviewCard from "$lib/components/Cards/UserReviewCard.svelte";
 import { type DrawerSettings, getDrawerStore } from "@skeletonlabs/skeleton";
 import { DrawerIDs } from '$lib/stores/drawer';
 import drawerID from '$lib/stores/drawer';

@@ -22,9 +22,9 @@
     import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
 
     import { onDestroy, onMount } from "svelte";
-    import Reputation from "./Reputation.svelte";
+    import ReputationCard from "./ReputationCard.svelte";
     import { ReviewEvent, ReviewType, type TroubleshooterRating } from "$lib/events/ReviewEvent";
-    import UserReviewCard from "../User/UserReviewCard.svelte";
+    import UserReviewCard from "../Cards/UserReviewCard.svelte";
     import { clientReviews, troubleshooterReviews } from "$lib/stores/reviews";
 
     import { insertThousandSeparator } from '$lib/utils/misc';
@@ -379,7 +379,7 @@
                 </div>
             </div>
             {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
-                <Reputation type={ReviewType.Troubleshooter} user={offer.pubkey}/>
+                <ReputationCard type={ReviewType.Troubleshooter} user={offer.pubkey}/>
             {/if}
             {#if showDetails}
                 <div class="">

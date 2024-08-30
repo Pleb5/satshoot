@@ -1,9 +1,9 @@
 <script lang="ts">
 import { type NDKEvent } from "@nostr-dev-kit/ndk";
 import currentUser from "$lib/stores/user";
-import OfferCard from "$lib/components/OrderBook/OfferCard.svelte";
-import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
-import MessageCard from "$lib/components/User/MessageCard.svelte";
+import OfferCard from "$lib/components/Cards/OfferCard.svelte";
+import TicketCard from "$lib/components/Cards/TicketCard.svelte";
+import MessageCard from "$lib/components/Cards/MessageCard.svelte";
 import {
     notificationsEnabled,
     notifications,
@@ -14,8 +14,8 @@ import {
     receivedZapsNotifications,
 } from "$lib/stores/notifications";
 import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
-import UserReviewCard from "$lib/components/User/UserReviewCard.svelte";
-import ZapCard from "$lib/components/User/ZapCard.svelte";
+import UserReviewCard from "$lib/components/Cards/UserReviewCard.svelte";
+import ZapCard from "$lib/components/Cards/ZapCard.svelte";
 import { ReviewType } from "$lib/events/ReviewEvent";
 
 const toastStore = getToastStore();

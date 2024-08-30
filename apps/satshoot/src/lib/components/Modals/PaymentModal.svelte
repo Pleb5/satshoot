@@ -13,7 +13,7 @@
     import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { type SvelteComponent, tick } from "svelte";
     import type { OfferEvent } from "$lib/events/OfferEvent";
-    import OfferCard from "../OrderBook/OfferCard.svelte";
+    import OfferCard from "../Cards/OfferCard.svelte";
     import { SatShootPubkey } from "$lib/utils/misc";
 
     import { insertThousandSeparator } from '$lib/utils/misc';

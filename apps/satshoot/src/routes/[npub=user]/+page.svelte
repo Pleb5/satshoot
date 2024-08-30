@@ -1,15 +1,15 @@
 <script lang="ts">
 import { page } from '$app/stores';
-import Reputation from '$lib/components/OrderBook/Reputation.svelte';
-import UserCard from "$lib/components/User/UserCard.svelte";
+import ReputationCard from '$lib/components/Cards/ReputationCard.svelte';
+import UserCard from "$lib/components/Cards/UserCard.svelte";
 import { TicketEvent } from '$lib/events/TicketEvent';
 import currentUser, { loggedIn } from '$lib/stores/user';
 import ndk from '$lib/stores/ndk';
 import { NDKKind } from '@nostr-dev-kit/ndk';
 import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
 import { OfferEvent } from '$lib/events/OfferEvent';
-import TicketCard from '$lib/components/OrderBook/TicketCard.svelte';
-import OfferCard from '$lib/components/OrderBook/OfferCard.svelte';
+import TicketCard from '$lib/components/Cards/TicketCard.svelte';
+import OfferCard from '$lib/components/Cards/OfferCard.svelte';
 import { onDestroy, onMount } from 'svelte';
 import { derived } from 'svelte/store';
 import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
@@ -114,7 +114,7 @@ onDestroy(()=>{
     <!-- that contains more reviews -->
     {#if $currentUser}
     <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-            <Reputation user={user.pubkey} type={undefined}/>
+            <ReputationCard user={user.pubkey} type={undefined}/>
     </div>
     {/if}
 

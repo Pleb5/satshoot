@@ -7,7 +7,7 @@ import { ticketTabStore } from "$lib/stores/tab-store";
 
 import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
 import { myTickets } from '$lib/stores/troubleshoot-eventstores';
-import TicketCard from '$lib/components/OrderBook/TicketCard.svelte';
+import TicketCard from '$lib/components/Cards/TicketCard.svelte';
 import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
     import { onMount } from "svelte";
 

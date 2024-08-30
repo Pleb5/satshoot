@@ -1,6 +1,6 @@
 <script lang="ts">
     import { TicketStatus, TicketEvent } from "$lib/events/TicketEvent";
-    import TicketCard from "$lib/components/OrderBook/TicketCard.svelte";
+    import TicketCard from "$lib/components/Cards/TicketCard.svelte";
 
     import { wot } from '$lib/stores/wot';
     import ndk, { connected } from "$lib/stores/ndk";

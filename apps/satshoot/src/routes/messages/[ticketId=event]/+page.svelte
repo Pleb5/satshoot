@@ -31,7 +31,7 @@
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
     import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
-    import MessageCard from "$lib/components/User/MessageCard.svelte";
+    import MessageCard from "$lib/components/Cards/MessageCard.svelte";
     import type { 
         ExtendedBaseType, 
         NDKEventStore 

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ChatHead from "$lib/components/User/ChatHead.svelte";
+    import ChatHead from "$lib/components/ChatHead.svelte";
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
     import ndk from "$lib/stores/ndk";
