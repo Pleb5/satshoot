@@ -1,7 +1,6 @@
 <script lang="ts">
     import ndk from "$lib/stores/ndk";
     import currentUser from '$lib/stores/user';
-    import { Nip05 } from '@nostr-dev-kit/ndk-svelte-components';
     import {
         NDKEvent, 
         NDKKind, 
@@ -262,18 +261,6 @@
                 {/if}
             </div>
             <div class="flex items-center gap-x-2">
-                <!-- <Nip05 -->
-                <!--     ndk={$ndk} -->
-                <!--     npub={npub} -->
-                <!--      -->
-                <!-- > -->
-                <!--     <div  -->
-                <!--         slot="badge" -->
-                <!--         let:nip05Valid={valid} -->
-                <!--     > -->
-                <!--         {valid ? 'valid' : 'invalid'} -->
-                <!--     </div> -->
-                <!-- </Nip05> -->
                 <div>
                     Nip05: {nip05 ?? '?'}
                 </div>
