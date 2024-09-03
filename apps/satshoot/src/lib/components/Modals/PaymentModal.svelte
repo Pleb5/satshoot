@@ -141,12 +141,13 @@
                         );
                         const relays = await zapper.relays(SatShootPubkey);
                         const satshootZapRequest = await generateZapRequest(
-                            offer, $ndk, troubleshooterZapConfig!, $currentUser!.pubkey,
-                            troubleshooterShareMillisats, relays
+                            satShootUser, $ndk, satshootZapConfig!, $currentUser!.pubkey,
+                            satshootSumMillisats, relays
 
                         );
 
                         // zapper.zapMethod = 'nip57';
+
                         console.log('ndk satshoot zapper', zapper)
                         let satshootInvoice = null;
                         if (satshootZapRequest) {
