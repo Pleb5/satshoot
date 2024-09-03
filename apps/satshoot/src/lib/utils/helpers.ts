@@ -3,7 +3,6 @@ import {
     type NDKEvent,
     NDKKind,
     NDKRelayList,
-    // NDKRelaySet,
     NDKRelay,
     NDKSubscriptionCacheUsage,
 } from '@nostr-dev-kit/ndk';
@@ -52,13 +51,17 @@ import {
 } from "$lib/stores/troubleshoot-eventstores";
 
 import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
-import { notifications } from '../stores/notifications.ts';
+import { notifications } from '../stores/notifications';
 
-import { tick } from 'svelte';
 import { goto } from '$app/navigation';
 import { get } from "svelte/store";
 import { dev, browser } from '$app/environment';
-import { sessionPK } from '../stores/ndk.ts';
+import { connected, sessionPK } from '../stores/ndk';
+import {
+    retryConnection,
+    retriesFailed,
+    retryDelay
+} from '../stores/network';
 
 
 export async function initializeUser(ndk: NDK) {
@@ -286,4 +289,28 @@ export function troubleshootZap(zap: NDKEvent): boolean {
     }
 
     return true;
+}
+
+export function restoreRelaysIfDown() {
+    const $ndk = get(ndk);
+    console.log('Check relays and try to reconnect if they are down..')
+    if ($ndk.pool.stats().connected === 0) {
+        connected.set(false);
+        const retriesLeft = get(retryConnection);
+        console.log('retryConnection', retriesLeft)
+        if (retriesLeft > 0) {
+            retryConnection.set(retriesLeft - 1);
+            // Try to reconnect to relays
+            $ndk.pool.connect();
+            // Re-check recursively
+            setTimeout(restoreRelaysIfDown, retryDelay);
+            // window.location.reload();
+        } else { 
+            // This is to always trigger this not just once.
+            // When user navigates this check can run multiple times
+            // but if a boolean was used, this could only be triggered once
+            retriesFailed.set(get(retriesFailed) + 1);
+        }
+
+    }
 }

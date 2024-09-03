@@ -8,6 +8,7 @@
     import { connected } from "$lib/stores/ndk";
     
     import redirectStore from '$lib/stores/network';
+    import { restoreRelaysIfDown } from "$lib/utils/helpers";
 
     import { wot } from '$lib/stores/wot';
 
@@ -43,7 +44,7 @@
     
     import { page } from '$app/stores';
     import { goto } from "$app/navigation";
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -230,6 +231,8 @@
         target: 'popupHover',
         placement: 'top'
     };
+
+    onMount(() => restoreRelaysIfDown());
 
     onDestroy(() => {
         ticketSubscription?.stop()

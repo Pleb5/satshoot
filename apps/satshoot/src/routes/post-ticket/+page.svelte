@@ -1,5 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+    import { restoreRelaysIfDown } from "$lib/utils/helpers";
     import currentUser, { loggingIn, loginAlert } from '$lib/stores/user';
 
     import type { NDKTag } from '@nostr-dev-kit/ndk';
@@ -204,6 +205,7 @@
             });
             tagList = tagList;
         }
+        restoreRelaysIfDown();
     });
 
     beforeNavigate(async ()=>{

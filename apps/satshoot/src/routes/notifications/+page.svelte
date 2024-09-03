@@ -1,5 +1,6 @@
 <script lang="ts">
 import { type NDKEvent } from "@nostr-dev-kit/ndk";
+import { restoreRelaysIfDown } from "$lib/utils/helpers";
 import currentUser from "$lib/stores/user";
 import OfferCard from "$lib/components/Cards/OfferCard.svelte";
 import TicketCard from "$lib/components/Cards/TicketCard.svelte";
@@ -17,6 +18,7 @@ import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 import UserReviewCard from "$lib/components/Cards/UserReviewCard.svelte";
 import ZapCard from "$lib/components/Cards/ZapCard.svelte";
 import { ReviewType } from "$lib/events/ReviewEvent";
+import { onMount } from "svelte";
 
 const toastStore = getToastStore();
 
@@ -59,6 +61,8 @@ async function removeNotification(event: NDKEvent) {
 function clearAll() {
     $notifications = [];
 }
+
+onMount(() => restoreRelaysIfDown());
 
 </script>
 

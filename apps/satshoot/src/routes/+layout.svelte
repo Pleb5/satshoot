@@ -19,7 +19,12 @@
 
     import { mounted, loggedIn, userRelaysUpdated } from "$lib/stores/user";
     import currentUser, {loggingIn, loginMethod} from "$lib/stores/user";
-    import { online, retryConnection, retryAttempts } from '$lib/stores/network';
+    import {
+        online,
+        retryConnection,
+        maxRetryAttempts,
+        retriesFailed
+    } from '$lib/stores/network';
 
     import { 
         wotFilteredTickets,
@@ -39,7 +44,7 @@
     import { allReceivedZaps, wotFilteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from "$lib/stores/notifications";
 
-    import { initializeUser, logout } from '$lib/utils/helpers';
+    import { initializeUser, logout, restoreRelaysIfDown } from '$lib/utils/helpers';
 
     import { wot, wotUpdating } from '$lib/stores/wot';
 
@@ -51,6 +56,7 @@
         NDKNip07Signer, 
         NDKPrivateKeySigner, 
         type NDKEvent,
+        NDKRelay,
     } from "@nostr-dev-kit/ndk";
 
     import { privateKeyFromNsec } from "$lib/utils/nip19";
@@ -130,33 +136,9 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    $ndk.pool.on('relay:disconnect', () => {
-        if ($ndk.pool.stats().connected === 0) {
-            $connected = false;
-            if (browser) {
-                if ($retryConnection > 0) {
-                    $retryConnection--;
-                    console.log('retryConnection', $retryConnection)
-                    retryConnection.set($retryConnection);
-                    // Try to reconnect to relays
-                    $ndk.pool.connect();
-                    // window.location.reload();
-                } else {
-                    const t: ToastSettings = {
-                        message: 'Could not reconnect to Relays!',
-                        autohide: false,
-                        action: {
-                            label: 'Reload page',
-                            response: () => {
-                                window.location.reload();
-                            },
-                        },
-                        classes: 'flex flex-col items-center gap-y-2 text-lg font-bold'
-                    };
-                    toastStore.trigger(t);
-                }
-            }
-        }
+    $ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
+        console.log('relay disconnected', relay)
+        restoreRelaysIfDown();
     });
 
     $ndk.pool.on('relay:connect', () => {
@@ -167,10 +149,25 @@
             $connected = true;
             console.log('connected')
             // If we managed to connect reset max connection retry attempts
-            $retryConnection = $retryAttempts;
-            retryConnection.set($retryAttempts);
+            $retryConnection = maxRetryAttempts;
+            retryConnection.set(maxRetryAttempts);
         }
     });
+
+    $: if($retriesFailed > 0) {
+        const t: ToastSettings = {
+            message: 'Could not reconnect to Relays!',
+            autohide: false,
+            action: {
+                label: 'Reload page',
+                response: () => {
+                    window.location.reload();
+                },
+            },
+            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold'
+        };
+        toastStore.trigger(t);
+    }
 
 
 

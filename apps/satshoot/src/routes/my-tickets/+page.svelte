@@ -1,5 +1,6 @@
 <script lang="ts">
 import currentUser from "$lib/stores/user";
+import { restoreRelaysIfDown } from "$lib/utils/helpers";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
@@ -9,7 +10,7 @@ import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
 import { myTickets } from '$lib/stores/troubleshoot-eventstores';
 import TicketCard from '$lib/components/Cards/TicketCard.svelte';
 import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
-    import { onMount } from "svelte";
+import { onMount } from "svelte";
 
 
 let newTickets: TicketEvent[] = [];
@@ -124,6 +125,8 @@ onMount(() => {
     const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
     // Scroll to top as soon as ticket arrives
     elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+
+    restoreRelaysIfDown();
 });
 
 </script>

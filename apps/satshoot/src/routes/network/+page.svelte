@@ -1,5 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+    import { restoreRelaysIfDown } from "$lib/utils/helpers";
     import currentUser from '$lib/stores/user';
     import { connected } from "$lib/stores/ndk";
 
@@ -213,6 +214,7 @@
     // }
 
     onMount(()=>{
+        restoreRelaysIfDown();
         $ndk.pool.on('connect', () => {
             updateRelayValues();
         });

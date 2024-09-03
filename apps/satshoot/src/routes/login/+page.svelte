@@ -14,8 +14,8 @@
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import BunkerLoginModal from "$lib/components/Modals/BunkerLoginModal.svelte";
-    import { initializeUser } from "$lib/utils/helpers";
-    import { tick } from "svelte";
+    import { initializeUser, restoreRelaysIfDown } from "$lib/utils/helpers";
+    import { onMount, tick } from "svelte";
     import Nip07LoginModal from "$lib/components/Modals/Nip07LoginModal.svelte";
 
     // Retrieve Modal Store at the top level
@@ -101,6 +101,7 @@
         placement: 'bottom'
     };
 
+    onMount(() => restoreRelaysIfDown());
 
 </script>
 

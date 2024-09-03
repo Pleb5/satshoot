@@ -3,6 +3,7 @@
     import { OfferEvent } from "$lib/events/OfferEvent";
     import { TicketEvent } from "$lib/events/TicketEvent";
     import ndk from "$lib/stores/ndk";
+    import { restoreRelaysIfDown } from "$lib/utils/helpers";
     import currentUser, { loggedIn } from "$lib/stores/user";
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from "@nostr-dev-kit/ndk";
     import { Tab, TabGroup } from "@skeletonlabs/skeleton";
@@ -118,6 +119,8 @@
         elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
         
         mounted = true;
+
+        restoreRelaysIfDown()
     });
 
 </script>

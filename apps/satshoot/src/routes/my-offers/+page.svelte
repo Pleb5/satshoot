@@ -1,6 +1,6 @@
-
 <script lang="ts">
 import currentUser from "$lib/stores/user";
+import { restoreRelaysIfDown } from "$lib/utils/helpers";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
@@ -154,6 +154,8 @@ onMount(() => {
     const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
     // Scroll to top as soon as ticket arrives
     elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+
+    restoreRelaysIfDown();
 });
 
 </script>
