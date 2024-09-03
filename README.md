@@ -1,22 +1,24 @@
 # SatShoot
-A peer-to-peer market for troubleshooting on nostr
+A freelance app for freedom-lovers, using nostr
 
 Try it live on:
 ```
 https://satshoot.com
 ```
 
-## ! Work In Progress !
+## Benefits
+- No middle-man: Your nostr keys, your contacts, your deals
+- Your servers: Respects your relays of choice (see [outbox model](https://nostr-nips.com/nip-65))
+- Web of Trust(WoT): Uses Your nostr-based social network to fight scammers and spammers
+- Build an unstoppable Reputation on nostr as a freelancer
 
-- Clients post tickets about technical issues they have. This is basically a Request For Quote (RFQ)
-- Troubleshooters send Offers to resolve the problem for sats. It can be an absolute or a time-based price
-- Clients select the most attractive Offer
-- If an Offer is accepted the Troubleshooting can begin via any means of communication, defaulting to nostr DM-s
+## Typical Flow
+- Clients post any job or problem. These are called Tickets. This is basically a Request For Quote (RFQ)
+- Freelancers bid on Tickets with Offers to resolve the problem for sats. It can be an absolute or a time-based price
+- Clients select the most attractive Offer: Price and Reputation of the bidder matter most
+- If an Offer is accepted the Troubleshooting can begin via any means of communication, defaulting to nostr DM-s (nip04)
+- You can pay any time after agreement and review each other
+- You build Reputation by earning / paying for services with public zaps on nostr and by receiving public reviews
+- You can post on your nostr feed to share Tickets and promote your services
 
 - Built with [Nostr Development Kit](https://github.com/nostr-dev-kit/ndk) by @[pablof7z](https://github.com/pablof7z)
-
-# Sources and inspiration
-- Stacker news
-- Stack exchanges(bitcoin stack exchange, stackoverflow)
-- Centralized Freelancer platforms(Fiverr, Upwork)
-- Decentralized marketplaces(joinmarket, bisq, robosats)
