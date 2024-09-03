@@ -133,22 +133,42 @@
     $ndk.pool.on('relay:disconnect', () => {
         if ($ndk.pool.stats().connected === 0) {
             $connected = false;
-            if (browser && $retryConnection > 0) {
-                $retryConnection--;
-                retryConnection.set($retryConnection);
-                window.location.reload();
+            if (browser) {
+                if ($retryConnection > 0) {
+                    $retryConnection--;
+                    console.log('retryConnection', $retryConnection)
+                    retryConnection.set($retryConnection);
+                    // Try to reconnect to relays
+                    $ndk.pool.connect();
+                    // window.location.reload();
+                } else {
+                    const t: ToastSettings = {
+                        message: 'Could not reconnect to Relays!',
+                        autohide: false,
+                        action: {
+                            label: 'Reload page',
+                            response: () => {
+                                window.location.reload();
+                            },
+                        },
+                        classes: 'flex flex-col items-center gap-y-2 text-lg font-bold'
+                    };
+                    toastStore.trigger(t);
+                }
             }
         }
     });
 
     $ndk.pool.on('relay:connect', () => {
         if ($ndk.pool.stats().connected > 0) {
-            $connected = true;
-            // If we managed to connect reset max connection retry attempts
-            if ($connected) {
-                $retryConnection = $retryAttempts;
-                retryConnection.set($retryAttempts);
+            if (!($connected)) {
+                console.log('reconnected!');
             }
+            $connected = true;
+            console.log('connected')
+            // If we managed to connect reset max connection retry attempts
+            $retryConnection = $retryAttempts;
+            retryConnection.set($retryAttempts);
         }
     });
 
