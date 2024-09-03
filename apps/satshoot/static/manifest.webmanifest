@@ -1,7 +1,7 @@
 {
     "name": "SatShoot",
     "short_name": "SatShoot",
-    "description": "Troubleshooting for sats on nostr",
+    "description": "Freelancing on nostr",
     "display": "standalone",
     "background_color": "#fff",
     "start_url": "/",
