@@ -254,7 +254,7 @@ export async function broadcastRelayList(ndk: NDKSvelte, readRelayUrls: string[]
     userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
 
     const blastrUrl = 'wss://nostr.mutinywallet.com';
-    ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl));
+    ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, ndk));
     // const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
     //     blastrUrl,
     //     ...ndk.pool.urls(),

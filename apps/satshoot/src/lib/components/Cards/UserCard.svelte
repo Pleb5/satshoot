@@ -63,6 +63,8 @@
             if (userProfile.image) {
                 avatarImage = userProfile.image;
             }
+        } else {
+            userProfile = {}
         }
     }
 
@@ -72,7 +74,7 @@
                 $currentUser.profile = userProfile;
 
                 const blastrUrl = 'wss://nostr.mutinywallet.com';
-                $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl));
+                $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, $ndk));
 
                 console.log('relays sending to:', $ndk.pool)
                 await $currentUser.publish();

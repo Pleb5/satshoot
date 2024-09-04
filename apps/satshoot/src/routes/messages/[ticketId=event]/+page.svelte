@@ -48,7 +48,7 @@
     if (relaysFromURL.length > 0) {
         relaysFromURL.forEach((relayURL: string) => {
             if (relayURL) {
-                $ndk.pool.addRelay(new NDKRelay(relayURL));
+                $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
             }
         });
     }
