@@ -2,7 +2,7 @@
     import ndk, { LoginMethod } from "$lib/stores/ndk";
 
     import redirectStore from "$lib/stores/network";
-    import { NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
+    import { NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
     import { sessionPK } from "$lib/stores/ndk";
     import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
     import { hexToBytes } from "@noble/hashes/utils";
@@ -39,6 +39,13 @@
         nsec = nsecEncode(hexToBytes(privateKey));
         const user = await $ndk.signer.user();
         npub = user.npub;
+        user.profile = {
+            created_at : Math.floor(Date.now() / 1000),
+        };
+
+        const blastrUrl = 'wss://nostr.mutinywallet.com';
+        $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, $ndk));
+        user.publish();
 
         initializeUser($ndk);
     });
