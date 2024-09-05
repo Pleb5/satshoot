@@ -41,6 +41,12 @@
         npub = user.npub;
         user.profile = {
             created_at : Math.floor(Date.now() / 1000),
+            name: 'name?',
+            displayName: 'name?',
+            about: '',
+            bio: '',
+            lud16: '',
+            website: ''
         };
 
         const blastrUrl = 'wss://nostr.mutinywallet.com';
