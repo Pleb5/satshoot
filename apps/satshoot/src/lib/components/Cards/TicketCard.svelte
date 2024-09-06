@@ -179,7 +179,7 @@
         if (ticket.status !== TicketStatus.New) {
             $clientReviews.forEach((review: ReviewEvent) => {
                 if (review.reviewedEventAddress === ticket.ticketAddress) {
-                    clientReview = review.ratings as ClientRating;
+                    clientReview = review.clientRatings;
                     const reviewerPubkey = review.pubkey;
                     reviewer = $ndk.getUser({pubkey: reviewerPubkey});
                 }

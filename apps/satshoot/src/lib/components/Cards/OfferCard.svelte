@@ -227,7 +227,7 @@
         if (winner) {
             $troubleshooterReviews.forEach((review: ReviewEvent) => {
                 if (review.reviewedEventAddress === offer!.offerAddress) {
-                    troubleshooterReview = review.ratings as TroubleshooterRating;
+                    troubleshooterReview = review.troubleshooterRatings;
                     const reviewerPubkey = review.pubkey;
                     reviewer = $ndk.getUser({pubkey: reviewerPubkey});
                 }
