@@ -2,11 +2,7 @@
     import ndk from "$lib/stores/ndk";
     import currentUser from '$lib/stores/user';
     import {
-        NDKEvent, 
-        NDKKind, 
         NDKRelay, 
-        NDKRelaySet,
-        NDKSubscriptionCacheUsage,
         type NDKUser,
         type NDKUserProfile
     } from "@nostr-dev-kit/ndk";
@@ -33,6 +29,14 @@
     $: editable = ($currentUser?.npub === npub);
     $: avatarImage = `https://robohash.org/${user.pubkey}`;
     $: nip05 = userProfile?.nip05;
+    $: lud16 = userProfile?.lud16;
+
+    $: website = userProfile?.website 
+        ? userProfile.website.length <= 20
+            ? userProfile.website
+            : userProfile.website.substring(0,20) + '...'
+        : '?'
+
     let validNIP05 = false;
 
     $: partOfWoT = ($wot.has(user.pubkey));
@@ -63,9 +67,7 @@
             if (userProfile.image) {
                 avatarImage = userProfile.image;
             }
-        } else {
-            userProfile = {}
-        }
+        } 
     }
 
     async function editProfile() {
@@ -170,6 +172,31 @@
             });
     }
 
+    function editWebsite() {
+        new Promise<string|undefined>((resolve) => {
+            const data = userProfile?.website ?? "";
+            const modalComponent: ModalComponent = {
+                ref: EditProfileModal,
+                props: {dataToEdit: data, fieldName: 'Website'},
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (editedData: string|undefined) => {
+                    resolve(editedData); 
+                },
+            };
+            modalStore.trigger(modal);
+            // We got some kind of response from modal
+        }).then((editedData: string|undefined) => {
+                if (editedData != undefined) {
+                    userProfile.website = editedData;
+                    editProfile();
+                }
+            });
+    }
+
     // For tooltip    
     const popupWoT: PopupSettings = {
         event: 'click',
@@ -234,7 +261,7 @@
         </div>
     </header>
     <div class="flex items-center gap-x-2 ">
-        <h4 class="h4">About</h4>
+        <h4 class="h4 underline">About</h4>
         {#if editable}
             <button on:click={editAbout}>
                 <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
@@ -245,10 +272,10 @@
         {userProfile?.about ?? userProfile?.bio ?? '?'}
     </div>
     <footer class="mt-4">
-        <h4 class="h4">Other:</h4>
         <div class="flex flex-col gap-y-1">
             <div class="flex items-center gap-x-2">
-                <div>Npub: {npub?.substring(0,20) + '...'}</div>
+                <div class="underline">Npub:</div>
+                <div>{npub?.substring(0,20) + '...'}</div>
                 {#if npub}
                     <div>
                         <button 
@@ -263,8 +290,11 @@
                 {/if}
             </div>
             <div class="flex items-center gap-x-2">
-                <div>
-                    Nip05: {nip05 ?? '?'}
+                <div class="flex gap-x-2">
+                    <div class="underline">
+                        Nip05:
+                    </div>
+                    <div>{nip05 ?? '?'}</div>
                 </div>
                 {#if nip05}
                     <div>
@@ -306,8 +336,22 @@
                     </div>
                 {/if}
             </div>
+            <div class="flex items-center gap-x-4">
+                <div class="flex gap-x-2">
+                    <div class="underline">Website:</div>
+                    <a class="anchor" href={website}><div>{website}</div></a>
+                </div>
+                {#if editable}
+                    <button on:click={editWebsite}>
+                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
+                    </button>
+                {/if}
+            </div>
             <div class=" flex items-center gap-x-2 ">
-                <div>LN address(lud16): {userProfile?.lud16 ?? '?'}</div>
+                <div class="flex gap-x-2">
+                    <div class="underline">LN Address:</div>
+                    <div>{lud16 ?? '?'}</div>
+                </div>
                 {#if editable}
                     <button on:click={editLud16}>
                         <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />

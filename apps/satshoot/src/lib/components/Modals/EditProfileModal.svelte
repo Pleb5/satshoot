@@ -19,6 +19,9 @@
 
     onMount(()=>{
         editedData = dataToEdit;
+        if (!editedData ?? fieldName === 'Website') {
+            editedData = 'https://';
+        }
     });
 
 </script>
@@ -39,7 +42,7 @@
                 <input 
                 type="text"
                 class="input"
-                placeholder={'New ' + fieldName}
+                placeholder={fieldName === 'Website' ? '' : 'New ' + fieldName}
                 bind:value={ editedData }
             />
             </div>
