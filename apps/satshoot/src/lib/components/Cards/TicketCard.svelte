@@ -417,7 +417,7 @@
                                 showReputation={false}
                                 showDetails={false}
                                 showDescription={false}
-                                showOfferReview={false}
+                                showOfferReview={true}
                             >
                             </OfferCard>
                         </svelte:fragment>
