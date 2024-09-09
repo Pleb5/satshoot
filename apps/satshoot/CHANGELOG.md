@@ -1,4 +1,8 @@
 # https://satshoot.com
+## 0.1.0
+- Improved UI in many places
+- Improved network stability and more ways for user to recover from network problems
+
 ## 0.0.2
 - Rebranded to SatShoot
 - Web of Trust based Spam Filtering
