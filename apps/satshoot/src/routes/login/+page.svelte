@@ -29,7 +29,7 @@
                 goto($redirectStore)
                 $redirectStore = '';
             } else {
-                goto('/'); 
+                goto('/ticket-feed'); 
             }
         }
     }

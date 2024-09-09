@@ -116,7 +116,6 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import type { ReviewEvent } from "$lib/events/ReviewEvent";
     import MessagesIcon from "$lib/components/Icons/MessagesIcon.svelte";
-    import { browser } from "$app/environment";
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -607,7 +606,7 @@
 
             <div class="flex justify-center lg:ml-20">
                 <div class ='flex gap-x-2 justify-center items-center'>
-                    <button class="btn btn-icon w-16" on:click={()=>{goto('/')}}>
+                    <button class="btn btn-icon w-16" on:click={()=>{goto('/ticket-feed')}}>
                         <img src="/satshoot.svg" alt="logo" />
                     </button>
                     
@@ -666,8 +665,8 @@
             >
                 <svelte:fragment slot="lead">
                     <AppRailAnchor
-                        href="/"
-                        selected={$page.url.pathname === '/'}
+                        href="/ticket-feed"
+                        selected={$page.url.pathname === '/ticket-feed'}
                     >
                         <TroubleshootIcon sizeClass={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
@@ -713,8 +712,8 @@
             class="lg:hidden w-full"
         >
             <TabAnchor 
-                href="/" 
-                selected={$page.url.pathname === '/'}
+                href="/ticket-feed" 
+                selected={$page.url.pathname === '/ticket-feed'}
             >
                 <TroubleshootIcon sizeClass={'text-2xl sm:text-3xl'} />
             </TabAnchor>
