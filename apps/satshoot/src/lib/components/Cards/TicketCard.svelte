@@ -41,7 +41,7 @@
     import { onDestroy, onMount } from 'svelte';
     import PaymentModal from '../Modals/PaymentModal.svelte';
     import OfferCard from './OfferCard.svelte';
-    import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
+    import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
 
     const modalStore = getModalStore();
 			
@@ -402,7 +402,7 @@
                 <Accordion>
                     <AccordionItem>
                         <svelte:fragment slot="lead">
-                            <UserOffersIcon
+                            <BitcoinIcon
                                 sizeClass={'text-xl sm:text-2xl'}
                                 extraClasses={'text-warning-500'}
                             />

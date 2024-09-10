@@ -13,10 +13,10 @@ import OfferCard from '$lib/components/Cards/OfferCard.svelte';
 import { onDestroy, onMount } from 'svelte';
 import { derived } from 'svelte/store';
 import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
-import UserTicketsIcon from '$lib/components/Icons/UserTicketsIcon.svelte';
+import TicketIcon from '$lib/components/Icons/TicketIcon.svelte';
 import HandshakeIcon from '$lib/components/Icons/HandshakeIcon.svelte';
 import PostTicketIcon from '$lib/components/Icons/PostTicketIcon.svelte';
-import UserOffersIcon from '$lib/components/Icons/UserOffersIcon.svelte';
+import BitcoinIcon from '$lib/components/Icons/BitcoinIcon.svelte';
 
 $: npub = $page.params.npub;
 $: user = $ndk.getUser({npub: npub});
@@ -167,7 +167,7 @@ onDestroy(()=>{
                             <Accordion>
                                 <AccordionItem>
                                     <svelte:fragment slot="lead">
-                                        <UserOffersIcon/>
+                                        <BitcoinIcon/>
                                     </svelte:fragment>
                                     <svelte:fragment slot="summary">
                                         <h3 class="h3 text-center underline">
@@ -210,7 +210,7 @@ onDestroy(()=>{
         <Accordion>
             <AccordionItem>
                 <svelte:fragment slot="lead">
-                    <UserTicketsIcon/>
+                    <TicketIcon/>
                 </svelte:fragment>
                 <svelte:fragment slot="summary">
                     <h3 class="h3 text-center underline">
@@ -239,7 +239,7 @@ onDestroy(()=>{
         <Accordion>
             <AccordionItem>
                 <svelte:fragment slot="lead">
-                    <UserOffersIcon/>
+                    <BitcoinIcon/>
                 </svelte:fragment>
                 <svelte:fragment slot="summary">
                     <h3 class="h3 text-center underline">
