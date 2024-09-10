@@ -403,8 +403,7 @@
                     <AccordionItem>
                         <svelte:fragment slot="lead">
                             <BitcoinIcon
-                                sizeClass={'text-xl sm:text-2xl'}
-                                extraClasses={'text-warning-500'}
+                                extraClasses={'text-xl sm:text-2xl text-warning-500'}
                             />
                         </svelte:fragment>
                         <svelte:fragment slot="summary">

@@ -668,7 +668,7 @@
                         href="/ticket-feed"
                         selected={$page.url.pathname === '/ticket-feed'}
                     >
-                        <TroubleshootIcon sizeClass={'text-2xl sm:text-3xl'} />
+                        <TroubleshootIcon extraClasses={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
 
                     <AppRailAnchor
@@ -715,7 +715,7 @@
                 href="/ticket-feed" 
                 selected={$page.url.pathname === '/ticket-feed'}
             >
-                <TroubleshootIcon sizeClass={'text-2xl sm:text-3xl'} />
+                <TroubleshootIcon extraClasses={'text-2xl sm:text-3xl'} />
             </TabAnchor>
 
             <TabAnchor 

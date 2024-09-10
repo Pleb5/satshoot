@@ -150,7 +150,7 @@
                         on:click={()=>{drawerStore.close()}}
                     >
                         <span class="w-6 text-center">
-                            <BitcoinIcon sizeClass={'text-lg'}/>
+                            <BitcoinIcon extraClasses={'text-lg'}/>
                         </span>
                         <span>My Offers</span>
                     </a>

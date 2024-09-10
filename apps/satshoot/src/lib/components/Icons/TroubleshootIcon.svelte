@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let sizeClass = 'text-lg';
+    export let extraClasses = 'text-lg';
 </script>
-<i class="fa-solid fa-gear {sizeClass}"></i>
+<i class="fa-solid fa-gear {extraClasses}"></i>
 
