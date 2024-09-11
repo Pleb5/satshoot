@@ -142,6 +142,9 @@
     $: if ($hideAppBarsStore) {
         hideTopbar = true;
         hideAppMenu = true;
+    } else {
+        hideTopbar = false;
+        hideAppMenu = false
     }
 
     $ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
@@ -346,7 +349,7 @@
         $mounted = true;
         localStorage.debug = 'ndk:*'
         if(!$modeCurrent) {
-            setModeCurrent(false);
+            setModeCurrent(true);
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -668,8 +671,9 @@
     </svelte:fragment>
     <!-- Sidebar. Hidden on small screens -->
 	<svelte:fragment slot="sidebarLeft">
+        {#if !hideAppMenu}
             <AppRail 
-                class="hidden lg:block min-w-28 {hideAppMenu ? 'hidden' : ''}"
+                class="hidden lg:block min-w-28"
                 hover="hover:variant-soft-primary"
                 active="bg-primary-300-600-token"
                 background="bg-surface-100-800-token"
@@ -705,6 +709,7 @@
                     </AppRailAnchor>
                 </svelte:fragment>
             </AppRail>
+        {/if}
     </svelte:fragment>
 
 	<!-- Router Slot -->

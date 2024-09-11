@@ -10,8 +10,10 @@ import ConnectionsIcon from "$lib/components/Icons/ConnectionsIcon.svelte";
 import HandshakeIcon from "$lib/components/Icons/HandshakeIcon.svelte";
 import ArrowIcon from "$lib/components/Icons/ArrowIcon.svelte";
 import { hideAppBarsStore } from '$lib/stores/gui';
-import { goto } from "$app/navigation";
+import { beforeNavigate, goto } from "$app/navigation";
 import { onMount } from "svelte";
+
+const satshootHeaderClasses = "h1 text-center text-primary-500";
 
 const mainCardClasses = "card card-hover bg-surface-100-800-token p-4 " +
                     "flex flex-col items-center col-start-2 " +
@@ -35,13 +37,25 @@ onMount(()=>{
     }
 });
 
+beforeNavigate(() => $hideAppBarsStore = false);
+
 </script>
 
 
 <div class={"bg-gradient-to-br from-primary-500 to-tertiary-400 " +
             "p-8 h-full grid grid-cols-[2%_1fr_2%] " +
             "sm:grid-cols-[10%_1fr_10%] gap-y-8"}>
-    <h1 class="h1 col-start-2 text-center">SatShoot</h1>
+    <div class="card col-start-2 bg-white px-8 py-4 flex justify-center">
+        <div class="flex flex-col items-center">
+            <div class="flex gap-x-4 items-center">
+                <img src="/satshoot.svg" alt="logo" />
+                <h1 class="{satshootHeaderClasses}">
+                    SatShoot
+                </h1>
+            </div>
+            <h2 class="h2 text-center">Freedom of Work</h2>
+        </div>
+    </div>
     <div class="{mainCardClasses}">
         <h2 class="h2 sm:h1 font-bold text-center " >
             Unstoppable Freelancing on Nostr
@@ -73,13 +87,15 @@ onMount(()=>{
         <!-- <span><HandshakeIcon iconType={'regular'} sizeClass={'text-xl'} /></span> -->
     </div>
 
+    <div class="col-start-2 flex justify-center">
     <button
         type="button"
-        class="btn btn-lg col-start-2 font-bold bg-success-500"
+        class="btn btn-lg col-start-2 w-[80vw] sm:w-[60vw] lg:w-[40vw] font-bold bg-success-500"
         on:click={start}
     >
         Get Started
     </button>
+    </div>
 
     <div class="{mainCardClasses}">
         <h2 class="h2 sm:h1 font-bold text-center" >
@@ -114,6 +130,17 @@ onMount(()=>{
             </div>
         </div>
     </div>
+
+    <div class="col-start-2 flex justify-center">
+    <button
+        type="button"
+        class="btn btn-lg col-start-2 w-[80vw] sm:w-[60vw] lg:w-[40vw] font-bold bg-success-500"
+        on:click={start}
+    >
+        Try SatShoot
+    </button>
+    </div>
+
     <div class="{mainCardClasses}">
         <h2 class="h2 sm:h1 font-bold text-center" >
             Use Freedom Technology to get rid of Middle-men
@@ -233,5 +260,14 @@ onMount(()=>{
                 </li>
             </ul>
         </div>
+    </div>
+    <div class="col-start-2 flex justify-center">
+        <button
+            type="button"
+            class="btn btn-lg col-start-2 w-[80vw] sm:w-[60vw] lg:w-[40vw] font-bold bg-success-500"
+            on:click={start}
+        >
+            Let's Do This
+        </button>
     </div>
 </div>
