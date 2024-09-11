@@ -10,7 +10,7 @@
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
-    import ReadyToTroubleshootIcon from "$lib/components/Icons/ReadyToTroubleshootIcon.svelte";
+    import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
     import ReadyToTroubleshootModal from "$lib/components/Modals/ReadyToTroubleshootModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
@@ -185,7 +185,7 @@
                     readyToTroubleshoot();
                 }}
             >
-                <ReadyToTroubleshootIcon extraClasses={'text-3xl '}/>
+                <TroubleshootIcon extraClasses={'text-3xl '}/>
             </button>
         </div>
     {/if}
