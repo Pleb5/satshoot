@@ -15,7 +15,7 @@ import { onMount } from "svelte";
 
 const satshootHeaderClasses = "h1 text-center text-primary-500";
 
-const mainCardClasses = "card card-hover bg-surface-100-800-token p-4 " +
+const mainCardClasses = "text-white p-4 " +
                     "flex flex-col items-center col-start-2 " +
                     "leading-normal sm:leading-loose";
 
@@ -43,23 +43,23 @@ beforeNavigate(() => $hideAppBarsStore = false);
 
 <div class={"bg-gradient-to-br from-primary-500 to-tertiary-400 " +
             "p-8 h-full grid grid-cols-[2%_1fr_2%] " +
-            "sm:grid-cols-[10%_1fr_10%] gap-y-8"}>
-    <div class="card col-start-2 bg-white px-8 py-4 flex justify-center">
+            "sm:grid-cols-[10%_1fr_10%] gap-y-2"}>
+    <div class="col-start-2 px-8 py-4 flex justify-center">
         <div class="flex flex-col items-center">
-            <div class="flex gap-x-4 items-center">
+            <div class=" card p-4 flex gap-x-4 items-center bg-white ">
                 <img src="/satshoot.svg" alt="logo" />
                 <h1 class="{satshootHeaderClasses}">
                     SatShoot
                 </h1>
             </div>
-            <h2 class="h2 text-center">Freedom of Work</h2>
+            <h2 class="h2 text-center text-white">Freedom of Work</h2>
         </div>
     </div>
     <div class="{mainCardClasses}">
         <h2 class="h2 sm:h1 font-bold text-center " >
             Unstoppable Freelancing on Nostr
         </h2>
-        <h3 class="h3 sm:h2 text-center m-2">
+        <h3 class="h3 sm:h2 text-center mt-2">
             Join the freedom economy
         </h3>
     </div>
@@ -85,21 +85,11 @@ beforeNavigate(() => $hideAppBarsStore = false);
         <!-- <span><HandshakeIcon iconType={'regular'} sizeClass={'text-xl'} /></span> -->
     </div>
 
-    <div class="col-start-2 flex justify-center">
-    <button
-        type="button"
-        class="btn btn-lg col-start-2 w-[80vw] sm:w-[60vw] lg:w-[40vw] font-bold bg-success-500"
-        on:click={start}
-    >
-        Get Started
-    </button>
-    </div>
-
     <div class="{mainCardClasses}">
         <h2 class="h2 sm:h1 font-bold text-center" >
             Leverage Your Nostr Network
         </h2>
-        <h3 class="h3 sm:h2 text-center m-2">
+        <h3 class="h3 sm:h2 text-center ">
             One account, endless possibilities:
         </h3>
     </div>
@@ -143,7 +133,7 @@ beforeNavigate(() => $hideAppBarsStore = false);
         <h2 class="h2 sm:h1 font-bold text-center" >
             Use Freedom Technology to get rid of Middle-men
         </h2>
-        <h3 class="h3 sm:h2 text-center m-2">
+        <h3 class="h3 sm:h2 text-center">
             No centralized 3rd parties:
         </h3>
     </div>
