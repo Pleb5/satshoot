@@ -17,6 +17,7 @@
     import currentUser, { loggedIn } from "$lib/stores/user";
     import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
     import { onDestroy, onMount } from "svelte";
+    import BullhornIcon from "$lib/components/Icons/BullhornIcon.svelte";
 
     const modalStore = getModalStore();
 
@@ -185,7 +186,7 @@
                     readyToTroubleshoot();
                 }}
             >
-                <TroubleshootIcon extraClasses={'text-3xl '}/>
+                <BullhornIcon extraClasses={'text-3xl '}/>
             </button>
         </div>
     {/if}
