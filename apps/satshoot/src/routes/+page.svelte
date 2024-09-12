@@ -29,12 +29,11 @@ function start() {
     goto('/landing-step-2');
 }
 
+$: if ($loggedIn) goto('/ticket-feed');
+
 onMount(()=>{
-    if ($loggedIn) goto('/ticket-feed');
-    else {
-        // Hide app bars
-        $hideAppBarsStore = true;
-    }
+    // Hide app bars
+    $hideAppBarsStore = true;
 });
 
 beforeNavigate(() => $hideAppBarsStore = false);
@@ -61,10 +60,9 @@ beforeNavigate(() => $hideAppBarsStore = false);
             Unstoppable Freelancing on Nostr
         </h2>
         <h3 class="h3 sm:h2 text-center m-2">
-            Join the freedom economy:
+            Join the freedom economy
         </h3>
     </div>
-
     <div class="{smallCardContainerClasses}">
         <div class="{smallCardClasses}">
             <h2 class="{smallCardHeaderClasses}">
