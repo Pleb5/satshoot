@@ -294,6 +294,7 @@ export function troubleshootZap(zap: NDKEvent): boolean {
 export function restoreRelaysIfDown() {
     const $ndk = get(ndk);
     console.log('Check relays and try to reconnect if they are down..')
+    console.log('relays connected = ', $ndk.pool.stats().connected)
     if ($ndk.pool.stats().connected === 0) {
         connected.set(false);
         const retriesLeft = get(retryConnection);

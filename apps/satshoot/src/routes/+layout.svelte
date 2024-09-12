@@ -46,7 +46,7 @@
 
     import { initializeUser, logout, restoreRelaysIfDown } from '$lib/utils/helpers';
 
-    import { wot, wotUpdating } from '$lib/stores/wot';
+    import { wot, wotUpdating, wotUpdateFailed } from '$lib/stores/wot';
 
     import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
 
@@ -155,6 +155,7 @@
     });
 
     $: if($retriesFailed > 0) {
+        toastStore.clear();
         const t: ToastSettings = {
             message: 'Could not reconnect to Relays!',
             autohide: false,
@@ -169,6 +170,21 @@
         toastStore.trigger(t);
     }
 
+    $: if($wotUpdateFailed) {
+        toastStore.clear();
+        const t: ToastSettings = {
+            message: 'Could not reconnect to Relays!',
+            autohide: false,
+            action: {
+                label: 'Reload page',
+                response: () => {
+                    window.location.reload();
+                },
+            },
+            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold'
+        };
+        toastStore.trigger(t);
+    }
 
 
     async function restoreLogin() {
