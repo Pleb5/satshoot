@@ -3,12 +3,12 @@ import ShareIcon from "$lib/components/Icons/ShareIcon.svelte";
 import StarIcon from "$lib/components/Icons/StarIcon.svelte";
 import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
 import BitcoinIcon from "$lib/components/Icons/BitcoinIcon.svelte";
-import { loggedIn } from "$lib/stores/user";
 import BullhornIcon from "$lib/components/Icons/BullhornIcon.svelte";
 import ShieldIcon from "$lib/components/Icons/ShieldIcon.svelte";
 import ConnectionsIcon from "$lib/components/Icons/ConnectionsIcon.svelte";
-import HandshakeIcon from "$lib/components/Icons/HandshakeIcon.svelte";
 import ArrowIcon from "$lib/components/Icons/ArrowIcon.svelte";
+import QuestionIcon from "$lib/components/Icons/QuestionIcon.svelte";
+import { loggedIn } from "$lib/stores/user";
 import { hideAppBarsStore } from '$lib/stores/gui';
 import { beforeNavigate, goto } from "$app/navigation";
 import { onMount } from "svelte";
@@ -244,6 +244,47 @@ beforeNavigate(() => $hideAppBarsStore = false);
                     <span><ArrowIcon  sizeClass={'text-xl'}/></span>
                     <span>
                         <strong>Instant, direct payments. No chargeback risk.</strong> 
+                    </span>
+                </li>
+            </ul>
+        </div>
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span><QuestionIcon extraClasses='text-2xl text-tertiary-500'/></span>
+                <span>So what's the catch?</span>
+            </h2>
+
+            <div>
+                <span>
+                    <span class="text-primary-700 font-bold">SatShoot</span> is a  
+                    <a class="anchor" href="https://github.com/Pleb5/satshoot">
+                        <strong>FOSS </strong>
+                    </a> 
+                    project but there are some ways to  
+                    <strong>pledge </strong> 
+                    your support:
+                </span>
+            </div>
+            <ul class="list">
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Freelancers can pledge a chosen percentage of 
+                        their reward to SatShoot
+                    </span>
+                </li>
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Clients can pledge an arbitrary fixed amount after 
+                        successfully closed deals
+                    </span>
+                </li>
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Extra paid services may be introduced in the future. 
+                        These will be non-essential, opt-in but handy features.
                     </span>
                 </li>
             </ul>

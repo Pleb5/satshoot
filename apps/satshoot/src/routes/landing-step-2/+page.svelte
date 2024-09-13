@@ -6,7 +6,7 @@ import redirectStore from "$lib/stores/network";
 
 const mainClasses = "flex justify-center items-center w-full h-full " +
                     "bg-gradient-to-br from-primary-500 to-tertiary-400 ";
-const cardClasses = "card card-hover p-8 bg-success-500 text-white";
+const cardClasses = "card card-hover p-8 m-2 bg-success-500 text-white";
 
 onMount(()=>$hideAppBarsStore = true);
 
@@ -16,7 +16,7 @@ beforeNavigate(()=>$hideAppBarsStore = false);
 <div class="{mainClasses}">
     <div class="flex flex-col items-center gap-y-4 ">
         <h1 class="h1 text-center text-white">Sign up as:</h1>
-        <div class="flex gap-x-4">
+        <div class="flex gap-x-4 flex-wrap justify-center gap-y-4">
             <a href="/login" on:click={()=>$redirectStore = '/ticket-feed'}>
                 <div class="{cardClasses}">
                     <h1 class="h1 text-center">Freelancer</h1>
@@ -30,4 +30,5 @@ beforeNavigate(()=>$hideAppBarsStore = false);
         </div>
     </div>
 </div>
+
 
