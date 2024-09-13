@@ -23,7 +23,6 @@
         online,
         retryConnection,
         maxRetryAttempts,
-        retriesFailed
     } from '$lib/stores/network';
 
     import { 
@@ -44,7 +43,7 @@
     import { allReceivedZaps, wotFilteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from "$lib/stores/notifications";
 
-    import { initializeUser, logout, restoreRelaysIfDown } from '$lib/utils/helpers';
+    import { initializeUser, logout, checkRelayConnections } from '$lib/utils/helpers';
 
     import { wot, wotUpdating, wotUpdateFailed } from '$lib/stores/wot';
 
@@ -138,7 +137,7 @@
 
     $ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
         console.log('relay disconnected', relay)
-        restoreRelaysIfDown();
+        checkRelayConnections();
     });
 
     $ndk.pool.on('relay:connect', () => {
@@ -150,11 +149,10 @@
             console.log('connected')
             // If we managed to connect reset max connection retry attempts
             $retryConnection = maxRetryAttempts;
-            retryConnection.set(maxRetryAttempts);
         }
     });
 
-    $: if($retriesFailed > 0) {
+    $: if($retryConnection === 0) {
         toastStore.clear();
         const t: ToastSettings = {
             message: 'Could not reconnect to Relays!',
@@ -168,12 +166,15 @@
             classes: 'flex flex-col items-center gap-y-2 text-lg font-bold'
         };
         toastStore.trigger(t);
+    } else {
+        toastStore.clear();
+        $retryConnection = maxRetryAttempts;
     }
 
     $: if($wotUpdateFailed) {
         toastStore.clear();
         const t: ToastSettings = {
-            message: 'Could not reconnect to Relays!',
+            message: 'Could not update Web of Trust!',
             autohide: false,
             action: {
                 label: 'Reload page',

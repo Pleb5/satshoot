@@ -1,6 +1,6 @@
 <script lang="ts">
 import { type NDKEvent } from "@nostr-dev-kit/ndk";
-import { restoreRelaysIfDown } from "$lib/utils/helpers";
+import { checkRelayConnections } from "$lib/utils/helpers";
 import currentUser from "$lib/stores/user";
 import OfferCard from "$lib/components/Cards/OfferCard.svelte";
 import TicketCard from "$lib/components/Cards/TicketCard.svelte";
@@ -62,7 +62,7 @@ function clearAll() {
     $notifications = [];
 }
 
-onMount(() => restoreRelaysIfDown());
+onMount(() => checkRelayConnections());
 
 </script>
 

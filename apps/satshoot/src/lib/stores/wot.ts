@@ -81,10 +81,19 @@ export function wotFiltered(events: NDKEvent[]):NDKEvent[] {
     return filteredEvents;
 }
 export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
+    // This should not take more than 15 sec
+    setTimeout(
+        () => {
+            if (get(wotUpdating)) {
+                wotUpdateFailed.set(true);
+                throw new Error('Updating Wot score took too long!');
+            }
+        },
+        15_000
+    );
     const user = get(currentUser);
     try {
         wotUpdating.set(true);
-        wotUpdateFailed.set(true);
         console.log('wotupdating', get(wotUpdating))
         await tick();
         if (!user) throw new Error('Could not get user');
@@ -115,6 +124,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         console.log('trustBasisEvents', trustBasisEvents)
 
         if (trustBasisEvents.size === 0) {
+            console.log('Could not fetch events to build trust network!')
             throw new Error('Could not fetch events to build trust network!');
         }
 
@@ -160,6 +170,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         followsUpdated.set(Math.floor(Date.now() / 1000));
 
         wotUpdating.set(false);
+        wotUpdateFailed.set(false);
 
         console.log("Follows", get(currentUserFollows));
         console.log("wot pubkeys", get(wot));

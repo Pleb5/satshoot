@@ -59,8 +59,8 @@ import { dev, browser } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import {
     retryConnection,
-    retriesFailed,
-    retryDelay
+    retryDelay,
+    maxRetryAttempts
 } from '../stores/network';
 
 
@@ -291,27 +291,24 @@ export function troubleshootZap(zap: NDKEvent): boolean {
     return true;
 }
 
-export function restoreRelaysIfDown() {
+export function checkRelayConnections() {
     const $ndk = get(ndk);
     console.log('Check relays and try to reconnect if they are down..')
     console.log('relays connected = ', $ndk.pool.stats().connected)
     if ($ndk.pool.stats().connected === 0) {
         connected.set(false);
-        const retriesLeft = get(retryConnection);
+        let retriesLeft = get(retryConnection);
         console.log('retryConnection', retriesLeft)
         if (retriesLeft > 0) {
-            retryConnection.set(retriesLeft - 1);
+            retriesLeft -= 1;
+            retryConnection.set(retriesLeft);
             // Try to reconnect to relays
             $ndk.pool.connect();
             // Re-check recursively
-            setTimeout(restoreRelaysIfDown, retryDelay);
+            setTimeout(checkRelayConnections, retryDelay);
             // window.location.reload();
-        } else { 
-            // This is to always trigger this not just once.
-            // When user navigates this check can run multiple times
-            // but if a boolean was used, this could only be triggered once
-            retriesFailed.set(get(retriesFailed) + 1);
         }
-
+    } else {
+        retryConnection.set(maxRetryAttempts);
     }
 }

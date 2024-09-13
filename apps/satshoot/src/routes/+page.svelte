@@ -5,7 +5,7 @@
     import { wot } from '$lib/stores/wot';
     import ndk, { connected } from "$lib/stores/ndk";
     import { online } from "$lib/stores/network";
-    import { restoreRelaysIfDown } from "$lib/utils/helpers";
+    import { checkRelayConnections } from "$lib/utils/helpers";
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from "@nostr-dev-kit/ndk";
 
@@ -111,7 +111,7 @@
 
 
     onMount(() => {
-        restoreRelaysIfDown();
+        checkRelayConnections();
         mounted = true;
     });
 
