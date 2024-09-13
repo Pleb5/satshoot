@@ -3,7 +3,7 @@
     import { getDrawerStore, getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
-    import { SlideToggle, LightSwitch } from '@skeletonlabs/skeleton';
+    import { SlideToggle } from '@skeletonlabs/skeleton';
     import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 
     import notificationsEnabled from '$lib/stores/notifications';
@@ -179,10 +179,6 @@
                 </SlideToggle>
             </li>
             <hr class="!my-4" />
-            <li class="flex justify-start gap-x-2 items-center">
-                <LightSwitch />
-                <span>Theme</span>
-            </li>
             <li>
                 <a
                     class="justify-start {classesActive(aboutHref)}"
