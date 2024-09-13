@@ -10,8 +10,8 @@
 
     import { logout } from '$lib/utils/helpers';
 
-    import UserTicketsIcon from '../Icons/UserTicketsIcon.svelte';
-    import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
+    import TicketIcon from '../Icons/TicketIcon.svelte';
+    import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
 
@@ -138,7 +138,7 @@
                         on:click={()=>{drawerStore.close()}}
                     >
                         <span class="w-6 text-center">
-                            <UserTicketsIcon sizeClass={''}/>
+                            <TicketIcon sizeClass={''}/>
                         </span>
                         <span>My Tickets</span>
                     </a>
@@ -150,7 +150,7 @@
                         on:click={()=>{drawerStore.close()}}
                     >
                         <span class="w-6 text-center">
-                            <UserOffersIcon sizeClass={'text-lg'}/>
+                            <BitcoinIcon extraClasses={'text-lg'}/>
                         </span>
                         <span>My Offers</span>
                     </a>

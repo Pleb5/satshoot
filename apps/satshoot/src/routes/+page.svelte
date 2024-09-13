@@ -1,194 +1,302 @@
 <script lang="ts">
-    import { TicketStatus, TicketEvent } from "$lib/events/TicketEvent";
-    import TicketCard from "$lib/components/Cards/TicketCard.svelte";
+import ShareIcon from "$lib/components/Icons/ShareIcon.svelte";
+import StarIcon from "$lib/components/Icons/StarIcon.svelte";
+import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
+import BitcoinIcon from "$lib/components/Icons/BitcoinIcon.svelte";
+import BullhornIcon from "$lib/components/Icons/BullhornIcon.svelte";
+import ShieldIcon from "$lib/components/Icons/ShieldIcon.svelte";
+import ConnectionsIcon from "$lib/components/Icons/ConnectionsIcon.svelte";
+import ArrowIcon from "$lib/components/Icons/ArrowIcon.svelte";
+import QuestionIcon from "$lib/components/Icons/QuestionIcon.svelte";
+import { loggedIn } from "$lib/stores/user";
+import { hideAppBarsStore } from '$lib/stores/gui';
+import { beforeNavigate, goto } from "$app/navigation";
+import { onMount } from "svelte";
 
-    import { wot } from '$lib/stores/wot';
-    import ndk, { connected } from "$lib/stores/ndk";
-    import { online } from "$lib/stores/network";
-    import { checkRelayConnections } from "$lib/utils/helpers";
+const satshootHeaderClasses = "h1 text-center text-primary-500";
 
-    import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from "@nostr-dev-kit/ndk";
+const mainCardClasses = "text-white p-4 " +
+                    "flex flex-col items-center col-start-2 " +
+                    "leading-normal sm:leading-loose";
 
-    import { InputChip } from "@skeletonlabs/skeleton";
-    import ReadyToTroubleshootIcon from "$lib/components/Icons/ReadyToTroubleshootIcon.svelte";
-    import ReadyToTroubleshootModal from "$lib/components/Modals/ReadyToTroubleshootModal.svelte";
-    import { getModalStore } from "@skeletonlabs/skeleton";
-    import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
-    import currentUser, { loggedIn } from "$lib/stores/user";
-    import type { ExtendedBaseType, NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
-    import { onDestroy, onMount } from "svelte";
+const smallCardContainerClasses = "col-start-2 flex flex-wrap items-center " +
+                                "justify-center gap-x-8 gap-y-4";
+const smallCardClasses = "card card-hover bg-surface-100-800-token p-4 " +
+                        "flex flex-col items-center gap-y-2 w-[80vw] sm:w-[40vw]";
+const smallCardHeaderClasses = "h4 sm:h3 text-center"
 
-    const modalStore = getModalStore();
+function start() {
+    goto('/landing-step-2');
+}
 
-    let newTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let filterInput = '';
-    let filterList: string[] = [];
-    let ticketList: Set<TicketEvent> = new Set;
-    let mounted = false;
+$: if ($loggedIn) goto('/ticket-feed');
 
-    function filterTickets() {
-        // We need to check all tickets against all filters
-        if (filterList.length > 0) {
-            const filteredTicketList:Set<TicketEvent> = new Set();
-            ticketList.forEach((ticket: TicketEvent) => {
-                filterList.forEach((filter: string) => {
-                    const lowerCaseFilter = filter.toLowerCase();
+onMount(()=>{
+    // Hide app bars
+    $hideAppBarsStore = true;
+});
 
-                    const lowerCaseTitle = ticket.title.toLowerCase();
-                    const lowerCaseDescription = ticket.description.toLowerCase();
-
-                    let tagsContain: boolean = false;
-                    ticket.tags.forEach((tag: NDKTag) => {
-                        if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
-                            tagsContain = true;
-                        }
-                    });
-
-                    const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-                    const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
-
-                    if (titleContains || descContains || tagsContain) {
-                        filteredTicketList.add(ticket);
-                    }
-                });
-            });
-            ticketList = filteredTicketList;
-        }
-    }
-
-    function addTagAndFilter(tag: string) {
-        if (!filterList.includes(tag)) {
-            filterList.push(tag);
-            filterList = filterList;
-            filterTickets();
-        }
-    }
-
-    function readyToTroubleshoot() {
-        const modalComponent: ModalComponent = {
-            ref: ReadyToTroubleshootModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
-    }
-
-    $: if($newTickets && filterList) {
-        // We just received a ticket 
-        ticketList = new Set($newTickets.filter((t: TicketEvent) => {
-            // New ticket check: if a ticket status is changed this removes not new tickets
-            const newTicket = (t.status === TicketStatus.New);
-            // wot is always at least 3 if there is a user logged in
-            // only update filter if other users are also present
-            const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
-
-            return newTicket && partOfWot;
-        }));
-
-        if (filterList.length > 0) {
-            filterTickets();
-        }
-    }
-
-    $: if ($loggedIn && mounted) {
-        newTickets = $ndk.storeSubscribe(
-            {
-                kinds: [NDKKind.TroubleshootTicket],
-            },
-            {
-                autoStart: true,
-                closeOnEose: false,
-                groupable: false,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            },
-            TicketEvent
-        );
-    }
-
-
-
-    onMount(() => {
-        checkRelayConnections();
-        mounted = true;
-    });
-
-    onDestroy(() => {
-        if (newTickets) newTickets.unsubscribe();
-    });
+beforeNavigate(() => $hideAppBarsStore = false);
 
 </script>
 
-{#if $currentUser}
-    <div class="flex flex-col justify-center gap-y-2 mt-2">
-        <div class="sticky top-2 w-80 z-40 mx-auto flex gap-x-2 items-center justify-center">
-            <InputChip
-            bind:value={filterList}
-            bind:input={filterInput}
-            name="chips"
-            placeholder="Filter by Title, Description or Tags"
-        />
-            <!-- <button  -->
-            <!--     class="btn btn-icon" -->
-            <!--     on:click={() => { -->
-            <!--             if (filterInput) { -->
-            <!--                 filterList = [...filterList, filterInput]; -->
-            <!--                 filterInput = ''; -->
-            <!--             } -->
-            <!--         } -->
-            <!--     } -->
-            <!-- > -->
-            <!--     <i class="fa-solid fa-magnifying-glass text-lg"></i> -->
-            <!-- </button> -->
-        </div>
 
-        {#if ticketList.size > 0}
-            <div class="grid grid-cols-1 gap-y-4 mb-8">
-                {#each ticketList as ticket (ticket.id)}
-                    <div class="flex justify-center">
-                        <TicketCard {ticket}
-                        titleSize={'md lg:text-xl'}
-                        tagCallback={addTagAndFilter} 
-                    />
-                    </div>
-                {/each}
+<div class={"bg-gradient-to-br from-primary-500 to-tertiary-400 " +
+            "p-8 h-full grid grid-cols-[2%_1fr_2%] " +
+            "sm:grid-cols-[10%_1fr_10%] gap-y-2"}>
+    <div class="col-start-2 px-8 py-4 flex justify-center">
+        <div class="flex flex-col items-center">
+            <div class=" card p-4 flex gap-x-4 items-center bg-white ">
+                <img src="/satshoot.svg" alt="logo" />
+                <h1 class="{satshootHeaderClasses}">
+                    SatShoot
+                </h1>
             </div>
-        {:else}
-            <div class="flex flex-col items-center gap-y-8">
-                {#each {length: 4} as _ }
-                    <section class="w-[300px] md:w-[400px]">
-                        <div class="p-4 space-y-4">
-                            <div class="placeholder animate-pulse" />
-                            <div class="grid grid-cols-3 gap-8">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                            </div>
-                            <div class="grid grid-cols-4 gap-4">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                            </div>
-                        </div>
-                    </section>
-                {/each}
-            </div>
-        {/if}
-    </div>
-    {#if $connected && $online}
-        <div class="fixed bottom-20 right-8">
-            <button class="btn btn-icon-xl bg-primary-300-600-token"
-                on:click={()=> {
-                    readyToTroubleshoot();
-                }}
-            >
-                <ReadyToTroubleshootIcon extraClasses={'text-3xl '}/>
-            </button>
+            <h2 class="h2 text-center text-white">Freedom of Work</h2>
         </div>
-    {/if}
-{:else} 
-    <h2 class="h2 mt-12 text-center font-bold">Login to view Ticket feed!</h2>
-{/if}
+    </div>
+    <div class="{mainCardClasses}">
+        <h2 class="h2 sm:h1 font-bold text-center " >
+            Unstoppable Freelancing on Nostr
+        </h2>
+        <h3 class="h3 sm:h2 text-center mt-2">
+            Join the freedom economy
+        </h3>
+    </div>
+    <div class="{smallCardContainerClasses}">
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span><TroubleshootIcon extraClasses={"text-2xl"}/></span>
+                <span>Find Freelancers for any job</span>
+            </h2>
+            <div>
+                Minor tasks or big-ticket projects
+            </div>
+        </div>
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span><BitcoinIcon extraClasses={'text-2xl'}/></span>
+                <span>Earn sats as a Freelancer</span>
+            </h2>
+            <div>
+                Bid on Tickets with Offers, get selected and start working
+            </div>
+        </div>
+        <!-- <span><HandshakeIcon iconType={'regular'} sizeClass={'text-xl'} /></span> -->
+    </div>
+
+    <div class="{mainCardClasses}">
+        <h2 class="h2 sm:h1 font-bold text-center" >
+            Leverage Your Nostr Network
+        </h2>
+        <h3 class="h3 sm:h2 text-center ">
+            One account, endless possibilities:
+        </h3>
+    </div>
+    <div class="{smallCardContainerClasses}">
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span><ShareIcon extraClasses={'text-2xl'}/></span>
+                <span>Share Tickets in Your Feed</span>
+            </h2>
+            <div class="text-wrap">
+                <span>
+                    <strong>Post </strong> 
+                    jobs and issues as short text to gain visibility
+                    <strong>across nostr-apps</strong> 
+                </span>
+            </div>
+        </div>
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span><BullhornIcon extraClasses={'text-2xl'}/></span>
+                <span>Promote Yourself Everywhere</span>
+            </h2>
+            <div class="text-wrap">
+                {"Post about Your topics of interest whenever " +
+                    "You are ready to work"}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-start-2 flex justify-center">
+    <button
+        type="button"
+        class="btn btn-lg col-start-2 w-[80vw] sm:w-[60vw] lg:w-[40vw] font-bold bg-success-500"
+        on:click={start}
+    >
+        Try SatShoot
+    </button>
+    </div>
+
+    <div class="{mainCardClasses}">
+        <h2 class="h2 sm:h1 font-bold text-center" >
+            Use Freedom Technology to get rid of Middle-men
+        </h2>
+        <h3 class="h3 sm:h2 text-center">
+            No centralized 3rd parties:
+        </h3>
+    </div>
+    <div class="{smallCardContainerClasses}">
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span><StarIcon extraClasses={'text-2xl text-warning-500'}/></span>
+                <span>Build an Unstoppable Reputation</span>
+            </h2>
+            <ul class="list">
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        SatShoot
+                        <strong>can never</strong> 
+                        delete your data or 
+                        <strong>censor</strong> 
+                        you
+                    </span>
+                </li>
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Your identity and data is 
+                        <strong>portable across</strong> 
+                        the 
+                        <strong>Nostr </strong>
+                        app-universe 
+                    </span>
+                </li>
+            </ul>
+        </div>
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span>
+                    <ConnectionsIcon extraClasses='text-2xl text-tertiary-500'/>
+                </span>
+                <span>Connections You control</span>
+            </h2>
+            <ul class="list">
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        SatShoot
+                        <strong>cannot stop You </strong> 
+                        from getting a deal 
+                    </span>
+                </li>
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        You can 
+                        <strong>switch</strong> 
+                        to another app at 
+                        <strong>any time</strong> 
+                        you like
+                    </span>
+                </li>
+            </ul>
+        </div>
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span><ShieldIcon extraClasses='text-2xl'/></span>
+                <span>Avoid spam and scam</span>
+            </h2>
+            <ul class="list">
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Only engage with your cryptographically verified 
+                        <strong>Web of Trust (WoT)</strong> 
+                    </span>
+                </li>
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Exclude bad actors based on your follows, mutes and reports
+                        across all nostr-apps
+                    </span>
+                </li>
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Select the best clients and freelancers based on reviews
+                        and other metrics
+                    </span>
+                </li>
+            </ul>
+            <div class="text-wrap">
+            </div>
+        </div>
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span><BitcoinIcon extraClasses='text-2xl text-primary-500'/></span>
+                <span>Instant and final payments</span>
+            </h2>
+            <ul class="list">
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Pay and earn in sats using  
+                        <strong>Lightning </strong> 
+                        (and soon 
+                        <strong>eCash)</strong> 
+                    </span>
+                </li>
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        <strong>Instant, direct payments. No chargeback risk.</strong> 
+                    </span>
+                </li>
+            </ul>
+        </div>
+        <div class="{smallCardClasses}">
+            <h2 class="{smallCardHeaderClasses}">
+                <span><QuestionIcon extraClasses='text-2xl text-tertiary-500'/></span>
+                <span>So what's the catch?</span>
+            </h2>
+
+            <div>
+                <span>
+                    <span class="text-primary-700 font-bold">SatShoot</span> is a  
+                    <a class="anchor" href="https://github.com/Pleb5/satshoot">
+                        <strong>FOSS </strong>
+                    </a> 
+                    project but there are some ways to  
+                    <strong>pledge </strong> 
+                    your support:
+                </span>
+            </div>
+            <ul class="list">
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Freelancers can pledge a chosen percentage of 
+                        their reward to SatShoot
+                    </span>
+                </li>
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Clients can pledge an arbitrary fixed amount after 
+                        successfully closed deals
+                    </span>
+                </li>
+                <li>
+                    <span><ArrowIcon  sizeClass={'text-xl'}/></span>
+                    <span>
+                        Extra paid services may be introduced in the future. 
+                        These will be non-essential, opt-in but handy features.
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-start-2 flex justify-center">
+        <button
+            type="button"
+            class="btn btn-lg col-start-2 w-[80vw] sm:w-[60vw] lg:w-[40vw] font-bold bg-success-500"
+            on:click={start}
+        >
+            Let's Do This
+        </button>
+    </div>
+</div>
