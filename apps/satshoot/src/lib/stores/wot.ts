@@ -49,6 +49,7 @@ const secondOrderReportWot = -0.5*(secondOrderFollowWot);
 export const useBootstrapAccount = true;
 
 export const wotUpdating = writable(false);
+export const wotUpdateFailed = writable(false);
 
 export const wot = derived(
     [networkWoTScores, minWot, currentUser],
@@ -80,6 +81,16 @@ export function wotFiltered(events: NDKEvent[]):NDKEvent[] {
     return filteredEvents;
 }
 export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
+    // This should not take more than 15 sec
+    setTimeout(
+        () => {
+            if (get(wotUpdating)) {
+                wotUpdateFailed.set(true);
+                throw new Error('Updating Wot score took too long!');
+            }
+        },
+        15_000
+    );
     const user = get(currentUser);
     try {
         wotUpdating.set(true);
@@ -112,7 +123,8 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
 
         console.log('trustBasisEvents', trustBasisEvents)
 
-        if (trustBasisEvents.length === 0) {
+        if (trustBasisEvents.size === 0) {
+            console.log('Could not fetch events to build trust network!')
             throw new Error('Could not fetch events to build trust network!');
         }
 
@@ -145,7 +157,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
 
         console.log('Network event store', networkStore)
 
-        if (networkStore.length === 0) {
+        if (networkStore.size === 0) {
             throw new Error('Could not fetch events to build trust network from INDIRECT follows!');
         }
 
@@ -158,11 +170,13 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         followsUpdated.set(Math.floor(Date.now() / 1000));
 
         wotUpdating.set(false);
+        wotUpdateFailed.set(false);
 
         console.log("Follows", get(currentUserFollows));
         console.log("wot pubkeys", get(wot));
     } catch (e) {
         wotUpdating.set(false);
+        wotUpdateFailed.set(true);
         console.log('Could not update Web of Trust scores: ', e)
     }
 }

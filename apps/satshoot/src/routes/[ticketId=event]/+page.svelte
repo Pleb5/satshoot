@@ -8,7 +8,7 @@
     import { connected } from "$lib/stores/ndk";
     
     import redirectStore from '$lib/stores/network';
-    import { restoreRelaysIfDown } from "$lib/utils/helpers";
+    import { checkRelayConnections } from "$lib/utils/helpers";
 
     import { wot } from '$lib/stores/wot';
 
@@ -232,7 +232,7 @@
         placement: 'top'
     };
 
-    onMount(() => restoreRelaysIfDown());
+    onMount(() => checkRelayConnections());
 
     onDestroy(() => {
         ticketSubscription?.stop()
