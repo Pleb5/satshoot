@@ -273,7 +273,7 @@
 </script>
 
 
-<div class="card bg-surface-200-700-token sm:max-w-[70vw] lg:max-w-[60vw] flex-grow text-wrap">
+<div class="card bg-surface-200-700-token max-w-[95vw] sm:max-w-[70vw] lg:max-w-[60vw] flex-grow text-wrap">
     {#if ticket}
         <header class="card-header grid grid-cols-[15%_1fr_15%] items-start">
             {#if ticketChat}
