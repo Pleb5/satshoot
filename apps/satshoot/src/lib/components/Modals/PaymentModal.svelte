@@ -1,23 +1,28 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
-    import currentUser from "$lib/stores/user";
+    import ndk from '$lib/stores/ndk';
+    import currentUser from '$lib/stores/user';
     // import type { NDKZapMethod } from "@nostr-dev-kit/ndk";
-    import { generateZapRequest } from "@nostr-dev-kit/ndk";
+    import {
+        generateZapRequest,
+        NDKKind,
+        NDKRelaySet,
+        NDKSubscriptionCacheUsage,
+        type NDKFilter,
+    } from '@nostr-dev-kit/ndk';
     import { TicketEvent } from '$lib/events/TicketEvent';
-
+    import { Invoice } from '@getalby/lightning-tools';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { type SvelteComponent, tick } from "svelte";
-    import type { OfferEvent } from "$lib/events/OfferEvent";
-    import OfferCard from "../Cards/OfferCard.svelte";
-    import { SatShootPubkey } from "$lib/utils/misc";
+    import { type SvelteComponent, tick } from 'svelte';
+    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import OfferCard from '../Cards/OfferCard.svelte';
+    import { SatShootPubkey } from '$lib/utils/misc';
 
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from "@nostr-dev-kit/ndk";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -27,13 +32,24 @@
     export let ticket: TicketEvent;
     export let offer: OfferEvent | null = null;
 
+    enum ToastType {
+        Success = 'success',
+        Warn = 'warning',
+        Error = 'error',
+    }
+
+    enum UserEnum {
+        Satshoot = 'satshoot',
+        Troubleshooter = 'troubleshooter',
+    }
+
     let amount = 0;
     let pledgedAmount = 0;
     let satshootShare = 0;
     let troubleshooterShare = 0;
 
     $: if (offer) {
-        satshootShare = Math.floor(amount * offer.pledgeSplit / 100);
+        satshootShare = Math.floor((amount * offer.pledgeSplit) / 100);
         troubleshooterShare = amount - satshootShare;
     }
 
@@ -41,12 +57,12 @@
 
     const popupClasses = 'card w-60 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto';
     let errorMessage = '';
-     
-    // For tooltip    
+
+    // For tooltip
     const popupPledge: PopupSettings = {
         event: 'click',
         target: 'popupPledge',
-        placement: 'bottom'
+        placement: 'bottom',
     };
 
     async function pay() {
@@ -55,246 +71,274 @@
                 paying = true;
                 await tick();
 
-                // const closedToast: ToastSettings = {
-                //     message: 'Ticket Closed!',
-                //     timeout: 7000,
-                //     background: 'bg-success-300-600-token',
-                // };
-                // toastStore.trigger(closedToast);
-                //
-                // const checkWallet: ToastSettings = {
-                //     message: 'Check your Wallet to make sure the Payment is complete!',
-                //     autohide: false,
-                //     background: 'bg-warning-300-600-token',
-                // };
-                // toastStore.trigger(checkWallet);
-
                 let troubleshooterShareMillisats = troubleshooterShare * 1000;
                 let satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
-                if ( (troubleshooterShareMillisats + satshootSumMillisats) === 0) {
+
+                if (troubleshooterShareMillisats + satshootSumMillisats === 0) {
                     errorMessage = 'Cannot pay 0 sats!';
                     paying = false;
                     return;
                 }
-                const invoices: Map<string, string> = new Map();
-                const paid: Map<string, boolean> = new Map();
-                paid.set('troubleshooter', false);
-                paid.set('satshoot', false);
-                const troubleshooterUser = $ndk.getUser({pubkey: offer.pubkey});
-                const satShootUser = $ndk.getUser({pubkey: SatShootPubkey});
 
-                const troubleshooterZapConfig = await troubleshooterUser.getZapConfiguration();
-                const satshootZapConfig = await satShootUser.getZapConfiguration();
+                const zapRequestRelays = new Map<UserEnum, string[]>();
+                const invoices: Map<
+                    UserEnum,
+                    {
+                        paymentRequest: string;
+                        receiver: string;
+                        eventId: string;
+                        zapper?: string;
+                    }
+                > = new Map();
+                const paid: Map<UserEnum, boolean> = new Map();
+                paid.set(UserEnum.Troubleshooter, false);
+                paid.set(UserEnum.Satshoot, false);
 
-                if (troubleshooterShareMillisats > 0 && !troubleshooterZapConfig) {
-                    errorMessage = 'Could not fetch Troubleshooter zap info!';
-                }
-                if (satshootSumMillisats > 0 && !satshootZapConfig) {
-                    errorMessage = 'Could not fetch SatShoot zap info!';
-                }
+                const troubleshooterUser = $ndk.getUser({ pubkey: offer.pubkey });
 
-                try {
-                    if (troubleshooterShareMillisats > 0 && troubleshooterZapConfig) {
-                        // Get NDKZapper object
-                        const zapper = $ndk.zap(
+                if (troubleshooterShare > 0) {
+                    const zapConfig = await troubleshooterUser
+                        .getZapConfiguration()
+                        .catch((err) => {
+                            console.log(
+                                'Error: An error occurred in getting getZapConfiguration for troubleShooter',
+                                err
+                            );
+                            return null;
+                        });
+
+                    if (zapConfig) {
+                        const invoice = await generateInvoice(
                             offer,
                             troubleshooterShareMillisats,
-                            {tags: [['satshoot']]},
-                        );
-                        const relays = await zapper.relays(offer.pubkey);
-                        const troubleshooterZapRequest = await generateZapRequest(
-                            offer, $ndk, troubleshooterZapConfig!, $currentUser!.pubkey,
-                            troubleshooterShareMillisats, relays
-                            
+                            zapConfig,
+                            offer.pubkey,
+                            {
+                                tags: [['satshoot']],
+                            },
+                            UserEnum.Troubleshooter,
+                            zapRequestRelays
                         );
 
-                        // zapper.zapMethod = 'nip57';
-                        console.log('ndk troubleshooter zapper', zapper)
-                        let troubleshooterInvoice = null;
-                        if (troubleshooterZapRequest) {
-                             troubleshooterInvoice = await zapper.getLnInvoice(
-                                troubleshooterZapRequest, troubleshooterShareMillisats,
-                                troubleshooterZapConfig
-                            );
+                        if (invoice) {
+                            invoices.set(UserEnum.Troubleshooter, {
+                                paymentRequest: invoice,
+                                receiver: offer.pubkey,
+                                eventId: offer.id,
+                                zapper: zapConfig.nostrPubkey,
+                            });
+                        } else {
+                            errorMessage =
+                                'Could not zap Troubleshooter: Failed to fetch payment invoice';
                         }
-                        console.log('troubleshooterInvoice', troubleshooterInvoice)
-                        if (troubleshooterInvoice) {
-                            invoices.set('troubleshooter', troubleshooterInvoice);
-                        }
+                    } else {
+                        errorMessage = 'Could not fetch Troubleshooter zap info!';
                     }
-                } catch {
-                    errorMessage = 'Could not zap Troubleshooter: Failed to fetch payment invoice'
-                    paying = false;
-                    return;
                 }
 
-                try {
-                    if (satshootSumMillisats > 0 && satshootZapConfig) {
-                        // Get NDKZapper object
-                        const zapper = $ndk.zap(
-                            satShootUser,
+                const satShootUser = $ndk.getUser({ pubkey: SatShootPubkey });
+
+                if (satshootSumMillisats > 0) {
+                    const zapConfig = await satShootUser.getZapConfiguration().catch((err) => {
+                        console.log(
+                            'Error: An error occurred in getting getZapConfiguration for satshoot',
+                            err
+                        );
+                        return null;
+                    });
+
+                    if (zapConfig) {
+                        const invoice = await generateInvoice(
+                            ticket,
                             satshootSumMillisats,
+                            zapConfig,
+                            SatShootPubkey,
                             {
                                 comment: 'satshoot',
                                 tags: [['e', ticket.id]],
-                            }
-                        );
-                        const relays = await zapper.relays(SatShootPubkey);
-                        const satshootZapRequest = await generateZapRequest(
-                            satShootUser, $ndk, satshootZapConfig!, $currentUser!.pubkey,
-                            satshootSumMillisats, relays
-
+                            },
+                            UserEnum.Satshoot,
+                            zapRequestRelays
                         );
 
-                        // zapper.zapMethod = 'nip57';
-
-                        console.log('ndk satshoot zapper', zapper)
-                        let satshootInvoice = null;
-                        if (satshootZapRequest) {
-                            satshootInvoice = await zapper.getLnInvoice(
-                                satshootZapRequest, satshootSumMillisats,
-                                satshootZapConfig
-                            );
+                        if (invoice) {
+                            invoices.set(UserEnum.Satshoot, {
+                                paymentRequest: invoice,
+                                receiver: SatShootPubkey,
+                                eventId: ticket.id,
+                                zapper: zapConfig.nostrPubkey,
+                            });
+                        } else {
+                            errorMessage =
+                                'Could not zap satshoot: Failed to fetch payment invoice';
                         }
-                        if (satshootInvoice) {
-                            invoices.set('satshoot', satshootInvoice);
-                        }
-                        console.log('satshootInvoice', satshootInvoice)
+                    } else {
+                        errorMessage = 'Could not fetch Troubleshooter zap info!';
                     }
-                } catch(e) {
-                    console.log(e)
-                    errorMessage = 'Could not zap SatShoot: Failed to fetch payment invoice'
-                    paying = false;
-                    return;
                 }
 
-                const {init, launchPaymentModal, onModalClosed} = await import('@getalby/bitcoin-connect');
+                const { init, launchPaymentModal, closeModal, onModalClosed } = await import(
+                    '@getalby/bitcoin-connect'
+                );
+
                 // Init getalby bitcoin-connect
-                init({appName: 'SatShoot'});
+                init({ appName: 'SatShoot' });
 
-                // Try to pay invoices and check for zap receipts of zappers
                 for (const key of invoices.keys()) {
-                    launchPaymentModal({
-                        invoice: invoices.get(key) as string,
-                        // NOTE: only fired if paid with WebLN
-                        onPaid: ({preimage}) => paid.set(key, true), 
-                    });
+                    const invoice = invoices.get(key);
 
-                    await new Promise<void>(resolve => {
-                        const unsub = onModalClosed(() => {
-                            resolve();
-                            unsub();
-                        });
+                    if (!invoice) continue;
+
+                    launchPaymentModal({
+                        invoice: invoice.paymentRequest,
+                        // NOTE: only fired if paid with WebLN
+                        onPaid: ({ preimage }) => {
+                            const paidInvoice = new Invoice({
+                                pr: invoice.paymentRequest,
+                            });
+                            paidInvoice
+                                .validatePreimage(preimage)
+                                .then((isValid) => {
+                                    paid.set(key, isValid);
+                                })
+                                .catch(() => {
+                                    paid.set(key, false);
+                                });
+                        },
                     });
 
                     // Fetch zap receipts if possible
-                    const filter:NDKFilter = {
+                    const filter: NDKFilter = {
                         kinds: [NDKKind.Zap],
-                        since: Math.floor(Date.now() / 1000)
+                        since: Math.floor(Date.now() / 1000),
+                        '#p': [invoice.receiver],
                     };
-                    if (key === 'troubleshooter' && troubleshooterZapConfig) {
-                        console.log('trying to fetch troubleshooter zap receipt...')
-                        if (troubleshooterZapConfig.nostrPubkey) {
-                            filter['authors'] = [troubleshooterZapConfig.nostrPubkey];
-                        }
-                        filter['#p'] = [offer.pubkey];
-                        // NDK tags zap requests with both 'e' and 'a' tags
-                        // for param repl. events. we look for the offer's 'e' tag
-                        filter['#e'] = [offer.id];
-                        try {
-                            const zapReceiptEvent = await $ndk.fetchEvent(
-                                filter,
-                                {
-                                    cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY
+
+                    if (invoice.zapper) {
+                        filter['authors'] = [invoice.zapper];
+                    }
+
+                    try {
+                        const subscription = $ndk.subscribe(
+                            filter,
+                            {
+                                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+                            },
+                            NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key), $ndk)
+                        );
+
+                        // Polling timeout
+                        const timeout = setTimeout(
+                            () => {
+                                errorMessage = `Timeout occurred while waiting for zap receipt of ${key}`;
+                                closeModal();
+                            },
+                            1 * 30 * 1000 // 1 minute
+                        );
+
+                        subscription.on('event', async (event: NDKEvent) => {
+                            const preimage = event.tagValue('preimage');
+                            if (preimage) {
+                                const paidInvoice = new Invoice({
+                                    pr: invoice.paymentRequest,
+                                });
+                                const isValid = await paidInvoice.validatePreimage(preimage);
+                                if (isValid && !paid.get(key)) {
+                                    paid.set(key, true);
+                                    closeModal();
                                 }
-                            );
-                            console.log(zapReceiptEvent)
-                            if (zapReceiptEvent) {
-                                const validReceipt = (
-                                    zapReceiptEvent.pubkey === troubleshooterZapConfig.nostrPubkey
-                                );
-                                paid.set(key, validReceipt);
                             }
-                        } catch(e) {
-                            errorMessage = "Could not fetch troubleshooter's zap receipt: " + e;
-                        }
-                    } else if (key === 'satshoot' && satshootZapConfig) {
-                        console.log('trying to fetch SatShoot zap receipt...')
-                        if (satshootZapConfig.nostrPubkey) {
-                            filter['authors'] = [satshootZapConfig.nostrPubkey];
-                        }
-                        filter['#p'] = [SatShootPubkey];
-                        // NDK tags zap requests with both 'e' and 'a' tags
-                        // for param repl. events. we look for the ticket's 'e' tag
-                        filter['#e'] = [ticket.id];
-                        try {
-                            const zapReceiptEvent = await $ndk.fetchEvent(
-                                filter,
-                                {
-                                    cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY
-                                }
-                            );
-                            console.log(zapReceiptEvent)
-                            if (zapReceiptEvent) {
-                                const validReceipt = (
-                                    zapReceiptEvent.pubkey === satshootZapConfig.nostrPubkey
-                                );
-                                paid.set(key, validReceipt);
-                            }
-                        } catch(e) {
-                            errorMessage = "Could not fetch SatShoot's zap receipt: " + e;
-                        }
+                        });
+
+                        await new Promise<void>((resolve) => {
+                            const unsub = onModalClosed(() => {
+                                console.log('onModalClosed');
+                                subscription.stop();
+                                clearTimeout(timeout);
+                                resolve();
+                                unsub();
+                            });
+                        });
+                    } catch (error) {
+                        console.log('An error occurred in payment process', error);
+                        errorMessage = "Could not fetch troubleshooter's zap receipt: " + e;
                     }
                 }
 
-                if (paid.get('troubleshooter')) {
-                    const t: ToastSettings = {
-                        message: 'Troubleshooter Paid!',
-                        autohide: false,
-                        background: 'bg-success-300-600-token',
-                    };
-                    toastStore.trigger(t);
+                if (paid.get(UserEnum.Troubleshooter)) {
+                    handleToast('Troubleshooter Paid!', ToastType.Success, false);
                 } else if (troubleshooterShareMillisats > 0) {
-                    const t: ToastSettings = {
-                        message: 'Troubleshooter Payment might have failed!',
-                        autohide: false,
-                        background: 'bg-warning-300-600-token',
-                    };
-                    toastStore.trigger(t);
+                    handleToast('Troubleshooter Payment might have failed!', ToastType.Warn, false);
                 }
-                if (paid.get('satshoot')) {
-                    const t: ToastSettings = {
-                        message: 'SatShoot Paid!',
-                        autohide: false,
-                        background: 'bg-success-300-600-token',
-                    };
-                    toastStore.trigger(t);
+                if (paid.get(UserEnum.Satshoot)) {
+                    handleToast('SatShoot Paid!', ToastType.Success, false);
                 } else if (satshootSumMillisats > 0) {
-                    const t: ToastSettings = {
-                        message: 'SatShoot Payment might have failed!',
-                        autohide: false,
-                        background: 'bg-warning-300-600-token',
-                    };
-                    toastStore.trigger(t);
+                    handleToast('SatShoot Payment might have failed!', ToastType.Warn, false);
                 }
                 if (modalStore) {
                     modalStore.close();
                 }
-            } catch(e) {
-                console.log(e)
+            } catch (error) {
+                console.log(error);
+                handleToast(
+                    'Error" An error occurred in payment process, check console for more details!',
+                    ToastType.Error
+                );
                 paying = false;
             }
         } else {
             paying = false;
-            const t: ToastSettings = {
-                message: 'Error: Could could not find ticket and offer!',
-                timeout: 7000,
-                background: 'bg-error-300-600-token',
-            };
-            toastStore.trigger(t);
+            handleToast('Error: Could could not find ticket and offer!', ToastType.Error);
         }
     }
 
+    async function generateInvoice(
+        target: any, // todo: fix type
+        amount: number,
+        zapConfig: any, // todo: fix type
+        receiver: string,
+        opts: any, // todo: fix type
+        user: UserEnum,
+        zapRequestRelays: Map<UserEnum, string[]>
+    ) {
+        // Get NDKZapper object
+        const zapper = $ndk.zap(offer, amount, opts);
+        const relays = await zapper.relays(receiver);
+
+        const zapRequest = await generateZapRequest(
+            target,
+            $ndk,
+            zapConfig,
+            receiver,
+            amount,
+            relays
+        ).catch((err) => {
+            console.log('Error: An error occurred in generating zap request!', err);
+            return null;
+        });
+
+        if (!zapRequest) return;
+
+        const relayUrls = zapRequest.tags.find((t) => t[0] === 'relays')?.slice(1) || [];
+
+        zapRequestRelays.set(user, relayUrls);
+
+        const invoice = await zapper.getLnInvoice(zapRequest, amount, zapConfig).catch((err) => {
+            console.log('Error: An error occurred in getting LnInvoice!', err);
+            return null;
+        });
+
+        return invoice;
+    }
+
+    function handleToast(message: string, type: ToastType, autohide: boolean = true) {
+        toastStore.trigger({
+            message,
+            timeout: 7000,
+            autohide,
+            background: `bg-${type}-300-600-token`,
+        });
+    }
 </script>
 
 {#if $modalStore[0]}
@@ -302,11 +346,11 @@
         <div class="card p-4 flex flex-col gap-y-4 items-center">
             <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Make Payment</h4>
             <!-- Offer -->
-            <OfferCard 
+            <OfferCard
                 {offer}
                 showReputation={false}
                 showDetails={false}
-                showTicket={false} 
+                showTicket={false}
                 showOfferReview={false}
                 showDescription={false}
             />
@@ -315,36 +359,32 @@
                 <span class="font-bold">Pay for the Troubleshooting</span>
                 <div class="input-group input-group-divider grid-cols-[auto_1fr]">
                     <div class="input-group-shim">
-                        <i class="fa-brands fa-bitcoin text-3xl"/>
+                        <i class="fa-brands fa-bitcoin text-3xl" />
                     </div>
-                    <input 
-                    class="text-lg max-w-md"
-                    type="number"
-                    min="0"
-                    max="100_000_000"
-                    placeholder="Amount"
-                    bind:value={amount}
-                />
+                    <input
+                        class="text-lg max-w-md"
+                        type="number"
+                        min="0"
+                        max="100_000_000"
+                        placeholder="Amount"
+                        bind:value={amount}
+                    />
                 </div>
             </label>
             <!-- Pledge support for development -->
             <div>
                 <div>
                     <span>Support SatShoot</span>
-                    <i 
-                    class="text-primary-300-600-token fa-solid fa-circle-question text-xl
-                    [&>*]:pointer-events-none" 
-                    use:popup={popupPledge}
-                />
+                    <i
+                        class="text-primary-300-600-token fa-solid fa-circle-question text-xl
+                    [&>*]:pointer-events-none"
+                        use:popup={popupPledge}
+                    />
 
                     <div data-popup="popupPledge">
-                        <div class="{popupClasses}">
-                            <p>
-                                Support the development of SatShoot.
-                            </p>
-                            <p>
-                                Your support will be visible as part of your Reputation
-                            </p>
+                        <div class={popupClasses}>
+                            <p>Support the development of SatShoot.</p>
+                            <p>Your support will be visible as part of your Reputation</p>
                             <div class="arrow bg-primary-300-600-token" />
                         </div>
                     </div>
@@ -352,15 +392,15 @@
                 <label class="max-w-60">
                     <div class="input-group input-group-divider grid-cols-[auto_1fr]">
                         <div class="input-group-shim">
-                            <i class="fa-brands fa-bitcoin text-3xl"/>
+                            <i class="fa-brands fa-bitcoin text-3xl" />
                         </div>
-                        <input 
-                        class="text-lg max-w-md"
-                        type="number"
-                        min="0"
-                        max="100_000_000"
-                        placeholder="Amount"
-                        bind:value={pledgedAmount}
+                        <input
+                            class="text-lg max-w-md"
+                            type="number"
+                            min="0"
+                            max="100_000_000"
+                            placeholder="Amount"
+                            bind:value={pledgedAmount}
                         />
                     </div>
                 </label>
@@ -372,18 +412,19 @@
                 </div>
                 <div class="underline">SatShoot gets:</div>
                 <div class="font-bold">
-                    {
-                    insertThousandSeparator(satshootShare) + ' + '
-                        + insertThousandSeparator(pledgedAmount) + ' = '
-                        + insertThousandSeparator(satshootShare + pledgedAmount) + 'sats'
-                    }
+                    {insertThousandSeparator(satshootShare) +
+                        ' + ' +
+                        insertThousandSeparator(pledgedAmount) +
+                        ' = ' +
+                        insertThousandSeparator(satshootShare + pledgedAmount) +
+                        'sats'}
                 </div>
             </div>
             <div class="flex w-full justify-between">
-                <button 
+                <button
                     type="button"
                     class="btn btn-sm sm:btn-md min-w-24 bg-error-300-600-token"
-                    on:click={()=> modalStore.close()}
+                    on:click={() => modalStore.close()}
                 >
                     Cancel
                 </button>
@@ -395,8 +436,14 @@
                 >
                     {#if paying}
                         <span>
-                            <ProgressRadial value={undefined} stroke={60} meter="stroke-error-500"
-                            track="stroke-error-500/30" strokeLinecap="round" width="w-8" />
+                            <ProgressRadial
+                                value={undefined}
+                                stroke={60}
+                                meter="stroke-error-500"
+                                track="stroke-error-500/30"
+                                strokeLinecap="round"
+                                width="w-8"
+                            />
                         </span>
                     {:else}
                         <div class="flex flex-col items-center gap-y-1">
@@ -411,12 +458,8 @@
             {/if}
         </div>
     {:else if !ticket}
-        <h2 class="h2 font-bold text-center text-error-300-600-token">
-            Error: Ticket is missing!
-        </h2>
+        <h2 class="h2 font-bold text-center text-error-300-600-token">Error: Ticket is missing!</h2>
     {:else if !offer}
-        <h2 class="h2 font-bold text-center text-error-300-600-token">
-            Error: Offer is missing!
-        </h2>
+        <h2 class="h2 font-bold text-center text-error-300-600-token">Error: Offer is missing!</h2>
     {/if}
 {/if}
