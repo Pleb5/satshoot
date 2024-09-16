@@ -4,7 +4,7 @@
     RewriteRule ^404\.html$ - [L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule . /404.html [L]
+    RewriteRule . /index.html [L]
 </IfModule>
 
 <If "%{REQUEST_URI} =~ m#^/.well-known/#">
