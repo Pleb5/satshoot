@@ -23,7 +23,6 @@
         online,
         retryConnection,
         maxRetryAttempts,
-        retriesFailed
     } from '$lib/stores/network';
 
     import { 
@@ -44,9 +43,9 @@
     import { allReceivedZaps, wotFilteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from "$lib/stores/notifications";
 
-    import { initializeUser, logout, restoreRelaysIfDown } from '$lib/utils/helpers';
+    import { initializeUser, logout, checkRelayConnections } from '$lib/utils/helpers';
 
-    import { wot, wotUpdating } from '$lib/stores/wot';
+    import { wot, wotUpdating, wotUpdateFailed } from '$lib/stores/wot';
 
     import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
 
@@ -116,7 +115,7 @@
     import type { OfferEvent } from "$lib/events/OfferEvent";
     import type { ReviewEvent } from "$lib/events/ReviewEvent";
     import MessagesIcon from "$lib/components/Icons/MessagesIcon.svelte";
-    import { browser } from "$app/environment";
+    import { hideAppBarsStore } from "$lib/stores/gui";
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -136,9 +135,20 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
+    let hideTopbar = false;
+    let hideAppMenu = false;
+
+    $: if ($hideAppBarsStore) {
+        hideTopbar = true;
+        hideAppMenu = true;
+    } else {
+        hideTopbar = false;
+        hideAppMenu = false
+    }
+
     $ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
         console.log('relay disconnected', relay)
-        restoreRelaysIfDown();
+        checkRelayConnections();
     });
 
     $ndk.pool.on('relay:connect', () => {
@@ -150,11 +160,11 @@
             console.log('connected')
             // If we managed to connect reset max connection retry attempts
             $retryConnection = maxRetryAttempts;
-            retryConnection.set(maxRetryAttempts);
         }
     });
 
-    $: if($retriesFailed > 0) {
+    $: if($retryConnection === 0) {
+        toastStore.clear();
         const t: ToastSettings = {
             message: 'Could not reconnect to Relays!',
             autohide: false,
@@ -167,8 +177,26 @@
             classes: 'flex flex-col items-center gap-y-2 text-lg font-bold'
         };
         toastStore.trigger(t);
+    } else {
+        toastStore.clear();
+        $retryConnection = maxRetryAttempts;
     }
 
+    $: if($wotUpdateFailed) {
+        toastStore.clear();
+        const t: ToastSettings = {
+            message: 'Could not update Web of Trust!',
+            autohide: false,
+            action: {
+                label: 'Reload page',
+                response: () => {
+                    window.location.reload();
+                },
+            },
+            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold'
+        };
+        toastStore.trigger(t);
+    }
 
 
     async function restoreLogin() {
@@ -338,7 +366,7 @@
         $mounted = true;
         localStorage.debug = 'ndk:*'
         if(!$modeCurrent) {
-            setModeCurrent(false);
+            setModeCurrent(true);
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -557,107 +585,110 @@
 </Drawer>
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
 	<svelte:fragment slot="header">
-        <AppBar gridColumns="grid-cols-3" slotDefault="place-content-center" slotTrail="place-content-end ">
-            <svelte:fragment slot="lead">
-                <div class ='flex gap-x-2 items-center'>
-                    <h3 class='h3 font-bold'>WoT:</h3>
-                    <div>
-                        {#if !$loggedIn}
-                            <i 
-                                class="fa-solid fa-circle-question text-2xl text-error-500"
-                                use:popup={popupWoT}
-                            >
-                            </i>
-                            <div data-popup="popupWoT">
-                                <div class="card font-bold w-40 p-4 text-error-500 max-h-60 overflow-y-auto">
-                                    Log in to Load your Web of Trust!
+        {#if !hideTopbar}
+            <AppBar gridColumns="grid-cols-3" slotDefault="place-content-center" slotTrail="place-content-end ">
+                <svelte:fragment slot="lead">
+                    <div class ='flex gap-x-2 items-center'>
+                        <h3 class='h3 font-bold'>WoT:</h3>
+                        <div>
+                            {#if !$loggedIn}
+                                <i 
+                                    class="fa-solid fa-circle-question text-2xl text-error-500"
+                                    use:popup={popupWoT}
+                                >
+                                </i>
+                                <div data-popup="popupWoT">
+                                    <div class="card font-bold w-40 p-4 text-error-500 max-h-60 overflow-y-auto">
+                                        Log in to Load your Web of Trust!
+                                    </div>
                                 </div>
-                            </div>
-                        {:else if $wot && $wot.size < 3 && $wotUpdating}
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={60}
-                                meter="stroke-error-500"
-                                track="stroke-error-500/30"
-                                strokeLinecap="round" width="w-8" 
-                            />
-                            {:else if $wot && $wot.size > 2 && $wotUpdating}
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={60}
-                                meter="stroke-success-500"
-                                track="stroke-success-500/30"
-                                strokeLinecap="round" width="w-8" 
-                            />
-                            {:else if $wot && $wot.size > 2}
-                            <i 
-                                class="fa-solid fa-circle-check text-2xl {trustColor}"
-                                use:popup={popupWoT}
-                            >
-                            </i>
-                            <div data-popup="popupWoT">
-                                <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
-                                    Web of Trust Loaded
+                            {:else if $wot && $wot.size < 3 && $wotUpdating}
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-error-500"
+                                    track="stroke-error-500/30"
+                                    strokeLinecap="round" width="w-8" 
+                                />
+                                {:else if $wot && $wot.size > 2 && $wotUpdating}
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-success-500"
+                                    track="stroke-success-500/30"
+                                    strokeLinecap="round" width="w-8" 
+                                />
+                                {:else if $wot && $wot.size > 2}
+                                <i 
+                                    class="fa-solid fa-circle-check text-2xl {trustColor}"
+                                    use:popup={popupWoT}
+                                >
+                                </i>
+                                <div data-popup="popupWoT">
+                                    <div class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto">
+                                        Web of Trust Loaded
+                                    </div>
                                 </div>
-                            </div>
-                        {/if}
+                            {/if}
+                        </div>
+                    </div>
+                </svelte:fragment>
+
+                <div class="flex justify-center lg:ml-20">
+                    <div class ='flex gap-x-2 justify-center items-center'>
+                        <button class="btn btn-icon w-16" on:click={()=>{goto('/ticket-feed')}}>
+                            <img src="/satshoot.svg" alt="logo" />
+                        </button>
+
                     </div>
                 </div>
-            </svelte:fragment>
 
-            <div class="flex justify-center lg:ml-20">
-                <div class ='flex gap-x-2 justify-center items-center'>
-                    <button class="btn btn-icon w-16" on:click={()=>{goto('/')}}>
-                        <img src="/satshoot.svg" alt="logo" />
-                    </button>
-                    
-                </div>
-            </div>
+                <svelte:fragment slot="trail">
+                    {#if $loggedIn}
+                        <button on:click={openAppMenu}>
+                            <!-- Avatar image -->
+                            <Avatar 
+                                class="rounded-full border-white placeholder-white"
+                                border="border-4 border-surface-300-600-token hover:!border-primary-500"
+                                cursor="cursor-pointer"
+                                src={
+                                $currentUser?.profile?.image
+                                    ?? `https://robohash.org/${$currentUser.pubkey}`
+                                }
+                            /> 
+                        </button>
+                    {:else if $loggingIn}
+                        <div class="flex gap-x-2">
+                            <h3 class='h6 md:h3 font-bold'>Logging in...</h3>
+                            <ProgressRadial
+                                value={undefined}
+                                stroke={80}
+                                meter="stroke-primary-500"
+                                track="stroke-primary-500/30"
+                                strokeLinecap="round" width="w-12" 
+                            />
+                        </div>
+                        {:else if $loginMethod === LoginMethod.Ephemeral}
+                        <button 
+                            class="btn bg-primary-300-600-token"
+                            type="button"
+                            on:click={ restoreLogin }
+                        >
+                            Login
+                        </button>
+                        {:else}
+                        <a href="/login" class="btn btn-md bg-primary-300-600-token ">
+                            <span>Login</span>
+                        </a>
 
-            <svelte:fragment slot="trail">
-                {#if $loggedIn}
-                    <button on:click={openAppMenu}>
-                        <!-- Avatar image -->
-                        <Avatar 
-                            class="rounded-full border-white placeholder-white"
-                            border="border-4 border-surface-300-600-token hover:!border-primary-500"
-                            cursor="cursor-pointer"
-                            src={
-                            $currentUser?.profile?.image
-                                ?? `https://robohash.org/${$currentUser.pubkey}`
-                            }
-                        /> 
-                    </button>
-                {:else if $loggingIn}
-                    <div class="flex gap-x-2">
-                        <h3 class='h6 md:h3 font-bold'>Logging in...</h3>
-                        <ProgressRadial
-                            value={undefined}
-                            stroke={80}
-                            meter="stroke-primary-500"
-                            track="stroke-primary-500/30"
-                            strokeLinecap="round" width="w-12" 
-                        />
-                    </div>
-                {:else if $loginMethod === LoginMethod.Ephemeral}
-                    <button 
-                        class="btn bg-primary-300-600-token"
-                        type="button"
-                        on:click={ restoreLogin }
-                    >
-                        Login
-                    </button>
-                {:else}
-                    <a href="/login" class="btn btn-md bg-primary-300-600-token ">
-                        <span>Login</span>
-                    </a>
-
-                {/if}
-            </svelte:fragment>
-        </AppBar>
+                    {/if}
+                </svelte:fragment>
+            </AppBar>
+        {/if}
     </svelte:fragment>
     <!-- Sidebar. Hidden on small screens -->
 	<svelte:fragment slot="sidebarLeft">
+        {#if !hideAppMenu}
             <AppRail 
                 class="hidden lg:block min-w-28"
                 hover="hover:variant-soft-primary"
@@ -666,10 +697,10 @@
             >
                 <svelte:fragment slot="lead">
                     <AppRailAnchor
-                        href="/"
-                        selected={$page.url.pathname === '/'}
+                        href="/ticket-feed"
+                        selected={$page.url.pathname === '/ticket-feed'}
                     >
-                        <TroubleshootIcon sizeClass={'text-2xl sm:text-3xl'} />
+                        <TroubleshootIcon extraClasses={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
 
                     <AppRailAnchor
@@ -695,6 +726,7 @@
                     </AppRailAnchor>
                 </svelte:fragment>
             </AppRail>
+        {/if}
     </svelte:fragment>
 
 	<!-- Router Slot -->
@@ -710,13 +742,13 @@
             hover="hover:variant-soft-primary"
             active="bg-primary-300-600-token"
             background="bg-surface-100-800-token"
-            class="lg:hidden w-full"
+            class="lg:hidden w-full {hideAppMenu ? 'hidden' : ''}"
         >
             <TabAnchor 
-                href="/" 
-                selected={$page.url.pathname === '/'}
+                href="/ticket-feed" 
+                selected={$page.url.pathname === '/ticket-feed'}
             >
-                <TroubleshootIcon sizeClass={'text-2xl sm:text-3xl'} />
+                <TroubleshootIcon extraClasses={'text-2xl sm:text-3xl'} />
             </TabAnchor>
 
             <TabAnchor 

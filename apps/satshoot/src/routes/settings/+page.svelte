@@ -1,7 +1,7 @@
 <script lang="ts">
 import ndk, { sessionPK } from '$lib/stores/ndk';
 import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
-import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+import { getModalStore, LightSwitch, type ModalSettings } from '@skeletonlabs/skeleton';
 import { getToastStore } from '@skeletonlabs/skeleton';
 import type { ToastSettings } from '@skeletonlabs/skeleton';
 import { clipboard } from '@skeletonlabs/skeleton';
@@ -95,7 +95,7 @@ onDestroy(() => {
     </button>
 
     {#if $sessionPK}
-        <button 
+        <button
             class="btn bg-primary-300-600-token"
             type="button"
             on:click={ showPrivateKey }
@@ -106,12 +106,12 @@ onDestroy(() => {
             <div class="flex flex-col items-center gap-y-4">
                 <div class="font-bold">
                     {
-                        nsec.substring(0,10) 
-                        + '...' 
+                        nsec.substring(0,10)
+                        + '...'
                         + nsec.substring(nsec.length - 11, nsec.length - 1)
                     }
                 </div>
-            <button 
+            <button
                 class="btn text-sm btn-sm bg-red-500 font-bold"
                 use:clipboard={nsec}
                 on:click={onCopyNsec}
@@ -122,5 +122,9 @@ onDestroy(() => {
         {/if}
     {/if}
 
-</div>
+    <div class="flex justify-start gap-x-2 items-center">
+        <LightSwitch />
+        <span>Theme</span>
+    </div>
 
+</div>

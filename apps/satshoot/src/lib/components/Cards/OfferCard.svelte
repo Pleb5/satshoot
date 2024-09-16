@@ -35,7 +35,7 @@
     import { insertThousandSeparator } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { wot } from '$lib/stores/wot';
-    import UserTicketsIcon from '../Icons/UserTicketsIcon.svelte';
+    import TicketIcon from '../Icons/TicketIcon.svelte';
 
     const modalStore = getModalStore();
 
@@ -395,7 +395,7 @@
                 <Accordion>
                     <AccordionItem bind:open={openTicket}>
                         <svelte:fragment slot="lead">
-                            <UserTicketsIcon sizeClass={'text-xl'} />
+                            <TicketIcon sizeClass={'text-xl'} />
                         </svelte:fragment>
                         <svelte:fragment slot="summary">
                             <div class="flex items-center justify-center">

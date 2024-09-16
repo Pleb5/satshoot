@@ -3,15 +3,15 @@
     import { getDrawerStore, getModalStore } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
-    import { SlideToggle, LightSwitch } from '@skeletonlabs/skeleton';
+    import { SlideToggle } from '@skeletonlabs/skeleton';
     import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 
     import notificationsEnabled from '$lib/stores/notifications';
 
     import { logout } from '$lib/utils/helpers';
 
-    import UserTicketsIcon from '../Icons/UserTicketsIcon.svelte';
-    import UserOffersIcon from '../Icons/UserOffersIcon.svelte';
+    import TicketIcon from '../Icons/TicketIcon.svelte';
+    import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
 
@@ -138,7 +138,7 @@
                         on:click={()=>{drawerStore.close()}}
                     >
                         <span class="w-6 text-center">
-                            <UserTicketsIcon sizeClass={''}/>
+                            <TicketIcon sizeClass={''}/>
                         </span>
                         <span>My Tickets</span>
                     </a>
@@ -150,7 +150,7 @@
                         on:click={()=>{drawerStore.close()}}
                     >
                         <span class="w-6 text-center">
-                            <UserOffersIcon sizeClass={'text-lg'}/>
+                            <BitcoinIcon extraClasses={'text-lg'}/>
                         </span>
                         <span>My Offers</span>
                     </a>
@@ -179,10 +179,6 @@
                 </SlideToggle>
             </li>
             <hr class="!my-4" />
-            <li class="flex justify-start gap-x-2 items-center">
-                <LightSwitch />
-                <span>Theme</span>
-            </li>
             <li>
                 <a
                     class="justify-start {classesActive(aboutHref)}"

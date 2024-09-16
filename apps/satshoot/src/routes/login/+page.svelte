@@ -14,7 +14,7 @@
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import BunkerLoginModal from "$lib/components/Modals/BunkerLoginModal.svelte";
-    import { initializeUser, restoreRelaysIfDown } from "$lib/utils/helpers";
+    import { initializeUser, checkRelayConnections } from "$lib/utils/helpers";
     import { onMount, tick } from "svelte";
     import Nip07LoginModal from "$lib/components/Modals/Nip07LoginModal.svelte";
 
@@ -29,7 +29,7 @@
                 goto($redirectStore)
                 $redirectStore = '';
             } else {
-                goto('/'); 
+                goto('/ticket-feed'); 
             }
         }
     }
@@ -101,7 +101,7 @@
         placement: 'bottom'
     };
 
-    onMount(() => restoreRelaysIfDown());
+    onMount(() => checkRelayConnections());
 
 </script>
 
