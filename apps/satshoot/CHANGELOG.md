@@ -1,4 +1,10 @@
 # https://satshoot.com
+## 0.1.1
+- Landing page for new users
+- LN payment fixes and stabilizations
+- Improved text rendering on Tickets and User cards
+- Network stability and WoT loading improvements
+
 ## 0.1.0
 - Improved UI in many places
 - Improved network stability and more ways for user to recover from network problems
