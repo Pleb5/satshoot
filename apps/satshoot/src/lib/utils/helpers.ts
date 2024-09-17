@@ -237,7 +237,7 @@ export async function fetchUserOutboxRelays(ndk: NDKSvelte):Promise<NDKEvent | n
     // ], ndk);
 
     const relays = await ndk.fetchEvent(
-        { kinds: [10002], authors: [$currentUser!.pubkey] },
+        { kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] },
         { 
             cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
             groupable: false,
@@ -291,24 +291,76 @@ export function troubleshootZap(zap: NDKEvent): boolean {
     return true;
 }
 
-export function checkRelayConnections() {
+export async function checkRelayConnections() {
     const $ndk = get(ndk);
+    const $currentUser = get(currentUser);
     console.log('Check relays and try to reconnect if they are down..')
     console.log('relays connected = ', $ndk.pool.stats().connected)
-    if ($ndk.pool.stats().connected === 0) {
+
+    const anyConnectedRelays = $ndk.pool.stats().connected !== 0;
+    let readAndWriteRelaysExist = false;
+
+    // Only bother to check stronger condition if weaker is met
+    if (anyConnectedRelays && $currentUser) {
+        console.log('There are connected relays, check user read and write relays..')
+        const relays = await $ndk.fetchEvent(
+            { kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] },
+            { 
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                groupable: false,
+            },
+        );
+
+        if (relays) {
+            const relayList = NDKRelayList.from(relays);
+            let readRelayExists = false;
+            let writeRelayExists = false;
+
+            // Check if user has at least 1 read and 1 write relay connected
+            for (const connectedPoolRelay of $ndk.pool.connectedRelays()) {
+                relayList.readRelayUrls.forEach((url: string) => {
+                    if (connectedPoolRelay.url === url) {
+                        console.log('There is a connected user read relay')
+                        readRelayExists = true;
+                    }
+                });
+
+                relayList.writeRelayUrls.forEach((url: string) => {
+                    if (connectedPoolRelay.url === url) {
+                        console.log('There is a connected user write relay')
+                        writeRelayExists = true;
+                    }
+                });
+
+                if (readRelayExists && writeRelayExists) {
+                    readAndWriteRelaysExist = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!anyConnectedRelays || ($currentUser && !readAndWriteRelaysExist)) {
         connected.set(false);
         let retriesLeft = get(retryConnection);
+        console.log('Any relays conected: ', anyConnectedRelays)
+        console.log('Any read and write relays conected: ', readAndWriteRelaysExist)
         console.log('retryConnection', retriesLeft)
         if (retriesLeft > 0) {
             retriesLeft -= 1;
             retryConnection.set(retriesLeft);
-            // Try to reconnect to relays
-            $ndk.pool.connect();
-            // Re-check recursively
+            // Try to reconnect to relays, timeout in 2sec for each relay
+            $ndk.pool.connect(2000);
+            // Re-check recursively when retry delay expires
+            // This sets an explicit cap on retries.
+            // After retryDelay X retryConnection amount of time is elapsed
+            // retry process is concluded and either we reconnected or 
+            // user needs to fix network and reload page (toast with btn is shown)
             setTimeout(checkRelayConnections, retryDelay);
-            // window.location.reload();
         }
     } else {
+        console.log('We are sufficiently connected, reset max retries')
+        connected.set(true);
         retryConnection.set(maxRetryAttempts);
     }
 }

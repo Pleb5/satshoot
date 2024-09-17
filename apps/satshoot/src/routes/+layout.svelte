@@ -152,14 +152,8 @@
     });
 
     $ndk.pool.on('relay:connect', () => {
-        if ($ndk.pool.stats().connected > 0) {
-            if (!($connected)) {
-                console.log('reconnected!');
-            }
-            $connected = true;
-            console.log('connected')
-            // If we managed to connect reset max connection retry attempts
-            $retryConnection = maxRetryAttempts;
+        if ($ndk.pool.stats().disconnected > 0) {
+            console.log('Relay connected but there are still relays disconnected!')
         }
     });
 
