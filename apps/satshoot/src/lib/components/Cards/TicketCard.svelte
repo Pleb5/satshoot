@@ -42,6 +42,7 @@
     import PaymentModal from '../Modals/PaymentModal.svelte';
     import OfferCard from './OfferCard.svelte';
     import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
+    import { linkifyText } from '$lib/utils/misc';
 
     const modalStore = getModalStore();
 			
@@ -53,7 +54,7 @@
     export let titleSize: string = 'xl';
     export let titleLink: boolean = true;
     export let shortenDescription = true;
-    let generatedDescription = '';
+    let processedDescription = '';
     export let countAllOffers = true;
     export let tagCallback: ((tag:string) => void) | null = null;
     export let showReputation = true;
@@ -120,25 +121,12 @@
 
         if (ticket?.description) {
             if (shortenDescription && ticket.description.length > 80) {
-                generatedDescription =  ticket.description.substring(0, 80) + '...';
+                processedDescription =  ticket.description.substring(0, 80) + '...';
             } else {
-                generatedDescription = ticket.description;
-            }
-
-            const words = generatedDescription.split(' ');
-            let needProcessing = false;
-            for (let i = 0; i < words.length; i++) {
-                if (words[i].length > 25) {
-                    needProcessing = true;
-                    words[i] = words[i].substring(0,24) +
-                        ' - ' + words[i].substring(25, words[i].length - 1);
-                }
-            }
-            if (needProcessing) {
-                generatedDescription = words.join(' ')
+                processedDescription = ticket.description;
             }
         } else {
-            generatedDescription = 'No description!';
+            processedDescription = 'No description!';
         }
 
         if (ticket.created_at) {
@@ -255,6 +243,7 @@
     }
 
     onMount(async ()=>{
+        processedDescription = linkifyText(ticket.description);
         if (ticket.acceptedOfferAddress) {
             const winnerOfferEvent = await $ndk.fetchEvent(ticket.acceptedOfferAddress);
             if (winnerOfferEvent) {
@@ -284,7 +273,7 @@
 </script>
 
 
-<div class="card bg-surface-200-700-token sm:max-w-[70vw] lg:max-w-[60vw] flex-grow text-wrap">
+<div class="card bg-surface-200-700-token max-w-[95vw] sm:max-w-[70vw] lg:max-w-[60vw] flex-grow text-wrap">
     {#if ticket}
         <header class="card-header grid grid-cols-[15%_1fr_15%] items-start">
             {#if ticketChat}
@@ -303,7 +292,7 @@
                         href={"/" + bech32ID }>{ticket.title ?? 'No title'}
                     </a>
                 {:else}
-                    <div class="text-{titleSize} text-wrap ">
+                    <div class="text-{titleSize} text-wrap break-words whitespace-pre-line">
                         {ticket.title ?? 'No title'}
                     </div>
                 {/if}
@@ -368,8 +357,8 @@
         </header>
 
         <section class="p-4">
-            <div class="text-center text-base md:text-lg">
-                { generatedDescription }
+            <div class="text-center text-base md:text-lg break-words whitespace-pre-line">
+                {@html processedDescription }
             </div>
 
             <hr class="my-4" />

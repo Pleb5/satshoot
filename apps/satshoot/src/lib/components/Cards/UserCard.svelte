@@ -268,7 +268,7 @@
             </button>
         {/if}
     </div>
-    <div class="max-w-80">
+    <div class="max-w-80 break-words whitespace-pre-line">
         {userProfile?.about ?? userProfile?.bio ?? '?'}
     </div>
     <footer class="mt-4">
