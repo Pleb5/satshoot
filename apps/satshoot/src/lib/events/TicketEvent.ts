@@ -16,7 +16,7 @@ export class TicketEvent extends NDKEvent {
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
-        this.kind ??= NDKKind.TroubleshootTicket;
+        this.kind ??= NDKKind.FreelanceTicket;
         this._status = parseInt(this.tagValue('s') as string);
         this._title = this.tagValue('title') as string;
     }

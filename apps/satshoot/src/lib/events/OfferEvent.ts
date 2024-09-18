@@ -29,7 +29,7 @@ export class OfferEvent extends NDKEvent {
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
-        this.kind ??= NDKKind.TroubleshootOffer;
+        this.kind ??= NDKKind.FreelanceOffer;
         this._pricing = parseInt(this.tagValue('pricing') ?? Pricing.Absolute.toString());
         this._amount = parseInt(this.tagValue("amount") ?? '0');
         this.tags.forEach((tag:NDKTag) => {
@@ -99,20 +99,20 @@ export class OfferEvent extends NDKEvent {
         return this._pledgeSplit;
     }
 
-    // troubleshooter equals this.pubkey but it is not assured
+    // Freelancer equals this.pubkey but it is not assured
     // that this.pubkey is defined at this point. So a simple setter wont suffice
-    public setPledgeSplit(pledgeSplit: number, troubleshooter: Hexpubkey) {
+    public setPledgeSplit(pledgeSplit: number, freelancer: Hexpubkey) {
         if (pledgeSplit < 0 || pledgeSplit > 100) {
             throw new Error(`Trying to set invalid zap split percentage: ${pledgeSplit} !`);
         }
         try {
-            nip19.npubEncode(troubleshooter)
+            nip19.npubEncode(freelancer)
         } catch {
-            throw new Error(`Invalid troubleshooter pubkey: ${troubleshooter}, cannot set zap splits!`);
+            throw new Error(`Invalid Freelancer pubkey: ${freelancer}, cannot set zap splits!`);
         }
         this.removeTag("zap");
         this.tags.push(['zap', SatShootPubkey, OUTBOXRELAYURLS[0], pledgeSplit.toString()]);
-        this.tags.push(['zap', troubleshooter, OUTBOXRELAYURLS[0], (100 - pledgeSplit).toString()]);
+        this.tags.push(['zap', freelancer, OUTBOXRELAYURLS[0], (100 - pledgeSplit).toString()]);
         this._pledgeSplit = pledgeSplit;
     }
 

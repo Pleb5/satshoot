@@ -30,9 +30,9 @@
         const five = $ndk.getUser(
             {npub: 'npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw'}
         );
-        const btcTroubleshootUser = $ndk.getUser({pubkey: SatShootPubkey});
+        const satShootUser = $ndk.getUser({pubkey: SatShootPubkey});
         kind1Event.tag(five);
-        kind1Event.tag(btcTroubleshootUser);
+        kind1Event.tag(satShootUser);
 
         try {
             posting = true;

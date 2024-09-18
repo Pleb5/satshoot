@@ -14,7 +14,7 @@
 - Web of Trust based Spam Filtering
 - Outbox Model
 - 'Qualitative Thumb system'-based Reviews
-- Broadcast troubleshooter availability
+- Broadcast Freelancer availability
 - App menu options and feature accessibility reworked
 - Payments with public Zaps
 - Notifications reworked.

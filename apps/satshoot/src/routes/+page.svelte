@@ -1,7 +1,7 @@
 <script lang="ts">
 import ShareIcon from "$lib/components/Icons/ShareIcon.svelte";
 import StarIcon from "$lib/components/Icons/StarIcon.svelte";
-import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
+import FreelanceIcon from "$lib/components/Icons/FreelanceIcon.svelte";
 import BitcoinIcon from "$lib/components/Icons/BitcoinIcon.svelte";
 import BullhornIcon from "$lib/components/Icons/BullhornIcon.svelte";
 import ShieldIcon from "$lib/components/Icons/ShieldIcon.svelte";
@@ -66,7 +66,7 @@ beforeNavigate(() => $hideAppBarsStore = false);
     <div class="{smallCardContainerClasses}">
         <div class="{smallCardClasses}">
             <h2 class="{smallCardHeaderClasses}">
-                <span><TroubleshootIcon extraClasses={"text-2xl"}/></span>
+                <span><FreelanceIcon extraClasses={"text-2xl"}/></span>
                 <span>Find Freelancers for any job</span>
             </h2>
             <div>

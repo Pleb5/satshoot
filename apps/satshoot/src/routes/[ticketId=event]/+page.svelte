@@ -55,7 +55,7 @@
     let ticketSubscription: NDKSubscription | undefined = undefined;
     let ticket: TicketEvent | undefined = undefined;
     let offersFilter: NDKFilter = {
-        kinds: [NDKKind.TroubleshootOffer],
+        kinds: [NDKKind.FreelanceOffer],
         '#a': [],
     }
     let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
@@ -92,7 +92,7 @@
         // Create new subscription on this ticket 
         const dTag = idFromNaddr(naddr).split(':')[2];
         const ticketFilter: NDKFilter = {
-            kinds: [NDKKind.TroubleshootTicket],
+            kinds: [NDKKind.FreelanceTicket],
             '#d': [dTag],
         };
 

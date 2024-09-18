@@ -60,7 +60,7 @@
                     body: `
                         <p class='mb-4'>Thank You for posting a Review!</p>
                         <p>
-                        Troubleshooting just got better for everyone!
+                        Freelancing just got better for everyone!
                         </p>
                         `,
                     buttonTextCancel:'Ok',

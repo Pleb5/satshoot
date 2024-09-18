@@ -32,12 +32,12 @@
         myOffers,
         allOffers,
         allTickets,
-    } from "$lib/stores/troubleshoot-eventstores";
+    } from "$lib/stores/freelance-eventstores";
 
     import { 
         allReviews,
         clientReviews,
-        troubleshooterReviews,
+        freelancerReviews,
     } from "$lib/stores/reviews";
     import { messageStore, wotFilteredMessageFeed } from "$lib/stores/messages";
     import { allReceivedZaps, wotFilteredReceivedZaps } from '$lib/stores/zaps';
@@ -84,7 +84,7 @@
     import AppMenu from "$lib/components/DrawerContents/AppMenu.svelte";
 
     // Menu Items 
-    import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
+    import FreelanceIcon from "$lib/components/Icons/FreelanceIcon.svelte";
     import PostTicketIcon from "$lib/components/Icons/PostTicketIcon.svelte";
     import NotificationsIcon from "$lib/components/Icons/NotificationsIcon.svelte";
 
@@ -537,8 +537,8 @@
         });
     }
 
-    $: if ($troubleshooterReviews) {
-        $troubleshooterReviews.forEach((r: ReviewEvent) => {
+    $: if ($freelancerReviews) {
+        $freelancerReviews.forEach((r: ReviewEvent) => {
             $myOffers.forEach((o: OfferEvent) => {
                 if (o.offerAddress === r.reviewedEventAddress) {
                     sendNotification(r);
@@ -694,7 +694,7 @@
                         href="/ticket-feed"
                         selected={$page.url.pathname === '/ticket-feed'}
                     >
-                        <TroubleshootIcon extraClasses={'text-2xl sm:text-3xl'} />
+                        <FreelanceIcon extraClasses={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
 
                     <AppRailAnchor
@@ -742,7 +742,7 @@
                 href="/ticket-feed" 
                 selected={$page.url.pathname === '/ticket-feed'}
             >
-                <TroubleshootIcon extraClasses={'text-2xl sm:text-3xl'} />
+                <FreelanceIcon extraClasses={'text-2xl sm:text-3xl'} />
             </TabAnchor>
 
             <TabAnchor 

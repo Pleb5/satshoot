@@ -71,7 +71,7 @@
     let ticketStatus: string;
 
     let offersFilter: NDKFilter = {
-        kinds: [NDKKind.TroubleshootOffer],
+        kinds: [NDKKind.FreelanceOffer],
         '#a': [ticket.ticketAddress],
     }
     const subOptions: NDKSubscriptionOptions = { 

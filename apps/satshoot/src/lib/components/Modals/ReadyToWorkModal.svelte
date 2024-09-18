@@ -22,7 +22,7 @@
     let textArea:HTMLTextAreaElement;
 
     let tagInput = '';
-    let messageResult = 'Ready for Troubleshooting!\nGo to https://satshoot.com/post-ticket/'; 
+    let messageResult = 'Ready to Work!\nGo to https://satshoot.com/post-ticket/'; 
     messageResult += ' and post your issues in these topics:\n';
 
     let posting = false;
@@ -42,7 +42,7 @@
         const kind1Event = new NDKEvent($ndk);
         kind1Event.kind = NDKKind.Text;
 
-        messageResult += '\n\n #satshoot #asknostr #troubleshooting';
+        messageResult += '\n\n #satshoot #asknostr #freelancing';
         kind1Event.content = messageResult;
         kind1Event.generateTags();
 
@@ -127,7 +127,7 @@
                 bind:this={textArea}
                 bind:value={messageResult}
             />
-                <span>#satshoot #asknostr #troubleshooting</span>
+                <span>#satshoot #asknostr #freelancing</span>
             </label>
             <div class="grid grid-cols-[30%_1fr] gap-x-2">
                 <button 

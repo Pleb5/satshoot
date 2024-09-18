@@ -8,7 +8,7 @@ import type { NDKUser } from "@nostr-dev-kit/ndk";
 
 import {
     userClientRatings,
-    userTroubleshooterRatings,
+    userFreelancerRatings,
 } from '$lib/stores/reviews';
 
 import { ReviewType } from "$lib/events/ReviewEvent";
@@ -22,7 +22,7 @@ const reviewer = $currentUser as NDKUser;
 
 const ratings = (reviewType === ReviewType.Client
     ? userClientRatings(reviewer.pubkey, userHex)
-    : userTroubleshooterRatings(reviewer.pubkey, userHex)
+    : userFreelancerRatings(reviewer.pubkey, userHex)
 );
 
 const baseClasses = 'card p-2 m-8 bg-surface-200-700-token\

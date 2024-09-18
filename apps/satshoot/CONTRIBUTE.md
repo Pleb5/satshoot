@@ -10,7 +10,7 @@
 3. Install [pnpm](https://pnpm.io/), [turbo repo](https://turbo.build/repo) and [just](https://github.com/casey/just) globally
     1. I do this with nixOS and a [nix devshell](https://github.com/Pleb5/devshell)
     2. You can use npm or whatever crap you got
-4. Go to the dir where you cloned bitcoin-troubleshoot and install all packages recursively:
+4. Go to the dir where you cloned SatShoot and install all packages recursively:
     1.  ```bash
         pnpm i
         ```

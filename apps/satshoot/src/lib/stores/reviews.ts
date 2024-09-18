@@ -1,10 +1,11 @@
-import { writable, get, derived } from 'svelte/store';
+import { get, derived } from 'svelte/store';
 import ndk from '$lib/stores/ndk';
+import { type NDKSubscriptionOptions } from '@nostr-dev-kit/ndk';
 import { wot } from '$lib/stores/wot';
 import currentUser from '$lib/stores/user';
 import {
     type ClientRating,
-    type TroubleshooterRating,
+    type FreelancerRating,
     ReviewEvent, 
     ReviewType,
 
@@ -19,24 +20,23 @@ import {
 export const subOptions: NDKSubscriptionOptions = {
     closeOnEose: false,
     groupable: false,
-    autoStart: false,
 };
 
 export const allReviewsFilter: NDKFilter<NDKKind.Review> = {
     kinds: [NDKKind.Review],
-    '#L': ['qts/troubleshooting'],
+    '#L': ['qts/freelancing'],
 };
 
 // export const reviewsOnMyTicketsFilter: NDKFilter<NDKKind.Review> = {
 //     kinds: [NDKKind.Review],
-//     '#L': ['qts/troubleshooting'],
+//     '#L': ['qts/freelancing'],
 //     authors: [],
 //     '#a': [],
 // };
 
 // export const reviewsOnMyOffersFilter: NDKFilter<NDKKind.Review> = {
 //     kinds: [NDKKind.Review],
-//     '#L': ['qts/troubleshooting'],
+//     '#L': ['qts/freelancing'],
 //     authors: [],
 //     '#a': [],
 // };
@@ -56,12 +56,12 @@ export const clientReviews = derived(
     }
 );
 
-export const troubleshooterReviews = derived(
+export const freelancerReviews = derived(
     [wot, allReviews],
     ([$wot, $allReviews]) => {
         // console.log('review arrived', get(allReviews))
         return $allReviews.filter((r: ReviewEvent) => {
-            return (r.type === ReviewType.Troubleshooter && $wot.has(r.pubkey))
+            return (r.type === ReviewType.Freelancer && $wot.has(r.pubkey))
         });
     }
 );
@@ -79,13 +79,13 @@ export function userClientRatings(source: Hexpubkey, target: Hexpubkey):
     return ratings
 }
 
-export function userTroubleshooterRatings(source: Hexpubkey, target: Hexpubkey):
-    Array<TroubleshooterRating> {
-    const ratings: Array<TroubleshooterRating> = [];
+export function userFreelancerRatings(source: Hexpubkey, target: Hexpubkey):
+    Array<FreelancerRating> {
+    const ratings: Array<FreelancerRating> = [];
 
-    get(troubleshooterReviews).forEach((r: ReviewEvent) => {
+    get(freelancerReviews).forEach((r: ReviewEvent) => {
         if (r.reviewedPerson === target && r.pubkey === source) {
-            ratings.push(r.troubleshooterRatings);
+            ratings.push(r.freelancerRatings);
         }
     });
 
@@ -161,15 +161,15 @@ export function aggregateClientRatings(target: Hexpubkey)
     return ratings;
 }
 
-export function aggregateTroubleshooterRatings(target: Hexpubkey)
+export function aggregateFreelancerRatings(target: Hexpubkey)
     : Map<string, number> {
     const ratings: Map<string, number> = new Map();
-    const successString = 'Successful TroubleShoots';
+    const successString = 'Successful Jobs';
     const expertiseString = 'Expertise';
     const availabilityString = 'Availability';
     const communicationString = 'Communication';
 
-    const reviews = get(troubleshooterReviews).filter((r: ReviewEvent) => {
+    const reviews = get(freelancerReviews).filter((r: ReviewEvent) => {
         return r.reviewedPerson === target;
     });
 
@@ -210,7 +210,7 @@ export function aggregateTroubleshooterRatings(target: Hexpubkey)
         const sum = (r.overallRating ?? 0) * scoreMultiplier;
         aggregatedAverage += sum;
 
-        const rating = r.troubleshooterRatings;
+        const rating = r.freelancerRatings;
         // console.log('rating: ', rating)
         if (rating.success) {
             const currentCount = ratings.get(successString) ?? 0;

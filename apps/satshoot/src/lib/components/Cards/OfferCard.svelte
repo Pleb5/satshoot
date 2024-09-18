@@ -28,9 +28,9 @@
 
     import { onDestroy, onMount } from 'svelte';
     import ReputationCard from './ReputationCard.svelte';
-    import { ReviewEvent, ReviewType, type TroubleshooterRating } from '$lib/events/ReviewEvent';
+    import { ReviewEvent, ReviewType, type FreelancerRating } from '$lib/events/ReviewEvent';
     import UserReviewCard from '../Cards/UserReviewCard.svelte';
-    import { clientReviews, troubleshooterReviews } from '$lib/stores/reviews';
+    import { clientReviews, freelancerReviews } from '$lib/stores/reviews';
 
     import { insertThousandSeparator } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
@@ -58,14 +58,14 @@
     export let showOfferReview = true;
     export let openReview = false;
 
-    let troubleshooterReview: TroubleshooterRating | null = null;
+    let freelancerReview: FreelancerRating | null = null;
     let reviewer: NDKUser;
 
     let paid = 0;
     let paymentStore: NDKEventStore<NDKEvent>;
 
-    let ticketFilter: NDKFilter<NDKKind.TroubleshootTicket> = {
-        kinds: [NDKKind.TroubleshootTicket],
+    let ticketFilter: NDKFilter<NDKKind.FreelanceTicket> = {
+        kinds: [NDKKind.FreelanceTicket],
         '#d': [],
     };
     let dTagOfTicket: string;
@@ -227,9 +227,9 @@
         }
 
         if (winner) {
-            $troubleshooterReviews.forEach((review: ReviewEvent) => {
+            $freelancerReviews.forEach((review: ReviewEvent) => {
                 if (review.reviewedEventAddress === offer!.offerAddress) {
-                    troubleshooterReview = review.troubleshooterRatings;
+                    freelancerReview = review.freelancerRatings;
                     const reviewerPubkey = review.pubkey;
                     reviewer = $ndk.getUser({ pubkey: reviewerPubkey });
                 }
@@ -348,7 +348,7 @@
             <div data-popup="pledgeInfo_{offer.id}">
                 <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
                     <p>
-                        Revenue share percentage the Troubleshooter pledged to SatShoot to support
+                        Revenue share percentage the Freelancer pledged to SatShoot to support
                         development.
                     </p>
                     <div class="arrow bg-primary-300-600-token" />
@@ -381,7 +381,7 @@
                 </div>
             </div>
             {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
-                <ReputationCard type={ReviewType.Troubleshooter} user={offer.pubkey} />
+                <ReputationCard type={ReviewType.Freelancer} user={offer.pubkey} />
             {/if}
             {#if showDetails}
                 <div class="">
@@ -436,8 +436,8 @@
                     </AccordionItem>
                 </Accordion>
             {/if}
-            {#if showOfferReview && troubleshooterReview && reviewer}
-                <UserReviewCard rating={troubleshooterReview} {reviewer} open={openReview} />
+            {#if showOfferReview && freelancerReview && reviewer}
+                <UserReviewCard rating={freelancerReview} {reviewer} open={openReview} />
             {/if}
         </div>
     {:else}

@@ -37,7 +37,7 @@ $: if (user) {
 
     allTicketsOfUser = $ndk.storeSubscribe<TicketEvent>(
         {
-            kinds: [NDKKind.TroubleshootTicket],
+            kinds: [NDKKind.FreelanceTicket],
             authors: [user.pubkey],
         },
         subOptions,
@@ -46,7 +46,7 @@ $: if (user) {
 
     allOffersOfUser = $ndk.storeSubscribe<OfferEvent>(
         {
-            kinds: [NDKKind.TroubleshootOffer],
+            kinds: [NDKKind.FreelanceOffer],
             authors: [user.pubkey],
         },
         subOptions,
@@ -140,7 +140,7 @@ onDestroy(()=>{
                                     </svelte:fragment>
                                     <svelte:fragment slot="summary">
                                         <h3 class="h3 text-center underline">
-                                            You as a Troubleshooter
+                                            You as a Freelancer
                                         </h3>
                                     </svelte:fragment>
                                     <svelte:fragment slot="content">
@@ -158,7 +158,7 @@ onDestroy(()=>{
                                             </div>
                                         {:else}
                                             <h4 class="text-center">
-                                                No Tickets troubleshot!
+                                                No Tickets found!
                                             </h4>
                                         {/if}
                                     </svelte:fragment>

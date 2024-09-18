@@ -1,12 +1,12 @@
 <script lang="ts">
 import ndk from "$lib/stores/ndk";
 import { wot } from '$lib/stores/wot';
-import { troubleshootZap } from '$lib/utils/helpers';
+import { freelancerZap } from '$lib/utils/helpers';
 import { 
     clientReviews,
-    troubleshooterReviews,
+    freelancerReviews,
     aggregateClientRatings,
-    aggregateTroubleshooterRatings
+    aggregateFreelancerRatings
 } from "$lib/stores/reviews";
 
 import {
@@ -39,15 +39,15 @@ export let open = true;
 
 const drawerStore = getDrawerStore();
 
-$: reviewArraysExist = $clientReviews && $troubleshooterReviews;
+$: reviewArraysExist = $clientReviews && $freelancerReviews;
 $: reviewsExist = reviewArraysExist && 
-            ($clientReviews.length > 0 || $troubleshooterReviews.length > 0);
+            ($clientReviews.length > 0 || $freelancerReviews.length > 0);
 
 $: if (!type && reviewArraysExist) {
-    if ($clientReviews.length > $troubleshooterReviews.length) {
+    if ($clientReviews.length > $freelancerReviews.length) {
         reviewType = ReviewType.Client;
     } else {
-        reviewType = ReviewType.Troubleshooter;
+        reviewType = ReviewType.Freelancer;
     }
 } else if (type) {
     reviewType = type;
@@ -92,23 +92,23 @@ function showReviewBreakdown() {
 //     console.log('currentUser', $currentUser)
 //     console.log('user', user)
 //     console.log('clientReviews', $clientReviews)
-//     console.log('troubleshooterReviews', $troubleshooterReviews)
+//     console.log('freelancerReviews', $freelancerReviews)
 // }
-// $: console.log($troubleshooterReviews)
+// $: console.log($freelancerReviews)
 
 $: if (
     $currentUser
     && user
     && $clientReviews
-    && $troubleshooterReviews
+    && $freelancerReviews
 ) {
 
     let otherTypeOfRatings;
     if (reviewType === ReviewType.Client) {
         ratings = aggregateClientRatings(user);
-        otherTypeOfRatings = aggregateTroubleshooterRatings(user);
+        otherTypeOfRatings = aggregateFreelancerRatings(user);
     } else {
-        ratings = aggregateTroubleshooterRatings(user);
+        ratings = aggregateFreelancerRatings(user);
         otherTypeOfRatings = aggregateClientRatings(user);
     }
 
@@ -180,7 +180,7 @@ $: if ($allEarningsStore) {
     allEarnings = 0;
     $allEarningsStore.forEach((zap: NDKEvent)=>{
         const zappee = zap.tagValue('P');
-        if (zappee && $wot.has(zappee) && troubleshootZap(zap)) {
+        if (zappee && $wot.has(zappee) && freelancerZap(zap)) {
             const zapInvoice = zapInvoiceFromEvent(zap);
             if (zapInvoice && zapInvoice.amount) {
                 allEarnings += Math.round(zapInvoice.amount / 1000);
@@ -193,7 +193,7 @@ $: if ($allPaymentsStore) {
     allPayments = 0;
     $allPaymentsStore.forEach((zap: NDKEvent)=>{
         const zappee = zap.tagValue('P')
-        if (zappee && $wot.has(zappee) && troubleshootZap(zap)) {
+        if (zappee && $wot.has(zappee) && freelancerZap(zap)) {
             const zapInvoice = zapInvoiceFromEvent(zap);
             if (zapInvoice && zapInvoice.amount) {
                 allPayments += Math.round(zapInvoice.amount / 1000);            }

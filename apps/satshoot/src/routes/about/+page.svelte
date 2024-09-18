@@ -26,14 +26,14 @@
         Let's take the example of Alice who is a bitcoiner and has a problem with her node.
         She cannot connect to it from her Wallet Software. She creates a 'Ticket' in 
         SatShoot and posts it on Nostr. Now anyone who has a clue how to solve her 
-        problem can bid on it with an 'Offer'. This Offer contains the price of the Troubleshooting.
+        problem can bid on it with an 'Offer'. This Offer contains the price of the Job.
     </p>
 
     <p class="mt-2">
         Bob who is deeper down the rabbit hole finds this Ticket in the feed and bids on it with an Offer. 
         Alice received a bunch of Offers from different bitcoiners but she trusts Bob the most and finds his 
         price affordable. She accepts Bob's Offer. They can now resolve the node issue via encrypted chat in 
-        SatShoot or they can just switch to a different app for the actual troubleshooting part.
+        SatShoot or they can just switch to a different app for the actual Freelancing part.
     </p>
 
     <p class="mt-2">

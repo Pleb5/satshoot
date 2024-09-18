@@ -59,9 +59,9 @@ async function openNotificationWindow(tag: string) {
     const urlToVisit = '/notifications/';
 
     const ticketNotification = 
-        (tag === NDKKind.TroubleshootTicket.toString());
+        (tag === NDKKind.FreelanceTicket.toString());
     const offerNotification = 
-        (tag === NDKKind.TroubleshootOffer.toString());
+        (tag === NDKKind.FreelanceOffer.toString());
     const messageNotification = 
         (tag === NDKKind.EncryptedDirectMessage.toString());
     const reviewNotification = 

@@ -10,8 +10,8 @@
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
-    import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
-    import ReadyToTroubleshootModal from "$lib/components/Modals/ReadyToTroubleshootModal.svelte";
+    import FreelanceIcon from "$lib/components/Icons/FreelanceIcon.svelte";
+    import ReadyToWorkModal from "$lib/components/Modals/ReadyToWorkModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
     import currentUser, { loggedIn } from "$lib/stores/user";
@@ -65,9 +65,9 @@
         }
     }
 
-    function readyToTroubleshoot() {
+    function readyToWork() {
         const modalComponent: ModalComponent = {
-            ref: ReadyToTroubleshootModal,
+            ref: ReadyToWorkModal,
         };
 
         const modal: ModalSettings = {
@@ -97,7 +97,7 @@
     $: if ($loggedIn && mounted) {
         newTickets = $ndk.storeSubscribe(
             {
-                kinds: [NDKKind.TroubleshootTicket],
+                kinds: [NDKKind.FreelanceTicket],
             },
             {
                 autoStart: true,
@@ -183,7 +183,7 @@
         <div class="fixed bottom-20 right-8">
             <button class="btn btn-icon-xl bg-primary-300-600-token"
                 on:click={()=> {
-                    readyToTroubleshoot();
+                    readyToWork();
                 }}
             >
                 <BullhornIcon extraClasses={'text-3xl '}/>

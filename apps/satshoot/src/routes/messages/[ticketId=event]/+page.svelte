@@ -53,8 +53,8 @@
         });
     }
 
-    let offersFilter: NDKFilter<NDKKind.TroubleshootOffer> = {
-        kinds: [NDKKind.TroubleshootOffer],
+    let offersFilter: NDKFilter<NDKKind.FreelanceOffer> = {
+        kinds: [NDKKind.FreelanceOffer],
         '#a': [ticketAddress],
     }
 

@@ -3,7 +3,7 @@ import currentUser from "$lib/stores/user";
 import {
     ReviewType,
     type ClientRating,
-    type TroubleshooterRating,
+    type FreelancerRating,
 } from "$lib/events/ReviewEvent";
  
 import { 
@@ -13,11 +13,11 @@ import {
 
 import {
     clientReviews,
-    troubleshooterReviews,
+    freelancerReviews,
     aggregateClientRatings,
-    aggregateTroubleshooterRatings,
+    aggregateFreelancerRatings,
     userClientRatings,
-    userTroubleshooterRatings,
+    userFreelancerRatings,
 } from '$lib/stores/reviews'
 
 import ReviewSummary from "./ReviewSummary.svelte";
@@ -34,18 +34,18 @@ $: if (reviewType) {
 const userHex = $drawerStore.meta['user'];
 
 let clientRatingsMap: Map<string, number>;
-let troubleshooterRatingsMap: Map<string, number>;
+let freelancerRatingsMap: Map<string, number>;
 let userClientRatingsArr: Array<ClientRating>;
-let userTroubleshooterRatingsArr: Array<TroubleshooterRating>;
+let userFreelancerRatingsArr: Array<FreelancerRating>;
 
 $: if ($clientReviews) {
     clientRatingsMap = aggregateClientRatings(userHex);
     userClientRatingsArr = userClientRatings($currentUser!.pubkey, userHex);
 }
 
-$: if ($troubleshooterReviews) {
-    troubleshooterRatingsMap = aggregateTroubleshooterRatings(userHex);
-    userTroubleshooterRatingsArr = userTroubleshooterRatings(
+$: if ($freelancerReviews) {
+    freelancerRatingsMap = aggregateFreelancerRatings(userHex);
+    userFreelancerRatingsArr = userFreelancerRatings(
         $currentUser!.pubkey,
         userHex
     );
@@ -67,8 +67,8 @@ const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
     <Tab bind:group={reviewType} name="tab1" value={ReviewType.Client}>
         Client Reviews
     </Tab>
-    <Tab bind:group={reviewType} name="tab2" value={ReviewType.Troubleshooter}>
-        Troubleshooter Reviews
+    <Tab bind:group={reviewType} name="tab2" value={ReviewType.Freelancer}>
+        Freelancer Reviews
     </Tab>
     <!-- Tab Panels --->
     <svelte:fragment slot="panel">
@@ -78,10 +78,10 @@ const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
                     ratings={clientRatingsMap}
                     userRatings={userClientRatingsArr}
                 />
-            {:else if troubleshooterRatingsMap && reviewType === ReviewType.Troubleshooter}
+            {:else if freelancerRatingsMap && reviewType === ReviewType.Freelancer}
                 <ReviewSummary 
-                    ratings={troubleshooterRatingsMap}
-                    userRatings={userTroubleshooterRatingsArr}
+                    ratings={freelancerRatingsMap}
+                    userRatings={userFreelancerRatingsArr}
                 />
             {/if}
         </div>

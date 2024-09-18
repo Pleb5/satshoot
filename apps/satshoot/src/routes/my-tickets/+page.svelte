@@ -7,7 +7,7 @@ import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 import { ticketTabStore } from "$lib/stores/tab-store";
 
 import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
-import { myTickets } from '$lib/stores/troubleshoot-eventstores';
+import { myTickets } from '$lib/stores/freelance-eventstores';
 import TicketCard from '$lib/components/Cards/TicketCard.svelte';
 import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
 import { onMount } from "svelte";

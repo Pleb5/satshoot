@@ -2,7 +2,7 @@
 import {
     ReviewType,
     type ClientRating,
-    type TroubleshooterRating 
+    type FreelancerRating 
 } from "$lib/events/ReviewEvent";
 import drawerID from '$lib/stores/drawer';
 import { DrawerIDs } from '$lib/stores/drawer';
@@ -15,14 +15,14 @@ import { onMount } from "svelte";
 export let ratings: Map<string, number>;
 const average = ratings.get('average') as number;
 
-export let userRatings: Array<ClientRating> | Array<TroubleshooterRating>;
+export let userRatings: Array<ClientRating> | Array<FreelancerRating>;
 
 const drawerStore = getDrawerStore();
 
 const reviewType = $drawerStore.meta['reviewType'];
 const reviewTypeText = (
     reviewType === ReviewType.Client 
-    ? 'Client' : 'Troubleshooter'
+    ? 'Client' : 'Freelancer'
 );
 const userHex = $drawerStore.meta['user'];
 

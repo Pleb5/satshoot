@@ -48,7 +48,7 @@ import {
     myOfferFilter,
     myTickets,
     myOffers,
-} from "$lib/stores/troubleshoot-eventstores";
+} from "$lib/stores/freelance-eventstores";
 
 import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
 import { notifications } from '../stores/notifications';
@@ -266,7 +266,7 @@ export async function broadcastRelayList(ndk: NDKSvelte, readRelayUrls: string[]
     console.log('relays posted to:', relaysPosted)
 }
 
-export function troubleshootZap(zap: NDKEvent): boolean {
+export function freelancerZap(zap: NDKEvent): boolean {
     const zapKind = (zap.kind === NDKKind.Zap);
     if (!zapKind) {
         return false;
@@ -282,7 +282,7 @@ export function troubleshootZap(zap: NDKEvent): boolean {
 
     if (kindFromATag) {
         const offerEventZapped = (
-            parseInt(kindFromATag) === NDKKind.TroubleshootOffer
+            parseInt(kindFromATag) === NDKKind.FreelanceOffer
         );
 
         if (!offerEventZapped) return false;

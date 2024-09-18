@@ -12,7 +12,7 @@ import currentUser from "./user";
 
 import { getActiveServiceWorker } from "$lib/utils/helpers";
 import { goto } from "$app/navigation";
-import { troubleshootZap } from "../utils/helpers.ts";
+import { freelancerZap } from "../utils/helpers";
 
 export const notificationsEnabled: Writable<boolean> = persisted('notificationsEnabled', false) ;
 
@@ -29,7 +29,7 @@ export const ticketNotifications = derived(
     ([$notifications]) => {
 
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === NDKKind.TroubleshootTicket;
+            return notification.kind === NDKKind.FreelanceTicket;
         });
 
         const tickets: TicketEvent[] = [];
@@ -44,7 +44,7 @@ export const offerNotifications = derived(
     ([$notifications]) => {
 
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === NDKKind.TroubleshootOffer;
+            return notification.kind === NDKKind.FreelanceOffer;
         });
 
         const offers: OfferEvent[] = [];
@@ -91,7 +91,7 @@ export const receivedZapsNotifications = derived(
     ([$notifications]) => {
         // Check for zap kinds and if zap has an 'a' tag referring to an Offer
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return troubleshootZap(notification);
+            return freelancerZap(notification);
         });
 
         return filteredEvents;
@@ -115,15 +115,15 @@ export async function sendNotification(event: NDKEvent) {
         const icon = '/satshoot.svg'
 
         // The Ticket of our _Offer_ was updated
-        if (event.kind === NDKKind.TroubleshootTicket) {
+        if (event.kind === NDKKind.FreelanceTicket) {
             title = 'Update!';
             body = '🔔 Check your Notifications!';
-            tag = NDKKind.TroubleshootTicket.toString();
+            tag = NDKKind.FreelanceTicket.toString();
             // The Offer on our _Ticket_ was updated
-        } else if(event.kind === NDKKind.TroubleshootOffer) {
+        } else if(event.kind === NDKKind.FreelanceOffer) {
             title = 'Update!';
             body = '🔔 Check your Notifications!';
-            tag = NDKKind.TroubleshootOffer.toString();
+            tag = NDKKind.FreelanceOffer.toString();
         } else if (event.kind === NDKKind.EncryptedDirectMessage) {
             title = 'New Message!';
             body = '🔔 Check your Notifications!';
