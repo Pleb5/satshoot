@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk, { LoginMethod } from '$lib/stores/ndk';
+    import ndk, { type LoginMethod } from '$lib/stores/ndk';
     import { loginMethod } from '$lib/stores/user';
 
     import { RestoreMethod, sessionPK } from "$lib/stores/ndk";
@@ -122,8 +122,8 @@
                             localStorage.setItem('nostr-nsec', encryptedSecret);
                         }
                         localStorage.setItem('nostr-npub', npub);
-                        $loginMethod = LoginMethod.Ephemeral;
-                        localStorage.setItem('login-method', $loginMethod);
+                        $loginMethod = 'local';
+                        localStorage.setItem('login-method', $loginMethod as LoginMethod);
 
                         const t: ToastSettings = {
                             message: 'Encrypted Secret saved in local storage!',

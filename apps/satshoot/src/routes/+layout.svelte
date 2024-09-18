@@ -47,7 +47,7 @@
 
     import { wot, wotUpdating, wotUpdateFailed } from '$lib/stores/wot';
 
-    import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
+    import { RestoreMethod, type LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06";
     import {
@@ -198,11 +198,16 @@
         $loggingIn = true;
         await tick();
 
+        // Migration to login-method = 'local'  instead of 'ephemeral'
+        const method = localStorage.getItem('login-method');
+        if (method === 'ephemeral') {
+            localStorage.setItem('login-method', 'local')
+        }
         // Try to get saved Login method from localStorage and login that way
-        $loginMethod = localStorage.getItem("login-method")?? null;
+        $loginMethod = method as LoginMethod ?? null;
 
         if ($loginMethod){
-            if ($loginMethod === LoginMethod.Ephemeral) {
+            if ($loginMethod === 'local') {
                 // We either get the private key from sessionStorage or decrypt from localStorage
                 if ($sessionPK) {
                     $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
@@ -264,7 +269,7 @@
                         toastStore.trigger(t);
                     }
                 }
-            } else if($loginMethod === LoginMethod.Bunker) {
+            } else if($loginMethod === 'bunker') {
                 const localBunkerKey = localStorage.getItem("bunkerLocalSignerPK");
                 const bunkerTargetNpub = localStorage.getItem("bunkerTargetNpub");
                 const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
@@ -338,7 +343,7 @@
                     }
 
                 }
-            } else if ($loginMethod === LoginMethod.NIP07) {
+            } else if ($loginMethod === 'nip07') {
                 if (!$ndk.signer) {
                     $ndk.signer = new NDKNip07Signer();
                 }
@@ -662,7 +667,7 @@
                                 strokeLinecap="round" width="w-12" 
                             />
                         </div>
-                        {:else if $loginMethod === LoginMethod.Ephemeral}
+                        {:else if $loginMethod === 'local'}
                         <button 
                             class="btn bg-primary-300-600-token"
                             type="button"

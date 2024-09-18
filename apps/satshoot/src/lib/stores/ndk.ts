@@ -28,11 +28,7 @@ export enum RestoreMethod {
     Nsec = 2,
 }
 
-export enum LoginMethod {
-    Bunker = "bunker",
-    NIP07 = "nip07",
-    Ephemeral = "ephemeral",
-}
+export type LoginMethod = "bunker" | "nip07" | "local";
 
 // save this in session storage when logging in or restoring cipher pk
 // then check for pk store in login before trying to decrypt

@@ -1,6 +1,6 @@
 <script lang='ts'>
     import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
-    import ndk, { LoginMethod } from "$lib/stores/ndk";
+    import ndk, { type LoginMethod } from "$lib/stores/ndk";
 
     import redirectStore from "$lib/stores/network";
     import { loggedIn, loginMethod } from "$lib/stores/user";
@@ -68,9 +68,9 @@
 
                 if (returnedUser.npub) {
                     modalStore.clear();
-                    $loginMethod = LoginMethod.NIP07;
+                    $loginMethod = 'nip07';
                     $ndk.signer = nip07Signer;
-                    localStorage.setItem('login-method', $loginMethod);
+                    localStorage.setItem('login-method', $loginMethod as LoginMethod);
                     initializeUser($ndk);
                 }
             } catch(e) {

@@ -4,7 +4,7 @@ import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
 
 import { getSetSerializer } from '../utils/misc';
-import { LoginMethod } from '$lib/stores/ndk';
+import { type LoginMethod } from '$lib/stores/ndk';
 
 
 export const loginAlert = writable(true);
