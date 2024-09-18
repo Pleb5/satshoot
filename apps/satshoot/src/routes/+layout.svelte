@@ -10,7 +10,6 @@
     import ndk from "$lib/stores/ndk";
     import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import { bunkerNDK } from '$lib/stores/ndk';
-    import { connected } from "$lib/stores/ndk";
     import {
         sessionPK,
     } from "$lib/stores/ndk";

@@ -114,7 +114,12 @@
         await tick();
 
         try {
-            await broadcastRelayList($ndk, readRelayUrls, writeRelayUrls);
+            await broadcastRelayList(
+                $ndk,
+                Array.from(readRelayUrls), 
+                Array.from(writeRelayUrls)
+            );
+
             posting = false;
 
             const t: ToastSettings = {

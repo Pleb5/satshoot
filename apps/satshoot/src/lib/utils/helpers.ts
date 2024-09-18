@@ -64,7 +64,7 @@ import {
 } from '../stores/network';
 
 
-export async function initializeUser(ndk: NDK) {
+export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init')
     try {
         loggingIn.set(false);
@@ -142,7 +142,7 @@ export async function initializeUser(ndk: NDK) {
     }
 }
 
-export async function logout() {
+export function logout() {
     console.log('logout')
 
     loggedIn.set(false);

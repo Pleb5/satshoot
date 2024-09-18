@@ -1,6 +1,5 @@
 import { writable, get, derived } from 'svelte/store';
 import { persisted } from 'svelte-persisted-store';
-import * as devalue from "devalue";
 import type { Writable } from 'svelte/store';
 
 import {
@@ -23,7 +22,7 @@ import {
     NDKKind,
 } from '@nostr-dev-kit/ndk';
 
-import type { NDKSvelte } from '@nostr-dev-kit/ndk-svelte';
+import { type NDKSvelte } from '@nostr-dev-kit/ndk-svelte';
 
 import currentUser from '../stores/user';
 import {
@@ -100,7 +99,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         const $networkWoTScores = new Map<Hexpubkey, number>();
 
 
-        await ndk.outboxTracker.trackUsers([user.pubkey, SatShootPubkey]);
+        await ndk.outboxTracker!.trackUsers([user.pubkey, SatShootPubkey]);
 
         // log write relays with buitin fn
 
@@ -137,7 +136,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         const authorsArray = Array.from(authors);
         console.log('authors', authors)
 
-        await ndk.outboxTracker.trackUsers(authorsArray);
+        await ndk.outboxTracker!.trackUsers(authorsArray);
 
         console.log('outboxPool after tracking all authors:', ndk.outboxPool)
 
