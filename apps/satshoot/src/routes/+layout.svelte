@@ -198,10 +198,12 @@
         await tick();
 
         // Migration to login-method = 'local'  instead of 'ephemeral'
-        const method = localStorage.getItem('login-method');
+        let method = localStorage.getItem('login-method');
         if (method === 'ephemeral') {
             localStorage.setItem('login-method', 'local')
+            method = 'local';
         }
+
         // Try to get saved Login method from localStorage and login that way
         $loginMethod = method as LoginMethod ?? null;
 
