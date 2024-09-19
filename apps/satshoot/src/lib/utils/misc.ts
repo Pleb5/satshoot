@@ -5,23 +5,29 @@ import {
     NDKKind,
 } from '@nostr-dev-kit/ndk';
 
+import { NDKKind } from '@nostr-dev-kit/ndk';
+
 export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
+
+if (typeof NDKKind === 'undefined') {
+    throw new Error('NDKKind is undefined. Check your imports.');
+}
 
 export const bunkerPerms = [
     'get_public_key',
     'get_relays',
     'nip04_encrypt',
     'nip04_decrypt',
-    'sign_event:' + NDKKind.FreelanceTicket.toString(),
-    'sign_event:' + NDKKind.FreelanceOffer.toString(),
-    'sign_event:' + NDKKind.Metadata.toString(),
-    'sign_event:' + NDKKind.Text.toString(),
-    'sign_event:' + NDKKind.EncryptedDirectMessage.toString(),
-    'sign_event:' + NDKKind.Review.toString(),
-    'sign_event:' + NDKKind.ZapRequest.toString(),
-    'sign_event:' + NDKKind.RelayList.toString(),
-    'sign_event:' + NDKKind.HttpAuth.toString(),
-]
+    `sign_event:${NDKKind.FreelanceTicket}`,
+    `sign_event:${NDKKind.FreelanceOffer}`,
+    `sign_event:${NDKKind.Metadata}`,
+    `sign_event:${NDKKind.Text}`,
+    `sign_event:${NDKKind.EncryptedDirectMessage}`,
+    `sign_event:${NDKKind.Review}`,
+    `sign_event:${NDKKind.ZapRequest}`,
+    `sign_event:${NDKKind.RelayList}`,
+    `sign_event:${NDKKind.HttpAuth}`,
+];
 
 interface SetSerializer {
       stringify: (set: Set<string>) => string,

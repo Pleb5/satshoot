@@ -18,6 +18,7 @@ import { page } from '$app/stores';
 export let avatarRight = true;
 export let message: NDKEvent;
 export let searchText = '';
+export let isFirstOfDay = false;
 
 let decryptedDM: string;
 const senderUser = $ndk.getUser({pubkey: message.pubkey});
@@ -33,6 +34,18 @@ let messageLink = '';
 
 let extraClasses = 'variant-soft-primary rounded-tr-none'
 let templateColumn = 'grid-cols-[auto_1fr]';
+
+function formatDate(date: Date): string {
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 7) {
+        return diffDays === 1 ? "Yesterday" : `${diffDays} days ago`;
+    } else {
+        return date.toLocaleDateString();
+    }
+}
 
 onMount(async () => {
     if (avatarRight) {
@@ -105,6 +118,13 @@ $: if (decryptedDM) {
 </script>
 
 <div class="{showMyself ? '' : 'hidden'}">
+    {#if isFirstOfDay}
+        <div class="date-separator">
+            <hr>
+            <span>{formatDate(messageDate)}</span>
+            <hr>
+        </div>
+    {/if}
     {#if decryptedDM}
         <div class="grid {templateColumn} gap-x-2 ">
             {#if !avatarRight}
@@ -157,3 +177,21 @@ $: if (decryptedDM) {
         </div>
     {/if}
 </div>
+
+<style>
+    .date-separator {
+        display: flex;
+        align-items: center;
+        margin: 1rem 0;
+    }
+    .date-separator hr {
+        flex-grow: 1;
+        border: none;
+        border-top: 1px solid #ccc;
+    }
+    .date-separator span {
+        padding: 0 10px;
+        color: #888;
+        font-size: 0.9em;
+    }
+</style>

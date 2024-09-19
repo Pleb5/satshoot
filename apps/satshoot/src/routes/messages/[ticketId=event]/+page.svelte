@@ -112,6 +112,13 @@
 		elemChat.scrollTo({ top: elemChat.scrollHeight, behavior });
 	}
 
+	function isFirstMessageOfDay(messages: NDKEvent[], index: number): boolean {
+		if (index === 0) return true;
+        	const currentDate = new Date(messages[index].created_at * 1000);
+		const previousDate = new Date(messages[index - 1].created_at * 1000);
+        	return currentDate.toDateString() !== previousDate.toDateString();
+	}
+
 	async function sendMessage() {
         if (currentMessage) {
             if (!currentPerson) {
@@ -572,11 +579,12 @@
                         style="height: {chatHeight}px;"
                     >
                         {#if $currentUser}
-                            {#each filteredMessageFeed as message(message.id)}
+                            {#each filteredMessageFeed as message, index (message.id)}
                                 <MessageCard
                                     avatarRight={message.pubkey !== $currentUser.pubkey}
                                     {message}
                                     searchText={searchInput}
+                                    isFirstOfDay={isFirstMessageOfDay(filteredMessageFeed, index)}
                                 />
                             {/each}
                         {:else}
