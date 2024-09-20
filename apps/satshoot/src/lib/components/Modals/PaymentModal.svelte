@@ -1,7 +1,9 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
-    import currentUser from '$lib/stores/user';
     // import type { NDKZapMethod } from "@nostr-dev-kit/ndk";
+    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { SatShootPubkey } from '$lib/utils/misc';
     import {
         generateZapRequest,
         NDKKind,
@@ -9,19 +11,12 @@
         NDKSubscriptionCacheUsage,
         type NDKFilter,
     } from '@nostr-dev-kit/ndk';
-    import { TicketEvent } from '$lib/events/TicketEvent';
-    import { Invoice } from '@getalby/lightning-tools';
-    import { getToastStore } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings } from '@skeletonlabs/skeleton';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-    import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { type SvelteComponent, tick } from 'svelte';
-    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import { getModalStore, getToastStore, popup, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { tick, type SvelteComponent } from 'svelte';
     import OfferCard from '../Cards/OfferCard.svelte';
-    import { SatShootPubkey } from '$lib/utils/misc';
 
+    import { getZapConfiguration } from '$lib/utils/helpers';
     import { insertThousandSeparator } from '$lib/utils/misc';
 
     const toastStore = getToastStore();
@@ -94,18 +89,10 @@
                 paid.set(UserEnum.Freelancer, false);
                 paid.set(UserEnum.Satshoot, false);
 
-                const freelancerUser = $ndk.getUser({ pubkey: offer.pubkey });
-
                 if (freelancerShare > 0) {
-                    const zapConfig = await freelancerUser
-                        .getZapConfiguration()
-                        .catch((err) => {
-                            console.log(
-                                'Error: An error occurred in getting getZapConfiguration for Freelancer',
-                                err
-                            );
-                            return null;
-                        });
+                    const zapConfig = await getZapConfiguration(offer.pubkey);
+
+                    console.log('zapConfig :>> ', zapConfig);
 
                     if (zapConfig) {
                         const invoice = await generateInvoice(
@@ -136,16 +123,8 @@
                     }
                 }
 
-                const satShootUser = $ndk.getUser({ pubkey: SatShootPubkey });
-
                 if (satshootSumMillisats > 0) {
-                    const zapConfig = await satShootUser.getZapConfiguration().catch((err) => {
-                        console.log(
-                            'Error: An error occurred in getting getZapConfiguration for satshoot',
-                            err
-                        );
-                        return null;
-                    });
+                    const zapConfig = await getZapConfiguration(SatShootPubkey);
 
                     if (zapConfig) {
                         const invoice = await generateInvoice(
@@ -192,19 +171,7 @@
                     launchPaymentModal({
                         invoice: invoice.paymentRequest,
                         // NOTE: only fired if paid with WebLN
-                        onPaid: ({ preimage }) => {
-                            const paidInvoice = new Invoice({
-                                pr: invoice.paymentRequest,
-                            });
-                            paidInvoice
-                                .validatePreimage(preimage)
-                                .then((isValid) => {
-                                    paid.set(key, isValid);
-                                })
-                                .catch(() => {
-                                    paid.set(key, false);
-                                });
-                        },
+                        onPaid: ({ preimage }) => paid.set(key, true),
                     });
 
                     // Fetch zap receipts if possible
@@ -227,26 +194,12 @@
                             NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key), $ndk)
                         );
 
-                        // Polling timeout
-                        const timeout = setTimeout(
-                            () => {
-                                errorMessage = `Timeout occurred while waiting for zap receipt of ${key}`;
-                                closeModal();
-                            },
-                            1 * 30 * 1000 // 1 minute
-                        );
-
                         subscription.on('event', async (event: NDKEvent) => {
-                            const preimage = event.tagValue('preimage');
-                            if (preimage) {
-                                const paidInvoice = new Invoice({
-                                    pr: invoice.paymentRequest,
-                                });
-                                const isValid = await paidInvoice.validatePreimage(preimage);
-                                if (isValid && !paid.get(key)) {
-                                    paid.set(key, true);
-                                    closeModal();
-                                }
+                            const bolt11 = event.tagValue('bolt11');
+
+                            if (bolt11 === invoice.paymentRequest && !paid.get(key)) {
+                                paid.set(key, true);
+                                closeModal();
                             }
                         });
 
@@ -254,7 +207,6 @@
                             const unsub = onModalClosed(() => {
                                 console.log('onModalClosed');
                                 subscription.stop();
-                                clearTimeout(timeout);
                                 resolve();
                                 unsub();
                             });

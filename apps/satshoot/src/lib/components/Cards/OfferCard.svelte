@@ -119,7 +119,7 @@
         }
 
         paymentStore = $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap], '#a': [offer.offerAddress] },
+            { kinds: [NDKKind.Zap], '#e': [offer.id] },
             {
                 closeOnEose: false,
                 groupable: true,
