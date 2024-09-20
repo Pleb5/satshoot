@@ -92,8 +92,6 @@
                 if (freelancerShare > 0) {
                     const zapConfig = await getZapConfiguration(offer.pubkey);
 
-                    console.log('zapConfig :>> ', zapConfig);
-
                     if (zapConfig) {
                         const invoice = await generateInvoice(
                             offer,
