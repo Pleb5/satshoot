@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk, { type LoginMethod } from "$lib/stores/ndk";
+    import ndk, { type LoginMethod, blastrUrl } from "$lib/stores/ndk";
 
     import redirectStore from "$lib/stores/network";
     import { NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
@@ -49,7 +49,6 @@
             website: ''
         };
 
-        const blastrUrl = 'wss://nostr.mutinywallet.com';
         $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, $ndk));
         user.publish();
 

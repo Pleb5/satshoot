@@ -14,7 +14,7 @@ export const DEFAULTRELAYURLS = [
     "wss://relay.primal.net/",
 ]
 
-export const OUTBOXRELAYURLS = [
+export const BOOTSTRAPOUTBOXRELAYS = [
     "wss://purplepag.es/",
     "wss://relay.damus.io/",
     "wss://relay.primal.net/",
@@ -22,6 +22,8 @@ export const OUTBOXRELAYURLS = [
     // "wss://nos.lol/",
     // "wss://bitcoiner.social/",
 ];
+
+export const blastrUrl = 'wss://sendit.nosflare.com';
 
 export enum RestoreMethod {
     Seed = 1,
@@ -41,7 +43,7 @@ export const sessionPK: Writable<string> =
 // that is, my tickets and tickets I bid on, as well as new messages
 const ndkSvelte = new NDKSvelte({
     enableOutboxModel: true,
-    outboxRelayUrls: OUTBOXRELAYURLS,
+    outboxRelayUrls: BOOTSTRAPOUTBOXRELAYS,
     blacklistRelayUrls: [],
     autoConnectUserRelays: true,
     autoFetchUserMutelist: true,

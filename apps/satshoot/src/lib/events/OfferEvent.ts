@@ -1,7 +1,7 @@
 import { NDKEvent, type Hexpubkey, type NDK, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
 import { SatShootPubkey } from "$lib/utils/misc";
 
-import { OUTBOXRELAYURLS } from "$lib/stores/ndk";
+import { BOOTSTRAPOUTBOXRELAYS } from "$lib/stores/ndk";
 
 import {nip19} from 'nostr-tools';
 import { NDKKind } from "@nostr-dev-kit/ndk";
@@ -111,8 +111,8 @@ export class OfferEvent extends NDKEvent {
             throw new Error(`Invalid Freelancer pubkey: ${freelancer}, cannot set zap splits!`);
         }
         this.removeTag("zap");
-        this.tags.push(['zap', SatShootPubkey, OUTBOXRELAYURLS[0], pledgeSplit.toString()]);
-        this.tags.push(['zap', freelancer, OUTBOXRELAYURLS[0], (100 - pledgeSplit).toString()]);
+        this.tags.push(['zap', SatShootPubkey, BOOTSTRAPOUTBOXRELAYS[0], pledgeSplit.toString()]);
+        this.tags.push(['zap', freelancer, BOOTSTRAPOUTBOXRELAYS[0], (100 - pledgeSplit).toString()]);
         this._pledgeSplit = pledgeSplit;
     }
 

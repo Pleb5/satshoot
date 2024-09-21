@@ -10,7 +10,7 @@ import {
     getNip57ZapSpecFromLud,
 } from '@nostr-dev-kit/ndk';
 
-import ndk from '$lib/stores/ndk';
+import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
 
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 
@@ -235,7 +235,6 @@ export async function broadcastRelayList(
     userRelayList.readRelayUrls = Array.from(readRelayUrls);
     userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
 
-    const blastrUrl = 'wss://nostr.mutinywallet.com';
     ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, ndk));
     // const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
     //     blastrUrl,
