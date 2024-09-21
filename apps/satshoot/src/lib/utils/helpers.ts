@@ -156,7 +156,7 @@ export function logout() {
 
     get(ndk).signer = undefined;
 
-    goto('/ticket-feed');
+    goto('/');
 }
 
 export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
