@@ -8,6 +8,7 @@ import {
     type NDKFilter,
     profileFromEvent,
     getNip57ZapSpecFromLud,
+    NDKRelaySet,
 } from '@nostr-dev-kit/ndk';
 
 import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
@@ -347,18 +348,30 @@ export async function checkRelayConnections() {
 export async function fetchEventFromRelays(
     filter: NDKFilter,
     timeoutMS: number = 15000,
-    fallbackToCache: boolean = false
+    fallbackToCache: boolean = false,
+    relays?: NDKRelay[]
 ) {
     const $ndk = get(ndk);
 
     const promise = new Promise<NDKEvent>((resolve, reject) => {
         let fetchedEvent: NDKEvent | null = null;
 
-        const relayOnlySubscription = $ndk.subscribe(filter, {
-            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-            closeOnEose: true,
-            groupable: false,
-        });
+        // If relays are provided construct a set and pass over to sub
+        const relaySet = relays
+            ? new NDKRelaySet(new Set(relays), $ndk)
+            : undefined
+        ;
+
+
+        const relayOnlySubscription = $ndk.subscribe(
+            filter,
+            {
+                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+                closeOnEose: true,
+                groupable: false,
+            },
+            relaySet
+        );
 
         const timeout = setTimeout(() => {
             relayOnlySubscription.stop();
@@ -412,14 +425,29 @@ export async function fetchEventFromRelays(
 }
 
 export async function getZapConfiguration(pubkey: string) {
+    const $ndk = get(ndk);
+
+    const metadataFilter = {
+        kinds: [NDKKind.Metadata],
+        authors: [pubkey],
+    };
+    //
+    // await $ndk.outboxTracker!.trackUsers([pubkey]);
+
+    const metadataRelays = [
+        ...$ndk.outboxPool!.connectedRelays(),
+        ...$ndk.pool!.connectedRelays()
+    ];
+
+    console.log('ndk relays connected', metadataRelays)
+
     const metadataEvent = await fetchEventFromRelays(
-        {
-            kinds: [NDKKind.Metadata],
-            authors: [pubkey],
-        },
-        5000
+        metadataFilter,
+        5000,
+        false,
+        metadataRelays
     ).catch((err) => {
-        console.error(`An error occurred in getZapConfiguration for ${pubkey}`, err);
+        console.error(`An error occurred in fetching profile metadata for ${pubkey}`, err);
         return null;
     });
 
@@ -427,19 +455,42 @@ export async function getZapConfiguration(pubkey: string) {
 
     const profile = profileFromEvent(metadataEvent);
 
-    const { lud06, lud16 } = profile;
+    try {
+        const lnurlSpec = await getNip57ZapSpecFromLud(
+            {
+                lud06: profile.lud06,
+                lud16: profile.lud16
+            },
+            $ndk
+        );
 
-    const $ndk = get(ndk);
-    const lnurlSpec = await getNip57ZapSpecFromLud({ lud06, lud16 }, $ndk)
-        .then((res) => {
-            if (!res) return null;
-
-            return res;
-        })
-        .catch((err) => {
-            console.error(`An error occurred in getZapConfiguration for ${pubkey}`, err);
+        if (!lnurlSpec) {
             return null;
-        });
+        }
 
-    return lnurlSpec;
+        return lnurlSpec;
+    } catch (err) {
+        console.error(`An error occurred in getZapConfiguration for ${pubkey}`, err);
+        console.error('Try to parse lud06 as lud16 as last resort..');
+        try {
+            // try if lud06 is actually a lud16
+            const lnurlSpec = await getNip57ZapSpecFromLud(
+                {lud06: undefined, lud16: profile.lud06},
+                $ndk
+            );
+
+            if (!lnurlSpec) {
+                return null 
+            }
+
+            return lnurlSpec;
+
+        } catch (err) {
+            console.error(
+                `Tried to parse lud06 as lud16 but error occurred again for ${pubkey}`,
+                err
+            );
+            return null;
+        }
+    }
 }
