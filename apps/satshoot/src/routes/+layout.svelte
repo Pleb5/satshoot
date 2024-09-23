@@ -145,11 +145,6 @@
         hideAppMenu = false
     }
 
-    $ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
-        console.log('relay disconnected', relay)
-        checkRelayConnections();
-    });
-
     $ndk.pool.on('relay:connect', () => {
         if ($ndk.pool.stats().disconnected > 0) {
             console.log('Relay connected but there are still relays disconnected!')
@@ -375,7 +370,7 @@
             showAppInstallPromotion = true;
         });
 
-        window.addEventListener('offline', (e) => {
+        window.addEventListener('offline', () => {
             console.log('offline')
             toastStore.clear();
             const t: ToastSettings = {
@@ -387,10 +382,16 @@
             $online = false;
         });
 
-        window.addEventListener('online', (e) => {
+        window.addEventListener('online', () => {
             $online = true;
 
             window.location.reload();
+        });
+
+        // We need to check relay connections on regaining focus,
+        // especially on mobile where user can put app in the background
+        window.addEventListener('focus', () => {
+            checkRelayConnections();
         });
 
         // Setup client-side caching
