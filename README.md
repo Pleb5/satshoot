@@ -16,7 +16,7 @@ https://satshoot.com
 - Clients post any job or problem. These are called Tickets. This is basically a Request For Quote (RFQ)
 - Freelancers bid on Tickets with Offers to resolve the problem for sats. It can be an absolute or a time-based price
 - Clients select the most attractive Offer: Price and Reputation of the bidder matter most
-- If an Offer is accepted the Freelancing can begin via any means of communication, defaulting to nostr DM-s (nip04)
+- If an Offer is accepted problem solving can begin via any means of communication, defaulting to nostr DM-s (nip04)
 - You can pay any time after agreement and review each other
 - You build Reputation by earning / paying for services with public zaps on nostr and by receiving public reviews
 - You can post on your nostr feed to share Tickets and promote your services
