@@ -31,6 +31,9 @@ import { wotUpdating } from "$lib/stores/wot";
 import type { NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
 import { SatShootPubkey } from "$lib/utils/misc";
 import { onDestroy } from "svelte";
+    import { wotFilteredOffers, wotFilteredTickets } from "$lib/stores/freelance-eventstores";
+    import type { TicketEvent } from "$lib/events/TicketEvent";
+    import type { OfferEvent } from "$lib/events/OfferEvent";
 
 export let user: Hexpubkey;
 export let type: ReviewType | undefined;
@@ -155,21 +158,59 @@ $: if (
     }
 }
 
-$: if($currentUser && user && $wot) {
+$: if($currentUser && user && $wot && $wotFilteredTickets && $wotFilteredOffers) {
+    const allTicketsOfUser = $wotFilteredTickets.filter(
+        (ticket: TicketEvent) => ticket.pubkey === user
+    );
+
+    const allOffersOfUser = $wotFilteredOffers.filter(
+        (offer: OfferEvent) => offer.pubkey === user
+    );
+
+    // Get all winner offer a-tags OF this user as a freelancer 
+    // We take only those that were on tickets from a client in wot
+    const allWinnerOffersOfUser: string[] = [];
+
+    // Get all winner offer a-tags FOR this user as a client 
+    // We take only freelancers in wot
+    const allWinnerOffersForUser: string[] = [];
+
+    // Get all tickets where user won and client is in wot
+    // OR tickets where user is a client and winner freelancer is in wot
+    const allTicketsWhereUserInvolved: string[] = [];
+
+    $wotFilteredTickets.forEach((t: TicketEvent) => {
+        allOffersOfUser.forEach((o: OfferEvent) => {
+            if (t.acceptedOfferAddress === o.offerAddress) {
+                allWinnerOffersOfUser.push(o.id);
+                allTicketsWhereUserInvolved.push(t.id);
+            }
+        });
+    });
+
+    $wotFilteredOffers.forEach((o: OfferEvent) => {
+        allTicketsOfUser.forEach((t: TicketEvent) => {
+            if (t.acceptedOfferAddress === o.offerAddress) {
+                allWinnerOffersForUser.push(o.id);
+                allTicketsWhereUserInvolved.push(t.id);
+            }
+        });
+    });
+
     allEarningsStore = $ndk.storeSubscribe(
-        {kinds: [NDKKind.Zap], '#p': [user]},
+        {kinds: [NDKKind.Zap], '#p': [user], '#e': allWinnerOffersOfUser},
         subOptions,
     );
 
     allPaymentsStore = $ndk.storeSubscribe(
-        {kinds: [NDKKind.Zap], '#P': [user]},
+        {kinds: [NDKKind.Zap], '#e': allWinnerOffersForUser},
         subOptions,
     );
 
     allPledgesStore = $ndk.storeSubscribe(
         {
             kinds: [NDKKind.Zap],
-            '#P': [user],
+            '#e': allTicketsWhereUserInvolved,
             '#p': [SatShootPubkey]
         },
         subOptions,
