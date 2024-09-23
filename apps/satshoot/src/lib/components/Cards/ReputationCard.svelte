@@ -69,9 +69,23 @@ let allEarningsStore: NDKEventStore<NDKEvent>;
 let allPaymentsStore: NDKEventStore<NDKEvent>;
 let allPledgesStore: NDKEventStore<NDKEvent>;
 
+let needSetup = true;
+
 let allEarnings = 0;
 let allPayments = 0;
 let allPledges = 0;
+
+// Get all winner offer a-tags OF this user as a freelancer 
+// We take only those that were on tickets from a client in wot
+const allWinnerOffersOfUser: string[] = [];
+
+// Get all winner offer a-tags FOR this user as a client 
+// We take only freelancers in wot
+const allWinnerOffersForUser: string[] = [];
+
+// Get all tickets where user won and client is in wot
+// OR tickets where user is a client and winner freelancer is in wot
+const allTicketsWhereUserInvolved: string[] = [];
 
 const baseClasses = 'card p-4 bg-surface-300-600-token';
 
@@ -158,7 +172,13 @@ $: if (
     }
 }
 
-$: if($currentUser && user && $wot && $wotFilteredTickets && $wotFilteredOffers) {
+$: if(
+    $currentUser && needSetup
+    && user && $wot
+    && $wotFilteredTickets && $wotFilteredOffers
+) {
+    needSetup = true;
+
     const allTicketsOfUser = $wotFilteredTickets.filter(
         (ticket: TicketEvent) => ticket.pubkey === user
     );
@@ -166,18 +186,6 @@ $: if($currentUser && user && $wot && $wotFilteredTickets && $wotFilteredOffers)
     const allOffersOfUser = $wotFilteredOffers.filter(
         (offer: OfferEvent) => offer.pubkey === user
     );
-
-    // Get all winner offer a-tags OF this user as a freelancer 
-    // We take only those that were on tickets from a client in wot
-    const allWinnerOffersOfUser: string[] = [];
-
-    // Get all winner offer a-tags FOR this user as a client 
-    // We take only freelancers in wot
-    const allWinnerOffersForUser: string[] = [];
-
-    // Get all tickets where user won and client is in wot
-    // OR tickets where user is a client and winner freelancer is in wot
-    const allTicketsWhereUserInvolved: string[] = [];
 
     $wotFilteredTickets.forEach((t: TicketEvent) => {
         allOffersOfUser.forEach((o: OfferEvent) => {
@@ -196,6 +204,10 @@ $: if($currentUser && user && $wot && $wotFilteredTickets && $wotFilteredOffers)
             }
         });
     });
+
+    console.log('allWinnerOffersOfUser', allWinnerOffersOfUser);
+    console.log('allWinnerOffersForUser', allWinnerOffersForUser);
+    console.log('allTicketsWhereUserInvolved', allTicketsWhereUserInvolved);
 
     allEarningsStore = $ndk.storeSubscribe(
         {kinds: [NDKKind.Zap], '#p': [user], '#e': allWinnerOffersOfUser},
@@ -219,46 +231,58 @@ $: if($currentUser && user && $wot && $wotFilteredTickets && $wotFilteredOffers)
 
 $: if ($allEarningsStore) {
     allEarnings = 0;
-    console.log('all earnings recalc', $allEarningsStore)
     $allEarningsStore.forEach((zap: NDKEvent)=>{
-        const zappee = zap.tagValue('P');
-
-        if (zappee && $wot.has(zappee) && freelancerZap(zap)) {
-            console.log('calc this earning')
-            const zapInvoice = zapInvoiceFromEvent(zap);
-            if (zapInvoice && zapInvoice.amount) {
-                console.log('amount', zapInvoice.amount)
-                allEarnings += Math.round(zapInvoice.amount / 1000);
-            }
+        const zapInvoice = zapInvoiceFromEvent(zap);
+        if (zapInvoice && zapInvoice.amount) {
+            console.log('amount', zapInvoice.amount)
+            allEarnings += Math.round(zapInvoice.amount / 1000);
         }
     });
 }
 
 $: if ($allPaymentsStore) {
     allPayments = 0;
-    console.log('all payments recalc', $allPaymentsStore)
     $allPaymentsStore.forEach((zap: NDKEvent)=>{
-        if (freelancerZap(zap)) {
-            const zapInvoice = zapInvoiceFromEvent(zap);
-            if (zapInvoice && zapInvoice.amount) {
-                console.log('amount', zapInvoice.amount)
-                allPayments += Math.round(zapInvoice.amount / 1000);            }
+        const zapInvoice = zapInvoiceFromEvent(zap);
+        if (zapInvoice && zapInvoice.amount) {
+            console.log('amount', zapInvoice.amount)
+            allPayments += Math.round(zapInvoice.amount / 1000);
         }
     });
 }
 
 $: if ($allPledgesStore) {
     allPledges = 0;
-    console.log('all pledges recalc', $allPledgesStore)
     $allPledgesStore.forEach((zap: NDKEvent)=>{
-        const zappee = zap.tagValue('P')
-        if (zappee && $wot.has(zappee)) {
-            const zapInvoice = zapInvoiceFromEvent(zap);
-            if (zapInvoice && zapInvoice.amount) {
-                console.log('amount', zapInvoice.amount)
-                allPledges += Math.round(zapInvoice.amount / 1000);
+        const zapInvoice = zapInvoiceFromEvent(zap);
+        if (zapInvoice && zapInvoice.amount) {
+            console.log('amount', zapInvoice.amount)
+            const pledgeSum = Math.round(zapInvoice.amount / 1000);
+
+            // Calculate share of pledge
+            const ticket = $wotFilteredTickets.filter(
+                (t: TicketEvent) => t.id === zap.tagValue('e')
+            )
+                .at(0) as TicketEvent;
+
+            const offer = $wotFilteredOffers.filter(
+                (o:OfferEvent) => o.offerAddress === ticket.acceptedOfferAddress
+            )
+            .at(0) as OfferEvent;
+
+            const absolutePledgeSplit = Math.round(offer.pledgeSplit / 100 * pledgeSum);
+            let userShare = 0;
+            // user is the client
+            if (ticket.pubkey === user) {
+                userShare = pledgeSum - absolutePledgeSplit;
+            } else {
+                // user is the freelancer
+                userShare = absolutePledgeSplit;
             }
+
+            allPledges += userShare;
         }
+
     });
 }
 
@@ -333,10 +357,7 @@ onDestroy(()=>{
                             <div>
                                 <span>
                                     {
-                                    (allEarnings 
-                                        ? insertThousandSeparator(allEarnings)
-                                        : '?'
-                                    ) + ' sats'
+                                        insertThousandSeparator(allEarnings) + ' sats'
                                     }
                                 </span>
                             </div>
@@ -354,10 +375,7 @@ onDestroy(()=>{
                             <div>
                                 <span>
                                     {
-                                    (allPayments
-                                        ? insertThousandSeparator(allPayments)
-                                        : '?'
-                                    ) + ' sats'
+                                        insertThousandSeparator(allPayments) + ' sats'
                                     }
                                 </span>
                             </div>
@@ -374,10 +392,7 @@ onDestroy(()=>{
                             <div>
                                 <span>
                                     {
-                                    (allPledges
-                                        ? insertThousandSeparator(allPledges)
-                                        : '?'
-                                    ) + ' sats'
+                                        insertThousandSeparator(allPledges) + ' sats'
                                     }
                                 </span>
                             </div>
