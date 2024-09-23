@@ -178,11 +178,15 @@ $: if($currentUser && user && $wot) {
 
 $: if ($allEarningsStore) {
     allEarnings = 0;
+    console.log('all earnings recalc', $allEarningsStore)
     $allEarningsStore.forEach((zap: NDKEvent)=>{
         const zappee = zap.tagValue('P');
+
         if (zappee && $wot.has(zappee) && freelancerZap(zap)) {
+            console.log('calc this earning')
             const zapInvoice = zapInvoiceFromEvent(zap);
             if (zapInvoice && zapInvoice.amount) {
+                console.log('amount', zapInvoice.amount)
                 allEarnings += Math.round(zapInvoice.amount / 1000);
             }
         }
@@ -191,11 +195,12 @@ $: if ($allEarningsStore) {
 
 $: if ($allPaymentsStore) {
     allPayments = 0;
+    console.log('all payments recalc', $allPaymentsStore)
     $allPaymentsStore.forEach((zap: NDKEvent)=>{
-        const zappee = zap.tagValue('P')
-        if (zappee && $wot.has(zappee) && freelancerZap(zap)) {
+        if (freelancerZap(zap)) {
             const zapInvoice = zapInvoiceFromEvent(zap);
             if (zapInvoice && zapInvoice.amount) {
+                console.log('amount', zapInvoice.amount)
                 allPayments += Math.round(zapInvoice.amount / 1000);            }
         }
     });
@@ -203,11 +208,13 @@ $: if ($allPaymentsStore) {
 
 $: if ($allPledgesStore) {
     allPledges = 0;
+    console.log('all pledges recalc', $allPledgesStore)
     $allPledgesStore.forEach((zap: NDKEvent)=>{
         const zappee = zap.tagValue('P')
         if (zappee && $wot.has(zappee)) {
             const zapInvoice = zapInvoiceFromEvent(zap);
             if (zapInvoice && zapInvoice.amount) {
+                console.log('amount', zapInvoice.amount)
                 allPledges += Math.round(zapInvoice.amount / 1000);
             }
         }

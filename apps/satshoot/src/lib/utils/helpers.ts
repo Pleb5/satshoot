@@ -254,15 +254,20 @@ export function freelancerZap(zap: NDKEvent): boolean {
         return false;
     }
 
+    console.log('zap kind true')
+
     const aTag = zap.tagValue('a');
 
     if (!aTag) return false;
+    console.log('a tag true')
 
     const kindFromATag = aTag.split(':')[0];
 
     if (!kindFromATag) return false;
+    console.log('kind from a tag true')
 
     if (kindFromATag) {
+        console.log('atag',aTag)
         const offerEventZapped = parseInt(kindFromATag) === NDKKind.FreelanceOffer;
 
         if (!offerEventZapped) return false;

@@ -1,11 +1,12 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
-    // import type { NDKZapMethod } from "@nostr-dev-kit/ndk";
+    import currentUser from '$lib/stores/user';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { SatShootPubkey } from '$lib/utils/misc';
     import {
         generateZapRequest,
+        NDKEvent,
         NDKKind,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
@@ -99,7 +100,8 @@
                             zapConfig,
                             offer.pubkey,
                             {
-                                tags: [['satshoot']],
+                                comment: 'satshoot',
+                                tags: [['P', $currentUser!.pubkey]],
                             },
                             UserEnum.Freelancer,
                             zapRequestRelays
@@ -132,7 +134,7 @@
                             SatShootPubkey,
                             {
                                 comment: 'satshoot',
-                                tags: [['e', ticket.id]],
+                                tags: [['P', $currentUser!.pubkey]],
                             },
                             UserEnum.Satshoot,
                             zapRequestRelays
@@ -193,6 +195,7 @@
                         );
 
                         subscription.on('event', async (event: NDKEvent) => {
+                            console.log('Got zap receipt', event)
                             const bolt11 = event.tagValue('bolt11');
 
                             if (bolt11 === invoice.paymentRequest && !paid.get(key)) {
@@ -261,7 +264,9 @@
             zapConfig,
             receiver,
             amount,
-            relays
+            relays,
+            opts.comment,
+            opts.tags
         ).catch((err) => {
             console.log('Error: An error occurred in generating zap request!', err);
             return null;
