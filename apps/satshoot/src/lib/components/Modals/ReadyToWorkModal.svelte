@@ -85,11 +85,11 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-4 bg-primary-500">
-        <h4 class="h4 text-center mb-2 underline">Broadcast to Nostr</h4>
+    <div class="card p-4 bg-tertiary-500">
+        <h4 class="h4 text-center mb-2 underline font-bold">Broadcast to Nostr</h4>
         <div class="flex flex-col justify-center gap-y-4">
             <label class="label">
-                <span class="">Add topics of interest</span>
+                <span class="font-bold">Add topics of interest</span>
                 <div class="flex justify-between">
                     <input class="input w-full text-center" 
                     bind:value={tagInput}
@@ -112,15 +112,17 @@
                     </button>
                 </div>
             </label>
-            <div class="card max-w-sm px-4 pb-4 overflow-y-auto max-h-32" tabindex="-1">
-                <Autocomplete
-                    bind:input={tagInput}
-                    options={tagOptions}
-                    on:selection={onAutoCompleteSelected}
-                />
+            <div class="flex justify-center">
+                <div class="card max-w-sm px-4 pb-4 overflow-y-auto max-h-32" tabindex="-1">
+                    <Autocomplete
+                        bind:input={tagInput}
+                        options={tagOptions}
+                        on:selection={onAutoCompleteSelected}
+                    />
+                </div>
             </div>
             <label class="label">
-                <span>Your Message:</span>
+                <span class="font-bold">Your Message:</span>
                 <textarea 
                 rows="8"
                 class="textarea"
