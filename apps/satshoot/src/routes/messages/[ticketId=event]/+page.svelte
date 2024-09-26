@@ -37,6 +37,7 @@
         NDKEventStore 
     } from "@nostr-dev-kit/ndk-svelte";
     import { browser } from "$app/environment";
+    import { orderEventsChronologically } from "$lib/utils/helpers";
 
 
     const toastStore = getToastStore();
@@ -307,8 +308,8 @@
                 return relatedToCurrentPerson;
             });
 
-            // We need messages in reverse chronological order
-            filteredMessageFeed.reverse();
+            // We need messages in chronological order
+            orderEventsChronologically(filteredMessageFeed, true);
 
             // Smooth scroll to bottom
             // Timeout prevents race condition

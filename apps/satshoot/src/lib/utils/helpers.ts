@@ -471,3 +471,14 @@ export async function getZapConfiguration(pubkey: string) {
         }
     }
 }
+
+export function orderEventsChronologically(events: NDKEvent[], reverse: boolean = false) {
+    events.sort((m1: NDKEvent, m2: NDKEvent) => {
+        if (reverse)
+            return m1.created_at! - m2.created_at!;
+        else
+            return m2.created_at! - m1.created_at!;
+    });
+
+    events = events;
+}
