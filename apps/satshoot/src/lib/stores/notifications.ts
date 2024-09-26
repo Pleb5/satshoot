@@ -12,7 +12,6 @@ import currentUser from "./user";
 
 import { getActiveServiceWorker } from "$lib/utils/helpers";
 import { goto } from "$app/navigation";
-import { freelancerZap } from "../utils/helpers";
 
 export const notificationsEnabled: Writable<boolean> = persisted('notificationsEnabled', false) ;
 
@@ -91,7 +90,7 @@ export const receivedZapsNotifications = derived(
     ([$notifications]) => {
         // Check for zap kinds and if zap has an 'a' tag referring to an Offer
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return freelancerZap(notification);
+            return notification.kind === NDKKind.Zap;
         });
 
         return filteredEvents;

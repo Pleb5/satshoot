@@ -1,7 +1,6 @@
 <script lang="ts">
 import ndk from "$lib/stores/ndk";
 import { wot } from '$lib/stores/wot';
-import { freelancerZap } from '$lib/utils/helpers';
 import { 
     clientReviews,
     freelancerReviews,

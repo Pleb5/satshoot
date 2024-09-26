@@ -39,7 +39,7 @@
         freelancerReviews,
     } from "$lib/stores/reviews";
     import { messageStore, wotFilteredMessageFeed } from "$lib/stores/messages";
-    import { allReceivedZaps, wotFilteredReceivedZaps } from '$lib/stores/zaps';
+    import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from "$lib/stores/notifications";
 
     import { initializeUser, logout, checkRelayConnections } from '$lib/utils/helpers';
@@ -554,8 +554,8 @@
         });
     }
 
-    $: if ($wotFilteredReceivedZaps && $currentUser) {
-        $wotFilteredReceivedZaps.forEach((zap: NDKEvent) => {
+    $: if ($filteredReceivedZaps && $currentUser) {
+        $filteredReceivedZaps.forEach((zap: NDKEvent) => {
             sendNotification(zap);
         });
     }

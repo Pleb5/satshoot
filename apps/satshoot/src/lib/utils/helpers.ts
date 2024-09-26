@@ -248,34 +248,6 @@ export async function broadcastRelayList(
     console.log('relays posted to:', relaysPosted);
 }
 
-export function freelancerZap(zap: NDKEvent): boolean {
-    const zapKind = zap.kind === NDKKind.Zap;
-    if (!zapKind) {
-        return false;
-    }
-
-    console.log('zap kind true')
-
-    const aTag = zap.tagValue('a');
-
-    if (!aTag) return false;
-    console.log('a tag true')
-
-    const kindFromATag = aTag.split(':')[0];
-
-    if (!kindFromATag) return false;
-    console.log('kind from a tag true')
-
-    if (kindFromATag) {
-        console.log('atag',aTag)
-        const offerEventZapped = parseInt(kindFromATag) === NDKKind.FreelanceOffer;
-
-        if (!offerEventZapped) return false;
-    }
-
-    return true;
-}
-
 export async function checkRelayConnections() {
     const $ndk = get(ndk);
     const $currentUser = get(currentUser);
