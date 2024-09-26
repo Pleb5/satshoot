@@ -51,6 +51,7 @@
     // Can disable chat from outside manually
     export let showChat = true;
     let ticketChat = false;
+    export let width = 'max-w-[95vw] sm:max-w-[70vw] lg:max-w-[60vw]';
     export let titleSize: string = 'xl';
     export let titleLink: boolean = true;
     export let shortenDescription = true;
@@ -273,7 +274,7 @@
 </script>
 
 
-<div class="card bg-surface-200-700-token max-w-[95vw] sm:max-w-[70vw] lg:max-w-[60vw] flex-grow text-wrap">
+<div class="card bg-surface-200-700-token {width} flex-grow text-wrap">
     {#if ticket}
         <header class="card-header grid grid-cols-[15%_1fr_15%] items-start">
             {#if ticketChat}
