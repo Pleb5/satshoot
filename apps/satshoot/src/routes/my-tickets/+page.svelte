@@ -145,7 +145,7 @@ onMount(() => {
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
             {#if $ticketTabStore === TicketStatus.New}
-                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each newTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showNewTicket[i] ? '' : 'hidden'}">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
@@ -153,7 +153,7 @@ onMount(() => {
                     {/each}
                 </div>
                 {:else if $ticketTabStore === TicketStatus.InProgress}
-                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each inProgressTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showInProgressTicket[i] ? '' : 'hidden'}">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
@@ -161,7 +161,7 @@ onMount(() => {
                     {/each}
                 </div>
                 {:else if $ticketTabStore === TicketStatus.Resolved}
-                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each closedTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showClosedTicket[i] ? '' : 'hidden'}">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
