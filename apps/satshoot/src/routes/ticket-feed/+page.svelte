@@ -10,7 +10,6 @@
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
-    import FreelanceIcon from "$lib/components/Icons/FreelanceIcon.svelte";
     import ReadyToWorkModal from "$lib/components/Modals/ReadyToWorkModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
@@ -25,6 +24,8 @@
     let filterInput = '';
     let filterList: string[] = [];
     let ticketList: Set<TicketEvent> = new Set;
+    // tracks if user-defined filtering returned anything
+    let noResults = false;
     let mounted = false;
 
     function filterTickets() {
@@ -53,6 +54,9 @@
                     }
                 });
             });
+
+            if (filteredTicketList.size === 0) noResults = true;
+
             ticketList = filteredTicketList;
         }
     }
@@ -156,6 +160,8 @@
                     </div>
                 {/each}
             </div>
+        {:else if noResults}
+            <h2 class="h2 font-bold text-center">No search results!</h2>
         {:else}
             <div class="flex flex-col items-center gap-y-8">
                 {#each {length: 4} as _ }
