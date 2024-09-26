@@ -205,9 +205,9 @@ $: if(
         });
     });
 
-    console.log('allWinnerOffersOfUser', allWinnerOffersOfUser);
-    console.log('allWinnerOffersForUser', allWinnerOffersForUser);
-    console.log('allTicketsWhereUserInvolved', allTicketsWhereUserInvolved);
+    // console.log('allWinnerOffersOfUser', allWinnerOffersOfUser);
+    // console.log('allWinnerOffersForUser', allWinnerOffersForUser);
+    // console.log('allTicketsWhereUserInvolved', allTicketsWhereUserInvolved);
 
     allEarningsStore = $ndk.storeSubscribe(
         {kinds: [NDKKind.Zap], '#p': [user], '#e': allWinnerOffersOfUser},
@@ -234,7 +234,7 @@ $: if ($allEarningsStore) {
     $allEarningsStore.forEach((zap: NDKEvent)=>{
         const zapInvoice = zapInvoiceFromEvent(zap);
         if (zapInvoice && zapInvoice.amount) {
-            console.log('amount', zapInvoice.amount)
+            // console.log('amount', zapInvoice.amount)
             allEarnings += Math.round(zapInvoice.amount / 1000);
         }
     });
@@ -245,7 +245,7 @@ $: if ($allPaymentsStore) {
     $allPaymentsStore.forEach((zap: NDKEvent)=>{
         const zapInvoice = zapInvoiceFromEvent(zap);
         if (zapInvoice && zapInvoice.amount) {
-            console.log('amount', zapInvoice.amount)
+            // console.log('amount', zapInvoice.amount)
             allPayments += Math.round(zapInvoice.amount / 1000);
         }
     });
@@ -256,7 +256,7 @@ $: if ($allPledgesStore) {
     $allPledgesStore.forEach((zap: NDKEvent)=>{
         const zapInvoice = zapInvoiceFromEvent(zap);
         if (zapInvoice && zapInvoice.amount) {
-            console.log('amount', zapInvoice.amount)
+            // console.log('amount', zapInvoice.amount)
             const pledgeSum = Math.round(zapInvoice.amount / 1000);
 
             // Calculate share of pledge
