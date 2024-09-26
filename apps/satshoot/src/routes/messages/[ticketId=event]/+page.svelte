@@ -387,7 +387,6 @@
 
                 $offerMakerToSelect = '';
             } else if($selectedPerson && ($selectedPerson.split('$')[1] == ticketAddress)) {
-                console.log('select person that was previously selected', $selectedPerson)
                 const pubkey = $selectedPerson.split('$')[0];
                 addPerson(pubkey);
                 const contact: Contact|undefined = people.find((c: Contact) =>

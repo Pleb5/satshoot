@@ -14,6 +14,7 @@ import { TicketEvent } from "$lib/events/TicketEvent";
 
 import { goto } from "$app/navigation";
 import { page } from '$app/stores';
+    import { selectedPerson } from "$lib/stores/messages";
 
 export let avatarRight = true;
 export let message: NDKEvent;
@@ -145,7 +146,10 @@ $: if (decryptedDM) {
                         <button
                             type="button" 
                             class="btn btn-icon-lg p-2 text-primary-400-500-token"
-                            on:click={()=>{goto(messageLink)}}
+                            on:click={()=>{
+                                $selectedPerson = message.pubkey + '$' + ticketAddress;
+                                goto(messageLink);
+                            }}
                         >
                             <span>Reply</span>
                             <span>

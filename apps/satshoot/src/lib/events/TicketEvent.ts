@@ -42,6 +42,10 @@ export class TicketEvent extends NDKEvent {
         this.status = TicketStatus.InProgress;
     }
 
+    get winnerFreelancer(): string | undefined {
+        return this.acceptedOfferAddress?.split(':')[1];
+    }
+
     get title(): string {
         return this._title;
     }

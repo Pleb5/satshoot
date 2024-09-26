@@ -43,6 +43,7 @@
     import OfferCard from './OfferCard.svelte';
     import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import { linkifyText } from '$lib/utils/misc';
+    import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
 
     const modalStore = getModalStore();
 			
@@ -207,6 +208,14 @@
         }
     }
 
+    function selectChatPartner() {
+        if (ticket.pubkey !== $currentUser!.pubkey){
+            $selectedPerson = ticket.pubkey + '$' + bech32ID;
+        } else if(ticket.acceptedOfferAddress) {
+            $offerMakerToSelect = ticket.winnerFreelancer as string;
+        }
+    }
+
     function editTicket() {
         if (ticket) {
             $ticketToEdit = ticket;
@@ -280,6 +289,7 @@
             {#if ticketChat}
                 <a
                     href={"/messages/" + bech32ID}
+                    on:click={selectChatPartner}
                     class="btn btn-icon btn-sm md:btn-md justify-self-start"
                 >
                     <i class="fa-solid fa-comment text-2xl md:text-3xl"></i>

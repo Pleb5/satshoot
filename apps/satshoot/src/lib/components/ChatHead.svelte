@@ -90,7 +90,7 @@ $: if ($loggedIn) {
 $: if ($navigating) {
     if ($navigating.to?.url.pathname === '/messages/' + naddr) {
         if (ticket.acceptedOfferAddress) {
-            $offerMakerToSelect = ticket.acceptedOfferAddress.split(':')[1];
+            $offerMakerToSelect = ticket.winnerFreelancer as string;
         }
     }
 }

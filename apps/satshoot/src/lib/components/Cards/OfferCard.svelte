@@ -14,7 +14,7 @@
     import TicketCard from './TicketCard.svelte';
     import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
 
-    import { offerMakerToSelect } from '$lib/stores/messages';
+    import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
 
     import type { NDKFilter, NDKEvent } from '@nostr-dev-kit/ndk';
 
@@ -238,8 +238,12 @@
         }
     }
 
-    function setOfferToSelect() {
-        $offerMakerToSelect = (offer as OfferEvent).pubkey;
+    function setChatPartner() {
+        if (ticket!.pubkey === $currentUser!.pubkey) {
+            $offerMakerToSelect = (offer as OfferEvent).pubkey;
+        } else {
+            $selectedPerson = ticket!.pubkey + '$' + ticket!.encode();
+        }
     }
 
     onMount(async () => {
@@ -282,7 +286,7 @@
         <div class="grid grid-cols-[15%_1fr_15%] justify-center items-center mx-2">
             {#if $currentUser && enableChat && ticket}
                 <a
-                    on:click={setOfferToSelect}
+                    on:click={setChatPartner}
                     href={'/messages/' + ticket.encode()}
                     class="btn btn-icon btn-sm justify-self-start"
                 >
