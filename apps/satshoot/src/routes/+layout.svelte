@@ -167,7 +167,6 @@
         toastStore.trigger(t);
     } else {
         toastStore.clear();
-        $retryConnection = maxRetryAttempts;
     }
 
     $: if($wotUpdateFailed) {
