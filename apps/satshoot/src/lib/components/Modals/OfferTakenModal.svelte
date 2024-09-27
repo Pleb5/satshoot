@@ -26,7 +26,7 @@
 
             </span>
             <span>
-                and talk about your preferred communication method then switch to that app for the actual Troubleshooting!
+                and talk about your preferred communication method then switch to that app for the actual Job!
             </span>
         </p>
 

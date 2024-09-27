@@ -43,6 +43,7 @@
     import OfferCard from './OfferCard.svelte';
     import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import { linkifyText } from '$lib/utils/misc';
+    import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
 
     const modalStore = getModalStore();
 			
@@ -51,6 +52,7 @@
     // Can disable chat from outside manually
     export let showChat = true;
     let ticketChat = false;
+    export let width = 'max-w-[95vw] sm:max-w-[70vw] lg:max-w-[60vw]';
     export let titleSize: string = 'xl';
     export let titleLink: boolean = true;
     export let shortenDescription = true;
@@ -71,7 +73,7 @@
     let ticketStatus: string;
 
     let offersFilter: NDKFilter = {
-        kinds: [NDKKind.TroubleshootOffer],
+        kinds: [NDKKind.FreelanceOffer],
         '#a': [ticket.ticketAddress],
     }
     const subOptions: NDKSubscriptionOptions = { 
@@ -206,6 +208,14 @@
         }
     }
 
+    function selectChatPartner() {
+        if (ticket.pubkey !== $currentUser!.pubkey){
+            $selectedPerson = ticket.pubkey + '$' + bech32ID;
+        } else if(ticket.acceptedOfferAddress) {
+            $offerMakerToSelect = ticket.winnerFreelancer as string;
+        }
+    }
+
     function editTicket() {
         if (ticket) {
             $ticketToEdit = ticket;
@@ -273,12 +283,13 @@
 </script>
 
 
-<div class="card bg-surface-200-700-token max-w-[95vw] sm:max-w-[70vw] lg:max-w-[60vw] flex-grow text-wrap">
+<div class="card bg-surface-200-700-token {width} flex-grow text-wrap">
     {#if ticket}
         <header class="card-header grid grid-cols-[15%_1fr_15%] items-start">
             {#if ticketChat}
                 <a
                     href={"/messages/" + bech32ID}
+                    on:click={selectChatPartner}
                     class="btn btn-icon btn-sm md:btn-md justify-self-start"
                 >
                     <i class="fa-solid fa-comment text-2xl md:text-3xl"></i>

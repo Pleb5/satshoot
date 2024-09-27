@@ -43,7 +43,7 @@ export const wotFilteredMessageFeed = derived(
             let relatedToTicket = false;
             message.tags.forEach((tag: NDKTag) => {
                 if (tag[0] === 't' && tag[1]
-                        .includes(NDKKind.TroubleshootTicket.toString())
+                        .includes(NDKKind.FreelanceTicket.toString())
                 ) {
                     relatedToTicket = true;
                 }

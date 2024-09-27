@@ -1,27 +1,23 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
-    // import type { NDKZapMethod } from "@nostr-dev-kit/ndk";
+    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { SatShootPubkey } from '$lib/utils/misc';
     import {
         generateZapRequest,
+        NDKEvent,
         NDKKind,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
         type NDKFilter,
     } from '@nostr-dev-kit/ndk';
-    import { TicketEvent } from '$lib/events/TicketEvent';
-    import { Invoice } from '@getalby/lightning-tools';
-    import { getToastStore } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings } from '@skeletonlabs/skeleton';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-    import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { type SvelteComponent, tick } from 'svelte';
-    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import { getModalStore, getToastStore, popup, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { tick, type SvelteComponent } from 'svelte';
     import OfferCard from '../Cards/OfferCard.svelte';
-    import { SatShootPubkey } from '$lib/utils/misc';
 
+    import { getZapConfiguration } from '$lib/utils/helpers';
     import { insertThousandSeparator } from '$lib/utils/misc';
 
     const toastStore = getToastStore();
@@ -40,17 +36,17 @@
 
     enum UserEnum {
         Satshoot = 'satshoot',
-        Troubleshooter = 'troubleshooter',
+        Freelancer = 'freelancer',
     }
 
     let amount = 0;
     let pledgedAmount = 0;
     let satshootShare = 0;
-    let troubleshooterShare = 0;
+    let freelancerShare = 0;
 
     $: if (offer) {
         satshootShare = Math.floor((amount * offer.pledgeSplit) / 100);
-        troubleshooterShare = amount - satshootShare;
+        freelancerShare = amount - satshootShare;
     }
 
     let paying = false;
@@ -71,10 +67,10 @@
                 paying = true;
                 await tick();
 
-                let troubleshooterShareMillisats = troubleshooterShare * 1000;
+                let freelancerShareMillisats = freelancerShare * 1000;
                 let satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
 
-                if (troubleshooterShareMillisats + satshootSumMillisats === 0) {
+                if (freelancerShareMillisats + satshootSumMillisats === 0) {
                     errorMessage = 'Cannot pay 0 sats!';
                     paying = false;
                     return;
@@ -91,37 +87,28 @@
                     }
                 > = new Map();
                 const paid: Map<UserEnum, boolean> = new Map();
-                paid.set(UserEnum.Troubleshooter, false);
+                paid.set(UserEnum.Freelancer, false);
                 paid.set(UserEnum.Satshoot, false);
 
-                const troubleshooterUser = $ndk.getUser({ pubkey: offer.pubkey });
-
-                if (troubleshooterShare > 0) {
-                    const zapConfig = await troubleshooterUser
-                        .getZapConfiguration()
-                        .catch((err) => {
-                            console.log(
-                                'Error: An error occurred in getting getZapConfiguration for troubleShooter',
-                                err
-                            );
-                            return null;
-                        });
+                if (freelancerShare > 0) {
+                    const zapConfig = await getZapConfiguration(offer.pubkey);
 
                     if (zapConfig) {
                         const invoice = await generateInvoice(
                             offer,
-                            troubleshooterShareMillisats,
+                            freelancerShareMillisats,
                             zapConfig,
                             offer.pubkey,
                             {
-                                tags: [['satshoot']],
+                                comment: 'satshoot',
+                                tags: [['P', $currentUser!.pubkey]],
                             },
-                            UserEnum.Troubleshooter,
+                            UserEnum.Freelancer,
                             zapRequestRelays
                         );
 
                         if (invoice) {
-                            invoices.set(UserEnum.Troubleshooter, {
+                            invoices.set(UserEnum.Freelancer, {
                                 paymentRequest: invoice,
                                 receiver: offer.pubkey,
                                 eventId: offer.id,
@@ -129,23 +116,15 @@
                             });
                         } else {
                             errorMessage =
-                                'Could not zap Troubleshooter: Failed to fetch payment invoice';
+                                'Could not zap Freelancer: Failed to fetch payment invoice';
                         }
                     } else {
-                        errorMessage = 'Could not fetch Troubleshooter zap info!';
+                        errorMessage = 'Could not fetch Freelancer zap info!';
                     }
                 }
 
-                const satShootUser = $ndk.getUser({ pubkey: SatShootPubkey });
-
                 if (satshootSumMillisats > 0) {
-                    const zapConfig = await satShootUser.getZapConfiguration().catch((err) => {
-                        console.log(
-                            'Error: An error occurred in getting getZapConfiguration for satshoot',
-                            err
-                        );
-                        return null;
-                    });
+                    const zapConfig = await getZapConfiguration(SatShootPubkey);
 
                     if (zapConfig) {
                         const invoice = await generateInvoice(
@@ -155,7 +134,7 @@
                             SatShootPubkey,
                             {
                                 comment: 'satshoot',
-                                tags: [['e', ticket.id]],
+                                tags: [['P', $currentUser!.pubkey]],
                             },
                             UserEnum.Satshoot,
                             zapRequestRelays
@@ -173,7 +152,7 @@
                                 'Could not zap satshoot: Failed to fetch payment invoice';
                         }
                     } else {
-                        errorMessage = 'Could not fetch Troubleshooter zap info!';
+                        errorMessage = 'Could not fetch Freelancer zap info!';
                     }
                 }
 
@@ -192,19 +171,7 @@
                     launchPaymentModal({
                         invoice: invoice.paymentRequest,
                         // NOTE: only fired if paid with WebLN
-                        onPaid: ({ preimage }) => {
-                            const paidInvoice = new Invoice({
-                                pr: invoice.paymentRequest,
-                            });
-                            paidInvoice
-                                .validatePreimage(preimage)
-                                .then((isValid) => {
-                                    paid.set(key, isValid);
-                                })
-                                .catch(() => {
-                                    paid.set(key, false);
-                                });
-                        },
+                        onPaid: ({ preimage }) => paid.set(key, true),
                     });
 
                     // Fetch zap receipts if possible
@@ -227,26 +194,13 @@
                             NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key), $ndk)
                         );
 
-                        // Polling timeout
-                        const timeout = setTimeout(
-                            () => {
-                                errorMessage = `Timeout occurred while waiting for zap receipt of ${key}`;
-                                closeModal();
-                            },
-                            1 * 30 * 1000 // 1 minute
-                        );
-
                         subscription.on('event', async (event: NDKEvent) => {
-                            const preimage = event.tagValue('preimage');
-                            if (preimage) {
-                                const paidInvoice = new Invoice({
-                                    pr: invoice.paymentRequest,
-                                });
-                                const isValid = await paidInvoice.validatePreimage(preimage);
-                                if (isValid && !paid.get(key)) {
-                                    paid.set(key, true);
-                                    closeModal();
-                                }
+                            console.log('Got zap receipt', event)
+                            const bolt11 = event.tagValue('bolt11');
+
+                            if (bolt11 === invoice.paymentRequest && !paid.get(key)) {
+                                paid.set(key, true);
+                                closeModal();
                             }
                         });
 
@@ -254,21 +208,20 @@
                             const unsub = onModalClosed(() => {
                                 console.log('onModalClosed');
                                 subscription.stop();
-                                clearTimeout(timeout);
                                 resolve();
                                 unsub();
                             });
                         });
                     } catch (error) {
                         console.log('An error occurred in payment process', error);
-                        errorMessage = "Could not fetch troubleshooter's zap receipt: " + e;
+                        errorMessage = "Could not fetch Freelancer's zap receipt: " + error;
                     }
                 }
 
-                if (paid.get(UserEnum.Troubleshooter)) {
-                    handleToast('Troubleshooter Paid!', ToastType.Success, false);
-                } else if (troubleshooterShareMillisats > 0) {
-                    handleToast('Troubleshooter Payment might have failed!', ToastType.Warn, false);
+                if (paid.get(UserEnum.Freelancer)) {
+                    handleToast('Freelancer Paid!', ToastType.Success, false);
+                } else if (freelancerShareMillisats > 0) {
+                    handleToast('Freelancer Payment might have failed!', ToastType.Warn, false);
                 }
                 if (paid.get(UserEnum.Satshoot)) {
                     handleToast('SatShoot Paid!', ToastType.Success, false);
@@ -302,7 +255,7 @@
         zapRequestRelays: Map<UserEnum, string[]>
     ) {
         // Get NDKZapper object
-        const zapper = $ndk.zap(offer, amount, opts);
+        const zapper = $ndk.zap(offer!, amount, opts);
         const relays = await zapper.relays(receiver);
 
         const zapRequest = await generateZapRequest(
@@ -311,7 +264,9 @@
             zapConfig,
             receiver,
             amount,
-            relays
+            relays,
+            opts.comment,
+            opts.tags
         ).catch((err) => {
             console.log('Error: An error occurred in generating zap request!', err);
             return null;
@@ -356,7 +311,7 @@
             />
             <!-- Payment -->
             <label class="max-w-60">
-                <span class="font-bold">Pay for the Troubleshooting</span>
+                <span class="font-bold">Pay for the Service</span>
                 <div class="input-group input-group-divider grid-cols-[auto_1fr]">
                     <div class="input-group-shim">
                         <i class="fa-brands fa-bitcoin text-3xl" />
@@ -406,9 +361,9 @@
                 </label>
             </div>
             <div class="flex flex-col">
-                <div class="underline">Troubleshooter gets:</div>
+                <div class="underline">Freelancer gets:</div>
                 <div class="font-bold">
-                    {insertThousandSeparator(troubleshooterShare) + 'sats'}
+                    {insertThousandSeparator(freelancerShare) + 'sats'}
                 </div>
                 <div class="underline">SatShoot gets:</div>
                 <div class="font-bold">

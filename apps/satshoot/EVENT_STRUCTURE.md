@@ -21,7 +21,7 @@
                 ...
         ["t", <tagN>],
 
-        // Public key of preferred troubleshooters. Allows for more fine-tuned discovery | optional
+        // Public key of preferred Freelancers. Allows for more fine-tuned discovery | optional
         ["p", <hex public key1>],
         ["p", <hex public key2>],
                 ...
@@ -36,7 +36,7 @@
         ["s", <0(new) OR 1(in progress) OR 2(Resolved) or 3(Failed)>],
 
         // If Clien accepts an offer she SHOULD set this tag
-        ["a", 32768:<hex pubkey of Troubleshooter>:<Offer ID from a d-tag of an offer>],
+        ["a", 32768:<hex pubkey of Freelancer>:<Offer ID from a d-tag of an offer>],
     ],
     "content": {
         <detailed description of the ticket | string, mandatory>
@@ -49,7 +49,7 @@
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Troubleshooter>,
+    "pubkey": <hex public key of the Freelancer>,
     "created_at": <unix timestamp in seconds>,
     "kind": 32768,
     "tags": [
@@ -70,8 +70,8 @@
 ## Review events
 ### Rationale: Web of Trust and Reviews
 In addition to the Web of Trust(WoT) weeding out untrusted people and spam, SatShoot
-uses Review events similar to NIP32 in order to bootstrap a reputation network of Troubleshooters
-and Clients. After a Troubleshooting experience both parties rate each other so everyone has more
+uses Review events similar to NIP32 in order to bootstrap a reputation network of Freelancers
+and Clients. After a Freelancing experience both parties rate each other so everyone has more
 confidence in the future that the counterparty is trustworthy enough.
 
 Filtering is based on the user's local perspective (follows, mutes and reports of himself and
@@ -80,7 +80,7 @@ Filtered pubkeys don't show up on the Ticket feed nor are his Offers listed,
 and his direct messages are not shown either.
 
 There is no filtering based on the Review events though. These are just to signal
-reputation in the specific domain of Troubleshooting. However, Review events themselves
+reputation in the specific domain of Freelancing. However, Review events themselves
 ARE filtered by the user's Web of Trust so it is hard to game these scores.
 This also means that reputation is local to the User of the app and is heavily
 dependent on the User's ability to build a trustworthy follow list.
@@ -90,19 +90,19 @@ The rating system used in SatShoot is based on [QTS](https://habla.news/u/arkino
 This hopefully captures users' sentiments better than 'five-star' systems and 
 allows for better overall UX around this feature.
 
-Total score in either the Troubleshooter's or the Client's case is between [0, 1].
+Total score in either the Freelancer's or the Client's case is between [0, 1].
 The outcome of the Ticket (state = Resolved/Failed) determines half the score
-for the Troubleshooter. The other half is determined by qualities of excellence,
+for the Freelancer. The other half is determined by qualities of excellence,
 - Expertise
 - Availability
 - Communication
 The overall score is skewed slightly towards Expertise.
 
 For the Clients it is harder to capture specific qualities, so an overall thumbs up/down
-from the Troubleshooter determines half the score and the Client can also receive extra
+from the Freelancer determines half the score and the Client can also receive extra
 points for excellence in communication and availability.
 
-### Troubleshooter Review event
+### Freelancer Review event
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
@@ -110,13 +110,13 @@ points for excellence in communication and availability.
     "created_at": <unix timestamp in seconds>,
     "kind": 1986,
     "tags": [
-        ["L", qts/troubleshooting]
-        ["l", “troubleshooter”, “qts/troubleshooting”],
+        ["L", qts/freelancing]
+        ["l", “freelancer”, “qts/freelancing”],
         ["rating", “<0 | 0.5>”, “success”], 
         ["rating", “<0 | 0.2>”, “expertise”], 
         ["rating", “<0 | 0.15>”, “availability”], 
         ["rating", “<0 | 0.15>”, “communication”], 
-        ["a", 32768:<hex pubkey of Troubleshooter>:<Offer d-tag>],
+        ["a", 32768:<hex pubkey of Freelancer>:<Offer d-tag>],
     ],
     "content": {
         <Short summary of the experience>
@@ -133,8 +133,8 @@ points for excellence in communication and availability.
     "created_at": <unix timestamp in seconds>,
     "kind": 1986,
     "tags": [
-        ["L", qts/troubleshooting]
-        ["l", “client”, “qts/troubleshooting”],
+        ["L", qts/freelancing]
+        ["l", “client”, “qts/freelancing”],
         ["rating", “<0 | 0.5>”, “thumb”], 
         ["rating", “<0 | 0.25>”, “availability”], 
         ["rating", “<0 | 0.25>”, “communication”], 

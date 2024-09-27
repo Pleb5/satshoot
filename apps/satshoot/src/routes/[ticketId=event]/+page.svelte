@@ -8,7 +8,7 @@
     import { connected } from "$lib/stores/ndk";
     
     import redirectStore from '$lib/stores/network';
-    import { checkRelayConnections } from "$lib/utils/helpers";
+    import { checkRelayConnections, orderEventsChronologically } from "$lib/utils/helpers";
 
     import { wot } from '$lib/stores/wot';
 
@@ -55,7 +55,7 @@
     let ticketSubscription: NDKSubscription | undefined = undefined;
     let ticket: TicketEvent | undefined = undefined;
     let offersFilter: NDKFilter = {
-        kinds: [NDKKind.TroubleshootOffer],
+        kinds: [NDKKind.FreelanceOffer],
         '#a': [],
     }
     let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
@@ -92,7 +92,7 @@
         // Create new subscription on this ticket 
         const dTag = idFromNaddr(naddr).split(':')[2];
         const ticketFilter: NDKFilter = {
-            kinds: [NDKKind.TroubleshootTicket],
+            kinds: [NDKKind.FreelanceTicket],
             '#d': [dTag],
         };
 
@@ -141,6 +141,9 @@
                 return $wot.has(offer.pubkey);
             });
         }
+
+        orderEventsChronologically($offerStore);
+
         $offerStore.forEach((offer: OfferEvent) => {
             if (offer.pubkey === $currentUser?.pubkey) {
                 offerToEdit = offer;

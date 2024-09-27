@@ -1,8 +1,8 @@
 {
 	"name": "satshoot",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "vite dev --host 0.0.0.0",
 		"build": "vite build",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

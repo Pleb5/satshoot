@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick, type SvelteComponent } from 'svelte';
-    import ndk, { LoginMethod } from '$lib/stores/ndk';
+    import ndk, { type LoginMethod } from '$lib/stores/ndk';
     import { initializeUser } from '$lib/utils/helpers';
     import { bunkerNDK } from '$lib/stores/ndk';
     import { NDKPrivateKeySigner, NDKNip46Signer } from '@nostr-dev-kit/ndk';
@@ -142,8 +142,8 @@
                     $ndk.signer = remoteSigner;
                     console.log('user logged in')
 
-                    $loginMethod = LoginMethod.Bunker;
-                    localStorage.setItem('login-method', $loginMethod);
+                    $loginMethod = 'bunker';
+                    localStorage.setItem('login-method', $loginMethod as LoginMethod);
                     localStorage.setItem("bunkerLocalSignerPK", localSigner.privateKey as string);
                     localStorage.setItem("bunkerTargetNpub", remoteUserNpub);
                     localStorage.setItem("bunkerRelayURLs", relayURLs.join(','));

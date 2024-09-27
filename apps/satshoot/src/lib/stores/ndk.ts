@@ -14,7 +14,7 @@ export const DEFAULTRELAYURLS = [
     "wss://relay.primal.net/",
 ]
 
-export const OUTBOXRELAYURLS = [
+export const BOOTSTRAPOUTBOXRELAYS = [
     "wss://purplepag.es/",
     "wss://relay.damus.io/",
     "wss://relay.primal.net/",
@@ -23,16 +23,14 @@ export const OUTBOXRELAYURLS = [
     // "wss://bitcoiner.social/",
 ];
 
+export const blastrUrl = 'wss://sendit.nosflare.com';
+
 export enum RestoreMethod {
     Seed = 1,
     Nsec = 2,
 }
 
-export enum LoginMethod {
-    Bunker = "bunker",
-    NIP07 = "nip07",
-    Ephemeral = "ephemeral",
-}
+export type LoginMethod = "bunker" | "nip07" | "local";
 
 // save this in session storage when logging in or restoring cipher pk
 // then check for pk store in login before trying to decrypt
@@ -45,7 +43,7 @@ export const sessionPK: Writable<string> =
 // that is, my tickets and tickets I bid on, as well as new messages
 const ndkSvelte = new NDKSvelte({
     enableOutboxModel: true,
-    outboxRelayUrls: OUTBOXRELAYURLS,
+    outboxRelayUrls: BOOTSTRAPOUTBOXRELAYS,
     blacklistRelayUrls: [],
     autoConnectUserRelays: true,
     autoFetchUserMutelist: true,

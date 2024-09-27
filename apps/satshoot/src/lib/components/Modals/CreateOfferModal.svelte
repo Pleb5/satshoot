@@ -36,7 +36,7 @@
     let pledgeSplit = 0;
 
     $: pledgedShare = Math.floor(amount * (pledgeSplit / 100));
-    $: troubleshooterShare = amount - pledgedShare;
+    $: freelancerShare = amount - pledgedShare;
 
     let description = '';
     let sendDm = true;
@@ -268,7 +268,7 @@
                         <div class="underline">You get:</div>
                         <div class="font-bold">
                             {
-                                insertThousandSeparator(troubleshooterShare) + 
+                                insertThousandSeparator(freelancerShare) + 
                                 (pricingMethod ? 'sats/min' : 'sats')
                             }
                         </div>

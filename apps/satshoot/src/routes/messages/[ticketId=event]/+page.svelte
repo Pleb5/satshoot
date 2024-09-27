@@ -37,6 +37,7 @@
         NDKEventStore 
     } from "@nostr-dev-kit/ndk-svelte";
     import { browser } from "$app/environment";
+    import { orderEventsChronologically } from "$lib/utils/helpers";
 
 
     const toastStore = getToastStore();
@@ -53,8 +54,8 @@
         });
     }
 
-    let offersFilter: NDKFilter<NDKKind.TroubleshootOffer> = {
-        kinds: [NDKKind.TroubleshootOffer],
+    let offersFilter: NDKFilter<NDKKind.FreelanceOffer> = {
+        kinds: [NDKKind.FreelanceOffer],
         '#a': [ticketAddress],
     }
 
@@ -110,6 +111,13 @@
 	// eslint-disable-next-line no-undef
 	function scrollChatBottom(behavior?: ScrollBehavior): void {
 		elemChat.scrollTo({ top: elemChat.scrollHeight, behavior });
+	}
+
+	function isFirstMessageOfDay(messages: NDKEvent[], index: number): boolean {
+		if (index === 0) return true;
+        	const currentDate = new Date(messages[index].created_at * 1000);
+		const previousDate = new Date(messages[index - 1].created_at * 1000);
+        	return currentDate.toDateString() !== previousDate.toDateString();
 	}
 
 	async function sendMessage() {
@@ -300,8 +308,8 @@
                 return relatedToCurrentPerson;
             });
 
-            // We need messages in reverse chronological order
-            filteredMessageFeed.reverse();
+            // We need messages in chronological order
+            orderEventsChronologically(filteredMessageFeed, true);
 
             // Smooth scroll to bottom
             // Timeout prevents race condition
@@ -380,7 +388,6 @@
 
                 $offerMakerToSelect = '';
             } else if($selectedPerson && ($selectedPerson.split('$')[1] == ticketAddress)) {
-                console.log('select person that was previously selected', $selectedPerson)
                 const pubkey = $selectedPerson.split('$')[0];
                 addPerson(pubkey);
                 const contact: Contact|undefined = people.find((c: Contact) =>
@@ -572,11 +579,12 @@
                         style="height: {chatHeight}px;"
                     >
                         {#if $currentUser}
-                            {#each filteredMessageFeed as message(message.id)}
+                            {#each filteredMessageFeed as message, index (message.id)}
                                 <MessageCard
                                     avatarRight={message.pubkey !== $currentUser.pubkey}
                                     {message}
                                     searchText={searchInput}
+                                    isFirstOfDay={isFirstMessageOfDay(filteredMessageFeed, index)}
                                 />
                             {/each}
                         {:else}

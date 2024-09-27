@@ -8,7 +8,7 @@ import {
 
 import NDK from "@nostr-dev-kit/ndk"
 
-enum TroubleshooterRatings {
+enum FreelancerRatings {
     success = '0.5',
     expertise = '0.2',
     availability = '0.15',
@@ -22,7 +22,7 @@ enum ClientRatings {
 }
 
 export enum ReviewType {
-    Troubleshooter = 'troubleshooter',
+    Freelancer = 'freelancer',
     Client = 'client',
 }
 
@@ -33,7 +33,7 @@ export interface ClientRating {
     reviewText: string;
 }
 
-export interface TroubleshooterRating {
+export interface FreelancerRating {
     success: boolean;
     expertise: boolean;
     availability: boolean;
@@ -49,7 +49,7 @@ export class ReviewEvent extends NDKEvent {
         super(ndk, rawEvent);
         this.kind ??= NDKKind.Review;
         if (!this.tagValue('L')) {
-            this.tags.push(["L", 'qts/troubleshooting']);
+            this.tags.push(["L", 'qts/freelancing']);
         }
     }
 
@@ -65,20 +65,20 @@ export class ReviewEvent extends NDKEvent {
         if (typeString === ReviewType.Client) {
             return ReviewType.Client;
         } 
-        return ReviewType.Troubleshooter;
+        return ReviewType.Freelancer;
     }
 
     set type(t: ReviewType) {
         this.removeTag('l');
-        this.tags.push(['l', t, 'qts/troubleshooting']);
+        this.tags.push(['l', t, 'qts/freelancing']);
     }
 
     set clientRatings(r: ClientRating) {
-        if (this.type === ReviewType.Troubleshooter) {
-            throw new Error('Forbidden: Trying to set client rating of a Troubleshooter review event!');
+        if (this.type === ReviewType.Freelancer) {
+            throw new Error('Forbidden: Trying to set client rating of a Freelancer review event!');
         }
         this.removeTag('l');
-        this.tags.push(['l', ReviewType.Client, 'qts/troubleshooting']);
+        this.tags.push(['l', ReviewType.Client, 'qts/freelancing']);
 
         this.removeTag('rating');
 
@@ -123,35 +123,35 @@ export class ReviewEvent extends NDKEvent {
     } 
 
 
-    set troubleshooterRatings(r: TroubleshooterRating) {
+    set freelancerRatings(r: FreelancerRating) {
         if (this.type === ReviewType.Client) {
-            throw new Error('Forbidden: Trying to set troubleshooter rating of a Client review event!');
+            throw new Error('Forbidden: Trying to set Freelancer rating of a Client review event!');
         }
         this.removeTag('l');
-        this.tags.push(['l', ReviewType.Troubleshooter, 'qts/troubleshooting']);
+        this.tags.push(['l', ReviewType.Freelancer, 'qts/freelancing']);
 
         this.removeTag('rating');
 
-        const success = r.success ? TroubleshooterRatings.success : '0';
+        const success = r.success ? FreelancerRatings.success : '0';
         this.tags.push(['rating', success, 'success']);
 
-        const expertise = r.expertise ? TroubleshooterRatings.expertise : '0';
+        const expertise = r.expertise ? FreelancerRatings.expertise : '0';
         this.tags.push(['rating', expertise, 'expertise']);
 
-        const availability = r.availability ? TroubleshooterRatings.availability : '0';
+        const availability = r.availability ? FreelancerRatings.availability : '0';
         this.tags.push(['rating', availability, 'availability']);
 
-        const communication = r.communication ? TroubleshooterRatings.communication : '0';
+        const communication = r.communication ? FreelancerRatings.communication : '0';
         this.tags.push(['rating', communication, 'communication']);
 
         this.content = r.reviewText;
     }
 
-    get troubleshooterRatings(): TroubleshooterRating {
-        if (this.type !== ReviewType.Troubleshooter) {
-            throw new Error('Requested troubleshooter ratings but review type is NOT Troubleshooter!')
+    get freelancerRatings(): FreelancerRating {
+        if (this.type !== ReviewType.Freelancer) {
+            throw new Error('Requested Freelancer ratings but review type is NOT Freelancer!')
         }
-        const troubleshooterRating: TroubleshooterRating = {
+        const freelancerRating: FreelancerRating = {
             success: false,
             expertise: false,
             availability: false,
@@ -164,19 +164,19 @@ export class ReviewEvent extends NDKEvent {
 
             if (tag.includes('rating')
                 && tag.includes('success') && rating > 0) {
-                troubleshooterRating.success = true;
+                freelancerRating.success = true;
             } else if (tag.includes('rating')
                 && tag.includes('expertise') && rating > 0) {
-                troubleshooterRating.expertise = true;
+                freelancerRating.expertise = true;
             } else if (tag.includes('rating')
                 && tag.includes('availability') && rating > 0) {
-                troubleshooterRating.availability = true;
+                freelancerRating.availability = true;
             } else if (tag.includes('rating')
                 && tag.includes('communication') && rating > 0) {
-                troubleshooterRating.communication = true;
+                freelancerRating.communication = true;
             }
         });
-        return troubleshooterRating;
+        return freelancerRating;
     }
 
     get reviewedEventAddress(): string | undefined{
@@ -185,12 +185,12 @@ export class ReviewEvent extends NDKEvent {
 
     set reviewedEventAddress(eventAddress: string) {
         const eventKind = parseInt(eventAddress.split(':')[0] as string);
-        if (eventKind === NDKKind.TroubleshootOffer && this.type === ReviewType.Client) {
+        if (eventKind === NDKKind.FreelanceOffer && this.type === ReviewType.Client) {
             throw new Error('Client reviews can only be given on Ticket events');
         }
 
-        if (eventKind === NDKKind.TroubleshootTicket && this.type === ReviewType.Troubleshooter) {
-            throw new Error('Troubleshooter reviews can only be given on Offer events');
+        if (eventKind === NDKKind.FreelanceTicket && this.type === ReviewType.Freelancer) {
+            throw new Error('Freelancer reviews can only be given on Offer events');
         }
 
         this.removeTag('a');
@@ -201,9 +201,9 @@ export class ReviewEvent extends NDKEvent {
         const aTag = this.tagValue('a');
         if (!aTag) return this.kind;
         if ( ((aTag as string).split(':')[0] as number)
-            === NDKKind.TroubleshootTicket ) {
-            return NDKKind.TroubleshootTicket;
-        } else return NDKKind.TroubleshootOffer;
+            === NDKKind.FreelanceTicket ) {
+            return NDKKind.FreelanceTicket;
+        } else return NDKKind.FreelanceOffer;
     }
 
     // Handle udnefined everywhere !!!
@@ -236,7 +236,7 @@ export class ReviewEvent extends NDKEvent {
                 }
             });
             return sum;
-        } else if (this.type === ReviewType.Troubleshooter) {
+        } else if (this.type === ReviewType.Freelancer) {
             this.tags.forEach((tag: NDKTag) => {
                 if (tag.includes('rating') && tag.includes('success')) {
                     const value = tag[1];

@@ -1,8 +1,9 @@
 <script lang="ts">
     import currentUser from '$lib/stores/user';
     import { getDrawerStore, getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent, ToastStore } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
+    import ReadyToWorkModal from "$lib/components/Modals/ReadyToWorkModal.svelte";
     import { SlideToggle } from '@skeletonlabs/skeleton';
     import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
 
@@ -14,6 +15,7 @@
     import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
+    import BullhornIcon from '../Icons/BullhornIcon.svelte';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -63,6 +65,18 @@
                 notificationsEnabled.set($notificationsEnabled);
             });
         }
+    }
+
+    function readyToWork() {
+        const modalComponent: ModalComponent = {
+            ref: ReadyToWorkModal,
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
     }
 
     function feedback() {
@@ -156,6 +170,14 @@
                     </a>
                 </li>
             {/if}
+            <li>
+                <button class="w-full justify-start" on:click={readyToWork}>
+                    <span class="w-6 text-center">
+                        <BullhornIcon extraClasses={''}/>
+                    </span>
+                    <span>Work</span>
+                </button>
+            </li>
             <li>
                 <a 
                     class="justify-start {classesActive(networkHref)}"

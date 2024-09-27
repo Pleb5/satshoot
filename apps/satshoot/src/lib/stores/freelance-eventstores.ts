@@ -18,21 +18,21 @@ export const subOptions: NDKSubscriptionOptions = {
 };
 
 export const allTicketsFilter: NDKFilter = {
-    kinds: [NDKKind.TroubleshootTicket],
+    kinds: [NDKKind.FreelanceTicket],
 };
 
 export const allOffersFilter: NDKFilter = {
-    kinds: [NDKKind.TroubleshootOffer],
+    kinds: [NDKKind.FreelanceOffer],
 };
 
 // The filter's pubkey part will be filled in when user logs in
 export const myTicketFilter: NDKFilter = {
-    kinds: [NDKKind.TroubleshootTicket],
+    kinds: [NDKKind.FreelanceTicket],
 };
 
 // The filter's pubkey part will be filled in when user logs in
 export const myOfferFilter: NDKFilter = {
-    kinds: [NDKKind.TroubleshootOffer], 
+    kinds: [NDKKind.FreelanceOffer], 
 };
 export const allTickets:NDKEventStore<ExtendedBaseType<TicketEvent>>
         = get(ndk).storeSubscribe<TicketEvent>(allTicketsFilter, subOptions, TicketEvent);

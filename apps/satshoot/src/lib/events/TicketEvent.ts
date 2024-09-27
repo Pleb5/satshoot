@@ -16,7 +16,7 @@ export class TicketEvent extends NDKEvent {
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
-        this.kind ??= NDKKind.TroubleshootTicket;
+        this.kind ??= NDKKind.FreelanceTicket;
         this._status = parseInt(this.tagValue('s') as string);
         this._title = this.tagValue('title') as string;
     }
@@ -40,6 +40,10 @@ export class TicketEvent extends NDKEvent {
         this.removeTag('a');
         this.tags.push(['a', offerAddress]);
         this.status = TicketStatus.InProgress;
+    }
+
+    get winnerFreelancer(): string | undefined {
+        return this.acceptedOfferAddress?.split(':')[1];
     }
 
     get title(): string {

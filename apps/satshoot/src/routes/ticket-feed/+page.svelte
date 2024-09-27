@@ -5,13 +5,12 @@
     import { wot } from '$lib/stores/wot';
     import ndk, { connected } from "$lib/stores/ndk";
     import { online } from "$lib/stores/network";
-    import { checkRelayConnections } from "$lib/utils/helpers";
+    import { checkRelayConnections, orderEventsChronologically } from "$lib/utils/helpers";
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from "@nostr-dev-kit/ndk";
 
     import { InputChip } from "@skeletonlabs/skeleton";
-    import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
-    import ReadyToTroubleshootModal from "$lib/components/Modals/ReadyToTroubleshootModal.svelte";
+    import ReadyToWorkModal from "$lib/components/Modals/ReadyToWorkModal.svelte";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
     import currentUser, { loggedIn } from "$lib/stores/user";
@@ -25,6 +24,8 @@
     let filterInput = '';
     let filterList: string[] = [];
     let ticketList: Set<TicketEvent> = new Set;
+    // tracks if user-defined filtering returned anything
+    let noResults = false;
     let mounted = false;
 
     function filterTickets() {
@@ -53,6 +54,9 @@
                     }
                 });
             });
+
+            if (filteredTicketList.size === 0) noResults = true;
+
             ticketList = filteredTicketList;
         }
     }
@@ -65,9 +69,9 @@
         }
     }
 
-    function readyToTroubleshoot() {
+    function readyToWork() {
         const modalComponent: ModalComponent = {
-            ref: ReadyToTroubleshootModal,
+            ref: ReadyToWorkModal,
         };
 
         const modal: ModalSettings = {
@@ -79,6 +83,7 @@
 
     $: if($newTickets && filterList) {
         // We just received a ticket 
+        orderEventsChronologically($newTickets);
         ticketList = new Set($newTickets.filter((t: TicketEvent) => {
             // New ticket check: if a ticket status is changed this removes not new tickets
             const newTicket = (t.status === TicketStatus.New);
@@ -97,7 +102,7 @@
     $: if ($loggedIn && mounted) {
         newTickets = $ndk.storeSubscribe(
             {
-                kinds: [NDKKind.TroubleshootTicket],
+                kinds: [NDKKind.FreelanceTicket],
             },
             {
                 autoStart: true,
@@ -107,6 +112,7 @@
             },
             TicketEvent
         );
+        $newTickets = $newTickets;
     }
 
 
@@ -145,7 +151,7 @@
             <!-- </button> -->
         </div>
 
-        {#if ticketList.size > 0}
+        {#if ticketList && ticketList.size > 0}
             <div class="grid grid-cols-1 gap-y-4 mb-8">
                 {#each ticketList as ticket (ticket.id)}
                     <div class="flex justify-center">
@@ -156,6 +162,8 @@
                     </div>
                 {/each}
             </div>
+        {:else if noResults}
+            <h2 class="h2 font-bold text-center">No search results!</h2>
         {:else}
             <div class="flex flex-col items-center gap-y-8">
                 {#each {length: 4} as _ }
@@ -183,7 +191,7 @@
         <div class="fixed bottom-20 right-8">
             <button class="btn btn-icon-xl bg-primary-300-600-token"
                 on:click={()=> {
-                    readyToTroubleshoot();
+                    readyToWork();
                 }}
             >
                 <BullhornIcon extraClasses={'text-3xl '}/>

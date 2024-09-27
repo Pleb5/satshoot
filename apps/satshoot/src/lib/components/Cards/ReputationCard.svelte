@@ -1,12 +1,11 @@
 <script lang="ts">
 import ndk from "$lib/stores/ndk";
 import { wot } from '$lib/stores/wot';
-import { troubleshootZap } from '$lib/utils/helpers';
 import { 
     clientReviews,
-    troubleshooterReviews,
+    freelancerReviews,
     aggregateClientRatings,
-    aggregateTroubleshooterRatings
+    aggregateFreelancerRatings
 } from "$lib/stores/reviews";
 
 import {
@@ -31,6 +30,9 @@ import { wotUpdating } from "$lib/stores/wot";
 import type { NDKEventStore } from "@nostr-dev-kit/ndk-svelte";
 import { SatShootPubkey } from "$lib/utils/misc";
 import { onDestroy } from "svelte";
+    import { wotFilteredOffers, wotFilteredTickets } from "$lib/stores/freelance-eventstores";
+    import type { TicketEvent } from "$lib/events/TicketEvent";
+    import type { OfferEvent } from "$lib/events/OfferEvent";
 
 export let user: Hexpubkey;
 export let type: ReviewType | undefined;
@@ -39,15 +41,15 @@ export let open = true;
 
 const drawerStore = getDrawerStore();
 
-$: reviewArraysExist = $clientReviews && $troubleshooterReviews;
+$: reviewArraysExist = $clientReviews && $freelancerReviews;
 $: reviewsExist = reviewArraysExist && 
-            ($clientReviews.length > 0 || $troubleshooterReviews.length > 0);
+            ($clientReviews.length > 0 || $freelancerReviews.length > 0);
 
 $: if (!type && reviewArraysExist) {
-    if ($clientReviews.length > $troubleshooterReviews.length) {
+    if ($clientReviews.length > $freelancerReviews.length) {
         reviewType = ReviewType.Client;
     } else {
-        reviewType = ReviewType.Troubleshooter;
+        reviewType = ReviewType.Freelancer;
     }
 } else if (type) {
     reviewType = type;
@@ -66,9 +68,23 @@ let allEarningsStore: NDKEventStore<NDKEvent>;
 let allPaymentsStore: NDKEventStore<NDKEvent>;
 let allPledgesStore: NDKEventStore<NDKEvent>;
 
+let needSetup = true;
+
 let allEarnings = 0;
 let allPayments = 0;
 let allPledges = 0;
+
+// Get all winner offer a-tags OF this user as a freelancer 
+// We take only those that were on tickets from a client in wot
+const allWinnerOffersOfUser: string[] = [];
+
+// Get all winner offer a-tags FOR this user as a client 
+// We take only freelancers in wot
+const allWinnerOffersForUser: string[] = [];
+
+// Get all tickets where user won and client is in wot
+// OR tickets where user is a client and winner freelancer is in wot
+const allTicketsWhereUserInvolved: string[] = [];
 
 const baseClasses = 'card p-4 bg-surface-300-600-token';
 
@@ -92,23 +108,23 @@ function showReviewBreakdown() {
 //     console.log('currentUser', $currentUser)
 //     console.log('user', user)
 //     console.log('clientReviews', $clientReviews)
-//     console.log('troubleshooterReviews', $troubleshooterReviews)
+//     console.log('freelancerReviews', $freelancerReviews)
 // }
-// $: console.log($troubleshooterReviews)
+// $: console.log($freelancerReviews)
 
 $: if (
     $currentUser
     && user
     && $clientReviews
-    && $troubleshooterReviews
+    && $freelancerReviews
 ) {
 
     let otherTypeOfRatings;
     if (reviewType === ReviewType.Client) {
         ratings = aggregateClientRatings(user);
-        otherTypeOfRatings = aggregateTroubleshooterRatings(user);
+        otherTypeOfRatings = aggregateFreelancerRatings(user);
     } else {
-        ratings = aggregateTroubleshooterRatings(user);
+        ratings = aggregateFreelancerRatings(user);
         otherTypeOfRatings = aggregateClientRatings(user);
     }
 
@@ -155,21 +171,57 @@ $: if (
     }
 }
 
-$: if($currentUser && user && $wot) {
+$: if(
+    $currentUser && needSetup
+    && user && $wot
+    && $wotFilteredTickets && $wotFilteredOffers
+) {
+    needSetup = true;
+
+    const allTicketsOfUser = $wotFilteredTickets.filter(
+        (ticket: TicketEvent) => ticket.pubkey === user
+    );
+
+    const allOffersOfUser = $wotFilteredOffers.filter(
+        (offer: OfferEvent) => offer.pubkey === user
+    );
+
+    $wotFilteredTickets.forEach((t: TicketEvent) => {
+        allOffersOfUser.forEach((o: OfferEvent) => {
+            if (t.acceptedOfferAddress === o.offerAddress) {
+                allWinnerOffersOfUser.push(o.id);
+                allTicketsWhereUserInvolved.push(t.ticketAddress);
+            }
+        });
+    });
+
+    $wotFilteredOffers.forEach((o: OfferEvent) => {
+        allTicketsOfUser.forEach((t: TicketEvent) => {
+            if (t.acceptedOfferAddress === o.offerAddress) {
+                allWinnerOffersForUser.push(o.id);
+                allTicketsWhereUserInvolved.push(t.ticketAddress);
+            }
+        });
+    });
+
+    // console.log('allWinnerOffersOfUser', allWinnerOffersOfUser);
+    // console.log('allWinnerOffersForUser', allWinnerOffersForUser);
+    // console.log('allTicketsWhereUserInvolved', allTicketsWhereUserInvolved);
+
     allEarningsStore = $ndk.storeSubscribe(
-        {kinds: [NDKKind.Zap], '#p': [user]},
+        {kinds: [NDKKind.Zap], '#p': [user], '#e': allWinnerOffersOfUser},
         subOptions,
     );
 
     allPaymentsStore = $ndk.storeSubscribe(
-        {kinds: [NDKKind.Zap], '#P': [user]},
+        {kinds: [NDKKind.Zap], '#e': allWinnerOffersForUser},
         subOptions,
     );
 
     allPledgesStore = $ndk.storeSubscribe(
         {
             kinds: [NDKKind.Zap],
-            '#P': [user],
+            '#a': allTicketsWhereUserInvolved,
             '#p': [SatShootPubkey]
         },
         subOptions,
@@ -179,12 +231,10 @@ $: if($currentUser && user && $wot) {
 $: if ($allEarningsStore) {
     allEarnings = 0;
     $allEarningsStore.forEach((zap: NDKEvent)=>{
-        const zappee = zap.tagValue('P');
-        if (zappee && $wot.has(zappee) && troubleshootZap(zap)) {
-            const zapInvoice = zapInvoiceFromEvent(zap);
-            if (zapInvoice && zapInvoice.amount) {
-                allEarnings += Math.round(zapInvoice.amount / 1000);
-            }
+        const zapInvoice = zapInvoiceFromEvent(zap);
+        if (zapInvoice && zapInvoice.amount) {
+            // console.log('amount', zapInvoice.amount)
+            allEarnings += Math.round(zapInvoice.amount / 1000);
         }
     });
 }
@@ -192,11 +242,10 @@ $: if ($allEarningsStore) {
 $: if ($allPaymentsStore) {
     allPayments = 0;
     $allPaymentsStore.forEach((zap: NDKEvent)=>{
-        const zappee = zap.tagValue('P')
-        if (zappee && $wot.has(zappee) && troubleshootZap(zap)) {
-            const zapInvoice = zapInvoiceFromEvent(zap);
-            if (zapInvoice && zapInvoice.amount) {
-                allPayments += Math.round(zapInvoice.amount / 1000);            }
+        const zapInvoice = zapInvoiceFromEvent(zap);
+        if (zapInvoice && zapInvoice.amount) {
+            // console.log('amount', zapInvoice.amount)
+            allPayments += Math.round(zapInvoice.amount / 1000);
         }
     });
 }
@@ -204,13 +253,38 @@ $: if ($allPaymentsStore) {
 $: if ($allPledgesStore) {
     allPledges = 0;
     $allPledgesStore.forEach((zap: NDKEvent)=>{
-        const zappee = zap.tagValue('P')
-        if (zappee && $wot.has(zappee)) {
-            const zapInvoice = zapInvoiceFromEvent(zap);
-            if (zapInvoice && zapInvoice.amount) {
-                allPledges += Math.round(zapInvoice.amount / 1000);
+        const zapInvoice = zapInvoiceFromEvent(zap);
+        if (zapInvoice && zapInvoice.amount) {
+            // console.log('amount', zapInvoice.amount)
+            const pledgeSum = Math.round(zapInvoice.amount / 1000);
+
+            // Calculate share of pledge
+            const ticket = $wotFilteredTickets.filter(
+                // Must check a-tag bc user can close ticket after payment
+                // and this causes a replacement, which means previous ticket's
+                // e-tag will not match the new ones.
+                (t: TicketEvent) => t.ticketAddress === zap.tagValue('a')
+            )
+                .at(0) as TicketEvent;
+
+            const offer = $wotFilteredOffers.filter(
+                (o:OfferEvent) => o.offerAddress === ticket.acceptedOfferAddress
+            )
+            .at(0) as OfferEvent;
+
+            const absolutePledgeSplit = Math.round(offer.pledgeSplit / 100 * pledgeSum);
+            let userShare = 0;
+            // user is the client
+            if (ticket.pubkey === user) {
+                userShare = pledgeSum - absolutePledgeSplit;
+            } else {
+                // user is the freelancer
+                userShare = absolutePledgeSplit;
             }
+
+            allPledges += userShare;
         }
+
     });
 }
 
@@ -285,10 +359,7 @@ onDestroy(()=>{
                             <div>
                                 <span>
                                     {
-                                    (allEarnings 
-                                        ? insertThousandSeparator(allEarnings)
-                                        : '?'
-                                    ) + ' sats'
+                                        insertThousandSeparator(allEarnings) + ' sats'
                                     }
                                 </span>
                             </div>
@@ -306,10 +377,7 @@ onDestroy(()=>{
                             <div>
                                 <span>
                                     {
-                                    (allPayments
-                                        ? insertThousandSeparator(allPayments)
-                                        : '?'
-                                    ) + ' sats'
+                                        insertThousandSeparator(allPayments) + ' sats'
                                     }
                                 </span>
                             </div>
@@ -326,10 +394,7 @@ onDestroy(()=>{
                             <div>
                                 <span>
                                     {
-                                    (allPledges
-                                        ? insertThousandSeparator(allPledges)
-                                        : '?'
-                                    ) + ' sats'
+                                        insertThousandSeparator(allPledges) + ' sats'
                                     }
                                 </span>
                             </div>

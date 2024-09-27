@@ -17,6 +17,7 @@ import TicketIcon from '$lib/components/Icons/TicketIcon.svelte';
 import HandshakeIcon from '$lib/components/Icons/HandshakeIcon.svelte';
 import PostTicketIcon from '$lib/components/Icons/PostTicketIcon.svelte';
 import BitcoinIcon from '$lib/components/Icons/BitcoinIcon.svelte';
+    import { orderEventsChronologically } from '$lib/utils/helpers';
 
 $: npub = $page.params.npub;
 $: user = $ndk.getUser({npub: npub});
@@ -37,7 +38,7 @@ $: if (user) {
 
     allTicketsOfUser = $ndk.storeSubscribe<TicketEvent>(
         {
-            kinds: [NDKKind.TroubleshootTicket],
+            kinds: [NDKKind.FreelanceTicket],
             authors: [user.pubkey],
         },
         subOptions,
@@ -46,13 +47,18 @@ $: if (user) {
 
     allOffersOfUser = $ndk.storeSubscribe<OfferEvent>(
         {
-            kinds: [NDKKind.TroubleshootOffer],
+            kinds: [NDKKind.FreelanceOffer],
             authors: [user.pubkey],
         },
         subOptions,
         OfferEvent
     );
 }
+
+$: orderEventsChronologically($allTicketsOfUser);
+
+$: orderEventsChronologically($allOffersOfUser);
+
 
 $: if ($loggedIn) {
     ticketsWithUser = derived(
@@ -71,6 +77,8 @@ $: if ($loggedIn) {
                 return false;
             });
 
+            orderEventsChronologically(tickets);
+
             return tickets;
         }
     );
@@ -86,6 +94,8 @@ $: if ($loggedIn) {
 
                 return false;
             });
+
+            orderEventsChronologically(offers);
 
             return offers;
         }
@@ -140,7 +150,7 @@ onDestroy(()=>{
                                     </svelte:fragment>
                                     <svelte:fragment slot="summary">
                                         <h3 class="h3 text-center underline">
-                                            You as a Troubleshooter
+                                            You as a Freelancer
                                         </h3>
                                     </svelte:fragment>
                                     <svelte:fragment slot="content">
@@ -158,7 +168,7 @@ onDestroy(()=>{
                                             </div>
                                         {:else}
                                             <h4 class="text-center">
-                                                No Tickets troubleshot!
+                                                No Tickets found!
                                             </h4>
                                         {/if}
                                     </svelte:fragment>

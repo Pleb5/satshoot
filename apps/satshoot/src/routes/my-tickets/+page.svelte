@@ -1,13 +1,13 @@
 <script lang="ts">
 import currentUser from "$lib/stores/user";
-import { checkRelayConnections } from "$lib/utils/helpers";
+import { checkRelayConnections, orderEventsChronologically } from "$lib/utils/helpers";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 import { ticketTabStore } from "$lib/stores/tab-store";
 
 import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
-import { myTickets } from '$lib/stores/troubleshoot-eventstores';
+import { myTickets } from '$lib/stores/freelance-eventstores';
 import TicketCard from '$lib/components/Cards/TicketCard.svelte';
 import SearchIcon from "$lib/components/Icons/SearchIcon.svelte";
 import { onMount } from "svelte";
@@ -107,6 +107,8 @@ $: if ($myTickets) {
     inProgressTickets = [];
     closedTickets = [];
 
+    orderEventsChronologically($myTickets);
+
     $myTickets.forEach((ticket: TicketEvent) => {
         if (ticket.status === TicketStatus.New) {
             newTickets.push(ticket);
@@ -145,7 +147,7 @@ onMount(() => {
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
             {#if $ticketTabStore === TicketStatus.New}
-                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each newTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showNewTicket[i] ? '' : 'hidden'}">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
@@ -153,7 +155,7 @@ onMount(() => {
                     {/each}
                 </div>
                 {:else if $ticketTabStore === TicketStatus.InProgress}
-                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each inProgressTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showInProgressTicket[i] ? '' : 'hidden'}">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
@@ -161,7 +163,7 @@ onMount(() => {
                     {/each}
                 </div>
                 {:else if $ticketTabStore === TicketStatus.Resolved}
-                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each closedTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showClosedTicket[i] ? '' : 'hidden'}">
                             <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>

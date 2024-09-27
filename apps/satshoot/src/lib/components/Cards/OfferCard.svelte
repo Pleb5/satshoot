@@ -14,7 +14,7 @@
     import TicketCard from './TicketCard.svelte';
     import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
 
-    import { offerMakerToSelect } from '$lib/stores/messages';
+    import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
 
     import type { NDKFilter, NDKEvent } from '@nostr-dev-kit/ndk';
 
@@ -28,9 +28,9 @@
 
     import { onDestroy, onMount } from 'svelte';
     import ReputationCard from './ReputationCard.svelte';
-    import { ReviewEvent, ReviewType, type TroubleshooterRating } from '$lib/events/ReviewEvent';
+    import { ReviewEvent, ReviewType, type FreelancerRating } from '$lib/events/ReviewEvent';
     import UserReviewCard from '../Cards/UserReviewCard.svelte';
-    import { clientReviews, troubleshooterReviews } from '$lib/stores/reviews';
+    import { clientReviews, freelancerReviews } from '$lib/stores/reviews';
 
     import { insertThousandSeparator } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
@@ -49,6 +49,7 @@
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
 
+    export let maxWidth = 'max-w-[90vw] sm:max-w-[70vw] lg:max-w-[60vw]';
     export let showTicket = true;
     export let showTicketReputation = true;
     export let showTicketReview = true;
@@ -58,14 +59,14 @@
     export let showOfferReview = true;
     export let openReview = false;
 
-    let troubleshooterReview: TroubleshooterRating | null = null;
+    let freelancerReview: FreelancerRating | null = null;
     let reviewer: NDKUser;
 
     let paid = 0;
     let paymentStore: NDKEventStore<NDKEvent>;
 
-    let ticketFilter: NDKFilter<NDKKind.TroubleshootTicket> = {
-        kinds: [NDKKind.TroubleshootTicket],
+    let ticketFilter: NDKFilter<NDKKind.FreelanceTicket> = {
+        kinds: [NDKKind.FreelanceTicket],
         '#d': [],
     };
     let dTagOfTicket: string;
@@ -119,7 +120,7 @@
         }
 
         paymentStore = $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap], '#a': [offer.offerAddress] },
+            { kinds: [NDKKind.Zap], '#e': [offer.id] },
             {
                 closeOnEose: false,
                 groupable: true,
@@ -227,9 +228,9 @@
         }
 
         if (winner) {
-            $troubleshooterReviews.forEach((review: ReviewEvent) => {
+            $freelancerReviews.forEach((review: ReviewEvent) => {
                 if (review.reviewedEventAddress === offer!.offerAddress) {
-                    troubleshooterReview = review.troubleshooterRatings;
+                    freelancerReview = review.freelancerRatings;
                     const reviewerPubkey = review.pubkey;
                     reviewer = $ndk.getUser({ pubkey: reviewerPubkey });
                 }
@@ -237,8 +238,12 @@
         }
     }
 
-    function setOfferToSelect() {
-        $offerMakerToSelect = (offer as OfferEvent).pubkey;
+    function setChatPartner() {
+        if (ticket!.pubkey === $currentUser!.pubkey) {
+            $offerMakerToSelect = (offer as OfferEvent).pubkey;
+        } else {
+            $selectedPerson = ticket!.pubkey + '$' + ticket!.encode();
+        }
     }
 
     onMount(async () => {
@@ -276,12 +281,12 @@
     };
 </script>
 
-<div class="card pt-2 bg-surface-200-700-token flex-grow sm:max-w-[70vw] lg:max-w-[60vw]">
+<div class="card pt-2 bg-surface-200-700-token flex-grow {maxWidth}">
     {#if offer}
         <div class="grid grid-cols-[15%_1fr_15%] justify-center items-center mx-2">
             {#if $currentUser && enableChat && ticket}
                 <a
-                    on:click={setOfferToSelect}
+                    on:click={setChatPartner}
                     href={'/messages/' + ticket.encode()}
                     class="btn btn-icon btn-sm justify-self-start"
                 >
@@ -348,7 +353,7 @@
             <div data-popup="pledgeInfo_{offer.id}">
                 <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
                     <p>
-                        Revenue share percentage the Troubleshooter pledged to SatShoot to support
+                        Revenue share percentage the Freelancer pledged to SatShoot to support
                         development.
                     </p>
                     <div class="arrow bg-primary-300-600-token" />
@@ -381,7 +386,7 @@
                 </div>
             </div>
             {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
-                <ReputationCard type={ReviewType.Troubleshooter} user={offer.pubkey} />
+                <ReputationCard type={ReviewType.Freelancer} user={offer.pubkey} />
             {/if}
             {#if showDetails}
                 <div class="">
@@ -436,8 +441,8 @@
                     </AccordionItem>
                 </Accordion>
             {/if}
-            {#if showOfferReview && troubleshooterReview && reviewer}
-                <UserReviewCard rating={troubleshooterReview} {reviewer} open={openReview} />
+            {#if showOfferReview && freelancerReview && reviewer}
+                <UserReviewCard rating={freelancerReview} {reviewer} open={openReview} />
             {/if}
         </div>
     {:else}

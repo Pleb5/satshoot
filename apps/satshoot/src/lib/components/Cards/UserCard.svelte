@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
+    import ndk, { blastrUrl } from "$lib/stores/ndk";
     import currentUser from '$lib/stores/user';
     import {
         NDKRelay, 
@@ -75,7 +75,6 @@
             try {
                 $currentUser.profile = userProfile;
 
-                const blastrUrl = 'wss://nostr.mutinywallet.com';
                 $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, $ndk));
 
                 console.log('relays sending to:', $ndk.pool)

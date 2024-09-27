@@ -192,7 +192,7 @@ onMount(() => checkRelayConnections());
                                     rating={
                                         review.type === ReviewType.Client
                                         ? review.clientRatings
-                                        : review.troubleshooterRatings
+                                        : review.freelancerRatings
                                     } 
                                     reviewer={review.author}
                                 />

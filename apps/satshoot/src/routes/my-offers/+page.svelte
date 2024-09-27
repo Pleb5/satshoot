@@ -1,13 +1,13 @@
 <script lang="ts">
 import currentUser from "$lib/stores/user";
-import { checkRelayConnections } from "$lib/utils/helpers";
+import { checkRelayConnections, orderEventsChronologically } from "$lib/utils/helpers";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
 import { offerTabStore } from "$lib/stores/tab-store";
 
 import { OfferStatus, type OfferEvent } from '$lib/events/OfferEvent';
-import { allTickets, myOffers } from '$lib/stores/troubleshoot-eventstores';
+import { allTickets, myOffers } from '$lib/stores/freelance-eventstores';
 import OfferCard from '$lib/components/Cards/OfferCard.svelte';
 import { type TicketEvent } from '$lib/events/TicketEvent';
 import SearchIcon from "$lib/components/Icons/SearchIcon.svelte"; 
@@ -127,6 +127,8 @@ $: if ($myOffers && $allTickets) {
     wonOffers = [];
     lostOffers = [];
 
+    orderEventsChronologically($myOffers);
+
     $myOffers.forEach((offer: OfferEvent) => {
         // This approach does not display an offer until it has successfully 
         // retrieved its status from its ticket!
@@ -187,7 +189,7 @@ onMount(() => {
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
             {#if $offerTabStore === OfferStatus.Pending}
-                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each pendingOffers as offer, i (offer.id) }
                         <div class="flex justify-center {showPendingOffer[i] ? '' : 'hidden'}">
                             <OfferCard
@@ -200,7 +202,7 @@ onMount(() => {
                     {/each}
                 </div>
             {:else if $offerTabStore === OfferStatus.Won}
-                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each wonOffers as offer, i (offer.id) }
                         <div class="flex justify-center {showWonOffer[i] ? '' : 'hidden'}">
                             <OfferCard {offer} countAllOffers={true} enableChat={true}/>
@@ -208,7 +210,7 @@ onMount(() => {
                     {/each}
                 </div>
             {:else if $offerTabStore === OfferStatus.Lost}
-                <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
+                <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each lostOffers as offer, i (offer.id) }
                         <div class="flex justify-center {showLostOffer[i] ? '' : 'hidden'}">
                             <OfferCard {offer} countAllOffers={true} enableChat={true}/>

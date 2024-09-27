@@ -10,7 +10,6 @@
     import ndk from "$lib/stores/ndk";
     import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
     import { bunkerNDK } from '$lib/stores/ndk';
-    import { connected } from "$lib/stores/ndk";
     import {
         sessionPK,
     } from "$lib/stores/ndk";
@@ -32,22 +31,22 @@
         myOffers,
         allOffers,
         allTickets,
-    } from "$lib/stores/troubleshoot-eventstores";
+    } from "$lib/stores/freelance-eventstores";
 
     import { 
         allReviews,
         clientReviews,
-        troubleshooterReviews,
+        freelancerReviews,
     } from "$lib/stores/reviews";
     import { messageStore, wotFilteredMessageFeed } from "$lib/stores/messages";
-    import { allReceivedZaps, wotFilteredReceivedZaps } from '$lib/stores/zaps';
+    import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from "$lib/stores/notifications";
 
     import { initializeUser, logout, checkRelayConnections } from '$lib/utils/helpers';
 
     import { wot, wotUpdating, wotUpdateFailed } from '$lib/stores/wot';
 
-    import { RestoreMethod, LoginMethod } from "$lib/stores/ndk";
+    import { RestoreMethod, type LoginMethod } from "$lib/stores/ndk";
 
     import { privateKeyFromSeedWords} from "nostr-tools/nip06";
     import {
@@ -84,7 +83,7 @@
     import AppMenu from "$lib/components/DrawerContents/AppMenu.svelte";
 
     // Menu Items 
-    import TroubleshootIcon from "$lib/components/Icons/TroubleshootIcon.svelte";
+    import FreelanceIcon from "$lib/components/Icons/FreelanceIcon.svelte";
     import PostTicketIcon from "$lib/components/Icons/PostTicketIcon.svelte";
     import NotificationsIcon from "$lib/components/Icons/NotificationsIcon.svelte";
 
@@ -146,11 +145,6 @@
         hideAppMenu = false
     }
 
-    $ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
-        console.log('relay disconnected', relay)
-        checkRelayConnections();
-    });
-
     $ndk.pool.on('relay:connect', () => {
         if ($ndk.pool.stats().disconnected > 0) {
             console.log('Relay connected but there are still relays disconnected!')
@@ -198,11 +192,18 @@
         $loggingIn = true;
         await tick();
 
+        // Migration to login-method = 'local'  instead of 'ephemeral'
+        let method = localStorage.getItem('login-method');
+        if (method === 'ephemeral') {
+            localStorage.setItem('login-method', 'local')
+            method = 'local';
+        }
+
         // Try to get saved Login method from localStorage and login that way
-        $loginMethod = localStorage.getItem("login-method")?? null;
+        $loginMethod = method as LoginMethod ?? null;
 
         if ($loginMethod){
-            if ($loginMethod === LoginMethod.Ephemeral) {
+            if ($loginMethod === 'local') {
                 // We either get the private key from sessionStorage or decrypt from localStorage
                 if ($sessionPK) {
                     $ndk.signer = new NDKPrivateKeySigner($sessionPK); 
@@ -264,7 +265,7 @@
                         toastStore.trigger(t);
                     }
                 }
-            } else if($loginMethod === LoginMethod.Bunker) {
+            } else if($loginMethod === 'bunker') {
                 const localBunkerKey = localStorage.getItem("bunkerLocalSignerPK");
                 const bunkerTargetNpub = localStorage.getItem("bunkerTargetNpub");
                 const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
@@ -338,7 +339,7 @@
                     }
 
                 }
-            } else if ($loginMethod === LoginMethod.NIP07) {
+            } else if ($loginMethod === 'nip07') {
                 if (!$ndk.signer) {
                     $ndk.signer = new NDKNip07Signer();
                 }
@@ -369,7 +370,7 @@
             showAppInstallPromotion = true;
         });
 
-        window.addEventListener('offline', (e) => {
+        window.addEventListener('offline', () => {
             console.log('offline')
             toastStore.clear();
             const t: ToastSettings = {
@@ -381,10 +382,16 @@
             $online = false;
         });
 
-        window.addEventListener('online', (e) => {
+        window.addEventListener('online', () => {
             $online = true;
 
             window.location.reload();
+        });
+
+        // We need to check relay connections on regaining focus,
+        // especially on mobile where user can put app in the background
+        window.addEventListener('focus', () => {
+            checkRelayConnections();
         });
 
         // Setup client-side caching
@@ -537,8 +544,8 @@
         });
     }
 
-    $: if ($troubleshooterReviews) {
-        $troubleshooterReviews.forEach((r: ReviewEvent) => {
+    $: if ($freelancerReviews) {
+        $freelancerReviews.forEach((r: ReviewEvent) => {
             $myOffers.forEach((o: OfferEvent) => {
                 if (o.offerAddress === r.reviewedEventAddress) {
                     sendNotification(r);
@@ -547,8 +554,8 @@
         });
     }
 
-    $: if ($wotFilteredReceivedZaps && $currentUser) {
-        $wotFilteredReceivedZaps.forEach((zap: NDKEvent) => {
+    $: if ($filteredReceivedZaps && $currentUser) {
+        $filteredReceivedZaps.forEach((zap: NDKEvent) => {
             sendNotification(zap);
         });
     }
@@ -662,7 +669,7 @@
                                 strokeLinecap="round" width="w-12" 
                             />
                         </div>
-                        {:else if $loginMethod === LoginMethod.Ephemeral}
+                        {:else if $loginMethod === 'local'}
                         <button 
                             class="btn bg-primary-300-600-token"
                             type="button"
@@ -694,7 +701,7 @@
                         href="/ticket-feed"
                         selected={$page.url.pathname === '/ticket-feed'}
                     >
-                        <TroubleshootIcon extraClasses={'text-2xl sm:text-3xl'} />
+                        <FreelanceIcon extraClasses={'text-2xl sm:text-3xl'} />
                     </AppRailAnchor>
 
                     <AppRailAnchor
@@ -742,7 +749,7 @@
                 href="/ticket-feed" 
                 selected={$page.url.pathname === '/ticket-feed'}
             >
-                <TroubleshootIcon extraClasses={'text-2xl sm:text-3xl'} />
+                <FreelanceIcon extraClasses={'text-2xl sm:text-3xl'} />
             </TabAnchor>
 
             <TabAnchor 

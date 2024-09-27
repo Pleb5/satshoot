@@ -1,13 +1,13 @@
 <script lang="ts">
 import currentUser from "$lib/stores/user";
-import type { ClientRating, TroubleshooterRating } from "$lib/events/ReviewEvent";
+import type { ClientRating, FreelancerRating } from "$lib/events/ReviewEvent";
 import type { NDKUser, NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { onMount } from "svelte";
 import { Avatar } from '@skeletonlabs/skeleton';
 import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
 
 
-export let rating: ClientRating | TroubleshooterRating;
+export let rating: ClientRating | FreelancerRating;
 export let reviewer: NDKUser;
 export let open = true;
 let reviewerProfile: NDKUserProfile | null;
@@ -44,7 +44,7 @@ $: if($currentUser && ($currentUser.pubkey === reviewer.pubkey)) {
         <svelte:fragment slot="content">
             <div class="flex flex-col items-center gap-y-2 text-lg sm:text-xl">
                 <div class="flex flex-col justify-center mb-4">
-                    <!-- TroubleshooterRating -->
+                    <!-- FreelancerRating -->
                     {#if 'success' in rating}
                         <div class="grid grid-cols-[1fr_auto] gap-x-8">
                             <div class="justify-self-start">

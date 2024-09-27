@@ -10,17 +10,17 @@
     import { onMount } from "svelte";
 
     enum ConversationType {
-        Troubleshooter = 0,
+        Freelancer = 0,
         Client = 1
     }
 
-    let troubleshooters: NDKUser[] = [];
-    let ticketsWithTroubleshooters: TicketEvent[] = [];
+    let freelancers: NDKUser[] = [];
+    let ticketsWithFreelancers: TicketEvent[] = [];
     let clients: NDKUser[] = [];
     let ticketsWithClients: TicketEvent[] = [];
-    let conversationType: ConversationType = ConversationType.Troubleshooter;
+    let conversationType: ConversationType = ConversationType.Freelancer;
     let mounted = false;
-    let noTicketsWithTroubleshooters = false;
+    let noTicketsWithFreelancers = false;
     let noTicketsWithClients = false;
 
     $: if ($loggedIn && mounted) {
@@ -31,7 +31,7 @@
         console.log('init')
         const tickets = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.TroubleshootTicket],
+                kinds: [NDKKind.FreelanceTicket],
                 authors: [$currentUser!.pubkey],
             },
             {
@@ -43,7 +43,7 @@
 
         console.log('my tickets in messages page:', tickets)
 
-        if (tickets.size === 0) noTicketsWithTroubleshooters = true;
+        if (tickets.size === 0) noTicketsWithFreelancers = true;
 
         tickets.forEach((ticketEvent: NDKEvent) => {
             const ticket = TicketEvent.from(ticketEvent);
@@ -51,18 +51,18 @@
                 const pubkey = ticket.acceptedOfferAddress.split(':')[1];
                 if (pubkey) {
                     const user = $ndk.getUser({pubkey: pubkey});
-                    troubleshooters.push(user);
-                    ticketsWithTroubleshooters.push(ticket);
+                    freelancers.push(user);
+                    ticketsWithFreelancers.push(ticket);
                 }
             }
         });
 
-        troubleshooters = troubleshooters;
-        ticketsWithTroubleshooters = ticketsWithTroubleshooters;
+        freelancers = freelancers;
+        ticketsWithFreelancers = ticketsWithFreelancers;
 
         const offers = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.TroubleshootOffer],
+                kinds: [NDKKind.FreelanceOffer],
                 authors: [$currentUser!.pubkey],
             },
             {
@@ -87,7 +87,7 @@
 
         const ticketEvents = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.TroubleshootTicket],
+                kinds: [NDKKind.FreelanceTicket],
                 '#d': ticketsToFetch,
             },
             {
@@ -127,8 +127,8 @@
 
 {#if $currentUser}
     <TabGroup justify='justify-evenly' flex='flex-grow'>
-        <Tab bind:group={conversationType} name="tab1" value={ConversationType.Troubleshooter}>
-            Conversations with Troubleshooters
+        <Tab bind:group={conversationType} name="tab1" value={ConversationType.Freelancer}>
+            Conversations with Freelancers
         </Tab>
         <Tab bind:group={conversationType} name="tab2" value={ConversationType.Client}>
             Conversations with Clients
@@ -136,18 +136,18 @@
         <!-- Tab Panels --->
         <svelte:fragment slot="panel">
             <div class="grid grid-cols-[10%_1fr_10%] sm:grid-cols-[30%_1fr_30%] gap-y-4">
-                {#if conversationType === ConversationType.Troubleshooter}
-                    {#if troubleshooters?.length > 0}
-                        {#each troubleshooters as troubleshooter, i}
+                {#if conversationType === ConversationType.Freelancer}
+                    {#if freelancers?.length > 0}
+                        {#each freelancers as freelancer, i}
                             <div class="col-start-2">
                                 <ChatHead 
-                                    user={troubleshooter}
-                                    ticket={ticketsWithTroubleshooters[i]}
+                                    user={freelancer}
+                                    ticket={ticketsWithFreelancers[i]}
                                 >
                                 </ChatHead>
                             </div>
                         {/each}
-                    {:else if noTicketsWithTroubleshooters}
+                    {:else if noTicketsWithFreelancers}
                         <div class="h4 text-center col-start-2">No Conversations!</div>
                     {:else}
                         {#each {length: 4} as _ }
