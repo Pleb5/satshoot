@@ -195,6 +195,15 @@
     }
 
     async function createOffer(offer: OfferEvent | undefined) {
+        if (!ticket) {
+            const t: ToastSettings = {
+                message: 'Ticket is not loaded yet!',
+                autohide: false,
+                background: 'bg-error-300-600-token',
+            };
+            toastStore.trigger(t);
+            return;
+        }
         const offerPosted: boolean = await new Promise<boolean>((resolve) => {
             const modalComponent: ModalComponent = {
                 ref: CreateOfferModal,
