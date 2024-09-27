@@ -112,6 +112,7 @@
             },
             TicketEvent
         );
+        $newTickets = $newTickets;
     }
 
 
@@ -150,7 +151,7 @@
             <!-- </button> -->
         </div>
 
-        {#if ticketList.size > 0}
+        {#if ticketList && ticketList.size > 0}
             <div class="grid grid-cols-1 gap-y-4 mb-8">
                 {#each ticketList as ticket (ticket.id)}
                     <div class="flex justify-center">
