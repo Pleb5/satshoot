@@ -31,7 +31,10 @@ const config = {
             // For SPA this is important. If a dynamic route is requested on a static site,
             // a fallback page is the response which svelte recognizes on the client-side
             // and tries to do client-side dynamic routing. Hosting provider specific option.
-            fallback: 'index.html',
+
+            // For test deploy use commented fallback page
+            // fallback: 'index.html',
+            fallback: '404.html',
             precompress: false,
             // strict is needed to check if all sites have prerender = true OR have a fallback page(see above)
             strict: true
