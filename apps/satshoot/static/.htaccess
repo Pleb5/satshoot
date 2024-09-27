@@ -5,8 +5,8 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     # for Test deploy use this rule:
-    # RewriteRule . /index.html [L]
-    RewriteRule . /404.html [L]
+    RewriteRule . /index.html [L]
+    # RewriteRule . /404.html [L]
 </IfModule>
 
 <If "%{REQUEST_URI} =~ m#^/.well-known/#">
