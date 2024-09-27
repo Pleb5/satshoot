@@ -1,4 +1,11 @@
 # https://satshoot.com
+## 0.1.2
+- Rename lots of things to better relate to freelancing
+- Improved payment experience
+- Layout improvements
+- Network stability improvements
+- Bug fixes in parsing Reputation-metrics
+
 ## 0.1.1
 - Landing page for new users
 - LN payment fixes and stabilizations
