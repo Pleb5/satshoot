@@ -190,7 +190,7 @@ $: if(
         allOffersOfUser.forEach((o: OfferEvent) => {
             if (t.acceptedOfferAddress === o.offerAddress) {
                 allWinnerOffersOfUser.push(o.id);
-                allTicketsWhereUserInvolved.push(t.id);
+                allTicketsWhereUserInvolved.push(t.ticketAddress);
             }
         });
     });
@@ -199,7 +199,7 @@ $: if(
         allTicketsOfUser.forEach((t: TicketEvent) => {
             if (t.acceptedOfferAddress === o.offerAddress) {
                 allWinnerOffersForUser.push(o.id);
-                allTicketsWhereUserInvolved.push(t.id);
+                allTicketsWhereUserInvolved.push(t.ticketAddress);
             }
         });
     });
@@ -221,7 +221,7 @@ $: if(
     allPledgesStore = $ndk.storeSubscribe(
         {
             kinds: [NDKKind.Zap],
-            '#e': allTicketsWhereUserInvolved,
+            '#a': allTicketsWhereUserInvolved,
             '#p': [SatShootPubkey]
         },
         subOptions,
@@ -260,7 +260,10 @@ $: if ($allPledgesStore) {
 
             // Calculate share of pledge
             const ticket = $wotFilteredTickets.filter(
-                (t: TicketEvent) => t.id === zap.tagValue('e')
+                // Must check a-tag bc user can close ticket after payment
+                // and this causes a replacement, which means previous ticket's
+                // e-tag will not match the new ones.
+                (t: TicketEvent) => t.ticketAddress === zap.tagValue('a')
             )
                 .at(0) as TicketEvent;
 
