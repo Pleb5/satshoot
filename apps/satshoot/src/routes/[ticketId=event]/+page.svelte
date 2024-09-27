@@ -8,7 +8,7 @@
     import { connected } from "$lib/stores/ndk";
     
     import redirectStore from '$lib/stores/network';
-    import { checkRelayConnections } from "$lib/utils/helpers";
+    import { checkRelayConnections, orderEventsChronologically } from "$lib/utils/helpers";
 
     import { wot } from '$lib/stores/wot';
 
@@ -141,6 +141,9 @@
                 return $wot.has(offer.pubkey);
             });
         }
+
+        orderEventsChronologically($offerStore);
+
         $offerStore.forEach((offer: OfferEvent) => {
             if (offer.pubkey === $currentUser?.pubkey) {
                 offerToEdit = offer;

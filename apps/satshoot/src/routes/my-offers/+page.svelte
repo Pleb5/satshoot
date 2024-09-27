@@ -1,6 +1,6 @@
 <script lang="ts">
 import currentUser from "$lib/stores/user";
-import { checkRelayConnections } from "$lib/utils/helpers";
+import { checkRelayConnections, orderEventsChronologically } from "$lib/utils/helpers";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
@@ -126,6 +126,8 @@ $: if ($myOffers && $allTickets) {
     pendingOffers = [];
     wonOffers = [];
     lostOffers = [];
+
+    orderEventsChronologically($myOffers);
 
     $myOffers.forEach((offer: OfferEvent) => {
         // This approach does not display an offer until it has successfully 

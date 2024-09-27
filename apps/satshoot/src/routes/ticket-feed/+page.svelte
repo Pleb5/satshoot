@@ -5,7 +5,7 @@
     import { wot } from '$lib/stores/wot';
     import ndk, { connected } from "$lib/stores/ndk";
     import { online } from "$lib/stores/network";
-    import { checkRelayConnections } from "$lib/utils/helpers";
+    import { checkRelayConnections, orderEventsChronologically } from "$lib/utils/helpers";
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from "@nostr-dev-kit/ndk";
 
@@ -83,6 +83,7 @@
 
     $: if($newTickets && filterList) {
         // We just received a ticket 
+        orderEventsChronologically($newTickets);
         ticketList = new Set($newTickets.filter((t: TicketEvent) => {
             // New ticket check: if a ticket status is changed this removes not new tickets
             const newTicket = (t.status === TicketStatus.New);

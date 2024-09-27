@@ -17,6 +17,7 @@ import TicketIcon from '$lib/components/Icons/TicketIcon.svelte';
 import HandshakeIcon from '$lib/components/Icons/HandshakeIcon.svelte';
 import PostTicketIcon from '$lib/components/Icons/PostTicketIcon.svelte';
 import BitcoinIcon from '$lib/components/Icons/BitcoinIcon.svelte';
+    import { orderEventsChronologically } from '$lib/utils/helpers';
 
 $: npub = $page.params.npub;
 $: user = $ndk.getUser({npub: npub});
@@ -54,6 +55,11 @@ $: if (user) {
     );
 }
 
+$: orderEventsChronologically($allTicketsOfUser);
+
+$: orderEventsChronologically($allOffersOfUser);
+
+
 $: if ($loggedIn) {
     ticketsWithUser = derived(
         [allTicketsOfUser, currentUser],
@@ -71,6 +77,8 @@ $: if ($loggedIn) {
                 return false;
             });
 
+            orderEventsChronologically(tickets);
+
             return tickets;
         }
     );
@@ -86,6 +94,8 @@ $: if ($loggedIn) {
 
                 return false;
             });
+
+            orderEventsChronologically(offers);
 
             return offers;
         }

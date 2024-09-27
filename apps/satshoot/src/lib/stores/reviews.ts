@@ -16,6 +16,7 @@ import {
     type Hexpubkey,
     type NDKFilter,
 } from '@nostr-dev-kit/ndk';
+import { orderEventsChronologically } from '$lib/utils/helpers';
 
 export const subOptions: NDKSubscriptionOptions = {
     closeOnEose: false,
@@ -50,9 +51,12 @@ export const allReviews = get(ndk).storeSubscribe(
 export const clientReviews = derived(
     [wot, allReviews],
     ([$wot, $allReviews]) => {
-        return $allReviews.filter((r: ReviewEvent) => {
+        const reviews = $allReviews.filter((r: ReviewEvent) => {
             return (r.type === ReviewType.Client && $wot.has(r.pubkey))
         });
+
+        orderEventsChronologically(reviews);
+        return reviews;
     }
 );
 
@@ -60,9 +64,13 @@ export const freelancerReviews = derived(
     [wot, allReviews],
     ([$wot, $allReviews]) => {
         // console.log('review arrived', get(allReviews))
-        return $allReviews.filter((r: ReviewEvent) => {
+        const reviews = $allReviews.filter((r: ReviewEvent) => {
             return (r.type === ReviewType.Freelancer && $wot.has(r.pubkey))
         });
+
+        orderEventsChronologically(reviews);
+        return reviews;
+
     }
 );
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 import currentUser from "$lib/stores/user";
-import { checkRelayConnections } from "$lib/utils/helpers";
+import { checkRelayConnections, orderEventsChronologically } from "$lib/utils/helpers";
 
 import type { NDKTag } from '@nostr-dev-kit/ndk';
 import { TabGroup, Tab } from '@skeletonlabs/skeleton';
@@ -106,6 +106,8 @@ $: if ($myTickets) {
     newTickets = [];
     inProgressTickets = [];
     closedTickets = [];
+
+    orderEventsChronologically($myTickets);
 
     $myTickets.forEach((ticket: TicketEvent) => {
         if (ticket.status === TicketStatus.New) {

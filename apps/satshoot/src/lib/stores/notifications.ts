@@ -10,7 +10,7 @@ import { OfferEvent } from "$lib/events/OfferEvent";
 import { ReviewEvent } from "$lib/events/ReviewEvent";
 import currentUser from "./user";
 
-import { getActiveServiceWorker } from "$lib/utils/helpers";
+import { getActiveServiceWorker, orderEventsChronologically } from "$lib/utils/helpers";
 import { goto } from "$app/navigation";
 
 export const notificationsEnabled: Writable<boolean> = persisted('notificationsEnabled', false) ;
@@ -34,6 +34,8 @@ export const ticketNotifications = derived(
         const tickets: TicketEvent[] = [];
         filteredEvents.forEach((t: NDKEvent)=>{tickets.push(TicketEvent.from(t))});
 
+        orderEventsChronologically(tickets);
+
         return tickets;
     }
 );
@@ -48,6 +50,8 @@ export const offerNotifications = derived(
 
         const offers: OfferEvent[] = [];
         filteredEvents.forEach((o: NDKEvent)=>{offers.push(OfferEvent.from(o))});
+
+        orderEventsChronologically(offers);
 
         return offers;
     }
@@ -66,6 +70,8 @@ export const messageNotifications = derived(
             });
         }
 
+        orderEventsChronologically(messages);
+
         return messages;
     }
 );
@@ -81,6 +87,8 @@ export const reviewNotifications = derived(
         const reviews: ReviewEvent[] = [];
         filteredEvents.forEach((r: NDKEvent)=>{reviews.push(ReviewEvent.from(r))});
 
+        orderEventsChronologically(reviews);
+
         return reviews;
     }
 );
@@ -92,6 +100,8 @@ export const receivedZapsNotifications = derived(
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
             return notification.kind === NDKKind.Zap;
         });
+
+        orderEventsChronologically(filteredEvents);
 
         return filteredEvents;
     }
