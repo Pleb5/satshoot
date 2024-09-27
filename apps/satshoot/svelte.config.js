@@ -33,8 +33,8 @@ const config = {
             // and tries to do client-side dynamic routing. Hosting provider specific option.
 
             // For test deploy use commented fallback page
-            // fallback: 'index.html',
-            fallback: '404.html',
+            fallback: 'index.html',
+            // fallback: '404.html',
             precompress: false,
             // strict is needed to check if all sites have prerender = true OR have a fallback page(see above)
             strict: true
