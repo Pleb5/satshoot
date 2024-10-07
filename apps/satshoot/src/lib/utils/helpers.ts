@@ -9,6 +9,8 @@ import {
     profileFromEvent,
     getNip57ZapSpecFromLud,
     NDKRelaySet,
+    NDKCashuMintList,
+    type CashuPaymentInfo,
 } from '@nostr-dev-kit/ndk';
 
 import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
@@ -50,6 +52,7 @@ import { get } from 'svelte/store';
 import { dev, browser } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
+import { walletInit } from '$lib/stores/wallet';
 
 export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init');
@@ -77,6 +80,9 @@ export async function initializeUser(ndk: NDKSvelte) {
             user.profile = profile;
         }
         currentUser.set(user);
+
+        // initialize user wallet for ecash payments
+        walletInit(ndk, user);
 
         // fetch users relays. If there are no outbox relays, set default ones
         const relays = await fetchUserOutboxRelays(ndk);
@@ -334,12 +340,7 @@ export async function fetchEventFromRelays(
         let fetchedEvent: NDKEvent | null = null;
 
         // If relays are provided construct a set and pass over to sub
-        const relaySet = relays
-            ? new NDKRelaySet(new Set(relays), $ndk)
-            : undefined
-        ;
-
-
+        const relaySet = relays ? new NDKRelaySet(new Set(relays), $ndk) : undefined;
         const relayOnlySubscription = $ndk.subscribe(
             filter,
             {
@@ -411,12 +412,9 @@ export async function getZapConfiguration(pubkey: string) {
     //
     // await $ndk.outboxTracker!.trackUsers([pubkey]);
 
-    const metadataRelays = [
-        ...$ndk.outboxPool!.connectedRelays(),
-        ...$ndk.pool!.connectedRelays()
-    ];
+    const metadataRelays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    console.log('ndk relays connected', metadataRelays)
+    console.log('ndk relays connected', metadataRelays);
 
     const metadataEvent = await fetchEventFromRelays(
         metadataFilter,
@@ -436,7 +434,7 @@ export async function getZapConfiguration(pubkey: string) {
         const lnurlSpec = await getNip57ZapSpecFromLud(
             {
                 lud06: profile.lud06,
-                lud16: profile.lud16
+                lud16: profile.lud16,
             },
             $ndk
         );
@@ -452,16 +450,15 @@ export async function getZapConfiguration(pubkey: string) {
         try {
             // try if lud06 is actually a lud16
             const lnurlSpec = await getNip57ZapSpecFromLud(
-                {lud06: undefined, lud16: profile.lud06},
+                { lud06: undefined, lud16: profile.lud06 },
                 $ndk
             );
 
             if (!lnurlSpec) {
-                return null 
+                return null;
             }
 
             return lnurlSpec;
-
         } catch (err) {
             console.error(
                 `Tried to parse lud06 as lud16 but error occurred again for ${pubkey}`,
@@ -472,12 +469,36 @@ export async function getZapConfiguration(pubkey: string) {
     }
 }
 
+export async function getCashuPaymentInfo(pubkey: string): Promise<CashuPaymentInfo | null> {
+    const $ndk = get(ndk);
+
+    const filter = {
+        kinds: [NDKKind.CashuMintList],
+        authors: [pubkey],
+    };
+
+    const relays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
+
+    const event = await fetchEventFromRelays(filter, 5000, false, relays).catch((err) => {
+        console.error(`An error occurred in fetching cashuMintList for ${pubkey}`, err);
+        return null;
+    });
+
+    if (!event) return null;
+
+    const mintList = NDKCashuMintList.from(event);
+
+    return {
+        mints: mintList.mints,
+        relays: mintList.relays,
+        p2pk: mintList.p2pk,
+    };
+}
+
 export function orderEventsChronologically(events: NDKEvent[], reverse: boolean = false) {
     events.sort((e1: NDKEvent, e2: NDKEvent) => {
-        if (reverse)
-            return e1.created_at! - e2.created_at!;
-        else
-            return e2.created_at! - e1.created_at!;
+        if (reverse) return e1.created_at! - e2.created_at!;
+        else return e2.created_at! - e1.created_at!;
     });
 
     events = events;

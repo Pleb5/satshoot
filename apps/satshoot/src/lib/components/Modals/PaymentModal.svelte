@@ -1,22 +1,24 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
-    import currentUser from '$lib/stores/user';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
+    import ndk from '$lib/stores/ndk';
+    import currentUser from '$lib/stores/user';
     import { SatShootPubkey } from '$lib/utils/misc';
     import {
         generateZapRequest,
-        NDKEvent,
+        getRelayListForUser,
         NDKKind,
+        NDKNutzap,
+        NDKRelayList,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
-        type NDKFilter,
     } from '@nostr-dev-kit/ndk';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { getModalStore, getToastStore, popup, ProgressRadial } from '@skeletonlabs/skeleton';
     import { tick, type SvelteComponent } from 'svelte';
     import OfferCard from '../Cards/OfferCard.svelte';
 
+    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
     import { getZapConfiguration } from '$lib/utils/helpers';
     import { insertThousandSeparator } from '$lib/utils/misc';
 
@@ -39,14 +41,65 @@
         Freelancer = 'freelancer',
     }
 
+    interface InvoiceDetails {
+        paymentRequest: string;
+        receiver: string;
+        eventId: string;
+        zapper?: string;
+    }
+
     let amount = 0;
     let pledgedAmount = 0;
     let satshootShare = 0;
     let freelancerShare = 0;
+    let canPayWithEcash = false;
+    let ecashTooltipText = 'Pay with ecash';
+    let hasSenderEcashSetup = false;
 
     $: if (offer) {
         satshootShare = Math.floor((amount * offer.pledgeSplit) / 100);
         freelancerShare = amount - satshootShare;
+    }
+
+    $: {
+        if (offer && $currentUser) {
+            canPayWithEcash = true;
+
+            hasSenderEcashSetup = $cashuPaymentInfoMap.has($currentUser.pubkey);
+            const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
+
+            if (!hasSenderEcashSetup) {
+                canPayWithEcash = false;
+                ecashTooltipText = 'Setup Ecash Wallet';
+            } else if (!hasFreelancerEcashSetup) {
+                canPayWithEcash = false;
+                ecashTooltipText = 'Freelancer does not have ecash wallet';
+            } else if (!$wallet) {
+                canPayWithEcash = false;
+                ecashTooltipText = 'Wallet is not initialized yet';
+            } else {
+                $wallet
+                    .balance()
+                    .then((balance) => {
+                        console.log('balance :>> ', balance);
+                        console.log('amount :>> ', amount);
+                        if (!balance) {
+                            canPayWithEcash = false;
+                            ecashTooltipText = `Don't have enough balance in ecash wallet`;
+                        } else if (balance[0].amount < amount) {
+                            canPayWithEcash = false;
+                            ecashTooltipText = `Don't have enough balance in ecash wallet`;
+                            return;
+                        }
+                    })
+                    .catch((err) => {
+                        console.error('An error occurred in fetching wallet balance', err);
+                        canPayWithEcash = false;
+                        ecashTooltipText = `Don't have enough balance in ecash wallet`;
+                        return;
+                    });
+            }
+        }
     }
 
     let paying = false;
@@ -61,187 +114,317 @@
         placement: 'bottom',
     };
 
+    const popupHover: PopupSettings = {
+        event: 'hover',
+        target: 'popupHover',
+        placement: 'top',
+    };
+
     async function pay() {
-        if (ticket && offer) {
-            try {
-                paying = true;
-                await tick();
+        const paymentData = await initializePayment();
+        if (!paymentData) return;
 
-                let freelancerShareMillisats = freelancerShare * 1000;
-                let satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
+        const { freelancerShareMillisats, satshootSumMillisats } = paymentData;
 
-                if (freelancerShareMillisats + satshootSumMillisats === 0) {
-                    errorMessage = 'Cannot pay 0 sats!';
-                    paying = false;
-                    return;
-                }
+        try {
+            const zapRequestRelays = new Map<UserEnum, string[]>();
+            const invoices = new Map<UserEnum, InvoiceDetails>();
+            const paid = new Map<UserEnum, boolean>([
+                [UserEnum.Freelancer, false],
+                [UserEnum.Satshoot, false],
+            ]);
 
-                const zapRequestRelays = new Map<UserEnum, string[]>();
-                const invoices: Map<
-                    UserEnum,
-                    {
-                        paymentRequest: string;
-                        receiver: string;
-                        eventId: string;
-                        zapper?: string;
-                    }
-                > = new Map();
-                const paid: Map<UserEnum, boolean> = new Map();
-                paid.set(UserEnum.Freelancer, false);
-                paid.set(UserEnum.Satshoot, false);
-
-                if (freelancerShare > 0) {
-                    const zapConfig = await getZapConfiguration(offer.pubkey);
-
-                    if (zapConfig) {
-                        const invoice = await generateInvoice(
-                            offer,
-                            freelancerShareMillisats,
-                            zapConfig,
-                            offer.pubkey,
-                            {
-                                comment: 'satshoot',
-                                tags: [['P', $currentUser!.pubkey]],
-                            },
-                            UserEnum.Freelancer,
-                            zapRequestRelays
-                        );
-
-                        if (invoice) {
-                            invoices.set(UserEnum.Freelancer, {
-                                paymentRequest: invoice,
-                                receiver: offer.pubkey,
-                                eventId: offer.id,
-                                zapper: zapConfig.nostrPubkey,
-                            });
-                        } else {
-                            errorMessage =
-                                'Could not zap Freelancer: Failed to fetch payment invoice';
-                        }
-                    } else {
-                        errorMessage = 'Could not fetch Freelancer zap info!';
-                    }
-                }
-
-                if (satshootSumMillisats > 0) {
-                    const zapConfig = await getZapConfiguration(SatShootPubkey);
-
-                    if (zapConfig) {
-                        const invoice = await generateInvoice(
-                            ticket,
-                            satshootSumMillisats,
-                            zapConfig,
-                            SatShootPubkey,
-                            {
-                                comment: 'satshoot',
-                                tags: [['P', $currentUser!.pubkey]],
-                            },
-                            UserEnum.Satshoot,
-                            zapRequestRelays
-                        );
-
-                        if (invoice) {
-                            invoices.set(UserEnum.Satshoot, {
-                                paymentRequest: invoice,
-                                receiver: SatShootPubkey,
-                                eventId: ticket.id,
-                                zapper: zapConfig.nostrPubkey,
-                            });
-                        } else {
-                            errorMessage =
-                                'Could not zap satshoot: Failed to fetch payment invoice';
-                        }
-                    } else {
-                        errorMessage = 'Could not fetch Freelancer zap info!';
-                    }
-                }
-
-                const { init, launchPaymentModal, closeModal, onModalClosed } = await import(
-                    '@getalby/bitcoin-connect'
+            if (freelancerShare > 0) {
+                await fetchPaymentInfo(
+                    UserEnum.Freelancer,
+                    offer!.pubkey,
+                    freelancerShareMillisats,
+                    zapRequestRelays,
+                    invoices,
+                    'offer'
                 );
+            }
 
-                // Init getalby bitcoin-connect
-                init({ appName: 'SatShoot' });
+            if (satshootSumMillisats > 0) {
+                await fetchPaymentInfo(
+                    UserEnum.Satshoot,
+                    SatShootPubkey,
+                    satshootSumMillisats,
+                    zapRequestRelays,
+                    invoices,
+                    'ticket'
+                );
+            }
 
-                for (const key of invoices.keys()) {
-                    const invoice = invoices.get(key);
+            const { init, launchPaymentModal, closeModal, onModalClosed } = await import(
+                '@getalby/bitcoin-connect'
+            );
+            init({ appName: 'SatShoot' });
 
-                    if (!invoice) continue;
+            for (const [key, invoice] of invoices.entries()) {
+                if (!invoice) continue;
 
-                    launchPaymentModal({
-                        invoice: invoice.paymentRequest,
-                        // NOTE: only fired if paid with WebLN
-                        onPaid: ({ preimage }) => paid.set(key, true),
+                launchPaymentModal({
+                    invoice: invoice.paymentRequest,
+                    onPaid: () => paid.set(key, true),
+                });
+
+                const filter = {
+                    kinds: [NDKKind.Zap],
+                    since: Math.floor(Date.now() / 1000),
+                    '#p': [invoice.receiver],
+                    authors: invoice.zapper ? [invoice.zapper] : undefined,
+                };
+
+                try {
+                    const subscription = $ndk.subscribe(
+                        filter,
+                        { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY },
+                        NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key), $ndk)
+                    );
+
+                    subscription.on('event', async (event) => {
+                        if (event.tagValue('bolt11') === invoice.paymentRequest && !paid.get(key)) {
+                            paid.set(key, true);
+                            closeModal();
+                        }
                     });
 
-                    // Fetch zap receipts if possible
-                    const filter: NDKFilter = {
-                        kinds: [NDKKind.Zap],
-                        since: Math.floor(Date.now() / 1000),
-                        '#p': [invoice.receiver],
-                    };
+                    await new Promise<void>((resolve) => {
+                        const unsub = onModalClosed(() => {
+                            subscription.stop();
+                            resolve();
+                            unsub();
+                        });
+                    });
+                } catch (error) {
+                    console.error('An error occurred in payment process', error);
+                    errorMessage = `Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "Satshoot's"} zap receipt: ${error}`;
+                }
+            }
 
-                    if (invoice.zapper) {
-                        filter['authors'] = [invoice.zapper];
+            handlePaymentStatus(
+                paid,
+                UserEnum.Freelancer,
+                freelancerShareMillisats,
+                'Freelancer Paid!',
+                'Freelancer Payment might have failed!'
+            );
+            handlePaymentStatus(
+                paid,
+                UserEnum.Satshoot,
+                satshootSumMillisats,
+                'SatShoot Paid!',
+                'SatShoot Payment might have failed!'
+            );
+
+            if (modalStore) modalStore.close();
+        } catch (error) {
+            console.error(error);
+            handleToast(
+                'Error: An error occurred in payment process, check console for more details!',
+                ToastType.Error
+            );
+            paying = false;
+        }
+    }
+
+    async function payWithEcash() {
+        const paymentData = await initializePayment();
+        if (!paymentData) return;
+
+        const { freelancerShareMillisats, satshootSumMillisats } = paymentData;
+
+        try {
+            const paid = new Map<UserEnum, boolean>([
+                [UserEnum.Freelancer, false],
+                [UserEnum.Satshoot, false],
+            ]);
+
+            async function processPayment(
+                userEnum: UserEnum,
+                pubkey: string,
+                amountMillisats: number
+            ) {
+                console.log('payment model 0');
+                console.log('payment model', amountMillisats);
+                console.log('payment model', $cashuPaymentInfoMap.get(pubkey));
+
+                if (amountMillisats > 0 && $cashuPaymentInfoMap.has(pubkey)) {
+                    const cashuPaymentInfo = $cashuPaymentInfoMap.get(pubkey);
+                    console.log('payment model');
+                    if (!cashuPaymentInfo) {
+                        errorMessage = `Could not fetch cashu payment info for ${userEnum}!`;
+                        return;
+                    }
+                    console.log('payment model 1');
+                    if (!$wallet) {
+                        errorMessage = 'Wallet is not initialized!';
+                        return;
+                    }
+                    console.log('payment model 2');
+                    const balance = await $wallet.balance();
+                    if (!balance) {
+                        errorMessage = `Don't have enough balance`;
+                        return;
+                    }
+                    console.log('payment model 3');
+                    let balanceInMilliSats = balance[0].amount;
+                    if (balance[0].unit === 'sats') {
+                        balanceInMilliSats *= 1000;
+                    }
+                    console.log('payment model 4');
+                    if (balanceInMilliSats < amountMillisats) {
+                        errorMessage = `Don't have enough balance`;
+                        return;
+                    }
+                    console.log('payment model 5');
+                    console.log('cashuPaymentInfo :>> ', cashuPaymentInfo);
+
+                    const cashuResult = await $wallet
+                        .cashuPay({
+                            target: userEnum === UserEnum.Freelancer ? offer! : ticket,
+                            recipientPubkey: pubkey,
+                            amount: amountMillisats,
+                            unit: 'msat',
+                            comment: 'satshoot',
+                            tags: [['P', $currentUser!.pubkey]],
+                            ...cashuPaymentInfo,
+                        })
+                        .catch((err) => {
+                            console.log('payment model 6 ');
+                            console.error(
+                                `An error occurred in cashuPay for ${userEnum === UserEnum.Freelancer ? 'freelancer' : 'satshoot'}`,
+                                err
+                            );
+                            return null;
+                        });
+                    console.log('payment model 7');
+
+                    console.log('cashuResult :>> ', cashuResult);
+
+                    if (!cashuResult) {
+                        errorMessage = `Failed to pay, check console for more details`;
+                        return;
                     }
 
-                    try {
-                        const subscription = $ndk.subscribe(
-                            filter,
-                            {
-                                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-                            },
-                            NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key), $ndk)
-                        );
+                    const nutzapEvent = new NDKNutzap($ndk);
+                    nutzapEvent.mint = cashuResult.mint;
+                    nutzapEvent.proofs = cashuResult.proofs;
+                    nutzapEvent.unit = 'sat';
+                    // NOTE: set target is not properly implemented in NDKNutzap, so manually add reference tag
+                    // nutzapEvent.target = userEnum === UserEnum.Freelancer ? offer! : ticket;
+                    nutzapEvent.tags.push([
+                        'a',
+                        userEnum === UserEnum.Freelancer
+                            ? offer!.offerAddress
+                            : ticket.ticketAddress,
+                    ]);
+                    nutzapEvent.tags.push([
+                        'e',
+                        userEnum === UserEnum.Freelancer ? offer!.id : ticket.id,
+                    ]);
+                    nutzapEvent.recipientPubkey = pubkey;
+                    await nutzapEvent.sign();
 
-                        subscription.on('event', async (event: NDKEvent) => {
-                            console.log('Got zap receipt', event)
-                            const bolt11 = event.tagValue('bolt11');
+                    const receiversRelays = await getRelayListForUser(pubkey, $ndk);
 
-                            if (bolt11 === invoice.paymentRequest && !paid.get(key)) {
-                                paid.set(key, true);
-                                closeModal();
-                            }
-                        });
+                    const publishedRelaySet = await nutzapEvent.publish(
+                        NDKRelaySet.fromRelayUrls(receiversRelays.readRelayUrls, $ndk)
+                    );
 
-                        await new Promise<void>((resolve) => {
-                            const unsub = onModalClosed(() => {
-                                console.log('onModalClosed');
-                                subscription.stop();
-                                resolve();
-                                unsub();
-                            });
-                        });
-                    } catch (error) {
-                        console.log('An error occurred in payment process', error);
-                        errorMessage = "Could not fetch Freelancer's zap receipt: " + error;
-                    }
-                }
+                    console.log('publishedRelaySet :>> ', publishedRelaySet);
 
-                if (paid.get(UserEnum.Freelancer)) {
-                    handleToast('Freelancer Paid!', ToastType.Success, false);
-                } else if (freelancerShareMillisats > 0) {
-                    handleToast('Freelancer Payment might have failed!', ToastType.Warn, false);
+                    paid.set(userEnum, true);
                 }
-                if (paid.get(UserEnum.Satshoot)) {
-                    handleToast('SatShoot Paid!', ToastType.Success, false);
-                } else if (satshootSumMillisats > 0) {
-                    handleToast('SatShoot Payment might have failed!', ToastType.Warn, false);
-                }
-                if (modalStore) {
-                    modalStore.close();
-                }
-            } catch (error) {
-                console.log(error);
-                handleToast(
-                    'Error" An error occurred in payment process, check console for more details!',
-                    ToastType.Error
-                );
-                paying = false;
+            }
+
+            await processPayment(UserEnum.Freelancer, offer!.pubkey, freelancerShareMillisats);
+            await processPayment(UserEnum.Satshoot, SatShootPubkey, satshootSumMillisats);
+
+            handlePaymentStatus(
+                paid,
+                UserEnum.Freelancer,
+                freelancerShareMillisats,
+                'Freelancer Paid!',
+                'Freelancer Payment might have failed!'
+            );
+            handlePaymentStatus(
+                paid,
+                UserEnum.Satshoot,
+                satshootSumMillisats,
+                'SatShoot Paid!',
+                'SatShoot Payment might have failed!'
+            );
+
+            if (modalStore) modalStore.close();
+        } catch (error) {
+            console.error(error);
+            handleToast(
+                'Error: An error occurred in payment process, check console for more details!',
+                ToastType.Error
+            );
+            paying = false;
+        }
+    }
+
+    async function initializePayment() {
+        if (!ticket || !offer) {
+            paying = false;
+            handleToast('Error: Could not find ticket and offer!', ToastType.Error);
+            return null;
+        }
+
+        paying = true;
+        await tick();
+
+        const freelancerShareMillisats = freelancerShare * 1000;
+        const satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
+
+        if (freelancerShareMillisats + satshootSumMillisats === 0) {
+            errorMessage = 'Cannot pay 0 sats!';
+            paying = false;
+            return null;
+        }
+
+        return { freelancerShareMillisats, satshootSumMillisats };
+    }
+
+    async function fetchPaymentInfo(
+        userEnum: UserEnum,
+        pubkey: string,
+        amountMillisats: number,
+        zapRequestRelays: Map<UserEnum, string[]>,
+        invoices: Map<UserEnum, InvoiceDetails>,
+        key: string
+    ) {
+        const zapConfig = await getZapConfiguration(pubkey);
+        if (zapConfig) {
+            const invoice = await generateInvoice(
+                key === 'ticket' ? ticket : offer,
+                amountMillisats,
+                zapConfig,
+                pubkey,
+                {
+                    comment: 'satshoot',
+                    tags: [['P', $currentUser!.pubkey]],
+                },
+                userEnum,
+                zapRequestRelays
+            );
+
+            if (invoice) {
+                invoices.set(userEnum, {
+                    paymentRequest: invoice,
+                    receiver: pubkey,
+                    eventId: key === 'ticket' ? ticket.id : offer!.id,
+                    zapper: zapConfig.nostrPubkey,
+                });
+            } else {
+                errorMessage = `Could not zap ${userEnum}: Failed to fetch payment invoice`;
             }
         } else {
-            paying = false;
-            handleToast('Error: Could could not find ticket and offer!', ToastType.Error);
+            errorMessage = `Could not fetch ${userEnum} zap info!`;
         }
     }
 
@@ -284,6 +467,21 @@
         });
 
         return invoice;
+    }
+
+    // Helper function to handle toast notifications about payment status
+    function handlePaymentStatus(
+        paid: Map<UserEnum, boolean>,
+        userEnum: UserEnum,
+        shareMillisats: number,
+        successMessage: string,
+        failureMessage: string
+    ) {
+        if (paid.get(userEnum)) {
+            handleToast(successMessage, ToastType.Success, false);
+        } else if (shareMillisats > 0) {
+            handleToast(failureMessage, ToastType.Warn, false);
+        }
     }
 
     function handleToast(message: string, type: ToastType, autohide: boolean = true) {
@@ -375,14 +573,7 @@
                         'sats'}
                 </div>
             </div>
-            <div class="flex w-full justify-between">
-                <button
-                    type="button"
-                    class="btn btn-sm sm:btn-md min-w-24 bg-error-300-600-token"
-                    on:click={() => modalStore.close()}
-                >
-                    Cancel
-                </button>
+            <div class="flex flex-col gap-2">
                 <button
                     type="button"
                     on:click={pay}
@@ -406,6 +597,41 @@
                         </div>
                     {/if}
                     <div class="font-bold">(Public Zap)</div>
+                </button>
+                <button
+                    on:click={payWithEcash}
+                    use:popup={popupHover}
+                    type="button"
+                    class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                    disabled={paying || !canPayWithEcash}
+                >
+                    {#if paying}
+                        <span>
+                            <ProgressRadial
+                                value={undefined}
+                                stroke={60}
+                                meter="stroke-error-500"
+                                track="stroke-error-500/30"
+                                strokeLinecap="round"
+                                width="w-8"
+                            />
+                        </span>
+                    {/if}
+                    <div class="flex flex-col items-center gap-y-1">
+                        <div class="font-bold">Pay with ecash</div>
+                    </div>
+                </button>
+                <div data-popup="popupHover">
+                    <div class={popupClasses}>
+                        <p>{ecashTooltipText}</p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    class="btn btn-sm sm:btn-md min-w-24 bg-error-300-600-token"
+                    on:click={() => modalStore.close()}
+                >
+                    Cancel
                 </button>
             </div>
             {#if errorMessage}
