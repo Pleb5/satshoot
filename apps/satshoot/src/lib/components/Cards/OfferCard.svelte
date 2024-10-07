@@ -422,32 +422,57 @@
         {#if winner}
             <div class="flex flex-col gap-2">
                 <h4 class="h5 md:h4 col-start-2 text-center text-success-500">
-                    {'Freelancer Paid: ' +
-                        (insertThousandSeparator(freelancerPaid) ?? '?') +
-                        ' sats'}
+                    <div class="flex flex-col items-center gap-y-2">
+                        <div>
+                            <div>
+                                Freelancer Paid: 
+                            </div>
+                            <div>
+                                {
+                                (insertThousandSeparator(freelancerPaid) ?? '?') +
+                                    ' sats'
+                                }
+                            </div>
+                        </div>
+                    </div>
                 </h4>
                 <h4 class="h5 md:h4 col-start-2 text-center text-success-500">
-                    {'Satshoot Paid: ' + (insertThousandSeparator(satshootPaid) ?? '?') + ' sats'}
+                    <div class="flex flex-col items-center gap-y-2">
+                        <div>
+                            <div>
+                                Satshoot Paid:
+                            </div>
+                            <div>
+                                {
+                                (insertThousandSeparator(satshootPaid) ?? '?') +
+                                    ' sats'
+                                }
+                            </div>
+                        </div>
+                    </div>
                 </h4>
             </div>
         {/if}
         {#if showDescription}
+            <div class="h5 sm:h4 text-center mt-2">
+                Pitch:
+            </div>
             <div class="text-center text-base md:text-lg p-2">
                 {offer.description}
             </div>
         {/if}
         <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start px-4 pt-2 pb-4">
-            <div class="flex flex-col items-center sm:grid sm:grid-cols-[20%_1fr_20%] mb-4">
+            <div class="flex flex-col items-center mb-4">
                 <div class="flex items-center">
                     <h4 class="h5 sm:h4">Posted by:</h4>
                 </div>
+            <a class="anchor text-lg sm:text-xl" href={'/' + npub}>
                 <div class="flex justify-center items-center gap-x-2">
                     <Avatar src={avatarImage} width="w-12" />
-                    <a class="anchor text-lg sm:text-xl" href={'/' + npub}>
-                        {name ? name : npub.slice(0, 10) + '...'}
-                    </a>
+                    {name ? name : npub.slice(0, 10) + '...'}
                 </div>
+            </a>
             </div>
             {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
                 <ReputationCard type={ReviewType.Freelancer} user={offer.pubkey} />

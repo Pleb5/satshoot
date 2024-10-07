@@ -374,19 +374,19 @@
 
             <hr class="my-4" />
 
-            <div class="flex flex-col items-center sm:grid sm:grid-cols-[20%_1fr_20%] mb-4">
+            <div class="flex flex-col items-center mb-4">
                 <div class="flex items-center">
                     <h4 class="h5 sm:h4">Posted by:</h4> 
                 </div>
-                <div class="flex justify-center items-center gap-x-2 z-0">
-                    <Avatar
-                        src={avatarImage}
-                        width="w-12" 
-                    />
-                    <a class="anchor text-lg sm:text-xl " href={'/' + npub}>
+                <a class="anchor text-lg sm:text-xl " href={'/' + npub}>
+                    <div class="flex justify-center items-center gap-x-2 z-0">
+                        <Avatar
+                            src={avatarImage}
+                            width="w-12" 
+                        />
                         {name ? name : npub.slice(0, 10) + '...'}
-                    </a>
-                </div>
+                    </div>
+                </a>
             </div>
             {#if showReputation && $currentUser && ticket.pubkey !== $currentUser.pubkey}
                 <ReputationCard 

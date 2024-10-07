@@ -9,6 +9,8 @@ import Dexie from 'dexie';
 import { onDestroy } from 'svelte';
 import { nsecEncode } from "nostr-tools/nip19"
 import { hexToBytes } from '@noble/ciphers/utils';
+    import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
+    import EyeIcon from '$lib/components/Icons/EyeIcon.svelte';
 
 
 const modalStore = getModalStore();
@@ -84,47 +86,59 @@ onDestroy(() => {
 });
 
 </script>
-
-<div class="flex flex-col items-center gap-y-4 my-4">
-    <button 
-        class="btn bg-primary-300-600-token"
-        type="button"
-        on:click={ clearCache }
-    >
-        Clear Cache
-    </button>
-
-    {#if $sessionPK}
-        <button
-            class="btn bg-primary-300-600-token"
-            type="button"
-            on:click={ showPrivateKey }
+<div class="flex flex-col items-center">
+    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-y-4 my-4 w-[70vw] md:w-[40vw]">
+        <div class="bg-primary-300-600-token col-start-2 flex justify-center
+            gap-x-2 items-center mb-8 p-4 rounded-xl"
         >
-            Show Private key (nsec)
+            <LightSwitch />
+            <span>Theme</span>
+        </div>
+
+        <button 
+            class="btn bg-primary-300-600-token col-start-2"
+            type="button"
+            on:click={ clearCache }
+        >
+            <div class="flex gap-x-2 justify-between">
+                <TrashIcon />
+                <div>Clear Cache</div>
+            </div>
         </button>
-        {#if nsec && showing}
-            <div class="flex flex-col items-center gap-y-4">
-                <div class="font-bold">
-                    {
-                        nsec.substring(0,10)
-                        + '...'
-                        + nsec.substring(nsec.length - 11, nsec.length - 1)
-                    }
-                </div>
-            <button
-                class="btn text-sm btn-sm bg-red-500 font-bold"
-                use:clipboard={nsec}
-                on:click={onCopyNsec}
-            >
-                {copiedNsec ? 'Copied!' : 'Dangerously Copy'}
-            </button>
+
+        {#if $sessionPK}
+            <div class="col-start-2 flex flex-col items-center gap-y-2">
+                <button
+                    class="btn bg-primary-300-600-token w-full"
+                    type="button"
+                    on:click={ showPrivateKey }
+                >
+                    <div class="flex justify-center gap-x-2">
+                        <EyeIcon show={showing} />
+                    </div>
+                    <div>
+                        Show Private key (nsec)
+                    </div>
+                </button>
+                {#if nsec && showing}
+                    <div class="flex flex-col items-center gap-y-4">
+                        <div class="font-bold">
+                            {
+                            nsec.substring(0,10)
+                                + '...'
+                                + nsec.substring(nsec.length - 11, nsec.length - 1)
+                            }
+                        </div>
+                        <button
+                            class="btn text-sm btn-sm bg-red-500 font-bold"
+                            use:clipboard={nsec}
+                            on:click={onCopyNsec}
+                        >
+                            {copiedNsec ? 'Copied!' : 'Dangerously Copy'}
+                        </button>
+                    </div>
+                {/if}
             </div>
         {/if}
-    {/if}
-
-    <div class="flex justify-start gap-x-2 items-center">
-        <LightSwitch />
-        <span>Theme</span>
     </div>
-
 </div>

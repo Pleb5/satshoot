@@ -53,7 +53,7 @@
     let satshootShare = 0;
     let freelancerShare = 0;
     let canPayWithEcash = false;
-    let ecashTooltipText = 'Pay with ecash';
+    let ecashTooltipText = '';
     let hasSenderEcashSetup = false;
 
     $: if (offer) {
@@ -593,7 +593,7 @@
                         </span>
                     {:else}
                         <div class="flex flex-col items-center gap-y-1">
-                            <div class="font-bold">Pay</div>
+                            <div class="font-bold">Pay LN</div>
                         </div>
                     {/if}
                     <div class="font-bold">(Public Zap)</div>
@@ -618,14 +618,16 @@
                         </span>
                     {/if}
                     <div class="flex flex-col items-center gap-y-1">
-                        <div class="font-bold">Pay with ecash</div>
+                        <div class="font-bold">Pay ecash (Public Zap)</div>
                     </div>
                 </button>
-                <div data-popup="popupHover">
-                    <div class={popupClasses}>
-                        <p>{ecashTooltipText}</p>
+                {#if ecashTooltipText}
+                    <div data-popup="popupHover">
+                        <div class={popupClasses}>
+                            <p>{ecashTooltipText}</p>
+                        </div>
                     </div>
-                </div>
+                {/if}
                 <button
                     type="button"
                     class="btn btn-sm sm:btn-md min-w-24 bg-error-300-600-token"
