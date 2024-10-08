@@ -1,11 +1,7 @@
-import {nip19} from 'nostr-tools';
-import { 
-    type NDKTag,
-    type Hexpubkey,
-    NDKKind,
-} from '@nostr-dev-kit/ndk';
+import { nip19 } from 'nostr-tools';
+import { type NDKTag, type Hexpubkey, NDKKind } from '@nostr-dev-kit/ndk';
 
-export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
+export const SatShootPubkey = '8f5a10baaa38a2b4ff4f89d83ccd05c854fe780a65b7ade5d6b943373da91657';
 
 if (typeof NDKKind === 'undefined') {
     throw new Error('NDKKind is undefined. Check your imports.');
@@ -28,17 +24,16 @@ export const bunkerPerms = [
 ];
 
 interface SetSerializer {
-      stringify: (set: Set<string>) => string,
-      parse: (json: string) => Set<string>,
+    stringify: (set: Set<string>) => string;
+    parse: (json: string) => Set<string>;
 }
 
 interface MapSerializer {
-      stringify: (set: Map<string, number>) => string,
-      parse: (json: string) => Map<string, number>,
+    stringify: (set: Map<string, number>) => string;
+    parse: (json: string) => Map<string, number>;
 }
 
 export function getSetSerializer(): SetSerializer {
-
     return {
         stringify: (set: Set<string> | null) => {
             if (!set) return JSON.stringify(null);
@@ -46,9 +41,9 @@ export function getSetSerializer(): SetSerializer {
         },
         parse: (json: string) => {
             if (json === 'null') return new Set<string>();
-            return new Set<string>(JSON.parse(json))
+            return new Set<string>(JSON.parse(json));
         },
-    }
+    };
 }
 
 export function getMapSerializer(): MapSerializer {
@@ -70,34 +65,36 @@ export function getMapSerializer(): MapSerializer {
             });
             return map;
         },
-    }
+    };
 }
 
-export function percentile(arr:number[], val:number) {
+export function percentile(arr: number[], val: number) {
     let count = 0;
-    arr.forEach(v => {
+    arr.forEach((v) => {
         if (v < val) {
             count++;
         } else if (v == val) {
             count += 0.5;
         }
     });
-    return Math.floor(100 * count / arr.length);
+    return Math.floor((100 * count) / arr.length);
 }
 
-export const filterValidPTags = (tags: NDKTag[]) => tags
-    .filter((t: NDKTag) => t[0] === 'p')
-    .map((t: NDKTag) => t[1])
-    .filter((f: Hexpubkey) => {
-        try {
-            nip19.npubEncode(f);
-            return true;
-        } catch { return false; }
-    });
-
+export const filterValidPTags = (tags: NDKTag[]) =>
+    tags
+        .filter((t: NDKTag) => t[0] === 'p')
+        .map((t: NDKTag) => t[1])
+        .filter((f: Hexpubkey) => {
+            try {
+                nip19.npubEncode(f);
+                return true;
+            } catch {
+                return false;
+            }
+        });
 
 export function insertThousandSeparator(amount: number) {
-    return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
 export function linkifyText(text: string): string {
@@ -112,9 +109,8 @@ export function linkifyText(text: string): string {
             const url = new URL(urlString);
 
             // Shorten the displayed URL text to 20 characters with '...'
-            const displayText = urlString.length > 20
-                ? urlString.substring(0, 20) + '...'
-                : urlString;
+            const displayText =
+                urlString.length > 20 ? urlString.substring(0, 20) + '...' : urlString;
 
             // Return the HTML anchor tag
             return `<a class='anchor' href="${url.href}" target="_blank">${displayText}</a>`;
@@ -124,4 +120,3 @@ export function linkifyText(text: string): string {
         }
     });
 }
-
