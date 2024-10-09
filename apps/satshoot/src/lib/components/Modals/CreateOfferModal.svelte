@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { onMount, type SvelteComponent } from 'svelte';
+    import { onMount, type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKSigner } from '@nostr-dev-kit/ndk';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
-    
-	import { getModalStore } from '@skeletonlabs/skeleton';
+
+    import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
@@ -16,19 +16,20 @@
     import { goto } from '$app/navigation';
     import { navigating } from '$app/stores';
     import tabStore from '$lib/stores/tab-store';
-    import { offerTabStore } from "$lib/stores/tab-store";
+    import { offerTabStore } from '$lib/stores/tab-store';
     import { insertThousandSeparator } from '$lib/utils/misc';
+    import { wallet } from '$lib/stores/wallet';
 
-	// Props
-	/** Exposes parent props to this component. */
-	// export let parent: SvelteComponent;
+    // Props
+    /** Exposes parent props to this component. */
+    // export let parent: SvelteComponent;
 
     export let ticket: TicketEvent;
     const ticketAddress = ticket.ticketAddress;
 
     export let offerToEdit: OfferEvent | undefined = undefined;
 
-	const modalStore = getModalStore();
+    const modalStore = getModalStore();
     const toastStore = getToastStore();
 
     let pricingMethod: Pricing;
@@ -43,15 +44,16 @@
 
     let errorText = '';
     let posting = false;
-    
-    const cBase = 'card bg-surface-100-800-token w-screen/2 h-screen/2 p-4 flex justify-center items-center';
+
+    const cBase =
+        'card bg-surface-100-800-token w-screen/2 h-screen/2 p-4 flex justify-center items-center';
 
     async function postOffer() {
         if (!validate()) {
             return;
         }
         posting = true;
-        const offer = new OfferEvent($ndk)
+        const offer = new OfferEvent($ndk);
 
         offer.pricing = pricingMethod;
         offer.amount = amount;
@@ -70,7 +72,7 @@
         }
 
         try {
-            console.log('offer', offer)
+            console.log('offer', offer);
             const relaysPublished = await offer.publish();
 
             if (sendDm) {
@@ -78,27 +80,28 @@
                 dm.kind = NDKKind.EncryptedDirectMessage;
                 dm.tags.push(['t', ticketAddress!]);
                 const ticketHolder = ticket.pubkey;
-                const ticketHolderUser = $ndk.getUser({pubkey: ticketHolder});
+                const ticketHolderUser = $ndk.getUser({ pubkey: ticketHolder });
 
-                if (!ticketHolder || !ticketHolderUser){
+                if (!ticketHolder || !ticketHolderUser) {
                     throw new Error('Could not identify Ticket Holder, sending DM failed!');
                 }
 
                 dm.tags.push(['p', ticketHolder]);
 
-                const content = `SatShoot Offer update on Ticket: ${ticket.title} | \n\n`
-                    + `Amount: ${offer.amount}${offer.pricing === Pricing.Absolute ? 'sats' : 'sats/min'} | \n`
-                    + `Description: ${offer.description}`;
-                console.log('dm content', content)
+                const content =
+                    `SatShoot Offer update on Ticket: ${ticket.title} | \n\n` +
+                    `Amount: ${offer.amount}${offer.pricing === Pricing.Absolute ? 'sats' : 'sats/min'} | \n` +
+                    `Description: ${offer.description}`;
+                console.log('dm content', content);
                 dm.content = await ($ndk.signer as NDKSigner).encrypt(ticketHolderUser, content);
-                console.log('encrypted dm', dm)
+                console.log('encrypted dm', dm);
 
                 const relays = await dm.publish();
-                console.log('relays published', relays)
+                console.log('relays published', relays);
             }
 
             posting = false;
-            
+
             $offerTabStore = OfferStatus.Pending;
 
             const t: ToastSettings = {
@@ -108,10 +111,10 @@
             };
             toastStore.trigger(t);
 
-            if ( !($currentUser?.profile?.lud16) ) {
-                console.log($currentUser?.profile)
+            if (!$currentUser?.profile?.lud16) {
+                console.log($currentUser?.profile);
 
-                let toastId:string;
+                let toastId: string;
                 const t: ToastSettings = {
                     message: 'Set up an LN Address to receive payments!',
                     background: 'bg-warning-300-600-token',
@@ -119,11 +122,26 @@
                     action: {
                         label: 'Go to Profile',
                         response: () => {
-                            goto("/" + $currentUser!.npub);
+                            goto('/' + $currentUser!.npub);
                         },
-                    }
-                }
+                    },
+                };
                 toastId = toastStore.trigger(t);
+            }
+
+            if ($currentUser && !$wallet) {
+                const t: ToastSettings = {
+                    message: 'Set up a cashu wallet to receive payments in ecash tokens!',
+                    background: 'bg-warning-300-600-token',
+                    autohide: false,
+                    action: {
+                        label: 'Go to Wallet',
+                        response: () => {
+                            goto('/my-cashu-wallet');
+                        },
+                    },
+                };
+                toastStore.trigger(t);
             }
 
             if ($modalStore[0].response) {
@@ -134,10 +152,10 @@
             modalStore.close();
 
             goto('/my-offers');
-        } catch(e) {
+        } catch (e) {
             posting = false;
             const errorMessage = 'Error happened while publishing Offer:' + e;
-            
+
             const t: ToastSettings = {
                 message: errorMessage,
                 timeout: 7000,
@@ -152,15 +170,15 @@
         }
     }
 
-    function validate():boolean {
+    function validate(): boolean {
         let valid = true;
         errorText = '';
         if (amount < 0) {
             valid = false;
-            errorText = 'Amount below 0!'
+            errorText = 'Amount below 0!';
         } else if (amount > 100_000_000) {
             valid = false;
-            errorText = 'Amount cannot exceed 100M sats!'
+            errorText = 'Amount cannot exceed 100M sats!';
         } else if (pledgeSplit < 0) {
             valid = false;
             errorText = 'Pledge split below 0!';
@@ -171,13 +189,13 @@
         return valid;
     }
 
-    $: if($navigating) {
+    $: if ($navigating) {
         if ($navigating.to?.url.pathname === '/my-tickets') {
-            $tabStore = 1; 
+            $tabStore = 1;
         }
     }
 
-    onMount(()=>{
+    onMount(() => {
         if (offerToEdit) {
             pricingMethod = offerToEdit.pricing;
             amount = offerToEdit.amount;
@@ -186,18 +204,17 @@
         }
     });
 
-    // For tooltip    
+    // For tooltip
     const popupPledgeSplit: PopupSettings = {
         event: 'click',
         target: 'popupPledgeSplit',
-        placement: 'bottom'
+        placement: 'bottom',
     };
-
 </script>
 
 {#if $modalStore[0]}
-<div class="{cBase}">
-    {#if ticketAddress}
+    <div class={cBase}>
+        {#if ticketAddress}
             <div class="grid grid-cols-1 p-4">
                 <h2 class="h2 text-center">Create Offer</h2>
                 <!-- Pricing -->
@@ -213,36 +230,37 @@
                     <span>Amount</span>
                     <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
                         <div class="input-group-shim">
-                            <i class="fa-brands fa-bitcoin text-3xl"/>
+                            <i class="fa-brands fa-bitcoin text-3xl" />
                         </div>
-                        <input 
-                        class="text-lg max-w-md"
-                        type="number"
-                        min="0"
-                        max="100_000_000"
-                        placeholder="Amount"
-                        bind:value={amount}
-                    />
+                        <input
+                            class="text-lg max-w-md"
+                            type="number"
+                            min="0"
+                            max="100_000_000"
+                            placeholder="Amount"
+                            bind:value={amount}
+                        />
                         <div>{pricingMethod ? 'sats/min' : 'sats'}</div>
                     </div>
                 </label>
                 <!-- Pledge Split -->
                 <div class="flex justify-start gap-x-1">
                     <span class="mr-2">Pledge Split</span>
-                    <i 
-                    class="text-primary-300-600-token fa-solid fa-circle-question text-xl
-                    [&>*]:pointer-events-none" 
-                    use:popup={popupPledgeSplit}
-                />
+                    <i
+                        class="text-primary-300-600-token fa-solid fa-circle-question text-xl
+                    [&>*]:pointer-events-none"
+                        use:popup={popupPledgeSplit}
+                    />
                     <div data-popup="popupPledgeSplit">
-                        <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
+                        <div
+                            class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto"
+                        >
                             <p>
-                                Pledge a percentage of your potential revenue to support development.
+                                Pledge a percentage of your potential revenue to support
+                                development.
                             </p>
-                            <br/>
-                            <p>
-                                The percentage pledged will show up for the potential Client.
-                            </p>
+                            <br />
+                            <p>The percentage pledged will show up for the potential Client.</p>
                             <div class="arrow bg-primary-300-600-token" />
                         </div>
                     </div>
@@ -250,16 +268,16 @@
                 <label class="mb-4 mt-1">
                     <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
                         <div class="input-group-shim">
-                            <i class="fa-brands fa-bitcoin text-3xl"/>
+                            <i class="fa-brands fa-bitcoin text-3xl" />
                         </div>
-                        <input 
-                        class="text-lg max-w-md"
-                        type="number"
-                        min="0"
-                        max="100"
-                        placeholder="Percentage"
-                        bind:value={pledgeSplit}
-                    />
+                        <input
+                            class="text-lg max-w-md"
+                            type="number"
+                            min="0"
+                            max="100"
+                            placeholder="Percentage"
+                            bind:value={pledgeSplit}
+                        />
                         <div>%</div>
                     </div>
                 </label>
@@ -267,19 +285,15 @@
                     <div class="flex flex-col">
                         <div class="underline">You get:</div>
                         <div class="font-bold">
-                            {
-                                insertThousandSeparator(freelancerShare) + 
-                                (pricingMethod ? 'sats/min' : 'sats')
-                            }
+                            {insertThousandSeparator(freelancerShare) +
+                                (pricingMethod ? 'sats/min' : 'sats')}
                         </div>
                     </div>
                     <div class="flex flex-col">
                         <div class="underline">You pledge:</div>
                         <div class="font-bold">
-                            {
-                                insertThousandSeparator(pledgedShare) + 
-                                (pricingMethod ? 'sats/min' : 'sats')
-                            }
+                            {insertThousandSeparator(pledgedShare) +
+                                (pricingMethod ? 'sats/min' : 'sats')}
                         </div>
                     </div>
                 </div>
@@ -287,43 +301,45 @@
                 <!-- Description -->
                 <label class="label max-w-xl mt-4 mb-2">
                     <span>Offer Description</span>
-                    <textarea 
-                    class="textarea"
-                    rows="3"
-                    placeholder="Describe why you should get the job"
-                    bind:value={description}
-                />
+                    <textarea
+                        class="textarea"
+                        rows="3"
+                        placeholder="Describe why you should get the job"
+                        bind:value={description}
+                    />
                 </label>
                 <!-- Send DM -->
                 <div class="mb-6">
                     <label class="flex items-center space-x-2">
-                        <input
-                            class="checkbox"
-                            type="checkbox" 
-                            bind:checked={sendDm}
-                        />
+                        <input class="checkbox" type="checkbox" bind:checked={sendDm} />
                         <p>Send Offer as NIP04 DM to Ticket Holder</p>
                     </label>
                 </div>
                 <!-- Cancel and Post Offer buttons -->
                 <div class="flex gap-x-4 justify-center mb-2">
-                    <button 
+                    <button
                         type="button"
                         class="btn btn-sm sm:btn-md bg-error-300-600-token"
-                        on:click={()=> modalStore.close()}
+                        on:click={() => modalStore.close()}
                     >
                         Cancel
                     </button>
-                    <button 
+                    <button
                         type="button"
-                        class="btn font-bold bg-success-400-500-token w-72" 
+                        class="btn font-bold bg-success-400-500-token w-72"
                         on:click={postOffer}
                         disabled={posting}
                     >
                         {#if posting}
                             <span>
-                                <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
-                                track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8"/>
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-tertiary-500"
+                                    track="stroke-tertiary-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
                             </span>
                         {:else}
                             <span>Post Offer</span>
@@ -336,10 +352,10 @@
                     </h4>
                 {/if}
             </div>
-    {:else}
-        <h2 class="h2 font-bold text-center text-error-300-600-token">
-            Error: Ticket is missing!
-        </h2>
-    {/if}
-</div>
+        {:else}
+            <h2 class="h2 font-bold text-center text-error-300-600-token">
+                Error: Ticket is missing!
+            </h2>
+        {/if}
+    </div>
 {/if}
