@@ -13,6 +13,8 @@
     } from '@skeletonlabs/skeleton';
     import EditProfileModal from '../../lib/components/Modals/EditProfileModal.svelte';
     import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
+    import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
+    import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -33,9 +35,68 @@
                 walletUnit = res[0].unit;
             }
         });
+
+        console.log('cashuWallet.tokens :>> ', cashuWallet.tokens);
+
+        cashuWallet.on('balance_updated', (balance) => {
+            cashuWallet!.balance().then((res) => {
+                if (res) {
+                    walletBalance = res[0].amount;
+                    walletUnit = res[0].unit;
+                }
+            });
+        });
     }
 
-    async function setupWallet() {}
+    async function setupWallet() {
+        const newWallet = new NDKCashuWallet($ndk);
+        const mintPromise = new Promise<string[] | undefined>((resolve) => {
+            const modalComponent: ModalComponent = {
+                ref: ExploreMintsModal,
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (mints?: string[]) => {
+                    resolve(mints);
+                },
+            };
+            modalStore.trigger(modal);
+        }).then((mints) => {
+            if (!mints || !mints.length) return;
+
+            newWallet.mints = mints;
+        });
+
+        await mintPromise;
+
+        if (!newWallet.mints.length) {
+            const t: ToastSettings = {
+                message: `No mint is selected. Choose at-least 1 mint`,
+            };
+            toastStore.trigger(t);
+
+            return;
+        }
+
+        newWallet
+            .publish()
+            .then(() => {
+                const t: ToastSettings = {
+                    message: `Wallet published!`,
+                };
+                toastStore.trigger(t);
+            })
+            .catch((err) => {
+                console.error(err);
+                const t: ToastSettings = {
+                    message: `Failed to publish wallet: ${err}`,
+                };
+                toastStore.trigger(t);
+            });
+        wallet.set(newWallet);
+    }
 
     async function updateWallet() {
         try {
@@ -48,6 +109,8 @@
             };
             toastStore.trigger(t);
         } catch (e) {
+            console.error(e);
+            console.trace(e);
             const t: ToastSettings = {
                 message: `Wallet update failed! Reason: ${e}`,
             };
@@ -78,6 +141,48 @@
                 cashuWallet!.name = editedData;
                 updateWallet();
             }
+        });
+    }
+
+    function deposit() {
+        const modalComponent: ModalComponent = {
+            ref: DepositEcashModal,
+            props: { cashuWallet },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+
+        modalStore.trigger(modal);
+    }
+
+    function exploreMints() {
+        // If user confirms modal do the editing
+        new Promise<string[] | undefined>((resolve) => {
+            const modalComponent: ModalComponent = {
+                ref: ExploreMintsModal,
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (mints?: string[]) => {
+                    resolve(mints);
+                },
+            };
+            modalStore.trigger(modal);
+        }).then((mints) => {
+            if (!cashuWallet || !mints || !mints.length) return;
+
+            const existingMints = cashuWallet.mints;
+            const newMints = mints.filter((mint) => !existingMints.includes(mint));
+
+            if (!newMints.length) return;
+
+            cashuWallet.mints = [...existingMints, ...newMints];
+            updateWallet();
         });
     }
 
@@ -128,6 +233,12 @@
         updateWallet();
     }
 
+    function refreshBalance() {
+        if (!cashuWallet) return;
+
+        cashuWallet.checkProofs();
+    }
+
     const tooltipRemoveMint: PopupSettings = {
         event: 'hover',
         target: 'tooltipRemoveMint',
@@ -167,8 +278,17 @@
                     </button>
                 </div>
 
-                <div class="text-7xl font-black text-center focus:outline-none w-full">
-                    {walletBalance}
+                <div class="flex flex-col items-center">
+                    <div class="flex items-baseline">
+                        <div class="text-7xl font-black text-center focus:outline-none w-full">
+                            {walletBalance}
+                        </div>
+                        <!-- <button on:click={refreshBalance}>
+                            <i
+                                class="fa-solid fa-rotate-right text-3xl text-muted-foreground font-light"
+                            ></i>
+                        </button> -->
+                    </div>
                     <div class="text-3xl text-muted-foreground font-light">
                         {walletUnit}
                     </div>
@@ -176,6 +296,7 @@
 
                 <div class="flex justify-center">
                     <button
+                        on:click={deposit}
                         type="button"
                         class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
                     >
@@ -193,7 +314,7 @@
                         >
                             {#each cashuWallet.mints as mint (mint)}
                                 <div
-                                    class="flex items-center justify-between p-2 hover:bg-gray-100 rounded"
+                                    class="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded"
                                 >
                                     <span>{mint}</span>
                                     <button
@@ -217,6 +338,7 @@
 
                     <button
                         type="button"
+                        on:click={exploreMints}
                         class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
                     >
                         Explore Mints
@@ -230,7 +352,7 @@
                     <div class="max-h-36 w-full overflow-y-auto border border-gray-300 p-2 rounded">
                         {#each cashuWallet.relays as relay (relay)}
                             <div
-                                class="flex items-center justify-between p-2 hover:bg-gray-100 rounded"
+                                class="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded"
                             >
                                 <span>{relay}</span>
                                 <button

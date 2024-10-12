@@ -29,6 +29,7 @@
     },
     "type": "module",
     "dependencies": {
+        "@cashu/cashu-ts": "1.1.0",
         "@floating-ui/dom": "^1.5.4",
         "@fortawesome/fontawesome-free": "^6.5.1",
         "@fortawesome/fontawesome-svg-core": "^6.5.1",
@@ -43,6 +44,7 @@
         "@nostr-dev-kit/ndk-cache-dexie": "workspace:^",
         "@nostr-dev-kit/ndk-svelte": "workspace:^",
         "@nostr-dev-kit/ndk-wallet": "workspace:^",
+        "@nostr-dev-kit/ndk-svelte-components": "workspace:^",
         "@scure/bip39": "^1.1.1",
         "devalue": "^5.0.0",
         "dexie": "^4.0.2",
