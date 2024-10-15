@@ -16,6 +16,10 @@
         amount ??= 0;
     }
 
+    $: if (cashuWallet.mints.length > 0 && !selectedMint) {
+        selectedMint = cashuWallet.mints[0];
+    }
+
     async function deposit() {
         depositing = true;
         const ndkCashuDeposit = cashuWallet.deposit(amount, selectedMint, unit);
