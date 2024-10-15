@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import { wallet } from '$lib/stores/wallet';
     import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import {
@@ -15,6 +15,7 @@
     import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
     import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
+    import { NDKCashuMintList, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -80,13 +81,21 @@
             return;
         }
 
-        newWallet
+        const signer = NDKPrivateKeySigner.generate();
+
+        newWallet.privkey = signer.privateKey;
+        newWallet.relays = DEFAULTRELAYURLS;
+
+        let walletPublished = false;
+
+        await newWallet
             .publish()
             .then(() => {
                 const t: ToastSettings = {
                     message: `Wallet published!`,
                 };
                 toastStore.trigger(t);
+                walletPublished = true;
             })
             .catch((err) => {
                 console.error(err);
@@ -95,7 +104,32 @@
                 };
                 toastStore.trigger(t);
             });
-        wallet.set(newWallet);
+
+        if (walletPublished) {
+            wallet.set(newWallet);
+            const cashuMintList = new NDKCashuMintList($ndk);
+
+            const user = await signer.user();
+            cashuMintList.p2pk = user.pubkey;
+            cashuMintList.relays = DEFAULTRELAYURLS;
+            cashuMintList.mints = newWallet.mints;
+
+            cashuMintList
+                .publishReplaceable()
+                .then(() => {
+                    const t: ToastSettings = {
+                        message: `CashuMintList published!`,
+                    };
+                    toastStore.trigger(t);
+                })
+                .catch((err) => {
+                    console.error(err);
+                    const t: ToastSettings = {
+                        message: `Failed to publish CashuMintList: ${err}`,
+                    };
+                    toastStore.trigger(t);
+                });
+        }
     }
 
     async function updateWallet() {
