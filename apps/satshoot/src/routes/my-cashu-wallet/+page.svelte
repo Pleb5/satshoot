@@ -85,6 +85,7 @@
 
         newWallet.privkey = signer.privateKey;
         newWallet.relays = DEFAULTRELAYURLS;
+        newWallet.name = 'My Cashu Wallet';
 
         let walletPublished = false;
 
