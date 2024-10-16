@@ -16,6 +16,7 @@
     import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
     import { NDKCashuMintList, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
+    import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -193,6 +194,20 @@
         modalStore.trigger(modal);
     }
 
+    function withdraw() {
+        const modalComponent: ModalComponent = {
+            ref: WithdrawEcashModal,
+            props: { cashuWallet },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+
+        modalStore.trigger(modal);
+    }
+
     function exploreMints() {
         // If user confirms modal do the editing
         new Promise<string[] | undefined>((resolve) => {
@@ -329,13 +344,20 @@
                     </div>
                 </div>
 
-                <div class="flex justify-center">
+                <div class="flex justify-center gap-x-2">
                     <button
                         on:click={deposit}
                         type="button"
                         class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
                     >
                         Deposit
+                    </button>
+                    <button
+                        on:click={withdraw}
+                        type="button"
+                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                    >
+                        Withdraw
                     </button>
                 </div>
 
