@@ -51,8 +51,8 @@
 {#if $modalStore[0]}
     <div class="card p-4 flex flex-col gap-y-4 min-w-[90vw] sm:min-w-[60vw] md:min-w-[30vw]">
         <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Choose Mint</h4>
-        <div class="h-[50vh] w-full flex flex-col overflow-y-auto overflow-x-clip border">
-            <div class="h-max divide-y flex flex-col items-stretch justify-stretch">
+        <div class="h-[50vh] w-full flex flex-col overflow-y-auto">
+            <div class="divide-y flex flex-col">
                 {#if recommendations}
                     {#each Object.entries(recommendations) as [mintUrl, mintUsage] (mintUrl)}
                         <CashuMintListItem

@@ -3,6 +3,8 @@
     import { CashuMint, type GetInfoResponse } from '@cashu/cashu-ts';
     import Avatar from '../Users/Avatar.svelte';
     import { createEventDispatcher } from 'svelte';
+    import { cashuPaymentInfoMap } from '$lib/stores/wallet';
+    import currentUser from '$lib/stores/user';
 
     const dispatcher = createEventDispatcher();
 
@@ -10,7 +12,13 @@
     export let mintUsage: MintUsage;
 
     let mintInfo: GetInfoResponse | null = null;
-    let isSelected: boolean = false;
+    
+    const userPaymentInfo = $cashuPaymentInfoMap.get($currentUser!.pubkey);
+    console.log(userPaymentInfo)
+    let isSelected: boolean = userPaymentInfo?.mints.includes(mintUrl) || false;
+    if (userPaymentInfo?.mints.includes(mintUrl)) {
+        console.log(mintUrl + ' is included')
+    } else console.log(mintUrl + 'is not included')
 
     $: {
         const mint = new CashuMint(mintUrl);
@@ -40,25 +48,30 @@
 </script>
 
 <div
-    class="flex justify-between w-80 p-2 pr-4 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+    class="flex justify-between p-2 pr-4 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
     role="button"
     on:click={toggleSelection}
     on:keydown={handleKeydown}
     tabindex="0"
 >
-    <div class="flex flex-col gap-2">
-        {#if mintInfo}
+    <div class="flex flex-col gap-2 w-full">
+        <div class="flex justify-between">
             <h3 class="text-foreground font-bold">
-                {mintInfo.name.length < 26 ? mintInfo.name : (mintInfo.name.substring(0,25) + '...')}
+                {#if mintInfo}
+                    <span>
+                        {mintInfo.name.length < 26 ? mintInfo.name : (mintInfo.name.substring(0,25) + '...')}
+                    </span>
+                {:else}
+                    <span>
+                        {mintUrl.length < 26 ? mintUrl : (mintUrl.substring(0,25) + '...')}
+                    </span>
+                {/if}
             </h3>
-            <div class="text-muted-foreground">
-                {mintInfo.description}
-            </div>
-        {:else}
-            <h3 class="text-foreground font-bold max-w-72 overflow-x-auto whitespace-nowrap">
-                {mintUrl.length < 26 ? mintUrl : (mintUrl.substring(0,25) + '...')}
-            </h3>
-        {/if}
+            <input type="checkbox" bind:checked={isSelected} />
+        </div>
+        <div class="text-muted-foreground">
+            {mintInfo?.description || ''}
+        </div>
 
         {#if mintUsage.pubkeys.size > 0}
             <div class="flex flex-row items-center gap-2">
@@ -80,5 +93,4 @@
             </div>
         {/if}
     </div>
-    <input type="checkbox" bind:checked={isSelected} />
 </div>
