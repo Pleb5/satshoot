@@ -170,7 +170,10 @@
         />
 
         <!-- Button to open file dialog -->
-        <button on:click={openFileDialog} class="btn btn-sm sm:btn-md bg-tertiary-300-600-token">
+        <button
+            on:click={openFileDialog}
+            class="input btn btn-sm sm:btn-md bg-tertiary-300-600-token"
+        >
             Import QR
         </button>
 
@@ -178,7 +181,7 @@
         <button
             type="button"
             on:click={isScanning ? stopScanningQR : scanQRCode}
-            class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
+            class="input btn btn-sm sm:btn-md bg-tertiary-300-600-token"
         >
             {#if isScanning}
                 Stop Scanning QR
@@ -191,7 +194,7 @@
         <button
             type="button"
             on:click={withdraw}
-            class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
+            class="input btn btn-sm sm:btn-md bg-tertiary-300-600-token"
             disabled={withdrawing || !pr}
         >
             Withdraw
