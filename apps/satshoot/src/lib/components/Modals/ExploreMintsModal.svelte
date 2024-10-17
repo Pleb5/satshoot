@@ -84,7 +84,7 @@
                 {/if}
             </div>
         </div>
-        <div class="flex justify-center gap-2">
+        <div class="flex justify-between">
             <button
                 type="button"
                 class="btn btn-sm sm:btn-md bg-error-300-600-token"
@@ -97,7 +97,7 @@
                 on:click={handleSelect}
                 class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
             >
-                Select
+                Apply
             </button>
         </div>
     </div>
