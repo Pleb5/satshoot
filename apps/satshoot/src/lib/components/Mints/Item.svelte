@@ -18,7 +18,7 @@
     let isSelected: boolean = userPaymentInfo?.mints.includes(mintUrl) || false;
     if (userPaymentInfo?.mints.includes(mintUrl)) {
         console.log(mintUrl + ' is included')
-    } else console.log(mintUrl + 'is not included')
+    } else console.log(mintUrl + ' is not included')
 
     $: {
         const mint = new CashuMint(mintUrl);
@@ -67,7 +67,7 @@
                     </span>
                 {/if}
             </h3>
-            <input type="checkbox" bind:checked={isSelected} />
+            <input type="checkbox" class="checkbox" bind:checked={isSelected} />
         </div>
         <div class="text-muted-foreground">
             {mintInfo?.description || ''}
