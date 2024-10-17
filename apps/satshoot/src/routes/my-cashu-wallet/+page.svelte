@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk, { DEFAULTRELAYURLS } from '$lib/stores/ndk';
-    import { wallet } from '$lib/stores/wallet';
+    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
     import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
@@ -17,6 +17,7 @@
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
     import { NDKCashuMintList, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
     import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
+    import currentUser from '$lib/stores/user';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -94,7 +95,7 @@
             .publish()
             .then(() => {
                 const t: ToastSettings = {
-                    message: `Wallet published!`,
+                    message: `Cashu Wallet created!`,
                 };
                 toastStore.trigger(t);
                 walletPublished = true;
@@ -102,7 +103,7 @@
             .catch((err) => {
                 console.error(err);
                 const t: ToastSettings = {
-                    message: `Failed to publish wallet: ${err}`,
+                    message: `Failed to create Cashu Wallet: ${err}`,
                 };
                 toastStore.trigger(t);
             });
@@ -120,14 +121,15 @@
                 .publishReplaceable()
                 .then(() => {
                     const t: ToastSettings = {
-                        message: `CashuMintList published!`,
+                        message: `Cashu Payment Info updated!`,
                     };
                     toastStore.trigger(t);
+
                 })
                 .catch((err) => {
                     console.error(err);
                     const t: ToastSettings = {
-                        message: `Failed to publish CashuMintList: ${err}`,
+                        message: `Failed to update Cashu Payment Info : ${err}`,
                     };
                     toastStore.trigger(t);
                 });
@@ -344,18 +346,18 @@
                     </div>
                 </div>
 
-                <div class="flex justify-center gap-x-2">
+                <div class="flex justify-center gap-x-12">
                     <button
                         on:click={deposit}
                         type="button"
-                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                     >
                         Deposit
                     </button>
                     <button
                         on:click={withdraw}
                         type="button"
-                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                     >
                         Withdraw
                     </button>

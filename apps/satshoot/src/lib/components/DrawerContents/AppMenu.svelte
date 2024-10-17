@@ -153,7 +153,7 @@
                         <span class="w-6 text-center">
                             <WalletIcon />
                         </span>
-                        <span>My Cashu Wallet</span>
+                        <span>Wallet</span>
                     </a>
                 </li>
                 <li>

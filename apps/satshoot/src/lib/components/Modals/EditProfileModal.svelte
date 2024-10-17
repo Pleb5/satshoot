@@ -7,6 +7,7 @@
 
     export let dataToEdit: string;
     export let fieldName: string;
+    export let confirmButtonText: string = 'Change';
     
     let editedData: string = '';
 
@@ -60,7 +61,7 @@
                 on:click={finish}
                 class="btn btn-lg bg-success-300-600-token"
             >
-                Change
+                {confirmButtonText}
             </button>
         </div>
     </div>

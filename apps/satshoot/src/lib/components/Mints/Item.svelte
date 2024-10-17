@@ -40,7 +40,7 @@
 </script>
 
 <div
-    class="flex justify-between items-center w-80 p-2 pr-4 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+    class="flex justify-between w-80 p-2 pr-4 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
     role="button"
     on:click={toggleSelection}
     on:keydown={handleKeydown}
@@ -49,14 +49,14 @@
     <div class="flex flex-col gap-2">
         {#if mintInfo}
             <h3 class="text-foreground font-bold">
-                {mintInfo.name}
+                {mintInfo.name.length < 26 ? mintInfo.name : (mintInfo.name.substring(0,25) + '...')}
             </h3>
             <div class="text-muted-foreground">
                 {mintInfo.description}
             </div>
         {:else}
             <h3 class="text-foreground font-bold max-w-72 overflow-x-auto whitespace-nowrap">
-                {mintUrl}
+                {mintUrl.length < 26 ? mintUrl : (mintUrl.substring(0,25) + '...')}
             </h3>
         {/if}
 
@@ -66,15 +66,17 @@
                     {#each Array.from(mintUsage.pubkeys).slice(0, 4) as pubkey}
                         <Avatar {pubkey} size="tiny" />
                     {/each}
+                </div>
+                <div class="flex justify-between items-center gap-x-1">
                     {#if mintUsage.pubkeys.size > 4}
-                        <div
+                        <span
                             class="bg-secondary text-foreground flex h-6 w-6 items-center justify-center rounded-full text-xs"
                         >
                             +{mintUsage.pubkeys.size - 4}
-                        </div>
+                        </span>
                     {/if}
+                    <span class="text-muted-foreground text-xs"> recommendations </span>
                 </div>
-                <span class="text-muted-foreground text-xs"> recommendations </span>
             </div>
         {/if}
     </div>

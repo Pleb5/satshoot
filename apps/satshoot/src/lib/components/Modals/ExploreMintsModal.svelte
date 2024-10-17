@@ -49,10 +49,10 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-4 flex flex-col gap-y-4">
+    <div class="card p-4 flex flex-col gap-y-4 min-w-[90vw] sm:min-w-[60vw] md:min-w-[30vw]">
         <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Choose Mint</h4>
         <div class="h-[50vh] w-full flex flex-col overflow-y-auto overflow-x-clip border">
-            <div class="h-max w-full divide-y flex flex-col items-stretch justify-stretch">
+            <div class="h-max divide-y flex flex-col items-stretch justify-stretch">
                 {#if recommendations}
                     {#each Object.entries(recommendations) as [mintUrl, mintUsage] (mintUrl)}
                         <CashuMintListItem
@@ -62,6 +62,25 @@
                                 toggleMintSelection(e.detail.mintUrl, e.detail.isSelected)}
                         />
                     {/each}
+                {:else}
+                    <div class="flex w-full justify-center justify-self-center">
+                        <div class="p-4 space-y-4 w-full">
+                            {#each {length: 4} as _}
+                                <div class="placeholder animate-pulse" />
+                                <div class="grid grid-cols-3 gap-8">
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                </div>
+                                <div class="grid grid-cols-4 gap-4">
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                </div>
+                            {/each}
+                        </div>
+                    </div>
                 {/if}
             </div>
         </div>

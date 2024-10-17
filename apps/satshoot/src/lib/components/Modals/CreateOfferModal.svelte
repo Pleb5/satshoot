@@ -300,7 +300,7 @@
 
                 <!-- Description -->
                 <label class="label max-w-xl mt-4 mb-2">
-                    <span>Offer Description</span>
+                    <span>Your Pitch:</span>
                     <textarea
                         class="textarea"
                         rows="3"
