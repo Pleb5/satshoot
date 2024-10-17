@@ -18,6 +18,8 @@
     import { NDKCashuMintList, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
     import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
     import currentUser from '$lib/stores/user';
+    import Warning from '$lib/components/Warning.svelte';
+    import { displayEcashWarning } from '$lib/stores/gui';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -309,6 +311,14 @@
 </script>
 
 <div class="flex flex-col gap-y-4 items-center p-4">
+    <!-- Warning Banner -->
+    {#if $displayEcashWarning}
+        <Warning
+            on:close={() => ($displayEcashWarning = false)}
+            text="Attention: This is an experimental feature, use it at your own risk."
+        />
+    {/if}
+
     <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
         <div class="card p-4 bg-surface-200-700-token flex flex-col flex-grow gap-y-4">
             {#if !cashuWallet}
