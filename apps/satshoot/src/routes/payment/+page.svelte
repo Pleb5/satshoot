@@ -1,34 +1,35 @@
 <script lang="ts">
-    import type { OfferEvent } from '$lib/events/OfferEvent';
-    import { TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
-    import currentUser from '$lib/stores/user';
-    import { SatShootPubkey } from '$lib/utils/misc';
+    import { tick } from 'svelte';
+
     import {
         generateZapRequest,
         getRelayListForUser,
         NDKKind,
         NDKNutzap,
-        NDKRelayList,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
     } from '@nostr-dev-kit/ndk';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore, getToastStore, popup, ProgressRadial } from '@skeletonlabs/skeleton';
-    import { tick, type SvelteComponent } from 'svelte';
-    import OfferCard from '../Cards/OfferCard.svelte';
+    import {
+        getToastStore,
+        popup,
+        ProgressRadial,
+        type PopupSettings,
+    } from '@skeletonlabs/skeleton';
 
+    import OfferCard from '$lib/components/Cards/OfferCard.svelte';
+
+    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import type { TicketEvent } from '$lib/events/TicketEvent';
+
+    import ndk from '$lib/stores/ndk';
+    import { paymentDetail } from '$lib/stores/payment';
+    import currentUser from '$lib/stores/user';
     import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
+
+    import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
     import { getZapConfiguration } from '$lib/utils/helpers';
-    import { insertThousandSeparator } from '$lib/utils/misc';
-
-    const toastStore = getToastStore();
-    const modalStore = getModalStore();
-
-    /** Exposes parent props to this component. */
-    export let parent: SvelteComponent;
-    export let ticket: TicketEvent;
-    export let offer: OfferEvent | null = null;
+    import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
 
     enum ToastType {
         Success = 'success',
@@ -47,6 +48,25 @@
         eventId: string;
         zapper?: string;
     }
+
+    const toastStore = getToastStore();
+
+    let redirectPath: string | null = null;
+
+    $: {
+        redirectPath = $page.url.searchParams.get('redirectPath');
+    }
+
+    let ticket: TicketEvent;
+    let offer: OfferEvent;
+
+    $: if ($paymentDetail) {
+        ticket = $paymentDetail.ticket;
+        offer = $paymentDetail.offer;
+    }
+
+    let paying = false;
+    let errorMessage = '';
 
     let amount = 0;
     let pledgedAmount = 0;
@@ -101,24 +121,6 @@
             }
         }
     }
-
-    let paying = false;
-
-    const popupClasses = 'card w-60 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto';
-    let errorMessage = '';
-
-    // For tooltip
-    const popupPledge: PopupSettings = {
-        event: 'click',
-        target: 'popupPledge',
-        placement: 'bottom',
-    };
-
-    const popupHover: PopupSettings = {
-        event: 'hover',
-        target: 'popupHover',
-        placement: 'top',
-    };
 
     async function pay() {
         const paymentData = await initializePayment();
@@ -180,7 +182,7 @@
                     const subscription = $ndk.subscribe(
                         filter,
                         { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY },
-                        NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key), $ndk)
+                        NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key)!, $ndk)
                     );
 
                     subscription.on('event', async (event) => {
@@ -218,7 +220,9 @@
                 'SatShoot Payment might have failed!'
             );
 
-            if (modalStore) modalStore.close();
+            if (redirectPath) {
+                goto(redirectPath);
+            }
         } catch (error) {
             console.error(error);
             handleToast(
@@ -246,40 +250,33 @@
                 pubkey: string,
                 amountMillisats: number
             ) {
-                console.log('payment model 0');
-                console.log('payment model', amountMillisats);
-                console.log('payment model', $cashuPaymentInfoMap.get(pubkey));
-
                 if (amountMillisats > 0 && $cashuPaymentInfoMap.has(pubkey)) {
                     const cashuPaymentInfo = $cashuPaymentInfoMap.get(pubkey);
-                    console.log('payment model');
                     if (!cashuPaymentInfo) {
                         errorMessage = `Could not fetch cashu payment info for ${userEnum}!`;
                         return;
                     }
-                    console.log('payment model 1');
+
                     if (!$wallet) {
                         errorMessage = 'Wallet is not initialized!';
                         return;
                     }
-                    console.log('payment model 2');
+
                     const balance = await $wallet.balance();
                     if (!balance) {
                         errorMessage = `Don't have enough balance`;
                         return;
                     }
-                    console.log('payment model 3');
+
                     let balanceInMilliSats = balance[0].amount;
                     if (balance[0].unit === 'sats') {
                         balanceInMilliSats *= 1000;
                     }
-                    console.log('payment model 4');
+
                     if (balanceInMilliSats < amountMillisats) {
                         errorMessage = `Don't have enough balance`;
                         return;
                     }
-                    console.log('payment model 5');
-                    console.log('cashuPaymentInfo :>> ', cashuPaymentInfo);
 
                     const cashuResult = await $wallet
                         .cashuPay({
@@ -299,7 +296,6 @@
                             );
                             return null;
                         });
-                    console.log('payment model 7');
 
                     console.log('cashuResult :>> ', cashuResult);
 
@@ -357,7 +353,9 @@
                 'SatShoot Payment might have failed!'
             );
 
-            if (modalStore) modalStore.close();
+            if (redirectPath) {
+                goto(redirectPath);
+            }
         } catch (error) {
             console.error(error);
             handleToast(
@@ -492,12 +490,36 @@
             background: `bg-${type}-300-600-token`,
         });
     }
+
+    function setupEcash() {
+        const currentPath = $page.url.pathname;
+        const walletUrl = new URL('my-cashu-wallet', window.location.origin);
+        walletUrl.searchParams.set('redirectPath', currentPath);
+
+        goto(walletUrl);
+    }
+
+    // For tooltip
+    const popupPledge: PopupSettings = {
+        event: 'click',
+        target: 'popupPledge',
+        placement: 'bottom',
+    };
+
+    const popupHover: PopupSettings = {
+        event: 'hover',
+        target: 'popupHover',
+        placement: 'top',
+    };
+
+    const popupClasses = 'card w-60 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto';
+    const width = 'max-w-[95vw] sm:max-w-[70vw] lg:max-w-[60vw]';
 </script>
 
-{#if $modalStore[0]}
-    {#if ticket && offer}
-        <div class="card p-4 flex flex-col gap-y-4 items-center">
-            <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Make Payment</h4>
+{#if ticket && offer}
+    <div class="flex justify-center">
+        <div class="card bg-surface-200-700-token {width} flex flex-col flex-grow gap-y-2 py-2">
+            <h4 class="h4 text-lg sm:text-2xl flex justify-center">Make Payment</h4>
             <!-- Offer -->
             <OfferCard
                 {offer}
@@ -507,30 +529,35 @@
                 showOfferReview={false}
                 showDescription={false}
             />
+
             <!-- Payment -->
-            <label class="max-w-60">
-                <span class="font-bold">Pay for the Service</span>
-                <div class="input-group input-group-divider grid-cols-[auto_1fr]">
-                    <div class="input-group-shim">
-                        <i class="fa-brands fa-bitcoin text-3xl" />
+            <div class="flex justify-center">
+                <label class="max-w-60 flex flex-col items-center">
+                    <span class="font-bold">Pay for the Service</span>
+                    <div class="input-group input-group-divider grid-cols-[auto_1fr]">
+                        <div class="input-group-shim">
+                            <i class="fa-brands fa-bitcoin text-3xl" />
+                        </div>
+                        <input
+                            class="text-lg max-w-md"
+                            type="number"
+                            min="0"
+                            max="100_000_000"
+                            placeholder="Amount"
+                            bind:value={amount}
+                        />
                     </div>
-                    <input
-                        class="text-lg max-w-md"
-                        type="number"
-                        min="0"
-                        max="100_000_000"
-                        placeholder="Amount"
-                        bind:value={amount}
-                    />
-                </div>
-            </label>
+                </label>
+            </div>
+
             <!-- Pledge support for development -->
-            <div>
+
+            <div class="flex flex-col items-center">
                 <div>
                     <span>Support SatShoot</span>
                     <i
                         class="text-primary-300-600-token fa-solid fa-circle-question text-xl
-                    [&>*]:pointer-events-none"
+                                [&>*]:pointer-events-none"
                         use:popup={popupPledge}
                     />
 
@@ -558,7 +585,8 @@
                     </div>
                 </label>
             </div>
-            <div class="flex flex-col">
+
+            <div class="flex flex-col items-center">
                 <div class="underline">Freelancer gets:</div>
                 <div class="font-bold">
                     {insertThousandSeparator(freelancerShare) + 'sats'}
@@ -573,7 +601,8 @@
                         'sats'}
                 </div>
             </div>
-            <div class="flex flex-col gap-2">
+
+            <div class="flex flex-col items-center">
                 <button
                     type="button"
                     on:click={pay}
@@ -598,29 +627,57 @@
                     {/if}
                     <div class="font-bold">(Public Zap)</div>
                 </button>
-                <button
-                    on:click={payWithEcash}
-                    use:popup={popupHover}
-                    type="button"
-                    class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
-                    disabled={paying || !canPayWithEcash}
-                >
-                    {#if paying}
-                        <span>
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={60}
-                                meter="stroke-error-500"
-                                track="stroke-error-500/30"
-                                strokeLinecap="round"
-                                width="w-8"
-                            />
-                        </span>
-                    {/if}
-                    <div class="flex flex-col items-center gap-y-1">
-                        <div class="font-bold">Pay ecash (Public Zap)</div>
-                    </div>
-                </button>
+            </div>
+            <div class="flex flex-col items-center">
+                {#if hasSenderEcashSetup}
+                    <button
+                        on:click={payWithEcash}
+                        use:popup={popupHover}
+                        type="button"
+                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                        disabled={paying || !canPayWithEcash}
+                    >
+                        {#if paying}
+                            <span>
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-error-500"
+                                    track="stroke-error-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
+                            </span>
+                        {/if}
+                        <div class="flex flex-col items-center gap-y-1">
+                            <div class="font-bold">Pay ecash (Public Zap)</div>
+                        </div>
+                    </button>
+                {:else}
+                    <button
+                        on:click={setupEcash}
+                        use:popup={popupHover}
+                        type="button"
+                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                    >
+                        {#if paying}
+                            <span>
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-error-500"
+                                    track="stroke-error-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
+                            </span>
+                        {/if}
+                        <div class="flex flex-col items-center gap-y-1">
+                            <div class="font-bold">Setup Cashu Wallet</div>
+                        </div>
+                    </button>
+                {/if}
+
                 {#if ecashTooltipText}
                     <div data-popup="popupHover">
                         <div class={popupClasses}>
@@ -628,21 +685,15 @@
                         </div>
                     </div>
                 {/if}
-                <button
-                    type="button"
-                    class="btn btn-sm sm:btn-md min-w-24 bg-error-300-600-token"
-                    on:click={() => modalStore.close()}
-                >
-                    Cancel
-                </button>
             </div>
+
             {#if errorMessage}
                 <div class="text-error-500 text-center">{errorMessage}</div>
             {/if}
         </div>
-    {:else if !ticket}
-        <h2 class="h2 font-bold text-center text-error-300-600-token">Error: Ticket is missing!</h2>
-    {:else if !offer}
-        <h2 class="h2 font-bold text-center text-error-300-600-token">Error: Offer is missing!</h2>
-    {/if}
+    </div>
+{:else}
+    <h2 class="h2 font-bold text-center text-error-300-600-token">
+        Error: Ticket & Offer is missing!
+    </h2>
 {/if}

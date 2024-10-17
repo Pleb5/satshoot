@@ -7,6 +7,7 @@ import { myTickets } from './freelance-eventstores';
 import currentUser from './user';
 
 export const wallet = writable<NDKCashuWallet | null>(null);
+export const ndkNutzapMonitor = writable<NutzapMonitor | null>(null);
 
 export function walletInit(ndk: NDKSvelte, user: NDKUser) {
     const service = new NDKWalletService(ndk);
@@ -33,6 +34,7 @@ export const subscribeForNutZaps = (ndk: NDKSvelte, user: NDKUser, wallet: NDKCa
         console.log('nutzapEvent :>> ', nutzapEvent);
     });
     nutzapMonitor.start();
+    ndkNutzapMonitor.set(nutzapMonitor);
 };
 
 // Maintain a previous map outside the derived store to persist state across invocations
