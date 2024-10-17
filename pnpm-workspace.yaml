@@ -4,4 +4,5 @@ packages:
   - 'packages/ndk/ndk-cache-dexie'
   - 'packages/ndk/ndk-svelte'
   - 'packages/ndk/ndk-wallet'
+  - 'packages/ndk/ndk-svelte-components'
   - 'packages/ndk/packages/*'

@@ -491,6 +491,14 @@
         });
     }
 
+    function setupEcash() {
+        const currentPath = $page.url.pathname;
+        const walletUrl = new URL('my-cashu-wallet', window.location.origin);
+        walletUrl.searchParams.set('redirectPath', currentPath);
+
+        goto(walletUrl);
+    }
+
     // For tooltip
     const popupPledge: PopupSettings = {
         event: 'click',
@@ -621,29 +629,55 @@
                 </button>
             </div>
             <div class="flex flex-col items-center">
-                <button
-                    on:click={payWithEcash}
-                    use:popup={popupHover}
-                    type="button"
-                    class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
-                    disabled={paying || !canPayWithEcash}
-                >
-                    {#if paying}
-                        <span>
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={60}
-                                meter="stroke-error-500"
-                                track="stroke-error-500/30"
-                                strokeLinecap="round"
-                                width="w-8"
-                            />
-                        </span>
-                    {/if}
-                    <div class="flex flex-col items-center gap-y-1">
-                        <div class="font-bold">Pay ecash (Public Zap)</div>
-                    </div>
-                </button>
+                {#if hasSenderEcashSetup}
+                    <button
+                        on:click={payWithEcash}
+                        use:popup={popupHover}
+                        type="button"
+                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                        disabled={paying || !canPayWithEcash}
+                    >
+                        {#if paying}
+                            <span>
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-error-500"
+                                    track="stroke-error-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
+                            </span>
+                        {/if}
+                        <div class="flex flex-col items-center gap-y-1">
+                            <div class="font-bold">Pay ecash (Public Zap)</div>
+                        </div>
+                    </button>
+                {:else}
+                    <button
+                        on:click={setupEcash}
+                        use:popup={popupHover}
+                        type="button"
+                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                    >
+                        {#if paying}
+                            <span>
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-error-500"
+                                    track="stroke-error-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
+                            </span>
+                        {/if}
+                        <div class="flex flex-col items-center gap-y-1">
+                            <div class="font-bold">Setup Cashu Wallet</div>
+                        </div>
+                    </button>
+                {/if}
+
                 {#if ecashTooltipText}
                     <div data-popup="popupHover">
                         <div class={popupClasses}>

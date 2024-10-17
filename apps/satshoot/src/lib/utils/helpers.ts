@@ -52,7 +52,7 @@ import { get } from 'svelte/store';
 import { dev, browser } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
-import { walletInit } from '$lib/stores/wallet';
+import { ndkNutzapMonitor, wallet, walletInit } from '$lib/stores/wallet';
 
 export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init');
@@ -160,6 +160,14 @@ export function logout() {
     allReceivedZaps.empty();
 
     notifications.set([]);
+
+    wallet.set(null);
+
+    const nutzapMonitor = get(ndkNutzapMonitor);
+    if (nutzapMonitor) {
+        nutzapMonitor.stop();
+        ndkNutzapMonitor.set(null);
+    }
 
     get(ndk).signer = undefined;
 
