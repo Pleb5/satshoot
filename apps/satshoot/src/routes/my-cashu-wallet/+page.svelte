@@ -125,6 +125,8 @@
                     };
                     toastStore.trigger(t);
 
+                    // Set user's payment info on successful wallet and info publish
+                    $cashuPaymentInfoMap.set($currentUser!.pubkey, cashuMintList);
                 })
                 .catch((err) => {
                     console.error(err);
