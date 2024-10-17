@@ -1,7 +1,7 @@
 import { nip19 } from 'nostr-tools';
 import { type NDKTag, type Hexpubkey, NDKKind } from '@nostr-dev-kit/ndk';
 
-export const SatShootPubkey = '8f5a10baaa38a2b4ff4f89d83ccd05c854fe780a65b7ade5d6b943373da91657';
+export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
 
 if (typeof NDKKind === 'undefined') {
     throw new Error('NDKKind is undefined. Check your imports.');
