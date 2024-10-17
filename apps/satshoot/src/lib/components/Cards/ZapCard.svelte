@@ -2,6 +2,7 @@
 import ndk from "$lib/stores/ndk";
 import { OfferEvent } from "$lib/events/OfferEvent";
 import { 
+    NDKKind,
     NDKSubscriptionCacheUsage,
     zapInvoiceFromEvent,
     type NDKEvent,
@@ -16,13 +17,17 @@ import OfferCard from "../Cards/OfferCard.svelte";
 import { insertThousandSeparator } from '$lib/utils/misc';
 
 
-export let zap: NDKEvent;
+export let zapEvent: NDKEvent;
 
-const zapInvoice:NDKZapInvoice|null = zapInvoiceFromEvent(zap);
+console.log(zapEvent)
+const zapInvoice:NDKZapInvoice|null = zapInvoiceFromEvent(zapEvent);
 
-const zapperUser = $ndk.getUser({pubkey: zap.tagValue('P')});
+const zapperUser = zapEvent.kind === NDKKind.Zap
+                    ? $ndk.getUser({pubkey: zapEvent.tagValue('P')})
+                    : $ndk.getUser({pubkey: zapEvent.pubkey});
+
 let zapperName = zapperUser.npub.substring(0,8);
-const zapDate = new Date(zap.created_at as number * 1000);
+const zapDate = new Date(zapEvent.created_at as number * 1000);
 const zapTimestamp = zapDate.toLocaleString();
 let zapperImage = `https://robohash.org/${zapperUser.pubkey}`;
 let zapperProfile: NDKUserProfile | null;
@@ -41,6 +46,7 @@ onMount(async() => {
         }
     }
     if (zapInvoice) {
+        // LN zap
         if (zapInvoice.zappedEvent) {
             const offerEvent = await $ndk.fetchEvent(
                 zapInvoice.zappedEvent,
@@ -56,6 +62,26 @@ onMount(async() => {
         }
         if (zapInvoice.amount) {
             amount = Math.round(zapInvoice.amount / 1000);
+        }
+    } else if (zapEvent.kind === NDKKind.Nutzap) {
+        // Nutzap
+        const nutZapAmount = zapEvent.tagValue('amount');
+        if (nutZapAmount) {
+            amount = Math.round(parseInt(nutZapAmount) / 1000);
+        }
+        const zappedOfferID = zapEvent.tagValue("e");
+        if (zappedOfferID) {
+            const offerEvent = await $ndk.fetchEvent(
+                zappedOfferID,
+                {
+                    groupable: true,
+                    groupableDelay: 400,
+                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+                },
+            );
+            if (offerEvent) {
+                zappedOffer = OfferEvent.from(offerEvent);
+            }
         }
     }
 });
