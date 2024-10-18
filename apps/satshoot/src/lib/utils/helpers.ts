@@ -477,7 +477,10 @@ export async function getZapConfiguration(pubkey: string) {
     }
 }
 
-export async function getCashuPaymentInfo(pubkey: string): Promise<CashuPaymentInfo | null> {
+export async function getCashuPaymentInfo(
+    pubkey: string,
+    wholeEvent: boolean = false
+): Promise<NDKCashuMintList | CashuPaymentInfo | null> {
     const $ndk = get(ndk);
 
     const filter = {
@@ -496,6 +499,8 @@ export async function getCashuPaymentInfo(pubkey: string): Promise<CashuPaymentI
 
     const mintList = NDKCashuMintList.from(event);
 
+    if (wholeEvent) return mintList;
+
     return {
         mints: mintList.mints,
         relays: mintList.relays,
@@ -510,4 +515,12 @@ export function orderEventsChronologically(events: NDKEvent[], reverse: boolean 
     });
 
     events = events;
+}
+
+export function arraysAreEqual<T>(arr1: T[], arr2: T[]): boolean {
+    // Check if arrays have the same length
+    if (arr1.length !== arr2.length) return false;
+
+    // Check if all elements are equal (using deep equality for objects)
+    return arr1.every((element, index) => element === arr2[index]);
 }

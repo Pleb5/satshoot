@@ -3,22 +3,14 @@
     import { CashuMint, type GetInfoResponse } from '@cashu/cashu-ts';
     import Avatar from '../Users/Avatar.svelte';
     import { createEventDispatcher } from 'svelte';
-    import { cashuPaymentInfoMap } from '$lib/stores/wallet';
-    import currentUser from '$lib/stores/user';
 
     const dispatcher = createEventDispatcher();
 
     export let mintUrl: MintUrl;
     export let mintUsage: MintUsage;
+    export let isSelected = false;
 
     let mintInfo: GetInfoResponse | null = null;
-    
-    const userPaymentInfo = $cashuPaymentInfoMap.get($currentUser!.pubkey);
-    console.log(userPaymentInfo)
-    let isSelected: boolean = userPaymentInfo?.mints.includes(mintUrl) || false;
-    if (userPaymentInfo?.mints.includes(mintUrl)) {
-        console.log(mintUrl + ' is included')
-    } else console.log(mintUrl + ' is not included')
 
     $: {
         const mint = new CashuMint(mintUrl);
@@ -59,11 +51,13 @@
             <h3 class="text-foreground font-bold">
                 {#if mintInfo}
                     <span>
-                        {mintInfo.name.length < 26 ? mintInfo.name : (mintInfo.name.substring(0,25) + '...')}
+                        {mintInfo.name.length < 26
+                            ? mintInfo.name
+                            : mintInfo.name.substring(0, 25) + '...'}
                     </span>
                 {:else}
                     <span>
-                        {mintUrl.length < 26 ? mintUrl : (mintUrl.substring(0,25) + '...')}
+                        {mintUrl.length < 26 ? mintUrl : mintUrl.substring(0, 25) + '...'}
                     </span>
                 {/if}
             </h3>

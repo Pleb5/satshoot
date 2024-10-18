@@ -20,6 +20,7 @@
     import currentUser from '$lib/stores/user';
     import Warning from '$lib/components/Warning.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
+    import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -58,6 +59,7 @@
         const mintPromise = new Promise<string[] | undefined>((resolve) => {
             const modalComponent: ModalComponent = {
                 ref: ExploreMintsModal,
+                props: { cashuWallet: newWallet },
             };
 
             const modal: ModalSettings = {
@@ -146,17 +148,44 @@
 
             wallet.set(cashuWallet);
 
-            const t: ToastSettings = {
+            toastStore.trigger({
                 message: `Walled updated!`,
-            };
-            toastStore.trigger(t);
+            });
+
+            // after wallet has been updated we should update cashu payment info
+            const ndkCashuMintList = await getCashuPaymentInfo($currentUser!.pubkey, true);
+
+            // only update cashu payment info if relays or mints are mismatching
+            if (
+                ndkCashuMintList instanceof NDKCashuMintList &&
+                (!arraysAreEqual(cashuWallet!.mints, ndkCashuMintList.mints) ||
+                    !arraysAreEqual(cashuWallet!.relays, ndkCashuMintList.relays))
+            ) {
+                // NOTE: This logic may not work in case of multiple wallet, will be refactored later
+                ndkCashuMintList.mints = cashuWallet!.mints;
+                ndkCashuMintList.relays = cashuWallet!.relays;
+
+                ndkCashuMintList
+                    .publishReplaceable()
+                    .then(() => {
+                        toastStore.trigger({
+                            message: `Cashu payment info updated!`,
+                        });
+                        // Set user's payment info on successful wallet and info publish
+                        $cashuPaymentInfoMap.set($currentUser!.pubkey, ndkCashuMintList);
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                        toastStore.trigger({
+                            message: `Failed to update Cashu Payment Info : ${err}`,
+                        });
+                    });
+            }
         } catch (e) {
-            console.error(e);
             console.trace(e);
-            const t: ToastSettings = {
+            toastStore.trigger({
                 message: `Wallet update failed! Reason: ${e}`,
-            };
-            toastStore.trigger(t);
+            });
         }
     }
 
@@ -219,6 +248,7 @@
         new Promise<string[] | undefined>((resolve) => {
             const modalComponent: ModalComponent = {
                 ref: ExploreMintsModal,
+                props: { cashuWallet },
             };
 
             const modal: ModalSettings = {
@@ -258,7 +288,7 @@
                 props: {
                     dataToEdit: 'wss://',
                     fieldName: 'Relay',
-                    confirmButtonText: 'Add'
+                    confirmButtonText: 'Add',
                 },
             };
 
