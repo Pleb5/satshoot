@@ -90,6 +90,7 @@
                     console.log('decodedText :>> ', decodedText);
                     pr = decodedText; // Set the payment request
                     html5QrCode.stop();
+                    isScanning = false;
                 },
                 undefined
             )
