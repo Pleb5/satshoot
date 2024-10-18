@@ -23,13 +23,15 @@ import {
 } from '@nostr-dev-kit/ndk';
 
 import { type NDKSvelte } from '@nostr-dev-kit/ndk-svelte';
+import { tick } from 'svelte';
 
 import currentUser from '../stores/user';
 import {
     currentUserFollows,
     followsUpdated,
 } from '../stores/user';
-import { tick } from 'svelte';
+
+import satShootWoT from './satshoot-wot';
 
 export const networkWoTScores: Writable<Map<Hexpubkey, number> | null>
     = persisted('networkWoTScores', null, {serializer: getMapSerializer()});
@@ -41,6 +43,7 @@ export const minWot = writable(3);
 const firstOrderFollowWot = 4;
 const firstOrderMuteWot = -0.5*(firstOrderFollowWot);
 const firstOrderReportWot = -0.5*(firstOrderFollowWot);
+
 const secondOrderFollowWot = 1;
 const secondOrderMuteWot = -0.5*(secondOrderFollowWot);
 const secondOrderReportWot = -0.5*(secondOrderFollowWot);
@@ -50,10 +53,11 @@ export const useBootstrapAccount = true;
 export const wotUpdating = writable(false);
 export const wotUpdateFailed = writable(false);
 
+let saveSatShootWoT = true;
 export const wot = derived(
     [networkWoTScores, minWot, currentUser],
     ([$networkWoTScores, $minWot, $currentUser]) => {
-        const pubkeys = new Set<Hexpubkey>();
+        const pubkeys = new Set<Hexpubkey>(satShootWoT);
 
         $networkWoTScores?.forEach((score: number, follow: Hexpubkey) => {
             if (score >= $minWot) pubkeys.add(follow);
@@ -62,6 +66,27 @@ export const wot = derived(
         if ($currentUser) {
             pubkeys.add($currentUser.pubkey);
             pubkeys.add(SatShootPubkey);
+
+            if ($currentUser.pubkey === SatShootPubkey && saveSatShootWoT) {
+                // Save SatShoot WoT in file to use it later
+                // as hardcoded initial WoT while user is not logged in
+                // Recalculated on every release preferably
+                const tsContent = 
+                    `const satShootWoT = ${
+                        JSON.stringify(Array.from(pubkeys), null, 2)
+                    };\nexport default satShootWoT;`;
+                const blob = new Blob(
+                    [tsContent],
+                    {type: 'text/typescript'}
+                );
+                const url = URL.createObjectURL(blob);
+                const atag = document.createElement('a');
+                atag.href = url;
+                atag.download = 'satshoot-wot.ts';
+                atag.click();
+                URL.revokeObjectURL(url);
+                saveSatShootWoT = false;
+            }
         }
 
         return pubkeys;
@@ -99,14 +124,14 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         const $networkWoTScores = new Map<Hexpubkey, number>();
 
 
-        await ndk.outboxTracker!.trackUsers([user.pubkey, SatShootPubkey]);
+        await ndk.outboxTracker!.trackUsers([user.pubkey]);
 
         // log write relays with buitin fn
 
-        // user and bootstrap 'trust' basis: follows, mutes and reports
+        // 'trust' basis: follows, mutes and reports
         const trustBasisFilter: NDKFilter = {
             kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
-            authors: [user.pubkey, SatShootPubkey]
+            authors: [user.pubkey]
         }
 
         console.log('outboxPool:', ndk.outboxPool)
