@@ -122,7 +122,7 @@
         }
     }
 
-    async function pay() {
+    async function payWithLN() {
         const paymentData = await initializePayment();
         if (!paymentData) return;
 
@@ -220,13 +220,19 @@
                 'SatShoot Payment might have failed!'
             );
 
-            if (redirectPath) {
+            if (
+                paid.get(UserEnum.Freelancer)
+                && paid.get(UserEnum.Satshoot)
+                && redirectPath
+            ) {
                 goto(redirectPath);
+            } else {
+                paying = false;
             }
         } catch (error) {
             console.error(error);
             handleToast(
-                'Error: An error occurred in payment process, check console for more details!',
+                `Error: An error occurred in payment process: ${error}`,
                 ToastType.Error
             );
             paying = false;
@@ -605,7 +611,7 @@
             <div class="flex flex-col items-center">
                 <button
                     type="button"
-                    on:click={pay}
+                    on:click={payWithLN}
                     class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
                     disabled={paying}
                 >

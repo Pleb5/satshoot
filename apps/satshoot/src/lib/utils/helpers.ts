@@ -438,6 +438,8 @@ export async function getZapConfiguration(pubkey: string) {
 
     const profile = profileFromEvent(metadataEvent);
 
+    if (!profile.lud16) return null;
+
     try {
         const lnurlSpec = await getNip57ZapSpecFromLud(
             {
