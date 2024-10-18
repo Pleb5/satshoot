@@ -262,12 +262,10 @@
         }).then((mints) => {
             if (!cashuWallet || !mints || !mints.length) return;
 
-            const existingMints = cashuWallet.mints;
-            const newMints = mints.filter((mint) => !existingMints.includes(mint));
+            if (!arraysAreEqual(cashuWallet.mints, mints)) {
+                cashuWallet.mints = mints;
+            }
 
-            if (!newMints.length) return;
-
-            cashuWallet.mints = [...existingMints, ...newMints];
             updateWallet();
         });
     }
