@@ -2,6 +2,7 @@
     import ndk from '$lib/stores/ndk';
     import {
         getCashuMintRecommendations,
+        NDKCashuWallet,
         type MintUrl,
         type NDKCashuMintRecommendation,
     } from '@nostr-dev-kit/ndk-wallet';
@@ -12,9 +13,14 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    let recommendations: NDKCashuMintRecommendation;
+    export let cashuWallet: NDKCashuWallet;
 
+    let recommendations: NDKCashuMintRecommendation;
     let selectedMints: MintUrl[] = [];
+
+    $: if (cashuWallet) {
+        selectedMints = [...cashuWallet.mints];
+    }
 
     function toggleMintSelection(mintUrl: MintUrl, isSelected: boolean) {
         if (isSelected) {
@@ -58,6 +64,7 @@
                         <CashuMintListItem
                             {mintUrl}
                             {mintUsage}
+                            isSelected={selectedMints.includes(mintUrl)}
                             on:selectMint={(e) =>
                                 toggleMintSelection(e.detail.mintUrl, e.detail.isSelected)}
                         />
@@ -65,7 +72,7 @@
                 {:else}
                     <div class="flex w-full justify-center justify-self-center">
                         <div class="p-4 space-y-4 w-full">
-                            {#each {length: 4} as _}
+                            {#each { length: 4 } as _}
                                 <div class="placeholder animate-pulse" />
                                 <div class="grid grid-cols-3 gap-8">
                                     <div class="placeholder animate-pulse" />
