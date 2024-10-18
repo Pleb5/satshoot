@@ -98,7 +98,8 @@
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import MessagesIcon from '$lib/components/Icons/MessagesIcon.svelte';
     import { hideAppBarsStore } from '$lib/stores/gui';
-    import { cashuPaymentInfoMap } from '$lib/stores/wallet';
+    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
+    import { isCashuMintListSynced } from '$lib/utils/cashu';
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -541,6 +542,10 @@
         $filteredReceivedZaps.forEach((zap: NDKEvent) => {
             sendNotification(zap);
         });
+    }
+
+    $: if ($currentUser && $wallet) {
+        isCashuMintListSynced($wallet, $currentUser, toastStore);
     }
 
     /**
