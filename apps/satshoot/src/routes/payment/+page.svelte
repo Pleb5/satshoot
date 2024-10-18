@@ -81,12 +81,19 @@
         freelancerShare = amount - satshootShare;
     }
 
+    // All checks passed, user can pay with ecash
+    $: if (canPayWithEcash) {
+        ecashTooltipText = '';
+        errorMessage = '';
+    }
+
     $: {
         if (offer && $currentUser) {
-            canPayWithEcash = true;
 
             hasSenderEcashSetup = $cashuPaymentInfoMap.has($currentUser.pubkey);
             const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
+
+            canPayWithEcash = true;
 
             if (!hasSenderEcashSetup) {
                 errorMessage = 'Setup Cashu wallet to pay with ecash!'
@@ -113,7 +120,6 @@
                             ecashTooltipText = `Don't have enough balance in ecash wallet`;
                             errorMessage = `Don't have enough balance in 
                                             ecash wallet(${balance[0].amount} sats)`;
-                            return;
                         }
                     })
                     .catch((err) => {
@@ -121,7 +127,6 @@
                         canPayWithEcash = false;
                         ecashTooltipText = `Don't have enough balance in ecash wallet`;
                         errorMessage = `Don't have enough balance in ecash wallet`;
-                        return;
                     });
             }
         }
@@ -702,9 +707,7 @@
                 </div>
             </div>
 
-            {#if errorMessage}
-                <div class="text-error-500 text-center">{errorMessage}</div>
-            {/if}
+            <div class="text-error-500 text-center">{errorMessage}</div>
         </div>
     </div>
 {:else}
