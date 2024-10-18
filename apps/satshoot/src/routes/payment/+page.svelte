@@ -89,14 +89,15 @@
             const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
 
             if (!hasSenderEcashSetup) {
-                canPayWithEcash = false;
-                ecashTooltipText = 'Setup Ecash Wallet';
+                errorMessage = 'Setup Cashu wallet to pay with ecash!'
             } else if (!hasFreelancerEcashSetup) {
                 canPayWithEcash = false;
                 ecashTooltipText = 'Freelancer does not have ecash wallet';
+                errorMessage = 'Freelancer does not have ecash wallet';
             } else if (!$wallet) {
                 canPayWithEcash = false;
                 ecashTooltipText = 'Wallet is not initialized yet';
+                errorMessage = 'Wallet is not initialized yet';
             } else {
                 $wallet
                     .balance()
@@ -106,9 +107,12 @@
                         if (!balance) {
                             canPayWithEcash = false;
                             ecashTooltipText = `Don't have enough balance in ecash wallet`;
+                            errorMessage = `Don't have enough balance in ecash wallet`;
                         } else if (balance[0].amount < amount) {
                             canPayWithEcash = false;
                             ecashTooltipText = `Don't have enough balance in ecash wallet`;
+                            errorMessage = `Don't have enough balance in 
+                                            ecash wallet(${balance[0].amount} sats)`;
                             return;
                         }
                     })
@@ -116,6 +120,7 @@
                         console.error('An error occurred in fetching wallet balance', err);
                         canPayWithEcash = false;
                         ecashTooltipText = `Don't have enough balance in ecash wallet`;
+                        errorMessage = `Don't have enough balance in ecash wallet`;
                         return;
                     });
             }
@@ -291,22 +296,22 @@
                             amount: amountMillisats,
                             unit: 'msat',
                             comment: 'satshoot',
-                            tags: [['P', $currentUser!.pubkey]],
                             ...cashuPaymentInfo,
                         })
                         .catch((err) => {
+                            const failedPaymentRecipient = 
+                                userEnum === UserEnum.Freelancer
+                                    ? 'freelancer'
+                                    : 'satshoot'
                             console.log('payment model 6 ');
-                            console.error(
-                                `An error occurred in cashuPay for ${userEnum === UserEnum.Freelancer ? 'freelancer' : 'satshoot'}`,
-                                err
-                            );
+                             
+                            errorMessage = `Failed to pay ${failedPaymentRecipient}:${err}`;
                             return null;
                         });
 
                     console.log('cashuResult :>> ', cashuResult);
 
                     if (!cashuResult) {
-                        errorMessage = `Failed to pay, check console for more details`;
                         return;
                     }
 
@@ -359,8 +364,14 @@
                 'SatShoot Payment might have failed!'
             );
 
-            if (redirectPath) {
+            if (
+                paid.get(UserEnum.Freelancer)
+                    && paid.get(UserEnum.Satshoot)
+                    && redirectPath
+            ) {
                 goto(redirectPath);
+            } else {
+                paying = false;
             }
         } catch (error) {
             console.error(error);
@@ -512,7 +523,7 @@
         placement: 'bottom',
     };
 
-    const popupHover: PopupSettings = {
+    const popupHoverCashuPaymentAvailableStatus: PopupSettings = {
         event: 'hover',
         target: 'popupHover',
         placement: 'top',
@@ -638,7 +649,7 @@
                 {#if hasSenderEcashSetup}
                     <button
                         on:click={payWithEcash}
-                        use:popup={popupHover}
+                        use:popup={popupHoverCashuPaymentAvailableStatus}
                         type="button"
                         class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
                         disabled={paying || !canPayWithEcash}
@@ -662,7 +673,7 @@
                 {:else}
                     <button
                         on:click={setupEcash}
-                        use:popup={popupHover}
+                        use:popup={popupHoverCashuPaymentAvailableStatus}
                         type="button"
                         class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
                     >
@@ -684,13 +695,11 @@
                     </button>
                 {/if}
 
-                {#if ecashTooltipText}
-                    <div data-popup="popupHover">
-                        <div class={popupClasses}>
-                            <p>{ecashTooltipText}</p>
-                        </div>
+                <div data-popup="popupHover">
+                    <div class={popupClasses}>
+                        <p>{ecashTooltipText}</p>
                     </div>
-                {/if}
+                </div>
             </div>
 
             {#if errorMessage}
