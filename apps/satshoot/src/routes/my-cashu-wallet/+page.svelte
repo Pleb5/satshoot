@@ -255,7 +255,11 @@
         new Promise<string | undefined>((resolve) => {
             const modalComponent: ModalComponent = {
                 ref: EditProfileModal,
-                props: { dataToEdit: 'wss://', fieldName: 'Relay' },
+                props: {
+                    dataToEdit: 'wss://',
+                    fieldName: 'Relay',
+                    confirmButtonText: 'Add'
+                },
             };
 
             const modal: ModalSettings = {
