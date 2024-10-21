@@ -224,20 +224,28 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
 export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | null> {
     const $currentUser = get(currentUser);
 
-    // const queryRelays = NDKRelaySet.fromRelayUrls([
-    //     ...ndk.pool.urls(),
-    //     ...ndk.outboxPool!.urls()
-    // ], ndk);
+    const queryRelaysUrls = [
+        ...ndk.pool.urls(),
+        ...ndk.outboxPool!.urls()
+    ];
 
-    const relays = await ndk.fetchEvent(
-        { kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] },
-        {
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-            groupable: false,
-        }
-        // queryRelays,
+    const queryRelays: Array<NDKRelay> = [];
+
+    queryRelaysUrls.forEach((url) => {
+        queryRelays.push(new NDKRelay(url, undefined, ndk));
+    });
+
+    const relayFilter = { 
+        kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] 
+    };
+
+    let relays = await fetchEventFromRelays(
+        relayFilter, 
+        4000,
+        true,
+        queryRelays
     );
-    console.log('outbox relays', relays);
+
     return relays;
 }
 
