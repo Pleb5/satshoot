@@ -346,76 +346,46 @@ export async function checkRelayConnections() {
 
 export async function fetchEventFromRelays(
     filter: NDKFilter,
-    timeoutMS: number = 15000,
+    relayTimeoutMS: number = 6000,
     fallbackToCache: boolean = false,
     relays?: NDKRelay[]
-) {
+): Promise<NDKEvent | null> {
     const $ndk = get(ndk);
 
-    const promise = new Promise<NDKEvent>((resolve, reject) => {
-        let fetchedEvent: NDKEvent | null = null;
+    // If relays are provided construct a set and pass over to sub
+    const relaySet = relays ? new NDKRelaySet(new Set(relays), $ndk) : undefined;
 
-        // If relays are provided construct a set and pass over to sub
-        const relaySet = relays ? new NDKRelaySet(new Set(relays), $ndk) : undefined;
-        const relayOnlySubscription = $ndk.subscribe(
-            filter,
-            {
-                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-                closeOnEose: true,
-                groupable: false,
-            },
-            relaySet
-        );
+    const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(null)
+        }, relayTimeoutMS);
 
-        const timeout = setTimeout(() => {
-            relayOnlySubscription.stop();
-
-            if (fetchedEvent) {
-                return resolve(fetchedEvent);
-            }
-
-            reject('Could not fetch event from relay within specified period of time');
-        }, timeoutMS);
-
-        relayOnlySubscription.on('event', (event: NDKEvent) => {
-            event.ndk = $ndk;
-
-            // We only emit immediately when the event is not replaceable
-            if (!event.isReplaceable()) {
-                clearTimeout(timeout);
-                relayOnlySubscription.stop();
-                resolve(event);
-            } else if (!fetchedEvent || fetchedEvent.created_at! < event.created_at!) {
-                fetchedEvent = event;
-            }
-        });
-
-        relayOnlySubscription.start();
     });
 
-    if (fallbackToCache) {
-        const cachedPromise = $ndk.fetchEvent(filter, {
-            cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
-            closeOnEose: true,
+    const relayPromise = $ndk.fetchEvent(
+        filter,
+        {
+            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
             groupable: false,
-        });
+        },
+        relaySet,
+    );
 
-        const eventFromRelay = await promise.catch((err) => {
-            console.error(err);
-            return null;
-        });
-        if (eventFromRelay) return eventFromRelay;
+    const fetchedEvent:NDKEvent | null = await Promise.race(
+        [timeoutPromise, relayPromise]
+    ) as NDKEvent | null;
 
-        const cachedEvent = await cachedPromise.catch((err) => {
-            console.error(err);
-            return null;
-        });
-        if (cachedEvent) return cachedEvent;
+    if (!fallbackToCache) return fetchedEvent;
 
-        throw new Error('Could not fetch event from both relay and cache');
-    }
+    const cachedEvent = await $ndk.fetchEvent(
+        filter,
+        {
+            cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
+            groupable: false,
+        }
+    );
 
-    return promise;
+    return cachedEvent;
 }
 
 export async function getZapConfiguration(pubkey: string) {
