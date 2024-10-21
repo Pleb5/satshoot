@@ -387,22 +387,18 @@ export async function getZapConfiguration(pubkey: string) {
         kinds: [NDKKind.Metadata],
         authors: [pubkey],
     };
-    //
-    // await $ndk.outboxTracker!.trackUsers([pubkey]);
 
-    const metadataRelays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
-
-    console.log('ndk relays connected', metadataRelays);
+    const metadataRelays = [
+        ...$ndk.outboxPool!.connectedRelays(),
+        ...$ndk.pool!.connectedRelays()
+    ];
 
     const metadataEvent = await fetchEventFromRelays(
         metadataFilter,
         5000,
         false,
         metadataRelays
-    ).catch((err) => {
-        console.error(`An error occurred in fetching profile metadata for ${pubkey}`, err);
-        return null;
-    });
+    );
 
     if (!metadataEvent) return null;
 
@@ -462,14 +458,14 @@ export async function getCashuPaymentInfo(
 
     const relays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    const event = await fetchEventFromRelays(filter, 5000, false, relays).catch((err) => {
-        console.error(`An error occurred in fetching cashuMintList for ${pubkey}`, err);
+    const cashuMintlistEvent = await fetchEventFromRelays(filter, 5000, false, relays);
+
+    if (!cashuMintlistEvent) {
+        console.warn(`Could not fetch Cashu Mint list for ${pubkey}`);
         return null;
-    });
+    }
 
-    if (!event) return null;
-
-    const mintList = NDKCashuMintList.from(event);
+    const mintList = NDKCashuMintList.from(cashuMintlistEvent);
 
     if (wholeEvent) return mintList;
 
