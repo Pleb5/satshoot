@@ -48,16 +48,23 @@ const secondOrderFollowWot = 1;
 const secondOrderMuteWot = -0.5*(secondOrderFollowWot);
 const secondOrderReportWot = -0.5*(secondOrderFollowWot);
 
-export const useBootstrapAccount = true;
+export const useSatShootWoT: Writable<boolean> = persisted('useSatShootWoT', true);
 
 export const wotUpdating = writable(false);
 export const wotUpdateFailed = writable(false);
+export const wotUpdateNoResults = writable(false);
 
 let saveSatShootWoT = true;
 export const wot = derived(
-    [networkWoTScores, minWot, currentUser],
-    ([$networkWoTScores, $minWot, $currentUser]) => {
-        const pubkeys = new Set<Hexpubkey>(satShootWoT);
+    [networkWoTScores, minWot, currentUser, useSatShootWoT],
+    ([$networkWoTScores, $minWot, $currentUser, $useSatShootWoT]) => {
+        const initialWoT: Array<Hexpubkey> = [];
+        if ($useSatShootWoT) {
+            initialWoT.push(SatShootPubkey);
+            initialWoT.push(...satShootWoT);
+        }
+
+        const pubkeys = new Set<Hexpubkey>(initialWoT);
 
         $networkWoTScores?.forEach((score: number, follow: Hexpubkey) => {
             if (score >= $minWot) pubkeys.add(follow);
@@ -65,27 +72,9 @@ export const wot = derived(
 
         if ($currentUser) {
             pubkeys.add($currentUser.pubkey);
-            pubkeys.add(SatShootPubkey);
 
             if ($currentUser.pubkey === SatShootPubkey && saveSatShootWoT) {
-                // Save SatShoot WoT in file to use it later
-                // as hardcoded initial WoT while user is not logged in
-                // Recalculated on every release preferably
-                const tsContent = 
-                    `const satShootWoT = ${
-                        JSON.stringify(Array.from(pubkeys), null, 2)
-                    };\nexport default satShootWoT;`;
-                const blob = new Blob(
-                    [tsContent],
-                    {type: 'text/typescript'}
-                );
-                const url = URL.createObjectURL(blob);
-                const atag = document.createElement('a');
-                atag.href = url;
-                atag.download = 'satshoot-wot.ts';
-                atag.click();
-                URL.revokeObjectURL(url);
-                saveSatShootWoT = false;
+                saveSatShootWoTInFile(pubkeys);
             }
         }
 
@@ -121,20 +110,18 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         await tick();
 
         if (!user) throw new Error('Could not get user');
-        const $networkWoTScores = new Map<Hexpubkey, number>();
 
+        const $networkWoTScores = new Map<Hexpubkey, number>();
 
         await ndk.outboxTracker!.trackUsers([user.pubkey]);
 
-        const trustBasisFilter: NDKFilter = {
+        const primaryWoTEventsFilter: NDKFilter = {
             kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
             authors: [user.pubkey]
         }
 
-        console.log('outboxPool:', ndk.outboxPool)
-
-        const trustBasisEvents = await ndk.fetchEvents(
-            trustBasisFilter,
+        const primaryWoTEvents = await ndk.fetchEvents(
+            primaryWoTEventsFilter,
             {
                 groupable: false,
                 closeOnEose: true,
@@ -142,13 +129,14 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             },
         );
 
-        if (trustBasisEvents.size === 0) {
-            console.log('Could not fetch events to build trust network!')
-            throw new Error('Could not fetch events to build trust network!');
+        if (primaryWoTEvents.size === 0) {
+            wotUpdating.set(false);
+            wotUpdateNoResults.set(true)
+            return;
         }
 
         // first order scores. Authors for the second order wot score are recorded
-        const authors: Set<Hexpubkey> = updateWotScores(trustBasisEvents, $networkWoTScores, true);
+        const authors: Set<Hexpubkey> = updateWotScores(primaryWoTEvents, $networkWoTScores, true);
         // Get a common relay set for the user's network
 
         // Now get ALL second order follows, mutes and reports
@@ -280,3 +268,24 @@ export function getWotPercentile(targetUser: NDKUser): number|undefined {
     return percentile(wotValues, wotValue);
 }
 
+function saveSatShootWoTInFile(pubkeys: Set<Hexpubkey>) {
+    // Save SatShoot WoT in file to use it later
+    // as hardcoded initial WoT while user is not logged in
+    // and as long as 'useSatShootWoT' is true
+    // Recalculated on every release preferably
+    const tsContent = 
+            `const satShootWoT = ${
+            JSON.stringify(Array.from(pubkeys), null, 2)
+            };\nexport default satShootWoT;`;
+    const blob = new Blob(
+        [tsContent],
+        {type: 'text/typescript'}
+    );
+    const url = URL.createObjectURL(blob);
+    const atag = document.createElement('a');
+    atag.href = url;
+    atag.download = 'satshoot-wot.ts';
+    atag.click();
+    URL.revokeObjectURL(url);
+    saveSatShootWoT = false;
+}

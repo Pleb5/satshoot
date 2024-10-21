@@ -16,7 +16,7 @@
 
     import { mounted, loggedIn, userRelaysUpdated } from '$lib/stores/user';
     import currentUser, { loggingIn, loginMethod } from '$lib/stores/user';
-    import { online, retryConnection, maxRetryAttempts } from '$lib/stores/network';
+    import { online, retryConnection } from '$lib/stores/network';
 
     import {
         wotFilteredTickets,
@@ -34,7 +34,13 @@
 
     import { initializeUser, logout, checkRelayConnections } from '$lib/utils/helpers';
 
-    import { wot, wotUpdating, wotUpdateFailed } from '$lib/stores/wot';
+    import { 
+        wot,
+        wotUpdating,
+        wotUpdateFailed,
+        wotUpdateNoResults,
+        useSatShootWoT
+    } from '$lib/stores/wot';
 
     import { RestoreMethod, type LoginMethod } from '$lib/stores/ndk';
 
@@ -157,10 +163,26 @@
     $: if ($wotUpdateFailed) {
         toastStore.clear();
         const t: ToastSettings = {
-            message: 'Could not update Web of Trust!',
+            message: 'Could not load Web of Trust!',
             autohide: false,
             action: {
-                label: 'Reload page',
+                label: 'Retry',
+                response: () => {
+                    window.location.reload();
+                },
+            },
+            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
+        };
+        toastStore.trigger(t);
+    }
+
+    $: if ($wotUpdateNoResults) {
+        toastStore.clear();
+        const t: ToastSettings = {
+            message: 'Could not load Your Web of Trust!',
+            autohide: false,
+            action: {
+                label: 'Retry',
                 response: () => {
                     window.location.reload();
                 },
@@ -605,6 +627,22 @@
                                         Log in to Load your Web of Trust!
                                     </div>
                                 </div>
+                            {:else if $wot?.size < 3}
+                                <i
+                                    class="fa-solid fa-circle-exclamation text-2xl
+                                    text-error-500"
+                                    use:popup={popupWoT}
+                                >
+                                </i>
+                                <div data-popup="popupWoT">
+                                    <div
+                                        class="card font-bold w-40 p-4 bg-error-500 max-h-60 overflow-y-auto"
+                                    >
+                                        No Web of Trust!
+                                        Turn on SatShoot WoT in Settings or 
+                                        follow more people on nostr!
+                                    </div>
+                                </div>
                             {:else if $wot && $wot.size < 3 && $wotUpdating}
                                 <ProgressRadial
                                     value={undefined}
@@ -623,6 +661,21 @@
                                     strokeLinecap="round"
                                     width="w-8"
                                 />
+                            {:else if $wot && $useSatShootWoT && $wotUpdateNoResults}
+                                <i
+                                    class="fa-solid fa-circle-check text-2xl
+                                    text-primary-500"
+                                    use:popup={popupWoT}
+                                >
+                                </i>
+                                <div data-popup="popupWoT">
+                                    <div
+                                        class="card font-bold w-40 p-4 bg-primary-500
+                                        max-h-60 overflow-y-auto"
+                                    >
+                                        Using SatShoot WoT only
+                                    </div>
+                                </div>
                             {:else if $wot && $wot.size > 2}
                                 <i
                                     class="fa-solid fa-circle-check text-2xl {trustColor}"
