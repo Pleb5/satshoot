@@ -117,7 +117,7 @@
     const popupWoT: PopupSettings = {
         event: 'click',
         target: 'popupWoT',
-        placement: 'bottom',
+        placement: 'right',
     };
     const trustColor = 'text-tertiary-500';
     const bgTrustColor = 'bg-tertiary-500';
@@ -684,7 +684,8 @@
                                 </i>
                                 <div data-popup="popupWoT">
                                     <div
-                                        class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto"
+                                        class="card font-bold w-40 p-4 {bgTrustColor}
+                                        max-h-60 overflow-y-auto"
                                     >
                                         Web of Trust Loaded
                                     </div>
