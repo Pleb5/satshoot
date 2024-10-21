@@ -273,15 +273,12 @@ export async function broadcastRelayList(
 export async function checkRelayConnections() {
     const $ndk = get(ndk);
     const $currentUser = get(currentUser);
-    console.log('Check relays and try to reconnect if they are down..');
-    console.log('relays connected = ', $ndk.pool.stats().connected);
 
     const anyConnectedRelays = $ndk.pool.stats().connected !== 0;
     let readAndWriteRelaysExist = false;
 
     // Only bother to check stronger condition if weaker is met
     if (anyConnectedRelays && $currentUser) {
-        console.log('There are connected relays, check user read and write relays..');
         const relays = await $ndk.fetchEvent(
             { kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] },
             {
@@ -299,14 +296,12 @@ export async function checkRelayConnections() {
             for (const connectedPoolRelay of $ndk.pool.connectedRelays()) {
                 relayList.readRelayUrls.forEach((url: string) => {
                     if (connectedPoolRelay.url === url) {
-                        console.log('There is a connected user read relay');
                         readRelayExists = true;
                     }
                 });
 
                 relayList.writeRelayUrls.forEach((url: string) => {
                     if (connectedPoolRelay.url === url) {
-                        console.log('There is a connected user write relay');
                         writeRelayExists = true;
                     }
                 });
@@ -322,9 +317,6 @@ export async function checkRelayConnections() {
     if (!anyConnectedRelays || ($currentUser && !readAndWriteRelaysExist)) {
         connected.set(false);
         let retriesLeft = get(retryConnection);
-        console.log('Any relays conected: ', anyConnectedRelays);
-        console.log('Any read and write relays conected: ', readAndWriteRelaysExist);
-        console.log('retryConnection', retriesLeft);
         if (retriesLeft > 0) {
             retriesLeft -= 1;
             retryConnection.set(retriesLeft);
@@ -338,7 +330,7 @@ export async function checkRelayConnections() {
             setTimeout(checkRelayConnections, retryDelay);
         }
     } else {
-        console.log('We are sufficiently connected, reset max retries');
+        // We are sufficiently connected
         connected.set(true);
         retryConnection.set(maxRetryAttempts);
     }

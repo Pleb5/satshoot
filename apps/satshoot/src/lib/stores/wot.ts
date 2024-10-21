@@ -118,17 +118,14 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
     const user = get(currentUser);
     try {
         wotUpdating.set(true);
-        console.log('wotupdating', get(wotUpdating))
         await tick();
+
         if (!user) throw new Error('Could not get user');
         const $networkWoTScores = new Map<Hexpubkey, number>();
 
 
         await ndk.outboxTracker!.trackUsers([user.pubkey]);
 
-        // log write relays with buitin fn
-
-        // 'trust' basis: follows, mutes and reports
         const trustBasisFilter: NDKFilter = {
             kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
             authors: [user.pubkey]
@@ -145,8 +142,6 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             },
         );
 
-        console.log('trustBasisEvents', trustBasisEvents)
-
         if (trustBasisEvents.size === 0) {
             console.log('Could not fetch events to build trust network!')
             throw new Error('Could not fetch events to build trust network!');
@@ -155,15 +150,11 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
         // first order scores. Authors for the second order wot score are recorded
         const authors: Set<Hexpubkey> = updateWotScores(trustBasisEvents, $networkWoTScores, true);
         // Get a common relay set for the user's network
-        //
 
         // Now get ALL second order follows, mutes and reports
         const authorsArray = Array.from(authors);
-        console.log('authors', authors)
 
         await ndk.outboxTracker!.trackUsers(authorsArray);
-
-        console.log('outboxPool after tracking all authors:', ndk.outboxPool)
 
         const networkFilter = {
             kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report, NDKKind.Metadata],
@@ -179,8 +170,6 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             },
         );
 
-        console.log('Network event store', networkStore)
-
         if (networkStore.size === 0) {
             throw new Error('Could not fetch events to build trust network from INDIRECT follows!');
         }
@@ -195,9 +184,6 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
 
         wotUpdating.set(false);
         wotUpdateFailed.set(false);
-
-        console.log("Follows", get(currentUserFollows));
-        console.log("wot pubkeys", get(wot));
     } catch (e) {
         wotUpdating.set(false);
         wotUpdateFailed.set(true);
@@ -221,7 +207,6 @@ function updateWotScores(events: Set<NDKEvent>, networkWoTScores:Map<Hexpubkey, 
     events.forEach((event: NDKEvent)=> {
         if (event.kind === NDKKind.Contacts) {
             const follows = filterValidPTags(event.tags);
-            // console.log('follows', follows)
             const userFollow:boolean = (event.pubkey === user.pubkey);
             follows.forEach((f: Hexpubkey) => {
                 if (userFollow) $currentUserFollows.add(f);
