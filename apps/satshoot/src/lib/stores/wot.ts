@@ -54,7 +54,7 @@ export const wotUpdating = writable(false);
 export const wotUpdateFailed = writable(false);
 export const wotUpdateNoResults = writable(false);
 
-let saveSatShootWoT = true;
+let saveSatShootWoT = false;
 export const wot = derived(
     [networkWoTScores, minWot, currentUser, useSatShootWoT],
     ([$networkWoTScores, $minWot, $currentUser, $useSatShootWoT]) => {
