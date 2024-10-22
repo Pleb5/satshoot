@@ -144,20 +144,6 @@
                 </li>
                 <li>
                     <a
-                        class="justify-start {classesActive(myCashuWalletHref)}"
-                        href={myCashuWalletHref}
-                        on:click={() => {
-                            drawerStore.close();
-                        }}
-                    >
-                        <span class="w-6 text-center">
-                            <WalletIcon />
-                        </span>
-                        <span>Wallet</span>
-                    </a>
-                </li>
-                <li>
-                    <a
                         class="justify-start {classesActive(myTicketsHref)}"
                         href={myTicketsHref}
                         on:click={() => {
@@ -182,6 +168,20 @@
                             <BitcoinIcon extraClasses={'text-lg'} />
                         </span>
                         <span>My Offers</span>
+                    </a>
+                </li>
+                <li>
+                    <a
+                        class="justify-start {classesActive(myCashuWalletHref)}"
+                        href={myCashuWalletHref}
+                        on:click={() => {
+                            drawerStore.close();
+                        }}
+                    >
+                        <span class="w-6 text-center">
+                            <WalletIcon />
+                        </span>
+                        <span>Wallet</span>
                     </a>
                 </li>
             {/if}
