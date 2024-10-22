@@ -89,14 +89,13 @@
 
     $: {
         if (offer && $currentUser) {
-
             hasSenderEcashSetup = $cashuPaymentInfoMap.has($currentUser.pubkey);
             const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
 
             canPayWithEcash = true;
 
             if (!hasSenderEcashSetup) {
-                errorMessage = 'Setup Cashu wallet to pay with ecash!'
+                errorMessage = 'Setup Cashu wallet to pay with ecash!';
             } else if (!hasFreelancerEcashSetup) {
                 canPayWithEcash = false;
                 ecashTooltipText = 'Freelancer does not have ecash wallet';
@@ -230,21 +229,14 @@
                 'SatShoot Payment might have failed!'
             );
 
-            if (
-                paid.get(UserEnum.Freelancer)
-                && paid.get(UserEnum.Satshoot)
-                && redirectPath
-            ) {
+            if (paid.get(UserEnum.Freelancer) && paid.get(UserEnum.Satshoot) && redirectPath) {
                 goto(redirectPath);
             } else {
                 paying = false;
             }
         } catch (error) {
             console.error(error);
-            handleToast(
-                `Error: An error occurred in payment process: ${error}`,
-                ToastType.Error
-            );
+            handleToast(`Error: An error occurred in payment process: ${error}`, ToastType.Error);
             paying = false;
         }
     }
@@ -304,12 +296,9 @@
                             ...cashuPaymentInfo,
                         })
                         .catch((err) => {
-                            const failedPaymentRecipient = 
-                                userEnum === UserEnum.Freelancer
-                                    ? 'freelancer'
-                                    : 'satshoot'
-                            console.log('payment model 6 ');
-                             
+                            const failedPaymentRecipient =
+                                userEnum === UserEnum.Freelancer ? 'freelancer' : 'satshoot';
+
                             errorMessage = `Failed to pay ${failedPaymentRecipient}:${err}`;
                             return null;
                         });
@@ -369,11 +358,7 @@
                 'SatShoot Payment might have failed!'
             );
 
-            if (
-                paid.get(UserEnum.Freelancer)
-                    && paid.get(UserEnum.Satshoot)
-                    && redirectPath
-            ) {
+            if (paid.get(UserEnum.Freelancer) && paid.get(UserEnum.Satshoot) && redirectPath) {
                 goto(redirectPath);
             } else {
                 paying = false;
