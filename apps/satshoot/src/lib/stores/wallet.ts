@@ -5,6 +5,7 @@ import NDKWalletService, { NDKCashuWallet, NutzapMonitor } from '@nostr-dev-kit/
 import { derived, writable, type Readable } from 'svelte/store';
 import { myTickets } from './freelance-eventstores';
 import currentUser from './user';
+import { SatShootPubkey } from '$lib/utils/misc';
 
 export const wallet = writable<NDKCashuWallet | null>(null);
 export const ndkNutzapMonitor = writable<NutzapMonitor | null>(null);
@@ -48,13 +49,14 @@ export const cashuPaymentInfoMap: Readable<Map<string, CashuPaymentInfo>> = deri
             // Copy the current state of previousMap to start fresh but retain processed data
             const newMap = new Map(previousMap);
 
-            // construct a string array which contains all the user who has won the offer and current logged in user
+            // construct a string array which contains all the user who has won the offer, current logged in user and satshoot
             const users = $myTickets
                 .map((myTicket) => myTicket.winnerFreelancer)
                 .filter((winner) => winner !== undefined);
             if ($currentUser) {
                 users.push($currentUser.pubkey);
             }
+            users.push(SatShootPubkey);
 
             // Create an array of promises for each user to fetch payment info only if not already cached
             const promises = users.map((user) => {
