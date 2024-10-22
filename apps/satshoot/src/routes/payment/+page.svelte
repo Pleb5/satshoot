@@ -108,13 +108,14 @@
                 $wallet
                     .balance()
                     .then((balance) => {
+                        const totalAmount = satshootShare + pledgedAmount + freelancerShare;
                         console.log('balance :>> ', balance);
-                        console.log('amount :>> ', amount);
+                        console.log('totalAmount :>> ', totalAmount);
                         if (!balance) {
                             canPayWithEcash = false;
                             ecashTooltipText = `Don't have enough balance in ecash wallet`;
                             errorMessage = `Don't have enough balance in ecash wallet`;
-                        } else if (balance[0].amount < amount) {
+                        } else if (balance[0].amount < totalAmount) {
                             canPayWithEcash = false;
                             ecashTooltipText = `Don't have enough balance in ecash wallet`;
                             errorMessage = `Don't have enough balance in 
