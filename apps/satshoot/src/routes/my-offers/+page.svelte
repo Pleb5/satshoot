@@ -196,6 +196,7 @@ onMount(() => {
                                 {offer}
                                 countAllOffers={true}
                                 enableChat={true}
+                                showPoster={false}
                             >
                             </OfferCard>
                         </div>
@@ -205,7 +206,13 @@ onMount(() => {
                 <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each wonOffers as offer, i (offer.id) }
                         <div class="flex justify-center {showWonOffer[i] ? '' : 'hidden'}">
-                            <OfferCard {offer} countAllOffers={true} enableChat={true}/>
+                            <OfferCard
+                                {offer}
+                                countAllOffers={true}
+                                enableChat={true}
+                                showPoster={false}
+                            >
+                            </OfferCard>
                         </div>
                     {/each}
                 </div>
@@ -213,7 +220,13 @@ onMount(() => {
                 <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each lostOffers as offer, i (offer.id) }
                         <div class="flex justify-center {showLostOffer[i] ? '' : 'hidden'}">
-                            <OfferCard {offer} countAllOffers={true} enableChat={true}/>
+                            <OfferCard
+                                {offer}
+                                countAllOffers={true}
+                                enableChat={true}
+                                showPoster={false}
+                            >
+                            </OfferCard>
                         </div>
                     {/each}
                 </div>

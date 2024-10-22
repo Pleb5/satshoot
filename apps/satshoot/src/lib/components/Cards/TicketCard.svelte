@@ -52,6 +52,7 @@
     let processedDescription = '';
     export let countAllOffers = true;
     export let tagCallback: ((tag: string) => void) | null = null;
+    export let showPoster = true
     export let showReputation = true;
     export let openReputation = true;
     export let showReview = true;
@@ -348,20 +349,21 @@
             <div class="text-center text-base md:text-lg break-words whitespace-pre-line">
                 {@html processedDescription}
             </div>
-
-            <hr class="my-4" />
-
-            <div class="flex flex-col items-center mb-4">
-                <div class="flex items-center">
-                    <h4 class="h5 sm:h4">Posted by:</h4>
-                </div>
-                <a class="anchor text-lg sm:text-xl" href={'/' + npub}>
-                    <div class="flex justify-center items-center gap-x-2 z-0">
-                        <Avatar src={avatarImage} width="w-12" />
-                        {name ? name : npub.slice(0, 10) + '...'}
+            
+            {#if showPoster}
+                <hr class="my-4" />
+                <div class="flex flex-col items-center mb-4">
+                    <div class="flex items-center">
+                        <h4 class="h5 sm:h4">Posted by:</h4>
                     </div>
-                </a>
-            </div>
+                    <a class="anchor text-lg sm:text-xl" href={'/' + npub}>
+                        <div class="flex justify-center items-center gap-x-2 z-0">
+                            <Avatar src={avatarImage} width="w-12" />
+                            {name ? name : npub.slice(0, 10) + '...'}
+                        </div>
+                    </a>
+                </div>
+            {/if}
             {#if showReputation && $currentUser && ticket.pubkey !== $currentUser.pubkey}
                 <ReputationCard
                     type={ReviewType.Client}

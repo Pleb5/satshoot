@@ -150,15 +150,27 @@ onMount(() => {
                 <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each newTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showNewTicket[i] ? '' : 'hidden'}">
-                            <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
+                            <TicketCard 
+                                {ticket}
+                                countAllOffers={true}
+                                titleSize={'md md:text-xl'}
+                                showPoster={false}
+                            />
                         </div>
                     {/each}
                 </div>
                 {:else if $ticketTabStore === TicketStatus.InProgress}
                 <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each inProgressTickets as ticket, i (ticket.id)}
-                        <div class="flex justify-center {showInProgressTicket[i] ? '' : 'hidden'}">
-                            <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
+                        <div class="flex justify-center 
+                            {showInProgressTicket[i] ? '' : 'hidden'}"
+                        >
+                            <TicketCard 
+                                {ticket}
+                                countAllOffers={true}
+                                titleSize={'md md:text-xl'}
+                                showPoster={false}
+                            />
                         </div>
                     {/each}
                 </div>
@@ -166,7 +178,12 @@ onMount(() => {
                 <div class="grid grid-cols-1 items-center gap-y-4 mb-8">
                     {#each closedTickets as ticket, i (ticket.id)}
                         <div class="flex justify-center {showClosedTicket[i] ? '' : 'hidden'}">
-                            <TicketCard {ticket} countAllOffers={true} titleSize={'md md:text-xl'}/>
+                            <TicketCard 
+                                {ticket}
+                                countAllOffers={true}
+                                titleSize={'md md:text-xl'}
+                                showPoster={false}
+                            />
                         </div>
                     {/each}
                 </div>
