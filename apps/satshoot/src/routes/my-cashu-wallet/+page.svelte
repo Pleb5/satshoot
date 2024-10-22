@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/ndk';
+    import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
     import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import {
@@ -15,7 +15,7 @@
     import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
     import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
-    import { NDKCashuMintList, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
+    import { NDKCashuMintList, NDKPrivateKeySigner, NDKRelaySet } from '@nostr-dev-kit/ndk';
     import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
     import currentUser from '$lib/stores/user';
     import Warning from '$lib/components/Warning.svelte';
@@ -121,24 +121,7 @@
             cashuMintList.relays = DEFAULTRELAYURLS;
             cashuMintList.mints = newWallet.mints;
 
-            cashuMintList
-                .publishReplaceable()
-                .then(() => {
-                    const t: ToastSettings = {
-                        message: `Cashu Payment Info updated!`,
-                    };
-                    toastStore.trigger(t);
-
-                    // Set user's payment info on successful wallet and info publish
-                    $cashuPaymentInfoMap.set($currentUser!.pubkey, cashuMintList);
-                })
-                .catch((err) => {
-                    console.error(err);
-                    const t: ToastSettings = {
-                        message: `Failed to update Cashu Payment Info : ${err}`,
-                    };
-                    toastStore.trigger(t);
-                });
+            publishCashuMintList(cashuMintList);
         }
     }
 
@@ -165,21 +148,7 @@
                 ndkCashuMintList.mints = cashuWallet!.mints;
                 ndkCashuMintList.relays = cashuWallet!.relays;
 
-                ndkCashuMintList
-                    .publishReplaceable()
-                    .then(() => {
-                        toastStore.trigger({
-                            message: `Cashu payment info updated!`,
-                        });
-                        // Set user's payment info on successful wallet and info publish
-                        $cashuPaymentInfoMap.set($currentUser!.pubkey, ndkCashuMintList);
-                    })
-                    .catch((err) => {
-                        console.log(err);
-                        toastStore.trigger({
-                            message: `Failed to update Cashu Payment Info : ${err}`,
-                        });
-                    });
+                publishCashuMintList(ndkCashuMintList);
             }
         } catch (e) {
             console.trace(e);
@@ -187,6 +156,39 @@
                 message: `Wallet update failed! Reason: ${e}`,
             });
         }
+    }
+
+    async function publishCashuMintList(cashuMintList: NDKCashuMintList) {
+        const relayUrls = new Set<string>();
+
+        relayUrls.add(blastrUrl);
+
+        $ndk.pool.urls().forEach((relayUrl) => {
+            relayUrls.add(relayUrl);
+        });
+
+        cashuMintList.relays.forEach((relayUrl) => {
+            relayUrls.add(relayUrl);
+        });
+
+        cashuMintList
+            .publishReplaceable(NDKRelaySet.fromRelayUrls(Array.from(relayUrls), $ndk))
+            .then(() => {
+                const t: ToastSettings = {
+                    message: `Cashu Payment Info updated!`,
+                };
+                toastStore.trigger(t);
+
+                // Set user's payment info on successful wallet and info publish
+                $cashuPaymentInfoMap.set($currentUser!.pubkey, cashuMintList);
+            })
+            .catch((err) => {
+                console.error(err);
+                const t: ToastSettings = {
+                    message: `Failed to update Cashu Payment Info : ${err}`,
+                };
+                toastStore.trigger(t);
+            });
     }
 
     function editName() {
