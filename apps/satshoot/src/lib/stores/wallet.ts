@@ -15,7 +15,6 @@ export function walletInit(ndk: NDKSvelte, user: NDKUser) {
     let hasSubscribedForNutZaps = false;
 
     service.on('wallet:default', (w) => {
-        console.log('wallet:default :>> ', w);
         const ndkCashuWallet = w as NDKCashuWallet;
         wallet.set(ndkCashuWallet);
         if (!hasSubscribedForNutZaps) {
