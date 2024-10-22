@@ -26,6 +26,7 @@ export const bunkerPerms = [
     `sign_event:${NDKKind.WalletChange}`,
     `sign_event:${NDKKind.CashuQuote}`,
     `sign_event:${NDKKind.CashuToken}`,
+    `sign_event:${NDKKind.EventDeletion}`,
     `sign_event:${NDKKind.Nutzap}`,
     `sign_event:${NDKKind.RelayList}`,
     `sign_event:${NDKKind.HttpAuth}`,
