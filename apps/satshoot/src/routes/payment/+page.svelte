@@ -603,9 +603,9 @@
                 <div class="font-bold">
                     {insertThousandSeparator(satshootShare) +
                         ' + ' +
-                        insertThousandSeparator(pledgedAmount) +
+                        insertThousandSeparator(pledgedAmount ?? 0) +
                         ' = ' +
-                        insertThousandSeparator(satshootShare + pledgedAmount) +
+                        insertThousandSeparator(satshootShare + (pledgedAmount ?? 0)) +
                         'sats'}
                 </div>
             </div>
