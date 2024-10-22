@@ -46,6 +46,7 @@
     export let countAllOffers = true;
     export let showDescription = true;
     export let showReputation = true;
+    export let showPoster = true;
     export let showDetails = true;
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
@@ -91,7 +92,6 @@
         dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
         ticketFilter['#d'] = [dTagOfTicket];
 
-        console.log('offer in onMount', offer);
         switch (offer.pricing) {
             case Pricing.Absolute:
                 pricing = 'sats';
@@ -463,17 +463,19 @@
         {/if}
         <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start px-4 pt-2 pb-4">
-            <div class="flex flex-col items-center mb-4">
-                <div class="flex items-center">
-                    <h4 class="h5 sm:h4">Posted by:</h4>
+            {#if showPoster}
+                <div class="flex flex-col items-center mb-4">
+                    <div class="flex items-center">
+                        <h4 class="h5 sm:h4">Posted by:</h4>
+                    </div>
+                    <a class="anchor text-lg sm:text-xl" href={'/' + npub}>
+                        <div class="flex justify-center items-center gap-x-2">
+                            <Avatar src={avatarImage} width="w-12" />
+                            {name ? name : npub.slice(0, 10) + '...'}
+                        </div>
+                    </a>
                 </div>
-            <a class="anchor text-lg sm:text-xl" href={'/' + npub}>
-                <div class="flex justify-center items-center gap-x-2">
-                    <Avatar src={avatarImage} width="w-12" />
-                    {name ? name : npub.slice(0, 10) + '...'}
-                </div>
-            </a>
-            </div>
+            {/if}
             {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
                 <ReputationCard type={ReviewType.Freelancer} user={offer.pubkey} />
             {/if}

@@ -19,7 +19,6 @@ import { insertThousandSeparator } from '$lib/utils/misc';
 
 export let zapEvent: NDKEvent;
 
-console.log(zapEvent)
 const zapInvoice:NDKZapInvoice|null = zapInvoiceFromEvent(zapEvent);
 
 const zapperUser = zapEvent.kind === NDKKind.Zap
@@ -110,6 +109,9 @@ onMount(async() => {
                     showReputation={false}
                     showTicketReputation={false}
                     showTicketReview={false}
+                    showDescription={false}
+                    showPoster={false}
+                    showDetails={false}
                 >
                 </OfferCard>
             </div>
