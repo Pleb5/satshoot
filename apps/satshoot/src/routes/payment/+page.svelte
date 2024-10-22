@@ -329,10 +329,9 @@
                     nutzapEvent.recipientPubkey = pubkey;
                     await nutzapEvent.sign();
 
-                    const receiversRelays = await getRelayListForUser(pubkey, $ndk);
-
+                    // According to spec NutZap should be published to relays indicated in Nutzap informational event (10009)
                     const publishedRelaySet = await nutzapEvent.publish(
-                        NDKRelaySet.fromRelayUrls(receiversRelays.readRelayUrls, $ndk)
+                        NDKRelaySet.fromRelayUrls(cashuPaymentInfo.relays, $ndk)
                     );
 
                     console.log('publishedRelaySet :>> ', publishedRelaySet);
