@@ -369,15 +369,19 @@
             <div class="flex items-center gap-x-2 max-w-full flex-wrap">
                 <div class="flex gap-x-1 max-w-full flex-wrap">
                     <div class="underline">Website:</div>
-                    <a class="anchor max-w-full" href={website}>
-                        <div class="max-w-full break-words">{website}</div>
-                    </a>
+                    <div class="flex items-center flex-wrap max-w-full gap-x-1">
+                        <a class="anchor max-w-full" href={website}>
+                            <div class="max-w-full break-words">{website}</div>
+                        </a>
+                        {#if editable}
+                            <button on:click={editWebsite}>
+                                <i class="text-primary-300-600-token 
+                                    fa-solid fa-pen-to-square text-lg" 
+                                />
+                            </button>
+                        {/if}
+                    </div>
                 </div>
-                {#if editable}
-                    <button on:click={editWebsite}>
-                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
-                    </button>
-                {/if}
             </div>
             <div class=" flex items-center gap-x-2 max-w-full flex-wrap">
                 <div class="flex gap-x-2 items-center max-w-full flex-wrap">
