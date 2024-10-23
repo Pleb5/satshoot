@@ -96,7 +96,6 @@
             '#d': [dTag],
         };
 
-        console.log('connected, setting up')
         ticketSubscription = $ndk.subscribe(ticketFilter, subOptions);
         ticketSubscription.on('event', (event: NDKEvent) => {
             // Dismiss with old tickets
@@ -107,7 +106,6 @@
                 }
             }
             ticket = TicketEvent.from(event);
-            console.log('ticket', ticket)
             user = $ndk.getUser({pubkey: ticket.pubkey});
 
             // Scroll to top as soon as ticket arrives
