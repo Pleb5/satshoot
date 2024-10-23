@@ -22,6 +22,7 @@
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { fetchEventFromRelays } from "$lib/utils/helpers";
+    import { shortenTextWithEllipsesInMiddle } from "$lib/utils/helpers";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -230,7 +231,7 @@
     const popupNip05: PopupSettings = {
         event: 'click',
         target: 'popupNip05',
-        placement: 'bottom'
+        placement: 'left'
     };
 
 </script>
@@ -246,7 +247,11 @@
             </div>
             <div class="flex items-center justify-center gap-x-4 ">
                 <h2 class="h2 text-center font-bold text-lg sm:text-2xl">
-                    {userProfile?.name ?? userProfile?.displayName ?? npub.substring(0,10)}
+                    {
+                        userProfile?.name ??
+                        userProfile?.displayName ??
+                        shortenTextWithEllipsesInMiddle(npub, 20)
+                    }
                 </h2>
                 <span>
                     {#if partOfWoT}
@@ -296,9 +301,11 @@
     </div>
     <footer class="mt-4">
         <div class="flex flex-col gap-y-1">
-            <div class="flex items-center gap-x-2">
+            <div class="flex items-center gap-x-1 max-w-full flex-wrap">
                 <div class="underline">Npub:</div>
-                <div>{npub?.substring(0,20) + '...'}</div>
+                <div class="max-w-full break-words">
+                    {shortenTextWithEllipsesInMiddle(npub, 18)}
+                </div>
                 {#if npub}
                     <div>
                         <button 
@@ -312,57 +319,59 @@
                     </div>
                 {/if}
             </div>
-            <div class="flex items-center gap-x-2">
-                <div class="flex gap-x-2">
-                    <div class="underline">
-                        Nip05:
-                    </div>
-                    <div>{nip05 ?? '?'}</div>
+            <div class="flex items-center gap-x-1 max-w-full flex-wrap">
+                <div class="underline">
+                    Nip05:
                 </div>
-                {#if nip05}
-                    <div>
-                        <button 
-                            class="btn btn-icon "
-                            use:clipboard={nip05}
-                        >
-                            <span>
-                                <i class='fa-regular fa-copy'/>
-                            </span>
-                            <button>
-                    </div>
-                    <div>
-                        {#if validNIP05}
-                            <i 
-                                class="fa-solid fa-circle-check text-xl {nip05TrustColor}"
-                                use:popup={popupNip05}
+                <div class="flex items-center gap-x-2 flex-wrap max-w-full">
+                    <div class="max-w-full break-words">{nip05 ?? '?'}</div>
+                    {#if nip05}
+                        <div>
+                            <button 
+                                class="btn btn-icon "
+                                use:clipboard={nip05}
                             >
-                            </i>
-                            <div data-popup="popupNip05">
-                                <div class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto">
-                                    Valid Nip05
-                                    <div class="arrow {bgNip05TrustColor}" />
+                                <span>
+                                    <i class='fa-regular fa-copy'/>
+                                </span>
+                                <button>
+                        </div>
+                        <div>
+                            {#if validNIP05}
+                                <i 
+                                    class="fa-solid fa-circle-check text-xl {nip05TrustColor}"
+                                    use:popup={popupNip05}
+                                >
+                                </i>
+                                <div data-popup="popupNip05">
+                                    <div class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto">
+                                        Valid Nip05
+                                        <div class="arrow {bgNip05TrustColor}" />
+                                    </div>
                                 </div>
-                            </div>
-                        {:else}
-                            <i 
-                                class="fa-solid fa-circle-question text-xl {nip05TrustColor}"
-                                use:popup={popupNip05}
-                            >
-                            </i>
-                            <div data-popup="popupNip05">
-                                <div class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto">
-                                    Could NOT validate Nip05!
-                                    <div class="arrow {bgNip05TrustColor}" />
+                            {:else}
+                                <i 
+                                    class="fa-solid fa-circle-question text-xl {nip05TrustColor}"
+                                    use:popup={popupNip05}
+                                >
+                                </i>
+                                <div data-popup="popupNip05">
+                                    <div class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto">
+                                        Could NOT validate Nip05!
+                                        <div class="arrow {bgNip05TrustColor}" />
+                                    </div>
                                 </div>
-                            </div>
-                        {/if}
-                    </div>
-                {/if}
+                            {/if}
+                        </div>
+                    {/if}
+                </div>
             </div>
-            <div class="flex items-center gap-x-4">
-                <div class="flex gap-x-2">
+            <div class="flex items-center gap-x-2 max-w-full flex-wrap">
+                <div class="flex gap-x-1 max-w-full flex-wrap">
                     <div class="underline">Website:</div>
-                    <a class="anchor" href={website}><div>{website}</div></a>
+                    <a class="anchor max-w-full" href={website}>
+                        <div class="max-w-full break-words">{website}</div>
+                    </a>
                 </div>
                 {#if editable}
                     <button on:click={editWebsite}>
@@ -370,10 +379,10 @@
                     </button>
                 {/if}
             </div>
-            <div class=" flex items-center gap-x-2 ">
-                <div class="flex gap-x-2">
+            <div class=" flex items-center gap-x-2 max-w-full flex-wrap">
+                <div class="flex gap-x-2 items-center max-w-full flex-wrap">
                     <div class="underline">LN Address:</div>
-                    <div>{lud16 ?? '?'}</div>
+                    <div class="max-w-full break-words">{lud16 ?? '?'}</div>
                 </div>
                 {#if editable}
                     <button on:click={editLud16}>

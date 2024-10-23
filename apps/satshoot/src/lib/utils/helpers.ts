@@ -492,3 +492,17 @@ export function arraysAreEqual<T>(arr1: T[], arr2: T[]): boolean {
     // Check if all elements are equal (using deep equality for objects)
     return arr1.every((element, index) => element === arr2[index]);
 }
+
+export function shortenTextWithEllipsesInMiddle(text: string, maxLength: number): string {
+    if (text.length <= maxLength) return text;
+    
+    const textCharactersLeftAlone: number = maxLength - 3;
+    const lengthOfStart = Math.round(textCharactersLeftAlone / 2);
+    const lengthOfEnd: number = textCharactersLeftAlone - lengthOfStart;
+
+    const result = text.substring(0, lengthOfStart)
+                    + "..."
+                    + text.substring(text.length - lengthOfEnd - 1);
+
+    return result;
+}
