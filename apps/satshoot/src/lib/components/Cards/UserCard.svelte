@@ -2,7 +2,9 @@
     import ndk, { blastrUrl } from "$lib/stores/ndk";
     import currentUser from '$lib/stores/user';
     import {
+    NDKKind,
         NDKRelay, 
+        profileFromEvent, 
         type NDKUser,
         type NDKUserProfile
     } from "@nostr-dev-kit/ndk";
@@ -19,6 +21,7 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
+    import { fetchEventFromRelays } from "$lib/utils/helpers";
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -61,9 +64,30 @@
     }
 
     async function setProfile() {
-        const profile = await user.fetchProfile();
+        // Logged in user's metadata MUST be fetched from relays
+        // to avoid metadata edit from stale state
+        // Otherwise we can fall back to cache
+        const fallBackToCache = (user.pubkey !== $currentUser?.pubkey);
+
+        const metadataFilter = {
+            kinds: [NDKKind.Metadata],
+            authors: [user.pubkey],
+        };
+
+        const metadataRelays = [
+            ...$ndk.outboxPool!.connectedRelays(),
+            ...$ndk.pool!.connectedRelays()
+        ];
+
+        const profile = await fetchEventFromRelays(
+            metadataFilter,
+            3000,
+            fallBackToCache,
+            metadataRelays
+        );
+
         if (profile) {
-            userProfile = profile;
+            userProfile = profileFromEvent(profile);
             if (userProfile.image) {
                 avatarImage = userProfile.image;
             }
