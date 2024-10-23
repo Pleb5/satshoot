@@ -329,6 +329,63 @@
         cashuWallet.checkProofs();
     }
 
+    async function backupWallet() {
+        if (!cashuWallet) return;
+
+        const walletTagId = cashuWallet.tagId();
+
+        const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
+
+        const tokens = await Promise.all(tokenPromises).catch((err) => {
+            console.error('Could not convert ecash tokens into nostr events', err);
+            toastStore.trigger({
+                message: 'Failed to backup! Could not convert ecash tokens into nostr events.',
+                background: `bg-error-300-600-token`,
+            });
+            return null;
+        });
+
+        if (!tokens) return;
+
+        const json = {
+            [walletTagId]: {
+                wallet: cashuWallet.event.rawEvent(),
+                tokens,
+            },
+        };
+
+        try {
+            const stringified = JSON.stringify(json);
+            const encrypted = await $ndk.signer!.encrypt($currentUser!, stringified);
+
+            localStorage.setItem('encryptedWallet', encrypted);
+            saveToFile(encrypted);
+        } catch (error) {
+            console.error('An error occurred in encryption of wallet content', error);
+            toastStore.trigger({
+                message: 'Failed to backup! Error occurred in encryption.',
+                background: `bg-error-300-600-token`,
+            });
+        }
+    }
+
+    // Function to save encrypted content to a file
+    function saveToFile(content: string) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+
+        // Create a link element to trigger download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'encryptedWallet.enc';
+        a.click();
+
+        // Clean up
+        URL.revokeObjectURL(url);
+    }
+
+    async function recoverWallet() {}
+
     const tooltipRemoveMint: PopupSettings = {
         event: 'hover',
         target: 'tooltipRemoveMint',
@@ -392,7 +449,7 @@
                     </div>
                 </div>
 
-                <div class="flex justify-center gap-x-12">
+                <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
                     <button
                         on:click={deposit}
                         type="button"
@@ -406,6 +463,20 @@
                         class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                     >
                         Withdraw
+                    </button>
+                    <button
+                        on:click={backupWallet}
+                        type="button"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
+                    >
+                        Backup
+                    </button>
+                    <button
+                        on:click={recoverWallet}
+                        type="button"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
+                    >
+                        Recover
                     </button>
                 </div>
 
