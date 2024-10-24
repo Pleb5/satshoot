@@ -136,12 +136,6 @@
         hideAppMenu = false;
     }
 
-    $ndk.pool.on('relay:connect', () => {
-        if ($ndk.pool.stats().disconnected > 0) {
-            console.log('Relay connected but there are still relays disconnected!');
-        }
-    });
-
     $: if ($retryConnection === 0) {
         toastStore.clear();
         const t: ToastSettings = {

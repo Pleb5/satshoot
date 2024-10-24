@@ -98,14 +98,6 @@
         drawerStore.open(drawerSettings);
     }
 
-    // $: if ($clientReviews) {
-    //     console.log('currentUser', $currentUser)
-    //     console.log('user', user)
-    //     console.log('clientReviews', $clientReviews)
-    //     console.log('freelancerReviews', $freelancerReviews)
-    // }
-    // $: console.log($freelancerReviews)
-
     $: if ($currentUser && user && $clientReviews && $freelancerReviews) {
         let otherTypeOfRatings;
         if (reviewType === ReviewType.Client) {
@@ -159,7 +151,8 @@
         }
     }
 
-    $: if ($currentUser && needSetup && user && $wot && $wotFilteredTickets && $wotFilteredOffers) {
+    $: if ($currentUser && needSetup && user && $wot
+        && $wotFilteredTickets && $wotFilteredOffers) {
         needSetup = true;
 
         const allTicketsOfUser = $wotFilteredTickets.filter(
@@ -193,7 +186,11 @@
         // console.log('allTicketsWhereUserInvolved', allTicketsWhereUserInvolved);
 
         allEarningsStore = $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#p': [user], '#e': allWinnerOffersOfUser },
+            { 
+                kinds: [NDKKind.Zap, NDKKind.Nutzap], 
+                '#p': [user],
+                '#e': allWinnerOffersOfUser
+            },
             subOptions
         );
 
@@ -218,7 +215,6 @@
             if (zap.kind === NDKKind.Zap) {
                 const zapInvoice = zapInvoiceFromEvent(zap);
                 if (zapInvoice && zapInvoice.amount) {
-                    // console.log('amount', zapInvoice.amount)
                     allEarnings += Math.round(zapInvoice.amount / 1000);
                 }
             } else if (zap.kind === NDKKind.Nutzap) {
@@ -236,7 +232,6 @@
             if (zap.kind === NDKKind.Zap) {
                 const zapInvoice = zapInvoiceFromEvent(zap);
                 if (zapInvoice && zapInvoice.amount) {
-                    // console.log('amount', zapInvoice.amount)
                     allPayments += Math.round(zapInvoice.amount / 1000);
                 }
             } else if (zap.kind === NDKKind.Nutzap) {
@@ -325,7 +320,8 @@
             </div>
         </svelte:fragment>
         <svelte:fragment slot="content">
-            {#if user && reviewArraysExist && $allEarningsStore && $allPaymentsStore && $allPledgesStore}
+            {#if user && reviewArraysExist && $allEarningsStore 
+                && $allPaymentsStore && $allPledgesStore}
                 <div
                     class="flex flex-grow justify-center sm:justify-between flex-wrap gap-y-2 gap-x-4"
                 >

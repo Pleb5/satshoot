@@ -50,14 +50,11 @@
     $: bgNip05TrustColor = validNIP05 ? 'bg-tertiary-500' : 'bg-error-500';
 
     $: if (user) {
-        console.log('setProfile')
         setProfile();
     }
 
     $: if (user && nip05) {
-        console.log('nip05 to validate:', nip05)
         user.validateNip05(nip05).then((response:boolean|null)=>{
-            console.log('nip05', response);
             if (response) {
                 validNIP05 = true;
             }
@@ -102,7 +99,6 @@
 
                 $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, $ndk));
 
-                console.log('relays sending to:', $ndk.pool)
                 await $currentUser.publish();
 
                 const t: ToastSettings = {
