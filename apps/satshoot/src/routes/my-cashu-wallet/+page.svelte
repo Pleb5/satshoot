@@ -332,38 +332,27 @@
     async function backupWallet() {
         if (!cashuWallet) return;
 
-        const walletTagId = cashuWallet.tagId();
+        try {
+            const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
+            const tokens = await Promise.all(tokenPromises);
 
-        const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
+            cashuWallet.event.tags = cashuWallet.publicTags;
+            cashuWallet.event.content = JSON.stringify(cashuWallet.privateTags);
+            await cashuWallet.event.encrypt($currentUser!, undefined, 'nip44');
 
-        const tokens = await Promise.all(tokenPromises).catch((err) => {
-            console.error('Could not convert ecash tokens into nostr events', err);
-            toastStore.trigger({
-                message: 'Failed to backup! Could not convert ecash tokens into nostr events.',
-                background: `bg-error-300-600-token`,
-            });
-            return null;
-        });
-
-        if (!tokens) return;
-
-        const json = {
-            [walletTagId]: {
+            const json = {
                 wallet: cashuWallet.event.rawEvent(),
                 tokens,
-            },
-        };
+            };
 
-        try {
-            const stringified = JSON.stringify(json);
-            const encrypted = await $ndk.signer!.encrypt($currentUser!, stringified);
+            const stringified = JSON.stringify(json, null, 2);
 
-            localStorage.setItem('encryptedWallet', encrypted);
-            saveToFile(encrypted);
+            localStorage.setItem('wallet-backup', stringified);
+            saveToFile(stringified);
         } catch (error) {
             console.error('An error occurred in encryption of wallet content', error);
             toastStore.trigger({
-                message: 'Failed to backup! Error occurred in encryption.',
+                message: `Failed to backup! An error occurred in backup process.`,
                 background: `bg-error-300-600-token`,
             });
         }
@@ -377,7 +366,7 @@
         // Create a link element to trigger download
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'encryptedWallet.enc';
+        a.download = 'wallet-backup.json';
         a.click();
 
         // Clean up
