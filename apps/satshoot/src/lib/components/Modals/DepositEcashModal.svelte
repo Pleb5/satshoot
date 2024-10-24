@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { cashuTokensBackup } from '$lib/stores/wallet';
     import type { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
 
@@ -26,6 +27,12 @@
 
         ndkCashuDeposit.on('success', (token) => {
             console.log('ndkCashuDeposit successful', token);
+            cashuTokensBackup.update((map) => {
+                // add token to backup
+                map.set(token.id, token.rawEvent());
+
+                return map;
+            });
             closeModal();
             toastStore.trigger({
                 message: `Successfully deposited ${amount} ${unit}!`,

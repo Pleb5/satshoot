@@ -1,14 +1,31 @@
 import { getCashuPaymentInfo } from '$lib/utils/helpers';
-import { NDKUser, type CashuPaymentInfo } from '@nostr-dev-kit/ndk';
+import { NDKUser, type CashuPaymentInfo, type NostrEvent } from '@nostr-dev-kit/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import NDKWalletService, { NDKCashuWallet, NutzapMonitor } from '@nostr-dev-kit/ndk-wallet';
-import { derived, writable, type Readable } from 'svelte/store';
+import NDKWalletService, {
+    NDKCashuToken,
+    NDKCashuWallet,
+    NutzapMonitor,
+} from '@nostr-dev-kit/ndk-wallet';
+import { derived, get, writable, type Readable } from 'svelte/store';
 import { myTickets } from './freelance-eventstores';
 import currentUser from './user';
-import { SatShootPubkey } from '$lib/utils/misc';
+import { getMapSerializer, SatShootPubkey } from '$lib/utils/misc';
+import type { Proof } from '@cashu/cashu-ts';
+import { persisted } from 'svelte-persisted-store';
+import ndk from './ndk';
 
 export const wallet = writable<NDKCashuWallet | null>(null);
 export const ndkNutzapMonitor = writable<NutzapMonitor | null>(null);
+
+export const unsavedProofsBackup = persisted('unsavedProofsBackup', new Map<string, Proof[]>(), {
+    storage: 'local',
+    serializer: getMapSerializer(),
+});
+
+export const cashuTokensBackup = persisted('cashuTokensBackup', new Map<string, NostrEvent>(), {
+    storage: 'local',
+    serializer: getMapSerializer(),
+});
 
 export function walletInit(ndk: NDKSvelte, user: NDKUser) {
     const service = new NDKWalletService(ndk);
@@ -20,6 +37,7 @@ export function walletInit(ndk: NDKSvelte, user: NDKUser) {
         wallet.set(ndkCashuWallet);
         if (!hasSubscribedForNutZaps) {
             hasSubscribedForNutZaps = true;
+            handleRolloverEvents(ndkCashuWallet);
             subscribeForNutZaps(ndk, user, ndkCashuWallet);
         }
     });
@@ -35,6 +53,76 @@ export const subscribeForNutZaps = (ndk: NDKSvelte, user: NDKUser, wallet: NDKCa
     });
     nutzapMonitor.start();
     ndkNutzapMonitor.set(nutzapMonitor);
+};
+
+const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
+    cashuWallet.on(
+        'rollover_failed',
+        async (
+            usedTokens: NDKCashuToken[],
+            movedProofs: Proof[],
+            changes: Proof[],
+            mint: string
+        ) => {
+            console.log('rollover failed in ndk, backing up tokens at app level');
+
+            usedTokens.forEach((t) => {
+                cashuWallet.removeTokenId(t.id);
+            });
+
+            const proofsToSave = movedProofs;
+            for (const change of changes) {
+                proofsToSave.push(change);
+            }
+
+            if (proofsToSave.length > 0) {
+                unsavedProofsBackup.update((map) => {
+                    const proofs = map.get(mint);
+
+                    if (proofs) {
+                        const existingProofIds = proofs.map((proof) => proof.id);
+
+                        const newProofs = proofsToSave.filter(
+                            (proof) => !existingProofIds.includes(proof.id)
+                        );
+
+                        map.set(mint, [...proofs, ...newProofs]);
+                    } else {
+                        map.set(mint, proofsToSave);
+                    }
+
+                    return map;
+                });
+            }
+
+            cashuTokensBackup.update((map) => {
+                // remove used tokens from backup
+                usedTokens.forEach((t) => {
+                    map.delete(t.id);
+                });
+
+                return map;
+            });
+        }
+    );
+
+    cashuWallet.on(
+        'rollover_done',
+        (consumedTokens: NDKCashuToken[], createdToken: NDKCashuToken | undefined) => {
+            console.log('Rollover done, backing up tokens');
+
+            cashuTokensBackup.update((map) => {
+                // remove consumed tokens from backup
+                consumedTokens.forEach((t) => {
+                    map.delete(t.id);
+                });
+
+                if (createdToken) map.set(createdToken.id, createdToken.rawEvent());
+
+                return map;
+            });
+        }
+    );
 };
 
 // Maintain a previous map outside the derived store to persist state across invocations
