@@ -32,6 +32,7 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
+    let validPledgePercent = true;
     let pricingMethod: Pricing;
     let amount = 0;
     let pledgeSplit = 0;
@@ -47,6 +48,14 @@
 
     const cBase =
         'card bg-surface-100-800-token w-screen/2 h-screen/2 p-4 flex justify-center items-center';
+
+    $: if (pledgeSplit >= 0 && pledgeSplit <= 100) {
+        validPledgePercent = true;
+        errorText = '';
+    } else {
+        validPledgePercent = false;
+        errorText = 'Set a valid Pledge Split percent!'
+    }
 
     async function postOffer() {
         if (!validate()) {
@@ -92,12 +101,9 @@
                     `SatShoot Offer update on Ticket: ${ticket.title} | \n\n` +
                     `Amount: ${offer.amount}${offer.pricing === Pricing.Absolute ? 'sats' : 'sats/min'} | \n` +
                     `Description: ${offer.description}`;
-                console.log('dm content', content);
                 dm.content = await ($ndk.signer as NDKSigner).encrypt(ticketHolderUser, content);
-                console.log('encrypted dm', dm);
 
-                const relays = await dm.publish();
-                console.log('relays published', relays);
+                await dm.publish();
             }
 
             posting = false;
@@ -328,7 +334,7 @@
                         type="button"
                         class="btn font-bold bg-success-400-500-token w-72"
                         on:click={postOffer}
-                        disabled={posting}
+                        disabled={posting || !validPledgePercent}
                     >
                         {#if posting}
                             <span>
