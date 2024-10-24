@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { onMount, tick, type SvelteComponent } from 'svelte';
-    import ndk from '$lib/stores/ndk';
-    import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
+    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/ndk';
+    import { wot } from '$lib/stores/wot';
+    import { NDKEvent, NDKKind, NDKRelaySet } from '@nostr-dev-kit/ndk';
 
     import { SatShootPubkey } from '$lib/utils/misc';
     
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 	import { getModalStore, getToastStore, getDrawerStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
+    import QuestionIcon from '../Icons/QuestionIcon.svelte';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -17,10 +19,40 @@
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
     let textArea:HTMLTextAreaElement;
-
     let posting = false;
 
+    let recommendationTooltip = 
+        "<div>"
+            + "You explicitly recommend to other people and nostr apps "
+            + "handling special freelance-related nostr events by SatShoot."
+        + "</div>"
+        + "<div>"
+            + "This helps other people discover SatShoot and also helps other apps"
+            + " handle this special data that they might not know about."
+        + "</div>";
+
+    let togglePostAppRecommendation = false;
+
     async function postFeedback() {
+
+        const appHandlerFilter = {
+            kinds: [NDKKind.AppHandler]
+        }
+        const fetchRelays = NDKRelaySet.fromRelayUrls([
+            ...$ndk.pool.urls(),
+            ...$ndk.outboxPool!.urls()
+        ], $ndk);
+
+        const appHandlerEvents = await $ndk.fetchEvents(appHandlerFilter, undefined, fetchRelays);
+        const eventArr = Array.from(appHandlerEvents)
+        
+
+        console.log(eventArr.filter((event: NDKEvent) => event.content.includes('highlighter')));
+        return;
+
+
+
+
         const kind1Event = new NDKEvent($ndk);
         kind1Event.kind = NDKKind.Text;
 
@@ -34,13 +66,31 @@
         kind1Event.tag(five);
         kind1Event.tag(satShootUser);
 
+        const ticketRecommendationEvent = new NDKEvent($ndk);
+        ticketRecommendationEvent.kind = NDKKind.AppRecommendation;
+        ticketRecommendationEvent.tags.push(
+            ['d', NDKKind.FreelanceTicket.toString()],
+            [
+                'a',
+                NDKKind.AppHandler.toString() + ':'
+                    + SatShootPubkey + ':'
+                    + '<d-id>',
+                DEFAULTRELAYURLS[0],
+                "web"
+            ]
+        );
+
         try {
             posting = true;
             await tick();
 
-            let relays = await kind1Event.publish();
+            await kind1Event.publish();
+
+            if (togglePostAppRecommendation) {
+                
+            }
             posting = false;
-            console.log(relays)
+
             const t: ToastSettings = {
                 message: 'Appreciate Your Feedback!',
                 timeout: 7000,
@@ -80,6 +130,24 @@
                 class="textarea"
                 bind:this={textArea}
             />
+            <div class="flex items-center justify-between">
+                <label class="flex items-center space-x-2">
+                    <input 
+                        class="checkbox"
+                        type="checkbox" 
+                        bind:checked={togglePostAppRecommendation} 
+                    />
+                    <p>Also recommend this app as a handler of Freelancer events</p>
+                </label>
+                <QuestionIcon
+                    extraClasses = "text-2xl [&>*]:pointer-events-none"
+                    triggerEvent = 'click'
+                    placement = 'top'
+                    popUpText = {recommendationTooltip}
+                />
+                <div>
+                </div>
+            </div>
             <div class="grid grid-cols-[30%_1fr] gap-x-2">
                 <button 
                     type="button"

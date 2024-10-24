@@ -1,6 +1,6 @@
 import {
+    NDKEvent,
     type NDKSigner,
-    type NDKEvent,
     NDKKind,
     NDKRelayList,
     NDKRelay,
@@ -505,4 +505,10 @@ export function shortenTextWithEllipsesInMiddle(text: string, maxLength: number)
                     + text.substring(text.length - lengthOfEnd - 1);
 
     return result;
+}
+
+export async function postAppHandlerInformation(ndk: NDKSvelte) {
+    const appHandlerEvent = new NDKEvent(ndk);
+    appHandlerEvent.kind = NDKKind.AppHandler;
+    
 }
