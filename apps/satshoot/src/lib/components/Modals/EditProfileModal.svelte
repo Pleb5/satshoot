@@ -20,7 +20,7 @@
 
     onMount(()=>{
         editedData = dataToEdit;
-        if (!editedData ?? fieldName === 'Website') {
+        if (!editedData && fieldName === 'Website') {
             editedData = 'https://';
         }
     });
