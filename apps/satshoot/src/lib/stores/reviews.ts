@@ -16,7 +16,10 @@ import {
     type Hexpubkey,
     type NDKFilter,
 } from '@nostr-dev-kit/ndk';
+
 import { orderEventsChronologically } from '$lib/utils/helpers';
+
+import type { Readable } from 'svelte/store';
 
 export const subOptions: NDKSubscriptionOptions = {
     closeOnEose: false,
@@ -100,42 +103,53 @@ export function userFreelancerRatings(source: Hexpubkey, target: Hexpubkey):
     return ratings
 }
 
-export function aggregateClientRatings(target: Hexpubkey)
-    : Map<string, number> {
-    const ratings: Map<string, number> = new Map();
-    const thumbString = 'Positive Overall Experience';
-    const availabilityString = 'Availability';
-    const communicationString = 'Communication';
+export interface aggregatedClientRatings {
+    thumbsUp: number,
+    thumbsDown: number,
+    availability: number,
+    communication: number,
+    average: number,
+}
 
-    const reviews = get(clientReviews).filter((r: ReviewEvent) => {
-        return r.reviewedPerson === target;
-    });
-    ratings.set(thumbString, 0);
-    ratings.set(availabilityString, 0);
-    ratings.set(communicationString, 0);
-
-    // Filter out duplicate reviews: Same person posted
-    // on the same event address but different event ID
-    for (const review of reviews) {
-        for(let i = 0; i < reviews.length; i++) {
-            const compareReview = reviews[i];
+function filterDuplicateReviews(reviews: ReviewEvent[])
+    : ReviewEvent[] {
+    const filteredReviews = reviews.filter((r: ReviewEvent) => );
+    for (const review of filteredReviews) {
+        for(let i = 0; i < filteredReviews.length; i++) {
+            const compareReview = filteredReviews[i];
             if (review.pubkey === compareReview.pubkey
                 && review.reviewedEventAddress === compareReview.reviewedEventAddress
                 && review.id !== compareReview.id) {
-                reviews.splice(i, 1);
+                filteredReviews.splice(i, 1);
             }
         }
     }
+}
 
-    // console.log('filtered target reviews', reviews)
+export function aggregateClientRatings(target: Hexpubkey)
+    : aggregatedClientRatings {
+    const reviews = get(clientReviews).filter((r: ReviewEvent) => {
+        return r.reviewedPerson === target;
+    });
+
+    const filteredReviews = filterDuplicateReviews()
+
+    const aggregateClientRatings: aggregatedClientRatings = {
+        thumbsUp: 0,
+        thumbsDown: 0,
+        availability: 0,
+        communication: 0,
+        average: 0,
+    };
+
+    // Filter out duplicate reviews: Same person posted
+    // on the same event address but different event ID
 
     let aggregatedAverage = 0;
     let numberOfReviews = 0;
     for (let i = 0; i < reviews.length; i++){
         const r = reviews[i];
-        // console.log('rating: ', r)
-        // currentUser must exist here bc reivews depend on wot
-        // and wot on currentUser(init  user)
+
         // Users own reviews are counted 4X in the aggregatedAverage score
         let scoreMultiplier = 1;
         numberOfReviews += 1;
@@ -147,7 +161,6 @@ export function aggregateClientRatings(target: Hexpubkey)
         aggregatedAverage += sum;
 
         const rating = r.clientRatings;
-        // console.log('rating: ', rating)
         if (rating.thumb) {
             const currentCount = ratings.get(thumbString) ?? 0;
             ratings.set(thumbString, currentCount + 1);
@@ -164,7 +177,6 @@ export function aggregateClientRatings(target: Hexpubkey)
 
     aggregatedAverage /= numberOfReviews;
     ratings.set("average", aggregatedAverage);
-    // console.log('ratings', ratings)
 
     return ratings;
 }
@@ -199,15 +211,11 @@ export function aggregateFreelancerRatings(target: Hexpubkey)
         }
     }
 
-    // console.log('filtered target reviews', reviews)
-
     let aggregatedAverage = 0;
     let numberOfReviews = 0;
     for (let i = 0; i < reviews.length; i++){
         const r = reviews[i];
-        // console.log('rating: ', r)
-        // currentUser must exist here bc reivews depend on wot
-        // and wot on currentUser(init  user)
+
         // Users own reviews are counted 4X in the aggregatedAverage score
         let scoreMultiplier = 1;
         numberOfReviews += 1;
