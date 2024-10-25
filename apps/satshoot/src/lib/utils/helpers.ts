@@ -22,7 +22,6 @@ import {
     loggedIn,
     loggingIn,
     loginMethod,
-    retryUserInit,
     followsUpdated,
     userRelaysUpdated,
 } from '../stores/user';
@@ -49,7 +48,7 @@ import { notifications } from '../stores/notifications';
 
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
-import { dev, browser } from '$app/environment';
+import { dev } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit } from '$lib/stores/wallet';
@@ -118,15 +117,8 @@ export async function initializeUser(ndk: NDKSvelte) {
         messageStore.startSubscription();
         allReviews.startSubscription();
         allReceivedZaps.startSubscription();
-
-        retryUserInit.set(false);
     } catch (e) {
         console.log('Could not initialize User. Reason: ', e);
-        if (browser && !get(retryUserInit)) {
-            retryUserInit.set(true);
-            console.log('Retrying...');
-            window.location.reload();
-        }
     }
 }
 

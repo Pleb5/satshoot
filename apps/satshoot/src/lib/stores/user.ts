@@ -13,7 +13,6 @@ export const mounted = writable(false);
 export const loggingIn = writable(false);
 export const loggedIn = writable(false);
 export const loginMethod = writable<LoginMethod | null>(null);
-export const retryUserInit = persisted('retryUserInit', false);
 
 export const currentUserFollows: Writable<Set<Hexpubkey> | null>
     = persisted('currentUserFollows', null, {serializer: getSetSerializer()});
