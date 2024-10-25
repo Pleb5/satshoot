@@ -246,7 +246,7 @@
                     {
                         userProfile?.name ??
                         userProfile?.displayName ??
-                        shortenTextWithEllipsesInMiddle(npub, 20)
+                        shortenTextWithEllipsesInMiddle(npub, 15)
                     }
                 </h2>
                 <span>
