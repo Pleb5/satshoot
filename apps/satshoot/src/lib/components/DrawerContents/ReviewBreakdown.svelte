@@ -22,7 +22,6 @@ import {
 
 import ReviewSummary from "./ReviewSummary.svelte";
 import { getDrawerStore } from "@skeletonlabs/skeleton";
-import { onMount } from "svelte";
 
 const drawerStore = getDrawerStore();
 
@@ -58,10 +57,10 @@ const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
 
 <TabGroup justify='justify-evenly' flex='flex-grow'>
     <Tab bind:group={reviewType} name="tab1" value={ReviewType.Client}>
-        Client Reviews
+        As a Client
     </Tab>
     <Tab bind:group={reviewType} name="tab2" value={ReviewType.Freelancer}>
-        Freelancer Reviews
+        As a Freelancer
     </Tab>
     <!-- Tab Panels --->
     <svelte:fragment slot="panel">
