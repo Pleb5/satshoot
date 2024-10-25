@@ -12,8 +12,8 @@ import { notifications } from '$lib/stores/notifications';
 
     {#if $notifications?.length > 0}
         <span 
-            class="badge-icon variant-filled-error absolute -top-1 -right-2 z-10"
-            style="font-size:8pt; width: 15px; height: 15px;"
+            class="badge-icon variant-filled-error absolute -top-1 -right-3 z-10"
+            style="font-size:8pt; width: 20px; height: 20px;"
         >
             {$notifications.length}
         </span>
