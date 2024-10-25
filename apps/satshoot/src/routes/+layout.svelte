@@ -355,11 +355,7 @@
         $loggingIn = false;
     }
 
-    onMount(async () => {
-        console.log('onMount layout');
-
-        // ---------------------------- Basic Init ----------------------------
-        $mounted = true;
+    function configureBasics() {
         localStorage.debug = '*';
         if (!$modeCurrent) {
             setModeCurrent(true);
@@ -395,10 +391,6 @@
             checkRelayConnections();
         });
 
-        // Setup client-side caching
-        if (!$ndk.cacheAdapter) {
-            $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
-        }
         window.onunhandledrejection = async (event: PromiseRejectionEvent) => {
             event.preventDefault();
             console.log(event.reason);
@@ -411,13 +403,20 @@
                 window.location.reload();
             }
         };
-        // db.on('versionchange', async() => {
-        //     console.log('Dexie DB version changed, deleting old DB...')
-        // });
+    }
+
+    onMount(async () => {
+        console.log('onMount layout');
+
+        $mounted = true;
+        // Setup client-side caching
+        if (!$ndk.cacheAdapter) {
+            $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
+        }
+
+        configureBasics();
 
         await $ndk.connect();
-
-        // ------------------------ Restore Login -----------------------------------
 
         if (!$loggedIn) {
             restoreLogin();
