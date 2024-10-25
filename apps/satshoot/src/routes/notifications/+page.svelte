@@ -23,6 +23,7 @@ import ZapIcon from "$lib/components/Icons/ZapIcon.svelte";
     import TicketIcon from "$lib/components/Icons/TicketIcon.svelte";
     import BitcoinIcon from "$lib/components/Icons/BitcoinIcon.svelte";
     import MessagesIcon from "$lib/components/Icons/MessagesIcon.svelte";
+    import StarIcon from "$lib/components/Icons/StarIcon.svelte";
 
 const toastStore = getToastStore();
 const accordionBaseClasses = 'card p-4 bg-surface-300-600-token'
@@ -259,7 +260,7 @@ onMount(() => checkRelayConnections());
         <Accordion class='{accordionBaseClasses}'>
             <AccordionItem open={false}>
                 <svelte:fragment slot="lead">
-                    <MessagesIcon />
+                    <StarIcon />
                 </svelte:fragment>
                 <svelte:fragment slot="summary">
                     <div class="flex items-center justify-center">
