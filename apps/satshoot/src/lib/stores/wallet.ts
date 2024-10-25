@@ -70,29 +70,55 @@ const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
                 cashuWallet.removeTokenId(t.id);
             });
 
+            let createdToken: NDKCashuToken | undefined;
+
             const proofsToSave = movedProofs;
             for (const change of changes) {
                 proofsToSave.push(change);
             }
 
             if (proofsToSave.length > 0) {
-                unsavedProofsBackup.update((map) => {
-                    const proofs = map.get(mint);
+                console.log('Creating new cashu token for backing up unsaved proofs');
+                const $ndk = get(ndk);
+                const newCashuToken = new NDKCashuToken($ndk);
+                newCashuToken.proofs = proofsToSave;
+                newCashuToken.mint = mint;
+                newCashuToken.wallet = cashuWallet;
 
-                    if (proofs) {
-                        const existingProofIds = proofs.map((proof) => proof.id);
+                try {
+                    console.log('Encrypting proofs added to token event');
+                    newCashuToken.content = JSON.stringify({
+                        proofs: newCashuToken.proofs,
+                    });
 
-                        const newProofs = proofsToSave.filter(
-                            (proof) => !existingProofIds.includes(proof.id)
-                        );
+                    const $currentUser = get(currentUser);
+                    await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
 
-                        map.set(mint, [...proofs, ...newProofs]);
-                    } else {
-                        map.set(mint, proofsToSave);
-                    }
+                    newCashuToken.id = newCashuToken.getEventHash();
 
-                    return map;
-                });
+                    createdToken = newCashuToken;
+                } catch (error) {
+                    console.log('An error occurred in encrypting proofs.', error);
+                    console.log('Backing up unsaved proofs');
+
+                    unsavedProofsBackup.update((map) => {
+                        const proofs = map.get(mint);
+
+                        if (proofs) {
+                            const existingProofIds = proofs.map((proof) => proof.id);
+
+                            const newProofs = proofsToSave.filter(
+                                (proof) => !existingProofIds.includes(proof.id)
+                            );
+
+                            map.set(mint, [...proofs, ...newProofs]);
+                        } else {
+                            map.set(mint, proofsToSave);
+                        }
+
+                        return map;
+                    });
+                }
             }
 
             cashuTokensBackup.update((map) => {
@@ -100,6 +126,8 @@ const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
                 usedTokens.forEach((t) => {
                     map.delete(t.id);
                 });
+
+                if (createdToken) map.set(createdToken.id, createdToken.rawEvent());
 
                 return map;
             });
