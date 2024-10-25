@@ -33,6 +33,13 @@ export interface ClientRating {
     reviewText: string;
 }
 
+export const THUMB_TEXT = 'Positive Overall Experience';
+export const AVAILABILITY_TEXT = 'Availability';
+export const COMMUNICATION_TEXT = 'Communication';
+
+export const SUCCESS_TEXT = 'Successful Jobs';
+export const EXPERTISE_TEXT = 'Expertise';
+
 export interface FreelancerRating {
     success: boolean;
     expertise: boolean;
@@ -40,6 +47,7 @@ export interface FreelancerRating {
     communication: boolean;
     reviewText: string;
 }
+
 
 // In the future perhaps make the two types of reviews extend a common ReviewEvent
 // this way it would use two different event stores and use common ancestor functions
