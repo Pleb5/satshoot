@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
-    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
+    import { cashuPaymentInfoMap, cashuTokensBackup, wallet } from '$lib/stores/wallet';
     import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
@@ -335,6 +335,16 @@
         try {
             const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
             const tokens = await Promise.all(tokenPromises);
+
+            // When user triggers manual backup its possible that
+            // there are some proofs in svelte persisted store that are not in wallet
+            // include those proofs too
+            const tokenIds = tokens.map((t) => t.id);
+            $cashuTokensBackup.forEach((value) => {
+                if (!tokenIds.includes(value.id)) {
+                    tokens.push(value);
+                }
+            });
 
             cashuWallet.event.tags = cashuWallet.publicTags;
             cashuWallet.event.content = JSON.stringify(cashuWallet.privateTags);
