@@ -10,6 +10,7 @@ import {
     getDrawerStore,
     type DrawerSettings,
 } from "@skeletonlabs/skeleton";
+import { type RatingConsensus, averageToRatingText } from '$lib/utils/helpers';
 import { onMount } from "svelte";
 
 export let ratings: Map<string, number>;
@@ -42,31 +43,10 @@ function showUserReviewBreakdown() {
 }
 
 onMount(() => {
-    if (isNaN(average)) {
-        ratingConsensus = 'No Ratings';
-        ratingColor = 'bg-surface-500';
-    } else {
-        ratingConsensus = 'Excellent';
-        ratingColor = 'bg-warning-500';
-        if (average < 0.9) {
-            ratingConsensus = 'Great';
-            ratingColor = 'bg-tertiary-500';
-        } 
-        if (average < 0.75) {
-            ratingConsensus = 'Good';
-            ratingColor = 'bg-success-500';
-        }
-        if (average < 0.5) {
-            ratingConsensus = 'Mixed ratings';
-            ratingColor = 'bg-surface-500';
-        }
-        if (average < 0.25) {
-            ratingConsensus = 'Bad';
-            ratingColor = 'bg-error-500';
-        }
-    }
+    const ratingText: RatingConsensus = averageToRatingText(average);
+    ratingConsensus = ratingText['ratingConsensus']; 
+    ratingColor = ratingText['ratingColor']; 
 });
-
 </script>
 
 <div class="flex flex-col items-center gap-y-4">
