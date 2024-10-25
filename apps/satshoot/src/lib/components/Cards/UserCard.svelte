@@ -21,7 +21,7 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { fetchEventFromRelays } from "$lib/utils/helpers";
+    import { fetchEventFromRelaysFirst } from "$lib/utils/helpers";
     import { shortenTextWithEllipsesInMiddle } from "$lib/utils/helpers";
 
     const toastStore = getToastStore();
@@ -77,7 +77,7 @@
             ...$ndk.pool!.connectedRelays()
         ];
 
-        const profile = await fetchEventFromRelays(
+        const profile = await fetchEventFromRelaysFirst(
             metadataFilter,
             3000,
             fallBackToCache,

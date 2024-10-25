@@ -239,7 +239,7 @@ export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | 
         kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] 
     };
 
-    let relays = await fetchEventFromRelays(
+    let relays = await fetchEventFromRelaysFirst(
         relayFilter, 
         4000,
         true,
@@ -336,7 +336,7 @@ export async function checkRelayConnections() {
     }
 }
 
-export async function fetchEventFromRelays(
+export async function fetchEventFromRelaysFirst(
     filter: NDKFilter,
     relayTimeoutMS: number = 6000,
     fallbackToCache: boolean = false,
@@ -367,7 +367,11 @@ export async function fetchEventFromRelays(
         [timeoutPromise, relayPromise]
     ) as NDKEvent | null;
 
-    if (!fallbackToCache) return fetchedEvent;
+    if (fetchedEvent){
+        return fetchedEvent;
+    } else if (!fetchedEvent && !fallbackToCache) {
+        return null;
+    }
 
     const cachedEvent = await $ndk.fetchEvent(
         filter,
@@ -393,7 +397,7 @@ export async function getZapConfiguration(pubkey: string) {
         ...$ndk.pool!.connectedRelays()
     ];
 
-    const metadataEvent = await fetchEventFromRelays(
+    const metadataEvent = await fetchEventFromRelaysFirst(
         metadataFilter,
         5000,
         false,
@@ -458,7 +462,7 @@ export async function getCashuPaymentInfo(
 
     const relays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    const cashuMintlistEvent = await fetchEventFromRelays(filter, 5000, false, relays);
+    const cashuMintlistEvent = await fetchEventFromRelaysFirst(filter, 5000, false, relays);
 
     if (!cashuMintlistEvent) {
         console.warn(`Could not fetch Cashu Mint list for ${pubkey}`);
