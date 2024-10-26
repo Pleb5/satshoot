@@ -111,19 +111,22 @@ export interface aggregatedClientRatings {
     average: number,
 }
 
-function filterDuplicateReviews(reviews: ReviewEvent[])
+// We only return the first review that actually refers to a ticket
+function filterDuplicateReviewsOnSameDeal(reviews: ReviewEvent[])
     : ReviewEvent[] {
-    const filteredReviews = reviews.filter((r: ReviewEvent) => );
-    for (const review of filteredReviews) {
-        for(let i = 0; i < filteredReviews.length; i++) {
-            const compareReview = filteredReviews[i];
-            if (review.pubkey === compareReview.pubkey
-                && review.reviewedEventAddress === compareReview.reviewedEventAddress
-                && review.id !== compareReview.id) {
-                filteredReviews.splice(i, 1);
+    const filteredReviews = Array.from(
+        reviews.reduce(
+            (map: Map<string, ReviewEvent>, r: ReviewEvent) => {
+                if (r.reviewedEventAddress) {
+                    map.set(r.reviewedEventAddress, r)
+                }
+                return map;
             }
-        }
-    }
+            , new Map<string, ReviewEvent>()
+        ).values()
+    );
+
+    return filteredReviews;
 }
 
 export function aggregateClientRatings(target: Hexpubkey)
@@ -132,7 +135,7 @@ export function aggregateClientRatings(target: Hexpubkey)
         return r.reviewedPerson === target;
     });
 
-    const filteredReviews = filterDuplicateReviews()
+    const filteredReviews = filterDuplicateReviewsOnSameDeal(reviews);
 
     const aggregateClientRatings: aggregatedClientRatings = {
         thumbsUp: 0,
