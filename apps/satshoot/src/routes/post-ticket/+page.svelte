@@ -58,16 +58,52 @@
     let loginAlertShown = false;
     let posting = false;
 
-    // Tag validation on tag selection from autocomplete
-    function onTagSelection(event: CustomEvent<AutocompleteOption<string>>): void {
-        let tagValue = event.detail.value;
-        // Run validation checks here(dont allow duplicates, max=5 tags) 
-        // and modify underlying data structure
-        // Modify conditions if validity checks ever change
-        if (tagList.length < maxTags && tagList.includes(tagValue) === false) {
-            tagList = [...tagList, tagValue];
-            tagInput = '';        
+    function checkValidTag(tagValue: string): boolean {
+        const occurrence = tagList.filter((tag: string) => tag === tagValue).length;
+        const valid = 
+            !!tagValue
+            && /^[a-z0-9_]+$/i.test(tagValue)
+            && tagList.length <= maxTags 
+            && occurrence === 1
+        
+        if (!valid) {
+            const t: ToastSettings = {
+                message: 'Invalid tag! Only letters and numbers, NO duplicates!',
+                timeout: 4000,
+                background: 'bg-error-300-600-token',
+            };
+            toastStore.trigger(t);
         }
+
+        return valid;
+    }
+
+    function transFormTag(tagValue: string): string {
+        tagValue = tagValue.replaceAll(' ', '_').toLowerCase();
+        return tagValue;
+    }
+
+    function addTagInput(tagValue: string) {
+        tagList = [...tagList, transFormTag(tagValue)];
+    }
+
+    function addTagWithButton() {
+        addTagInput(tagInput);
+    }
+
+    $: if (tagList.length > 0) {
+        const lastAdded = transFormTag(tagList.at(-1) as string);
+        tagList[tagList.length - 1] = lastAdded;
+
+        if (!checkValidTag(lastAdded)) {
+            tagList.pop();
+        }
+    }
+
+    // Tag validation on tag selection from autocomplete
+    function onTagSelection(event: CustomEvent<AutocompleteOption<string>>) {
+        let tagValue = event.detail.value;
+        addTagInput(tagValue);
     }
 
     // Checking Title and description values on user input
@@ -116,10 +152,7 @@
                 }
 
                 try {
-                    const relays = await ticket.publish();
-                    console.log(relays)
-                    console.log('onrelays', ticket.onRelays)
-
+                    await ticket.publish();
 
                     posting = false;
 
@@ -248,22 +281,34 @@
 
         <div class="text-token max-w-sm gap-y-2 mt-8">
             <span class="text-lg sm:text-2xl">Ticket Tags(max. 5pcs)</span>
-            <InputChip
-                bind:input={tagInput}
-                bind:value={tagList}
-                name="tags"
-                placeholder="Enter tag value..."
-                max={maxTags}
-                minlength={2}
-                maxlength={20}
-            />
+            <div class="grid grid-cols-[1fr_auto] gap-x-2">
+                <div>
+                    <InputChip
+                        bind:input={tagInput}
+                        bind:value={tagList}
+                        name="tags"
+                        placeholder="Enter tag value..."
+                        max={maxTags}
+                        minlength={2}
+                        maxlength={20}
+                    />
 
-            <div class="card max-w-sm pb-4 overflow-y-auto max-h-32" tabindex="-1">
-                <Autocomplete
-                    bind:input={tagInput}
-                    options={tagOptions}
-                    on:selection={onTagSelection}
-                />
+                    <div class="card max-w-sm pb-4 overflow-y-auto max-h-32" tabindex="-1">
+                        <Autocomplete
+                            bind:input={tagInput}
+                            options={tagOptions}
+                            on:selection={onTagSelection}
+                        />
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <button type="button"
+                        class="btn btn-lg bg-primary-400-500-token"
+                        on:click={addTagWithButton}
+                    >
+                        Add
+                    </button>
+                </div>
             </div>
         </div>
     </div>
