@@ -298,6 +298,7 @@
                             bind:input={tagInput}
                             options={tagOptions}
                             on:selection={onTagSelection}
+                            emptyState={'No Recommendations found'}
                         />
                     </div>
                 </div>
