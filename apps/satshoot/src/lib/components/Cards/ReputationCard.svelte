@@ -37,8 +37,8 @@
     const drawerStore = getDrawerStore();
 
     $: reviewArraysExist = $clientReviews && $freelancerReviews;
-    $: reviewsExist =
-        reviewArraysExist && ($clientReviews.length > 0 || $freelancerReviews.length > 0);
+    $: reviewsExist = reviewArraysExist
+            && ($clientReviews.length > 0 || $freelancerReviews.length > 0);
 
     $: if (!type && reviewArraysExist) {
         if ($clientReviews.length > $freelancerReviews.length) {
@@ -49,8 +49,6 @@
     } else if (type) {
         reviewType = type;
     }
-
-    let ratings: Map<string, number> | undefined = undefined;
 
     const subOptions = {
         closeOnEose: false,
@@ -100,37 +98,29 @@
     }
 
     $: if ($currentUser && user && $clientReviews && $freelancerReviews) {
-        let otherTypeOfRatings;
+        let clientAverage = aggregateClientRatings(user).average;
+        let freelancerAverage = aggregateFreelancerRatings(user).average;
+        let overallAverage: number = NaN;
+
         if (reviewType === ReviewType.Client) {
-            ratings = aggregateClientRatings(user);
-            otherTypeOfRatings = aggregateFreelancerRatings(user);
-        } else {
-            ratings = aggregateFreelancerRatings(user);
-            otherTypeOfRatings = aggregateClientRatings(user);
-        }
-
-        const average = ratings!.get('average') as number;
-        const otherTypeOfaverage = otherTypeOfRatings.get('average') as number;
-        let overallAverage: number;
-
-        // We take the average of both types of ratings if type is undefined
-        if (type === undefined) {
-            if (!isNaN(average) && !isNaN(otherTypeOfaverage)) {
-                overallAverage = (average + otherTypeOfaverage) / 2;
-            } else if (isNaN(average) && !isNaN(otherTypeOfaverage)) {
-                overallAverage = otherTypeOfaverage;
-            } else if (isNaN(otherTypeOfaverage) && !isNaN(average)) {
-                overallAverage = average;
+            overallAverage = clientAverage;
+        } else if (reviewType === ReviewType.Freelancer) {
+            overallAverage = freelancerAverage;
+        } else if (type === undefined) {
+            if (!isNaN(clientAverage) && !isNaN(freelancerAverage)) {
+                overallAverage = (clientAverage + freelancerAverage) / 2;
+            } else if (isNaN(clientAverage) && !isNaN(freelancerAverage)) {
+                overallAverage = freelancerAverage;
+            } else if (isNaN(freelancerAverage) && !isNaN(clientAverage)) {
+                overallAverage = clientAverage;
             } else {
                 overallAverage = NaN;
             }
-        } else {
-            overallAverage = average;
         }
 
         const ratingText: RatingConsensus = averageToRatingText(overallAverage);
-        ratingConsensus = ratingText['ratingConsensus'];
-        ratingColor = ratingText['ratingColor'];
+        ratingConsensus = ratingText.ratingConsensus;
+        ratingColor = ratingText.ratingColor;
     }
 
     $: if ($currentUser && needSetup && user && $wot
@@ -162,10 +152,6 @@
                 }
             });
         });
-
-        // console.log('allWinnerOffersOfUser', allWinnerOffersOfUser);
-        // console.log('allWinnerOffersForUser', allWinnerOffersForUser);
-        // console.log('allTicketsWhereUserInvolved', allTicketsWhereUserInvolved);
 
         allEarningsStore = $ndk.storeSubscribe(
             { 

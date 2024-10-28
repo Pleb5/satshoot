@@ -2,7 +2,14 @@
 import {
     ReviewType,
     type ClientRating,
-    type FreelancerRating 
+    type FreelancerRating ,
+    THUMBS_UP_TEXT,
+    THUMBS_DOWN_TEXT,
+    AVAILABILITY_TEXT,
+    COMMUNICATION_TEXT,
+    SUCCESS_TEXT,
+    FAILED_TEXT,
+    EXPERTISE_TEXT
 } from "$lib/events/ReviewEvent";
 import drawerID from '$lib/stores/drawer';
 import { DrawerIDs } from '$lib/stores/drawer';
@@ -11,10 +18,45 @@ import {
     type DrawerSettings,
 } from "@skeletonlabs/skeleton";
 import { type RatingConsensus, averageToRatingText } from '$lib/utils/helpers';
-import { onMount } from "svelte";
+import type {
+    AggregatedClientRatings,
+    AggregatedFreelancerRatings 
+} from "$lib/stores/reviews";
 
-export let ratings: Map<string, number>;
-const average = ratings.get('average') as number;
+export let aggregateRatings: AggregatedClientRatings | AggregatedFreelancerRatings;
+let positiveText: string = '';
+let negativeText: string = '';
+let rateOfPositiveOutcomeText = '';
+let numberOfPositiveOutcome: number = 0;
+let numberOfNegativeOutcome: number = 0;
+let numberOfExpertiseLabels = 0;
+
+if (aggregateRatings.type === 'client') {
+    positiveText = THUMBS_UP_TEXT;
+    negativeText = THUMBS_DOWN_TEXT;
+    rateOfPositiveOutcomeText = 'Rate of Postive Experience:'
+    numberOfPositiveOutcome = aggregateRatings.thumbsUp;
+    numberOfNegativeOutcome = aggregateRatings.thumbsDown;
+} else {
+    positiveText = SUCCESS_TEXT;
+    negativeText = FAILED_TEXT;
+    rateOfPositiveOutcomeText = 'Success Rate:'
+    numberOfPositiveOutcome = aggregateRatings.success;
+    numberOfNegativeOutcome = aggregateRatings.failure;
+    numberOfExpertiseLabels = aggregateRatings.expertise;
+}
+
+const rateOfPositiveOutcome = Math.round(
+    numberOfPositiveOutcome / 
+    (numberOfPositiveOutcome + numberOfNegativeOutcome) 
+    * 100
+);
+
+const average = aggregateRatings.average;
+const ratingText: RatingConsensus = averageToRatingText(average);
+const ratingConsensus = ratingText.ratingConsensus; 
+const ratingColor = ratingText.ratingColor; 
+
 
 export let userRatings: Array<ClientRating> | Array<FreelancerRating>;
 
@@ -26,9 +68,6 @@ const reviewTypeText = (
     ? 'Client' : 'Freelancer'
 );
 const userHex = $drawerStore.meta['user'];
-
-let ratingConsensus = '';
-let ratingColor = '';
 
 function showUserReviewBreakdown() {
     $drawerID = DrawerIDs.UserReviewBreakdown;
@@ -42,15 +81,10 @@ function showUserReviewBreakdown() {
     drawerStore.open(drawerSettings);
 }
 
-onMount(() => {
-    const ratingText: RatingConsensus = averageToRatingText(average);
-    ratingConsensus = ratingText['ratingConsensus']; 
-    ratingColor = ratingText['ratingColor']; 
-});
 </script>
 
 <div class="flex flex-col items-center gap-y-4">
-    {#if ratings.size > 0}
+    {#if !isNaN(aggregateRatings.average)}
         <h3 class="h3 underline">Rating Consensus</h3>
         <div class="badge text-lg sm:text-xl {ratingColor}">
             {ratingConsensus}
@@ -59,22 +93,37 @@ onMount(() => {
         <h3 class="h3 underline">No Ratings found!</h3>
     {/if}
     <h3 class="h3 underline">Review Summary</h3>
-    {#if ratings.size > 0}
-        <div class="grid grid-cols-[1fr_auto] gap-x-4 text-lg">
-            <div class="flex gap-x-2">
-                <div>👍</div>
-                <div>{Array.from(ratings.keys())[0]}:</div>
+    {#if !isNaN(aggregateRatings.average)}
+        <div class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-lg">
+            <div>
+                👍
+                {positiveText}:
             </div>
-            <div>{Array.from(ratings.values())[0] + 'X'}</div>
+            <div>
+                {numberOfPositiveOutcome + 'X'}
+            </div>
+            <div>
+                ❌
+                {negativeText}:
+            </div>
+            <div>
+                {numberOfNegativeOutcome + 'X'}
+            </div>
+        </div>
+        <div class="flex gap-x-2">
+            <div>{rateOfPositiveOutcomeText}</div>
+            <div>{rateOfPositiveOutcome} %</div>
         </div>
         <h3 class="h3 mt-4 mb-2 underline">Exceptional Qualities Received:</h3>
         <div class="grid grid-cols-[1fr_auto] gap-y-2 gap-x-6 mb-4 text-lg">
-            {#each Array.from(ratings.keys()) as key, i}
-                {#if i > 0 && key !== 'average'}
-                    <div>⭐ {key}:</div>
-                    <div>{ratings.get(key) + 'X'}</div>
-                {/if}
-            {/each}
+            <div>⭐ {AVAILABILITY_TEXT}:</div>
+            <div>{aggregateRatings.availability + 'X'}</div>
+            <div>⭐ {COMMUNICATION_TEXT}:</div>
+            <div>{aggregateRatings.communication + 'X'}</div>
+            {#if aggregateRatings.type === "freelancer"}
+                <div>⭐ {EXPERTISE_TEXT}:</div>
+                <div>{aggregateRatings.expertise + 'X'}</div>
+            {/if}
         </div>
     {/if}
     {#if userRatings && userRatings.length > 0}

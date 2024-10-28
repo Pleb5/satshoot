@@ -33,11 +33,13 @@ export interface ClientRating {
     reviewText: string;
 }
 
-export const THUMB_TEXT = 'Positive Overall Experience';
+export const THUMBS_UP_TEXT = 'Positive Experience';
+export const THUMBS_DOWN_TEXT = 'Negative Experience';
 export const AVAILABILITY_TEXT = 'Availability';
 export const COMMUNICATION_TEXT = 'Communication';
 
 export const SUCCESS_TEXT = 'Successful Jobs';
+export const FAILED_TEXT = 'Failed Jobs';
 export const EXPERTISE_TEXT = 'Expertise';
 
 export interface FreelancerRating {
