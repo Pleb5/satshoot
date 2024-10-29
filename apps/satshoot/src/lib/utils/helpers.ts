@@ -1,6 +1,6 @@
 import {
+    NDKEvent,
     type NDKSigner,
-    type NDKEvent,
     NDKKind,
     NDKRelayList,
     NDKRelay,
@@ -11,6 +11,8 @@ import {
     NDKRelaySet,
     NDKCashuMintList,
     type CashuPaymentInfo,
+    type NDKUserProfile,
+    serializeProfile,
 } from '@nostr-dev-kit/ndk';
 
 import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
@@ -251,16 +253,50 @@ export async function broadcastRelayList(
     userRelayList.readRelayUrls = Array.from(readRelayUrls);
     userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
 
-    ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, ndk));
-    // const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
-    //     blastrUrl,
-    //     ...ndk.pool.urls(),
-    //     ...ndk.outboxPool!.urls()
-    // ], ndk);
-    console.log('relays sending to:', ndk.pool.urls());
-
-    const relaysPosted = await userRelayList.publish();
+    const relaysPosted = await broadcastEvent(ndk, userRelayList, [...writeRelayUrls]);
     console.log('relays posted to:', relaysPosted);
+}
+
+export async function broadcastUserProfile(ndk: NDKSvelte, userProfile: NDKUserProfile) {
+    const ndkEvent = new NDKEvent(ndk);
+    ndkEvent.content = serializeProfile(userProfile);
+    ndkEvent.kind = NDKKind.Metadata;
+
+    const explicitRelays: string[] = [];
+
+    const relayListEvent = await fetchUserOutboxRelays(ndk);
+    if (relayListEvent) {
+        const relayList = NDKRelayList.from(relayListEvent);
+        explicitRelays.push(...relayList.writeRelayUrls);
+    }
+
+    const relaysPosted = await broadcastEvent(ndk, ndkEvent, explicitRelays);
+    console.log('userProfile posted to:', relaysPosted);
+}
+
+export async function broadcastEvent(
+    ndk: NDKSvelte,
+    ndkEvent: NDKEvent,
+    explicitRelayUrls: string[],
+    includePoolRelays: boolean = true,
+    includeOutboxPoolRelays: boolean = true,
+    includeBlastUrl: boolean = true
+) {
+    const relayUrls = [...explicitRelayUrls];
+
+    if (includePoolRelays) {
+        relayUrls.push(...ndk.pool.urls());
+    }
+
+    if (includeOutboxPoolRelays && ndk.outboxPool) {
+        relayUrls.push(...ndk.outboxPool.urls());
+    }
+
+    if (includeBlastUrl) {
+        relayUrls.push(blastrUrl);
+    }
+
+    return await ndkEvent.publish(NDKRelaySet.fromRelayUrls(relayUrls, ndk));
 }
 
 export async function checkRelayConnections() {

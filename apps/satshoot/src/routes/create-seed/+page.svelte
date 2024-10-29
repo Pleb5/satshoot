@@ -15,7 +15,7 @@
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
-    import { initializeUser } from '$lib/utils/helpers';
+    import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
 
     import { loginMethod } from '$lib/stores/user';
 
@@ -49,8 +49,7 @@
             website: '',
         };
 
-        $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, $ndk));
-        user.publish();
+        broadcastUserProfile($ndk, user.profile);
 
         initializeUser($ndk);
     });

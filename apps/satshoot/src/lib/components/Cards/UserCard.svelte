@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk, { blastrUrl } from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
-    import { NDKRelay, type NDKUser, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import { type NDKUser, type NDKUserProfile } from '@nostr-dev-kit/ndk';
 
     import { wot } from '$lib/stores/wot';
 
@@ -15,6 +15,7 @@
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
+    import { broadcastUserProfile } from '$lib/utils/helpers';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -70,11 +71,7 @@
         if ($currentUser) {
             try {
                 $currentUser.profile = userProfile;
-
-                $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, $ndk));
-
-                console.log('relays sending to:', $ndk.pool);
-                await $currentUser.publish();
+                await broadcastUserProfile($ndk, userProfile);
 
                 const t: ToastSettings = {
                     message: `Profile changed!`,
