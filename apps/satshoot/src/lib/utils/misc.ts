@@ -37,9 +37,9 @@ interface SetSerializer {
     parse: (json: string) => Set<string>;
 }
 
-interface MapSerializer {
-    stringify: (set: Map<string, number>) => string;
-    parse: (json: string) => Map<string, number>;
+interface MapSerializer<K, V> {
+    stringify: (map: Map<K, V>) => string;
+    parse: (json: string) => Map<K, V>;
 }
 
 export function getSetSerializer(): SetSerializer {
@@ -55,22 +55,22 @@ export function getSetSerializer(): SetSerializer {
     };
 }
 
-export function getMapSerializer(): MapSerializer {
+export function getMapSerializer<K, V>(): MapSerializer<K, V> {
     return {
-        stringify: (map: Map<string, number> | null) => {
+        stringify: (map: Map<K, V> | null) => {
             if (!map) return JSON.stringify(null);
             return JSON.stringify(Array.from(map.entries()));
         },
 
         parse: (json: string) => {
-            const map: Map<string, number> = new Map();
+            const map: Map<K, V> = new Map();
             const parsedJson = JSON.parse(json);
 
             if (parsedJson === null) return map;
 
-            const array: Array<string[]> = Array.from(parsedJson);
-            array.forEach((elem: string[]) => {
-                map.set(elem[0], parseInt(elem[1]));
+            const array: Array<[K, V]> = Array.from(parsedJson);
+            array.forEach(([key, value]) => {
+                map.set(key, value);
             });
             return map;
         },

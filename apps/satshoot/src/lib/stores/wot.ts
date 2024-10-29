@@ -19,7 +19,7 @@ import satShootWoT from './satshoot-wot';
 export const networkWoTScores: Writable<Map<Hexpubkey, number> | null> = persisted(
     'networkWoTScores',
     null,
-    { serializer: getMapSerializer() }
+    { serializer: getMapSerializer<Hexpubkey, number>() }
 );
 
 // Minimum wot to be included in any result

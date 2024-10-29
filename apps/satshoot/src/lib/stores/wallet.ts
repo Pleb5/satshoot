@@ -19,12 +19,12 @@ export const ndkNutzapMonitor = writable<NutzapMonitor | null>(null);
 
 export const unsavedProofsBackup = persisted('unsavedProofsBackup', new Map<string, Proof[]>(), {
     storage: 'local',
-    serializer: getMapSerializer(),
+    serializer: getMapSerializer<string, Proof[]>(),
 });
 
 export const cashuTokensBackup = persisted('cashuTokensBackup', new Map<string, NostrEvent>(), {
     storage: 'local',
-    serializer: getMapSerializer(),
+    serializer: getMapSerializer<string, NostrEvent>(),
 });
 
 export function walletInit(ndk: NDKSvelte, user: NDKUser) {
