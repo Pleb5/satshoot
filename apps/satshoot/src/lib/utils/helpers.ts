@@ -224,10 +224,7 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
 export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | null> {
     const $currentUser = get(currentUser);
 
-    const queryRelaysUrls = [
-        ...ndk.pool.urls(),
-        ...ndk.outboxPool!.urls()
-    ];
+    const queryRelaysUrls = [...ndk.pool.urls(), ...ndk.outboxPool!.urls()];
 
     const queryRelays: Array<NDKRelay> = [];
 
@@ -235,16 +232,12 @@ export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | 
         queryRelays.push(new NDKRelay(url, undefined, ndk));
     });
 
-    const relayFilter = { 
-        kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] 
+    const relayFilter = {
+        kinds: [NDKKind.RelayList],
+        authors: [$currentUser!.pubkey],
     };
 
-    let relays = await fetchEventFromRelays(
-        relayFilter, 
-        4000,
-        true,
-        queryRelays
-    );
+    let relays = await fetchEventFromRelays(relayFilter, 4000, true, queryRelays);
 
     return relays;
 }
@@ -349,9 +342,8 @@ export async function fetchEventFromRelays(
 
     const timeoutPromise = new Promise((resolve) => {
         setTimeout(() => {
-            resolve(null)
+            resolve(null);
         }, relayTimeoutMS);
-
     });
 
     const relayPromise = $ndk.fetchEvent(
@@ -360,22 +352,20 @@ export async function fetchEventFromRelays(
             cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
             groupable: false,
         },
-        relaySet,
+        relaySet
     );
 
-    const fetchedEvent:NDKEvent | null = await Promise.race(
-        [timeoutPromise, relayPromise]
-    ) as NDKEvent | null;
+    const fetchedEvent: NDKEvent | null = (await Promise.race([
+        timeoutPromise,
+        relayPromise,
+    ])) as NDKEvent | null;
 
     if (!fallbackToCache) return fetchedEvent;
 
-    const cachedEvent = await $ndk.fetchEvent(
-        filter,
-        {
-            cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
-            groupable: false,
-        }
-    );
+    const cachedEvent = await $ndk.fetchEvent(filter, {
+        cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
+        groupable: false,
+    });
 
     return cachedEvent;
 }
@@ -388,17 +378,9 @@ export async function getZapConfiguration(pubkey: string) {
         authors: [pubkey],
     };
 
-    const metadataRelays = [
-        ...$ndk.outboxPool!.connectedRelays(),
-        ...$ndk.pool!.connectedRelays()
-    ];
+    const metadataRelays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    const metadataEvent = await fetchEventFromRelays(
-        metadataFilter,
-        5000,
-        false,
-        metadataRelays
-    );
+    const metadataEvent = await fetchEventFromRelays(metadataFilter, 5000, false, metadataRelays);
 
     if (!metadataEvent) return null;
 
