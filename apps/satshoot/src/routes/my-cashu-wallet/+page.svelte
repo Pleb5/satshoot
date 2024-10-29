@@ -21,6 +21,7 @@
     import Warning from '$lib/components/Warning.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
     import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
+    import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -383,7 +384,19 @@
         URL.revokeObjectURL(url);
     }
 
-    async function recoverWallet() {}
+    async function recoverWallet() {
+        const modalComponent: ModalComponent = {
+            ref: RecoverEcashWallet,
+            props: { cashuWallet },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+
+        modalStore.trigger(modal);
+    }
 
     const tooltipRemoveMint: PopupSettings = {
         event: 'hover',

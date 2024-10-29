@@ -1,9 +1,16 @@
 import ndk from '$lib/stores/ndk';
-import { NDKCashuMintList, NDKUser, type CashuPaymentInfo } from '@nostr-dev-kit/ndk';
-import type { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+import {
+    NDKCashuMintList,
+    NDKUser,
+    type CashuPaymentInfo,
+    type NostrEvent,
+} from '@nostr-dev-kit/ndk';
+import type { NDKCashuToken, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
 import type { ToastSettings, ToastStore } from '@skeletonlabs/skeleton';
 import { get } from 'svelte/store';
 import { getCashuPaymentInfo } from './helpers';
+import { isNostrEvent } from './misc';
+import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
 
 // This method checks if user's cashu mint list event (kind: 10019) is synced with user's selected cashu wallet
 export async function isCashuMintListSynced(
@@ -129,4 +136,45 @@ export async function syncP2pk(ndkCashuWallet: NDKCashuWallet, cashuPaymentInfo:
     ndkMintList.p2pk = p2pk;
 
     return ndkMintList.publishReplaceable();
+}
+
+export function isValidBackup(value: any): value is { wallet: NostrEvent; tokens: NostrEvent[] } {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        isNostrEvent(value.wallet) &&
+        Array.isArray(value.tokens) &&
+        value.tokens.every(isNostrEvent)
+    );
+}
+
+export function parseAndValidateBackup(
+    jsonString: string
+): { wallet: NostrEvent; tokens: NostrEvent[] } | null {
+    try {
+        const parsed = JSON.parse(jsonString);
+
+        if (isValidBackup(parsed)) {
+            console.log('Validation successful:', parsed);
+            return parsed; // Return the validated object if successful
+        } else {
+            console.error('Validation failed: Object structure does not match the schema.');
+            return null;
+        }
+    } catch (error) {
+        console.error('Invalid JSON format:', error);
+        return null;
+    }
+}
+
+export async function extractUnspentProofsForMint(mint: string, tokens: NDKCashuToken[]) {
+    const allProofs = tokens.map((t) => t.proofs).flat();
+    const _wallet = new CashuWallet(new CashuMint(mint));
+
+    const spentProofs = await _wallet.checkProofsSpent(allProofs);
+    const spentProofsSet = new Set(spentProofs.map((p) => p.id));
+
+    const unspentProofs = allProofs.filter((proof) => !spentProofsSet.has(proof.id));
+
+    return unspentProofs;
 }

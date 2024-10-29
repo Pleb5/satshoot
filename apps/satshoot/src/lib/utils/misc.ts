@@ -1,5 +1,5 @@
 import { nip19 } from 'nostr-tools';
-import { type NDKTag, type Hexpubkey, NDKKind } from '@nostr-dev-kit/ndk';
+import { type NDKTag, type Hexpubkey, NDKKind, type NostrEvent } from '@nostr-dev-kit/ndk';
 
 export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
 
@@ -128,4 +128,25 @@ export function linkifyText(text: string): string {
             return urlString;
         }
     });
+}
+
+export function isNDKTagArray(value: any): value is NDKTag[] {
+    return (
+        Array.isArray(value) &&
+        value.every((tag) => Array.isArray(tag) && tag.every((item) => typeof item === 'string'))
+    );
+}
+
+export function isNostrEvent(value: any): value is NostrEvent {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        typeof value.created_at === 'number' &&
+        typeof value.content === 'string' &&
+        isNDKTagArray(value.tags) &&
+        typeof value.pubkey === 'string' &&
+        (typeof value.kind === 'undefined' || typeof value.kind === 'number') &&
+        (typeof value.id === 'undefined' || typeof value.id === 'string') &&
+        (typeof value.sig === 'undefined' || typeof value.sig === 'string')
+    );
 }
