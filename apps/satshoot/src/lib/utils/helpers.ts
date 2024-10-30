@@ -1,6 +1,6 @@
 import {
+    NDKEvent,
     type NDKSigner,
-    type NDKEvent,
     NDKKind,
     NDKRelayList,
     NDKRelay,
@@ -11,6 +11,7 @@ import {
     NDKRelaySet,
     NDKCashuMintList,
     type CashuPaymentInfo,
+    type NostrEvent,
 } from '@nostr-dev-kit/ndk';
 
 import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
@@ -52,7 +53,16 @@ import { get } from 'svelte/store';
 import { dev, browser } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
-import { ndkNutzapMonitor, wallet, walletInit } from '$lib/stores/wallet';
+import {
+    cashuTokensBackup,
+    ndkNutzapMonitor,
+    unsavedProofsBackup,
+    wallet,
+    walletInit,
+} from '$lib/stores/wallet';
+import { NDKCashuToken, type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
+import { getUniqueProofs } from './cashu';
 
 export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init');
@@ -224,10 +234,7 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
 export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | null> {
     const $currentUser = get(currentUser);
 
-    const queryRelaysUrls = [
-        ...ndk.pool.urls(),
-        ...ndk.outboxPool!.urls()
-    ];
+    const queryRelaysUrls = [...ndk.pool.urls(), ...ndk.outboxPool!.urls()];
 
     const queryRelays: Array<NDKRelay> = [];
 
@@ -235,16 +242,12 @@ export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | 
         queryRelays.push(new NDKRelay(url, undefined, ndk));
     });
 
-    const relayFilter = { 
-        kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] 
+    const relayFilter = {
+        kinds: [NDKKind.RelayList],
+        authors: [$currentUser!.pubkey],
     };
 
-    let relays = await fetchEventFromRelays(
-        relayFilter, 
-        4000,
-        true,
-        queryRelays
-    );
+    let relays = await fetchEventFromRelays(relayFilter, 4000, true, queryRelays);
 
     return relays;
 }
@@ -349,9 +352,8 @@ export async function fetchEventFromRelays(
 
     const timeoutPromise = new Promise((resolve) => {
         setTimeout(() => {
-            resolve(null)
+            resolve(null);
         }, relayTimeoutMS);
-
     });
 
     const relayPromise = $ndk.fetchEvent(
@@ -360,22 +362,20 @@ export async function fetchEventFromRelays(
             cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
             groupable: false,
         },
-        relaySet,
+        relaySet
     );
 
-    const fetchedEvent:NDKEvent | null = await Promise.race(
-        [timeoutPromise, relayPromise]
-    ) as NDKEvent | null;
+    const fetchedEvent: NDKEvent | null = (await Promise.race([
+        timeoutPromise,
+        relayPromise,
+    ])) as NDKEvent | null;
 
     if (!fallbackToCache) return fetchedEvent;
 
-    const cachedEvent = await $ndk.fetchEvent(
-        filter,
-        {
-            cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
-            groupable: false,
-        }
-    );
+    const cachedEvent = await $ndk.fetchEvent(filter, {
+        cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
+        groupable: false,
+    });
 
     return cachedEvent;
 }
@@ -388,17 +388,9 @@ export async function getZapConfiguration(pubkey: string) {
         authors: [pubkey],
     };
 
-    const metadataRelays = [
-        ...$ndk.outboxPool!.connectedRelays(),
-        ...$ndk.pool!.connectedRelays()
-    ];
+    const metadataRelays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    const metadataEvent = await fetchEventFromRelays(
-        metadataFilter,
-        5000,
-        false,
-        metadataRelays
-    );
+    const metadataEvent = await fetchEventFromRelays(metadataFilter, 5000, false, metadataRelays);
 
     if (!metadataEvent) return null;
 
@@ -491,4 +483,109 @@ export function arraysAreEqual<T>(arr1: T[], arr2: T[]): boolean {
 
     // Check if all elements are equal (using deep equality for objects)
     return arr1.every((element, index) => element === arr2[index]);
+}
+
+export async function resyncWalletAndBackup(
+    $wallet: NDKCashuWallet,
+    $cashuTokensBackup: Map<string, NostrEvent>,
+    $unsavedProofsBackup: Map<string, Proof[]>
+) {
+    try {
+        const $ndk = get(ndk);
+
+        // get ids of existing tokens in wallet
+        const existingTokenIds = $wallet.tokens.map((token) => token.id);
+
+        // filter tokens from backup that don't exists in wallet
+        const missingTokens = Array.from(
+            $cashuTokensBackup.values().filter((token) => existingTokenIds.includes(token.id!))
+        );
+
+        if (missingTokens.length > 0) {
+            // convert raw token events to NDKCashuTokens
+            // this also decrypts the private tags in token events
+            const promises = missingTokens.map((token) => {
+                const ndkEvent = new NDKEvent($ndk, token);
+                return NDKCashuToken.from(ndkEvent);
+            });
+
+            const ndkCashuTokens = await Promise.all(promises).then((tokens) => {
+                return tokens.filter((token) => token instanceof NDKCashuToken);
+            });
+
+            const invalidTokens: NDKCashuToken[] = [];
+
+            // get all the unique mints from tokens
+            const mints = new Set<string>();
+            ndkCashuTokens.forEach((t) => {
+                if (t.mint) mints.add(t.mint);
+            });
+
+            const mintsArray = Array.from(mints);
+            const tokenPromises = mintsArray.map(async (mint) => {
+                // get all the proofs tied to tokens with a specific mint
+                const allProofs = ndkCashuTokens
+                    .filter((t) => t.mint === mint)
+                    .map((token) => token.proofs)
+                    .flat();
+
+                const _wallet = new CashuWallet(new CashuMint(mint));
+                const spentProofs = await _wallet.checkProofsSpent(allProofs);
+
+                ndkCashuTokens.map(async (token) => {
+                    // check if there's any proof that has been spent then this is not a valid token
+                    const proofsCountBeforeFilter = token.proofs.length;
+                    const unspentProofs = getUniqueProofs(token.proofs, spentProofs);
+
+                    if (proofsCountBeforeFilter === unspentProofs.length) {
+                        await token.publish($wallet.relaySet);
+                        $wallet.addToken(token);
+                    } else {
+                        invalidTokens.push(token);
+                    }
+                });
+            });
+
+            await Promise.all(tokenPromises);
+
+            cashuTokensBackup.update((map) => {
+                // remove invalid tokens from the backup
+                invalidTokens.forEach((t) => map.delete(t.id));
+
+                return map;
+            });
+        }
+
+        $unsavedProofsBackup.entries().map(async ([mint, proofs]) => {
+            if (proofs.length > 0) {
+                // Creating new cashu token for backing up unsaved proofs related to a specific mint
+                const newCashuToken = new NDKCashuToken($ndk);
+                newCashuToken.proofs = proofs;
+                newCashuToken.mint = mint;
+                newCashuToken.wallet = $wallet;
+
+                console.log('Encrypting proofs added to token event');
+                newCashuToken.content = JSON.stringify({
+                    proofs: newCashuToken.proofs,
+                });
+
+                const $currentUser = get(currentUser);
+                // encrypt the new token event
+                await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
+                await newCashuToken.sign();
+                await newCashuToken.publish($wallet.relaySet);
+
+                // now that new token has been signed and published to relays
+                // we can add it to wallet and remove these proofs from unsaved proofs backup
+                $wallet.addToken(newCashuToken);
+                unsavedProofsBackup.update((map) => {
+                    map.delete(mint);
+
+                    return map;
+                });
+            }
+        });
+    } catch (error) {
+        console.error('An error occurred in syncing wallet and backup', error);
+    }
 }

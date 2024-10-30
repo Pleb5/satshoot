@@ -32,14 +32,19 @@
     import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from '$lib/stores/notifications';
 
-    import { initializeUser, logout, checkRelayConnections } from '$lib/utils/helpers';
+    import {
+        initializeUser,
+        logout,
+        checkRelayConnections,
+        resyncWalletAndBackup,
+    } from '$lib/utils/helpers';
 
-    import { 
+    import {
         wot,
         wotUpdating,
         wotUpdateFailed,
         wotUpdateNoResults,
-        useSatShootWoT
+        useSatShootWoT,
     } from '$lib/stores/wot';
 
     import { RestoreMethod, type LoginMethod } from '$lib/stores/ndk';
@@ -104,8 +109,14 @@
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import MessagesIcon from '$lib/components/Icons/MessagesIcon.svelte';
     import { hideAppBarsStore } from '$lib/stores/gui';
-    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
+    import {
+        cashuPaymentInfoMap,
+        cashuTokensBackup,
+        unsavedProofsBackup,
+        wallet,
+    } from '$lib/stores/wallet';
     import { isCashuMintListSynced } from '$lib/utils/cashu';
+    import { debounce } from '$lib/utils/misc';
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -190,6 +201,13 @@
             classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
         };
         toastStore.trigger(t);
+    }
+
+    // Use the debounced function with resyncWalletAndBackup, setting a delay of 10 seconds
+    const debouncedResync = debounce(resyncWalletAndBackup, 10000);
+
+    $: if ($wallet && $cashuTokensBackup && $unsavedProofsBackup) {
+        debouncedResync($wallet, $cashuTokensBackup, $unsavedProofsBackup);
     }
 
     async function restoreLogin() {
@@ -441,6 +459,8 @@
         if (messageStore) messageStore.empty();
         if (allReceivedZaps) allReceivedZaps.empty();
         if (allReviews) allReviews.empty();
+
+        debouncedResync.clear();
     });
 
     // Check for app updates and offer reload option to user in a Toast
@@ -638,9 +658,8 @@
                                     <div
                                         class="card font-bold w-40 p-4 bg-error-500 max-h-60 overflow-y-auto"
                                     >
-                                        No Web of Trust!
-                                        Turn on SatShoot WoT in Settings or 
-                                        follow more people on nostr!
+                                        No Web of Trust! Turn on SatShoot WoT in Settings or follow
+                                        more people on nostr!
                                     </div>
                                 </div>
                             {:else if $wot && $wot.size < 3 && $wotUpdating}

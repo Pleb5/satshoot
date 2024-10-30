@@ -150,3 +150,29 @@ export function isNostrEvent(value: any): value is NostrEvent {
         (typeof value.sig === 'undefined' || typeof value.sig === 'string')
     );
 }
+
+/**
+ * Creates a debounced version of a function, which delays invoking the function
+ * until after a specified delay has passed since the last time it was called.
+ */
+export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
+    // Variable to hold the timeout ID, used to clear the timeout on repeated calls
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+    // Debounced function with the core debouncing logic
+    const debounced = (...args: Parameters<T>): void => {
+        // Clear the previous timeout, if any, to reset the delay
+        if (timeout) clearTimeout(timeout);
+
+        // Set a new timeout to invoke the function after the delay
+        timeout = setTimeout(() => fn(...args), delay);
+    };
+
+    // Attach a clear method to allow external clearing of the timeout
+    debounced.clear = () => {
+        if (timeout) clearTimeout(timeout);
+        timeout = null;
+    };
+
+    return debounced;
+}
