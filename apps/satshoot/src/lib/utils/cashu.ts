@@ -178,3 +178,11 @@ export async function extractUnspentProofsForMint(mint: string, tokens: NDKCashu
 
     return unspentProofs;
 }
+
+export function getUniqueProofs(array1: Proof[], array2: Proof[]): Proof[] {
+    // Create a Set of JSON stringified objects from array2 for faster lookup
+    const array2Set = new Set(array2.map((proof) => JSON.stringify(proof)));
+
+    // Filter array1 to only include objects not in array2
+    return array1.filter((proof) => !array2Set.has(JSON.stringify(proof)));
+}

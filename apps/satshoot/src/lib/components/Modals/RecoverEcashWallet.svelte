@@ -1,7 +1,11 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
-    import { extractUnspentProofsForMint, parseAndValidateBackup } from '$lib/utils/cashu';
+    import {
+        extractUnspentProofsForMint,
+        getUniqueProofs,
+        parseAndValidateBackup,
+    } from '$lib/utils/cashu';
     import { NDKEvent } from '@nostr-dev-kit/ndk';
     import { NDKCashuToken, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
@@ -127,18 +131,13 @@
                         ndkCashuTokens.filter((t) => t.mint === mint)
                     );
 
-                    const existingProofSet = new Set<string>();
-
-                    cashuWallet.tokens
+                    const existingProofs = cashuWallet.tokens
                         .filter((t) => t.mint === mint)
-                        .forEach((token) => {
-                            token.proofs.forEach((p) => existingProofSet.add(p.id));
-                        });
+                        .map((token) => token.proofs)
+                        .flat();
 
                     // find all the unspent proofs that are not in current wallet
-                    const proofsToSave = unspentProofs.filter((p) => !existingProofSet.has(p.id));
-
-                    console.log('proofsToSave :>> ', proofsToSave);
+                    const proofsToSave = getUniqueProofs(unspentProofs, existingProofs);
 
                     if (proofsToSave.length > 0) return cashuWallet.saveProofs(proofsToSave, mint);
                 });

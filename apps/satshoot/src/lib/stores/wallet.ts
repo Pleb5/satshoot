@@ -13,6 +13,7 @@ import { getMapSerializer, SatShootPubkey } from '$lib/utils/misc';
 import type { Proof } from '@cashu/cashu-ts';
 import { persisted } from 'svelte-persisted-store';
 import ndk from './ndk';
+import { getUniqueProofs } from '$lib/utils/cashu';
 
 export const wallet = writable<NDKCashuWallet | null>(null);
 export const ndkNutzapMonitor = writable<NutzapMonitor | null>(null);
@@ -102,16 +103,11 @@ const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
                     console.log('Backing up unsaved proofs');
 
                     unsavedProofsBackup.update((map) => {
-                        const proofs = map.get(mint);
+                        const existingProofs = map.get(mint);
 
-                        if (proofs) {
-                            const existingProofIds = proofs.map((proof) => proof.id);
-
-                            const newProofs = proofsToSave.filter(
-                                (proof) => !existingProofIds.includes(proof.id)
-                            );
-
-                            map.set(mint, [...proofs, ...newProofs]);
+                        if (existingProofs) {
+                            const newProofs = getUniqueProofs(proofsToSave, existingProofs);
+                            map.set(mint, [...existingProofs, ...newProofs]);
                         } else {
                             map.set(mint, proofsToSave);
                         }
