@@ -1,7 +1,13 @@
 <script lang="ts">
     import ndk, { blastrUrl } from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
-    import { type NDKUser, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import {
+        NDKKind,
+        NDKRelay,
+        profileFromEvent,
+        type NDKUser,
+        type NDKUserProfile,
+    } from '@nostr-dev-kit/ndk';
 
     import { wot } from '$lib/stores/wot';
 
@@ -16,6 +22,8 @@
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
     import { broadcastUserProfile } from '$lib/utils/helpers';
+    import { fetchEventFromRelaysFirst } from '$lib/utils/helpers';
+    import { shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -43,14 +51,11 @@
     $: bgNip05TrustColor = validNIP05 ? 'bg-tertiary-500' : 'bg-error-500';
 
     $: if (user) {
-        console.log('setProfile');
         setProfile();
     }
 
     $: if (user && nip05) {
-        console.log('nip05 to validate:', nip05);
         user.validateNip05(nip05).then((response: boolean | null) => {
-            console.log('nip05', response);
             if (response) {
                 validNIP05 = true;
             }
@@ -58,9 +63,30 @@
     }
 
     async function setProfile() {
-        const profile = await user.fetchProfile();
+        // Logged in user's metadata MUST be fetched from relays
+        // to avoid metadata edit from stale state
+        // Otherwise we can fall back to cache
+        const fallBackToCache = user.pubkey !== $currentUser?.pubkey;
+
+        const metadataFilter = {
+            kinds: [NDKKind.Metadata],
+            authors: [user.pubkey],
+        };
+
+        const metadataRelays = [
+            ...$ndk.outboxPool!.connectedRelays(),
+            ...$ndk.pool!.connectedRelays(),
+        ];
+
+        const profile = await fetchEventFromRelaysFirst(
+            metadataFilter,
+            3000,
+            fallBackToCache,
+            metadataRelays
+        );
+
         if (profile) {
-            userProfile = profile;
+            userProfile = profileFromEvent(profile);
             if (userProfile.image) {
                 avatarImage = userProfile.image;
             }
@@ -197,7 +223,7 @@
     const popupNip05: PopupSettings = {
         event: 'click',
         target: 'popupNip05',
-        placement: 'bottom',
+        placement: 'left',
     };
 </script>
 
@@ -209,7 +235,9 @@
             </div>
             <div class="flex items-center justify-center gap-x-4">
                 <h2 class="h2 text-center font-bold text-lg sm:text-2xl">
-                    {userProfile?.name ?? userProfile?.displayName ?? npub.substring(0, 10)}
+                    {userProfile?.name ??
+                        userProfile?.displayName ??
+                        shortenTextWithEllipsesInMiddle(npub, 15)}
                 </h2>
                 <span>
                     {#if partOfWoT}
@@ -263,9 +291,11 @@
     </div>
     <footer class="mt-4">
         <div class="flex flex-col gap-y-1">
-            <div class="flex items-center gap-x-2">
+            <div class="flex items-center gap-x-1 max-w-full flex-wrap">
                 <div class="underline">Npub:</div>
-                <div>{npub?.substring(0, 20) + '...'}</div>
+                <div class="max-w-full break-words">
+                    {shortenTextWithEllipsesInMiddle(npub, 18)}
+                </div>
                 {#if npub}
                     <div>
                         <button class="btn btn-icon" use:clipboard={npub}>
@@ -277,68 +307,75 @@
                     </div>
                 {/if}
             </div>
-            <div class="flex items-center gap-x-2">
-                <div class="flex gap-x-2">
-                    <div class="underline">Nip05:</div>
-                    <div>{nip05 ?? '?'}</div>
+            <div class="flex items-center gap-x-1 max-w-full flex-wrap">
+                <div class="underline">Nip05:</div>
+                <div class="flex items-center gap-x-2 flex-wrap max-w-full">
+                    <div class="max-w-full break-words">{nip05 ?? '?'}</div>
+                    {#if nip05}
+                        <div>
+                            <button class="btn btn-icon" use:clipboard={nip05}>
+                                <span>
+                                    <i class="fa-regular fa-copy" />
+                                </span>
+                                <button> </button></button
+                            >
+                        </div>
+                        <div>
+                            {#if validNIP05}
+                                <i
+                                    class="fa-solid fa-circle-check text-xl {nip05TrustColor}"
+                                    use:popup={popupNip05}
+                                >
+                                </i>
+                                <div data-popup="popupNip05">
+                                    <div
+                                        class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto"
+                                    >
+                                        Valid Nip05
+                                        <div class="arrow {bgNip05TrustColor}" />
+                                    </div>
+                                </div>
+                            {:else}
+                                <i
+                                    class="fa-solid fa-circle-question text-xl {nip05TrustColor}"
+                                    use:popup={popupNip05}
+                                >
+                                </i>
+                                <div data-popup="popupNip05">
+                                    <div
+                                        class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto"
+                                    >
+                                        Could NOT validate Nip05!
+                                        <div class="arrow {bgNip05TrustColor}" />
+                                    </div>
+                                </div>
+                            {/if}
+                        </div>
+                    {/if}
                 </div>
-                {#if nip05}
-                    <div>
-                        <button class="btn btn-icon" use:clipboard={nip05}>
-                            <span>
-                                <i class="fa-regular fa-copy" />
-                            </span>
-                            <button> </button></button
-                        >
-                    </div>
-                    <div>
-                        {#if validNIP05}
-                            <i
-                                class="fa-solid fa-circle-check text-xl {nip05TrustColor}"
-                                use:popup={popupNip05}
-                            >
-                            </i>
-                            <div data-popup="popupNip05">
-                                <div
-                                    class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto"
-                                >
-                                    Valid Nip05
-                                    <div class="arrow {bgNip05TrustColor}" />
-                                </div>
-                            </div>
-                        {:else}
-                            <i
-                                class="fa-solid fa-circle-question text-xl {nip05TrustColor}"
-                                use:popup={popupNip05}
-                            >
-                            </i>
-                            <div data-popup="popupNip05">
-                                <div
-                                    class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto"
-                                >
-                                    Could NOT validate Nip05!
-                                    <div class="arrow {bgNip05TrustColor}" />
-                                </div>
-                            </div>
+            </div>
+            <div class="flex items-center gap-x-2 max-w-full flex-wrap">
+                <div class="flex gap-x-1 max-w-full flex-wrap">
+                    <div class="underline">Website:</div>
+                    <div class="flex items-center flex-wrap max-w-full gap-x-1">
+                        <a class="anchor max-w-full" href={website}>
+                            <div class="max-w-full break-words">{website}</div>
+                        </a>
+                        {#if editable}
+                            <button on:click={editWebsite}>
+                                <i
+                                    class="text-primary-300-600-token
+                                    fa-solid fa-pen-to-square text-lg"
+                                />
+                            </button>
                         {/if}
                     </div>
-                {/if}
-            </div>
-            <div class="flex items-center gap-x-4">
-                <div class="flex gap-x-2">
-                    <div class="underline">Website:</div>
-                    <a class="anchor" href={website}><div>{website}</div></a>
                 </div>
-                {#if editable}
-                    <button on:click={editWebsite}>
-                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
-                    </button>
-                {/if}
             </div>
-            <div class=" flex items-center gap-x-2">
-                <div class="flex gap-x-2">
+            <div class=" flex items-center gap-x-2 max-w-full flex-wrap">
+                <div class="flex gap-x-2 items-center max-w-full flex-wrap">
                     <div class="underline">LN Address:</div>
-                    <div>{lud16 ?? '?'}</div>
+                    <div class="max-w-full break-words">{lud16 ?? '?'}</div>
                 </div>
                 {#if editable}
                     <button on:click={editLud16}>
