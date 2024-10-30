@@ -6,6 +6,7 @@
         getRelayListForUser,
         NDKKind,
         NDKNutzap,
+        NDKRelayList,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
     } from '@nostr-dev-kit/ndk';
@@ -28,7 +29,7 @@
 
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
-    import { getZapConfiguration } from '$lib/utils/helpers';
+    import { broadcastEvent, fetchUserOutboxRelays, getZapConfiguration } from '$lib/utils/helpers';
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
 
     enum ToastType {
@@ -330,8 +331,23 @@
                     await nutzapEvent.sign();
 
                     // According to spec NutZap should be published to relays indicated in Nutzap informational event (10009)
-                    const publishedRelaySet = await nutzapEvent.publish(
-                        NDKRelaySet.fromRelayUrls(cashuPaymentInfo.relays, $ndk)
+
+                    const explicitRelays: string[] = [];
+
+                    const relayListEvent = await fetchUserOutboxRelays($ndk, pubkey);
+                    if (relayListEvent) {
+                        const relayList = NDKRelayList.from(relayListEvent);
+                        explicitRelays.push(...relayList.readRelayUrls);
+                    }
+                    explicitRelays.push(...cashuPaymentInfo.relays);
+
+                    const publishedRelaySet = await broadcastEvent(
+                        $ndk,
+                        nutzapEvent,
+                        explicitRelays,
+                        false,
+                        false,
+                        false
                     );
 
                     console.log('publishedRelaySet :>> ', publishedRelaySet);

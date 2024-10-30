@@ -215,9 +215,10 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
     return null;
 }
 
-export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | null> {
-    const $currentUser = get(currentUser);
-
+export async function fetchUserOutboxRelays(
+    ndk: NDKSvelte,
+    pubkey?: string
+): Promise<NDKEvent | null> {
     const queryRelaysUrls = [...ndk.pool.urls(), ...ndk.outboxPool!.urls()];
 
     const queryRelays: Array<NDKRelay> = [];
@@ -226,9 +227,14 @@ export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | 
         queryRelays.push(new NDKRelay(url, undefined, ndk));
     });
 
+    if (!pubkey) {
+        const $currentUser = get(currentUser);
+        pubkey = $currentUser!.pubkey;
+    }
+
     const relayFilter = {
         kinds: [NDKKind.RelayList],
-        authors: [$currentUser!.pubkey],
+        authors: [pubkey],
     };
 
     let relays = await fetchEventFromRelaysFirst(relayFilter, 4000, true, queryRelays);
