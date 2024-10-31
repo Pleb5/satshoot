@@ -490,6 +490,7 @@ export async function resyncWalletAndBackup(
     $cashuTokensBackup: Map<string, NostrEvent>,
     $unsavedProofsBackup: Map<string, Proof[]>
 ) {
+    console.log('syncing wallet and backup ');
     try {
         const $ndk = get(ndk);
 
@@ -498,7 +499,7 @@ export async function resyncWalletAndBackup(
 
         // filter tokens from backup that don't exists in wallet
         const missingTokens = Array.from(
-            $cashuTokensBackup.values().filter((token) => existingTokenIds.includes(token.id!))
+            $cashuTokensBackup.values().filter((token) => !existingTokenIds.includes(token.id!))
         );
 
         if (missingTokens.length > 0) {
@@ -548,15 +549,18 @@ export async function resyncWalletAndBackup(
 
             await Promise.all(tokenPromises);
 
-            cashuTokensBackup.update((map) => {
-                // remove invalid tokens from the backup
-                invalidTokens.forEach((t) => map.delete(t.id));
+            if (invalidTokens.length > 0) {
+                cashuTokensBackup.update((map) => {
+                    // remove invalid tokens from the backup
+                    invalidTokens.forEach((t) => map.delete(t.id));
 
-                return map;
-            });
+                    return map;
+                });
+            }
         }
 
-        $unsavedProofsBackup.entries().map(async ([mint, proofs]) => {
+        const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
+        unsavedProofsArray.map(async ([mint, proofs]) => {
             if (proofs.length > 0) {
                 // Creating new cashu token for backing up unsaved proofs related to a specific mint
                 const newCashuToken = new NDKCashuToken($ndk);

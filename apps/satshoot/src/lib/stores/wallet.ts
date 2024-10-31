@@ -73,7 +73,7 @@ const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
 
             let createdToken: NDKCashuToken | undefined;
 
-            const proofsToSave = movedProofs;
+            const proofsToSave = [...movedProofs];
             for (const change of changes) {
                 proofsToSave.push(change);
             }
@@ -85,6 +85,7 @@ const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
                 newCashuToken.proofs = proofsToSave;
                 newCashuToken.mint = mint;
                 newCashuToken.wallet = cashuWallet;
+                newCashuToken.created_at = Math.floor(Date.now() / 1000);
 
                 try {
                     console.log('Encrypting proofs added to token event');
@@ -93,6 +94,7 @@ const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
                     });
 
                     const $currentUser = get(currentUser);
+                    newCashuToken.pubkey = $currentUser!.pubkey;
                     await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
 
                     newCashuToken.id = newCashuToken.getEventHash();
