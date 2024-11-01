@@ -562,32 +562,38 @@ export async function resyncWalletAndBackup(
         const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
         unsavedProofsArray.map(async ([mint, proofs]) => {
             if (proofs.length > 0) {
-                // Creating new cashu token for backing up unsaved proofs related to a specific mint
-                const newCashuToken = new NDKCashuToken($ndk);
-                newCashuToken.proofs = proofs;
-                newCashuToken.mint = mint;
-                newCashuToken.wallet = $wallet;
+                const _wallet = new CashuWallet(new CashuMint(mint));
+                const spentProofs = await _wallet.checkProofsSpent(proofs);
+                const unspentProofs = getUniqueProofs(proofs, spentProofs);
 
-                console.log('Encrypting proofs added to token event');
-                newCashuToken.content = JSON.stringify({
-                    proofs: newCashuToken.proofs,
-                });
+                if (unspentProofs.length > 0) {
+                    // Creating new cashu token for backing up unsaved proofs related to a specific mint
+                    const newCashuToken = new NDKCashuToken($ndk);
+                    newCashuToken.proofs = unspentProofs;
+                    newCashuToken.mint = mint;
+                    newCashuToken.wallet = $wallet;
 
-                const $currentUser = get(currentUser);
-                // encrypt the new token event
-                await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
-                await newCashuToken.sign();
-                await newCashuToken.publish($wallet.relaySet);
+                    console.log('Encrypting proofs added to token event');
+                    newCashuToken.content = JSON.stringify({
+                        proofs: newCashuToken.proofs,
+                    });
 
-                // now that new token has been signed and published to relays
-                // we can add it to wallet and remove these proofs from unsaved proofs backup
-                $wallet.addToken(newCashuToken);
-                unsavedProofsBackup.update((map) => {
-                    map.delete(mint);
+                    const $currentUser = get(currentUser);
+                    // encrypt the new token event
+                    await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
+                    await newCashuToken.sign();
+                    await newCashuToken.publish($wallet.relaySet);
 
-                    return map;
-                });
+                    // now that new token has been signed and published to relays
+                    // we can add it to wallet and remove these proofs from unsaved proofs backup
+                    $wallet.addToken(newCashuToken);
+                }
             }
+            unsavedProofsBackup.update((map) => {
+                map.delete(mint);
+
+                return map;
+            });
         });
     } catch (error) {
         console.error('An error occurred in syncing wallet and backup', error);
