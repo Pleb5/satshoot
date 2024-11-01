@@ -172,9 +172,7 @@ export async function extractUnspentProofsForMint(mint: string, tokens: NDKCashu
     const _wallet = new CashuWallet(new CashuMint(mint));
 
     const spentProofs = await _wallet.checkProofsSpent(allProofs);
-    const spentProofsSet = new Set(spentProofs.map((p) => p.id));
-
-    const unspentProofs = allProofs.filter((proof) => !spentProofsSet.has(proof.id));
+    const unspentProofs = getUniqueProofs(allProofs, spentProofs)
 
     return unspentProofs;
 }
