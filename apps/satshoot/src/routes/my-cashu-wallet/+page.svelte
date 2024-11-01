@@ -1,7 +1,12 @@
 <script lang="ts">
     import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
-    import { cashuPaymentInfoMap, cashuTokensBackup, wallet } from '$lib/stores/wallet';
-    import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+    import {
+        cashuPaymentInfoMap,
+        cashuTokensBackup,
+        unsavedProofsBackup,
+        wallet,
+    } from '$lib/stores/wallet';
+    import { NDKCashuToken, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
         getToastStore,
@@ -338,7 +343,7 @@
             const tokens = await Promise.all(tokenPromises);
 
             // When user triggers manual backup its possible that
-            // there are some proofs in svelte persisted store that are not in wallet
+            // there are some tokens in svelte persisted store that are not in wallet
             // include those proofs too
             const tokenIds = tokens.map((t) => t.id);
             $cashuTokensBackup.forEach((value) => {
@@ -346,6 +351,33 @@
                     tokens.push(value);
                 }
             });
+
+            // Its also possible that there are some unsaved proofs in svelte persisted store
+            // We need to include these proofs in backup too
+            const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
+            const unsavedProofsPromises = unsavedProofsArray.map(async ([mint, proofs]) => {
+                if (proofs.length > 0) {
+                    // Creating new cashu token for backing up unsaved proofs related to a specific mint
+                    const newCashuToken = new NDKCashuToken($ndk);
+                    newCashuToken.proofs = proofs;
+                    newCashuToken.mint = mint;
+                    newCashuToken.wallet = cashuWallet!;
+                    newCashuToken.created_at = Math.floor(Date.now() / 1000);
+                    newCashuToken.pubkey = $currentUser!.pubkey;
+
+                    console.log('Encrypting proofs added to token event');
+                    newCashuToken.content = JSON.stringify({
+                        proofs: newCashuToken.proofs,
+                    });
+
+                    // encrypt the new token event
+                    await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
+                    const cashuTokenEvent = await newCashuToken.toNostrEvent();
+                    tokens.push(cashuTokenEvent);
+                }
+            });
+
+            await Promise.all(unsavedProofsPromises);
 
             cashuWallet.event.tags = cashuWallet.publicTags;
             cashuWallet.event.content = JSON.stringify(cashuWallet.privateTags);
