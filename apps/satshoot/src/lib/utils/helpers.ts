@@ -569,7 +569,7 @@ export async function resyncWalletAndBackup(
     $cashuTokensBackup: Map<string, NostrEvent>,
     $unsavedProofsBackup: Map<string, Proof[]>
 ) {
-    console.log('syncing wallet and backup ');
+    console.log('syncing wallet and backup ', $cashuTokensBackup);
     try {
         const $ndk = get(ndk);
 
@@ -577,9 +577,8 @@ export async function resyncWalletAndBackup(
         const existingTokenIds = $wallet.tokens.map((token) => token.id);
 
         // filter tokens from backup that don't exists in wallet
-        const missingTokens = Array.from(
-            $cashuTokensBackup.values().filter((token) => !existingTokenIds.includes(token.id!))
-        );
+        const missingTokens = Array.from($cashuTokensBackup.values())
+            .filter((token) => !existingTokenIds.includes(token.id!));
 
         if (missingTokens.length > 0) {
             // convert raw token events to NDKCashuTokens
