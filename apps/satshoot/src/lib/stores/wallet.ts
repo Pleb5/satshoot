@@ -1,14 +1,32 @@
 import { getCashuPaymentInfo } from '$lib/utils/helpers';
-import { NDKUser, type CashuPaymentInfo } from '@nostr-dev-kit/ndk';
+import { NDKUser, type CashuPaymentInfo, type NostrEvent } from '@nostr-dev-kit/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import NDKWalletService, { NDKCashuWallet, NutzapMonitor } from '@nostr-dev-kit/ndk-wallet';
-import { derived, writable, type Readable } from 'svelte/store';
+import NDKWalletService, {
+    NDKCashuToken,
+    NDKCashuWallet,
+    NutzapMonitor,
+} from '@nostr-dev-kit/ndk-wallet';
+import { derived, get, writable, type Readable } from 'svelte/store';
 import { myTickets } from './freelance-eventstores';
 import currentUser from './user';
-import { SatShootPubkey } from '$lib/utils/misc';
+import { getMapSerializer, SatShootPubkey } from '$lib/utils/misc';
+import type { Proof } from '@cashu/cashu-ts';
+import { persisted } from 'svelte-persisted-store';
+import ndk from './ndk';
+import { getUniqueProofs } from '$lib/utils/cashu';
 
 export const wallet = writable<NDKCashuWallet | null>(null);
 export const ndkNutzapMonitor = writable<NutzapMonitor | null>(null);
+
+export const unsavedProofsBackup = persisted('unsavedProofsBackup', new Map<string, Proof[]>(), {
+    storage: 'local',
+    serializer: getMapSerializer<string, Proof[]>(),
+});
+
+export const cashuTokensBackup = persisted('cashuTokensBackup', new Map<string, NostrEvent>(), {
+    storage: 'local',
+    serializer: getMapSerializer<string, NostrEvent>(),
+});
 
 export function walletInit(ndk: NDKSvelte, user: NDKUser) {
     const service = new NDKWalletService(ndk);
@@ -20,6 +38,7 @@ export function walletInit(ndk: NDKSvelte, user: NDKUser) {
         wallet.set(ndkCashuWallet);
         if (!hasSubscribedForNutZaps) {
             hasSubscribedForNutZaps = true;
+            handleRolloverEvents(ndkCashuWallet);
             subscribeForNutZaps(ndk, user, ndkCashuWallet);
         }
     });
@@ -35,6 +54,101 @@ export const subscribeForNutZaps = (ndk: NDKSvelte, user: NDKUser, wallet: NDKCa
     });
     nutzapMonitor.start();
     ndkNutzapMonitor.set(nutzapMonitor);
+};
+
+const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
+    cashuWallet.on(
+        'rollover_failed',
+        async (
+            usedTokens: NDKCashuToken[],
+            movedProofs: Proof[],
+            changes: Proof[],
+            mint: string
+        ) => {
+            console.log('rollover failed in ndk, backing up tokens at app level');
+
+            usedTokens.forEach((t) => {
+                cashuWallet.removeTokenId(t.id);
+            });
+
+            let createdToken: NDKCashuToken | undefined;
+
+            const proofsToSave = [...movedProofs];
+            for (const change of changes) {
+                proofsToSave.push(change);
+            }
+
+            if (proofsToSave.length > 0) {
+                console.log('Creating new cashu token for backing up unsaved proofs');
+                const $ndk = get(ndk);
+                const newCashuToken = new NDKCashuToken($ndk);
+                newCashuToken.proofs = proofsToSave;
+                newCashuToken.mint = mint;
+                newCashuToken.wallet = cashuWallet;
+                newCashuToken.created_at = Math.floor(Date.now() / 1000);
+
+                try {
+                    console.log('Encrypting proofs added to token event');
+                    newCashuToken.content = JSON.stringify({
+                        proofs: newCashuToken.proofs,
+                    });
+
+                    const $currentUser = get(currentUser);
+                    newCashuToken.pubkey = $currentUser!.pubkey;
+                    await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
+
+                    newCashuToken.id = newCashuToken.getEventHash();
+
+                    createdToken = newCashuToken;
+                } catch (error) {
+                    console.log('An error occurred in encrypting proofs.', error);
+                    console.log('Backing up unsaved proofs');
+
+                    unsavedProofsBackup.update((map) => {
+                        const existingProofs = map.get(mint);
+
+                        if (existingProofs) {
+                            const newProofs = getUniqueProofs(proofsToSave, existingProofs);
+                            map.set(mint, [...existingProofs, ...newProofs]);
+                        } else {
+                            map.set(mint, proofsToSave);
+                        }
+
+                        return map;
+                    });
+                }
+            }
+
+            cashuTokensBackup.update((map) => {
+                // remove used tokens from backup
+                usedTokens.forEach((t) => {
+                    map.delete(t.id);
+                });
+
+                if (createdToken) map.set(createdToken.id, createdToken.rawEvent());
+
+                return map;
+            });
+        }
+    );
+
+    cashuWallet.on(
+        'rollover_done',
+        (consumedTokens: NDKCashuToken[], createdToken: NDKCashuToken | undefined) => {
+            console.log('Rollover done, backing up tokens');
+
+            cashuTokensBackup.update((map) => {
+                // remove consumed tokens from backup
+                consumedTokens.forEach((t) => {
+                    map.delete(t.id);
+                });
+
+                if (createdToken) map.set(createdToken.id, createdToken.rawEvent());
+
+                return map;
+            });
+        }
+    );
 };
 
 // Maintain a previous map outside the derived store to persist state across invocations

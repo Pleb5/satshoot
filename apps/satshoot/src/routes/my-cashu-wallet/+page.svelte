@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
-    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
+    import { cashuPaymentInfoMap, cashuTokensBackup, wallet } from '$lib/stores/wallet';
     import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
@@ -21,6 +21,7 @@
     import Warning from '$lib/components/Warning.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
     import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
+    import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -329,6 +330,74 @@
         cashuWallet.checkProofs();
     }
 
+    async function backupWallet() {
+        if (!cashuWallet) return;
+
+        try {
+            const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
+            const tokens = await Promise.all(tokenPromises);
+
+            // When user triggers manual backup its possible that
+            // there are some proofs in svelte persisted store that are not in wallet
+            // include those proofs too
+            const tokenIds = tokens.map((t) => t.id);
+            $cashuTokensBackup.forEach((value) => {
+                if (!tokenIds.includes(value.id)) {
+                    tokens.push(value);
+                }
+            });
+
+            cashuWallet.event.tags = cashuWallet.publicTags;
+            cashuWallet.event.content = JSON.stringify(cashuWallet.privateTags);
+            await cashuWallet.event.encrypt($currentUser!, undefined, 'nip44');
+
+            const json = {
+                wallet: cashuWallet.event.rawEvent(),
+                tokens,
+            };
+
+            const stringified = JSON.stringify(json, null, 2);
+
+            localStorage.setItem('wallet-backup', stringified);
+            saveToFile(stringified);
+        } catch (error) {
+            console.error('An error occurred in encryption of wallet content', error);
+            toastStore.trigger({
+                message: `Failed to backup! An error occurred in backup process.`,
+                background: `bg-error-300-600-token`,
+            });
+        }
+    }
+
+    // Function to save encrypted content to a file
+    function saveToFile(content: string) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+
+        // Create a link element to trigger download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'wallet-backup.json';
+        a.click();
+
+        // Clean up
+        URL.revokeObjectURL(url);
+    }
+
+    async function recoverWallet() {
+        const modalComponent: ModalComponent = {
+            ref: RecoverEcashWallet,
+            props: { cashuWallet },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+
+        modalStore.trigger(modal);
+    }
+
     const tooltipRemoveMint: PopupSettings = {
         event: 'hover',
         target: 'tooltipRemoveMint',
@@ -392,7 +461,7 @@
                     </div>
                 </div>
 
-                <div class="flex justify-center gap-x-12">
+                <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
                     <button
                         on:click={deposit}
                         type="button"
@@ -406,6 +475,20 @@
                         class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                     >
                         Withdraw
+                    </button>
+                    <button
+                        on:click={backupWallet}
+                        type="button"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
+                    >
+                        Backup
+                    </button>
+                    <button
+                        on:click={recoverWallet}
+                        type="button"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
+                    >
+                        Recover
                     </button>
                 </div>
 

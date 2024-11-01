@@ -1,5 +1,5 @@
 import { nip19 } from 'nostr-tools';
-import { type NDKTag, type Hexpubkey, NDKKind } from '@nostr-dev-kit/ndk';
+import { type NDKTag, type Hexpubkey, NDKKind, type NostrEvent } from '@nostr-dev-kit/ndk';
 
 export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
 
@@ -37,9 +37,9 @@ interface SetSerializer {
     parse: (json: string) => Set<string>;
 }
 
-interface MapSerializer {
-    stringify: (set: Map<string, number>) => string;
-    parse: (json: string) => Map<string, number>;
+interface MapSerializer<K, V> {
+    stringify: (map: Map<K, V>) => string;
+    parse: (json: string) => Map<K, V>;
 }
 
 export function getSetSerializer(): SetSerializer {
@@ -55,22 +55,22 @@ export function getSetSerializer(): SetSerializer {
     };
 }
 
-export function getMapSerializer(): MapSerializer {
+export function getMapSerializer<K, V>(): MapSerializer<K, V> {
     return {
-        stringify: (map: Map<string, number> | null) => {
+        stringify: (map: Map<K, V> | null) => {
             if (!map) return JSON.stringify(null);
             return JSON.stringify(Array.from(map.entries()));
         },
 
         parse: (json: string) => {
-            const map: Map<string, number> = new Map();
+            const map: Map<K, V> = new Map();
             const parsedJson = JSON.parse(json);
 
             if (parsedJson === null) return map;
 
-            const array: Array<string[]> = Array.from(parsedJson);
-            array.forEach((elem: string[]) => {
-                map.set(elem[0], parseInt(elem[1]));
+            const array: Array<[K, V]> = Array.from(parsedJson);
+            array.forEach(([key, value]) => {
+                map.set(key, value);
             });
             return map;
         },
@@ -128,4 +128,51 @@ export function linkifyText(text: string): string {
             return urlString;
         }
     });
+}
+
+export function isNDKTagArray(value: any): value is NDKTag[] {
+    return (
+        Array.isArray(value) &&
+        value.every((tag) => Array.isArray(tag) && tag.every((item) => typeof item === 'string'))
+    );
+}
+
+export function isNostrEvent(value: any): value is NostrEvent {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        typeof value.created_at === 'number' &&
+        typeof value.content === 'string' &&
+        isNDKTagArray(value.tags) &&
+        typeof value.pubkey === 'string' &&
+        (typeof value.kind === 'undefined' || typeof value.kind === 'number') &&
+        (typeof value.id === 'undefined' || typeof value.id === 'string') &&
+        (typeof value.sig === 'undefined' || typeof value.sig === 'string')
+    );
+}
+
+/**
+ * Creates a debounced version of a function, which delays invoking the function
+ * until after a specified delay has passed since the last time it was called.
+ */
+export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
+    // Variable to hold the timeout ID, used to clear the timeout on repeated calls
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+    // Debounced function with the core debouncing logic
+    const debounced = (...args: Parameters<T>): void => {
+        // Clear the previous timeout, if any, to reset the delay
+        if (timeout) clearTimeout(timeout);
+
+        // Set a new timeout to invoke the function after the delay
+        timeout = setTimeout(() => fn(...args), delay);
+    };
+
+    // Attach a clear method to allow external clearing of the timeout
+    debounced.clear = () => {
+        if (timeout) clearTimeout(timeout);
+        timeout = null;
+    };
+
+    return debounced;
 }
