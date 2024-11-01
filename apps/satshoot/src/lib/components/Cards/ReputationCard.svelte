@@ -9,6 +9,7 @@
     } from '$lib/stores/reviews';
 
     import { ReviewType } from '$lib/events/ReviewEvent';
+    import { type RatingConsensus, averageToRatingText } from '$lib/utils/helpers';
 
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { NDKNutzap, zapInvoiceFromEvent } from '@nostr-dev-kit/ndk';
@@ -36,8 +37,8 @@
     const drawerStore = getDrawerStore();
 
     $: reviewArraysExist = $clientReviews && $freelancerReviews;
-    $: reviewsExist =
-        reviewArraysExist && ($clientReviews.length > 0 || $freelancerReviews.length > 0);
+    $: reviewsExist = reviewArraysExist
+            && ($clientReviews.length > 0 || $freelancerReviews.length > 0);
 
     $: if (!type && reviewArraysExist) {
         if ($clientReviews.length > $freelancerReviews.length) {
@@ -48,8 +49,6 @@
     } else if (type) {
         reviewType = type;
     }
-
-    let ratings: Map<string, number> | undefined = undefined;
 
     const subOptions = {
         closeOnEose: false,
@@ -98,68 +97,34 @@
         drawerStore.open(drawerSettings);
     }
 
-    // $: if ($clientReviews) {
-    //     console.log('currentUser', $currentUser)
-    //     console.log('user', user)
-    //     console.log('clientReviews', $clientReviews)
-    //     console.log('freelancerReviews', $freelancerReviews)
-    // }
-    // $: console.log($freelancerReviews)
-
     $: if ($currentUser && user && $clientReviews && $freelancerReviews) {
-        let otherTypeOfRatings;
+        let clientAverage = aggregateClientRatings(user).average;
+        let freelancerAverage = aggregateFreelancerRatings(user).average;
+        let overallAverage: number = NaN;
+
         if (reviewType === ReviewType.Client) {
-            ratings = aggregateClientRatings(user);
-            otherTypeOfRatings = aggregateFreelancerRatings(user);
-        } else {
-            ratings = aggregateFreelancerRatings(user);
-            otherTypeOfRatings = aggregateClientRatings(user);
-        }
-
-        const average = ratings!.get('average') as number;
-        const otherTypeOfaverage = otherTypeOfRatings.get('average') as number;
-        let overallAverage: number;
-
-        // We take the average of both types of ratings if type is undefined
-        if (type === undefined) {
-            if (!isNaN(average) && !isNaN(otherTypeOfaverage)) {
-                overallAverage = (average + otherTypeOfaverage) / 2;
-            } else if (isNaN(average) && !isNaN(otherTypeOfaverage)) {
-                overallAverage = otherTypeOfaverage;
-            } else if (isNaN(otherTypeOfaverage) && !isNaN(average)) {
-                overallAverage = average;
+            overallAverage = clientAverage;
+        } else if (reviewType === ReviewType.Freelancer) {
+            overallAverage = freelancerAverage;
+        } else if (type === undefined) {
+            if (!isNaN(clientAverage) && !isNaN(freelancerAverage)) {
+                overallAverage = (clientAverage + freelancerAverage) / 2;
+            } else if (isNaN(clientAverage) && !isNaN(freelancerAverage)) {
+                overallAverage = freelancerAverage;
+            } else if (isNaN(freelancerAverage) && !isNaN(clientAverage)) {
+                overallAverage = clientAverage;
             } else {
                 overallAverage = NaN;
             }
-        } else {
-            overallAverage = average;
         }
-        if (isNaN(overallAverage)) {
-            ratingConsensus = 'No Ratings';
-            ratingColor = 'bg-surface-500';
-        } else {
-            ratingConsensus = 'Excellent';
-            ratingColor = 'bg-warning-500';
-            if (overallAverage < 0.9) {
-                ratingConsensus = 'Great';
-                ratingColor = 'bg-tertiary-500';
-            }
-            if (overallAverage < 0.75) {
-                ratingConsensus = 'Good';
-                ratingColor = 'bg-success-500';
-            }
-            if (overallAverage < 0.5) {
-                ratingConsensus = 'Mixed ratings';
-                ratingColor = 'bg-surface-500';
-            }
-            if (overallAverage < 0.25) {
-                ratingConsensus = 'Bad';
-                ratingColor = 'bg-error-500';
-            }
-        }
+
+        const ratingText: RatingConsensus = averageToRatingText(overallAverage);
+        ratingConsensus = ratingText.ratingConsensus;
+        ratingColor = ratingText.ratingColor;
     }
 
-    $: if ($currentUser && needSetup && user && $wot && $wotFilteredTickets && $wotFilteredOffers) {
+    $: if ($currentUser && needSetup && user && $wot
+        && $wotFilteredTickets && $wotFilteredOffers) {
         needSetup = true;
 
         const allTicketsOfUser = $wotFilteredTickets.filter(
@@ -188,12 +153,12 @@
             });
         });
 
-        // console.log('allWinnerOffersOfUser', allWinnerOffersOfUser);
-        // console.log('allWinnerOffersForUser', allWinnerOffersForUser);
-        // console.log('allTicketsWhereUserInvolved', allTicketsWhereUserInvolved);
-
         allEarningsStore = $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#p': [user], '#e': allWinnerOffersOfUser },
+            { 
+                kinds: [NDKKind.Zap, NDKKind.Nutzap], 
+                '#p': [user],
+                '#e': allWinnerOffersOfUser
+            },
             subOptions
         );
 
@@ -218,7 +183,6 @@
             if (zap.kind === NDKKind.Zap) {
                 const zapInvoice = zapInvoiceFromEvent(zap);
                 if (zapInvoice && zapInvoice.amount) {
-                    // console.log('amount', zapInvoice.amount)
                     allEarnings += Math.round(zapInvoice.amount / 1000);
                 }
             } else if (zap.kind === NDKKind.Nutzap) {
@@ -236,7 +200,6 @@
             if (zap.kind === NDKKind.Zap) {
                 const zapInvoice = zapInvoiceFromEvent(zap);
                 if (zapInvoice && zapInvoice.amount) {
-                    // console.log('amount', zapInvoice.amount)
                     allPayments += Math.round(zapInvoice.amount / 1000);
                 }
             } else if (zap.kind === NDKKind.Nutzap) {
@@ -325,7 +288,8 @@
             </div>
         </svelte:fragment>
         <svelte:fragment slot="content">
-            {#if user && reviewArraysExist && $allEarningsStore && $allPaymentsStore && $allPledgesStore}
+            {#if user && reviewArraysExist && $allEarningsStore 
+                && $allPaymentsStore && $allPledgesStore}
                 <div
                     class="flex flex-grow justify-center sm:justify-between flex-wrap gap-y-2 gap-x-4"
                 >

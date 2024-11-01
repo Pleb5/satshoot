@@ -1,23 +1,23 @@
 <script lang="ts">
-    import ndk, { type LoginMethod, blastrUrl } from "$lib/stores/ndk";
+    import ndk, { type LoginMethod, blastrUrl } from '$lib/stores/ndk';
 
-    import redirectStore from "$lib/stores/network";
-    import { NDKPrivateKeySigner, NDKRelay } from "@nostr-dev-kit/ndk";
-    import { sessionPK } from "$lib/stores/ndk";
-    import { privateKeyFromSeedWords, generateSeedWords } from "nostr-tools/nip06"
-    import { hexToBytes } from "@noble/hashes/utils";
-    import { nsecEncode } from "nostr-tools/nip19"
+    import redirectStore from '$lib/stores/network';
+    import { NDKPrivateKeySigner, NDKRelay } from '@nostr-dev-kit/ndk';
+    import { sessionPK } from '$lib/stores/ndk';
+    import { privateKeyFromSeedWords, generateSeedWords } from 'nostr-tools/nip06';
+    import { hexToBytes } from '@noble/hashes/utils';
+    import { nsecEncode } from 'nostr-tools/nip19';
 
     import { clipboard } from '@skeletonlabs/skeleton';
-    import { onMount, tick } from "svelte";
-    import { goto } from "$app/navigation";
+    import { onMount, tick } from 'svelte';
+    import { goto } from '$app/navigation';
 
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import { getToastStore } from '@skeletonlabs/skeleton';
-    import { initializeUser } from "$lib/utils/helpers";
+    import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
 
-    import { loginMethod } from "$lib/stores/user";
+    import { loginMethod } from '$lib/stores/user';
 
     const toastStore = getToastStore();
 
@@ -29,8 +29,8 @@
     onMount(async () => {
         // Generate new local private key
         seedWords = generateSeedWords();
-        const privateKey = privateKeyFromSeedWords(seedWords); 
-        // Store private key in session storage 
+        const privateKey = privateKeyFromSeedWords(seedWords);
+        // Store private key in session storage
         $sessionPK = `${privateKey}`;
 
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
@@ -40,17 +40,16 @@
         const user = await $ndk.signer.user();
         npub = user.npub;
         user.profile = {
-            created_at : Math.floor(Date.now() / 1000),
+            created_at: Math.floor(Date.now() / 1000),
             name: 'name?',
             displayName: 'name?',
             about: '',
             bio: '',
             lud16: '',
-            website: ''
+            website: '',
         };
 
-        $ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, $ndk));
-        user.publish();
+        broadcastUserProfile($ndk, user.profile);
 
         initializeUser($ndk);
     });
@@ -79,8 +78,8 @@
         }, 1000);
     }
 
-    let passphrase:string;
-    let confirmPassphrase:string;
+    let passphrase: string;
+    let confirmPassphrase: string;
     let passphraseValid: boolean = false;
     let confirmPassphraseValid: boolean = false;
     let showPassphrase: boolean = false;
@@ -92,7 +91,7 @@
     let encrypting = false;
 
     function validatePassphrase() {
-        if (passphrase.length > 13){
+        if (passphrase.length > 13) {
             passphraseValid = true;
         } else {
             passphraseValid = false;
@@ -101,7 +100,7 @@
     }
 
     function validateConfirmPassphrase() {
-        if (passphrase === confirmPassphrase){
+        if (passphrase === confirmPassphrase) {
             confirmPassphraseValid = true;
         } else {
             confirmPassphraseValid = false;
@@ -110,10 +109,13 @@
 
     async function encryptAndSaveSeed() {
         if (seedWords && npub) {
-            // encrypt seed 
-            const cryptWorker = new Worker(new URL("$lib/utils/crypto.worker.ts", import.meta.url),{
-                type: 'module'
-            });
+            // encrypt seed
+            const cryptWorker = new Worker(
+                new URL('$lib/utils/crypto.worker.ts', import.meta.url),
+                {
+                    type: 'module',
+                }
+            );
 
             cryptWorker.onmessage = (m) => {
                 const encryptedSeed = m.data['encryptedSecret'];
@@ -130,7 +132,7 @@
                         background: 'bg-success-300-600-token',
                     };
                     toastStore.trigger(t);
-                    
+
                     if ($redirectStore) {
                         goto($redirectStore);
                         $redirectStore = '';
@@ -139,27 +141,26 @@
                     }
                 } else {
                     statusMessage = 'Unexpected response from encryption process:' + m.data;
-                    setTimeout(()=>{
+                    setTimeout(() => {
                         statusColor = 'text-red-500';
-                    }, 800);            
+                    }, 800);
                 }
             };
 
             cryptWorker.onerror = (e) => {
                 statusMessage = `Error while encrypting seed words!`;
-                setTimeout(()=>{
+                setTimeout(() => {
                     statusColor = 'text-red-500';
-                }, 800);            
-
+                }, 800);
             };
 
             cryptWorker.onmessageerror = (me) => {
                 statusMessage = 'Received malformed message: ' + me.data;
 
-                setTimeout(()=>{
+                setTimeout(() => {
                     statusColor = 'text-red-500';
-                }, 800);            
-            }
+                }, 800);
+            };
 
             encrypting = true;
 
@@ -169,32 +170,33 @@
             cryptWorker.postMessage({
                 secret: seedWords,
                 passphrase: passphrase,
-                salt: npub
+                salt: npub,
             });
         }
-
     }
 
     function finish() {
         // Todo: Loading popup while encrypting
         encryptAndSaveSeed();
     }
-
 </script>
+
 <div class="p-4">
     <h2 class="h2 mb-4 text-center">Backup your Account</h2>
     {#if seedWordList.length > 0 && npub && nsec}
-        <h4 class="h4 text-center mb-4">Put these words in a safe place to be able to access your account later:</h4>
+        <h4 class="h4 text-center mb-4">
+            Put these words in a safe place to be able to access your account later:
+        </h4>
         <div class="flex flex-col justify-center items-center gap-y-4 mb-8">
-                <div class="card p-4 border-2 border-red-500 ">
-                    <div class="grid grid-cols-2 gap-x-6 gap-y-2">
-                        {#each seedWordList as word, i}
-                            <strong class="max-w-sm">{i+1}{'. ' + word}</strong>
-                        {/each}
-                    </div>
+            <div class="card p-4 border-2 border-red-500">
+                <div class="grid grid-cols-2 gap-x-6 gap-y-2">
+                    {#each seedWordList as word, i}
+                        <strong class="max-w-sm">{i + 1}{'. ' + word}</strong>
+                    {/each}
+                </div>
             </div>
-            <button 
-                class="btn btn-md w-40 bg-red-500 font-bold "
+            <button
+                class="btn btn-md w-40 bg-red-500 font-bold"
                 use:clipboard={seedWords}
                 on:click={onCopySeed}
             >
@@ -203,9 +205,9 @@
         </div>
         <div class="flex flex-col items-center gap-y-2 mb-8">
             <div class="card p-4 border-2 border-red-500 col-span-2">
-                <strong class="">{nsec.substring(0,25) + '...'}</strong>
+                <strong class="">{nsec.substring(0, 25) + '...'}</strong>
             </div>
-            <button 
+            <button
                 class="btn text-sm btn-sm self-center justify-self-start bg-red-500 font-bold"
                 use:clipboard={nsec}
                 on:click={onCopyNsec}
@@ -216,9 +218,9 @@
 
         <div class="flex flex-col items-center gap-y-2 mb-8">
             <div class="card p-4 border-2 border-red-500">
-                <strong class="">{npub.substring(0,25) + '...'}</strong>
+                <strong class="">{npub.substring(0, 25) + '...'}</strong>
             </div>
-            <button 
+            <button
                 class="btn btn-sm md:btn-md self-center justify-self-start bg-red-500 font-bold"
                 use:clipboard={npub}
                 on:click={onCopyNpub}
@@ -229,15 +231,15 @@
 
         <div class="flex flex-col items-center mb-4">
             <h2 class="h4">Your secret words will be stored locally in encrypted form!</h2>
-            <h4 class="h4 ">Provide a strong passphrase for encryption at rest(min. 14chars):</h4>
+            <h4 class="h4">Provide a strong passphrase for encryption at rest(min. 14chars):</h4>
         </div>
 
         <div class="flex flex-col gap-y-4 justify-center items-center mb-8">
             <div class="flex justify-between max-w-80">
-                <input 
-                    class="input {passphraseValid ? 'input-success' : 'input-error'}" 
-                    title="Passphrase(min. 14chars):" 
-                    type={ showPassphrase ? 'text' : 'password' }
+                <input
+                    class="input {passphraseValid ? 'input-success' : 'input-error'}"
+                    title="Passphrase(min. 14chars):"
+                    type={showPassphrase ? 'text' : 'password'}
                     placeholder="Enter passphrase..."
                     on:input={(event) => {
                         passphrase = event.currentTarget.value;
@@ -246,20 +248,21 @@
                 />
 
                 <button
-                    type="button" 
+                    type="button"
                     class="btn btn-icon-sm"
-                    on:click={ () => showPassphrase = !showPassphrase }>
+                    on:click={() => (showPassphrase = !showPassphrase)}
+                >
                     <span>
-                        <i class="fa-solid { showPassphrase ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                        <i class="fa-solid {showPassphrase ? 'fa-eye' : 'fa-eye-slash'}"></i>
                     </span>
                 </button>
             </div>
             <div class="flex justify-between items-center max-w-80">
-                <input 
-                    class="input {confirmPassphraseValid ? 'input-success' : 'input-error'}" 
-                    title="Confirm passphrase:" 
-                    type={ showConfirmPassphrase ? 'text' : 'password' }
-                    placeholder="Confirm passphrase..." 
+                <input
+                    class="input {confirmPassphraseValid ? 'input-success' : 'input-error'}"
+                    title="Confirm passphrase:"
+                    type={showConfirmPassphrase ? 'text' : 'password'}
+                    placeholder="Confirm passphrase..."
                     disabled={!passphraseValid}
                     on:input={(event) => {
                         confirmPassphrase = event.currentTarget.value;
@@ -267,26 +270,33 @@
                     }}
                 />
                 <button
-                    type="button" 
+                    type="button"
                     class="btn btn-icon-sm"
-                    on:click={ () => showConfirmPassphrase = !showConfirmPassphrase }>
+                    on:click={() => (showConfirmPassphrase = !showConfirmPassphrase)}
+                >
                     <span>
-                        <i class="fa-solid { showConfirmPassphrase ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                        <i class="fa-solid {showConfirmPassphrase ? 'fa-eye' : 'fa-eye-slash'}"></i>
                     </span>
                 </button>
             </div>
         </div>
 
         <div class="flex justify-center">
-            <button 
-                class="btn font-bold bg-success-400-500-token w-60" 
-                disabled={!passphraseValid || !confirmPassphraseValid || encrypting} 
+            <button
+                class="btn font-bold bg-success-400-500-token w-60"
+                disabled={!passphraseValid || !confirmPassphraseValid || encrypting}
                 on:click={finish}
             >
                 {#if encrypting}
                     <span>
-                        <ProgressRadial value={undefined} stroke={60} meter="stroke-tertiary-500"
-                            track="stroke-tertiary-500/30" strokeLinecap="round" width="w-8" />
+                        <ProgressRadial
+                            value={undefined}
+                            stroke={60}
+                            meter="stroke-tertiary-500"
+                            track="stroke-tertiary-500/30"
+                            strokeLinecap="round"
+                            width="w-8"
+                        />
                     </span>
                 {:else}
                     <span>Finish</span>
@@ -294,7 +304,7 @@
             </button>
         </div>
         {#if statusMessage}
-            <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
+            <h5 class="h5 font-bold text-center {statusColor} mt-2">{statusMessage}</h5>
         {/if}
     {:else}
         <p>Error! Seed words, nsec or npub missing!</p>

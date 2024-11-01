@@ -18,11 +18,12 @@ import {
     aggregateFreelancerRatings,
     userClientRatings,
     userFreelancerRatings,
+    type AggregatedClientRatings,
+    type AggregatedFreelancerRatings,
 } from '$lib/stores/reviews'
 
 import ReviewSummary from "./ReviewSummary.svelte";
 import { getDrawerStore } from "@skeletonlabs/skeleton";
-import { onMount } from "svelte";
 
 const drawerStore = getDrawerStore();
 
@@ -33,30 +34,23 @@ $: if (reviewType) {
 
 const userHex = $drawerStore.meta['user'];
 
-let clientRatingsMap: Map<string, number>;
-let freelancerRatingsMap: Map<string, number>;
+let aggregatedClientRatings: AggregatedClientRatings;
+let aggregatedFreelancerRatings: AggregatedFreelancerRatings;
 let userClientRatingsArr: Array<ClientRating>;
 let userFreelancerRatingsArr: Array<FreelancerRating>;
 
 $: if ($clientReviews) {
-    clientRatingsMap = aggregateClientRatings(userHex);
+    aggregatedClientRatings = aggregateClientRatings(userHex);
     userClientRatingsArr = userClientRatings($currentUser!.pubkey, userHex);
 }
 
 $: if ($freelancerReviews) {
-    freelancerRatingsMap = aggregateFreelancerRatings(userHex);
+    aggregatedFreelancerRatings = aggregateFreelancerRatings(userHex);
     userFreelancerRatingsArr = userFreelancerRatings(
         $currentUser!.pubkey,
         userHex
     );
 }
-
-
-onMount(() => {
-    const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
-    // Scroll to top as soon as ticket arrives
-    elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
-});
 
 const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
     flex-grow sm:max-w-[70vw] lg:max-w-[60vw] overflow-y-auto';
@@ -65,22 +59,22 @@ const baseClasses = 'card p-4 m-8 bg-surface-200-700-token\
 
 <TabGroup justify='justify-evenly' flex='flex-grow'>
     <Tab bind:group={reviewType} name="tab1" value={ReviewType.Client}>
-        Client Reviews
+        As a Client
     </Tab>
     <Tab bind:group={reviewType} name="tab2" value={ReviewType.Freelancer}>
-        Freelancer Reviews
+        As a Freelancer
     </Tab>
     <!-- Tab Panels --->
     <svelte:fragment slot="panel">
         <div class="{baseClasses}">
-            {#if clientRatingsMap && reviewType === ReviewType.Client}
+            {#if aggregatedClientRatings && reviewType === ReviewType.Client}
                 <ReviewSummary 
-                    ratings={clientRatingsMap}
+                    aggregateRatings={aggregatedClientRatings}
                     userRatings={userClientRatingsArr}
                 />
-            {:else if freelancerRatingsMap && reviewType === ReviewType.Freelancer}
+            {:else if aggregatedFreelancerRatings && reviewType === ReviewType.Freelancer}
                 <ReviewSummary 
-                    ratings={freelancerRatingsMap}
+                    aggregateRatings={aggregatedFreelancerRatings}
                     userRatings={userFreelancerRatingsArr}
                 />
             {/if}

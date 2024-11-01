@@ -12,11 +12,25 @@ import { notifications } from '$lib/stores/notifications';
 
     {#if $notifications?.length > 0}
         <span 
-            class="badge-icon variant-filled-error absolute -top-1 -right-2 z-10"
-            style="font-size:8pt; width: 15px; height: 15px;"
+            class="badge-icon custom-badge-size variant-filled-error 
+            absolute -top-2 -right-4 z-10"
         >
             {$notifications.length}
         </span>
     {/if}
 </div>
 
+<style>
+    .custom-badge-size {
+        font-size:7pt;
+        width: 21px; 
+        height: 21px;
+    }
+    @screen sm {
+        .custom-badge-size {
+            font-size:9pt;
+            width: 25px; 
+            height: 25px;
+        }
+    }
+</style>

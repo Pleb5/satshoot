@@ -11,6 +11,8 @@ import {
     NDKRelaySet,
     NDKCashuMintList,
     type CashuPaymentInfo,
+    type NDKUserProfile,
+    serializeProfile,
     type NostrEvent,
 } from '@nostr-dev-kit/ndk';
 
@@ -23,7 +25,6 @@ import {
     loggedIn,
     loggingIn,
     loginMethod,
-    retryUserInit,
     followsUpdated,
     userRelaysUpdated,
 } from '../stores/user';
@@ -50,7 +51,7 @@ import { notifications } from '../stores/notifications';
 
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
-import { dev, browser } from '$app/environment';
+import { dev } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
 import {
@@ -128,15 +129,8 @@ export async function initializeUser(ndk: NDKSvelte) {
         messageStore.startSubscription();
         allReviews.startSubscription();
         allReceivedZaps.startSubscription();
-
-        retryUserInit.set(false);
     } catch (e) {
         console.log('Could not initialize User. Reason: ', e);
-        if (browser && !get(retryUserInit)) {
-            retryUserInit.set(true);
-            console.log('Retrying...');
-            window.location.reload();
-        }
     }
 }
 
@@ -247,7 +241,7 @@ export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | 
         authors: [$currentUser!.pubkey],
     };
 
-    let relays = await fetchEventFromRelays(relayFilter, 4000, true, queryRelays);
+    let relays = await fetchEventFromRelaysFirst(relayFilter, 4000, true, queryRelays);
 
     return relays;
 }
@@ -261,16 +255,50 @@ export async function broadcastRelayList(
     userRelayList.readRelayUrls = Array.from(readRelayUrls);
     userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
 
-    ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, ndk));
-    // const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
-    //     blastrUrl,
-    //     ...ndk.pool.urls(),
-    //     ...ndk.outboxPool!.urls()
-    // ], ndk);
-    console.log('relays sending to:', ndk.pool.urls());
-
-    const relaysPosted = await userRelayList.publish();
+    const relaysPosted = await broadcastEvent(ndk, userRelayList, [...writeRelayUrls]);
     console.log('relays posted to:', relaysPosted);
+}
+
+export async function broadcastUserProfile(ndk: NDKSvelte, userProfile: NDKUserProfile) {
+    const ndkEvent = new NDKEvent(ndk);
+    ndkEvent.content = serializeProfile(userProfile);
+    ndkEvent.kind = NDKKind.Metadata;
+
+    const explicitRelays: string[] = [];
+
+    const relayListEvent = await fetchUserOutboxRelays(ndk);
+    if (relayListEvent) {
+        const relayList = NDKRelayList.from(relayListEvent);
+        explicitRelays.push(...relayList.writeRelayUrls);
+    }
+
+    const relaysPosted = await broadcastEvent(ndk, ndkEvent, explicitRelays);
+    console.log('userProfile posted to:', relaysPosted);
+}
+
+export async function broadcastEvent(
+    ndk: NDKSvelte,
+    ndkEvent: NDKEvent,
+    explicitRelayUrls: string[],
+    includePoolRelays: boolean = true,
+    includeOutboxPoolRelays: boolean = true,
+    includeBlastUrl: boolean = true
+) {
+    const relayUrls = [...explicitRelayUrls];
+
+    if (includePoolRelays) {
+        relayUrls.push(...ndk.pool.urls());
+    }
+
+    if (includeOutboxPoolRelays && ndk.outboxPool) {
+        relayUrls.push(...ndk.outboxPool.urls());
+    }
+
+    if (includeBlastUrl) {
+        relayUrls.push(blastrUrl);
+    }
+
+    return await ndkEvent.publish(NDKRelaySet.fromRelayUrls(relayUrls, ndk));
 }
 
 export async function checkRelayConnections() {
@@ -339,7 +367,7 @@ export async function checkRelayConnections() {
     }
 }
 
-export async function fetchEventFromRelays(
+export async function fetchEventFromRelaysFirst(
     filter: NDKFilter,
     relayTimeoutMS: number = 6000,
     fallbackToCache: boolean = false,
@@ -370,7 +398,11 @@ export async function fetchEventFromRelays(
         relayPromise,
     ])) as NDKEvent | null;
 
-    if (!fallbackToCache) return fetchedEvent;
+    if (fetchedEvent) {
+        return fetchedEvent;
+    } else if (!fetchedEvent && !fallbackToCache) {
+        return null;
+    }
 
     const cachedEvent = await $ndk.fetchEvent(filter, {
         cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
@@ -450,7 +482,7 @@ export async function getCashuPaymentInfo(
 
     const relays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    const cashuMintlistEvent = await fetchEventFromRelays(filter, 5000, false, relays);
+    const cashuMintlistEvent = await fetchEventFromRelaysFirst(filter, 5000, false, relays);
 
     if (!cashuMintlistEvent) {
         console.warn(`Could not fetch Cashu Mint list for ${pubkey}`);
@@ -485,12 +517,59 @@ export function arraysAreEqual<T>(arr1: T[], arr2: T[]): boolean {
     return arr1.every((element, index) => element === arr2[index]);
 }
 
+export function shortenTextWithEllipsesInMiddle(text: string, maxLength: number): string {
+    if (text.length <= maxLength) return text;
+
+    const textCharactersLeftAlone: number = maxLength - 3;
+    const lengthOfStart = Math.round(textCharactersLeftAlone / 2);
+    const lengthOfEnd: number = textCharactersLeftAlone - lengthOfStart;
+
+    const result =
+        text.substring(0, lengthOfStart) + '...' + text.substring(text.length - lengthOfEnd - 1);
+
+    return result;
+}
+
+export interface RatingConsensus {
+    ratingConsensus: string;
+    ratingColor: string;
+}
+
+export function averageToRatingText(average: number): RatingConsensus {
+    let ratingConsensus = '';
+    let ratingColor = '';
+    if (isNaN(average)) {
+        ratingConsensus = 'No Ratings';
+        ratingColor = 'bg-surface-500';
+    } else {
+        ratingConsensus = 'Excellent';
+        ratingColor = 'bg-warning-500';
+        if (average < 0.9) {
+            ratingConsensus = 'Great';
+            ratingColor = 'bg-tertiary-500';
+        }
+        if (average < 0.75) {
+            ratingConsensus = 'Good';
+            ratingColor = 'bg-success-500';
+        }
+        if (average < 0.5) {
+            ratingConsensus = 'Mixed ratings';
+            ratingColor = 'bg-surface-500';
+        }
+        if (average < 0.25) {
+            ratingConsensus = 'Bad';
+            ratingColor = 'bg-error-500';
+        }
+    }
+    return { ratingConsensus: ratingConsensus, ratingColor: ratingColor };
+}
+
 export async function resyncWalletAndBackup(
     $wallet: NDKCashuWallet,
     $cashuTokensBackup: Map<string, NostrEvent>,
     $unsavedProofsBackup: Map<string, Proof[]>
 ) {
-    console.log('syncing wallet and backup ');
+    console.log('syncing wallet and backup ', $cashuTokensBackup);
     try {
         const $ndk = get(ndk);
 
@@ -498,9 +577,8 @@ export async function resyncWalletAndBackup(
         const existingTokenIds = $wallet.tokens.map((token) => token.id);
 
         // filter tokens from backup that don't exists in wallet
-        const missingTokens = Array.from(
-            $cashuTokensBackup.values().filter((token) => !existingTokenIds.includes(token.id!))
-        );
+        const missingTokens = Array.from($cashuTokensBackup.values())
+            .filter((token) => !existingTokenIds.includes(token.id!));
 
         if (missingTokens.length > 0) {
             // convert raw token events to NDKCashuTokens
