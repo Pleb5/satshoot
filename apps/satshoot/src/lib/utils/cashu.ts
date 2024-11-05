@@ -5,12 +5,14 @@ import {
     type CashuPaymentInfo,
     type NostrEvent,
 } from '@nostr-dev-kit/ndk';
-import type { NDKCashuToken, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+import { NDKCashuToken, type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
 import type { ToastSettings, ToastStore } from '@skeletonlabs/skeleton';
 import { get } from 'svelte/store';
 import { getCashuPaymentInfo } from './helpers';
 import { isNostrEvent } from './misc';
 import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
+import { cashuTokensBackup, unsavedProofsBackup } from '$lib/stores/wallet';
+import currentUser from '$lib/stores/user';
 
 // This method checks if user's cashu mint list event (kind: 10019) is synced with user's selected cashu wallet
 export async function isCashuMintListSynced(
@@ -172,7 +174,7 @@ export async function extractUnspentProofsForMint(mint: string, tokens: NDKCashu
     const _wallet = new CashuWallet(new CashuMint(mint));
 
     const spentProofs = await _wallet.checkProofsSpent(allProofs);
-    const unspentProofs = getUniqueProofs(allProofs, spentProofs)
+    const unspentProofs = getUniqueProofs(allProofs, spentProofs);
 
     return unspentProofs;
 }
@@ -183,4 +185,79 @@ export function getUniqueProofs(array1: Proof[], array2: Proof[]): Proof[] {
 
     // Filter array1 to only include objects not in array2
     return array1.filter((proof) => !array2Set.has(JSON.stringify(proof)));
+}
+
+export async function backupWallet(cashuWallet: NDKCashuWallet) {
+    const $ndk = get(ndk);
+    const $currentUser = get(currentUser);
+    const $cashuTokensBackup = get(cashuTokensBackup);
+    const $unsavedProofsBackup = get(unsavedProofsBackup);
+
+    const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
+    const tokens = await Promise.all(tokenPromises);
+
+    // When user triggers manual backup its possible that
+    // there are some tokens in svelte persisted store that are not in wallet
+    // include those proofs too
+    const tokenIds = tokens.map((t) => t.id);
+    $cashuTokensBackup.forEach((value) => {
+        if (!tokenIds.includes(value.id)) {
+            tokens.push(value);
+        }
+    });
+
+    // Its also possible that there are some unsaved proofs in svelte persisted store
+    // We need to include these proofs in backup too
+    const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
+    const unsavedProofsPromises = unsavedProofsArray.map(async ([mint, proofs]) => {
+        if (proofs.length > 0) {
+            // Creating new cashu token for backing up unsaved proofs related to a specific mint
+            const newCashuToken = new NDKCashuToken($ndk);
+            newCashuToken.proofs = proofs;
+            newCashuToken.mint = mint;
+            newCashuToken.wallet = cashuWallet!;
+            newCashuToken.created_at = Math.floor(Date.now() / 1000);
+            newCashuToken.pubkey = $currentUser!.pubkey;
+
+            console.log('Encrypting proofs added to token event');
+            newCashuToken.content = JSON.stringify({
+                proofs: newCashuToken.proofs,
+            });
+
+            // encrypt the new token event
+            await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
+            const cashuTokenEvent = await newCashuToken.toNostrEvent();
+            tokens.push(cashuTokenEvent);
+        }
+    });
+
+    await Promise.all(unsavedProofsPromises);
+
+    cashuWallet.event.tags = cashuWallet.publicTags;
+    cashuWallet.event.content = JSON.stringify(cashuWallet.privateTags);
+    await cashuWallet.event.encrypt($currentUser!, undefined, 'nip44');
+
+    const json = {
+        wallet: cashuWallet.event.rawEvent(),
+        tokens,
+    };
+
+    const stringified = JSON.stringify(json, null, 2);
+
+    saveToFile(stringified);
+}
+
+// Function to save encrypted content to a file
+function saveToFile(content: string) {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+
+    // Create a link element to trigger download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'wallet-backup.json';
+    a.click();
+
+    // Clean up
+    URL.revokeObjectURL(url);
 }

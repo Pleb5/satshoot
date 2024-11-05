@@ -9,14 +9,13 @@
 
     import notificationsEnabled from '$lib/stores/notifications';
 
-    import { logout } from '$lib/utils/helpers';
-
     import TicketIcon from '../Icons/TicketIcon.svelte';
     import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
     import BullhornIcon from '../Icons/BullhornIcon.svelte';
     import WalletIcon from '../Icons/WalletIcon.svelte';
+    import LogoutModal from '../Modals/LogoutModal.svelte';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -90,28 +89,16 @@
     }
 
     function onLogout() {
-        const modalBody = `
-                <p>Do really you wish to log out?</p>
-                <strong class="text-error-400-500-token">
-                    If you are logged in with a Local Keypair,
-                    it will be deleted from local storage!
-                </strong>`;
-
-        let logoutResponse = async function (r: boolean) {
-            if (r) {
-                modalStore.close();
-                drawerStore.close();
-                logout();
-            }
+        const modalComponent: ModalComponent = {
+            ref: LogoutModal,
         };
 
         const modal: ModalSettings = {
-            type: 'confirm',
-            // Data
+            type: 'component',
             title: 'Confirm log out',
-            body: modalBody,
-            response: logoutResponse,
+            component: modalComponent,
         };
+
         modalStore.trigger(modal);
     }
 

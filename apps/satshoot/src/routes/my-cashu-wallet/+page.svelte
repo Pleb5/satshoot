@@ -27,6 +27,7 @@
     import { displayEcashWarning } from '$lib/stores/gui';
     import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
     import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
+    import { backupWallet } from '$lib/utils/cashu';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -335,63 +336,11 @@
         cashuWallet.checkProofs();
     }
 
-    async function backupWallet() {
+    async function handleWalletBackup() {
         if (!cashuWallet) return;
 
         try {
-            const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
-            const tokens = await Promise.all(tokenPromises);
-
-            // When user triggers manual backup its possible that
-            // there are some tokens in svelte persisted store that are not in wallet
-            // include those proofs too
-            const tokenIds = tokens.map((t) => t.id);
-            $cashuTokensBackup.forEach((value) => {
-                if (!tokenIds.includes(value.id)) {
-                    tokens.push(value);
-                }
-            });
-
-            // Its also possible that there are some unsaved proofs in svelte persisted store
-            // We need to include these proofs in backup too
-            const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
-            const unsavedProofsPromises = unsavedProofsArray.map(async ([mint, proofs]) => {
-                if (proofs.length > 0) {
-                    // Creating new cashu token for backing up unsaved proofs related to a specific mint
-                    const newCashuToken = new NDKCashuToken($ndk);
-                    newCashuToken.proofs = proofs;
-                    newCashuToken.mint = mint;
-                    newCashuToken.wallet = cashuWallet!;
-                    newCashuToken.created_at = Math.floor(Date.now() / 1000);
-                    newCashuToken.pubkey = $currentUser!.pubkey;
-
-                    console.log('Encrypting proofs added to token event');
-                    newCashuToken.content = JSON.stringify({
-                        proofs: newCashuToken.proofs,
-                    });
-
-                    // encrypt the new token event
-                    await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
-                    const cashuTokenEvent = await newCashuToken.toNostrEvent();
-                    tokens.push(cashuTokenEvent);
-                }
-            });
-
-            await Promise.all(unsavedProofsPromises);
-
-            cashuWallet.event.tags = cashuWallet.publicTags;
-            cashuWallet.event.content = JSON.stringify(cashuWallet.privateTags);
-            await cashuWallet.event.encrypt($currentUser!, undefined, 'nip44');
-
-            const json = {
-                wallet: cashuWallet.event.rawEvent(),
-                tokens,
-            };
-
-            const stringified = JSON.stringify(json, null, 2);
-
-            localStorage.setItem('wallet-backup', stringified);
-            saveToFile(stringified);
+            backupWallet(cashuWallet);
         } catch (error) {
             console.error('An error occurred in encryption of wallet content', error);
             toastStore.trigger({
@@ -399,21 +348,6 @@
                 background: `bg-error-300-600-token`,
             });
         }
-    }
-
-    // Function to save encrypted content to a file
-    function saveToFile(content: string) {
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-
-        // Create a link element to trigger download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'wallet-backup.json';
-        a.click();
-
-        // Clean up
-        URL.revokeObjectURL(url);
     }
 
     async function recoverWallet() {
@@ -509,7 +443,7 @@
                         Withdraw
                     </button>
                     <button
-                        on:click={backupWallet}
+                        on:click={handleWalletBackup}
                         type="button"
                         class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                     >
