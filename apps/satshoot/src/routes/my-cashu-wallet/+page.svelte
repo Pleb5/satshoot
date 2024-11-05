@@ -20,14 +20,21 @@
     import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
     import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
-    import { NDKCashuMintList, NDKPrivateKeySigner, NDKRelaySet } from '@nostr-dev-kit/ndk';
+    import {
+        NDKCashuMintList,
+        NDKEvent,
+        NDKKind,
+        NDKPrivateKeySigner,
+        NDKRelaySet,
+    } from '@nostr-dev-kit/ndk';
     import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
     import currentUser from '$lib/stores/user';
     import Warning from '$lib/components/Warning.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
     import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
     import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
-    import { backupWallet } from '$lib/utils/cashu';
+    import { backupWallet, getUniqueProofs } from '$lib/utils/cashu';
+    import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -330,10 +337,91 @@
         updateWallet();
     }
 
-    function refreshBalance() {
+    async function refreshBalance() {
         if (!cashuWallet) return;
 
-        cashuWallet.checkProofs();
+        const tokensToDestroy: NDKCashuToken[] = [];
+        const proofsToSave = new Map<string, Proof[]>();
+
+        // get all the unique mints from tokens
+        const mints = new Set<string>();
+        cashuWallet.tokens.forEach((t) => {
+            if (t.mint) mints.add(t.mint);
+        });
+
+        const mintsArray = Array.from(mints);
+
+        const promises = mintsArray.map(async (mint) => {
+            const allTokens = cashuWallet!.tokens.filter((t) => t.mint === mint);
+            const allProofs = allTokens.map((t) => t.proofs).flat();
+
+            const _wallet = new CashuWallet(new CashuMint(mint));
+            const spentProofs = await _wallet.checkProofsSpent(allProofs);
+
+            allTokens.forEach((token) => {
+                const unspentProofs = getUniqueProofs(token.proofs, spentProofs);
+
+                // If unspentProofs length is not equal to token.proofs length
+                // then it means this token create some spent proofs.
+                // Therefore, we'll add this token to tokensToDestroy array
+                // and will add unspent proofs to proofsToSave map
+                if (unspentProofs.length !== token.proofs.length) {
+                    tokensToDestroy.push(token);
+                    const proofs = proofsToSave.get(mint);
+                    if (proofs) {
+                        proofsToSave.set(mint, [...proofs, ...unspentProofs]);
+                    } else {
+                        proofsToSave.set(mint, unspentProofs);
+                    }
+                }
+            });
+        });
+
+        await Promise.all(promises);
+
+        const relaySet = cashuWallet.relaySet;
+
+        console.log('tokensToDestroy :>> ', tokensToDestroy);
+
+        if (tokensToDestroy.length > 0) {
+            const deleteEvent = new NDKEvent($ndk);
+            deleteEvent.kind = NDKKind.EventDeletion;
+            deleteEvent.tags = [['k', NDKKind.CashuToken.toString()]];
+
+            tokensToDestroy.forEach((token) => {
+                deleteEvent.tag(['e', token.id]);
+                if (token.relay) relaySet?.addRelay(token.relay);
+            });
+            await deleteEvent.publish(relaySet);
+            cashuWallet.addUsedTokens(tokensToDestroy);
+        }
+
+        // handle proofs to save
+        const proofsToSaveArray = Array.from(proofsToSave.entries());
+        console.log('proofsToSaveArray :>> ', proofsToSaveArray);
+        const newTokenPromises = proofsToSaveArray.map(async ([mint, proofs]) => {
+            if (proofs.length > 0) {
+                // Creating new cashu token for backing up unsaved proofs related to a specific mint
+                const newCashuToken = new NDKCashuToken($ndk);
+                newCashuToken.proofs = proofs;
+                newCashuToken.mint = mint;
+                newCashuToken.wallet = cashuWallet!;
+                newCashuToken.created_at = Math.floor(Date.now() / 1000);
+                newCashuToken.pubkey = $currentUser!.pubkey;
+
+                console.log('Encrypting proofs added to token event');
+                newCashuToken.content = JSON.stringify({
+                    proofs: newCashuToken.proofs,
+                });
+
+                // encrypt the new token event
+                await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
+                await newCashuToken.publish();
+                cashuWallet?.emit('token_created', newCashuToken);
+            }
+        });
+
+        Promise.all(newTokenPromises);
     }
 
     async function handleWalletBackup() {
@@ -416,11 +504,11 @@
                         <div class="text-7xl font-black text-center focus:outline-none w-full">
                             {walletBalance}
                         </div>
-                        <!-- <button on:click={refreshBalance}>
+                        <button on:click={refreshBalance}>
                             <i
                                 class="fa-solid fa-rotate-right text-3xl text-muted-foreground font-light"
                             ></i>
-                        </button> -->
+                        </button>
                     </div>
                     <div class="text-3xl text-muted-foreground font-light">
                         {walletUnit}
