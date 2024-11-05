@@ -45,6 +45,8 @@
     import { linkifyText } from '$lib/utils/misc';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
 
+	import Markdown from './Markdown.svelte'
+
     const modalStore = getModalStore();
 			
     
@@ -253,7 +255,9 @@
     }
 
     onMount(async ()=>{
-        processedDescription = linkifyText(ticket.description);
+
+        //processedDescription = linkifyText(ticket.description);
+		processedDescription = ticket.description;
         if (ticket.acceptedOfferAddress) {
             const winnerOfferEvent = await $ndk.fetchEvent(ticket.acceptedOfferAddress);
             if (winnerOfferEvent) {
@@ -369,7 +373,7 @@
 
         <section class="p-4">
             <div class="text-center text-base md:text-lg break-words whitespace-pre-line">
-                {@html processedDescription }
+                <Markdown content={processedDescription} />
             </div>
 
             <hr class="my-4" />
