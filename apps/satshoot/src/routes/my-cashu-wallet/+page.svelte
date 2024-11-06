@@ -15,6 +15,7 @@
         type ModalSettings,
         type ToastSettings,
         type PopupSettings,
+        ProgressRadial,
     } from '@skeletonlabs/skeleton';
     import EditProfileModal from '../../lib/components/Modals/EditProfileModal.svelte';
     import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
@@ -46,6 +47,7 @@
 
     let walletBalance = 0;
     let walletUnit = 'sats';
+    let cleaningWallet = false;
 
     $: if (cashuWallet) {
         cashuWallet.balance().then((res) => {
@@ -350,6 +352,43 @@
         }
     }
 
+    function handleCleanWallet() {
+        const modalBody = `
+                <strong class="text-primary-400-500-token">
+                    If a wallet contains used tokens, they will be removed
+                    and you may see a decrease in wallet balance.
+                    Do you really wish to clean wallet?
+                </strong>`;
+
+        let response = async function (r: boolean) {
+            if (r) {
+                modalStore.close();
+                cleaningWallet = true;
+                await cleanWallet(cashuWallet!)
+                    .catch((err) => {
+                        console.error('An error occurred in cleaning wallet', err);
+                        toastStore.trigger({
+                            message: `Failed to clean used tokens!`,
+                            background: `bg-info-300-600-token`,
+                        });
+                    })
+                    .finally(() => {
+                        cleaningWallet = false;
+                    });
+            }
+        };
+
+        const modal: ModalSettings = {
+            type: 'confirm',
+            // Data
+            title: 'Confirm clean wallet',
+            body: modalBody,
+            response: response,
+        };
+
+        modalStore.trigger(modal);
+    }
+
     async function handleWalletBackup() {
         if (!cashuWallet) return;
 
@@ -430,11 +469,6 @@
                         <div class="text-7xl font-black text-center focus:outline-none w-full">
                             {walletBalance}
                         </div>
-                        <button on:click={refreshBalance}>
-                            <i
-                                class="fa-solid fa-rotate-right text-3xl text-muted-foreground font-light"
-                            ></i>
-                        </button>
                     </div>
                     <div class="text-3xl text-muted-foreground font-light">
                         {walletUnit}
@@ -469,6 +503,29 @@
                         class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                     >
                         Recover
+                    </button>
+                    <button
+                        on:click={handleCleanWallet}
+                        disabled={cleaningWallet}
+                        type="button"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token flex justify-center"
+                    >
+                        {#if cleaningWallet}
+                            <span>
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-primary-500"
+                                    track="stroke-primary-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
+                            </span>
+                        {:else}
+                            <i class="fa-solid fa-rotate-right text-muted-foreground font-light"
+                            ></i>
+                        {/if}
+                        <span> Clean Wallet</span>
                     </button>
                 </div>
 
