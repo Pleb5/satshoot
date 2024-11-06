@@ -115,7 +115,7 @@
         unsavedProofsBackup,
         wallet,
     } from '$lib/stores/wallet';
-    import { isCashuMintListSynced } from '$lib/utils/cashu';
+    import { cleanWallet, isCashuMintListSynced } from '$lib/utils/cashu';
     import { debounce } from '$lib/utils/misc';
 
     initializeStores();
@@ -581,6 +581,36 @@
 
     $: if ($currentUser && $wallet) {
         isCashuMintListSynced($wallet, $currentUser, toastStore);
+
+        $wallet.on('found_spent_token', () => {
+            toastStore.trigger({
+                message: `Cashu Wallet contains some tokens which have been spent. Do you want to clean the wallet?`,
+                background: 'bg-warning-300-600-token',
+                autohide: false,
+                action: {
+                    label: 'Clean Wallet',
+                    response: () => {
+                        cleanWallet($wallet)
+                            .then(() => {
+                                toastStore.trigger({
+                                    message: `Successfully cleaned cashu wallet from used tokens`,
+                                    timeout: 5000,
+                                    autohide: true,
+                                    background: `bg-success-300-600-token`,
+                                });
+                            })
+                            .catch((err) => {
+                                console.trace(err);
+                                toastStore.trigger({
+                                    message: `Failed to clean wallet!`,
+                                    autohide: false,
+                                    background: `bg-error-300-600-token`,
+                                });
+                            });
+                    },
+                },
+            });
+        });
     }
 
     /**
