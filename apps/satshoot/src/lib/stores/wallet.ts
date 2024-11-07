@@ -150,13 +150,18 @@ const handleEventsEmittedFromWallet = (cashuWallet: NDKCashuWallet) => {
         }
     );
 
-    cashuWallet.on('token_created', (token) => {
-        console.log('Backing up newly created cashu token!');
+    cashuWallet.on('received_proofs', async (proofs, mint) => {
+        console.log('Backing up newly received cashu proofs!');
 
-        // A new NDKCashuToken created
-        cashuTokensBackup.update((map) => {
-            // just add the token to backup
-            map.set(token.id, token.rawEvent());
+        unsavedProofsBackup.update((map) => {
+            const existingProofs = map.get(mint);
+
+            if (existingProofs) {
+                const newProofs = getUniqueProofs(proofs, existingProofs);
+                map.set(mint, [...existingProofs, ...newProofs]);
+            } else {
+                map.set(mint, proofs);
+            }
 
             return map;
         });
