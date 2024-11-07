@@ -1,40 +1,29 @@
 <script lang="ts">
+    import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
+    import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
+    import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
+    import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
+    import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
+    import Warning from '$lib/components/Warning.svelte';
+    import { displayEcashWarning } from '$lib/stores/gui';
     import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
-    import {
-        cashuPaymentInfoMap,
-        cashuTokensBackup,
-        unsavedProofsBackup,
-        wallet,
-    } from '$lib/stores/wallet';
-    import { NDKCashuToken, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+    import currentUser from '$lib/stores/user';
+    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
+    import { backupWallet, cleanWallet } from '$lib/utils/cashu';
+    import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
+    import { NDKCashuMintList, NDKPrivateKeySigner, NDKRelaySet } from '@nostr-dev-kit/ndk';
+    import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
         getToastStore,
         popup,
+        ProgressRadial,
         type ModalComponent,
         type ModalSettings,
-        type ToastSettings,
         type PopupSettings,
-        ProgressRadial,
+        type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import EditProfileModal from '../../lib/components/Modals/EditProfileModal.svelte';
-    import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
-    import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
-    import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
-    import {
-        NDKCashuMintList,
-        NDKEvent,
-        NDKKind,
-        NDKPrivateKeySigner,
-        NDKRelaySet,
-    } from '@nostr-dev-kit/ndk';
-    import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
-    import currentUser from '$lib/stores/user';
-    import Warning from '$lib/components/Warning.svelte';
-    import { displayEcashWarning } from '$lib/stores/gui';
-    import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
-    import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
-    import { backupWallet, cleanWallet } from '$lib/utils/cashu';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -336,20 +325,6 @@
         cashuWallet.relays = cashuWallet.relays.filter((r) => r !== relay);
 
         updateWallet();
-    }
-
-    async function refreshBalance() {
-        if (!cashuWallet) return;
-
-        try {
-            await cleanWallet(cashuWallet);
-        } catch (error) {
-            console.error('An error occurred in cleaning wallet', error);
-            toastStore.trigger({
-                message: `Failed to clean used tokens!`,
-                background: `bg-error-300-600-token`,
-            });
-        }
     }
 
     function handleCleanWallet() {
