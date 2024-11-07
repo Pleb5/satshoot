@@ -251,6 +251,8 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
     const proofsToSaveArray = Array.from(proofsToSave.entries());
     const newTokenPromises = proofsToSaveArray.map(async ([mint, proofs]) => {
         if (proofs.length > 0) {
+            cashuWallet?.emit('received_proofs', proofs, mint);
+
             // Creating new cashu token for backing up unsaved proofs related to a specific mint
             const newCashuToken = new NDKCashuToken($ndk);
             newCashuToken.proofs = proofs;
@@ -267,7 +269,6 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
             // encrypt the new token event
             await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
             await newCashuToken.publish();
-            cashuWallet?.emit('token_created', newCashuToken);
         }
     });
 
@@ -408,6 +409,8 @@ export async function resyncWalletAndBackup(
             }
         }
 
+        const existingProofs = $wallet.tokens.map((t) => t.proofs).flat();
+
         const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
         unsavedProofsArray.map(async ([mint, proofs]) => {
             if (proofs.length > 0) {
@@ -415,10 +418,12 @@ export async function resyncWalletAndBackup(
                 const spentProofs = await _wallet.checkProofsSpent(proofs);
                 const unspentProofs = getUniqueProofs(proofs, spentProofs);
 
-                if (unspentProofs.length > 0) {
+                const newProofs = getUniqueProofs(unspentProofs, existingProofs);
+
+                if (newProofs.length > 0) {
                     // Creating new cashu token for backing up unsaved proofs related to a specific mint
                     const newCashuToken = new NDKCashuToken($ndk);
-                    newCashuToken.proofs = unspentProofs;
+                    newCashuToken.proofs = newProofs;
                     newCashuToken.mint = mint;
                     newCashuToken.wallet = $wallet;
 
