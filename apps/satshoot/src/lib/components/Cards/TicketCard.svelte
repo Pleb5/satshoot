@@ -256,7 +256,6 @@
 
     onMount(async ()=>{
 
-        //processedDescription = linkifyText(ticket.description);
 		processedDescription = ticket.description;
         if (ticket.acceptedOfferAddress) {
             const winnerOfferEvent = await $ndk.fetchEvent(ticket.acceptedOfferAddress);
