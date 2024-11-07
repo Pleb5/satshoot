@@ -34,8 +34,12 @@
             .lnPay({ pr })
             .then((res) => {
                 console.log('res withdraw :>> ', res);
+                let message = 'Successfully withdrawn amount!\n';
+                if (res?.fee) {
+                    message += `Costed ${res.fee} sats as fee.`;
+                }
                 toastStore.trigger({
-                    message: `Successfully withdrawn amount!`,
+                    message: message,
                     timeout: 5000,
                     autohide: true,
                     background: `bg-success-300-600-token`,
