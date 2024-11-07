@@ -32,12 +32,7 @@
     import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from '$lib/stores/notifications';
 
-    import {
-        initializeUser,
-        logout,
-        checkRelayConnections,
-        resyncWalletAndBackup,
-    } from '$lib/utils/helpers';
+    import { initializeUser, logout, checkRelayConnections } from '$lib/utils/helpers';
 
     import {
         wot,
@@ -115,7 +110,7 @@
         unsavedProofsBackup,
         wallet,
     } from '$lib/stores/wallet';
-    import { cleanWallet, isCashuMintListSynced } from '$lib/utils/cashu';
+    import { cleanWallet, isCashuMintListSynced, resyncWalletAndBackup } from '$lib/utils/cashu';
     import { debounce } from '$lib/utils/misc';
 
     initializeStores();
