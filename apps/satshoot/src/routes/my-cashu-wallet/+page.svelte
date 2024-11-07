@@ -1,27 +1,29 @@
 <script lang="ts">
+    import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
+    import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
+    import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
+    import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
+    import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
+    import Warning from '$lib/components/Warning.svelte';
+    import { displayEcashWarning } from '$lib/stores/gui';
     import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
-    import { cashuPaymentInfoMap, cashuTokensBackup, wallet } from '$lib/stores/wallet';
+    import currentUser from '$lib/stores/user';
+    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
+    import { backupWallet, cleanWallet } from '$lib/utils/cashu';
+    import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
+    import { NDKCashuMintList, NDKPrivateKeySigner, NDKRelaySet } from '@nostr-dev-kit/ndk';
     import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
         getToastStore,
         popup,
+        ProgressRadial,
         type ModalComponent,
         type ModalSettings,
-        type ToastSettings,
         type PopupSettings,
+        type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import EditProfileModal from '../../lib/components/Modals/EditProfileModal.svelte';
-    import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
-    import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
-    import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
-    import { NDKCashuMintList, NDKPrivateKeySigner, NDKRelaySet } from '@nostr-dev-kit/ndk';
-    import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
-    import currentUser from '$lib/stores/user';
-    import Warning from '$lib/components/Warning.svelte';
-    import { displayEcashWarning } from '$lib/stores/gui';
-    import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
-    import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -34,6 +36,7 @@
 
     let walletBalance = 0;
     let walletUnit = 'sats';
+    let cleaningWallet = false;
 
     $: if (cashuWallet) {
         cashuWallet.balance().then((res) => {
@@ -324,42 +327,48 @@
         updateWallet();
     }
 
-    function refreshBalance() {
-        if (!cashuWallet) return;
+    function handleCleanWallet() {
+        const modalBody = `
+                <strong class="text-primary-400-500-token">
+                    If a wallet contains used tokens, they will be removed
+                    and you may see a decrease in wallet balance.
+                    Do you really wish to clean wallet?
+                </strong>`;
 
-        cashuWallet.checkProofs();
+        let response = async function (r: boolean) {
+            if (r) {
+                modalStore.close();
+                cleaningWallet = true;
+                await cleanWallet(cashuWallet!)
+                    .catch((err) => {
+                        console.error('An error occurred in cleaning wallet', err);
+                        toastStore.trigger({
+                            message: `Failed to clean used tokens!`,
+                            background: `bg-info-300-600-token`,
+                        });
+                    })
+                    .finally(() => {
+                        cleaningWallet = false;
+                    });
+            }
+        };
+
+        const modal: ModalSettings = {
+            type: 'confirm',
+            // Data
+            title: 'Confirm clean wallet',
+            body: modalBody,
+            response: response,
+        };
+
+        modalStore.trigger(modal);
     }
 
-    async function backupWallet() {
+    async function handleWalletBackup() {
         if (!cashuWallet) return;
 
         try {
-            const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
-            const tokens = await Promise.all(tokenPromises);
-
-            // When user triggers manual backup its possible that
-            // there are some proofs in svelte persisted store that are not in wallet
-            // include those proofs too
-            const tokenIds = tokens.map((t) => t.id);
-            $cashuTokensBackup.forEach((value) => {
-                if (!tokenIds.includes(value.id)) {
-                    tokens.push(value);
-                }
-            });
-
-            cashuWallet.event.tags = cashuWallet.publicTags;
-            cashuWallet.event.content = JSON.stringify(cashuWallet.privateTags);
-            await cashuWallet.event.encrypt($currentUser!, undefined, 'nip44');
-
-            const json = {
-                wallet: cashuWallet.event.rawEvent(),
-                tokens,
-            };
-
-            const stringified = JSON.stringify(json, null, 2);
-
-            localStorage.setItem('wallet-backup', stringified);
-            saveToFile(stringified);
+            backupWallet(cashuWallet);
         } catch (error) {
             console.error('An error occurred in encryption of wallet content', error);
             toastStore.trigger({
@@ -367,21 +376,6 @@
                 background: `bg-error-300-600-token`,
             });
         }
-    }
-
-    // Function to save encrypted content to a file
-    function saveToFile(content: string) {
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-
-        // Create a link element to trigger download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'wallet-backup.json';
-        a.click();
-
-        // Clean up
-        URL.revokeObjectURL(url);
     }
 
     async function recoverWallet() {
@@ -450,11 +444,6 @@
                         <div class="text-7xl font-black text-center focus:outline-none w-full">
                             {walletBalance}
                         </div>
-                        <!-- <button on:click={refreshBalance}>
-                            <i
-                                class="fa-solid fa-rotate-right text-3xl text-muted-foreground font-light"
-                            ></i>
-                        </button> -->
                     </div>
                     <div class="text-3xl text-muted-foreground font-light">
                         {walletUnit}
@@ -477,7 +466,7 @@
                         Withdraw
                     </button>
                     <button
-                        on:click={backupWallet}
+                        on:click={handleWalletBackup}
                         type="button"
                         class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                     >
@@ -489,6 +478,29 @@
                         class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
                     >
                         Recover
+                    </button>
+                    <button
+                        on:click={handleCleanWallet}
+                        disabled={cleaningWallet}
+                        type="button"
+                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token flex justify-center"
+                    >
+                        {#if cleaningWallet}
+                            <span>
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-primary-500"
+                                    track="stroke-primary-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
+                            </span>
+                        {:else}
+                            <i class="fa-solid fa-rotate-right text-muted-foreground font-light"
+                            ></i>
+                        {/if}
+                        <span> Clean Wallet</span>
                     </button>
                 </div>
 

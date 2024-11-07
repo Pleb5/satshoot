@@ -38,7 +38,7 @@ export function walletInit(ndk: NDKSvelte, user: NDKUser) {
         wallet.set(ndkCashuWallet);
         if (!hasSubscribedForNutZaps) {
             hasSubscribedForNutZaps = true;
-            handleRolloverEvents(ndkCashuWallet);
+            handleEventsEmittedFromWallet(ndkCashuWallet);
             subscribeForNutZaps(ndk, user, ndkCashuWallet);
         }
     });
@@ -56,7 +56,7 @@ export const subscribeForNutZaps = (ndk: NDKSvelte, user: NDKUser, wallet: NDKCa
     ndkNutzapMonitor.set(nutzapMonitor);
 };
 
-const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
+const handleEventsEmittedFromWallet = (cashuWallet: NDKCashuWallet) => {
     cashuWallet.on(
         'rollover_failed',
         async (
@@ -149,6 +149,18 @@ const handleRolloverEvents = (cashuWallet: NDKCashuWallet) => {
             });
         }
     );
+
+    cashuWallet.on('token_created', (token) => {
+        console.log('Backing up newly created cashu token!');
+
+        // A new NDKCashuToken created
+        cashuTokensBackup.update((map) => {
+            // just add the token to backup
+            map.set(token.id, token.rawEvent());
+
+            return map;
+        });
+    });
 };
 
 // Maintain a previous map outside the derived store to persist state across invocations
