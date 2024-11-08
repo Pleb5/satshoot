@@ -1,9 +1,33 @@
 <script lang="ts">
-    import { marked, type Tokens, type TokenizerAndRendererExtension } from 'marked';
+    import { marked, type Token, type Tokens, type TokenizerAndRendererExtension } from 'marked';
     import markedLinkifyIt from 'marked-linkify-it';
     import DOMPurify from 'dompurify';
+    import ndk from '$lib/stores/ndk';
+    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { onMount } from 'svelte';
 
     export let content = '';
+    let sanitizedContent = '';
+
+    const getPub = async (token: Token) => {
+        if (token.type === 'nostr' && token.tagType === 'npub') {
+            const user = $ndk.getUser({ npub: token.tagType + token.content });
+
+            try {
+                const profile = await user.fetchProfile({
+                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                    closeOnEose: true,
+                    groupable: false,
+                    groupableDelay: 1000,
+                });
+                if (profile) {
+                    if (profile.name) token.userName = profile.name;
+                }
+            } catch (e) {
+				console.log(e);
+			}
+        }
+    };
 
     const nostrRegex = /^(nostr:)?n(event|ote|pub|profile|addr)([a-zA-Z0-9]{10,1000})/;
 
@@ -25,41 +49,26 @@
                     tagType: `n${tagType}`,
                     prefix: prefix || '',
                     content,
+                    userName: null,
                     tokens: [],
                 };
             }
         },
         renderer(token: Tokens.Generic) {
             const { prefix, tagType, content, text } = token;
-
-            // Customize rendering based on the tag type
-            let additionalClass = '';
-            let icon = '';
-
             switch (tagType) {
                 case 'nevent':
-                    additionalClass = 'nostr-nevent';
-                    icon = '<i class="icon-nevent"></i> ';
-                    break;
                 case 'note':
-                    additionalClass = 'nostr-note';
-                    icon = '<i class="icon-note"></i> ';
-                    break;
-                case 'npub':
-                    additionalClass = 'nostr-npub';
-                    icon = '<i class="icon-npub"></i> ';
-                    break;
-                case 'nprofile':
-                    additionalClass = 'nostr-nprofile';
-                    icon = '<i class="icon-nprofile"></i> ';
-                    break;
                 case 'naddr':
-                    additionalClass = 'nostr-naddr';
-                    icon = '<i class="icon-naddr"></i> ';
-                    break;
+                    return `<a href="/${token.tagType}${token.content}" class="nostr-handle">
+					    ${token.content.slice(0, 10) + '...'}
+					</a>`;
+                case 'nprofile':
+                case 'npub':
+                    return `<a href="/${token.tagType}${token.content}">
+                        @${token.userName ? token.userName : token.content.slice(0, 10) + '...'}
+                    </a>`;
             }
-
-            return `<span class="nostr-handle ${additionalClass}">${token.text}</span>`;
         },
     };
 
@@ -70,11 +79,12 @@
             },
         },
     });
-
-    marked.use({ extensions: [nostrTokenizer] });
+    marked.use({ extensions: [nostrTokenizer], async: true, walkTokens: getPub });
     marked.use(markedLinkifyIt({}, {}));
 
-    const sanitizedContent = DOMPurify.sanitize(marked(content));
+    onMount(async () => {
+        sanitizedContent = DOMPurify.sanitize(await marked(content));
+    });
 </script>
 
 <div class="markdown">{@html sanitizedContent}</div>
