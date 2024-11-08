@@ -59,7 +59,7 @@
             .catch((err) => {
                 console.error('An error occurred in withdraw', err);
                 toastStore.trigger({
-                    message: `Failed to withdraw!`,
+                    message: `Failed to withdraw: ${err?.message || err} `,
                     autohide: false,
                     background: `bg-error-300-600-token`,
                 });

@@ -301,7 +301,8 @@
                             const failedPaymentRecipient =
                                 userEnum === UserEnum.Freelancer ? 'freelancer' : 'satshoot';
 
-                            errorMessage = `Failed to pay ${failedPaymentRecipient}:${err}`;
+                            console.error(`Failed to pay ${failedPaymentRecipient}`, err);
+                            errorMessage = `Failed to pay ${failedPaymentRecipient}:${err?.message || err}`;
                             return null;
                         });
 
@@ -379,10 +380,10 @@
             } else {
                 paying = false;
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
             handleToast(
-                'Error: An error occurred in payment process, check console for more details!',
+                `An error occurred in payment process: ${error?.message || error}`,
                 ToastType.Error
             );
             paying = false;
@@ -396,6 +397,7 @@
             return null;
         }
 
+        errorMessage = '';
         paying = true;
         await tick();
 
