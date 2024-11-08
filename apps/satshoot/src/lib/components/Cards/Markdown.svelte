@@ -5,13 +5,32 @@
     import ndk from '$lib/stores/ndk';
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
+    import { nip19 } from 'nostr-tools';
 
     export let content = '';
     let sanitizedContent = '';
 
     const getPub = async (token: Token) => {
-        if (token.type === 'nostr' && token.tagType === 'npub') {
-            const user = $ndk.getUser({ npub: token.tagType + token.content });
+        if (token.type === 'nostr') {
+
+			const id = `${token.tagType}${token.content}`;
+			const {type, data} = nip19.decode(id);
+			let npub = '';
+            
+			switch(type) {
+				case 'nevent':
+                case 'note':
+                case 'naddr':
+					return;
+				case 'nprofile':
+					npub = data.pubkey;
+					break;
+				case 'npub':
+					npub = data;
+					break;
+			}
+
+			let user = $ndk.getUser({ pubkey: npub });
 
             try {
                 const profile = await user.fetchProfile({
@@ -55,18 +74,18 @@
             }
         },
         renderer(token: Tokens.Generic) {
-            const { prefix, tagType, content, text } = token;
+            const { prefix, tagType, content, text, userName } = token;
             switch (tagType) {
                 case 'nevent':
                 case 'note':
                 case 'naddr':
-                    return `<a href="/${token.tagType}${token.content}" class="nostr-handle">
-					    ${token.content.slice(0, 10) + '...'}
+                    return `<a href="/${tagType}${content}" class="nostr-handle">
+					    ${content.slice(0, 10) + '...'}
 					</a>`;
                 case 'nprofile':
                 case 'npub':
-                    return `<a href="/${token.tagType}${token.content}">
-                        @${token.userName ? token.userName : token.content.slice(0, 10) + '...'}
+                    return `<a href="/${tagType}${content}">
+                        @${userName ? userName : content.slice(0, 10) + '...'}
                     </a>`;
             }
         },
