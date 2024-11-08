@@ -17,15 +17,15 @@
                 const profile = await user.fetchProfile({
                     cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
                     closeOnEose: true,
-                    groupable: false,
+                    groupable: true,
                     groupableDelay: 1000,
                 });
                 if (profile) {
                     if (profile.name) token.userName = profile.name;
                 }
             } catch (e) {
-				console.log(e);
-			}
+                console.log(e);
+            }
         }
     };
 
@@ -72,15 +72,15 @@
         },
     };
 
+    marked.use({ extensions: [nostrTokenizer], async: true, walkTokens: getPub });
+    marked.use(markedLinkifyIt({}, {}));
     marked.use({
         renderer: {
             image() {
-                return false;
+                return '';
             },
         },
     });
-    marked.use({ extensions: [nostrTokenizer], async: true, walkTokens: getPub });
-    marked.use(markedLinkifyIt({}, {}));
 
     onMount(async () => {
         sanitizedContent = DOMPurify.sanitize(await marked(content));
@@ -88,3 +88,9 @@
 </script>
 
 <div class="markdown">{@html sanitizedContent}</div>
+
+<style>
+    .markdown {
+        padding: 1em;
+    }
+</style>
