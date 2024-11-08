@@ -3,6 +3,7 @@
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
     import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
     import { onMount } from 'svelte';
+    import { Invoice } from '@getalby/lightning-tools';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -34,9 +35,18 @@
             .lnPay({ pr })
             .then((res) => {
                 console.log('res withdraw :>> ', res);
-                let message = 'Successfully withdrawn amount!\n';
+                let message = '<div><p>Successfully withdrawn amount!</p>';
                 if (res?.fee) {
-                    message += `Costed ${res.fee} sats as fee.`;
+                    const invoice = new Invoice({ pr });
+                    const { satoshi } = invoice;
+
+                    const total = satoshi + res.fee;
+                    message += `<br/>
+                    <p>Withdrawn: ${satoshi} sats</p>
+                    <br/>
+                    <p>Fee: ${res.fee} sats</p>
+                    <br/>
+                    <p>Total: ${total} sats</p>`;
                 }
                 toastStore.trigger({
                     message: message,
@@ -49,7 +59,7 @@
             .catch((err) => {
                 console.error('An error occurred in withdraw', err);
                 toastStore.trigger({
-                    message: `Failed to withdraw!`,
+                    message: `Failed to withdraw: ${err?.message || err} `,
                     autohide: false,
                     background: `bg-error-300-600-token`,
                 });
