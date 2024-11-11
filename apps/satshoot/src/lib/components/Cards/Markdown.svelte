@@ -12,25 +12,22 @@
 
     const getPub = async (token: Token) => {
         if (token.type === 'nostr') {
+            const id = `${token.tagType}${token.content}`;
+            const { type, data } = nip19.decode(id);
+            let npub = '';
 
-			const id = `${token.tagType}${token.content}`;
-			const {type, data} = nip19.decode(id);
-			let npub = '';
-            
-			switch(type) {
-				case 'nevent':
-                case 'note':
-                case 'naddr':
-					return;
-				case 'nprofile':
-					npub = data.pubkey;
-					break;
-				case 'npub':
-					npub = data;
-					break;
-			}
+            switch (type) {
+                case 'nprofile':
+                    npub = data.pubkey;
+                    break;
+                case 'npub':
+                    npub = data;
+                    break;
+                default:
+                    return;
+            }
 
-			let user = $ndk.getUser({ pubkey: npub });
+            let user = $ndk.getUser({ pubkey: npub });
 
             try {
                 const profile = await user.fetchProfile({
@@ -43,7 +40,7 @@
                     if (profile.name) token.userName = profile.name;
                 }
             } catch (e) {
-                console.log(e);
+                console.error(e);
             }
         }
     };
@@ -79,7 +76,7 @@
                 case 'nevent':
                 case 'note':
                 case 'naddr':
-                    return `<a href="/${tagType}${content}" class="nostr-handle">
+                    return `<a href="/${tagType}${content}">
 					    ${content.slice(0, 10) + '...'}
 					</a>`;
                 case 'nprofile':
