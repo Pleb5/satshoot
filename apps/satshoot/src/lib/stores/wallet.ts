@@ -15,8 +15,17 @@ import { persisted } from 'svelte-persisted-store';
 import ndk from './ndk';
 import { getUniqueProofs } from '$lib/utils/cashu';
 
+export const ndkWalletService = writable<NDKWalletService | null>(null);
 export const wallet = writable<NDKCashuWallet | null>(null);
 export const ndkNutzapMonitor = writable<NutzapMonitor | null>(null);
+
+export enum WalletStatus {
+    Loading,
+    Loaded,
+    Failed,
+}
+
+export const walletStatus = writable<WalletStatus>(WalletStatus.Loading);
 
 export const unsavedProofsBackup = persisted('unsavedProofsBackup', new Map<string, Proof[]>(), {
     storage: 'local',
@@ -30,12 +39,14 @@ export const cashuTokensBackup = persisted('cashuTokensBackup', new Map<string, 
 
 export function walletInit(ndk: NDKSvelte, user: NDKUser) {
     const service = new NDKWalletService(ndk);
+    ndkWalletService.set(service);
 
     let hasSubscribedForNutZaps = false;
 
     service.on('wallet:default', (w) => {
         if (!hasSubscribedForNutZaps) {
             hasSubscribedForNutZaps = true;
+            walletStatus.set(WalletStatus.Loaded);
 
             const ndkCashuWallet = w as NDKCashuWallet;
             wallet.set(ndkCashuWallet);
