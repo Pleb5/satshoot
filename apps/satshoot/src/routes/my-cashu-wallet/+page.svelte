@@ -8,10 +8,23 @@
     import { displayEcashWarning } from '$lib/stores/gui';
     import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
-    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
+    import {
+        cashuPaymentInfoMap,
+        ndkWalletService,
+        wallet,
+        WalletStatus,
+        walletStatus,
+    } from '$lib/stores/wallet';
     import { backupWallet, cleanWallet } from '$lib/utils/cashu';
-    import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
-    import { NDKCashuMintList, NDKPrivateKeySigner, NDKRelaySet } from '@nostr-dev-kit/ndk';
+    import { arraysAreEqual, fetchUserOutboxRelays, getCashuPaymentInfo } from '$lib/utils/helpers';
+    import {
+        NDKCashuMintList,
+        NDKKind,
+        NDKPrivateKeySigner,
+        NDKRelayList,
+        NDKRelaySet,
+        NDKSubscriptionCacheUsage,
+    } from '@nostr-dev-kit/ndk';
     import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
@@ -24,6 +37,7 @@
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import EditProfileModal from '../../lib/components/Modals/EditProfileModal.svelte';
+    import ImportEcashWallet from '$lib/components/Modals/ImportEcashWallet.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -56,6 +70,41 @@
                 }
             });
         });
+    }
+
+    $: if (!cashuWallet && $currentUser && $ndkWalletService) {
+        (async () => {
+            const relayUrls = [...$ndk.pool.urls()];
+
+            const relayListEvent = await fetchUserOutboxRelays($ndk);
+            if (relayListEvent) {
+                const relayList = NDKRelayList.from(relayListEvent);
+                relayUrls.push(...relayList.writeRelayUrls);
+            }
+
+            const walletEvent = await $ndk.fetchEvent(
+                { kinds: [NDKKind.CashuWallet], authors: [$currentUser.pubkey] },
+                { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL },
+                NDKRelaySet.fromRelayUrls(relayUrls, $ndk)
+            );
+
+            if (!walletEvent) {
+                walletStatus.set(WalletStatus.Failed);
+                return;
+            }
+
+            const wallet = await NDKCashuWallet.from(walletEvent);
+
+            if (!wallet) {
+                walletStatus.set(WalletStatus.Failed);
+                return;
+            }
+
+            if (!$ndkWalletService.defaultWallet) {
+                $ndkWalletService.defaultWallet = wallet;
+                $ndkWalletService.emit('wallet:default', wallet);
+            }
+        })();
     }
 
     async function setupWallet() {
@@ -127,6 +176,19 @@
 
             publishCashuMintList(cashuMintList);
         }
+    }
+
+    async function importWallet() {
+        const modalComponent: ModalComponent = {
+            ref: ImportEcashWallet,
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+
+        modalStore.trigger(modal);
     }
 
     async function updateWallet() {
@@ -418,8 +480,19 @@
 
     <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
         <div class="card p-4 bg-surface-200-700-token flex flex-col flex-grow gap-y-4">
-            {#if !cashuWallet}
+            {#if $walletStatus === WalletStatus.Loading}
                 <div class="flex justify-center">
+                    <ProgressRadial
+                        value={undefined}
+                        stroke={60}
+                        meter="stroke-primary-500"
+                        track="stroke-primary-500/30"
+                        strokeLinecap="round"
+                        width="w-8"
+                    />
+                </div>
+            {:else if $walletStatus === WalletStatus.Failed}
+                <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
                     <button
                         on:click={setupWallet}
                         type="button"
@@ -427,8 +500,15 @@
                     >
                         Initialize Cashu Wallet
                     </button>
+                    <button
+                        on:click={importWallet}
+                        type="button"
+                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                    >
+                        Import Wallet
+                    </button>
                 </div>
-            {:else}
+            {:else if cashuWallet}
                 <div class="flex items-center justify-center gap-x-4">
                     <h2 class="h2 text-center font-bold text-lg sm:text-2xl">
                         {cashuWallet.name || '??'}

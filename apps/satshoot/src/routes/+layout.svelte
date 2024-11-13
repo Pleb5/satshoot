@@ -575,7 +575,13 @@
     }
 
     $: if ($currentUser && $wallet) {
-        isCashuMintListSynced($wallet, $currentUser, toastStore);
+        // The Cashu wallet may have just been created,
+        // and the Cashu mint list event might still be in progress.
+        // To allow for this delay, call isCashuMintListSynced
+        // within a setTimeout to provide a margin.
+        setTimeout(() => {
+            isCashuMintListSynced($wallet, $currentUser, toastStore);
+        }, 15 * 1000);
 
         $wallet.on('found_spent_token', () => {
             toastStore.trigger({
