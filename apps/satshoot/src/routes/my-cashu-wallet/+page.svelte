@@ -16,11 +16,12 @@
         walletStatus,
     } from '$lib/stores/wallet';
     import { backupWallet, cleanWallet } from '$lib/utils/cashu';
-    import { arraysAreEqual, getCashuPaymentInfo } from '$lib/utils/helpers';
+    import { arraysAreEqual, fetchUserOutboxRelays, getCashuPaymentInfo } from '$lib/utils/helpers';
     import {
         NDKCashuMintList,
         NDKKind,
         NDKPrivateKeySigner,
+        NDKRelayList,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
     } from '@nostr-dev-kit/ndk';
@@ -73,9 +74,18 @@
 
     $: if (!cashuWallet && $currentUser && $ndkWalletService) {
         (async () => {
+            const relayUrls = [...$ndk.pool.urls()];
+
+            const relayListEvent = await fetchUserOutboxRelays($ndk);
+            if (relayListEvent) {
+                const relayList = NDKRelayList.from(relayListEvent);
+                relayUrls.push(...relayList.writeRelayUrls);
+            }
+
             const walletEvent = await $ndk.fetchEvent(
                 { kinds: [NDKKind.CashuWallet], authors: [$currentUser.pubkey] },
-                { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
+                { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL },
+                NDKRelaySet.fromRelayUrls(relayUrls, $ndk)
             );
 
             if (!walletEvent) {
