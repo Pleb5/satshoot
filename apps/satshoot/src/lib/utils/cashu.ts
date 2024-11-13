@@ -281,17 +281,22 @@ export async function backupWallet(cashuWallet: NDKCashuWallet) {
     const $cashuTokensBackup = get(cashuTokensBackup);
     const $unsavedProofsBackup = get(unsavedProofsBackup);
 
-    const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
-    const tokens = await Promise.all(tokenPromises);
+    const tokensToBackup: NostrEvent[] = [];
+
+    const existingTokenIds = cashuWallet.tokens.map((t) => t.id);
 
     // When user triggers manual backup its possible that
     // there are some tokens in svelte persisted store that are not in wallet
     // include those proofs too
-    const tokenIds = tokens.map((t) => t.id);
     $cashuTokensBackup.forEach((value) => {
-        if (!tokenIds.includes(value.id)) {
-            tokens.push(value);
+        if (!existingTokenIds.includes(value.id!)) {
+            tokensToBackup.push(value);
         }
+    });
+
+    const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
+    await Promise.all(tokenPromises).then((tokens) => {
+        tokens.forEach((token) => tokensToBackup.push(token));
     });
 
     // Its also possible that there are some unsaved proofs in svelte persisted store
@@ -315,7 +320,7 @@ export async function backupWallet(cashuWallet: NDKCashuWallet) {
             // encrypt the new token event
             await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
             const cashuTokenEvent = await newCashuToken.toNostrEvent();
-            tokens.push(cashuTokenEvent);
+            tokensToBackup.push(cashuTokenEvent);
         }
     });
 
@@ -327,7 +332,7 @@ export async function backupWallet(cashuWallet: NDKCashuWallet) {
 
     const json = {
         wallet: cashuWallet.event.rawEvent(),
-        tokens,
+        tokens: tokensToBackup,
     };
 
     const stringified = JSON.stringify(json, null, 2);
