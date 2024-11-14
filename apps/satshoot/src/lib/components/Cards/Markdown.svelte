@@ -1,10 +1,8 @@
 <script lang="ts">
     import { marked, type Token, type Tokens, type TokenizerAndRendererExtension } from 'marked';
-    import markedLinkifyIt from 'marked-linkify-it';
     import DOMPurify from 'dompurify';
     import ndk from '$lib/stores/ndk';
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
-    import { onMount } from 'svelte';
     import { nip19 } from 'nostr-tools';
 
     export let content = '';
@@ -27,7 +25,7 @@
                     return;
             }
 
-            let user = $ndk.getUser({ pubkey: npub });
+            let user = $ndk.getUser({ hexpubkey: npub });
 
             try {
                 const profile = await user.fetchProfile({
@@ -37,10 +35,36 @@
                     groupableDelay: 1000,
                 });
                 if (profile) {
-                    if (profile.name) token.userName = profile.name;
+                    token.userName = profile.name || profile.displayName;
                 }
             } catch (e) {
                 console.error(e);
+            }
+        } else if (token.type === 'email') {
+            try {
+                const user = await $ndk.getUserFromNip05(token.text);
+                if (user) {
+                    token.isNip05 = true;
+                    token.tagType = 'npub';
+                    token.content = user.pubkey;
+
+                    // Fetch user profile
+                    const profile = await user.fetchProfile({
+                        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                        closeOnEose: true,
+                        groupable: true,
+                        groupableDelay: 1000,
+                    });
+
+                    if (profile) {
+                        token.userName = profile.name || profile.displayName || token.text;
+                    } else {
+                        token.userName = token.text;
+                    }
+                }
+            } catch (e) {
+                console.error(`Failed to fetch NIP-05 user for ${token.text}:`, e);
+                token.isNip05 = false;
             }
         }
     };
@@ -54,7 +78,7 @@
             const match = src.match(/(nostr:)?n(event|ote|pub|profile|addr)/);
             return match ? match.index : -1;
         },
-        tokenizer(src: string, tokens: any) {
+        tokenizer(src: string) {
             const match = nostrRegex.exec(src);
             if (match) {
                 const [fullMatch, prefix, tagType, content] = match;
@@ -71,26 +95,66 @@
             }
         },
         renderer(token: Tokens.Generic) {
-            const { prefix, tagType, content, text, userName } = token;
+            const { tagType, content, userName } = token;
+            let url = `/${tagType}${content}`;
+            let linkText = userName ? `@${userName}` : `${tagType}${content}`.slice(0, 20) + '...';
+
             switch (tagType) {
                 case 'nevent':
                 case 'note':
-                case 'naddr':
-                    return `<a href="/${tagType}${content}">
-					    ${content.slice(0, 10) + '...'}
-					</a>`;
+                    url = `https://coracle.social/notes/${tagType}${content}`;
+                    break;
                 case 'nprofile':
+                    url = `https://coracle.social/people/${tagType}${content}`;
+                    break;
                 case 'npub':
-                    return `<a href="/${tagType}${content}">
-                        @${userName ? userName : content.slice(0, 10) + '...'}
-                    </a>`;
+                case 'naddr':
+                    break;
+            }
+            return `<a href="${url}">${linkText}</a>`;
+        },
+    };
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+/;
+
+    const emailTokenizer: TokenizerAndRendererExtension = {
+        name: 'email',
+        level: 'inline',
+        start(src: string) {
+            const match = src.match(emailRegex);
+            return match ? match.index : -1;
+        },
+        tokenizer(src: string) {
+            const match = emailRegex.exec(src);
+            if (match) {
+                const [fullMatch] = match;
+                return {
+                    type: 'email',
+                    raw: fullMatch,
+                    text: fullMatch,
+                    href: `mailto:${fullMatch}`,
+                    isNip05: false,
+                    tokens: [],
+                };
+            }
+        },
+        renderer(token: Tokens.Generic) {
+            if (token.isNip05) {
+                // Render as Nostr link
+                const { tagType, content, userName } = token;
+                let url = `/${tagType}${content}`;
+                let linkText = userName ? `@${userName}` : token.text;
+                return `<a href="${url}">${linkText}</a>`;
+            } else {
+                return `<a href="${token.href}">${token.text}</a>`;
             }
         },
     };
 
-    marked.use({ extensions: [nostrTokenizer], async: true, walkTokens: getPub });
-    marked.use(markedLinkifyIt({}, {}));
     marked.use({
+        extensions: [nostrTokenizer, emailTokenizer],
+        async: true,
+        walkTokens: getPub,
         renderer: {
             image() {
                 return '';
@@ -98,9 +162,12 @@
         },
     });
 
-    onMount(async () => {
-        sanitizedContent = DOMPurify.sanitize(await marked(content));
-    });
+    $: if (content) {
+        (async () => {
+            const parsed = await marked(content);
+            sanitizedContent = DOMPurify.sanitize(parsed);
+        })();
+    }
 </script>
 
 <div class="markdown">{@html sanitizedContent}</div>

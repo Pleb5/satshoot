@@ -255,8 +255,6 @@
     }
 
     onMount(async ()=>{
-
-		processedDescription = ticket.description;
         if (ticket.acceptedOfferAddress) {
             const winnerOfferEvent = await $ndk.fetchEvent(ticket.acceptedOfferAddress);
             if (winnerOfferEvent) {
@@ -372,7 +370,7 @@
 
         <section class="p-4">
             <div class="text-center text-base md:text-lg break-words whitespace-pre-line">
-                <Markdown content={processedDescription} />
+                <Markdown content={ticket.description} />
             </div>
 
             <hr class="my-4" />
