@@ -46,7 +46,7 @@
                 if (user) {
                     token.isNip05 = true;
                     token.tagType = 'npub';
-                    token.content = user.pubkey;
+                    token.content = user.npub;
 
                     // Fetch user profile
                     const profile = await user.fetchProfile({
@@ -142,7 +142,7 @@
             if (token.isNip05) {
                 // Render as Nostr link
                 const { tagType, content, userName } = token;
-                let url = `/${tagType}${content}`;
+                let url = `/${content}`;
                 let linkText = userName ? `@${userName}` : token.text;
                 return `<a href="${url}">${linkText}</a>`;
             } else {
