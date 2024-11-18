@@ -37,6 +37,8 @@
     import { wot } from '$lib/stores/wot';
     import TicketIcon from '../Icons/TicketIcon.svelte';
 
+	import Markdown from './Markdown.svelte'
+
     const modalStore = getModalStore();
 
     export let offer: OfferEvent;
@@ -369,7 +371,7 @@
         {/if}
         {#if showDescription}
             <div class="text-center text-base md:text-lg p-2">
-                {offer.description}
+                <Markdown content={offer.description} />
             </div>
         {/if}
         <slot name="takeOffer" />
