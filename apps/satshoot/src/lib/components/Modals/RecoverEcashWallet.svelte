@@ -9,6 +9,7 @@
     import { NDKEvent } from '@nostr-dev-kit/ndk';
     import { NDKCashuToken, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -89,6 +90,9 @@
             // get ids of existing tokens in current wallet
             const existingTokenIds = cashuWallet.tokens.map((token) => token.id);
 
+            // get existing proofs in current wallet
+            const existingProofs = cashuWallet.tokens.map((t) => t.proofs).flat();
+
             // filter tokens from backup that don't exists in loaded wallet
             const missingTokens = backupJson.tokens.filter(
                 (token) => !existingTokenIds.includes(token.id!)
@@ -96,26 +100,20 @@
 
             if (missingTokens.length > 0) {
                 // convert raw token events to NDKCashuTokens
-                // this also decrypts the private tags in token events
-                const promises = missingTokens.map((token) => {
-                    const ndkEvent = new NDKEvent($ndk, token);
-                    return NDKCashuToken.from(ndkEvent);
-                });
+                const ndkCashuTokens = missingTokens
+                    .map((token) => {
+                        const ndkCashuToken = new NDKCashuToken($ndk, token);
+                        try {
+                            const content = JSON.parse(ndkCashuToken.content);
+                            ndkCashuToken.proofs = content.proofs;
+                            if (!Array.isArray(ndkCashuToken.proofs)) return;
+                        } catch (e) {
+                            return;
+                        }
 
-                const ndkCashuTokens = await Promise.all(promises)
-                    .then((tokens) => {
-                        return tokens.filter((token) => token instanceof NDKCashuToken);
+                        return ndkCashuToken;
                     })
-                    .catch(() => {
-                        toastStore.trigger({
-                            message:
-                                'Error occurred in converting raw token events to NDKCashuToken',
-                            background: `bg-error-300-600-token`,
-                        });
-                        return null;
-                    });
-
-                if (!ndkCashuTokens) return;
+                    .filter((token) => token instanceof NDKCashuToken);
 
                 // get all the unique mints from tokens
                 const mints = new Set<string>();
@@ -125,21 +123,38 @@
 
                 const mintsArray = Array.from(mints);
                 const tokenPromises = mintsArray.map(async (mint) => {
-                    // get all the unspent proofs for a mint
-                    const unspentProofs = await extractUnspentProofsForMint(
-                        mint,
-                        ndkCashuTokens.filter((t) => t.mint === mint)
-                    );
-
-                    const existingProofs = cashuWallet.tokens
+                    // get all the proofs tied to tokens with a specific mint
+                    const allProofs = ndkCashuTokens
                         .filter((t) => t.mint === mint)
                         .map((token) => token.proofs)
                         .flat();
 
-                    // find all the unspent proofs that are not in current wallet
-                    const proofsToSave = getUniqueProofs(unspentProofs, existingProofs);
+                    const _wallet = new CashuWallet(new CashuMint(mint));
+                    const spentProofs = await _wallet.checkProofsSpent(allProofs);
 
-                    if (proofsToSave.length > 0) return cashuWallet.saveProofs(proofsToSave, mint);
+                    ndkCashuTokens
+                        .filter((t) => t.mint === mint)
+                        .map((token) => {
+                            // for a token to be valid, it should not have any spent proof
+                            // and no proof should be a duplicate of any existing proof in the wallet tokens
+
+                            const proofsCountBeforeFilter = token.proofs.length;
+
+                            // check if there's any proof that has been spent then this is not a valid token
+                            const unspentProofs = getUniqueProofs(token.proofs, spentProofs);
+                            if (proofsCountBeforeFilter !== unspentProofs.length) {
+                                return;
+                            }
+
+                            // if there's any proof in existing proofs that matches any of the proof
+                            // from this token, then its not a valid token
+                            const uniqueProofs = getUniqueProofs(token.proofs, existingProofs);
+                            if (proofsCountBeforeFilter !== uniqueProofs.length) {
+                                return;
+                            }
+
+                            cashuWallet.addToken(token);
+                        });
                 });
 
                 await Promise.all(tokenPromises);

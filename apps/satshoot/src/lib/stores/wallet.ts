@@ -77,13 +77,19 @@ const handleEventsEmittedFromWallet = (cashuWallet: NDKCashuWallet) => {
             changes: Proof[],
             mint: string
         ) => {
-            console.log('rollover failed in ndk, backing up tokens at app level');
+            console.log('rollover failed in ndk, backing up proofs at app level');
+
+            cashuTokensBackup.update((map) => {
+                // remove used tokens from backup
+                usedTokens.forEach((t) => {
+                    map.delete(t.id);
+                });
+                return map;
+            });
 
             usedTokens.forEach((t) => {
                 cashuWallet.removeTokenId(t.id);
             });
-
-            let createdToken: NDKCashuToken | undefined;
 
             const proofsToSave = [...movedProofs];
             for (const change of changes) {
@@ -91,63 +97,33 @@ const handleEventsEmittedFromWallet = (cashuWallet: NDKCashuWallet) => {
             }
 
             if (proofsToSave.length > 0) {
-                console.log('Creating new cashu token for backing up unsaved proofs');
-                const $ndk = get(ndk);
-                const newCashuToken = new NDKCashuToken($ndk);
-                newCashuToken.proofs = proofsToSave;
-                newCashuToken.mint = mint;
-                newCashuToken.wallet = cashuWallet;
-                newCashuToken.created_at = Math.floor(Date.now() / 1000);
+                console.log('Backing up unsaved proofs');
+                unsavedProofsBackup.update((map) => {
+                    const existingProofs = map.get(mint);
 
-                try {
-                    console.log('Encrypting proofs added to token event');
-                    newCashuToken.content = JSON.stringify({
-                        proofs: newCashuToken.proofs,
-                    });
+                    if (existingProofs) {
+                        const newProofs = getUniqueProofs(proofsToSave, existingProofs);
+                        map.set(mint, [...existingProofs, ...newProofs]);
+                    } else {
+                        map.set(mint, proofsToSave);
+                    }
 
-                    const $currentUser = get(currentUser);
-                    newCashuToken.pubkey = $currentUser!.pubkey;
-                    await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
-
-                    newCashuToken.id = newCashuToken.getEventHash();
-
-                    createdToken = newCashuToken;
-                } catch (error) {
-                    console.log('An error occurred in encrypting proofs.', error);
-                    console.log('Backing up unsaved proofs');
-
-                    unsavedProofsBackup.update((map) => {
-                        const existingProofs = map.get(mint);
-
-                        if (existingProofs) {
-                            const newProofs = getUniqueProofs(proofsToSave, existingProofs);
-                            map.set(mint, [...existingProofs, ...newProofs]);
-                        } else {
-                            map.set(mint, proofsToSave);
-                        }
-
-                        return map;
-                    });
-                }
-            }
-
-            cashuTokensBackup.update((map) => {
-                // remove used tokens from backup
-                usedTokens.forEach((t) => {
-                    map.delete(t.id);
+                    return map;
                 });
-
-                if (createdToken) map.set(createdToken.id, createdToken.rawEvent());
-
-                return map;
-            });
+            }
         }
     );
 
     cashuWallet.on(
         'rollover_done',
-        (consumedTokens: NDKCashuToken[], createdToken: NDKCashuToken | undefined) => {
-            console.log('Rollover done, backing up tokens');
+        async (consumedTokens: NDKCashuToken[], createdToken: NDKCashuToken | undefined) => {
+            console.log('Rollover done, backing up proofs and tokens');
+
+            let newToken: NDKCashuToken | undefined;
+
+            if (createdToken) {
+                newToken = await NDKCashuToken.from(createdToken);
+            }
 
             cashuTokensBackup.update((map) => {
                 // remove consumed tokens from backup
@@ -155,7 +131,7 @@ const handleEventsEmittedFromWallet = (cashuWallet: NDKCashuWallet) => {
                     map.delete(t.id);
                 });
 
-                if (createdToken) map.set(createdToken.id, createdToken.rawEvent());
+                if (newToken) map.set(newToken.id, newToken.rawEvent());
 
                 return map;
             });

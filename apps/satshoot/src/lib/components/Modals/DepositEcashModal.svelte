@@ -1,6 +1,6 @@
 <script lang="ts">
     import { cashuTokensBackup } from '$lib/stores/wallet';
-    import type { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+    import { NDKCashuToken, type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
 
     const modalStore = getModalStore();
@@ -25,14 +25,24 @@
         depositing = true;
         const ndkCashuDeposit = cashuWallet.deposit(amount, selectedMint, unit);
 
-        ndkCashuDeposit.on('success', (token) => {
-            console.log('ndkCashuDeposit successful', token);
-            cashuTokensBackup.update((map) => {
-                // add token to backup
-                map.set(token.id, token.rawEvent());
+        ndkCashuDeposit.on('success', async (token) => {
+            // Token received has encrypted content
+            // but we want to store it in local storage as un-encrypted.
+            // Therefore, we'll have to make it un-encrypted
 
-                return map;
-            });
+            const newToken = await NDKCashuToken.from(token);
+
+            if (newToken) {
+                console.log('ndkCashuDeposit successful', newToken.rawEvent());
+
+                cashuTokensBackup.update((map) => {
+                    // add newToken to backup
+                    map.set(newToken.id, newToken.rawEvent());
+
+                    return map;
+                });
+            }
+
             closeModal();
             toastStore.trigger({
                 message: `Successfully deposited ${amount} ${unit}!`,
