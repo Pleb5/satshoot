@@ -286,7 +286,6 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
 
             const proofs = proofsToSave.get(mint);
             if (proofs) {
-                const uniqueProofs = getUniqueProofs(token.proofs, proofs);
                 proofsToSave.set(mint, removeDuplicateProofs([...proofs, ...token.proofs]));
             } else {
                 proofsToSave.set(mint, removeDuplicateProofs([...token.proofs]));
@@ -449,6 +448,12 @@ export async function resyncWalletAndBackup(
     console.log('syncing wallet and backup ', $cashuTokensBackup);
     try {
         const $ndk = get(ndk);
+
+        // remove used tokens from wallet
+        const usedTokenIds = Array.from($wallet.usedTokenIds);
+        $wallet.usedTokenIds.forEach((id) => {
+            $wallet.removeTokenId(id);
+        });
 
         // get ids of existing tokens in wallet
         const existingTokenIds = $wallet.tokens.map((token) => token.id);
