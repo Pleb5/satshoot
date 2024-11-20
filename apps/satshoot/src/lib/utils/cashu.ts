@@ -234,6 +234,13 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
     const tokensToDestroy: NDKCashuToken[] = [];
     const proofsToSave = new Map<string, Proof[]>();
 
+    let prevBalance = 0;
+    await cashuWallet.balance().then((res) => {
+        if (res) {
+            prevBalance = res[0].amount;
+        }
+    });
+
     // get all the unique mints from tokens
     const mints = new Set<string>();
     cashuWallet.tokens.forEach((t) => {
@@ -305,7 +312,7 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
             if (token.relay) relaySet?.addRelay(token.relay);
         });
         await deleteEvent.publish(relaySet);
-        cashuWallet.addUsedTokens(tokensToDestroy);
+        tokensToDestroy.forEach((t) => cashuWallet.removeTokenId(t.id));
         cashuTokensBackup.update((map) => {
             // remove invalid tokens from the backup
             tokensToDestroy.forEach((t) => map.delete(t.id));
@@ -339,6 +346,7 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
             // To store it in svelte persisted store, we need this in un-encrypted form
             const newToken = await NDKCashuToken.from(newCashuToken);
             if (newToken) {
+                cashuWallet.addToken(newToken);
                 cashuTokensBackup.update((map) => {
                     // add newToken to backup
                     map.set(newToken.id, newToken.rawEvent());
@@ -350,6 +358,15 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
     });
 
     await Promise.all(newTokenPromises);
+
+    let newBalance = 0;
+    await cashuWallet.balance().then((res) => {
+        if (res) {
+            newBalance = res[0].amount;
+        }
+    });
+
+    return prevBalance - newBalance;
 }
 
 export async function backupWallet(cashuWallet: NDKCashuWallet) {
@@ -450,7 +467,6 @@ export async function resyncWalletAndBackup(
         const $ndk = get(ndk);
 
         // remove used tokens from wallet
-        const usedTokenIds = Array.from($wallet.usedTokenIds);
         $wallet.usedTokenIds.forEach((id) => {
             $wallet.removeTokenId(id);
         });

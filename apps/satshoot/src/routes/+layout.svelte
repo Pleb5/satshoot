@@ -592,11 +592,10 @@
                     label: 'Clean Wallet',
                     response: () => {
                         cleanWallet($wallet)
-                            .then(() => {
+                            .then((cleanedAmount) => {
                                 toastStore.trigger({
-                                    message: `Successfully cleaned cashu wallet from used tokens`,
-                                    timeout: 5000,
-                                    autohide: true,
+                                    message: `${cleanedAmount} spent/duplicate sats cleaned from wallet`,
+                                    autohide: false,
                                     background: `bg-success-300-600-token`,
                                 });
                             })
