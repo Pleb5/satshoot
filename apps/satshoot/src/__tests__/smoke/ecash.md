@@ -89,6 +89,51 @@ Payment through Ecash wallet
 
 ### Title
 
+Payment through Ecash wallet
+
+### Preconditions:
+
+-   Successfully completed ST004
+-   Swap roles between user1 and user2
+-   create a ticket with user2
+-   bid with user1: 50 sats, 10% pledge
+-   accept ticket with user 2
+
+### Test Steps:
+
+-   try to pay user1 10 sats 2X times
+-   try to pay remaining 50 sats in one go
+
+### Expected Result:
+
+-   Payments should go through successfully
+-   User 1 should receive 45 sats from user 1
+
+## ST006
+
+### Title
+
+Withdraw payment
+
+### Preconditions:
+
+-   Successfully completed ST005
+-   now user2 should have 40 sats remaining
+
+### Test Steps:
+
+-   withdraw 30 sats from user2
+
+### Expected Result:
+
+-   Withdrawal process should succeed
+-   user2's ecash wallet balance should be reduced by 30 sats + some fee
+-   user2's lighting wallet balance should be increased by 30 sats
+
+## ST007
+
+### Title
+
 Successfully cleans the wallet from spent and duplicate proofs
 
 ### Preconditions:
@@ -107,23 +152,39 @@ Successfully cleans the wallet from spent and duplicate proofs
 -   User should see a decrease in balance if wallet contains any spent or duplicate proofs
 -   Otherwise it should remain same
 
-## ST006
+## ST008
 
 ### Title
 
-Withdraw amount from wallet
+Backup wallet along with tokens in a local file
 
 ### Preconditions:
 
--   Successfully completed ST004
+-   Successfully completed ST007
 
 ### Test Steps:
 
--   Withdraw some amount from user1
--   Withdraw some amount from user2
+-   Click Backup button
 
 ### Expected Result:
 
--   Both withdrawals should be succeeded
--   User's ecash wallet should reduce the balance by the sum of withdrawal amount + fee
--   Withdrawal amount should be reflected in user's lightning wallet
+-   It should save a json file to local drive
+
+## ST008
+
+### Title
+
+Recover backup
+
+### Preconditions:
+
+-   Successfully completed ST008
+
+### Test Steps:
+
+-   Click Recover button
+-   Choose a backup file
+
+### Expected Result:
+
+-   It should successfully recover the wallet, include missing tokens, and discard spent
