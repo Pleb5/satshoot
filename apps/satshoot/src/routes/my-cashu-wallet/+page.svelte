@@ -402,6 +402,13 @@
                 modalStore.close();
                 cleaningWallet = true;
                 await cleanWallet(cashuWallet!)
+                    .then((cleanedAmount) => {
+                        toastStore.trigger({
+                            message: `${cleanedAmount} spent/duplicate sats cleaned from wallet`,
+                            background: `bg-success-300-600-token`,
+                            autohide: false,
+                        });
+                    })
                     .catch((err) => {
                         console.error('An error occurred in cleaning wallet', err);
                         toastStore.trigger({
