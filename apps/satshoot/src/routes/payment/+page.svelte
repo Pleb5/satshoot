@@ -25,12 +25,18 @@
     import ndk from '$lib/stores/ndk';
     import { paymentDetail } from '$lib/stores/payment';
     import currentUser from '$lib/stores/user';
-    import { cashuPaymentInfoMap, wallet } from '$lib/stores/wallet';
+    import {
+        cashuPaymentInfoMap,
+        cashuTokensBackup,
+        unsavedProofsBackup,
+        wallet,
+    } from '$lib/stores/wallet';
 
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
     import { broadcastEvent, fetchUserOutboxRelays, getZapConfiguration } from '$lib/utils/helpers';
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
+    import { resyncWalletAndBackup } from '$lib/utils/cashu';
 
     enum ToastType {
         Success = 'success',
@@ -358,6 +364,14 @@
             }
 
             await processPayment(UserEnum.Freelancer, offer!.pubkey, freelancerShareMillisats);
+
+            // its possible that after one payment wallet may contains used tokens
+            // so, resync wallet and backup before making other payment
+            // this will remove any used tokens in the wallet
+            if ($wallet) {
+                await resyncWalletAndBackup($wallet!, $cashuTokensBackup, $unsavedProofsBackup);
+            }
+
             await processPayment(UserEnum.Satshoot, SatShootPubkey, satshootSumMillisats);
 
             handlePaymentStatus(

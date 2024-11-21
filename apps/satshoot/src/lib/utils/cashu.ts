@@ -181,12 +181,50 @@ export async function extractUnspentProofsForMint(mint: string, tokens: NDKCashu
     return unspentProofs;
 }
 
+export function findTokensWithDuplicateProofs(tokens: NDKCashuToken[]): NDKCashuToken[] {
+    // To track occurrences of proofs
+    const proofMap = new Map<string, number>();
+
+    // First pass: Count occurrences of all proofs
+    tokens.forEach((token) => {
+        token.proofs.forEach((proof) => {
+            const proofString = JSON.stringify(proof); // Stringify to compare full object
+            proofMap.set(proofString, (proofMap.get(proofString) || 0) + 1);
+        });
+    });
+
+    // Collect all duplicate proofs
+    const duplicateProofs = new Set<string>(
+        Array.from(proofMap.entries())
+            .filter(([, count]) => count > 1)
+            .map(([proofString]) => proofString)
+    );
+
+    // Second pass: Filter tokens with duplicate proofs
+    return tokens.filter((token) =>
+        token.proofs.some((proof) => duplicateProofs.has(JSON.stringify(proof)))
+    );
+}
+
 export function getUniqueProofs(array1: Proof[], array2: Proof[]): Proof[] {
     // Create a Set of JSON stringified objects from array2 for faster lookup
     const array2Set = new Set(array2.map((proof) => JSON.stringify(proof)));
 
     // Filter array1 to only include objects not in array2
     return array1.filter((proof) => !array2Set.has(JSON.stringify(proof)));
+}
+
+function removeDuplicateProofs(proofs: Proof[]): Proof[] {
+    const seen = new Set<string>();
+    return proofs.filter((proof) => {
+        // Serialize the proof object
+        const proofString = JSON.stringify(proof);
+        if (seen.has(proofString)) {
+            return false; // Skip duplicates
+        }
+        seen.add(proofString);
+        return true; // Keep unique proofs
+    });
 }
 
 export async function cleanWallet(cashuWallet: NDKCashuWallet) {
@@ -196,6 +234,13 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
     const tokensToDestroy: NDKCashuToken[] = [];
     const proofsToSave = new Map<string, Proof[]>();
 
+    let prevBalance = 0;
+    await cashuWallet.balance().then((res) => {
+        if (res) {
+            prevBalance = res[0].amount;
+        }
+    });
+
     // get all the unique mints from tokens
     const mints = new Set<string>();
     cashuWallet.tokens.forEach((t) => {
@@ -204,6 +249,7 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
 
     const mintsArray = Array.from(mints);
 
+    // remove tokens which contains spent proofs
     const promises = mintsArray.map(async (mint) => {
         const allTokens = cashuWallet!.tokens.filter((t) => t.mint === mint);
         const allProofs = allTokens.map((t) => t.proofs).flat();
@@ -222,15 +268,37 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
                 tokensToDestroy.push(token);
                 const proofs = proofsToSave.get(mint);
                 if (proofs) {
-                    proofsToSave.set(mint, [...proofs, ...unspentProofs]);
+                    proofsToSave.set(mint, removeDuplicateProofs([...proofs, ...unspentProofs]));
                 } else {
-                    proofsToSave.set(mint, unspentProofs);
+                    proofsToSave.set(mint, removeDuplicateProofs(unspentProofs));
                 }
             }
         });
     });
 
     await Promise.all(promises);
+
+    // Its possible that tokens may have duplicate proofs
+    // we need to remove these tokens with duplicate proofs
+    // and create a clean token
+    const validTokens = cashuWallet.tokens.filter(
+        (token) => !tokensToDestroy.some((t) => t.id === token.id)
+    );
+    const tokensWithDuplicateProofs = findTokensWithDuplicateProofs(validTokens);
+
+    if (tokensWithDuplicateProofs.length > 0) {
+        tokensWithDuplicateProofs.forEach((token) => {
+            tokensToDestroy.push(token);
+            const mint = token.mint || '';
+
+            const proofs = proofsToSave.get(mint);
+            if (proofs) {
+                proofsToSave.set(mint, removeDuplicateProofs([...proofs, ...token.proofs]));
+            } else {
+                proofsToSave.set(mint, removeDuplicateProofs([...token.proofs]));
+            }
+        });
+    }
 
     const relaySet = cashuWallet.relaySet;
 
@@ -244,7 +312,13 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
             if (token.relay) relaySet?.addRelay(token.relay);
         });
         await deleteEvent.publish(relaySet);
-        cashuWallet.addUsedTokens(tokensToDestroy);
+        tokensToDestroy.forEach((t) => cashuWallet.removeTokenId(t.id));
+        cashuTokensBackup.update((map) => {
+            // remove invalid tokens from the backup
+            tokensToDestroy.forEach((t) => map.delete(t.id));
+
+            return map;
+        });
     }
 
     // handle proofs to save
@@ -260,19 +334,39 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
             newCashuToken.wallet = cashuWallet!;
             newCashuToken.created_at = Math.floor(Date.now() / 1000);
             newCashuToken.pubkey = $currentUser!.pubkey;
-
-            console.log('Encrypting proofs added to token event');
             newCashuToken.content = JSON.stringify({
                 proofs: newCashuToken.proofs,
             });
 
-            // encrypt the new token event
+            console.log('Encrypting proofs added to token event');
             await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
             await newCashuToken.publish();
+
+            // When we publish newly created token, It becomes encrypted.
+            // To store it in svelte persisted store, we need this in un-encrypted form
+            const newToken = await NDKCashuToken.from(newCashuToken);
+            if (newToken) {
+                cashuWallet.addToken(newToken);
+                cashuTokensBackup.update((map) => {
+                    // add newToken to backup
+                    map.set(newToken.id, newToken.rawEvent());
+
+                    return map;
+                });
+            }
         }
     });
 
     await Promise.all(newTokenPromises);
+
+    let newBalance = 0;
+    await cashuWallet.balance().then((res) => {
+        if (res) {
+            newBalance = res[0].amount;
+        }
+    });
+
+    return prevBalance - newBalance;
 }
 
 export async function backupWallet(cashuWallet: NDKCashuWallet) {
@@ -284,25 +378,40 @@ export async function backupWallet(cashuWallet: NDKCashuWallet) {
     const tokensToBackup: NostrEvent[] = [];
 
     const existingTokenIds = cashuWallet.tokens.map((t) => t.id);
+    const existingProofs = cashuWallet.tokens.map((t) => t.proofs).flat();
 
     // When user triggers manual backup its possible that
     // there are some tokens in svelte persisted store that are not in wallet
     // include those proofs too
-    $cashuTokensBackup.forEach((value) => {
-        if (!existingTokenIds.includes(value.id!)) {
-            tokensToBackup.push(value);
-        }
+    $cashuTokensBackup.forEach((token) => {
+        const ndkCashuToken = new NDKCashuToken($ndk, token);
+        try {
+            const content = JSON.parse(ndkCashuToken.content);
+            ndkCashuToken.proofs = content.proofs;
+            if (!Array.isArray(ndkCashuToken.proofs)) return;
+
+            const proofsCountBeforeFilter = ndkCashuToken.proofs.length;
+            const uniqueProofs = getUniqueProofs(ndkCashuToken.proofs, existingProofs);
+
+            // check if token not exists Wallet state and
+            // none of the proof is the duplicate of existing proofs in wallet
+            if (
+                !existingTokenIds.includes(token.id!) &&
+                proofsCountBeforeFilter === uniqueProofs.length
+            ) {
+                tokensToBackup.push(token);
+            }
+        } catch (e) {}
     });
 
-    const tokenPromises = cashuWallet.tokens.map((token) => token.toNostrEvent());
-    await Promise.all(tokenPromises).then((tokens) => {
-        tokens.forEach((token) => tokensToBackup.push(token));
+    cashuWallet.tokens.forEach((token) => {
+        tokensToBackup.push(token.rawEvent());
     });
 
     // Its also possible that there are some unsaved proofs in svelte persisted store
     // We need to include these proofs in backup too
     const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
-    const unsavedProofsPromises = unsavedProofsArray.map(async ([mint, proofs]) => {
+    unsavedProofsArray.forEach(([mint, proofs]) => {
         if (proofs.length > 0) {
             // Creating new cashu token for backing up unsaved proofs related to a specific mint
             const newCashuToken = new NDKCashuToken($ndk);
@@ -311,20 +420,26 @@ export async function backupWallet(cashuWallet: NDKCashuWallet) {
             newCashuToken.wallet = cashuWallet!;
             newCashuToken.created_at = Math.floor(Date.now() / 1000);
             newCashuToken.pubkey = $currentUser!.pubkey;
-
-            console.log('Encrypting proofs added to token event');
             newCashuToken.content = JSON.stringify({
                 proofs: newCashuToken.proofs,
             });
+            newCashuToken.id = newCashuToken.getEventHash();
 
-            // encrypt the new token event
-            await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
-            const cashuTokenEvent = await newCashuToken.toNostrEvent();
-            tokensToBackup.push(cashuTokenEvent);
+            tokensToBackup.push(newCashuToken.rawEvent());
+            // also include token to svelte-persisted-store backup
+            cashuTokensBackup.update((map) => {
+                map.set(newCashuToken.id, newCashuToken.rawEvent());
+                return map;
+            });
         }
-    });
+        // now that we have created a token from these proofs.
+        // so  we can remove these proofs from unsaved proofs backup
+        unsavedProofsBackup.update((map) => {
+            map.delete(mint);
 
-    await Promise.all(unsavedProofsPromises);
+            return map;
+        });
+    });
 
     cashuWallet.event.tags = cashuWallet.publicTags;
     cashuWallet.event.content = JSON.stringify(cashuWallet.privateTags);
@@ -345,29 +460,42 @@ export async function resyncWalletAndBackup(
     $cashuTokensBackup: Map<string, NostrEvent>,
     $unsavedProofsBackup: Map<string, Proof[]>
 ) {
+    const $currentUser = get(currentUser);
+
     console.log('syncing wallet and backup ', $cashuTokensBackup);
     try {
         const $ndk = get(ndk);
 
+        // remove used tokens from wallet
+        $wallet.usedTokenIds.forEach((id) => {
+            $wallet.removeTokenId(id);
+        });
+
         // get ids of existing tokens in wallet
         const existingTokenIds = $wallet.tokens.map((token) => token.id);
+        const existingProofs = $wallet.tokens.map((t) => t.proofs).flat();
 
         // filter tokens from backup that don't exists in wallet
-        const missingTokens = Array.from($cashuTokensBackup.values()).filter(
+        const missingTokensInWallet = Array.from($cashuTokensBackup.values()).filter(
             (token) => !existingTokenIds.includes(token.id!)
         );
 
-        if (missingTokens.length > 0) {
+        if (missingTokensInWallet.length > 0) {
             // convert raw token events to NDKCashuTokens
-            // this also decrypts the private tags in token events
-            const promises = missingTokens.map((token) => {
-                const ndkEvent = new NDKEvent($ndk, token);
-                return NDKCashuToken.from(ndkEvent);
-            });
+            const ndkCashuTokens = missingTokensInWallet
+                .map((token) => {
+                    const ndkCashuToken = new NDKCashuToken($ndk, token);
+                    try {
+                        const content = JSON.parse(ndkCashuToken.content);
+                        ndkCashuToken.proofs = content.proofs;
+                        if (!Array.isArray(ndkCashuToken.proofs)) return;
+                    } catch (e) {
+                        return;
+                    }
 
-            const ndkCashuTokens = await Promise.all(promises).then((tokens) => {
-                return tokens.filter((token) => token instanceof NDKCashuToken);
-            });
+                    return ndkCashuToken;
+                })
+                .filter((token) => token instanceof NDKCashuToken);
 
             const invalidTokens: NDKCashuToken[] = [];
 
@@ -388,18 +516,31 @@ export async function resyncWalletAndBackup(
                 const _wallet = new CashuWallet(new CashuMint(mint));
                 const spentProofs = await _wallet.checkProofsSpent(allProofs);
 
-                ndkCashuTokens.map(async (token) => {
-                    // check if there's any proof that has been spent then this is not a valid token
-                    const proofsCountBeforeFilter = token.proofs.length;
-                    const unspentProofs = getUniqueProofs(token.proofs, spentProofs);
+                ndkCashuTokens
+                    .filter((t) => t.mint === mint)
+                    .map(async (token) => {
+                        // for a token to be valid, it should not have any spent proof
+                        // and no proof should be a duplicate of any existing proof in the wallet tokens
+                        const proofsCountBeforeFilter = token.proofs.length;
 
-                    if (proofsCountBeforeFilter === unspentProofs.length) {
-                        await token.publish($wallet.relaySet);
+                        // check if there's any proof that has been spent then this is not a valid token
+                        const unspentProofs = getUniqueProofs(token.proofs, spentProofs);
+                        if (proofsCountBeforeFilter !== unspentProofs.length) {
+                            invalidTokens.push(token);
+                            return;
+                        }
+
+                        // if there's any proof in existing proofs that matches any of the proof
+                        // from this token, then its not a valid token
+                        const uniqueProofs = getUniqueProofs(token.proofs, existingProofs);
+                        if (proofsCountBeforeFilter !== uniqueProofs.length) {
+                            invalidTokens.push(token);
+                            return;
+                        }
+
                         $wallet.addToken(token);
-                    } else {
-                        invalidTokens.push(token);
-                    }
-                });
+                        existingProofs.push(...token.proofs);
+                    });
             });
 
             await Promise.all(tokenPromises);
@@ -414,7 +555,25 @@ export async function resyncWalletAndBackup(
             }
         }
 
-        const existingProofs = $wallet.tokens.map((t) => t.proofs).flat();
+        const tokenIdsInBackup = Array.from($cashuTokensBackup.keys());
+        const missingTokensInBackup = $wallet.tokens.filter(
+            (token) => !tokenIdsInBackup.includes(token.id)
+        );
+
+        if (missingTokensInBackup.length > 0) {
+            const tokensToBackup: NostrEvent[] = [];
+            missingTokensInBackup.map((token) => {
+                tokensToBackup.push(token.rawEvent());
+            });
+
+            cashuTokensBackup.update((map) => {
+                tokensToBackup.forEach((token) => {
+                    if (token.id) map.set(token.id, token);
+                });
+
+                return map;
+            });
+        }
 
         const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
         unsavedProofsArray.map(async ([mint, proofs]) => {
@@ -431,21 +590,21 @@ export async function resyncWalletAndBackup(
                     newCashuToken.proofs = newProofs;
                     newCashuToken.mint = mint;
                     newCashuToken.wallet = $wallet;
-
-                    console.log('Encrypting proofs added to token event');
+                    newCashuToken.created_at = Math.floor(Date.now() / 1000);
+                    newCashuToken.pubkey = $currentUser!.pubkey;
                     newCashuToken.content = JSON.stringify({
                         proofs: newCashuToken.proofs,
                     });
+                    newCashuToken.id = newCashuToken.getEventHash();
 
-                    const $currentUser = get(currentUser);
-                    // encrypt the new token event
-                    await newCashuToken.encrypt($currentUser!, undefined, 'nip44');
-                    await newCashuToken.sign();
-                    await newCashuToken.publish($wallet.relaySet);
-
-                    // now that new token has been signed and published to relays
-                    // we can add it to wallet and remove these proofs from unsaved proofs backup
+                    // now that new token has been created
+                    // we can add it to wallet and cashuTokensBackup
+                    // and remove these proofs from unsaved proofs backup
                     $wallet.addToken(newCashuToken);
+                    cashuTokensBackup.update((map) => {
+                        map.set(newCashuToken.id, newCashuToken.rawEvent());
+                        return map;
+                    });
                 }
             }
             unsavedProofsBackup.update((map) => {

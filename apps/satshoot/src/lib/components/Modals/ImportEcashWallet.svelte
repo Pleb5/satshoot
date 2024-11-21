@@ -90,25 +90,20 @@
             }
 
             // convert raw token events to NDKCashuTokens
-            // this also decrypts the private tags in token events
-            const promises = backupJson.tokens.map((token) => {
-                const ndkEvent = new NDKEvent($ndk, token);
-                return NDKCashuToken.from(ndkEvent);
-            });
+            const ndkCashuTokens = backupJson.tokens
+                .map((token) => {
+                    const ndkCashuToken = new NDKCashuToken($ndk, token);
+                    try {
+                        const content = JSON.parse(ndkCashuToken.content);
+                        ndkCashuToken.proofs = content.proofs;
+                        if (!Array.isArray(ndkCashuToken.proofs)) return;
+                    } catch (e) {
+                        return;
+                    }
 
-            const ndkCashuTokens = await Promise.all(promises)
-                .then((tokens) => {
-                    return tokens.filter((token) => token instanceof NDKCashuToken);
+                    return ndkCashuToken;
                 })
-                .catch(() => {
-                    toastStore.trigger({
-                        message: 'Error occurred in converting raw token events to NDKCashuToken',
-                        background: `bg-error-300-600-token`,
-                    });
-                    return null;
-                });
-
-            if (!ndkCashuTokens) return;
+                .filter((token) => token instanceof NDKCashuToken);
 
             // get all the unique mints from tokens
             const mints = new Set<string>();
@@ -127,7 +122,6 @@
                 // find all spent proofs
                 const _wallet = new CashuWallet(new CashuMint(mint));
                 const spentProofs = await _wallet.checkProofsSpent(allProofs);
-                extractUnspentProofsForMint;
 
                 allTokens.forEach((token) => {
                     const unspentProofs = getUniqueProofs(token.proofs, spentProofs);
