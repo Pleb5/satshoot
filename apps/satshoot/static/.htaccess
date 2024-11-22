@@ -17,7 +17,8 @@
 
 # https://stackoverflow.com/questions/49547/how-do-we-control-web-page-caching-across-all-browsers#2068407
 <IfModule mod_headers.c>
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    # Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Cache-Control "no-cache"
     Header set Pragma "no-cache"
     Header set Expires 0
 </IfModule>
