@@ -1,5 +1,10 @@
 <script lang="ts">
-    import { marked, type Token, type Tokens, type TokenizerAndRendererExtension } from 'marked';
+    import { 
+        marked,
+        type Token,
+        type Tokens,
+        type TokenizerAndRendererExtension
+    } from 'marked';
     import DOMPurify from 'dompurify';
     import ndk from '$lib/stores/ndk';
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
@@ -111,7 +116,7 @@
                 case 'naddr':
                     break;
             }
-            return `<a href="${url}">${linkText}</a>`;
+            return `<a href="${url}" class="anchor">${linkText}</a>`;
         },
     };
 
@@ -144,9 +149,9 @@
                 const { tagType, content, userName } = token;
                 let url = `/${content}`;
                 let linkText = userName ? `@${userName}` : token.text;
-                return `<a href="${url}">${linkText}</a>`;
+                return `<a href="${url}" class="anchor">${linkText}</a>`;
             } else {
-                return `<a href="${token.href}">${token.text}</a>`;
+                return `<a href="${token.href}" class="anchor">${token.text}</a>`;
             }
         },
     };
@@ -158,6 +163,18 @@
         renderer: {
             image() {
                 return '';
+            },
+            link(token) {
+                // Check if the URL starts with https://
+                if (token.href.startsWith('https://')) {
+                    // Customize the rendering of https:// URLs
+                    const shortenedURL = token.text.length > 20 
+                        ? token.text.slice(0, 20) + '...'
+                        : token.text;
+                    return `<a href="${token.href}" class="anchor">${shortenedURL}</a>`;
+                }
+                // Default rendering for other links
+                return `<a href="${token.href}" class="anchor">${token.text}</a>`;
             },
         },
     });
