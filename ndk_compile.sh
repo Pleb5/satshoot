@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 directory_root="./packages/ndk"
-subfolders=("ndk" "ndk-cache-dexie" "ndk-cache-redis" "ndk-svelte" "ndk-svelte-components")
+subfolders=("ndk" "ndk-cache-dexie" "ndk-cache-redis" "ndk-svelte" "ndk-svelte-components" "ndk-wallet")
 
 for subfolder in "${subfolders[@]}"; do
     current_folder="$directory_root/$subfolder"

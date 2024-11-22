@@ -98,7 +98,8 @@ export const receivedZapsNotifications = derived(
     ([$notifications]) => {
         // Check for zap kinds and if zap has an 'a' tag referring to an Offer
         const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === NDKKind.Zap;
+            return notification.kind === NDKKind.Zap
+                    || notification.kind === NDKKind.Nutzap;
         });
 
         orderEventsChronologically(filteredEvents);

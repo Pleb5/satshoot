@@ -16,6 +16,7 @@ import {
     type Hexpubkey,
     type NDKFilter,
 } from '@nostr-dev-kit/ndk';
+
 import { orderEventsChronologically } from '$lib/utils/helpers';
 
 export const subOptions: NDKSubscriptionOptions = {
@@ -100,147 +101,147 @@ export function userFreelancerRatings(source: Hexpubkey, target: Hexpubkey):
     return ratings
 }
 
-export function aggregateClientRatings(target: Hexpubkey)
-    : Map<string, number> {
-    const ratings: Map<string, number> = new Map();
-    const thumbString = 'Positive Overall Experience';
-    const availabilityString = 'Availability';
-    const communicationString = 'Communication';
+export interface AggregatedClientRatings {
+    type: 'client',
+    thumbsUp: number,
+    thumbsDown: number,
+    availability: number,
+    communication: number,
+    average: number,
+}
 
-    const reviews = get(clientReviews).filter((r: ReviewEvent) => {
+export interface AggregatedFreelancerRatings {
+    type: 'freelancer',
+    success: number,
+    failure: number,
+    expertise: number,
+    availability: number,
+    communication: number,
+    average: number,
+}
+
+// We only return the first review that actually refers to a ticket
+function filterDuplicateReviewsOnSameDeal(reviews: ReviewEvent[])
+    : ReviewEvent[] {
+    const filteredReviews = Array.from(
+        reviews.reduce(
+            (map: Map<string, ReviewEvent>, r: ReviewEvent) => {
+                if (r.reviewedEventAddress) {
+                    map.set(r.reviewedEventAddress, r)
+                }
+                return map;
+            }
+            , new Map<string, ReviewEvent>()
+        ).values()
+    );
+
+    return filteredReviews;
+}
+
+export function aggregateClientRatings(target: Hexpubkey)
+    : AggregatedClientRatings {
+    const reviewsOnClient = get(clientReviews).filter((r: ReviewEvent) => {
         return r.reviewedPerson === target;
     });
-    ratings.set(thumbString, 0);
-    ratings.set(availabilityString, 0);
-    ratings.set(communicationString, 0);
 
-    // Filter out duplicate reviews: Same person posted
-    // on the same event address but different event ID
-    for (const review of reviews) {
-        for(let i = 0; i < reviews.length; i++) {
-            const compareReview = reviews[i];
-            if (review.pubkey === compareReview.pubkey
-                && review.reviewedEventAddress === compareReview.reviewedEventAddress
-                && review.id !== compareReview.id) {
-                reviews.splice(i, 1);
-            }
-        }
-    }
+    const filteredClientReviews = filterDuplicateReviewsOnSameDeal(reviewsOnClient);
 
-    // console.log('filtered target reviews', reviews)
+    const aggregateClientRatings: AggregatedClientRatings = {
+        type: 'client',
+        thumbsUp: 0,
+        thumbsDown: 0,
+        availability: 0,
+        communication: 0,
+        average: 0,
+    };
 
     let aggregatedAverage = 0;
     let numberOfReviews = 0;
-    for (let i = 0; i < reviews.length; i++){
-        const r = reviews[i];
-        // console.log('rating: ', r)
-        // currentUser must exist here bc reivews depend on wot
-        // and wot on currentUser(init  user)
+    for (const clientReview of filteredClientReviews) {
         // Users own reviews are counted 4X in the aggregatedAverage score
         let scoreMultiplier = 1;
         numberOfReviews += 1;
-        if (r.pubkey === get(currentUser)!.pubkey) {
+
+        const $currentUser = get(currentUser);
+        if ($currentUser && clientReview.pubkey === $currentUser.pubkey) {
             scoreMultiplier = 4;
             numberOfReviews += 3;
         }
-        const sum = (r.overallRating ?? 0) * scoreMultiplier;
+        const sum = (clientReview.overallRating ?? 0) * scoreMultiplier;
         aggregatedAverage += sum;
 
-        const rating = r.clientRatings;
-        // console.log('rating: ', rating)
+        const rating = clientReview.clientRatings;
         if (rating.thumb) {
-            const currentCount = ratings.get(thumbString) ?? 0;
-            ratings.set(thumbString, currentCount + 1);
-        } 
+            aggregateClientRatings.thumbsUp += 1;
+        } else {
+            aggregateClientRatings.thumbsDown += 1;
+        }
         if (rating.availability) {
-            const currentCount = ratings.get(availabilityString) ?? 0;
-            ratings.set(availabilityString, currentCount + 1);
+            aggregateClientRatings.availability += 1;
         }
         if (rating.communication) {
-            const currentCount = ratings.get(communicationString) ?? 0;
-            ratings.set(communicationString, currentCount + 1);
+            aggregateClientRatings.communication += 1;
         }
     }
 
     aggregatedAverage /= numberOfReviews;
-    ratings.set("average", aggregatedAverage);
-    // console.log('ratings', ratings)
+    aggregateClientRatings.average = aggregatedAverage;
 
-    return ratings;
+    return aggregateClientRatings;
 }
 
 export function aggregateFreelancerRatings(target: Hexpubkey)
-    : Map<string, number> {
-    const ratings: Map<string, number> = new Map();
-    const successString = 'Successful Jobs';
-    const expertiseString = 'Expertise';
-    const availabilityString = 'Availability';
-    const communicationString = 'Communication';
-
-    const reviews = get(freelancerReviews).filter((r: ReviewEvent) => {
+    : AggregatedFreelancerRatings {
+    const reviewsOnFreelancer = get(freelancerReviews).filter((r: ReviewEvent) => {
         return r.reviewedPerson === target;
     });
 
-    ratings.set(successString, 0);
-    ratings.set(expertiseString, 0);
-    ratings.set(availabilityString, 0);
-    ratings.set(communicationString, 0);
+    const filteredFreelancerReviews = filterDuplicateReviewsOnSameDeal(reviewsOnFreelancer);
 
-    // Filter out duplicate reviews: Same person posted
-    // on the same event address but different event ID
-    for (const review of reviews) {
-        for(let i = 0; i < reviews.length; i++) {
-            const compareReview = reviews[i];
-            if (review.pubkey === compareReview.pubkey
-                && review.reviewedEventAddress === compareReview.reviewedEventAddress
-                && review.id !== compareReview.id) {
-                reviews.splice(i, 1);
-            }
-        }
-    }
-
-    // console.log('filtered target reviews', reviews)
+    const aggregateFreelancerRatings: AggregatedFreelancerRatings = {
+        type: 'freelancer',
+        success: 0,
+        failure: 0,
+        expertise: 0,
+        availability: 0,
+        communication: 0,
+        average: 0,
+    };
 
     let aggregatedAverage = 0;
     let numberOfReviews = 0;
-    for (let i = 0; i < reviews.length; i++){
-        const r = reviews[i];
-        // console.log('rating: ', r)
-        // currentUser must exist here bc reivews depend on wot
-        // and wot on currentUser(init  user)
+    for (const freelancerReview of filteredFreelancerReviews) {
         // Users own reviews are counted 4X in the aggregatedAverage score
         let scoreMultiplier = 1;
         numberOfReviews += 1;
-        if (r.pubkey === get(currentUser)!.pubkey) {
+
+        const $currentUser = get(currentUser);
+        if ($currentUser && freelancerReview.pubkey === $currentUser.pubkey) {
             scoreMultiplier = 4;
             numberOfReviews += 3;
         }
-        const sum = (r.overallRating ?? 0) * scoreMultiplier;
+        const sum = (freelancerReview.overallRating ?? 0) * scoreMultiplier;
         aggregatedAverage += sum;
 
-        const rating = r.freelancerRatings;
-        // console.log('rating: ', rating)
+        const rating = freelancerReview.freelancerRatings;
         if (rating.success) {
-            const currentCount = ratings.get(successString) ?? 0;
-            ratings.set(successString, currentCount + 1);
-        } 
+            aggregateFreelancerRatings.success += 1;
+        } else {
+            aggregateFreelancerRatings.failure += 1;
+        }
         if (rating.expertise) {
-            const currentCount = ratings.get(expertiseString) ?? 0;
-            ratings.set(expertiseString, currentCount + 1);
-        } 
+            aggregateFreelancerRatings.expertise += 1;
+        }
         if (rating.availability) {
-            const currentCount = ratings.get(availabilityString) ?? 0;
-            ratings.set(availabilityString, currentCount + 1);
+            aggregateFreelancerRatings.availability += 1;
         }
         if (rating.communication) {
-            const currentCount = ratings.get(communicationString) ?? 0;
-            ratings.set(communicationString, currentCount + 1);
+            aggregateFreelancerRatings.communication += 1;
         }
     }
 
     aggregatedAverage /= numberOfReviews;
-    ratings.set("average", aggregatedAverage);
-    // console.log('ratings', ratings)
+    aggregateFreelancerRatings.average = aggregatedAverage;
 
-    return ratings;
+    return aggregateFreelancerRatings;
 }

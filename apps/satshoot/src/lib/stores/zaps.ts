@@ -9,9 +9,9 @@ import {
 import { myOffers } from './freelance-eventstores';
 import type { OfferEvent } from '$lib/events/OfferEvent';
 
-// The authors part of the filter gets assigned when user is initialized 
-export const allReceivedZapsFilter: NDKFilter<NDKKind.Zap> = {
-    kinds: [NDKKind.Zap],
+// The p-tag of the filter gets assigned when user is initialized 
+export const allReceivedZapsFilter = {
+    kinds: [NDKKind.Zap, NDKKind.Nutzap],
 };
 
 export const allReceivedZaps = get(ndk).storeSubscribe(
@@ -23,6 +23,7 @@ export const allReceivedZaps = get(ndk).storeSubscribe(
     },
 );
 
+// todo: use wot here too
 export const filteredReceivedZaps = derived(
     [allReceivedZaps, myOffers],
     ([$allReceivedZaps, $myOffers]) => {

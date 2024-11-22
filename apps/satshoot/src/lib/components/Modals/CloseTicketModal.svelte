@@ -1,18 +1,19 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
+    import ndk from '$lib/stores/ndk';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import { type FreelancerRating , ReviewEvent } from "$lib/events/ReviewEvent";
+    import { type FreelancerRating, ReviewEvent } from '$lib/events/ReviewEvent';
 
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings, ModalSettings } from '@skeletonlabs/skeleton';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { RadioGroup, RadioItem } from '@skeletonlabs/skeleton';
-    import { type SvelteComponent, tick } from "svelte";
-    import type { OfferEvent } from "$lib/events/OfferEvent";
+    import { type SvelteComponent, tick } from 'svelte';
+    import type { OfferEvent } from '$lib/events/OfferEvent';
 
-    import PaymentModal from "./PaymentModal.svelte";
-    import { type ModalComponent } from "@skeletonlabs/skeleton";
+    import { paymentDetail } from '$lib/stores/payment';
+    import { page } from '$app/stores';
+    import { goto } from '$app/navigation';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -33,7 +34,7 @@
     let closingStatus: TicketStatus.Resolved | TicketStatus.Failed = TicketStatus.Resolved;
 
     let errorMessage = '';
-     
+
     async function closeTicket() {
         if (ticket) {
             const ticketToPublish = new TicketEvent($ndk);
@@ -44,9 +45,7 @@
 
             try {
                 closing = true;
-                console.log('connected relays before closing ticket:',
-                    $ndk.pool.connectedRelays()
-                );
+                console.log('connected relays before closing ticket:', $ndk.pool.connectedRelays());
                 await tick();
 
                 const relays = await ticketToPublish.publish();
@@ -64,7 +63,7 @@
                         availability: false,
                         communication: false,
                         reviewText: reviewText,
-                    }
+                    };
 
                     if (closingStatus === TicketStatus.Resolved) {
                         rating.success = true;
@@ -97,21 +96,21 @@
 
                 // Close this modal and Open payment modal
                 modalStore.close();
-                
+
                 if (offer) {
-                    const modalComponent: ModalComponent = {
-                        ref: PaymentModal,
-                        props: {ticket: ticket, offer: offer},
+                    $paymentDetail = {
+                        ticket,
+                        offer,
                     };
 
-                    const modal: ModalSettings = {
-                        type: 'component',
-                        component: modalComponent,
-                    };
-                    modalStore.trigger(modal);
+                    const currentPath = $page.url.pathname;
+                    const paymentUrl = new URL('payment', window.location.origin);
+                    paymentUrl.searchParams.set('redirectPath', currentPath);
+
+                    goto(paymentUrl);
                 }
-            } catch(e) {
-                console.log(e)
+            } catch (e) {
+                console.log(e);
                 closing = false;
                 errorMessage = 'Error while closing: ' + e;
             }
@@ -126,7 +125,6 @@
             modalStore.close();
         }
     }
-
 </script>
 
 {#if $modalStore[0]}
@@ -134,29 +132,19 @@
         <div class="card p-4">
             <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Close Ticket</h4>
             <div class="flex flex-col justify-center min-w-60 gap-y-4">
-                <div class="text-md sm:text-xl text-center font-bold">
-                    Was Your Issue Resolved?
-                </div>
-                <RadioGroup 
-                    active="variant-filled-primary"
-                    hover="hover:variant-soft-primary"
-                >
-						<RadioItem 
-                            bind:group={closingStatus}
-                            required
-                            name="status"
-                            value={TicketStatus.Resolved}
-
-                        >
-                            Yes
-                        </RadioItem>
-						<RadioItem
-                            bind:group={closingStatus}
-                            name="status" 
-                            value={TicketStatus.Failed}
-                        >
-                            No
-                        </RadioItem>
+                <div class="text-md sm:text-xl text-center font-bold">Was Your Issue Resolved?</div>
+                <RadioGroup active="variant-filled-primary" hover="hover:variant-soft-primary">
+                    <RadioItem
+                        bind:group={closingStatus}
+                        required
+                        name="status"
+                        value={TicketStatus.Resolved}
+                    >
+                        Yes
+                    </RadioItem>
+                    <RadioItem bind:group={closingStatus} name="status" value={TicketStatus.Failed}>
+                        No
+                    </RadioItem>
                 </RadioGroup>
                 {#if offer}
                     <div class="text-md sm:text-xl text-center font-bold">
@@ -177,20 +165,21 @@
                         </label>
                     </div>
                     <label class="label max-w-xl">
-                        <span class="text-md sm:text-xl">Share your experience to help others:</span>
-                        <textarea 
-                        class="textarea"
-                        rows="3"
-                        placeholder="Describe your experience..."
-                        bind:value={reviewText}
-                    />
+                        <span class="text-md sm:text-xl">Share your experience to help others:</span
+                        >
+                        <textarea
+                            class="textarea"
+                            rows="3"
+                            placeholder="Describe your experience..."
+                            bind:value={reviewText}
+                        />
                     </label>
                 {/if}
                 <div class="grid grid-cols-[30%_1fr] gap-x-2">
-                    <button 
+                    <button
                         type="button"
                         class="btn btn-sm sm:btn-md bg-error-300-600-token"
-                        on:click={()=> modalStore.close()}
+                        on:click={() => modalStore.close()}
                     >
                         Cancel
                     </button>
@@ -202,11 +191,19 @@
                     >
                         {#if closing}
                             <span>
-                                <ProgressRadial value={undefined} stroke={60} meter="stroke-error-500"
-                                    track="stroke-error-500/30" strokeLinecap="round" width="w-8" />
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-error-500"
+                                    track="stroke-error-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
                             </span>
                         {:else}
-                            <span class="font-bold">{'Close Ticket' + (offer ? ' and Pay' : '')}</span>
+                            <span class="font-bold"
+                                >{'Close Ticket' + (offer ? ' and Pay' : '')}</span
+                            >
                         {/if}
                     </button>
                 </div>
@@ -216,8 +213,6 @@
             </div>
         </div>
     {:else}
-        <h2 class="h2 font-bold text-center text-error-300-600-token">
-            Error: Ticket is missing!
-        </h2>
+        <h2 class="h2 font-bold text-center text-error-300-600-token">Error: Ticket is missing!</h2>
     {/if}
 {/if}

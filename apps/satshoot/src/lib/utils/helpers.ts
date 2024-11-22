@@ -1,6 +1,6 @@
 import {
+    NDKEvent,
     type NDKSigner,
-    type NDKEvent,
     NDKKind,
     NDKRelayList,
     NDKRelay,
@@ -9,6 +9,11 @@ import {
     profileFromEvent,
     getNip57ZapSpecFromLud,
     NDKRelaySet,
+    NDKCashuMintList,
+    type CashuPaymentInfo,
+    type NDKUserProfile,
+    serializeProfile,
+    type NostrEvent,
 } from '@nostr-dev-kit/ndk';
 
 import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
@@ -20,7 +25,6 @@ import {
     loggedIn,
     loggingIn,
     loginMethod,
-    retryUserInit,
     followsUpdated,
     userRelaysUpdated,
 } from '../stores/user';
@@ -47,9 +51,10 @@ import { notifications } from '../stores/notifications';
 
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
-import { dev, browser } from '$app/environment';
+import { dev } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
+import { ndkNutzapMonitor, wallet, walletInit } from '$lib/stores/wallet';
 
 export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init');
@@ -77,6 +82,9 @@ export async function initializeUser(ndk: NDKSvelte) {
             user.profile = profile;
         }
         currentUser.set(user);
+
+        // initialize user wallet for ecash payments
+        walletInit(ndk, user);
 
         // fetch users relays. If there are no outbox relays, set default ones
         const relays = await fetchUserOutboxRelays(ndk);
@@ -112,15 +120,8 @@ export async function initializeUser(ndk: NDKSvelte) {
         messageStore.startSubscription();
         allReviews.startSubscription();
         allReceivedZaps.startSubscription();
-
-        retryUserInit.set(false);
     } catch (e) {
         console.log('Could not initialize User. Reason: ', e);
-        if (browser && !get(retryUserInit)) {
-            retryUserInit.set(true);
-            console.log('Retrying...');
-            window.location.reload();
-        }
     }
 }
 
@@ -154,6 +155,14 @@ export function logout() {
     allReceivedZaps.empty();
 
     notifications.set([]);
+
+    wallet.set(null);
+
+    const nutzapMonitor = get(ndkNutzapMonitor);
+    if (nutzapMonitor) {
+        nutzapMonitor.stop();
+        ndkNutzapMonitor.set(null);
+    }
 
     get(ndk).signer = undefined;
 
@@ -210,20 +219,21 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
 export async function fetchUserOutboxRelays(ndk: NDKSvelte): Promise<NDKEvent | null> {
     const $currentUser = get(currentUser);
 
-    // const queryRelays = NDKRelaySet.fromRelayUrls([
-    //     ...ndk.pool.urls(),
-    //     ...ndk.outboxPool!.urls()
-    // ], ndk);
+    const queryRelaysUrls = [...ndk.pool.urls(), ...ndk.outboxPool!.urls()];
 
-    const relays = await ndk.fetchEvent(
-        { kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] },
-        {
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-            groupable: false,
-        }
-        // queryRelays,
-    );
-    console.log('outbox relays', relays);
+    const queryRelays: Array<NDKRelay> = [];
+
+    queryRelaysUrls.forEach((url) => {
+        queryRelays.push(new NDKRelay(url, undefined, ndk));
+    });
+
+    const relayFilter = {
+        kinds: [NDKKind.RelayList],
+        authors: [$currentUser!.pubkey],
+    };
+
+    let relays = await fetchEventFromRelaysFirst(relayFilter, 4000, true, queryRelays);
+
     return relays;
 }
 
@@ -236,30 +246,61 @@ export async function broadcastRelayList(
     userRelayList.readRelayUrls = Array.from(readRelayUrls);
     userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
 
-    ndk.pool.useTemporaryRelay(new NDKRelay(blastrUrl, undefined, ndk));
-    // const broadCastRelaySet = NDKRelaySet.fromRelayUrls([
-    //     blastrUrl,
-    //     ...ndk.pool.urls(),
-    //     ...ndk.outboxPool!.urls()
-    // ], ndk);
-    console.log('relays sending to:', ndk.pool.urls());
-
-    const relaysPosted = await userRelayList.publish();
+    const relaysPosted = await broadcastEvent(ndk, userRelayList, [...writeRelayUrls]);
     console.log('relays posted to:', relaysPosted);
+}
+
+export async function broadcastUserProfile(ndk: NDKSvelte, userProfile: NDKUserProfile) {
+    const ndkEvent = new NDKEvent(ndk);
+    ndkEvent.content = serializeProfile(userProfile);
+    ndkEvent.kind = NDKKind.Metadata;
+
+    const explicitRelays: string[] = [];
+
+    const relayListEvent = await fetchUserOutboxRelays(ndk);
+    if (relayListEvent) {
+        const relayList = NDKRelayList.from(relayListEvent);
+        explicitRelays.push(...relayList.writeRelayUrls);
+    }
+
+    const relaysPosted = await broadcastEvent(ndk, ndkEvent, explicitRelays);
+    console.log('userProfile posted to:', relaysPosted);
+}
+
+export async function broadcastEvent(
+    ndk: NDKSvelte,
+    ndkEvent: NDKEvent,
+    explicitRelayUrls: string[],
+    includePoolRelays: boolean = true,
+    includeOutboxPoolRelays: boolean = true,
+    includeBlastUrl: boolean = true
+) {
+    const relayUrls = [...explicitRelayUrls];
+
+    if (includePoolRelays) {
+        relayUrls.push(...ndk.pool.urls());
+    }
+
+    if (includeOutboxPoolRelays && ndk.outboxPool) {
+        relayUrls.push(...ndk.outboxPool.urls());
+    }
+
+    if (includeBlastUrl) {
+        relayUrls.push(blastrUrl);
+    }
+
+    return await ndkEvent.publish(NDKRelaySet.fromRelayUrls(relayUrls, ndk));
 }
 
 export async function checkRelayConnections() {
     const $ndk = get(ndk);
     const $currentUser = get(currentUser);
-    console.log('Check relays and try to reconnect if they are down..');
-    console.log('relays connected = ', $ndk.pool.stats().connected);
 
     const anyConnectedRelays = $ndk.pool.stats().connected !== 0;
     let readAndWriteRelaysExist = false;
 
     // Only bother to check stronger condition if weaker is met
     if (anyConnectedRelays && $currentUser) {
-        console.log('There are connected relays, check user read and write relays..');
         const relays = await $ndk.fetchEvent(
             { kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] },
             {
@@ -277,14 +318,12 @@ export async function checkRelayConnections() {
             for (const connectedPoolRelay of $ndk.pool.connectedRelays()) {
                 relayList.readRelayUrls.forEach((url: string) => {
                     if (connectedPoolRelay.url === url) {
-                        console.log('There is a connected user read relay');
                         readRelayExists = true;
                     }
                 });
 
                 relayList.writeRelayUrls.forEach((url: string) => {
                     if (connectedPoolRelay.url === url) {
-                        console.log('There is a connected user write relay');
                         writeRelayExists = true;
                     }
                 });
@@ -300,9 +339,6 @@ export async function checkRelayConnections() {
     if (!anyConnectedRelays || ($currentUser && !readAndWriteRelaysExist)) {
         connected.set(false);
         let retriesLeft = get(retryConnection);
-        console.log('Any relays conected: ', anyConnectedRelays);
-        console.log('Any read and write relays conected: ', readAndWriteRelaysExist);
-        console.log('retryConnection', retriesLeft);
         if (retriesLeft > 0) {
             retriesLeft -= 1;
             retryConnection.set(retriesLeft);
@@ -316,89 +352,55 @@ export async function checkRelayConnections() {
             setTimeout(checkRelayConnections, retryDelay);
         }
     } else {
-        console.log('We are sufficiently connected, reset max retries');
+        // We are sufficiently connected
         connected.set(true);
         retryConnection.set(maxRetryAttempts);
     }
 }
 
-export async function fetchEventFromRelays(
+export async function fetchEventFromRelaysFirst(
     filter: NDKFilter,
-    timeoutMS: number = 15000,
+    relayTimeoutMS: number = 6000,
     fallbackToCache: boolean = false,
     relays?: NDKRelay[]
-) {
+): Promise<NDKEvent | null> {
     const $ndk = get(ndk);
 
-    const promise = new Promise<NDKEvent>((resolve, reject) => {
-        let fetchedEvent: NDKEvent | null = null;
+    // If relays are provided construct a set and pass over to sub
+    const relaySet = relays ? new NDKRelaySet(new Set(relays), $ndk) : undefined;
 
-        // If relays are provided construct a set and pass over to sub
-        const relaySet = relays
-            ? new NDKRelaySet(new Set(relays), $ndk)
-            : undefined
-        ;
-
-
-        const relayOnlySubscription = $ndk.subscribe(
-            filter,
-            {
-                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-                closeOnEose: true,
-                groupable: false,
-            },
-            relaySet
-        );
-
-        const timeout = setTimeout(() => {
-            relayOnlySubscription.stop();
-
-            if (fetchedEvent) {
-                return resolve(fetchedEvent);
-            }
-
-            reject('Could not fetch event from relay within specified period of time');
-        }, timeoutMS);
-
-        relayOnlySubscription.on('event', (event: NDKEvent) => {
-            event.ndk = $ndk;
-
-            // We only emit immediately when the event is not replaceable
-            if (!event.isReplaceable()) {
-                clearTimeout(timeout);
-                relayOnlySubscription.stop();
-                resolve(event);
-            } else if (!fetchedEvent || fetchedEvent.created_at! < event.created_at!) {
-                fetchedEvent = event;
-            }
-        });
-
-        relayOnlySubscription.start();
+    const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(null);
+        }, relayTimeoutMS);
     });
 
-    if (fallbackToCache) {
-        const cachedPromise = $ndk.fetchEvent(filter, {
-            cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
-            closeOnEose: true,
+    const relayPromise = $ndk.fetchEvent(
+        filter,
+        {
+            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
             groupable: false,
-        });
+        },
+        relaySet
+    );
 
-        const eventFromRelay = await promise.catch((err) => {
-            console.error(err);
-            return null;
-        });
-        if (eventFromRelay) return eventFromRelay;
+    const fetchedEvent: NDKEvent | null = (await Promise.race([
+        timeoutPromise,
+        relayPromise,
+    ])) as NDKEvent | null;
 
-        const cachedEvent = await cachedPromise.catch((err) => {
-            console.error(err);
-            return null;
-        });
-        if (cachedEvent) return cachedEvent;
-
-        throw new Error('Could not fetch event from both relay and cache');
+    if (fetchedEvent) {
+        return fetchedEvent;
+    } else if (!fetchedEvent && !fallbackToCache) {
+        return null;
     }
 
-    return promise;
+    const cachedEvent = await $ndk.fetchEvent(filter, {
+        cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
+        groupable: false,
+    });
+
+    return cachedEvent;
 }
 
 export async function getZapConfiguration(pubkey: string) {
@@ -408,35 +410,22 @@ export async function getZapConfiguration(pubkey: string) {
         kinds: [NDKKind.Metadata],
         authors: [pubkey],
     };
-    //
-    // await $ndk.outboxTracker!.trackUsers([pubkey]);
 
-    const metadataRelays = [
-        ...$ndk.outboxPool!.connectedRelays(),
-        ...$ndk.pool!.connectedRelays()
-    ];
+    const metadataRelays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    console.log('ndk relays connected', metadataRelays)
-
-    const metadataEvent = await fetchEventFromRelays(
-        metadataFilter,
-        5000,
-        false,
-        metadataRelays
-    ).catch((err) => {
-        console.error(`An error occurred in fetching profile metadata for ${pubkey}`, err);
-        return null;
-    });
+    const metadataEvent = await fetchEventFromRelays(metadataFilter, 5000, false, metadataRelays);
 
     if (!metadataEvent) return null;
 
     const profile = profileFromEvent(metadataEvent);
 
+    if (!profile.lud16) return null;
+
     try {
         const lnurlSpec = await getNip57ZapSpecFromLud(
             {
                 lud06: profile.lud06,
-                lud16: profile.lud16
+                lud16: profile.lud16,
             },
             $ndk
         );
@@ -452,16 +441,15 @@ export async function getZapConfiguration(pubkey: string) {
         try {
             // try if lud06 is actually a lud16
             const lnurlSpec = await getNip57ZapSpecFromLud(
-                {lud06: undefined, lud16: profile.lud06},
+                { lud06: undefined, lud16: profile.lud06 },
                 $ndk
             );
 
             if (!lnurlSpec) {
-                return null 
+                return null;
             }
 
             return lnurlSpec;
-
         } catch (err) {
             console.error(
                 `Tried to parse lud06 as lud16 but error occurred again for ${pubkey}`,
@@ -472,13 +460,97 @@ export async function getZapConfiguration(pubkey: string) {
     }
 }
 
+export async function getCashuPaymentInfo(
+    pubkey: string,
+    wholeEvent: boolean = false
+): Promise<NDKCashuMintList | CashuPaymentInfo | null> {
+    const $ndk = get(ndk);
+
+    const filter = {
+        kinds: [NDKKind.CashuMintList],
+        authors: [pubkey],
+    };
+
+    const relays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
+
+    const cashuMintlistEvent = await fetchEventFromRelaysFirst(filter, 5000, false, relays);
+
+    if (!cashuMintlistEvent) {
+        console.warn(`Could not fetch Cashu Mint list for ${pubkey}`);
+        return null;
+    }
+
+    const mintList = NDKCashuMintList.from(cashuMintlistEvent);
+
+    if (wholeEvent) return mintList;
+
+    return {
+        mints: mintList.mints,
+        relays: mintList.relays,
+        p2pk: mintList.p2pk,
+    };
+}
+
 export function orderEventsChronologically(events: NDKEvent[], reverse: boolean = false) {
     events.sort((e1: NDKEvent, e2: NDKEvent) => {
-        if (reverse)
-            return e1.created_at! - e2.created_at!;
-        else
-            return e2.created_at! - e1.created_at!;
+        if (reverse) return e1.created_at! - e2.created_at!;
+        else return e2.created_at! - e1.created_at!;
     });
 
     events = events;
+}
+
+export function arraysAreEqual<T>(arr1: T[], arr2: T[]): boolean {
+    // Check if arrays have the same length
+    if (arr1.length !== arr2.length) return false;
+
+    // Check if all elements are equal (using deep equality for objects)
+    return arr1.every((element, index) => element === arr2[index]);
+}
+
+export function shortenTextWithEllipsesInMiddle(text: string, maxLength: number): string {
+    if (text.length <= maxLength) return text;
+
+    const textCharactersLeftAlone: number = maxLength - 3;
+    const lengthOfStart = Math.round(textCharactersLeftAlone / 2);
+    const lengthOfEnd: number = textCharactersLeftAlone - lengthOfStart;
+
+    const result =
+        text.substring(0, lengthOfStart) + '...' + text.substring(text.length - lengthOfEnd - 1);
+
+    return result;
+}
+
+export interface RatingConsensus {
+    ratingConsensus: string;
+    ratingColor: string;
+}
+
+export function averageToRatingText(average: number): RatingConsensus {
+    let ratingConsensus = '';
+    let ratingColor = '';
+    if (isNaN(average)) {
+        ratingConsensus = 'No Ratings';
+        ratingColor = 'bg-surface-500';
+    } else {
+        ratingConsensus = 'Excellent';
+        ratingColor = 'bg-warning-500';
+        if (average < 0.9) {
+            ratingConsensus = 'Great';
+            ratingColor = 'bg-tertiary-500';
+        }
+        if (average < 0.75) {
+            ratingConsensus = 'Good';
+            ratingColor = 'bg-success-500';
+        }
+        if (average < 0.5) {
+            ratingConsensus = 'Mixed ratings';
+            ratingColor = 'bg-surface-500';
+        }
+        if (average < 0.25) {
+            ratingConsensus = 'Bad';
+            ratingColor = 'bg-error-500';
+        }
+    }
+    return { ratingConsensus: ratingConsensus, ratingColor: ratingColor };
 }

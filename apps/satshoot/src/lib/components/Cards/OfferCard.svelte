@@ -3,6 +3,7 @@
     import currentUser from '$lib/stores/user';
     import {
         NDKKind,
+        NDKNutzap,
         NDKSubscriptionCacheUsage,
         zapInvoiceFromEvent,
         type NDKUser,
@@ -32,7 +33,7 @@
     import UserReviewCard from '../Cards/UserReviewCard.svelte';
     import { clientReviews, freelancerReviews } from '$lib/stores/reviews';
 
-    import { insertThousandSeparator } from '$lib/utils/misc';
+    import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { wot } from '$lib/stores/wot';
     import TicketIcon from '../Icons/TicketIcon.svelte';
@@ -47,6 +48,7 @@
     export let countAllOffers = true;
     export let showDescription = true;
     export let showReputation = true;
+    export let showPoster = true;
     export let showDetails = true;
     let ticket: TicketEvent | undefined = undefined;
     export let enableChat = false;
@@ -64,8 +66,10 @@
     let freelancerReview: FreelancerRating | null = null;
     let reviewer: NDKUser;
 
-    let paid = 0;
-    let paymentStore: NDKEventStore<NDKEvent>;
+    let freelancerPaid = 0;
+    let satshootPaid = 0;
+    let freelancerPaymentStore: NDKEventStore<NDKEvent>;
+    let satshootPaymentStore: NDKEventStore<NDKEvent>;
 
     let ticketFilter: NDKFilter<NDKKind.FreelanceTicket> = {
         kinds: [NDKKind.FreelanceTicket],
@@ -90,7 +94,6 @@
         dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
         ticketFilter['#d'] = [dTagOfTicket];
 
-        console.log('offer in onMount', offer);
         switch (offer.pricing) {
             case Pricing.Absolute:
                 pricing = 'sats';
@@ -121,8 +124,32 @@
             }
         }
 
-        paymentStore = $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap], '#e': [offer.id] },
+        freelancerPaymentStore = $ndk.storeSubscribe(
+            [
+                { kinds: [NDKKind.Zap], '#e': [offer.id] },
+                { kinds: [NDKKind.Nutzap], '#a': [offer.offerAddress] },
+            ],
+            {
+                closeOnEose: false,
+                groupable: true,
+                groupableDelay: 1500,
+                autoStart: true,
+            }
+        );
+
+        satshootPaymentStore = $ndk.storeSubscribe(
+            [
+                {
+                    kinds: [NDKKind.Zap],
+                    '#p': [SatShootPubkey],
+                    '#a': [offer.referencedTicketAddress],
+                },
+                {
+                    kinds: [NDKKind.Nutzap],
+                    '#p': [SatShootPubkey],
+                    '#a': [offer.referencedTicketAddress],
+                },
+            ],
             {
                 closeOnEose: false,
                 groupable: true,
@@ -208,14 +235,45 @@
         });
     }
 
-    $: if ($paymentStore) {
-        paid = 0;
-        $paymentStore.forEach((zap: NDKEvent) => {
-            const zapInvoice = zapInvoiceFromEvent(zap);
-            if (zapInvoice) {
-                const zappee = zapInvoice.zappee;
-                if ($wot.has(zappee)) {
-                    paid += Math.round(zapInvoice.amount / 1000);
+    $: if ($freelancerPaymentStore) {
+        freelancerPaid = 0;
+        $freelancerPaymentStore.forEach((zap: NDKEvent) => {
+            if (zap.kind === NDKKind.Zap) {
+                const zapInvoice = zapInvoiceFromEvent(zap);
+                if (zapInvoice) {
+                    const zappee = zapInvoice.zappee;
+                    if ($wot.has(zappee)) {
+                        freelancerPaid += Math.round(zapInvoice.amount / 1000);
+                    }
+                }
+            } else if (zap.kind === NDKKind.Nutzap) {
+                const nutzap = NDKNutzap.from(zap);
+                if (nutzap) {
+                    if ($wot.has(nutzap.pubkey)) {
+                        freelancerPaid += Math.round(nutzap.amount / 1000);
+                    }
+                }
+            }
+        });
+    }
+
+    $: if ($satshootPaymentStore) {
+        satshootPaid = 0;
+        $satshootPaymentStore.forEach((zap: NDKEvent) => {
+            if (zap.kind === NDKKind.Zap) {
+                const zapInvoice = zapInvoiceFromEvent(zap);
+                if (zapInvoice) {
+                    const zappee = zapInvoice.zappee;
+                    if ($wot.has(zappee)) {
+                        satshootPaid += Math.round(zapInvoice.amount / 1000);
+                    }
+                }
+            } else if (zap.kind === NDKKind.Nutzap) {
+                const nutzap = NDKNutzap.from(zap);
+                if (nutzap) {
+                    if ($wot.has(nutzap.pubkey)) {
+                        satshootPaid += Math.round(nutzap.amount / 1000);
+                    }
                 }
             }
         });
@@ -266,7 +324,8 @@
 
     onDestroy(() => {
         if (ticketStore) ticketStore.empty();
-        if (paymentStore) paymentStore.empty();
+        if (freelancerPaymentStore) freelancerPaymentStore.empty();
+        if (satshootPaymentStore) satshootPaymentStore.empty();
     });
 
     // For context menu: Edit ticket, close ticket, share ticket
@@ -363,30 +422,62 @@
             </div>
         </div>
         {#if winner}
-            <div class="flex justify-center items-center gap-x-2">
+            <div class="flex flex-col gap-2">
                 <h4 class="h5 md:h4 col-start-2 text-center text-success-500">
-                    {'Paid: ' + (insertThousandSeparator(paid) ?? '?') + ' sats'}
+                    <div class="flex flex-col items-center gap-y-2">
+                        <div>
+                            <div>
+                                Freelancer Paid: 
+                            </div>
+                            <div>
+                                {
+                                (insertThousandSeparator(freelancerPaid) ?? '?') +
+                                    ' sats'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </h4>
+                <h4 class="h5 md:h4 col-start-2 text-center text-success-500">
+                    <div class="flex flex-col items-center gap-y-2">
+                        <div>
+                            <div>
+                                Satshoot Paid:
+                            </div>
+                            <div>
+                                {
+                                (insertThousandSeparator(satshootPaid) ?? '?') +
+                                    ' sats'
+                                }
+                            </div>
+                        </div>
+                    </div>
                 </h4>
             </div>
         {/if}
         {#if showDescription}
+            <div class="h5 sm:h4 text-center mt-2">
+                Pitch:
+            </div>
             <div class="text-center text-base md:text-lg p-2">
                 <Markdown content={offer.description} />
             </div>
         {/if}
         <slot name="takeOffer" />
         <div class="flex flex-col gap-y-1 justify-start px-4 pt-2 pb-4">
-            <div class="flex flex-col items-center sm:grid sm:grid-cols-[20%_1fr_20%] mb-4">
-                <div class="flex items-center">
-                    <h4 class="h5 sm:h4">Posted by:</h4>
-                </div>
-                <div class="flex justify-center items-center gap-x-2">
-                    <Avatar src={avatarImage} width="w-12" />
+            {#if showPoster}
+                <div class="flex flex-col items-center mb-4">
+                    <div class="flex items-center">
+                        <h4 class="h5 sm:h4">Posted by:</h4>
+                    </div>
                     <a class="anchor text-lg sm:text-xl" href={'/' + npub}>
-                        {name ? name : npub.slice(0, 10) + '...'}
+                        <div class="flex justify-center items-center gap-x-2">
+                            <Avatar src={avatarImage} width="w-12" />
+                            {name ? name : npub.slice(0, 10) + '...'}
+                        </div>
                     </a>
                 </div>
-            </div>
+            {/if}
             {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
                 <ReputationCard type={ReviewType.Freelancer} user={offer.pubkey} />
             {/if}

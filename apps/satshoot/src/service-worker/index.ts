@@ -27,7 +27,6 @@ sw.onactivate = (event: ExtendableEvent) => {
 }
 
 sw.onmessage = (m) => {
-    console.log('message received in service worker', m)
     const title = m.data['title'];
     const body = m.data['body'];
     const tag = m.data['tag'];
@@ -79,23 +78,6 @@ async function openNotificationWindow(tag: string) {
         console.log('This type of notification is not implemented yet!')
         return;
     }
-
-    // let clientOpenWithUrl = false;
-    //
-    //
-    // for(const client of allClients) {
-    //     const url = new URL(client.url);
-    //     console.log('client url:', client.url)
-    //     console.log('compare', url.pathname)
-    //     if(url.pathname.includes(urlToVisit)) {
-    //         console.log('client already there with url')
-    //         await client.focus();
-    //         clientOpenWithUrl = true;
-    //         break;
-    //     }
-    // }
-    // if (!clientOpenWithUrl) {
-    // }
 
     const allClients = await sw.clients.matchAll({type: "window"});
     if (allClients.length === 0) {
