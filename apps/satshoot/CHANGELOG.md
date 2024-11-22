@@ -1,4 +1,10 @@
 # https://satshoot.com
+## 0.2.0
+- Cashu NIP60 wallet
+- NIP61 NutZap payments
+- Render Markown and nostr entities on Cards
+- Lots of bug fixes, UI and stability improvements
+
 ## 0.1.2
 - Rename lots of things to better relate to freelancing
 - Improved payment experience
