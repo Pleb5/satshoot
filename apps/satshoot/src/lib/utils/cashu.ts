@@ -220,7 +220,7 @@ export function getUniqueProofs(array1: Proof[], array2: Proof[]): Proof[] {
     return array1.filter((proof) => !array2Set.has(JSON.stringify(proof)));
 }
 
-function removeDuplicateProofs(proofs: Proof[]): Proof[] {
+export function removeDuplicateProofs(proofs: Proof[]): Proof[] {
     const seen = new Set<string>();
     return proofs.filter((proof) => {
         // Serialize the proof object

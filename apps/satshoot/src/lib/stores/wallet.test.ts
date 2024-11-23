@@ -1,9 +1,10 @@
-import { get } from 'svelte/store';
-import { walletInit, WalletStatus, walletStatus } from './wallet';
 import type { Proof } from '@cashu/cashu-ts';
-import { NDKPrivateKeySigner, NDKRelaySet, NDKUser, type NostrEvent } from '@nostr-dev-kit/ndk';
+import { NDKPrivateKeySigner, type NostrEvent } from '@nostr-dev-kit/ndk';
 import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import NDKWalletService, { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+import { get } from 'svelte/store';
+
+import { ndkWalletService, wallet, walletInit, WalletStatus, walletStatus } from './wallet';
 
 describe('walletStatus', () => {
     test('should be `loading` by default', () => {
@@ -216,5 +217,41 @@ describe('ndkWalletService', () => {
         const { ndkWalletService } = await import('./wallet');
 
         expect(get(ndkWalletService)).toBeInstanceOf(NDKWalletService);
+    });
+});
+
+describe('walletInit', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('should initialize the wallet and update the store', async () => {
+        const mockSubscribeForNutZaps = vi.fn(); // Mock implementation
+
+        // Mock `start` method
+        vi.spyOn(NDKWalletService.prototype, 'start').mockImplementation(() => {});
+
+        const ndk = new NDKSvelte();
+        const user = await NDKPrivateKeySigner.generate().user();
+
+        // Call walletInit with mocked `subscribeForNutZaps`
+        walletInit(ndk, user, mockSubscribeForNutZaps);
+
+        // Assertions: Validate `ndkWalletService` initialization
+        const $ndkWalletService = get(ndkWalletService);
+        expect($ndkWalletService).toBeInstanceOf(NDKWalletService);
+
+        // Emit `wallet:default` to simulate the wallet event
+        const mockWallet = new NDKCashuWallet(ndk);
+        $ndkWalletService?.emit('wallet:default', mockWallet);
+
+        // Validate the `wallet` store
+        const $wallet = get(wallet);
+        expect($wallet).toBeDefined();
+        expect($wallet).toBeInstanceOf(NDKCashuWallet);
+
+        // Ensure `subscribeForNutZaps` was called
+        expect(mockSubscribeForNutZaps).toHaveBeenCalledTimes(1);
+        expect(mockSubscribeForNutZaps).toHaveBeenCalledWith(ndk, user, mockWallet);
     });
 });
