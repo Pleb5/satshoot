@@ -2,7 +2,7 @@ import { writable, get, derived } from 'svelte/store';
 import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
 
-import { getMapSerializer, SatShootPubkey, filterValidPTags, percentile } from '../utils/misc';
+import { SatShootPubkey, filterValidPTags, percentile } from '../utils/misc';
 
 import type { NDKEvent, NDKUser, Hexpubkey, NDKFilter } from '@nostr-dev-kit/ndk';
 
@@ -12,15 +12,11 @@ import { type NDKSvelte } from '@nostr-dev-kit/ndk-svelte';
 import { tick } from 'svelte';
 
 import currentUser from '../stores/user';
-import { currentUserFollows, followsUpdated } from '../stores/user';
+import { followsUpdated } from '../stores/user';
 
 import satShootWoT from './satshoot-wot';
 
-export const networkWoTScores: Writable<Map<Hexpubkey, number> | null> = persisted(
-    'networkWoTScores',
-    null,
-    { serializer: getMapSerializer<Hexpubkey, number>() }
-);
+export const networkWoTScores: Writable<Map<Hexpubkey, number> | null> = writable(null);
 
 // Minimum wot to be included in any result
 export const minWot = writable(3);
@@ -165,8 +161,6 @@ function updateWotScores(
     if (!user || !networkWoTScores) {
         throw new Error('Could not get data to update wot scores');
     }
-    const $currentUserFollows = get(currentUserFollows) ?? new Set<Hexpubkey>();
-
     const followWot = firstOrderFollows ? firstOrderFollowWot : secondOrderFollowWot;
     const muteWot = firstOrderFollows ? firstOrderMuteWot : secondOrderMuteWot;
     const reportWot = firstOrderFollows ? firstOrderReportWot : secondOrderReportWot;
@@ -178,8 +172,6 @@ function updateWotScores(
             const follows = filterValidPTags(event.tags);
             const userFollow: boolean = event.pubkey === user.pubkey;
             follows.forEach((f: Hexpubkey) => {
-                if (userFollow) $currentUserFollows.add(f);
-
                 // Add first order follow score
                 const currentScore: number =
                     (networkWoTScores as Map<Hexpubkey, number>).get(f) ?? 0;
@@ -218,10 +210,6 @@ function updateWotScores(
             }
         }
     });
-
-    if (firstOrderFollows) {
-        currentUserFollows.set($currentUserFollows);
-    }
 
     return authors;
 }
