@@ -358,9 +358,13 @@
                 <div class="flex gap-x-1 max-w-full flex-wrap">
                     <div class="underline">Website:</div>
                     <div class="flex items-center flex-wrap max-w-full gap-x-1">
-                        <a class="anchor max-w-full" href={website}>
-                            <div class="max-w-full break-words">{website}</div>
-                        </a>
+                        {#if userProfile?.website}
+                            <a class="anchor max-w-full" href={userProfile.website}>
+                                <div class="max-w-full break-words">{website}</div>
+                            </a>
+                        {:else}
+                            <div>?</div>
+                        {/if}
                         {#if editable}
                             <button on:click={editWebsite}>
                                 <i
