@@ -19,8 +19,8 @@
 	// Props
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
-    let textArea:HTMLTextAreaElement;
 
+    let tagInputElement: HTMLInputElement;
     let tagInput = '';
     let messageResult = 'Ready to Work!\nGo to https://satshoot.com/post-ticket/'; 
     messageResult += ' and post your issues in these topics:\n';
@@ -78,8 +78,7 @@
     }
 
     onMount(()=>{
-        textArea.setSelectionRange(0, 0);
-        textArea.focus();
+        tagInputElement.focus();
     });
 
 </script>
@@ -92,6 +91,7 @@
                 <span class="font-bold">Add topics of interest</span>
                 <div class="flex justify-between">
                     <input class="input w-full text-center" 
+                    bind:this={tagInputElement}
                     bind:value={tagInput}
                     title="Tag your Interests" 
                     type="text" 
@@ -126,7 +126,6 @@
                 <textarea 
                 rows="8"
                 class="textarea"
-                bind:this={textArea}
                 bind:value={messageResult}
             />
                 <span>#satshoot #asknostr #freelancing</span>
