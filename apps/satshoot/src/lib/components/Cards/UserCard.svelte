@@ -188,6 +188,31 @@
         });
     }
 
+    function editNip05() {
+        new Promise<string | undefined>((resolve) => {
+            const data = userProfile.nip05 ?? '';
+            const modalComponent: ModalComponent = {
+                ref: EditProfileModal,
+                props: { dataToEdit: data, fieldName: 'Nip05' },
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (editedData: string | undefined) => {
+                    resolve(editedData);
+                },
+            };
+            modalStore.trigger(modal);
+            // We got some kind of response from modal
+        }).then((editedData: string | undefined) => {
+            if (editedData) {
+                userProfile.nip05 = editedData;
+                editProfile();
+            }
+        });
+    }
+
     function editWebsite() {
         new Promise<string | undefined>((resolve) => {
             const data = userProfile?.website ?? '';
@@ -351,6 +376,12 @@
                                 </div>
                             {/if}
                         </div>
+                    {/if}
+                    {#if editable}
+                        <button on:click={editNip05}>
+                            <i class="text-primary-300-600-token
+                                fa-solid fa-pen-to-square text-lg" />
+                        </button>
                     {/if}
                 </div>
             </div>
