@@ -7,6 +7,8 @@
         getUniqueProofs,
         parseAndValidateBackup,
     } from '$lib/utils/cashu';
+    import { decryptSecret } from '$lib/utils/crypto';
+    import { getFileExtension } from '$lib/utils/misc';
     import { CashuMint, CashuWallet } from '@cashu/cashu-ts';
     import { NDKEvent } from '@nostr-dev-kit/ndk';
     import { NDKCashuToken, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
@@ -17,11 +19,19 @@
 
     let importing = false;
     let file: File | null = null;
+    let passphrase = '';
+    let showPassphraseInput = false;
 
     // Handle file selection
     function handleFileChange(event: Event) {
+        showPassphraseInput = false;
         const target = event.target as HTMLInputElement;
         file = target.files ? target.files[0] : null;
+
+        if (file) {
+            const fileExtension = getFileExtension(file.name);
+            if (fileExtension === 'enc') showPassphraseInput = true;
+        }
     }
 
     // Import function to read and parse the JSON file
@@ -42,11 +52,43 @@
             return;
         }
 
+        const fileExtension = getFileExtension(file.name);
+
+        if (!fileExtension) {
+            toastStore.trigger({
+                message: `Failed to recover wallet. Couldn't identify file type.`,
+                background: `bg-error-300-600-token`,
+            });
+
+            return;
+        }
+
+        if (fileExtension !== 'json' && fileExtension !== 'enc') {
+            toastStore.trigger({
+                message: `Failed to recover wallet. Invalid file type. Only .json or .enc is accepted.`,
+                background: `bg-error-300-600-token`,
+            });
+
+            return;
+        }
+
         try {
             importing = true;
 
             // Read the file content
-            const fileContent = await file.text();
+            let fileContent = await file.text();
+
+            if (fileExtension === 'enc') {
+                try {
+                    fileContent = decryptSecret(fileContent, passphrase, $currentUser!.pubkey);
+                } catch (error) {
+                    toastStore.trigger({
+                        message: 'Failed to decrypt backup file',
+                        background: `bg-error-300-600-token`,
+                    });
+                    return;
+                }
+            }
 
             // parse the content of selected json file
             // parseAndValidateBackup function will check if the file content matches the backup schema
@@ -157,11 +199,21 @@
         <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Import Ecash Wallet</h4>
         <input
             type="file"
-            accept=".json"
+            accept=".json,.enc"
             class="input text-center bg-transparent border-none rounded-md"
             aria-label="choose file"
             on:change={handleFileChange}
         />
+
+        {#if showPassphraseInput}
+            <input
+                type="text"
+                class="input rounded-md"
+                aria-label="passphrase"
+                placeholder="Enter passphrase for encryption (min. 14 chars)"
+                bind:value={passphrase}
+            />
+        {/if}
 
         <button
             type="button"

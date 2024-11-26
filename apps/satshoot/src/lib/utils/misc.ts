@@ -152,3 +152,8 @@ export function debounce<T extends (...args: any[]) => void>(fn: T, delay: numbe
 
     return debounced;
 }
+
+export function getFileExtension(filename: string): string | null {
+    const parts = filename.split('.');
+    return parts.length > 1 ? parts.pop()! : null;
+}
