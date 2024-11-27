@@ -15,7 +15,6 @@
     Header always set Access-Control-Allow-Methods "GET" 
 </If> 
 
-# https://stackoverflow.com/questions/49547/how-do-we-control-web-page-caching-across-all-browsers#2068407
 <IfModule mod_headers.c>
     Header set Cache-Control "max-age=0, must-revalidate"
 </IfModule>
