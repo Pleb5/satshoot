@@ -20,6 +20,7 @@ import { isNostrEvent } from './misc';
 import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
 import { cashuTokensBackup, unsavedProofsBackup } from '$lib/stores/wallet';
 import currentUser from '$lib/stores/user';
+import { encryptSecret } from './crypto';
 
 // This method checks if user's cashu mint list event (kind: 10019) is synced with user's selected cashu wallet
 export async function isCashuMintListSynced(
@@ -374,7 +375,11 @@ export async function cleanWallet(cashuWallet: NDKCashuWallet) {
     return prevBalance - newBalance;
 }
 
-export async function backupWallet(cashuWallet: NDKCashuWallet) {
+export async function backupWallet(
+    cashuWallet: NDKCashuWallet,
+    encrypted?: boolean,
+    passphrase?: string
+) {
     const $ndk = get(ndk);
     const $currentUser = get(currentUser);
     const $cashuTokensBackup = get(cashuTokensBackup);
@@ -457,7 +462,19 @@ export async function backupWallet(cashuWallet: NDKCashuWallet) {
 
     const stringified = JSON.stringify(json, null, 2);
 
-    saveToFile(stringified);
+    if (encrypted) {
+        if (!passphrase || passphrase.length < 14) {
+            throw new Error('minimum 14 chars are required for passphrase');
+        }
+
+        // we'll use pubkey of current user as salt for encryption
+        const salt = $currentUser!.pubkey;
+
+        const cipherData = encryptSecret(stringified, passphrase, salt);
+        saveToFile(cipherData, true);
+    } else {
+        saveToFile(stringified);
+    }
 }
 
 export async function resyncWalletAndBackup(
@@ -678,14 +695,17 @@ export async function getCashuMintRecommendations(ndk: NDK, $wot: Set<string>) {
 }
 
 // Function to save encrypted content to a file
-function saveToFile(content: string) {
-    const blob = new Blob([content], { type: 'text/plain' });
+function saveToFile(content: string, isEncrypted = false) {
+    const filename = `wallet-backup.${isEncrypted ? 'enc' : 'json'}`;
+    const mimeType = isEncrypted ? 'application/octet-stream' : 'application/json';
+
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
 
     // Create a link element to trigger download
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'wallet-backup.json';
+    a.download = filename;
     a.click();
 
     // Clean up

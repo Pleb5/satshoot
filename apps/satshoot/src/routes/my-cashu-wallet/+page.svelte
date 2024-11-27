@@ -38,6 +38,7 @@
     } from '@skeletonlabs/skeleton';
     import EditProfileModal from '../../lib/components/Modals/EditProfileModal.svelte';
     import ImportEcashWallet from '$lib/components/Modals/ImportEcashWallet.svelte';
+    import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -436,15 +437,17 @@
     async function handleWalletBackup() {
         if (!cashuWallet) return;
 
-        try {
-            backupWallet(cashuWallet);
-        } catch (error) {
-            console.error('An error occurred in encryption of wallet content', error);
-            toastStore.trigger({
-                message: `Failed to backup! An error occurred in backup process.`,
-                background: `bg-error-300-600-token`,
-            });
-        }
+        const modalComponent: ModalComponent = {
+            ref: BackupEcashWallet,
+            props: { cashuWallet },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+
+        modalStore.trigger(modal);
     }
 
     async function recoverWallet() {

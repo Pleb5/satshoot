@@ -170,7 +170,7 @@ Backup wallet along with tokens in a local file
 
 -   It should save a json file to local drive
 
-## ST008
+## ST009
 
 ### Title
 
@@ -184,6 +184,48 @@ Recover backup
 
 -   Click Recover button
 -   Choose a backup file
+
+### Expected Result:
+
+-   It should successfully recover the wallet, include missing tokens, and discard spent
+
+## ST010
+
+### Title
+
+Backup wallet along with tokens in a local file and encrypt the file
+
+### Preconditions:
+
+-   Successfully completed ST007
+
+### Test Steps:
+
+-   Click Backup button
+-   Check encrypt wallet checkbox
+-   Enter a passphrase of at least 14 chars
+-   Proceed with backup
+
+### Expected Result:
+
+-   It should save a .enc file to local drive
+
+## ST011
+
+### Title
+
+Recover backup with encrypted backup file
+
+### Preconditions:
+
+-   Successfully completed ST010
+
+### Test Steps:
+
+-   Click Recover button
+-   Choose an encrypted backup file
+-   Enter passphrase
+-   Proceed with recovery
 
 ### Expected Result:
 
