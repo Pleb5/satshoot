@@ -1,13 +1,18 @@
 import ndk from '$lib/stores/ndk';
-import {
+import NDK, {
     NDKCashuMintList,
     NDKEvent,
     NDKKind,
     NDKUser,
     type CashuPaymentInfo,
+    type NDKFilter,
     type NostrEvent,
 } from '@nostr-dev-kit/ndk';
-import { NDKCashuToken, type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+import {
+    NDKCashuToken,
+    type NDKCashuMintRecommendation,
+    type NDKCashuWallet,
+} from '@nostr-dev-kit/ndk-wallet';
 import type { ToastSettings, ToastStore } from '@skeletonlabs/skeleton';
 import { get } from 'svelte/store';
 import { getCashuPaymentInfo } from './helpers';
@@ -618,6 +623,60 @@ export async function resyncWalletAndBackup(
     }
 }
 
+export async function getCashuMintRecommendations(ndk: NDK, $wot: Set<string>) {
+    const res: NDKCashuMintRecommendation = {};
+
+    const mintListFilter: NDKFilter = { kinds: [NDKKind.CashuMintList] };
+    const mintListRecommendations = await ndk.fetchEvents(mintListFilter);
+    for (const event of mintListRecommendations) {
+        // Skip events if the publisher is not in the Web of Trust ($wot)
+        if (!$wot.has(event.pubkey)) continue;
+
+        // Extract "mint" tags from the event
+        for (const mintTag of event.getMatchingTags('mint')) {
+            const url = mintTag[1];
+            if (!url) continue; // Skip if URL is not present
+
+            // Aggregate events and pubkeys by URL
+            const entry = res[url] || { events: [], pubkeys: new Set() };
+            entry.events.push(event);
+            entry.pubkeys.add(event.pubkey);
+            res[url] = entry; // Update the result object
+        }
+    }
+
+    // If we have at least 5 recommendations, return early
+    if (Object.entries(res).length >= 5) {
+        return sortRecommendations(res);
+    }
+
+    const mintRecommendationFilter: NDKFilter = {
+        kinds: [NDKKind.EcashMintRecommendation],
+    };
+    const mintRecommendations = await ndk.fetchEvents(mintRecommendationFilter);
+    for (const event of mintRecommendations) {
+        // Skip events if the publisher is not in the Web of Trust ($wot)
+        if (!$wot.has(event.pubkey)) continue;
+
+        // Extract "u" tags representing URLs and filter for Cashu-specific recommendations
+        for (const uTag of event.getMatchingTags('u')) {
+            if (uTag[2] && uTag[2] !== 'cashu') continue; // Skip if not related to Cashu
+
+            const url = uTag[1];
+            if (!url) continue; // Skip if URL is not present
+
+            // Aggregate events and pubkeys by URL
+            const entry = res[url] || { events: [], pubkeys: new Set() };
+            entry.events.push(event);
+            entry.pubkeys.add(event.pubkey);
+            res[url] = entry; // Update the result object
+        }
+    }
+
+    // Sort the final recommendations by the number of unique pubkeys in descending order
+    return sortRecommendations(res);
+}
+
 // Function to save encrypted content to a file
 function saveToFile(content: string) {
     const blob = new Blob([content], { type: 'text/plain' });
@@ -631,4 +690,11 @@ function saveToFile(content: string) {
 
     // Clean up
     URL.revokeObjectURL(url);
+}
+
+// Helper function to sort recommendations by the count of unique pubkeys
+function sortRecommendations(recommendations: NDKCashuMintRecommendation) {
+    return Object.fromEntries(
+        Object.entries(recommendations).sort((a, b) => b[1].pubkeys.size - a[1].pubkeys.size)
+    );
 }
