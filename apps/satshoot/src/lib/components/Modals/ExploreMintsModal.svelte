@@ -1,14 +1,14 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import {
-        getCashuMintRecommendations,
         NDKCashuWallet,
         type MintUrl,
         type NDKCashuMintRecommendation,
     } from '@nostr-dev-kit/ndk-wallet';
     import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
-    import { onMount } from 'svelte';
     import CashuMintListItem from '$lib/components/Mints/Item.svelte';
+    import { wot } from '$lib/stores/wot';
+    import { getCashuMintRecommendations } from '$lib/utils/cashu';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -37,8 +37,8 @@
         }
     }
 
-    onMount(() => {
-        getCashuMintRecommendations($ndk)
+    $: {
+        getCashuMintRecommendations($ndk, $wot)
             .then((res) => {
                 recommendations = res;
             })
@@ -51,7 +51,7 @@
                 });
                 modalStore.close();
             });
-    });
+    }
 </script>
 
 {#if $modalStore[0]}
