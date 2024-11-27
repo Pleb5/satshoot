@@ -37,7 +37,11 @@ export const cashuTokensBackup = persisted('cashuTokensBackup', new Map<string, 
     serializer: getMapSerializer<string, NostrEvent>(),
 });
 
-export function walletInit(ndk: NDKSvelte, user: NDKUser) {
+export function walletInit(
+    ndk: NDKSvelte,
+    user: NDKUser,
+    customSubscribeForNutZaps = subscribeForNutZaps // Allow injection for testing
+) {
     const service = new NDKWalletService(ndk);
     ndkWalletService.set(service);
 
@@ -51,7 +55,7 @@ export function walletInit(ndk: NDKSvelte, user: NDKUser) {
             const ndkCashuWallet = w as NDKCashuWallet;
             wallet.set(ndkCashuWallet);
             handleEventsEmittedFromWallet(ndkCashuWallet);
-            subscribeForNutZaps(ndk, user, ndkCashuWallet);
+            customSubscribeForNutZaps(ndk, user, ndkCashuWallet);
         }
     });
 
