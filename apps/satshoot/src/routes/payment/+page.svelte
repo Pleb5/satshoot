@@ -37,6 +37,7 @@
     import { broadcastEvent, fetchUserOutboxRelays, getZapConfiguration } from '$lib/utils/helpers';
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import { resyncWalletAndBackup } from '$lib/utils/cashu';
+    import { CashuMint } from '@cashu/cashu-ts';
 
     enum ToastType {
         Success = 'success',
@@ -294,14 +295,44 @@
                         return;
                     }
 
+                    const mintPromises = cashuPaymentInfo.mints.map(async (mintUrl) => {
+                        const mint = new CashuMint(mintUrl);
+                        return mint
+                            .getInfo()
+                            .then((info) => {
+                                if (info.nuts[4].methods.some((method) => method.unit === 'sat')) {
+                                    return mintUrl;
+                                }
+                                return null;
+                            })
+                            .catch((err) => {
+                                console.error(
+                                    'An error occurred in getting mint info',
+                                    mintUrl,
+                                    err
+                                );
+                                return null;
+                            });
+                    });
+
+                    const mints = await Promise.all(mintPromises).then((mints) => {
+                        return mints.filter((mint) => mint !== null);
+                    });
+
+                    if (mints.length === 0) {
+                        errorMessage = `Could not find a mint for ${userEnum} that support sats!`;
+                        return;
+                    }
+
                     const cashuResult = await $wallet
                         .cashuPay({
+                            ...cashuPaymentInfo,
+                            mints,
                             target: userEnum === UserEnum.Freelancer ? offer! : ticket,
                             recipientPubkey: pubkey,
                             amount: amountMillisats,
                             unit: 'msat',
                             comment: 'satshoot',
-                            ...cashuPaymentInfo,
                         })
                         .catch((err) => {
                             const failedPaymentRecipient =
