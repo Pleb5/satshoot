@@ -1,9 +1,12 @@
 <script lang="ts">
-    import ndk, { blastrUrl } from '$lib/stores/ndk';
-    import currentUser from '$lib/stores/user';
+    import ndk from '$lib/stores/ndk';
+    import currentUser, {
+        currentUserFreelanceFollows,
+        freelanceFollowEvents,
+    } from '$lib/stores/user';
     import {
+        NDKEvent,
         NDKKind,
-        NDKRelay,
         profileFromEvent,
         type NDKUser,
         type NDKUserProfile,
@@ -24,12 +27,22 @@
     import { broadcastUserProfile } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/helpers';
     import { shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import { filterValidPTags } from '$lib/utils/misc';
+
+    enum FollowStatus {
+        isFollowing,
+        beingFollowed,
+        none,
+    }
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
     export let user: NDKUser;
     let userProfile: NDKUserProfile;
+    let followBtnText = 'Follow';
+    let followStatus = FollowStatus.none;
+
     $: npub = user.npub;
     $: editable = $currentUser?.npub === npub;
     $: avatarImage = `https://robohash.org/${user.pubkey}`;
@@ -60,6 +73,130 @@
                 validNIP05 = true;
             }
         });
+    }
+
+    $: if ($currentUserFreelanceFollows) {
+        const isFollowing = $currentUserFreelanceFollows.has(user.pubkey);
+
+        if (isFollowing) {
+            followBtnText = 'Un-Follow';
+            followStatus = FollowStatus.isFollowing;
+        }
+    }
+
+    $: if ($freelanceFollowEvents.has(user.pubkey) && $currentUser) {
+        if (followStatus !== FollowStatus.isFollowing) {
+            const targetUserFollowEvent = $freelanceFollowEvents.get(user.pubkey)!;
+
+            // list of all users whom target user is following
+            const follows = filterValidPTags(targetUserFollowEvent.tags);
+
+            const isFollowing = follows.includes($currentUser.pubkey);
+            // Update the status if target user is following current user
+            // but current user is not following target user
+            if (isFollowing) {
+                followBtnText = 'Follow Back';
+                followStatus = FollowStatus.beingFollowed;
+            }
+        }
+    }
+
+    async function follow() {
+        if (!$currentUser) return;
+        const followEvent = $freelanceFollowEvents.get($currentUser.pubkey);
+
+        if (followEvent) {
+            // publish delete event with reference to previous follow event
+            const deleteEvent = new NDKEvent($ndk);
+            deleteEvent.kind = NDKKind.EventDeletion;
+            deleteEvent.tag(['e', followEvent.id]);
+            deleteEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
+            deleteEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
+            deleteEvent.publish();
+        }
+
+        // create and publish a new follow event
+        const newFollowEvent = new NDKEvent($ndk);
+        newFollowEvent.kind ??= 967;
+        newFollowEvent.tags = followEvent ? followEvent.tags : [];
+        newFollowEvent.tag(['p', user.pubkey]);
+        newFollowEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
+        newFollowEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
+
+        await newFollowEvent
+            .publish()
+            .then(() => {
+                toastStore.trigger({
+                    message: 'Followed!!!',
+                    background: `bg-success-300-600-token`,
+                    autohide: true,
+                    timeout: 5000,
+                });
+
+                freelanceFollowEvents.update((map) => {
+                    map.set($currentUser.pubkey, newFollowEvent);
+                    return map;
+                });
+            })
+            .catch((err) => {
+                console.error(err);
+                toastStore.trigger({
+                    message: 'Failed to publish follow event',
+                    background: `bg-error-300-600-token`,
+                    autohide: true,
+                    timeout: 5000,
+                });
+            });
+    }
+
+    async function unFollow() {
+        if (!$currentUser) return;
+        const followEvent = $freelanceFollowEvents.get($currentUser.pubkey);
+
+        if (!followEvent) return;
+
+        // publish delete event with reference to previous follow event
+        const deleteEvent = new NDKEvent($ndk);
+        deleteEvent.kind = NDKKind.EventDeletion;
+        deleteEvent.tag(['e', followEvent.id]);
+        deleteEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
+        deleteEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
+        deleteEvent.publish();
+
+        // create and publish a new follow event
+        const newFollowEvent = new NDKEvent($ndk);
+        newFollowEvent.kind ??= 967;
+        newFollowEvent.tags = followEvent.tags.filter(
+            (tag) => tag[0] !== 'p' || tag[1] !== user.pubkey
+        );
+
+        await newFollowEvent
+            .publish()
+            .then(() => {
+                toastStore.trigger({
+                    message: 'Un-followed!!!',
+                    background: `bg-success-300-600-token`,
+                    autohide: true,
+                    timeout: 5000,
+                });
+
+                freelanceFollowEvents.update((map) => {
+                    map.set($currentUser.pubkey, newFollowEvent);
+                    return map;
+                });
+
+                followBtnText = 'Follow';
+                followStatus = FollowStatus.none;
+            })
+            .catch((err) => {
+                console.error(err);
+                toastStore.trigger({
+                    message: 'Failed to publish follow event',
+                    background: `bg-error-300-600-token`,
+                    autohide: true,
+                    timeout: 5000,
+                });
+            });
     }
 
     async function setProfile() {
@@ -274,6 +411,13 @@
             {#if editable}
                 <button class="justify-self-end" on:click={editName}>
                     <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
+                </button>
+            {:else if $currentUser && followBtnText}
+                <button
+                    class="btn text-primary-400-500-token justify-self-end"
+                    on:click={followStatus === FollowStatus.isFollowing ? unFollow : follow}
+                >
+                    {followBtnText}
                 </button>
             {/if}
         </div>
