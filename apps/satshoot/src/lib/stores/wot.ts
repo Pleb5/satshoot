@@ -11,7 +11,7 @@ import { NDKSubscriptionCacheUsage, NDKKind } from '@nostr-dev-kit/ndk';
 import { type NDKSvelte } from '@nostr-dev-kit/ndk-svelte';
 import { tick } from 'svelte';
 
-import currentUser from '../stores/user';
+import currentUser, { currentUserFreelanceFollows } from '../stores/user';
 import { currentUserFollows, followsUpdated } from '../stores/user';
 
 import satShootWoT from './satshoot-wot';
@@ -42,8 +42,8 @@ export const wotUpdateNoResults = writable(false);
 
 let saveSatShootWoT = false;
 export const wot = derived(
-    [networkWoTScores, minWot, currentUser, useSatShootWoT],
-    ([$networkWoTScores, $minWot, $currentUser, $useSatShootWoT]) => {
+    [networkWoTScores, minWot, currentUser, currentUserFreelanceFollows, useSatShootWoT],
+    ([$networkWoTScores, $minWot, $currentUser, $currentUserFreelanceFollows, $useSatShootWoT]) => {
         const initialWoT: Array<Hexpubkey> = [];
         if ($useSatShootWoT) {
             initialWoT.push(SatShootPubkey);
@@ -58,6 +58,11 @@ export const wot = derived(
 
         if ($currentUser) {
             pubkeys.add($currentUser.pubkey);
+
+            // add current user's freelance follows to wot
+            $currentUserFreelanceFollows?.forEach((follow) => {
+                pubkeys.add(follow);
+            });
 
             if ($currentUser.pubkey === SatShootPubkey && saveSatShootWoT) {
                 saveSatShootWoTInFile(pubkeys);

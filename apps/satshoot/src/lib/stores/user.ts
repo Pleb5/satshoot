@@ -1,11 +1,16 @@
-import type { NDKUser, Hexpubkey } from '@nostr-dev-kit/ndk';
-import { writable } from 'svelte/store';
+import {
+    type NDKUser,
+    type Hexpubkey,
+    type NDKEvent,
+    NDKKind,
+    NDKSubscriptionCacheUsage,
+} from '@nostr-dev-kit/ndk';
+import { derived, get, writable } from 'svelte/store';
 import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
 
-import { getSetSerializer } from '../utils/misc';
-import { type LoginMethod } from '$lib/stores/ndk';
-
+import { filterValidPTags, getSetSerializer } from '../utils/misc';
+import ndk, { type LoginMethod } from '$lib/stores/ndk';
 
 export const loginAlert = writable(true);
 
@@ -14,12 +19,69 @@ export const loggingIn = writable(false);
 export const loggedIn = writable(false);
 export const loginMethod = writable<LoginMethod | null>(null);
 
-export const currentUserFollows: Writable<Set<Hexpubkey> | null>
-    = persisted('currentUserFollows', null, {serializer: getSetSerializer()});
+export const currentUserFollows: Writable<Set<Hexpubkey> | null> = persisted(
+    'currentUserFollows',
+    null,
+    { serializer: getSetSerializer() }
+);
 
 export const userRelaysUpdated = writable(false);
 export const followsUpdated: Writable<number> = persisted('followsUpdated', 0);
 
-const currentUser = writable<NDKUser|null>(null);
+const currentUser = writable<NDKUser | null>(null);
+
+export const freelanceFollowEvents = writable(new Map<Hexpubkey, NDKEvent>());
+
+export const currentUserFreelanceFollows = derived(
+    [freelanceFollowEvents, currentUser],
+    ([$freelanceFollowsEvents, $currentUser]) => {
+        if (!$currentUser) return null;
+
+        const currentUserFollowEvent = $freelanceFollowsEvents.get($currentUser.pubkey);
+        if (!currentUserFollowEvent) return null;
+
+        const follows = filterValidPTags(currentUserFollowEvent.tags);
+        return new Set(follows);
+    }
+);
+
+export const fetchFreelanceFollowEvent = async (pubkey: Hexpubkey) => {
+    const $freelanceFollowEvents = get(freelanceFollowEvents);
+    if ($freelanceFollowEvents.has(pubkey)) return;
+
+    const $ndk = get(ndk);
+
+    const followEvent = await $ndk
+        .fetchEvent(
+            {
+                kinds: [967 as NDKKind],
+                '#k': [NDKKind.FreelanceTicket.toString(), NDKKind.FreelanceOffer.toString()],
+                authors: [pubkey],
+            },
+            {
+                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+            }
+        )
+        .catch((err) => {
+            console.error(
+                'Error occurred in fetching freelance follow event for user',
+                pubkey,
+                err
+            );
+            return null;
+        });
+
+    console.log(
+        'followEvent 326695e8a13d94fcbb7ebbb6e74823956f4c52ed4111384148344d3767ce7d09 :>> ',
+        followEvent
+    );
+
+    if (followEvent) {
+        freelanceFollowEvents.update((map) => {
+            map.set(pubkey, followEvent);
+            return map;
+        });
+    }
+};
 
 export default currentUser;
