@@ -519,16 +519,6 @@
         toastStore.trigger(t);
     }
 
-    $: {
-        $wotFilteredTickets.forEach((ticket) => {
-            fetchFreelanceFollowEvent(ticket.pubkey);
-        });
-
-        $wotFilteredOffers.forEach((offer) => {
-            fetchFreelanceFollowEvent(offer.pubkey);
-        });
-    }
-
     // ----- Notifications ------ //
     $: if ($wotFilteredTickets && $myOffers) {
         // console.log('all tickets change:', $wotFilteredTickets)

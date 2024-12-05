@@ -2,6 +2,7 @@
     import ndk from '$lib/stores/ndk';
     import currentUser, {
         currentUserFreelanceFollows,
+        fetchFreelanceFollowEvent,
         freelanceFollowEvents,
     } from '$lib/stores/user';
     import {
@@ -73,6 +74,10 @@
                 validNIP05 = true;
             }
         });
+    }
+
+    $: if (user.pubkey !== $currentUser?.pubkey) {
+        fetchFreelanceFollowEvent(user.pubkey);
     }
 
     $: if ($currentUserFreelanceFollows) {

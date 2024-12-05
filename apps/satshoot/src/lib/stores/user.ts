@@ -71,11 +71,6 @@ export const fetchFreelanceFollowEvent = async (pubkey: Hexpubkey) => {
             return null;
         });
 
-    console.log(
-        'followEvent 326695e8a13d94fcbb7ebbb6e74823956f4c52ed4111384148344d3767ce7d09 :>> ',
-        followEvent
-    );
-
     if (followEvent) {
         freelanceFollowEvents.update((map) => {
             map.set(pubkey, followEvent);
