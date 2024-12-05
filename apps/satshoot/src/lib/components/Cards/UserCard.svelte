@@ -2,15 +2,13 @@
     import ndk, { blastrUrl } from '$lib/stores/ndk';
     import currentUser, {
         currentUserFreelanceFollows,
+        fetchFreelanceFollowEvent,
         freelanceFollowEvents,
     } from '$lib/stores/user';
     import {
         NDKEvent,
         NDKKind,
-        NDKRelay,
-        NDKSubscriptionCacheUsage,
         profileFromEvent,
-        type NDKTag,
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
@@ -76,6 +74,10 @@
                 validNIP05 = true;
             }
         });
+    }
+
+    $: if (user.pubkey !== $currentUser?.pubkey) {
+        fetchFreelanceFollowEvent(user.pubkey);
     }
 
     $: if ($currentUserFreelanceFollows) {

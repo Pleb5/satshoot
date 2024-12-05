@@ -14,12 +14,7 @@
 
     import { Dexie } from 'dexie';
 
-    import {
-        mounted,
-        loggedIn,
-        userRelaysUpdated,
-        fetchFreelanceFollowEvent,
-    } from '$lib/stores/user';
+    import { mounted, loggedIn, userRelaysUpdated } from '$lib/stores/user';
     import currentUser, { loggingIn, loginMethod } from '$lib/stores/user';
     import { online, retryConnection } from '$lib/stores/network';
 
@@ -512,16 +507,6 @@
             background: 'bg-warning-300-600-token',
         };
         toastStore.trigger(t);
-    }
-
-    $: {
-        $wotFilteredTickets.forEach((ticket) => {
-            fetchFreelanceFollowEvent(ticket.pubkey);
-        });
-
-        $wotFilteredOffers.forEach((offer) => {
-            fetchFreelanceFollowEvent(offer.pubkey);
-        });
     }
 
     // ----- Notifications ------ //
