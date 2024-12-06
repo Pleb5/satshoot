@@ -137,7 +137,25 @@ export function logout() {
 
     currentUser.set(null);
 
-    localStorage.clear();
+    // We dont remove modeCurrent(dark/light theme), debug and app_updated_at entries
+    localStorage.removeItem('unsavedProofsBackup');
+    localStorage.removeItem('cashuTokensBackup');
+    localStorage.removeItem('followsUpdated');
+    localStorage.removeItem('tabStore');
+    localStorage.removeItem('ticketTabStore');
+    localStorage.removeItem('offerTabStore');
+    localStorage.removeItem('notificationsEnabled');
+    localStorage.removeItem('useSatShootWoT');
+    localStorage.removeItem('seenIDs');
+    localStorage.removeItem('nostr-seedwords');
+    localStorage.removeItem('nostr-npub');
+    localStorage.removeItem('login-method');
+    localStorage.removeItem('nostr-npub');
+    localStorage.removeItem('nostr-nsec');
+    localStorage.removeItem('bunkerLocalSignerPK');
+    localStorage.removeItem('bunkerTargetNpub');
+    localStorage.removeItem('bunkerRelayURLs');
+
     sessionStorage.clear();
 
     sessionPK.set('');

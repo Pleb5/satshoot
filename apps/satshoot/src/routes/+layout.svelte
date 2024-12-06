@@ -14,6 +14,8 @@
 
     import { Dexie } from 'dexie';
 
+    import { updated, pollUpdated } from '$lib/stores/app-updated';
+
     import { mounted, loggedIn, userRelaysUpdated } from '$lib/stores/user';
     import currentUser, { loggingIn, loginMethod } from '$lib/stores/user';
     import { online, retryConnection } from '$lib/stores/network';
@@ -60,7 +62,7 @@
     import { Avatar } from '@skeletonlabs/skeleton';
     import { AppRail, AppRailAnchor } from '@skeletonlabs/skeleton';
     import { TabGroup, TabAnchor } from '@skeletonlabs/skeleton';
-    import { page, updated } from '$app/stores';
+    import { page } from '$app/stores';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 
     // Popups
@@ -421,6 +423,9 @@
     onMount(async () => {
         console.log('onMount layout');
 
+        // Start polling for app updates
+        pollUpdated();
+
         $mounted = true;
         // Setup client-side caching
         if (!$ndk.cacheAdapter) {
@@ -461,7 +466,8 @@
                 label: 'Reload',
                 response: () => {
                     // Reload new page circumventing browser cache
-                    location.href = location.pathname + '?v=' + new Date().getTime();
+                    location.href = location.pathname
+                        + '?v=' + new Date().getTime();
                 },
             },
             classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
