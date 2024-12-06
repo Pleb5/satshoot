@@ -21,7 +21,7 @@ const config = {
             // Every 10 secs this checks if app was updated
             // updated means build timestamp checking by default
             // see: https://kit.svelte.dev/docs/configuration#version
-            pollInterval: 10000
+            // pollInterval: 10000
         },
         adapter: adapter(
             // ---------------- For build ------------------
