@@ -2,12 +2,11 @@
     RewriteEngine On
     RewriteBase /
     RewriteRule ^404\.html$ - [L]
-    RewriteCond ^/_app/version\.json$ - [L]
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    # for test deploy use this rule:
-    # RewriteRule . /index.html [L]
-    RewriteRule . /404.html [L]
+
+    RewriteRule . /index.html [L]
 </IfModule>
 
 <If "%{REQUEST_URI} =~ m#^/.well-known/#">
