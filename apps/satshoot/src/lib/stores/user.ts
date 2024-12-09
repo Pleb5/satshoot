@@ -54,7 +54,7 @@ export const fetchFreelanceFollowEvent = async (pubkey: Hexpubkey) => {
     const followEvent = await $ndk
         .fetchEvent(
             {
-                kinds: [967 as NDKKind],
+                kinds: [NDKKind.KindScopedFollow],
                 '#k': [NDKKind.FreelanceTicket.toString(), NDKKind.FreelanceOffer.toString()],
                 authors: [pubkey],
             },
