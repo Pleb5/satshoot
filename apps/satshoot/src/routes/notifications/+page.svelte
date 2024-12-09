@@ -13,6 +13,7 @@
         messageNotifications,
         reviewNotifications,
         receivedZapsNotifications,
+        followNotifications,
     } from '$lib/stores/notifications';
     import {
         Accordion,
@@ -29,6 +30,8 @@
     import BitcoinIcon from '$lib/components/Icons/BitcoinIcon.svelte';
     import MessagesIcon from '$lib/components/Icons/MessagesIcon.svelte';
     import StarIcon from '$lib/components/Icons/StarIcon.svelte';
+    import UserIcon from '$lib/components/Icons/UserIcon.svelte';
+    import FollowNotificationCard from '$lib/components/Cards/FollowNotificationCard.svelte';
 
     const toastStore = getToastStore();
     const accordionBaseClasses =
@@ -55,6 +58,10 @@
         // console.log('received message notification')
     }
 
+    $: if ($followNotifications) {
+        // console.log('received message notification')
+    }
+
     $: if (!$notificationsEnabled) {
         const t: ToastSettings = {
             message: 'Notifications are Disabled!',
@@ -78,6 +85,55 @@
 {#if $currentUser}
     <h3 class="h3 text-center mb-4 underline">Notifications</h3>
     <div class="flex flex-col items-center px-4 gap-y-8 mb-8">
+        <Accordion class={accordionBaseClasses}>
+            <AccordionItem open={false}>
+                <svelte:fragment slot="lead">
+                    <UserIcon />
+                </svelte:fragment>
+                <svelte:fragment slot="summary">
+                    <div class="flex items-center justify-center">
+                        <h3 class="h3 text-center underline my-4 relative inline-block">
+                            <span>Follows</span>
+                            <span
+                                class="badge-icon variant-filled-error
+                                         absolute -top-1 -right-6 z-10"
+                                style="font-size:8pt; width: 20px; height: 20px;"
+                            >
+                                {$followNotifications.length}
+                            </span>
+                        </h3>
+                    </div>
+                </svelte:fragment>
+                <svelte:fragment slot="content">
+                    {#if $followNotifications.length > 0}
+                        <div class="space-y-4 p-1">
+                            {#each $followNotifications as followEvent (followEvent.id)}
+                                <div class="flex justify-center items-center">
+                                    <div class="">
+                                        <FollowNotificationCard {followEvent} />
+                                    </div>
+                                    <div>
+                                        <button
+                                            class="btn btn-icon"
+                                            type="button"
+                                            on:click={() => {
+                                                removeNotification(followEvent);
+                                            }}
+                                        >
+                                            <i
+                                                class="fa-solid fa-circle-xmark text-3xl text-error-500"
+                                            ></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {/each}
+                        </div>
+                    {:else}
+                        <div class="text-center">No New Follower</div>
+                    {/if}
+                </svelte:fragment>
+            </AccordionItem>
+        </Accordion>
         <Accordion class={accordionBaseClasses}>
             <AccordionItem open={false}>
                 <svelte:fragment slot="lead">
