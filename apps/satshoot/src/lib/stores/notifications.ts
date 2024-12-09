@@ -110,7 +110,7 @@ export const receivedZapsNotifications = derived(
 
 export const followNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-        return notification.kind === 967;
+        return notification.kind === NDKKind.KindScopedFollow;
     });
 
     orderEventsChronologically(filteredEvents);
@@ -156,10 +156,10 @@ export async function sendNotification(event: NDKEvent) {
             title = 'Payment arrived!';
             body = '🔔 Check your Notifications!';
             tag = NDKKind.Zap.toString();
-        } else if (event.kind === (967 as NDKKind)) {
+        } else if (event.kind === NDKKind.KindScopedFollow) {
             title = 'Someone has followed you!';
             body = '🔔 Check your Notifications!';
-            tag = '967';
+            tag = NDKKind.KindScopedFollow.toString();
         }
 
         const activeSW = await getActiveServiceWorker()

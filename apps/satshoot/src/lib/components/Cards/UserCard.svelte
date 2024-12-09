@@ -122,7 +122,7 @@
 
         // create and publish a new follow event
         const newFollowEvent = new NDKEvent($ndk);
-        newFollowEvent.kind ??= 967;
+        newFollowEvent.kind ??= NDKKind.KindScopedFollow;
         newFollowEvent.tags = followEvent ? followEvent.tags : [];
         newFollowEvent.tag(['p', user.pubkey]);
         newFollowEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
@@ -170,7 +170,7 @@
 
         // create and publish a new follow event
         const newFollowEvent = new NDKEvent($ndk);
-        newFollowEvent.kind ??= 967;
+        newFollowEvent.kind ??= NDKKind.KindScopedFollow;
         newFollowEvent.tags = followEvent.tags.filter(
             (tag) => tag[0] !== 'p' || tag[1] !== user.pubkey
         );

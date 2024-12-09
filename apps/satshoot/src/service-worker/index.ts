@@ -67,7 +67,8 @@ async function openNotificationWindow(tag: string) {
         (tag === NDKKind.Review.toString());
     const receivedZapNotification = 
         (tag === NDKKind.Zap.toString());
-    const followNotification = tag === '967';
+    const followNotification = 
+        (tag === NDKKind.KindScopedFollow.toString());
 
     if(
         !ticketNotification 
