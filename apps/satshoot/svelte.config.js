@@ -34,7 +34,7 @@ const config = {
 
             // For test deploy use commented fallback page
             // fallback: 'index.html',
-            fallback: '404.html',
+            fallback: 'index.html',
             precompress: false,
             // strict is needed to check if all sites have prerender = true OR have a fallback page(see above)
             strict: true
