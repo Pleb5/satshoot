@@ -67,6 +67,8 @@ async function openNotificationWindow(tag: string) {
         (tag === NDKKind.Review.toString());
     const receivedZapNotification = 
         (tag === NDKKind.Zap.toString());
+    const followNotification = 
+        (tag === NDKKind.KindScopedFollow.toString());
 
     if(
         !ticketNotification 
@@ -74,6 +76,7 @@ async function openNotificationWindow(tag: string) {
         && !messageNotification 
         && !reviewNotification
         && !receivedZapNotification
+        && !followNotification
     ) {
         console.log('This type of notification is not implemented yet!')
         return;

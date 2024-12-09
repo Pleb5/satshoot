@@ -51,6 +51,8 @@
         NDKPrivateKeySigner,
         type NDKEvent,
         NDKRelay,
+        NDKKind,
+        NDKSubscription,
     } from '@nostr-dev-kit/ndk';
 
     import { privateKeyFromNsec } from '$lib/utils/nip19';
@@ -133,6 +135,8 @@
 
     let hideTopbar = false;
     let hideAppMenu = false;
+
+    let followSubscription: NDKSubscription | undefined = undefined;
 
     $: if ($hideAppBarsStore) {
         hideTopbar = true;
@@ -439,6 +443,8 @@
     onDestroy(() => {
         console.log('layout on destroy');
 
+        if (followSubscription) followSubscription.stop();
+
         if (allTickets) allTickets.empty();
         if (allOffers) allOffers.empty();
         if (myTickets) myTickets.empty();
@@ -572,6 +578,25 @@
         $filteredReceivedZaps.forEach((zap: NDKEvent) => {
             sendNotification(zap);
         });
+    }
+
+    $: if ($currentUser) {
+        if (!followSubscription) {
+            followSubscription = $ndk.subscribe(
+                {
+                    kinds: [NDKKind.KindScopedFollow],
+                    '#k': [NDKKind.FreelanceTicket.toString(), NDKKind.FreelanceOffer.toString()],
+                    '#p': [$currentUser.pubkey],
+                },
+                {
+                    closeOnEose: false,
+                }
+            );
+
+            followSubscription.on('event', (event) => {
+                sendNotification(event);
+            });
+        }
     }
 
     $: if ($currentUser && $wallet) {

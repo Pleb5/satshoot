@@ -108,6 +108,16 @@ export const receivedZapsNotifications = derived(
     }
 );
 
+export const followNotifications = derived([notifications], ([$notifications]) => {
+    const filteredEvents = $notifications.filter((notification: NDKEvent) => {
+        return notification.kind === NDKKind.KindScopedFollow;
+    });
+
+    orderEventsChronologically(filteredEvents);
+
+    return filteredEvents;
+});
+
 export async function sendNotification(event: NDKEvent) {
     const $seenIDs = get(seenIDs);
     const $notifications = get(notifications);
@@ -146,6 +156,10 @@ export async function sendNotification(event: NDKEvent) {
             title = 'Payment arrived!';
             body = '🔔 Check your Notifications!';
             tag = NDKKind.Zap.toString();
+        } else if (event.kind === NDKKind.KindScopedFollow) {
+            title = 'Someone has followed you!';
+            body = '🔔 Check your Notifications!';
+            tag = NDKKind.KindScopedFollow.toString();
         }
 
         const activeSW = await getActiveServiceWorker()

@@ -20,7 +20,7 @@ import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
 
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 
-import currentUser from '../stores/user';
+import currentUser, { fetchFreelanceFollowEvent } from '../stores/user';
 import {
     loggedIn,
     loggingIn,
@@ -107,6 +107,9 @@ export async function initializeUser(ndk: NDKSvelte) {
             // console.log('wot updated')
             // wotArray = Array.from(get(wot));
         }
+
+        // fetch the freelance follow event of current user
+        await fetchFreelanceFollowEvent(user.pubkey);
 
         // Start all tickets/offers sub
         allTickets.startSubscription();
