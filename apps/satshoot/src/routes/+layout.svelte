@@ -120,6 +120,9 @@
     } from '$lib/stores/wallet';
     import { cleanWallet, isCashuMintListSynced, resyncWalletAndBackup } from '$lib/utils/cashu';
     import { debounce } from '$lib/utils/misc';
+    import Header from '$lib/components/layout/Header.svelte';
+    import Footer from '$lib/components/layout/Footer.svelte';
+    import BottomNav from '$lib/components/layout/BottomNav.svelte';
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -682,150 +685,9 @@
 </Drawer>
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
     <svelte:fragment slot="header">
-        {#if !hideTopbar}
-            <AppBar
-                gridColumns="grid-cols-3"
-                slotDefault="place-content-center"
-                slotTrail="place-content-end "
-            >
-                <svelte:fragment slot="lead">
-                    <div class="flex gap-x-2 items-center">
-                        <h3 class="h3 font-bold">WoT:</h3>
-                        <div>
-                            {#if !$loggedIn}
-                                <i
-                                    class="fa-solid fa-circle-question text-2xl text-error-500"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div
-                                        class="card font-bold w-40 p-4 text-error-500 max-h-60 overflow-y-auto"
-                                    >
-                                        Log in to Load your Web of Trust!
-                                    </div>
-                                </div>
-                            {:else if $wot?.size < 3}
-                                <i
-                                    class="fa-solid fa-circle-exclamation text-2xl
-                                    text-error-500"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div
-                                        class="card font-bold w-40 p-4 bg-error-500 max-h-60 overflow-y-auto"
-                                    >
-                                        No Web of Trust! Turn on SatShoot WoT in Settings or follow
-                                        more people on nostr!
-                                    </div>
-                                </div>
-                            {:else if $wot && $wot.size < 3 && $wotUpdating}
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-error-500"
-                                    track="stroke-error-500/30"
-                                    strokeLinecap="round"
-                                    width="w-8"
-                                />
-                            {:else if $wot && $wot.size > 2 && $wotUpdating}
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-success-500"
-                                    track="stroke-success-500/30"
-                                    strokeLinecap="round"
-                                    width="w-8"
-                                />
-                            {:else if $wot && $useSatShootWoT && $wotUpdateNoResults}
-                                <i
-                                    class="fa-solid fa-circle-check text-2xl
-                                    text-primary-500"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div
-                                        class="card font-bold w-40 p-4 bg-primary-500
-                                        max-h-60 overflow-y-auto"
-                                    >
-                                        Using SatShoot WoT only
-                                    </div>
-                                </div>
-                            {:else if $wot && $wot.size > 2}
-                                <i
-                                    class="fa-solid fa-circle-check text-2xl {trustColor}"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div
-                                        class="card font-bold w-40 p-4 {bgTrustColor}
-                                        max-h-60 overflow-y-auto"
-                                    >
-                                        Web of Trust Loaded
-                                    </div>
-                                </div>
-                            {/if}
-                        </div>
-                    </div>
-                </svelte:fragment>
-
-                <div class="flex justify-center lg:ml-20">
-                    <div class="flex gap-x-2 justify-center items-center">
-                        <button
-                            class="btn btn-icon w-16"
-                            on:click={() => {
-                                goto('/ticket-feed');
-                            }}
-                        >
-                            <img src="/satshoot.svg" alt="logo" />
-                        </button>
-                    </div>
-                </div>
-
-                <svelte:fragment slot="trail">
-                    {#if $loggedIn}
-                        <button on:click={openAppMenu}>
-                            <!-- Avatar image -->
-                            <Avatar
-                                class="rounded-full border-white placeholder-white"
-                                border="border-4 border-surface-300-600-token hover:!border-primary-500"
-                                cursor="cursor-pointer"
-                                src={$currentUser?.profile?.image ??
-                                    `https://robohash.org/${$currentUser.pubkey}`}
-                            />
-                        </button>
-                    {:else if $loggingIn}
-                        <div class="flex gap-x-2">
-                            <h3 class="h6 md:h3 font-bold">Logging in...</h3>
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={80}
-                                meter="stroke-primary-500"
-                                track="stroke-primary-500/30"
-                                strokeLinecap="round"
-                                width="w-12"
-                            />
-                        </div>
-                    {:else if $loginMethod === 'local'}
-                        <button
-                            class="btn bg-primary-300-600-token"
-                            type="button"
-                            on:click={restoreLogin}
-                        >
-                            Login
-                        </button>
-                    {:else}
-                        <a href="/login" class="btn btn-md bg-primary-300-600-token">
-                            <span>Login</span>
-                        </a>
-                    {/if}
-                </svelte:fragment>
-            </AppBar>
-        {/if}
+        <Header />
     </svelte:fragment>
+
     <!-- Sidebar. Hidden on small screens -->
     <svelte:fragment slot="sidebarLeft">
         {#if !hideAppMenu}
@@ -870,40 +732,10 @@
     <!-- Router Slot -->
     <slot />
 
-    <!-- Footer: Only visible on small and medium screens(sm, md) -->
     <svelte:fragment slot="footer">
-        <TabGroup
-            justify="justify-center"
-            flex="flex-1"
-            rounded=""
-            border=""
-            hover="hover:variant-soft-primary"
-            active="bg-primary-300-600-token"
-            background="bg-surface-100-800-token"
-            class="lg:hidden w-full {hideAppMenu ? 'hidden' : ''}"
-        >
-            <TabAnchor href="/ticket-feed" selected={$page.url.pathname === '/ticket-feed'}>
-                <FreelanceIcon extraClasses={'text-2xl sm:text-3xl'} />
-            </TabAnchor>
-
-            <TabAnchor href="/post-ticket" selected={$page.url.pathname.includes('/post-ticket')}>
-                <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
-            </TabAnchor>
-            <TabAnchor
-                href="/messages"
-                selected={$page.url.pathname.includes('/messages') &&
-                    !$page.url.pathname.includes('naddr')}
-            >
-                <MessagesIcon sizeClass={'text-2xl sm:text-3xl'} />
-            </TabAnchor>
-            <TabAnchor
-                href="/notifications"
-                selected={$page.url.pathname.includes('/notifications')}
-            >
-                <NotificationsIcon sizeClass={'text-2xl sm:text-3xl'} />
-            </TabAnchor>
-        </TabGroup>
+        <Footer />
     </svelte:fragment>
 </AppShell>
+<BottomNav />
 
 <!-- <AppHeader /> -->
