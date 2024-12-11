@@ -1,0 +1,55 @@
+<script lang="ts">
+    const tags = [
+        'Design',
+        'Programming',
+        'C++',
+        'Game Designer',
+        'UE5 Developer',
+        'Marketing',
+        'SFX Artist',
+        'Vector Artist',
+        'UX Designer',
+        'Unity Developer',
+    ];
+
+    const tagLinkClasses =
+        'transition-all ease duration-[0.3s] w-full relative p-[15px] rounded-[10px] bg-white ' +
+        'border-[3px] border-white flex flex-col justify-center items-center gap-[25px] ' +
+        'shadow-[0_0_4px_0_rgba(0,0,0,0.1)] text-[rgba(0,0,0,0.5)] font-[700] text-[18px] ' +
+        'text-center hover:scale-[1.01] hover:shadow-[0_0_4px_0_rgba(0,0,0,0.2)] hover:border-[3px] ' +
+        'hover:border-[#3b73f6] hover:no-underline';
+
+    const viewMoreBtnClasses =
+        'transition-all ease duration-[0.3s] outline-0 p-[10px_20px] rounded-[5px] ' +
+        'font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row ' +
+        'justify-center items-center gap-[10px] bg-[rgba(255,255,255,0)] text-[rgba(0,0,0,0.5)] ' +
+        'border-[1px] border-solid border-[rgba(0,0,0,0.1)] w-full max-w-[200px] hover:bg-[#3b73f6] ' +
+        'hover:text-[rgb(255,255,255)] hover:border-[1px_solid_rgba(0,0,0,0)] hover:max-w-[225px]';
+</script>
+
+<div class="w-full flex flex-col justify-center items-center py-[50px]">
+    <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
+        <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
+            <div class="w-full flex flex-col gap-[15px]">
+                <h2 class="text-[40px] font-[500]">Job Tags</h2>
+                <p>Look for jobs that tag themselves with specific tags</p>
+            </div>
+            <div
+                class="w-full grid grid-cols-5 gap-[25px] max-[992px]:grid-cols-4 max-[768px]:grid-cols-3 max-[576px]:grid-cols-2 max-[360px]:grid-cols-1"
+            >
+                {#each tags as tag}
+                    <a class={tagLinkClasses} href="/">
+                        <p
+                            class="text-center display-[webkit-box] -webkit-box-orient-vertical overflow-hidden -webkit-line-clamp-1"
+                        >
+                            {tag}
+                        </p>
+                    </a>
+                {/each}
+            </div>
+            <div class="w-full flex flex-row justify-center items-inherit gap-[15px]">
+                <button type="button" class={viewMoreBtnClasses}> View more </button>
+            </div>
+        </div>
+    </div>
+</div>
