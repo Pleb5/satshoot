@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { loggedIn } from '$lib/stores/user';
     import NavLinks from './NavLinks.svelte';
     import ProfileDropdown from './ProfileDropdown.svelte';
 
@@ -19,7 +20,7 @@
     const mobileProfileBtnClass =
         'overflow-hidden w-[100%]  outline-[1px] outline-[rgb(0,0,0,0.1)]' +
         'transition ease-in-out duration-[0.3s] py-[6px] px-[12px] rounded-[6px] transform scale-100 ' +
-        'whitespace-nowrap flex flex-row justify-start items-center gap-[8px] flex-grow-[1] hover:bg-[#3b82f6] hover:text-white ';
+        'whitespace-nowrap flex flex-row justify-center items-center gap-[8px] flex-grow-[1] hover:bg-[#3b82f6] hover:text-white ';
 </script>
 
 <div class="w-[100%] flex-col justify-center items-center hidden max-[576px]:flex">
@@ -51,19 +52,32 @@
             <div
                 class="w-[100%] border-t-[1px] border-t-[rgb(0,0,0,0.1)] px-[10px] py-[10px] flex flex-col gap-[10px]"
             >
-                <div class="flex-grow flex flex-row gap-4 justify-end items-center flex-wrap">
-                    <a href="/login" class={loginBtnClasses + ' flex-grow-[1]'}> Login </a>
+                <!-- <div class="flex-grow flex flex-row gap-4 justify-center items-center flex-wrap"> -->
+                {#if !$loggedIn}
+                    <a
+                        href="/login"
+                        on:click={toggleMobileNav}
+                        class={loginBtnClasses + ' flex-grow-[1]'}
+                    >
+                        Login
+                    </a>
+                {:else}
                     <div
                         class="relative inline-block text-left justify-start items-start flex-grow-[1]"
                     >
-                        <ProfileDropdown classes={mobileProfileBtnClass} />
+                        <ProfileDropdown
+                            classes={mobileProfileBtnClass}
+                            on:click={toggleMobileNav}
+                        />
                     </div>
-                </div>
+                {/if}
+
+                <!-- </div> -->
             </div>
             <div
                 class="w-[100%] border-t-[1px] border-t-[rgb(0,0,0,0.1)] px-[10px] py-[10px] flex flex-col gap-[10px] overflow-auto"
             >
-                <NavLinks />
+                <NavLinks on:click={toggleMobileNav} />
             </div>
         </div>
     {/if}

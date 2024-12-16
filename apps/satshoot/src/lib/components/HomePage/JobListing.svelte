@@ -7,6 +7,7 @@
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy, onMount } from 'svelte';
     import JobCard from './JobCard.svelte';
+    import { goto } from '$app/navigation';
 
     let newTickets: NDKEventStore<ExtendedBaseType<TicketEvent>>;
     let ticketList: Set<TicketEvent> = new Set();
@@ -94,7 +95,13 @@
                 {/if}
             </div>
             <div class="w-full flex flex-row justify-center items-inherit gap-[15px]">
-                <button type="button" class={viewMoreBtnClasses}> View more </button>
+                <button
+                    on:click={() => goto('/ticket-feed/')}
+                    type="button"
+                    class={viewMoreBtnClasses}
+                >
+                    View more
+                </button>
             </div>
         </div>
     </div>

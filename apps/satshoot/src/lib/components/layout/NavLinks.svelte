@@ -1,19 +1,19 @@
 <script lang="ts">
+    import { createEventDispatcher } from 'svelte';
+
+    const dispatch = createEventDispatcher();
+
     const navLinks = [
         {
             href: '/',
             label: 'Home',
         },
         {
-            href: '/',
+            href: '/ticket-feed/',
             label: 'Jobs',
         },
         {
-            href: '/',
-            label: 'Tags',
-        },
-        {
-            href: '/',
+            href: '/about/',
             label: 'About',
         },
     ];
@@ -25,7 +25,7 @@
 </script>
 
 {#each navLinks as { label, href }}
-    <a class={classesForNavLink} {href}>
+    <a class={classesForNavLink} {href} on:click={() => dispatch('click')}>
         <p>{label}</p>
     </a>
 {/each}

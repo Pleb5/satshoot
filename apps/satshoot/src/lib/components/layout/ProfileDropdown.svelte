@@ -1,13 +1,26 @@
 <script lang="ts">
-    import { loggedIn } from '$lib/stores/user';
+    import currentUser, { loggedIn } from '$lib/stores/user';
     import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import LogoutModal from '../Modals/LogoutModal.svelte';
+    import { shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import TicketIcon from '../Icons/TicketIcon.svelte';
+    import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
+    import WalletIcon from '../Icons/WalletIcon.svelte';
+    import ReadyToWorkModal from '../Modals/ReadyToWorkModal.svelte';
+    import FeedbackModal from '../Modals/FeedbackModal.svelte';
+    import BullhornIcon from '../Icons/BullhornIcon.svelte';
+    import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+    import { browser } from '$app/environment';
 
     export let classes: string;
 
     const modalStore = getModalStore();
+    const dispatch = createEventDispatcher();
 
     let profileDropdownOpen = false;
+    let dropdownElement: HTMLDivElement | null = null; // Reference for the dropdown element
+
+    $: profileHref = $currentUser ? '/' + $currentUser.npub || '' + '/' : '/';
 
     function toggleProfileDropdown() {
         profileDropdownOpen = !profileDropdownOpen;
@@ -27,10 +40,100 @@
         modalStore.trigger(modal);
     }
 
-    const profileMenuItems = [
+    function readyToWork() {
+        const modalComponent: ModalComponent = {
+            ref: ReadyToWorkModal,
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
+    }
+
+    function feedback() {
+        const modalComponent: ModalComponent = {
+            ref: FeedbackModal,
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
+    }
+
+    function handleClickOutside(event: MouseEvent) {
+        const target = event.target as HTMLElement;
+
+        // Ignore elements with the data-ignore-outside-click attribute
+        if (target.closest('[data-ignore-outside-click]')) {
+            return;
+        }
+
+        profileDropdownOpen = false;
+    }
+
+    if (browser) {
+        // Attach and detach the event listener
+        onMount(() => {
+            window.addEventListener('click', handleClickOutside);
+        });
+
+        onDestroy(() => {
+            window.removeEventListener('click', handleClickOutside);
+        });
+    }
+
+    $: profileMenuItems = [
         {
-            href: '/',
-            label: 'Text',
+            href: profileHref,
+            label: 'Profile',
+            icon: {
+                component: null, // No component, just an HTML icon class
+                props: { class: 'fa-solid fa-user' },
+            },
+        },
+        {
+            href: '/my-tickets/',
+            label: 'My Tickets',
+            icon: {
+                component: TicketIcon,
+                props: { sizeClass: '' },
+            },
+        },
+        {
+            href: '/my-offers/',
+            label: 'My offers',
+            icon: {
+                component: BitcoinIcon,
+                props: { extraClasses: 'text-lg' },
+            },
+        },
+        {
+            href: '/my-cashu-wallet/',
+            label: 'Wallet',
+            icon: {
+                component: WalletIcon,
+                props: {},
+            },
+        },
+        {
+            href: '/network/',
+            label: 'Network',
+            icon: {
+                component: null, // No component, just an HTML icon class
+                props: { class: 'fa-solid fa-globe' },
+            },
+        },
+        {
+            href: '/settings/',
+            label: 'Settings',
+            icon: {
+                component: null, // No component, just an HTML icon class
+                props: { class: 'fa-solid fa-gear' },
+            },
         },
     ];
 
@@ -39,26 +142,73 @@
         'rounded-[6px] border-[1px] border-[rgb(0,0,0,0.1)] shadow-[0_0px_8px_rgba(0,0,0,0.1)]';
 
     const profileMenuItemClass =
-        'transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] ' +
-        'hover:bg-[rgb(59,115,246)] hover:text-white';
+        'transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[4px] py-[4px] ' +
+        'hover:bg-[rgb(59,115,246)] hover:text-white flex justify-start gap-2';
+
+    const extraClassesForLogoutBtn =
+        'bg-red-500 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-800 px-4 py-2 ' +
+        'rounded flex items-center justify-center';
 </script>
 
-<button on:click={toggleProfileDropdown} class={classes}>
-    <img src="/img/28bj7a.gif" alt="user profile" class="w-[25px] h-[25px] rounded-[100%]" />
-    <span class="overflow-hidden whitespace-nowrap overflow-ellipsis max-w-[200px]">Username</span>
-</button>
-{#if profileDropdownOpen}
-    <div class={profileDropdownWrapperClass}>
-        <div class="p-[5px] flex flex-col" role="menu">
-            {#each profileMenuItems as { href, label }}
-                <a {href} class={profileMenuItemClass}>
-                    {label}
-                </a>
-            {/each}
+{#if $currentUser}
+    <button on:click={toggleProfileDropdown} class={classes} data-ignore-outside-click>
+        <img
+            src={$currentUser.profile?.image ?? `https://robohash.org/${$currentUser.pubkey}`}
+            alt="user profile"
+            class="w-[25px] h-[25px] rounded-[100%]"
+        />
+        <span class="overflow-hidden whitespace-nowrap overflow-ellipsis max-w-[200px]"
+            >{$currentUser.profile?.name ??
+                $currentUser.profile?.displayName ??
+                shortenTextWithEllipsesInMiddle($currentUser.npub, 15)}</span
+        >
+    </button>
+    {#if profileDropdownOpen}
+        <div class={profileDropdownWrapperClass} bind:this={dropdownElement}>
+            <div class="p-[5px] flex flex-col gap-2" role="menu">
+                {#each profileMenuItems as { href, label, icon }}
+                    <a
+                        {href}
+                        class={profileMenuItemClass}
+                        on:click={() => {
+                            toggleProfileDropdown();
+                            dispatch('click');
+                        }}
+                    >
+                        <span class="w-6 text-center">
+                            {#if !icon.component}
+                                <i {...icon.props}></i>
+                            {:else}
+                                <svelte:component this={icon.component} {...icon.props} />
+                            {/if}
+                        </span>
+                        <span>{label}</span>
+                    </a>
+                {/each}
 
-            {#if $loggedIn}
-                <button class={profileMenuItemClass} on:click={onLogout}>Logout</button>
-            {/if}
+                <button class="w-full {profileMenuItemClass}" on:click={readyToWork}>
+                    <span class="w-6 text-center">
+                        <BullhornIcon extraClasses={''} />
+                    </span>
+                    <span>Work</span>
+                </button>
+
+                <button class="w-full {profileMenuItemClass}" on:click={feedback}>
+                    <span class="w-6 text-center">
+                        <i class="fa-regular fa-comment" />
+                    </span>
+                    <span>Feedback</span>
+                </button>
+
+                {#if $loggedIn}
+                    <button
+                        class="{profileMenuItemClass} {extraClassesForLogoutBtn} justify-"
+                        on:click={onLogout}
+                    >
+                        Logout
+                    </button>
+                {/if}
+            </div>
         </div>
-    </div>
+    {/if}
 {/if}

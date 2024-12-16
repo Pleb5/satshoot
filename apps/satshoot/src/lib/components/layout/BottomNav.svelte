@@ -1,32 +1,41 @@
 <script lang="ts">
+    import currentUser from '$lib/stores/user';
+
     let isCollapsed = true;
 
     const toggleCollapse = () => {
         isCollapsed = !isCollapsed;
     };
 
-    const items = [
-        {
-            href: '/',
-            icon: 'bxs-home',
-        },
-        {
-            href: '/',
-            icon: 'bxs-conversation',
-        },
-        {
-            href: '/',
-            icon: 'bxs-bell',
-        },
-        {
-            href: '/',
-            icon: 'bxs-cog',
-        },
-        {
-            href: '/',
-            icon: 'bxs-user',
-        },
-    ];
+    let items: { href: string; icon: string }[] = [];
+
+    $: {
+        items = [
+            {
+                href: '/',
+                icon: 'bxs-home',
+            },
+            {
+                href: '/messages/',
+                icon: 'bxs-conversation',
+            },
+            {
+                href: '/notifications/',
+                icon: 'bxs-bell',
+            },
+            {
+                href: '/settings/',
+                icon: 'bxs-cog',
+            },
+        ];
+
+        if ($currentUser) {
+            items.push({
+                href: '/' + $currentUser.npub + '/',
+                icon: 'bxs-user',
+            });
+        }
+    }
 
     const collapseWrapperClasses =
         'transition-all ease-in-out duration-[0.4s] w-auto fixed bottom-0 ' +

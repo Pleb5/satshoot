@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
 </script>
 
 <div
@@ -44,6 +45,7 @@
                             <button
                                 type="button"
                                 class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] border-0 outline-0 text-[rgb(255,255,255)] p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[75%] hover:bg-[rgb(59,130,246)] hover:text-[rgb(255,255,255)] max-[576px]:max-w-[100%]"
+                                on:click={() => goto('/post-ticket/')}
                             >
                                 Create Job Listing
                             </button>
@@ -51,7 +53,7 @@
                         <div
                             class="w-full bg-[rgba(255,255,255,0.75)] rounded-[6px] shadow-[0_0_8px_0_rgba(0,0,0,0.1)] backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
                         >
-                            <h2 class="text-center font-[800] text-[32px]">Look For Work People</h2>
+                            <h2 class="text-center font-[800] text-[32px]">Look For Work</h2>
                             <p class="text-center">
                                 See what problems are available to solve, or projects to build, and
                                 give your best offer to solve said problem or finish the project
@@ -59,6 +61,7 @@
                             <button
                                 type="button"
                                 class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] border-0 outline-0 text-[rgb(255,255,255)] p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[75%] hover:bg-[rgb(59,130,246)] hover:text-[rgb(255,255,255)] max-[576px]:max-w-[100%]"
+                                on:click={() => goto('/ticket-feed/')}
                             >
                                 Discover Opportunities
                             </button>

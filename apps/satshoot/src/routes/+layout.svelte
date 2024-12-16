@@ -688,47 +688,6 @@
         <Header />
     </svelte:fragment>
 
-    <!-- Sidebar. Hidden on small screens -->
-    <svelte:fragment slot="sidebarLeft">
-        {#if !hideAppMenu}
-            <AppRail
-                class="hidden lg:block min-w-28"
-                hover="hover:variant-soft-primary"
-                active="bg-primary-300-600-token"
-                background="bg-surface-100-800-token"
-            >
-                <svelte:fragment slot="lead">
-                    <AppRailAnchor
-                        href="/ticket-feed"
-                        selected={$page.url.pathname === '/ticket-feed'}
-                    >
-                        <FreelanceIcon extraClasses={'text-2xl sm:text-3xl'} />
-                    </AppRailAnchor>
-
-                    <AppRailAnchor
-                        href="/post-ticket"
-                        selected={$page.url.pathname.includes('/post-ticket')}
-                    >
-                        <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
-                    </AppRailAnchor>
-                    <AppRailAnchor
-                        href="/messages"
-                        selected={$page.url.pathname.includes('/messages') &&
-                            !$page.url.pathname.includes('naddr')}
-                    >
-                        <MessagesIcon sizeClass={'text-2xl sm:text-3xl'} />
-                    </AppRailAnchor>
-                    <AppRailAnchor
-                        href="/notifications"
-                        selected={$page.url.pathname.includes('/notifications')}
-                    >
-                        <NotificationsIcon sizeClass={'text-2xl sm:text-3xl'} />
-                    </AppRailAnchor>
-                </svelte:fragment>
-            </AppRail>
-        {/if}
-    </svelte:fragment>
-
     <!-- Router Slot -->
     <slot />
 
