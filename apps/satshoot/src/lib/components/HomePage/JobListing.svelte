@@ -6,7 +6,7 @@
     import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy, onMount } from 'svelte';
-    import JobCard from './JobCard.svelte';
+    import JobCard from '../Jobs/JobCard.svelte';
     import { goto } from '$app/navigation';
 
     let newTickets: NDKEventStore<ExtendedBaseType<TicketEvent>>;

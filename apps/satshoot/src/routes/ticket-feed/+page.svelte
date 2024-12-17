@@ -16,7 +16,7 @@
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy, onMount } from 'svelte';
     import BullhornIcon from '$lib/components/Icons/BullhornIcon.svelte';
-    import JobCard from '$lib/components/HomePage/JobCard.svelte';
+    import JobCard from '$lib/components/Jobs/JobCard.svelte';
 
     const modalStore = getModalStore();
 
