@@ -95,11 +95,7 @@
                 {/if}
             </div>
             <div class="w-full flex flex-row justify-center items-inherit gap-[15px]">
-                <button
-                    on:click={() => goto('/ticket-feed/')}
-                    type="button"
-                    class={viewMoreBtnClasses}
-                >
+                <button on:click={() => goto('/jobs/')} type="button" class={viewMoreBtnClasses}>
                     View more
                 </button>
             </div>

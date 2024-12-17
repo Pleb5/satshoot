@@ -61,7 +61,7 @@
                             <button
                                 type="button"
                                 class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] border-0 outline-0 text-[rgb(255,255,255)] p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[75%] hover:bg-[rgb(59,130,246)] hover:text-[rgb(255,255,255)] max-[576px]:max-w-[100%]"
-                                on:click={() => goto('/ticket-feed/')}
+                                on:click={() => goto('/jobs/')}
                             >
                                 Discover Opportunities
                             </button>

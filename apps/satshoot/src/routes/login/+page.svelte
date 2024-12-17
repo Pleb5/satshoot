@@ -1,22 +1,22 @@
-<script lang='ts'>
-    import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
-    import ndk, { type LoginMethod } from "$lib/stores/ndk";
+<script lang="ts">
+    import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
+    import ndk, { type LoginMethod } from '$lib/stores/ndk';
 
-    import redirectStore from "$lib/stores/network";
-    import { loggedIn, loginMethod } from "$lib/stores/user";
+    import redirectStore from '$lib/stores/network';
+    import { loggedIn, loginMethod } from '$lib/stores/user';
 
-    import { browser } from "$app/environment";
+    import { browser } from '$app/environment';
 
     import { goto } from '$app/navigation';
 
-    import { getToastStore,  popup } from '@skeletonlabs/skeleton';
+    import { getToastStore, popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings, ToastSettings } from '@skeletonlabs/skeleton';
     import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import BunkerLoginModal from "$lib/components/Modals/BunkerLoginModal.svelte";
-    import { initializeUser, checkRelayConnections } from "$lib/utils/helpers";
-    import { onMount, tick } from "svelte";
-    import Nip07LoginModal from "$lib/components/Modals/Nip07LoginModal.svelte";
+    import BunkerLoginModal from '$lib/components/Modals/BunkerLoginModal.svelte';
+    import { initializeUser, checkRelayConnections } from '$lib/utils/helpers';
+    import { onMount, tick } from 'svelte';
+    import Nip07LoginModal from '$lib/components/Modals/Nip07LoginModal.svelte';
 
     // Retrieve Modal Store at the top level
     const modalStore = getModalStore();
@@ -26,10 +26,10 @@
     $: {
         if ($loggedIn) {
             if ($redirectStore) {
-                goto($redirectStore)
+                goto($redirectStore);
                 $redirectStore = '';
             } else {
-                goto('/ticket-feed'); 
+                goto('/');
             }
         }
     }
@@ -44,7 +44,6 @@
             component: modalComponent,
         };
         modalStore.trigger(modal);
-
     }
 
     async function onNIP07Login() {
@@ -73,7 +72,7 @@
                     localStorage.setItem('login-method', $loginMethod as LoginMethod);
                     initializeUser($ndk);
                 }
-            } catch(e) {
+            } catch (e) {
                 const t: ToastSettings = {
                     message: 'Browser extension rejected access!',
                     autohide: false,
@@ -82,27 +81,25 @@
                 toastStore.trigger(t);
                 modalStore.clear();
             }
-
         } else if (!window.nostr) {
             const modal: ModalSettings = {
                 type: 'alert',
                 title: 'No Compatible Extension!',
                 body: 'No nip07-compatible browser extension found! See Alby, nos2x or similar!',
-                buttonTextCancel:'Cancel',
+                buttonTextCancel: 'Cancel',
             };
             modalStore.trigger(modal);
         }
     }
 
-    // For tooltip    
+    // For tooltip
     const popupHover: PopupSettings = {
         event: 'click',
         target: 'popupHover',
-        placement: 'bottom'
+        placement: 'bottom',
     };
 
     onMount(() => checkRelayConnections());
-
 </script>
 
 <div class="flex justify-center mt-4">
@@ -124,14 +121,10 @@
             </div>
         </button>
         <div class="grid grid-cols-2 gap-x-2 gap-y-4 mx-4">
-            <a 
-                class="btn btn-md bg-warning-300-600-token"
-                href="https://nsec.app/"
-                target="_blank"
-            >
+            <a class="btn btn-md bg-warning-300-600-token" href="https://nsec.app/" target="_blank">
                 <span>See Nsec.app</span>
             </a>
-            <a 
+            <a
                 class="btn btn-md bg-warning-300-600-token"
                 href="https://github.com/greenart7c3/Amber"
                 target="_blank"
@@ -153,7 +146,7 @@
             </div>
         </button>
         <div class="grid grid-cols-2 gap-x-2 gap-y-4 mx-4">
-            <a 
+            <a
                 class="btn btn-md bg-warning-300-600-token"
                 href="https://getalby.com/"
                 target="_blank"
@@ -161,7 +154,7 @@
                 <span>See Alby</span>
             </a>
 
-            <a 
+            <a
                 class="btn btn-md bg-warning-300-600-token"
                 href="https://chromewebstore.google.com/detail/nos2x/kpgefcfmnafjgpblomihpgmejjdanjjp?pli=1
 "
@@ -170,7 +163,7 @@
                 <span>See nos2x</span>
             </a>
 
-            <a 
+            <a
                 class="btn btn-md bg-warning-300-600-token"
                 href="https://chromewebstore.google.com/detail/horse/ogdjeglchjlenflecdcoonkngmmipcoe"
                 target="_blank"
@@ -178,7 +171,7 @@
                 <span>See horse</span>
             </a>
 
-            <a 
+            <a
                 class="btn btn-md bg-warning-300-600-token"
                 href="https://www.getflamingo.org/"
                 target="_blank"
@@ -187,7 +180,7 @@
             </a>
         </div>
         <!-- Restore Local keypair -->
-        <a 
+        <a
             href="/restore/"
             class="btn btn-icon btn-md lg:btn-lg w-full h-20 bg-primary-300-600-token"
         >
@@ -196,7 +189,7 @@
                     <i class="fa-solid fa-key fa-xl"></i>
                     <div>Secret key</div>
                 </div>
-                <div 
+                <div
                     class="text-error-500 bg-warning-500 font-bold p-2
                             badge"
                 >
@@ -206,48 +199,43 @@
         </a>
         <!-- New local keypair -->
         <div class="flex w-full h-20 gap-x-4 justify-center items-center">
-            <a 
-                href="/create-seed/" 
-                class="btn btn-icon btn-md lg:btn-lg w-full h-full bg-tertiary-300-600-token "
+            <a
+                href="/create-seed/"
+                class="btn btn-icon btn-md lg:btn-lg w-full h-full bg-tertiary-300-600-token"
             >
                 <div class="flex gap-x-2 items-center">
                     <i class="fa-solid fa-circle-plus fa-xl"></i>
-                    <div> New Secret Key</div>
+                    <div>New Secret Key</div>
                 </div>
             </a>
-            <i 
+            <i
                 class="text-tertiary-300-600-token fa-solid fa-circle-question text-2xl
-                [&>*]:pointer-events-none" 
+                [&>*]:pointer-events-none"
                 use:popup={popupHover}
             />
 
             <div data-popup="popupHover">
                 <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
                     <p>
-                        Generate a new nostr keypair from bip39 seed words.
-                        The words will be stored in browser local storage in an encrypted form.
-                        Whenever you clear the browser local storage(e.g. delete cookies)
-                        you need to restore the nostr key from the bip39 words.
+                        Generate a new nostr keypair from bip39 seed words. The words will be stored
+                        in browser local storage in an encrypted form. Whenever you clear the
+                        browser local storage(e.g. delete cookies) you need to restore the nostr key
+                        from the bip39 words.
                     </p>
-                    <br/>
+                    <br />
                     <p>
-                        This identity can be used anywhere in the nostr ecosystem.
-                        Take care of the words and don't store them unencrypted in digital form. 
-                        If you intend to use it in the long run, also create a physical backup:
+                        This identity can be used anywhere in the nostr ecosystem. Take care of the
+                        words and don't store them unencrypted in digital form. If you intend to use
+                        it in the long run, also create a physical backup:
                     </p>
-                    <br/>
+                    <br />
                     <ul>
-                        <li>
-                            - Write them down on a piece of paper and laminate it
-                        </li>
-                        <li>
-                            - Or backup in steel like bitcoiners do with seed words
-                        </li>
+                        <li>- Write them down on a piece of paper and laminate it</li>
+                        <li>- Or backup in steel like bitcoiners do with seed words</li>
                     </ul>
                     <div class="arrow bg-primary-300-600-token" />
                 </div>
             </div>
         </div>
     </div>
-
 </div>

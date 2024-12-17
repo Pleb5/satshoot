@@ -9,7 +9,7 @@
             label: 'Home',
         },
         {
-            href: '/ticket-feed/',
+            href: '/jobs/',
             label: 'Jobs',
         },
         {
