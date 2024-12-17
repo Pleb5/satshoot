@@ -23,7 +23,10 @@
         'whitespace-nowrap flex flex-row justify-center items-center gap-[8px] flex-grow-[1] hover:bg-[#3b82f6] hover:text-white ';
 </script>
 
-<div class="w-[100%] flex-col justify-center items-center hidden max-[576px]:flex">
+<div
+    class="w-[100%] flex-col justify-center items-center hidden max-[576px]:flex"
+    class:bg-white={mobileNavOpen}
+>
     <div class="w-[100%] flex flex-row grow-1 gap-[10px] p-[10px] justify-center items-center">
         <div class={satshootMobileLogoClass}>
             <img src="/img/satshoot.svg" alt="satshoot logo" class="w-full max-w-[65px]" />
@@ -34,25 +37,10 @@
         </button>
     </div>
     {#if mobileNavOpen}
-        <div
-            id="mobileNavContent"
-            class="w-[100%] absolute top-0 bottom-0 left-0 right-0 z-20 bg-white flex flex-col"
-        >
-            <div
-                class="w-[100%] flex flex-row grow-1 gap-[10px] p-[10px] justify-center items-center"
-            >
-                <div class={satshootMobileLogoClass}>
-                    <img src="/img/satshoot.svg" alt="satshoot logo" class="w-full max-w-[65px]" />
-                    <p>Satshoot</p>
-                </div>
-                <button on:click={toggleMobileNav} class={mobileNavMenuIconBtnClass}>
-                    <i class="bx bx-menu text-[32px]"></i>
-                </button>
-            </div>
+        <div class="w-[100%] h-screen bg-white flex flex-col">
             <div
                 class="w-[100%] border-t-[1px] border-t-[rgb(0,0,0,0.1)] px-[10px] py-[10px] flex flex-col gap-[10px]"
             >
-                <!-- <div class="flex-grow flex flex-row gap-4 justify-center items-center flex-wrap"> -->
                 {#if !$loggedIn}
                     <a
                         href="/login"
@@ -71,8 +59,6 @@
                         />
                     </div>
                 {/if}
-
-                <!-- </div> -->
             </div>
             <div
                 class="w-[100%] border-t-[1px] border-t-[rgb(0,0,0,0.1)] px-[10px] py-[10px] flex flex-col gap-[10px] overflow-auto"
