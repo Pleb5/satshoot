@@ -7,6 +7,11 @@
     import TrustedNetwork from './TrustedNetwork.svelte';
 
     export let ticket: TicketEvent;
+    let bech32ID = '';
+
+    $: if (ticket) {
+        bech32ID = ticket.encode();
+    }
 
     enum Tabs {
         JobDescription,
@@ -52,7 +57,7 @@
 >
     <div class="jobCardDetails w-full flex flex-col gap-[0px] p-[10px] min-h-[165px]">
         {#if selectedTab === Tabs.JobDescription}
-            <JobDetails title={ticket.title} description={ticket.description} />
+            <JobDetails title={ticket.title} description={ticket.description} {bech32ID} />
         {:else if selectedTab === Tabs.Earning}
             <EarningDetails user={ticket.author.pubkey} />
         {:else if selectedTab === Tabs.Reputation}
