@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import EarningDetails from './EarningDetails.svelte';
     import JobActions from './JobActions.svelte';
@@ -98,7 +99,8 @@
             <i class="bx bxs-cog"></i>
         </button>
         <button
-            class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] text-[rgb(255,255,255)] p-[10px_20px] font-semibold text-[18px] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] bg-[rgba(59,115,246,0)] text-[rgba(0,0,0,0.5)] w-auto hover:bg-[rgb(59,130,246)] hover:text-white"
+            class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] text-[rgb(255,255,255)] p-[10px_20px] font-semibold text-[18px] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full bg-[rgba(59,115,246,0)] text-[rgba(0,0,0,0.5)] hover:bg-[rgb(59,130,246)] hover:text-white"
+            on:click={() => goto('/' + bech32ID + '/')}
         >
             <i class="bx bxs-show"></i>
         </button>
