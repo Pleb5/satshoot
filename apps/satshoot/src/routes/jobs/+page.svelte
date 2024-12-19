@@ -17,6 +17,7 @@
     import { onDestroy, onMount } from 'svelte';
     import BullhornIcon from '$lib/components/Icons/BullhornIcon.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
+    import { JobsPerPage } from '$lib/utils/misc';
 
     const modalStore = getModalStore();
 
@@ -26,6 +27,8 @@
     let ticketList: Set<TicketEvent> = new Set();
     // tracks if user-defined filtering returned anything
     let noResults = false;
+
+    let currentPage = 1;
 
     function filterTickets() {
         // We need to check all tickets against all filters
@@ -100,6 +103,14 @@
         }
     }
 
+    function handlePrev() {
+        currentPage -= 1;
+    }
+
+    function handleNext() {
+        currentPage += 1;
+    }
+
     onMount(() => {
         checkRelayConnections();
 
@@ -121,6 +132,11 @@
     onDestroy(() => {
         if (newTickets) newTickets.unsubscribe();
     });
+
+    const paginationBtnClasses =
+        'transition-all ease duration-[0.3s] py-[10px] px-[20px] rounded-[5px] ' +
+        'font-[18px] bg-white text-[rgb(0,0,0,0.5)] hover:bg-[#3b82f6] disabled:cursor-not-allowed' +
+        'hover:text-white max-[576px]:grow-[1] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]';
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
@@ -167,7 +183,7 @@
                             class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
                         >
                             {#if ticketList && ticketList.size > 0}
-                                {#each ticketList as ticket (ticket.id)}
+                                {#each Array.from(ticketList).slice((currentPage - 1) * JobsPerPage, currentPage * JobsPerPage) as ticket (ticket.id)}
                                     <JobCard {ticket} />
                                 {/each}
                             {:else if noResults}
@@ -200,19 +216,23 @@
                                 class="w-full max-w-[300px] flex flex-row gap-[15px] justify-center items-center max-[576px]:flex-wrap"
                             >
                                 <button
-                                    class="transition-all ease duration-[0.3s] py-[10px] px-[20px] rounded-[5px] font-[600] font-[18px] bg-white text-[rgb(0,0,0,0.5)] hover:bg-[#3b82f6] hover:text-white max-[576px]:grow-[1] max-[576px]:order-[2] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]"
+                                    class="{paginationBtnClasses} max-[576px]:order-[2]"
                                     type="button"
+                                    on:click={handlePrev}
+                                    disabled={currentPage === 1}
                                 >
                                     <i class="bx bxs-chevron-left"></i>
                                 </button>
                                 <div
                                     class="flex flex-row justify-center items-center max-[576px]:w-[100%]"
                                 >
-                                    <p>Current page: 12</p>
+                                    <p>Current page: {currentPage}</p>
                                 </div>
                                 <button
-                                    class="transition-all ease duration-[0.3s] py-[10px] px-[20px] rounded-[5px] font-[600] font-[18px] bg-white text-[rgb(0,0,0,0.5)] hover:bg-[#3b82f6] hover:text-white max-[576px]:grow-[1] max-[576px]:order-[3] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]"
+                                    class="{paginationBtnClasses} max-[576px]:order-[3]"
                                     type="button"
+                                    on:click={handleNext}
+                                    disabled={ticketList.size <= currentPage * JobsPerPage}
                                 >
                                     <i class="bx bxs-chevron-right"></i>
                                 </button>
