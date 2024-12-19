@@ -1,6 +1,8 @@
 import { nip19 } from 'nostr-tools';
 import { type NDKTag, type Hexpubkey, NDKKind, type NostrEvent } from '@nostr-dev-kit/ndk';
 
+export const JobsPerPage = 9;
+
 export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
 
 if (typeof NDKKind === 'undefined') {
