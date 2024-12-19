@@ -60,7 +60,7 @@
         {#if selectedTab === Tabs.JobDescription}
             <JobDetails title={ticket.title} description={ticket.description} {bech32ID} />
         {:else if selectedTab === Tabs.Earning}
-            <EarningDetails user={ticket.author.pubkey} />
+            <EarningDetails user={ticket.pubkey} />
         {:else if selectedTab === Tabs.Reputation}
             <Ratings
                 ratingAsClient={4}
@@ -69,7 +69,7 @@
                 totalFreelancerReviews={250}
             />
         {:else if selectedTab === Tabs.Network}
-            <TrustedNetwork />
+            <TrustedNetwork user={ticket.pubkey} />
         {:else if selectedTab === Tabs.Actions}
             <JobActions />
         {/if}

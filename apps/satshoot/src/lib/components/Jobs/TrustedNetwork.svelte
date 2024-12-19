@@ -1,4 +1,51 @@
 <script lang="ts">
+    import ndk from '$lib/stores/ndk';
+    import satShootWoT from '$lib/stores/satshoot-wot';
+    import currentUser, { currentUserFreelanceFollows, loggedIn } from '$lib/stores/user';
+    import { minWot, networkWoTScores } from '$lib/stores/wot';
+    import { filterValidPTags, SatShootPubkey } from '$lib/utils/misc';
+    import { NDKKind, NDKUser, type Hexpubkey } from '@nostr-dev-kit/ndk';
+    import Avatar from '../Users/Avatar.svelte';
+    import { nip19 } from 'nostr-tools';
+
+    export let user: Hexpubkey;
+
+    let followedBySatshootNetwork = new Set<Hexpubkey>();
+    let followedByUserNetwork = new Set<Hexpubkey>();
+
+    $: if (user) {
+        $ndk.fetchEvents({
+            kinds: [NDKKind.KindScopedFollow],
+            '#k': [NDKKind.FreelanceTicket.toString(), NDKKind.FreelanceOffer.toString()],
+            '#p': [user],
+        }).then((events) => {
+            const array1 = new Set<Hexpubkey>();
+            const array2 = new Set<Hexpubkey>();
+
+            events.forEach((event) => {
+                if (satShootWoT.includes(event.pubkey)) {
+                    // push pubkey to array1 which will be eventually assigned to followedBySatshootNetwork
+                    array1.add(event.pubkey);
+                }
+
+                if (
+                    $currentUser &&
+                    ($currentUserFreelanceFollows?.has(event.pubkey) ||
+                        ($networkWoTScores?.get(event.pubkey) || Number.NEGATIVE_INFINITY) >=
+                            $minWot)
+                ) {
+                    // push pubkey to array2 which will be eventually assigned to followedByUserNetwork
+                    array2.add(event.pubkey);
+                }
+            });
+
+            followedBySatshootNetwork = array1;
+            followedByUserNetwork = array2;
+        });
+    }
+
+    // const followedBy =
+
     const profileImageWrapperClasses =
         'transition ease-in-out duration-[0.3s] min-w-[40px] min-h-[40px] w-[40px] h-[40px] ' +
         'rounded-full border-[3px] border-white shadow-[0_0_4px_2px_rgba(0,0,0,0.35)] ' +
@@ -19,42 +66,74 @@
                 >
                     <a
                         class="transition ease-in-out duration-[0.3s] flex flex-col justify-center items-center"
-                        href="/"
+                        href={'/' + SatShootPubkey + '/'}
                     >
                         <div class={profileImageWrapperClasses}>
-                            <img
-                                class="w-full h-full absolute top-0 bottom-0 right-0 left-0 object-cover"
-                                src="/img/28bj7a.gif"
-                                alt="user profile"
-                            />
+                            <Avatar pubkey={SatShootPubkey} />
                         </div>
                     </a>
                 </div>
                 <div class="w-full flex flex-row flex-wrap">
-                    {#each Array(4).fill(0) as item}
+                    {#each Array.from(followedBySatshootNetwork).slice(0, 5) as pubkey}
                         <a
                             class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center ml-0 hover:mr-[15px] hover:p-[0_10px] hover:pl-0"
-                            href="/"
+                            href={'/' + nip19.npubEncode(pubkey) + '/'}
                         >
                             <div class={profileImageWrapperClasses}>
-                                <img
-                                    class="w-full h-full absolute top-0 bottom-0 right-0 left-0 object-cover"
-                                    src="/img/28bj7a.gif"
-                                    alt="user profile"
-                                />
+                                <Avatar {pubkey} />
                             </div>
                         </a>
                     {/each}
 
-                    <div
-                        class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center text-[rgba(0,0,0,0.5)] font-[800] no-underline leading-[1] ml-[-15px] hover:ml-0 hover:mr-[15px] hover:p-[0_10px]"
-                    >
-                        <div class={profileImageWrapperClasses}>
-                            <p>50+</p>
+                    {#if followedBySatshootNetwork.size > 5}
+                        <div
+                            class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center text-[rgba(0,0,0,0.5)] font-[800] no-underline leading-[1] ml-[-15px] hover:ml-0 hover:mr-[15px] hover:p-[0_10px]"
+                        >
+                            <div class={profileImageWrapperClasses}>
+                                <p>{followedBySatshootNetwork.size - 5}</p>
+                            </div>
                         </div>
-                    </div>
+                    {/if}
                 </div>
             </div>
+            {#if $loggedIn && $currentUser}
+                <div class="w-full flex flex-row gap-[5px]">
+                    <div
+                        class="flex flex-row p-[0_8px_0_0] m-[0_5px_0_0] border-r border-[rgba(0,0,0,0.1)]"
+                    >
+                        <a
+                            class="transition ease-in-out duration-[0.3s] flex flex-col justify-center items-center"
+                            href={'/' + $currentUser.npub + '/'}
+                        >
+                            <div class={profileImageWrapperClasses}>
+                                <Avatar pubkey={$currentUser.pubkey} />
+                            </div>
+                        </a>
+                    </div>
+                    <div class="w-full flex flex-row flex-wrap">
+                        {#each Array.from(followedByUserNetwork).slice(0, 5) as pubkey}
+                            <a
+                                class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center ml-0 hover:mr-[15px] hover:p-[0_10px] hover:pl-0"
+                                href={'/' + nip19.npubEncode(pubkey) + '/'}
+                            >
+                                <div class={profileImageWrapperClasses}>
+                                    <Avatar {pubkey} />
+                                </div>
+                            </a>
+                        {/each}
+
+                        {#if followedByUserNetwork.size > 5}
+                            <div
+                                class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center text-[rgba(0,0,0,0.5)] font-[800] no-underline leading-[1] ml-[-15px] hover:ml-0 hover:mr-[15px] hover:p-[0_10px]"
+                            >
+                                <div class={profileImageWrapperClasses}>
+                                    <p>{followedByUserNetwork.size - 5}</p>
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+            {/if}
         </div>
     </div>
 </div>
