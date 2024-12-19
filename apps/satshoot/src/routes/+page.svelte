@@ -6,6 +6,17 @@
     import NostrSection from '$lib/components/HomePage/NostrSection.svelte';
     import EcashSection from '$lib/components/HomePage/EcashSection.svelte';
     import ProsSection from '$lib/components/HomePage/ProsSection.svelte';
+    import { page } from '$app/stores';
+    import { goto } from '$app/navigation';
+
+    $: searchQuery = $page.url.searchParams.get('searchTerms');
+    $: filterList = searchQuery ? searchQuery.split(',') : [];
+
+    $: if (filterList.length > 0) {
+        const url = new URL($page.url);
+        url.pathname = '/jobs/';
+        goto(url.toString());
+    }
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">

@@ -104,7 +104,7 @@
     import drawerID from '$lib/stores/drawer';
     import { DrawerIDs } from '$lib/stores/drawer';
     import { onMount, onDestroy, tick } from 'svelte';
-    import { goto } from '$app/navigation';
+    import { beforeNavigate, goto } from '$app/navigation';
     import ReviewBreakdown from '$lib/components/DrawerContents/ReviewBreakdown.svelte';
     import UserReviewBreakdown from '$lib/components/DrawerContents/UserReviewBreakdown.svelte';
     import type { TicketEvent } from '$lib/events/TicketEvent';
@@ -123,12 +123,28 @@
     import Header from '$lib/components/layout/Header.svelte';
     import Footer from '$lib/components/layout/Footer.svelte';
     import BottomNav from '$lib/components/layout/BottomNav.svelte';
+    import { searchTerms } from '$lib/stores/search';
 
     initializeStores();
     const drawerStore = getDrawerStore();
 
     // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
+
+    beforeNavigate(({ to }) => {
+        if (to?.url.pathname !== '/jobs') {
+            // clear search terms by initializing a new set
+            searchTerms.set(new Set());
+        }
+    });
+
+    $: searchQuery = $page.url.searchParams.get('searchTerms');
+    $: filterList = searchQuery ? searchQuery.split(',') : [];
+
+    // on page reload if url contains searchTerms add them to svelte store
+    $: if (filterList.length > 0) {
+        searchTerms.set(new Set(filterList));
+    }
 
     // For WoT tooltip
     const popupWoT: PopupSettings = {
