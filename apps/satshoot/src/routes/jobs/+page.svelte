@@ -18,12 +18,14 @@
     import BullhornIcon from '$lib/components/Icons/BullhornIcon.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
+    import { page } from '$app/stores';
 
     const modalStore = getModalStore();
 
+    $: searchQuery = $page.url.searchParams.get('searchTerms');
+    $: filterList = searchQuery ? searchQuery.split(',') : [];
+
     let newTickets: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let filterInput = '';
-    let filterList: string[] = [];
     let ticketList: Set<TicketEvent> = new Set();
     // tracks if user-defined filtering returned anything
     let noResults = false;
@@ -149,33 +151,6 @@
                         Discover latest jobs posts by individuals who are looking to have their
                         project developed or issue solved
                     </p>
-                </div>
-                <div class="w-full flex flex-row gap-[25px] max-[576px]:flex-col">
-                    <div
-                        class="flex flex-row gap-[5px] items-center grow-[1] max-[576px]:order-[2]"
-                    >
-                        <p class="font-[700] text-[rgba(0,0,0,0.65)]">Searching:</p>
-                        <p>Term</p>
-                    </div>
-                    <div class="flex flex-row justify-end">
-                        <div class="w-full flex flex-col gap-[5px]">
-                            <div
-                                class="flex flex-row rounded-[6px] overflow-hidden bg-white outline outline-[5px] outline-white border-[1px] border-[rgb(0,0,0,0.1)]"
-                            >
-                                <input
-                                    class="w-full border-[0px] border-[rgb(0,0,0,0.15)] rounded-[0px] outline outline-[0px] py-[5px] px-[10px]"
-                                    type="text"
-                                    placeholder="Search..."
-                                />
-                                <button
-                                    class="transition-all ease duration-[0.3s] bg-[#3b73f6] py-[5px] px-[15px] rounded-[0px] text-white hover:text-white hover:bg-[#3b82f6]"
-                                    type="button"
-                                >
-                                    <i class="bx bx-search"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <div class="w-full flex flex-col gap-[25px]">
