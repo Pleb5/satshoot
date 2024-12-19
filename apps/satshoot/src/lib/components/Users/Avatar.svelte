@@ -67,7 +67,7 @@
 {#if !userProfile && fetching}
     <img
         alt="Avatar loading..."
-        src="https://api.dicebear.com/8.x/thumbs/svg?seed={user?.pubkey ?? randSeed}"
+        src="https://robohash.org/{user?.pubkey ?? pubkey ?? randSeed}"
         class="
             {$$props.class}
             {$$props.loadingClass ? $$props.loadingClass : ''}
