@@ -62,6 +62,7 @@
             if (filteredTicketList.size === 0) noResults = true;
 
             ticketList = filteredTicketList;
+            currentPage = 1;
         }
     }
 
@@ -137,7 +138,7 @@
 
     const paginationBtnClasses =
         'transition-all ease duration-[0.3s] py-[10px] px-[20px] rounded-[5px] ' +
-        'font-[18px] bg-white text-[rgb(0,0,0,0.5)] hover:bg-[#3b82f6] disabled:cursor-not-allowed' +
+        'font-[18px] bg-white text-[rgb(0,0,0,0.5)] hover:bg-[#3b82f6] disabled:cursor-not-allowed ' +
         'hover:text-white max-[576px]:grow-[1] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]';
 </script>
 
