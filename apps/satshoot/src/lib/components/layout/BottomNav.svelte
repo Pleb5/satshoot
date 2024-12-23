@@ -20,8 +20,8 @@
     $: {
         items = [
             {
-                href: '/',
-                icon: 'bxs-home',
+                href: '/jobs/',
+                icon: 'bxs-briefcase',
             },
             {
                 href: '/messages/',
@@ -74,8 +74,8 @@
         'flex flex-row border-white';
 
     const itemClasses =
-        'transition ease-in-out duration-[0.3s] bg-[rgb(59,115,246,0)] ' +
-        'text-[24px] border-0 outline-none text-[rgb(0,0,0,0.35)] py-[10px] px-[15px] ' +
+        'transition ease-in-out duration-[0.3s] ' +
+        'text-[24px] border-0 outline-none py-[10px] px-[15px] ' +
         'rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row ' +
         'justify-center items-center gap-[8px] hover:bg-[rgb(59,130,246)] hover:text-white';
 
@@ -121,7 +121,16 @@
         >
             {#each items as { href, icon }}
                 {#if href}
-                    <a {href} class={itemClasses}> <i class={`bx ${icon}`} /> </a>
+                    <a
+                        {href}
+                        class={itemClasses}
+                        class:bg-[rgb(59,115,246)]={href === $page.url.pathname}
+                        class:bg-[rgb(59,115,246,0)]={href !== $page.url.pathname}
+                        class:text-white={href === $page.url.pathname}
+                        class:text-[rgb(0,0,0,0.35)]={href !== $page.url.pathname}
+                    >
+                        <i class={`bx ${icon}`} />
+                    </a>
                 {:else if icon === 'bx-search'}
                     <button class={itemClasses} on:click={handleSearch}>
                         <i class="bx bx-search"></i></button
