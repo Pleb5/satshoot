@@ -1,9 +1,12 @@
 <script lang="ts">
     import { loggedIn } from '$lib/stores/user';
+    import { createEventDispatcher } from 'svelte';
     import NavLinks from './NavLinks.svelte';
     import ProfileDropdown from './ProfileDropdown.svelte';
 
     export let loginBtnClasses: string;
+
+    const dispatch = createEventDispatcher();
 
     let mobileNavOpen = false;
     function toggleMobileNav() {
@@ -42,13 +45,15 @@
                 class="w-[100%] border-t-[1px] border-t-[rgb(0,0,0,0.1)] px-[10px] py-[10px] flex flex-col gap-[10px]"
             >
                 {#if !$loggedIn}
-                    <a
-                        href="/login"
-                        on:click={toggleMobileNav}
+                    <button
                         class={loginBtnClasses + ' flex-grow-[1]'}
+                        on:click={() => {
+                            toggleMobileNav();
+                            dispatch('login');
+                        }}
                     >
                         Login
-                    </a>
+                    </button>
                 {:else}
                     <div
                         class="relative inline-block text-left justify-start items-start flex-grow-[1]"

@@ -1,9 +1,12 @@
 <script lang="ts">
     import { loggedIn } from '$lib/stores/user';
+    import { createEventDispatcher } from 'svelte';
     import NavLinks from './NavLinks.svelte';
     import ProfileDropdown from './ProfileDropdown.svelte';
 
     export let loginBtnClasses: string;
+
+    const dispatch = createEventDispatcher();
 
     const satShootLogoWrapperClass =
         'flex-grow flex flex-row gap-4 justify-end items-center flex-wrap ' +
@@ -37,7 +40,9 @@
                 </div>
                 <div class="flex-grow flex flex-row gap-4 justify-end items-center flex-wrap">
                     {#if !$loggedIn}
-                        <a href="/login" class={loginBtnClasses}> Login </a>
+                        <button class={loginBtnClasses} on:click={() => dispatch('login')}>
+                            Login
+                        </button>
                     {/if}
                     <div class="relative inline-block text-left max-w-[250px]">
                         <ProfileDropdown classes={profileBtnClasses} />
