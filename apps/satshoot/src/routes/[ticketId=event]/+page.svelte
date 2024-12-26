@@ -1,25 +1,24 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
+    import ndk from '$lib/stores/ndk';
     import currentUser, { loggedIn, loggingIn } from '$lib/stores/user';
     import { loginAlert } from '$lib/stores/user';
-    import { TicketEvent, TicketStatus } from "$lib/events/TicketEvent";
-    import TicketCard from "$lib/components/Cards/TicketCard.svelte";
-    import { OfferEvent } from "$lib/events/OfferEvent";
-    import { connected } from "$lib/stores/ndk";
-    
-    import redirectStore from '$lib/stores/network';
-    import { checkRelayConnections, orderEventsChronologically } from "$lib/utils/helpers";
+    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import TicketCard from '$lib/components/Cards/TicketCard.svelte';
+    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { connected } from '$lib/stores/ndk';
+
+    import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
     import { wot } from '$lib/stores/wot';
 
-    import UserCard from "$lib/components/Cards/UserCard.svelte";
-    import OfferCard from "$lib/components/Cards/OfferCard.svelte";
-    import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19'
+    import UserCard from '$lib/components/Cards/UserCard.svelte';
+    import OfferCard from '$lib/components/Cards/OfferCard.svelte';
+    import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
 
-    import CreateOfferModal from "$lib/components/Modals/CreateOfferModal.svelte";
-    import TakeOfferModal from "$lib/components/Modals/TakeOfferModal.svelte";
-    import { getModalStore } from "@skeletonlabs/skeleton";
-    import type { ModalComponent, ModalSettings } from "@skeletonlabs/skeleton";
+    import CreateOfferModal from '$lib/components/Modals/CreateOfferModal.svelte';
+    import TakeOfferModal from '$lib/components/Modals/TakeOfferModal.svelte';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
 
     import { popup } from '@skeletonlabs/skeleton';
     import type { PopupSettings } from '@skeletonlabs/skeleton';
@@ -32,24 +31,21 @@
         type NDKFilter,
         type NDKSubscriptionOptions,
         NDKEvent,
-        NDKSubscription, 
+        NDKSubscription,
         NDKUser,
-
-        NDKKind
-
-
-    } from "@nostr-dev-kit/ndk";
+        NDKKind,
+    } from '@nostr-dev-kit/ndk';
 
     import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
-    
+
     import { page } from '$app/stores';
-    import { goto } from "$app/navigation";
-    import { onDestroy, onMount } from "svelte";
+    import { goto } from '$app/navigation';
+    import { onDestroy, onMount } from 'svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    const subOptions: NDKSubscriptionOptions = { 
+    const subOptions: NDKSubscriptionOptions = {
         closeOnEose: false,
     };
     let ticketSubscription: NDKSubscription | undefined = undefined;
@@ -57,7 +53,7 @@
     let offersFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceOffer],
         '#a': [],
-    }
+    };
     let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
     let alreadySubscribedToOffers = false;
     let user: NDKUser | undefined = undefined;
@@ -89,7 +85,7 @@
             });
         }
 
-        // Create new subscription on this ticket 
+        // Create new subscription on this ticket
         const dTag = idFromNaddr(naddr).split(':')[2];
         const ticketFilter: NDKFilter = {
             kinds: [NDKKind.FreelanceTicket],
@@ -106,17 +102,18 @@
                 }
             }
             ticket = TicketEvent.from(event);
-            user = $ndk.getUser({pubkey: ticket.pubkey});
+            user = $ndk.getUser({ pubkey: ticket.pubkey });
 
             // Scroll to top as soon as ticket arrives
-            const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
-            elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
+            const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
+            elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
 
             // TODO: Some effect to show the ticket changed
 
             if (ticket.status !== TicketStatus.New) {
                 allowCreateOffer = false;
-                disallowCreateOfferReason = "Status of this ticket not 'New' anymore! Cannot Create Offer!";
+                disallowCreateOfferReason =
+                    "Status of this ticket not 'New' anymore! Cannot Create Offer!";
             }
 
             // Subscribe on Offers of this ticket. Do this only once
@@ -125,17 +122,15 @@
                 // Add a live sub on offers of this ticket if not already subbed
                 // Else already subbed, we can check if new offer arrived on ticket
                 offersFilter['#a']!.push(ticket.ticketAddress);
-                offerStore = $ndk.storeSubscribe<OfferEvent>(
-                    offersFilter, subOptions, OfferEvent
-                );
+                offerStore = $ndk.storeSubscribe<OfferEvent>(offersFilter, subOptions, OfferEvent);
             }
         });
-    };
+    }
 
     $: if ($offerStore) {
         // Filtering out offers not in the web of Trust
         if ($wot && $wot.size > 2) {
-            $offerStore = $offerStore.filter((offer: OfferEvent)=> {
+            $offerStore = $offerStore.filter((offer: OfferEvent) => {
                 return $wot.has(offer.pubkey);
             });
         }
@@ -151,32 +146,19 @@
     }
 
     $: {
-        if (!$currentUser || $loggingIn){
+        if (!$currentUser || $loggingIn) {
             allowCreateOffer = false;
-            disallowCreateOfferReason = 'Need to log in before creating an offer!'; 
-            
+            disallowCreateOfferReason = 'Need to log in before creating an offer!';
+
             if ($loginAlert && !loginAlertShown) {
                 loginAlertShown = true;
 
-                let toastId:string;
+                let toastId: string;
                 const t: ToastSettings = {
                     message: 'Login to create an Offer!',
                     autohide: false,
-                    action: {
-                        label: 'Login',
-                        response: () => {
-                            $redirectStore = $page.url.toString();
-                            goto('/login');
-                        },
-                    },
-                    callback: (response) => {
-                        if(response.status === 'closed') {
-                            $loginAlert = false;
-                        }
-                    },
                 };
                 toastId = toastStore.trigger(t);
-
             }
         } else {
             allowCreateOffer = true;
@@ -214,7 +196,9 @@
             const modal: ModalSettings = {
                 type: 'component',
                 component: modalComponent,
-                response: (offerPosted: boolean) => {resolve(offerPosted)},
+                response: (offerPosted: boolean) => {
+                    resolve(offerPosted);
+                },
             };
             modalStore.trigger(modal);
         });
@@ -224,7 +208,7 @@
         if (ticket) {
             const modalComponent: ModalComponent = {
                 ref: TakeOfferModal,
-                props: {ticket: ticket, offer: offer},
+                props: { ticket: ticket, offer: offer },
             };
 
             const modal: ModalSettings = {
@@ -232,30 +216,34 @@
                 component: modalComponent,
             };
             modalStore.trigger(modal);
-        } 
+        }
     }
 
-    // For tooltip    
+    // For tooltip
     const popupHover: PopupSettings = {
         event: 'click',
         target: 'popupHover',
-        placement: 'top'
+        placement: 'top',
     };
 
     onMount(() => checkRelayConnections());
 
     onDestroy(() => {
-        ticketSubscription?.stop()
+        ticketSubscription?.stop();
         if (offerStore) {
             offerStore.unsubscribe();
         }
     });
-
 </script>
 
 <div class="m-6 flex justify-center">
     {#if ticket}
-        <TicketCard {ticket} titleSize='md sm:text-lg' titleLink={false} shortenDescription={false} />
+        <TicketCard
+            {ticket}
+            titleSize="md sm:text-lg"
+            titleLink={false}
+            shortenDescription={false}
+        />
     {:else}
         <div class="w-full">
             <div class="p-4 space-y-4">
@@ -279,31 +267,31 @@
 {#if !myTicket}
     <!-- Create Offer -->
     <div class="flex justify-center items-center gap-x-2">
-        <button 
+        <button
             type="button"
-            on:click={ () => createOffer(offerToEdit) }
+            on:click={() => createOffer(offerToEdit)}
             class="btn btn-2xl text-xl font-bold bg-primary-300-600-token"
             disabled={!allowCreateOffer}
         >
-            { btnActionText }
+            {btnActionText}
         </button>
         {#if !allowCreateOffer}
-            <i 
+            <i
                 class="text-primary-300-600-token fa-solid fa-circle-question text-2xl
-                [&>*]:pointer-events-none" 
+                [&>*]:pointer-events-none"
                 use:popup={popupHover}
             />
 
             <div class="card p-4 bg-primary-300-600-token" data-popup="popupHover">
                 <p>
-                    {disallowCreateOfferReason} 
+                    {disallowCreateOfferReason}
                 </p>
                 <div class="arrow bg-primary-300-600-token" />
             </div>
         {/if}
     </div>
     <!-- User -->
-    <h2 class="font-bold text-center text-lg sm:text-2xl mt-4" >Posted by:</h2>
+    <h2 class="font-bold text-center text-lg sm:text-2xl mt-4">Posted by:</h2>
     <div class="flex justify-center">
         <div class="m-4">
             {#if user}
@@ -333,8 +321,8 @@
     </div>
 {/if}
 <!-- Offers on Ticket -->
-<h2 class="font-bold text-center text-lg sm:text-2xl mb-4" >
-    {'Offers on this Ticket: ' + ($offerStore ? $offerStore.length : '?') }
+<h2 class="font-bold text-center text-lg sm:text-2xl mb-4">
+    {'Offers on this Ticket: ' + ($offerStore ? $offerStore.length : '?')}
 </h2>
 <div class="grid grid-cols-1 items-center gap-y-4 mx-8 mb-8">
     {#if $offerStore}
