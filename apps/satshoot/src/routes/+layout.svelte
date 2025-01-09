@@ -2,110 +2,89 @@
     import '../app.css';
 
     // Font awesome
+    import '@fortawesome/fontawesome-free/css/brands.css';
     import '@fortawesome/fontawesome-free/css/fontawesome.css';
     import '@fortawesome/fontawesome-free/css/regular.css';
     import '@fortawesome/fontawesome-free/css/solid.css';
-    import '@fortawesome/fontawesome-free/css/brands.css';
 
-    import ndk from '$lib/stores/ndk';
+    import ndk, { bunkerNDK, sessionPK } from '$lib/stores/ndk';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
-    import { bunkerNDK } from '$lib/stores/ndk';
-    import { sessionPK } from '$lib/stores/ndk';
 
     import { Dexie } from 'dexie';
 
-    import { mounted, loggedIn, userRelaysUpdated } from '$lib/stores/user';
-    import currentUser, { loggingIn, loginMethod } from '$lib/stores/user';
     import { online, retryConnection } from '$lib/stores/network';
+    import currentUser, {
+        loggedIn,
+        loggingIn,
+        loginMethod,
+        mounted,
+        userRelaysUpdated,
+    } from '$lib/stores/user';
 
     import {
-        wotFilteredTickets,
-        wotFilteredOffers,
-        myTickets,
-        myOffers,
         allOffers,
         allTickets,
+        myOffers,
+        myTickets,
+        wotFilteredOffers,
+        wotFilteredTickets,
     } from '$lib/stores/freelance-eventstores';
 
-    import { allReviews, clientReviews, freelancerReviews } from '$lib/stores/reviews';
     import { messageStore, wotFilteredMessageFeed } from '$lib/stores/messages';
-    import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from '$lib/stores/notifications';
+    import { allReviews, clientReviews, freelancerReviews } from '$lib/stores/reviews';
+    import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
 
-    import { initializeUser, logout, checkRelayConnections } from '$lib/utils/helpers';
+    import { checkRelayConnections, initializeUser, logout } from '$lib/utils/helpers';
 
-    import {
-        wot,
-        wotUpdating,
-        wotUpdateFailed,
-        wotUpdateNoResults,
-        useSatShootWoT,
-    } from '$lib/stores/wot';
+    import { wotUpdateFailed, wotUpdateNoResults } from '$lib/stores/wot';
 
     import { RestoreMethod, type LoginMethod } from '$lib/stores/ndk';
 
-    import { privateKeyFromSeedWords } from 'nostr-tools/nip06';
     import {
-        NDKNip46Signer,
-        NDKNip07Signer,
-        NDKPrivateKeySigner,
-        type NDKEvent,
-        NDKRelay,
         NDKKind,
+        NDKNip07Signer,
+        NDKNip46Signer,
+        NDKPrivateKeySigner,
         NDKSubscription,
+        type NDKEvent,
     } from '@nostr-dev-kit/ndk';
+    import { privateKeyFromSeedWords } from 'nostr-tools/nip06';
 
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
-    import { AppShell } from '@skeletonlabs/skeleton';
-    import { AppBar } from '@skeletonlabs/skeleton';
-    import { Avatar } from '@skeletonlabs/skeleton';
-    import { AppRail, AppRailAnchor } from '@skeletonlabs/skeleton';
-    import { TabGroup, TabAnchor } from '@skeletonlabs/skeleton';
     import { page, updated } from '$app/stores';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-
+    import { AppShell } from '@skeletonlabs/skeleton';
     // Popups
-    import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
+    import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
-    import { storePopup, popup, type PopupSettings } from '@skeletonlabs/skeleton';
-
+    import { storePopup, type PopupSettings } from '@skeletonlabs/skeleton';
     // App menu in drawer
     import AppMenu from '$lib/components/DrawerContents/AppMenu.svelte';
 
     // Menu Items
-    import FreelanceIcon from '$lib/components/Icons/FreelanceIcon.svelte';
-    import PostTicketIcon from '$lib/components/Icons/PostTicketIcon.svelte';
-    import NotificationsIcon from '$lib/components/Icons/NotificationsIcon.svelte';
 
-    import { setModeCurrent, modeCurrent } from '@skeletonlabs/skeleton';
-
+    import { modeCurrent, setModeCurrent } from '@skeletonlabs/skeleton';
     // Skeleton Toast
     import { Toast, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
 
     // Skeleton Modals
-    import { Modal, getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
-
+    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
+    import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
-    import {
-        initializeStores,
-        Drawer,
-        getDrawerStore,
-        type DrawerSettings,
-    } from '@skeletonlabs/skeleton';
-    import drawerID from '$lib/stores/drawer';
-    import { DrawerIDs } from '$lib/stores/drawer';
-    import { onMount, onDestroy, tick } from 'svelte';
-    import { beforeNavigate, goto } from '$app/navigation';
+    import { beforeNavigate } from '$app/navigation';
     import ReviewBreakdown from '$lib/components/DrawerContents/ReviewBreakdown.svelte';
     import UserReviewBreakdown from '$lib/components/DrawerContents/UserReviewBreakdown.svelte';
-    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import BottomNav from '$lib/components/layout/BottomNav.svelte';
+    import Footer from '$lib/components/layout/Footer.svelte';
+    import Header from '$lib/components/layout/Header.svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
-    import MessagesIcon from '$lib/components/Icons/MessagesIcon.svelte';
+    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import drawerID, { DrawerIDs } from '$lib/stores/drawer';
     import { hideAppBarsStore } from '$lib/stores/gui';
+    import { searchTerms } from '$lib/stores/search';
     import {
         cashuPaymentInfoMap,
         cashuTokensBackup,
@@ -114,10 +93,13 @@
     } from '$lib/stores/wallet';
     import { cleanWallet, isCashuMintListSynced, resyncWalletAndBackup } from '$lib/utils/cashu';
     import { debounce } from '$lib/utils/misc';
-    import Header from '$lib/components/layout/Header.svelte';
-    import Footer from '$lib/components/layout/Footer.svelte';
-    import BottomNav from '$lib/components/layout/BottomNav.svelte';
-    import { searchTerms } from '$lib/stores/search';
+    import {
+        Drawer,
+        getDrawerStore,
+        initializeStores,
+        type DrawerSettings,
+    } from '@skeletonlabs/skeleton';
+    import { onDestroy, onMount, tick } from 'svelte';
 
     initializeStores();
     const drawerStore = getDrawerStore();
@@ -678,7 +660,7 @@
     }
 </script>
 
-<Toast />
+<Toast zIndex="z-[1100]" />
 <Modal />
 <Drawer regionDrawer={'flex justify-center'} zIndex={'z-50'}>
     {#if $drawerID === DrawerIDs.AppMenu}

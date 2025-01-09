@@ -3,15 +3,12 @@
     import { page } from '$app/stores';
     import { searchTerms } from '$lib/stores/search';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import CloseModal from '../UI/Buttons/CloseModal.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
     let searchInput = '';
-
-    function handleClose() {
-        modalStore.close();
-    }
 
     function handleRemoveTerm(term: string) {
         const newArray = Array.from($searchTerms).filter((t) => t !== term);
@@ -63,11 +60,6 @@
         modalStore.close();
     }
 
-    const closeBtnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] ' +
-        'border-[1px] border-[rgb(0,0,0,0.1)] hover:border-[rgb(0,0,0,0.0)] ' +
-        'text-[rgb(0,0,0,0.5)]  hover:text-white hover:bg-[#3b73f6]';
-
     const inputWrapperClasses =
         'flex flex-row rounded-[6px] overflow-hidden bg-white outline ' +
         'outline-[5px] outline-white border-[1px] border-[rgb(0,0,0,0.1)] gap-[2px]';
@@ -103,9 +95,7 @@
                             class="flex flex-row justify-between gap-[10px] pb-[10px] border-b-[1px] border-b-[rgb(0,0,0,0.1)] items-center"
                         >
                             <p class="font-[500] text-[18px]">Search Modal</p>
-                            <button class={closeBtnClasses} type="button" on:click={handleClose}>
-                                <i class="bx bx-x text-[20px]"></i>
-                            </button>
+                            <CloseModal />
                         </div>
                         <div class="w-full flex flex-col">
                             <div class="w-full flex flex-col gap-[10px]">
