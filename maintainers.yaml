@@ -1,6 +1,7 @@
 identifier: satshoot
 maintainers:
 - npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw
+- npub1d9c9qjs4epdc9jfjzy8kn6tenwz8lmhvzqyg6cd5xl5f4zqsec0swxgz4f
 relays:
 - wss://relay.damus.io/
 - wss://nos.lol/
