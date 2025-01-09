@@ -32,6 +32,7 @@
     import { hexToBytes } from '@noble/hashes/utils';
     import { encryptSecret } from '$lib/utils/crypto';
     import { privateKeyFromNsec } from '$lib/utils/nip19';
+    import CloseModal from '../UI/Buttons/CloseModal.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -63,10 +64,6 @@
 
     function toggleLocalKey() {
         displayLocalKeyLogin = !displayLocalKeyLogin;
-    }
-
-    function handleClose() {
-        modalStore.close();
     }
 
     async function connectBunker() {
@@ -436,10 +433,6 @@
         },
     ];
 
-    const closeBtnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] text-[rgb(0,0,0,0.5)]' +
-        'border-[1px] border-[rgb(0,0,0,0.1)] hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-[#3b73f6]';
-
     const learnMoreBtnClasses =
         'transition ease duration-[0.3s] w-full border-[2px] border-[rgb(0,0,0,0.1)] p-[5px] font-[500] flex justify-center ' +
         'text-[rgb(0,0,0,0.5)] rounded-b-[6px] hover:bg-[rgb(59,115,246)] hover:text-white hover:border-[rgb(59,115,246)]';
@@ -516,9 +509,7 @@
                             class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
                         >
                             <p class="font-[500] text-[18px]">Login</p>
-                            <button class={closeBtnClasses} type="button" on:click={handleClose}>
-                                <i class="bx bx-x text-[20px]" />
-                            </button>
+                            <CloseModal />
                         </div>
                         <div class="w-full flex flex-col">
                             <div class="w-full flex flex-col gap-[10px] pt-[10px]">
