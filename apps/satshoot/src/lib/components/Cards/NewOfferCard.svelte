@@ -20,10 +20,10 @@
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import { onDestroy, onMount } from 'svelte';
     import PaymentModal from '../Modals/PaymentModal.svelte';
-    import TakeOfferModal from '../Modals/TakeOfferModal.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import NewReputationCard from './NewReputationCard.svelte';
+    import NewTakeOfferModal from '../Modals/NewTakeOfferModal.svelte';
 
     const modalStore = getModalStore();
 
@@ -205,7 +205,7 @@
     function takeOffer() {
         if (job) {
             const modalComponent: ModalComponent = {
-                ref: TakeOfferModal,
+                ref: NewTakeOfferModal,
                 props: { ticket: job, offer: offer },
             };
 
