@@ -3,6 +3,7 @@
     import JobCard from '$lib/components/Cards/JobCard.svelte';
     import NewOfferCard from '$lib/components/Cards/NewOfferCard.svelte';
     import NewUserCard from '$lib/components/Cards/NewUserCard.svelte';
+    import NewCreateOfferModal from '$lib/components/Modals/NewCreateOfferModal.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import ndk, { connected } from '$lib/stores/ndk';
@@ -20,6 +21,13 @@
         NDKUser,
     } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+    import {
+        getModalStore,
+        getToastStore,
+        type ModalComponent,
+        type ModalSettings,
+        type ToastSettings,
+    } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount } from 'svelte';
 
     enum OfferTab {
@@ -27,6 +35,9 @@
         Won,
         Lost,
     }
+
+    const toastStore = getToastStore();
+    const modalStore = getModalStore();
 
     const subOptions: NDKSubscriptionOptions = {
         closeOnEose: false,
@@ -103,7 +114,7 @@
             if (jobPost.status !== TicketStatus.New) {
                 allowCreateOffer = false;
                 disallowCreateOfferReason =
-                    "Status of this ticket not 'New' anymore! Cannot Create Offer!";
+                    "Status of this ticket not 'New' anymore! Cannot Create/Edit Offer!";
             }
 
             // Subscribe on Offers of this ticket. Do this only once
@@ -171,6 +182,41 @@
         }
     });
 
+    async function createOffer(offer: OfferEvent | undefined) {
+        if (!jobPost) {
+            const t: ToastSettings = {
+                message: 'Ticket is not loaded yet!',
+                autohide: false,
+                background: 'bg-error-300-600-token',
+            };
+            toastStore.trigger(t);
+            return;
+        }
+        const offerPosted: boolean = await new Promise<boolean>((resolve) => {
+            const modalComponent: ModalComponent = {
+                ref: NewCreateOfferModal,
+                props: {
+                    ticket: jobPost,
+                    offerToEdit: offer,
+                },
+            };
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (offerPosted: boolean) => {
+                    resolve(offerPosted);
+                },
+            };
+            modalStore.trigger(modal);
+        });
+    }
+
+    const offerBtnClasses =
+        'transition ease duration-[0.3s] outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] ' +
+        'rounded-[6px] transform whitespace-nowrap flex flex-row justify-center items-center gap-[8px] font-[600] ' +
+        'text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white max-[768px]:grow-[1]';
+
     const tabSelectorClasses =
         'w-full flex flex-row flex-wrap p-[5px] gap-[10px] rounded-[6px] bg-[rgb(0,0,0,0.1)] border-[2px] border-[rgb(0,0,0,0.05)]';
 
@@ -191,6 +237,47 @@
                         <!-- Job post main start -->
                         <div class="w-full flex flex-col gap-[15px]">
                             <JobCard job={jobPost} />
+
+                            {#if !myJob}
+                                <div class="w-full flex flex-col gap-[15px]">
+                                    <div
+                                        class="w-full flex flex-row flex-wrap gap-[10px] justify-between items-center"
+                                    >
+                                        <p
+                                            class="font-[600] text-[24px] flex flex-row gap-[5px] items-center"
+                                        >
+                                            My Submission
+                                        </p>
+                                    </div>
+
+                                    {#if offerToEdit}
+                                        <NewOfferCard offer={offerToEdit} />
+                                    {/if}
+
+                                    {#if allowCreateOffer}
+                                        <div class="flex flex-row justify-center">
+                                            <button
+                                                type="button"
+                                                on:click={() => createOffer(offerToEdit)}
+                                                class={offerBtnClasses}
+                                            >
+                                                {btnActionText}
+                                            </button>
+                                        </div>
+                                    {:else}
+                                        <div
+                                            class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
+                                        >
+                                            <p
+                                                class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]"
+                                            >
+                                                {disallowCreateOfferReason}
+                                            </p>
+                                        </div>
+                                    {/if}
+                                </div>
+                            {/if}
+
                             <div class="w-full flex flex-col gap-[15px]">
                                 <div
                                     class="w-full flex flex-row flex-wrap gap-[10px] justify-between items-center"
