@@ -4,6 +4,7 @@
     import NewOfferCard from '$lib/components/Cards/NewOfferCard.svelte';
     import NewUserCard from '$lib/components/Cards/NewUserCard.svelte';
     import NewCreateOfferModal from '$lib/components/Modals/NewCreateOfferModal.svelte';
+    import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import ndk, { connected } from '$lib/stores/ndk';
@@ -59,7 +60,7 @@
     let allowCreateOffer: boolean = true;
     let disallowCreateOfferReason = '';
 
-    let offersTab = OfferTab.Pending;
+    let selectedOffersTab = OfferTab.Pending;
 
     let myJob = false;
     $: if ($currentUser && jobPost) {
@@ -160,7 +161,7 @@
                     (offer) => offer.offerAddress === jobPost?.acceptedOfferAddress
                 );
 
-                offersTab = OfferTab.Won;
+                selectedOffersTab = OfferTab.Won;
             }
 
             lostOffers = $offerStore.filter(
@@ -212,20 +213,16 @@
         });
     }
 
+    const tabs = [
+        { id: OfferTab.Pending, label: 'Pending' },
+        { id: OfferTab.Won, label: 'Won' },
+        { id: OfferTab.Lost, label: 'Lost' },
+    ];
+
     const offerBtnClasses =
         'transition ease duration-[0.3s] outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] ' +
         'rounded-[6px] transform whitespace-nowrap flex flex-row justify-center items-center gap-[8px] font-[600] ' +
         'text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white max-[768px]:grow-[1]';
-
-    const tabSelectorClasses =
-        'w-full flex flex-row flex-wrap p-[5px] gap-[10px] rounded-[6px] bg-[rgb(0,0,0,0.1)] border-[2px] border-[rgb(0,0,0,0.05)]';
-
-    const tabSelectorItemClasses =
-        'transition ease duration-[0.3s] grow-[1] p-[5px] rounded-[4px] text-center font-[600] cursor-pointer';
-
-    const selectedTabClasses = 'text-white bg-[rgb(59,115,246)]';
-    const nonSelectedTabClasses =
-        'hover:text-[rgb(255,255,255,0.65)] hover:bg-[rgb(59,115,246,0.5)] text-[rgb(0,0,0,0.35)]';
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
@@ -294,40 +291,10 @@
 
                                 <!-- tabs start-->
                                 <div class="w-full flex flex-col gap-[10px]">
-                                    <!-- tabs selector start-->
-                                    <div class={tabSelectorClasses}>
-                                        <button
-                                            on:click={() => (offersTab = OfferTab.Pending)}
-                                            class="{tabSelectorItemClasses} {offersTab ===
-                                            OfferTab.Pending
-                                                ? selectedTabClasses
-                                                : nonSelectedTabClasses}"
-                                        >
-                                            Pending
-                                        </button>
-                                        <button
-                                            on:click={() => (offersTab = OfferTab.Won)}
-                                            class="{tabSelectorItemClasses} {offersTab ===
-                                            OfferTab.Won
-                                                ? selectedTabClasses
-                                                : nonSelectedTabClasses}"
-                                        >
-                                            Won
-                                        </button>
-                                        <button
-                                            on:click={() => (offersTab = OfferTab.Lost)}
-                                            class="{tabSelectorItemClasses} {offersTab ===
-                                            OfferTab.Lost
-                                                ? selectedTabClasses
-                                                : nonSelectedTabClasses}"
-                                        >
-                                            Lost
-                                        </button>
-                                    </div>
-                                    <!-- tabs selector end-->
+                                    <TabSelector {tabs} bind:selectedTab={selectedOffersTab} />
                                     <!-- tabs content start-->
                                     <div class="w-full flex flex-col">
-                                        {#if offersTab === OfferTab.Pending}
+                                        {#if selectedOffersTab === OfferTab.Pending}
                                             <div class="w-full flex flex-col">
                                                 <div class="w-full flex flex-col gap-[15px]">
                                                     <!-- Offer post start-->
@@ -336,7 +303,7 @@
                                                     {/each}
                                                 </div>
                                             </div>
-                                        {:else if offersTab === OfferTab.Won}
+                                        {:else if selectedOffersTab === OfferTab.Won}
                                             {#if winningOffer}
                                                 <div class="w-full flex flex-col">
                                                     <div class="w-full flex flex-col gap-[15px]">
