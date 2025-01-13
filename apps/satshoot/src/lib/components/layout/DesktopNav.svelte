@@ -21,6 +21,10 @@
         'transition ease-in-out duration-[0.3s] outline outline-[1px] ' +
         'outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] rounded-[6px] transform scale-100 ' +
         'whitespace-nowrap flex flex-row justify-center items-center gap-[8px] hover:bg-[#3b82f6] hover:text-white';
+
+    const jobPostBtnClasses =
+        'transition ease-in-out duration-[0.3s] bg-[rgb(59,115,246)] py-[6px] px-[15px] rounded-[6px] ' +
+        'text-white whitespace-nowrap flex flex-row justify-center items-center gap-[8px] hover:bg-blue-500';
 </script>
 
 <div class="w-full flex flex-col justify-center items-center max-[576px]:hidden">
@@ -44,6 +48,11 @@
                             Login
                         </button>
                     {/if}
+
+                    {#if $loggedIn}
+                        <a href="/post-job/" class={jobPostBtnClasses}>Submit Job Post</a>
+                    {/if}
+
                     <div class="relative inline-block text-left max-w-[250px]">
                         <ProfileDropdown classes={profileBtnClasses} />
                     </div>

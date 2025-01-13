@@ -13,6 +13,8 @@
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from './PaymentModal.svelte';
+    import { ticketToEdit } from '$lib/stores/ticket-to-edit';
+    import { goto } from '$app/navigation';
 
     const modalStore = getModalStore();
 
@@ -140,6 +142,15 @@
         modalStore.trigger(modal);
     }
 
+    function handleEdit() {
+        if (job) {
+            $ticketToEdit = job;
+
+            goto('/post-job');
+            modalStore.clear();
+        }
+    }
+
     const menuItemClasses =
         'transition-all ease duration-[0.3s] py-[5px] px-[10px] justify-start items-center flex flex-row w-full gap-[10px] rounded-[4px] ' +
         'text-[rgb(0,0,0,0.5)] border-[1px] border-[rgb(0,0,0,0.1)] hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-[#3b73f6]';
@@ -173,7 +184,7 @@
                                 </button>
 
                                 {#if myJob && job.status === TicketStatus.New}
-                                    <button class={menuItemClasses}>
+                                    <button class={menuItemClasses} on:click={handleEdit}>
                                         <i class="bx bxs-edit-alt text-[20px]"></i>
                                         <p class="">Edit</p>
                                     </button>

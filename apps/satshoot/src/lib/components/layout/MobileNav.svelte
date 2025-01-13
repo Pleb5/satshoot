@@ -24,6 +24,10 @@
         'overflow-hidden w-[100%]  outline-[1px] outline-[rgb(0,0,0,0.1)]' +
         'transition ease-in-out duration-[0.3s] py-[6px] px-[12px] rounded-[6px] transform scale-100 ' +
         'whitespace-nowrap flex flex-row justify-center items-center gap-[8px] flex-grow-[1] hover:bg-[#3b82f6] hover:text-white ';
+
+    const jobPostBtnClasses =
+        'transition ease-in-out duration-[0.3s] bg-[rgb(59,115,246)] py-[6px] px-[15px] rounded-[6px] ' +
+        'text-white whitespace-nowrap flex flex-row justify-center items-center gap-[8px] hover:bg-blue-500';
 </script>
 
 <div
@@ -55,6 +59,10 @@
                         Login
                     </button>
                 {:else}
+                    <a href="/post-job/" on:click={toggleMobileNav} class={jobPostBtnClasses}>
+                        Submit Job Post
+                    </a>
+
                     <div
                         class="relative inline-block text-left justify-start items-start flex-grow-[1]"
                     >
