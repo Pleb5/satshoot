@@ -1,28 +1,28 @@
 <script lang="ts">
-	import { onMount, tick, type SvelteComponent } from 'svelte';
+    import { onMount, tick, type SvelteComponent } from 'svelte';
     import ndk from '$lib/stores/ndk';
     import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
 
     import { SatShootPubkey } from '$lib/utils/misc';
-    
+
     import { ProgressRadial } from '@skeletonlabs/skeleton';
-	import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
 
     import { Autocomplete } from '@skeletonlabs/skeleton';
     import type { AutocompleteOption } from '@skeletonlabs/skeleton';
-    import tagOptions from "$lib/utils/tag-options";
+    import tagOptions from '$lib/utils/tag-options';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-	// Props
-	/** Exposes parent props to this component. */
-	export let parent: SvelteComponent;
-    let textArea:HTMLTextAreaElement;
+    // Props
+    /** Exposes parent props to this component. */
+    export let parent: SvelteComponent;
+    let textArea: HTMLTextAreaElement;
 
     let tagInput = '';
-    let messageResult = 'Ready to Work!\nGo to https://satshoot.com/post-ticket/'; 
+    let messageResult = 'Ready to Work!\nGo to https://satshoot.com/post-job/';
     messageResult += ' and post your issues in these topics:\n';
 
     let posting = false;
@@ -31,7 +31,7 @@
     function onAutoCompleteSelected(event: CustomEvent<AutocompleteOption<string>>): void {
         let tagValue = event.detail.value;
         addTag(tagValue);
-        tagInput = '';        
+        tagInput = '';
     }
 
     function addTag(tag: string) {
@@ -46,7 +46,7 @@
         kind1Event.content = messageResult;
         kind1Event.generateTags();
 
-        const satShootUser = $ndk.getUser({pubkey: SatShootPubkey});
+        const satShootUser = $ndk.getUser({ pubkey: SatShootPubkey });
         kind1Event.tag(satShootUser);
 
         try {
@@ -55,7 +55,7 @@
 
             let relays = await kind1Event.publish();
             posting = false;
-            console.log(relays)
+            console.log(relays);
             const t: ToastSettings = {
                 message: 'Broadcasted!',
                 timeout: 5000,
@@ -64,7 +64,7 @@
             toastStore.trigger(t);
 
             modalStore.close();
-        } catch(e) {
+        } catch (e) {
             posting = false;
             const t: ToastSettings = {
                 message: 'Error happened while broadcasting! Try again later!',
@@ -77,11 +77,10 @@
         }
     }
 
-    onMount(()=>{
+    onMount(() => {
         textArea.setSelectionRange(0, 0);
         textArea.focus();
     });
-
 </script>
 
 {#if $modalStore[0]}
@@ -91,23 +90,23 @@
             <label class="label">
                 <span class="font-bold">Add topics of interest</span>
                 <div class="flex justify-between">
-                    <input class="input w-full text-center" 
-                    bind:value={tagInput}
-                    title="Tag your Interests" 
-                    type="text" 
-                    placeholder="Type topics of interest"
-                />
-                    <button 
+                    <input
+                        class="input w-full text-center"
+                        bind:value={tagInput}
+                        title="Tag your Interests"
+                        type="text"
+                        placeholder="Type topics of interest"
+                    />
+                    <button
                         class="btn btn-icon"
-                        type="button" 
-                        on:click={()=>{addTag(tagInput)}}
+                        type="button"
+                        on:click={() => {
+                            addTag(tagInput);
+                        }}
                         disabled={posting}
                     >
                         <span>
-                            <i 
-                                class="text-3xl text-success-500 fa-solid fa-circle-plus"
-                            >
-                            </i>
+                            <i class="text-3xl text-success-500 fa-solid fa-circle-plus"> </i>
                         </span>
                     </button>
                 </div>
@@ -123,19 +122,19 @@
             </div>
             <label class="label">
                 <span class="font-bold">Your Message:</span>
-                <textarea 
-                rows="8"
-                class="textarea"
-                bind:this={textArea}
-                bind:value={messageResult}
-            />
+                <textarea
+                    rows="8"
+                    class="textarea"
+                    bind:this={textArea}
+                    bind:value={messageResult}
+                />
                 <span>#satshoot #asknostr #freelancing</span>
             </label>
             <div class="grid grid-cols-[30%_1fr] gap-x-2">
-                <button 
+                <button
                     type="button"
                     class="btn btn-sm sm:btn-md bg-error-300-600-token"
-                    on:click={()=> modalStore.close()}
+                    on:click={() => modalStore.close()}
                 >
                     Cancel
                 </button>
@@ -148,14 +147,14 @@
                 >
                     {#if posting}
                         <span>
-                        <ProgressRadial 
-                            value={undefined} 
-                            stroke={60}
-                            meter="stroke-tertiary-500"
-                            track="stroke-tertiary-500/30"
-                            strokeLinecap="round"
-                            width="w-8"
-                        />
+                            <ProgressRadial
+                                value={undefined}
+                                stroke={60}
+                                meter="stroke-tertiary-500"
+                                track="stroke-tertiary-500/30"
+                                strokeLinecap="round"
+                                width="w-8"
+                            />
                         </span>
                     {:else}
                         <span>Post</span>

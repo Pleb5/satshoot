@@ -50,6 +50,7 @@
         "@nostr-dev-kit/ndk-svelte-components": "workspace:^",
         "@nostr-dev-kit/ndk-wallet": "workspace:^",
         "@scure/bip39": "^1.1.1",
+        "date-fns": "^4.1.0",
         "devalue": "^5.0.0",
         "dexie": "^4.0.2",
         "html5-qrcode": "^2.3.8",

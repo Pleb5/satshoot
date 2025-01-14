@@ -2,110 +2,89 @@
     import '../app.css';
 
     // Font awesome
+    import '@fortawesome/fontawesome-free/css/brands.css';
     import '@fortawesome/fontawesome-free/css/fontawesome.css';
     import '@fortawesome/fontawesome-free/css/regular.css';
     import '@fortawesome/fontawesome-free/css/solid.css';
-    import '@fortawesome/fontawesome-free/css/brands.css';
 
-    import ndk from '$lib/stores/ndk';
+    import ndk, { bunkerNDK, sessionPK } from '$lib/stores/ndk';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
-    import { bunkerNDK } from '$lib/stores/ndk';
-    import { sessionPK } from '$lib/stores/ndk';
 
     import { Dexie } from 'dexie';
 
-    import { mounted, loggedIn, userRelaysUpdated } from '$lib/stores/user';
-    import currentUser, { loggingIn, loginMethod } from '$lib/stores/user';
     import { online, retryConnection } from '$lib/stores/network';
+    import currentUser, {
+        loggedIn,
+        loggingIn,
+        loginMethod,
+        mounted,
+        userRelaysUpdated,
+    } from '$lib/stores/user';
 
     import {
-        wotFilteredTickets,
-        wotFilteredOffers,
-        myTickets,
-        myOffers,
         allOffers,
         allTickets,
+        myOffers,
+        myTickets,
+        wotFilteredOffers,
+        wotFilteredTickets,
     } from '$lib/stores/freelance-eventstores';
 
-    import { allReviews, clientReviews, freelancerReviews } from '$lib/stores/reviews';
     import { messageStore, wotFilteredMessageFeed } from '$lib/stores/messages';
-    import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
     import { sendNotification } from '$lib/stores/notifications';
+    import { allReviews, clientReviews, freelancerReviews } from '$lib/stores/reviews';
+    import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
 
-    import { initializeUser, logout, checkRelayConnections } from '$lib/utils/helpers';
+    import { checkRelayConnections, initializeUser, logout } from '$lib/utils/helpers';
 
-    import {
-        wot,
-        wotUpdating,
-        wotUpdateFailed,
-        wotUpdateNoResults,
-        useSatShootWoT,
-    } from '$lib/stores/wot';
+    import { wotUpdateFailed, wotUpdateNoResults } from '$lib/stores/wot';
 
     import { RestoreMethod, type LoginMethod } from '$lib/stores/ndk';
 
-    import { privateKeyFromSeedWords } from 'nostr-tools/nip06';
     import {
-        NDKNip46Signer,
-        NDKNip07Signer,
-        NDKPrivateKeySigner,
-        type NDKEvent,
-        NDKRelay,
         NDKKind,
+        NDKNip07Signer,
+        NDKNip46Signer,
+        NDKPrivateKeySigner,
         NDKSubscription,
+        type NDKEvent,
     } from '@nostr-dev-kit/ndk';
+    import { privateKeyFromSeedWords } from 'nostr-tools/nip06';
 
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
-    import { AppShell } from '@skeletonlabs/skeleton';
-    import { AppBar } from '@skeletonlabs/skeleton';
-    import { Avatar } from '@skeletonlabs/skeleton';
-    import { AppRail, AppRailAnchor } from '@skeletonlabs/skeleton';
-    import { TabGroup, TabAnchor } from '@skeletonlabs/skeleton';
     import { page, updated } from '$app/stores';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-
+    import { AppShell } from '@skeletonlabs/skeleton';
     // Popups
-    import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
+    import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
-    import { storePopup, popup, type PopupSettings } from '@skeletonlabs/skeleton';
-
+    import { storePopup, type PopupSettings } from '@skeletonlabs/skeleton';
     // App menu in drawer
     import AppMenu from '$lib/components/DrawerContents/AppMenu.svelte';
 
     // Menu Items
-    import FreelanceIcon from '$lib/components/Icons/FreelanceIcon.svelte';
-    import PostTicketIcon from '$lib/components/Icons/PostTicketIcon.svelte';
-    import NotificationsIcon from '$lib/components/Icons/NotificationsIcon.svelte';
 
-    import { setModeCurrent, modeCurrent } from '@skeletonlabs/skeleton';
-
+    import { modeCurrent, setModeCurrent } from '@skeletonlabs/skeleton';
     // Skeleton Toast
     import { Toast, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
 
     // Skeleton Modals
-    import { Modal, getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
-
+    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
+    import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
-    import {
-        initializeStores,
-        Drawer,
-        getDrawerStore,
-        type DrawerSettings,
-    } from '@skeletonlabs/skeleton';
-    import drawerID from '$lib/stores/drawer';
-    import { DrawerIDs } from '$lib/stores/drawer';
-    import { onMount, onDestroy, tick } from 'svelte';
-    import { goto } from '$app/navigation';
+    import { beforeNavigate } from '$app/navigation';
     import ReviewBreakdown from '$lib/components/DrawerContents/ReviewBreakdown.svelte';
     import UserReviewBreakdown from '$lib/components/DrawerContents/UserReviewBreakdown.svelte';
-    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import BottomNav from '$lib/components/layout/BottomNav.svelte';
+    import Footer from '$lib/components/layout/Footer.svelte';
+    import Header from '$lib/components/layout/Header.svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
-    import MessagesIcon from '$lib/components/Icons/MessagesIcon.svelte';
+    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import drawerID, { DrawerIDs } from '$lib/stores/drawer';
     import { hideAppBarsStore } from '$lib/stores/gui';
+    import { searchTerms } from '$lib/stores/search';
     import {
         cashuPaymentInfoMap,
         cashuTokensBackup,
@@ -114,12 +93,34 @@
     } from '$lib/stores/wallet';
     import { cleanWallet, isCashuMintListSynced, resyncWalletAndBackup } from '$lib/utils/cashu';
     import { debounce } from '$lib/utils/misc';
+    import {
+        Drawer,
+        getDrawerStore,
+        initializeStores,
+        type DrawerSettings,
+    } from '@skeletonlabs/skeleton';
+    import { onDestroy, onMount, tick } from 'svelte';
 
     initializeStores();
     const drawerStore = getDrawerStore();
 
     // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
+
+    beforeNavigate(({ to }) => {
+        if (to?.url.pathname !== '/jobs') {
+            // clear search terms by initializing a new set
+            searchTerms.set(new Set());
+        }
+    });
+
+    $: searchQuery = $page.url.searchParams.get('searchTerms');
+    $: filterList = searchQuery ? searchQuery.split(',') : [];
+
+    // on page reload if url contains searchTerms add them to svelte store
+    $: if (filterList.length > 0) {
+        searchTerms.set(new Set(filterList));
+    }
 
     // For WoT tooltip
     const popupWoT: PopupSettings = {
@@ -659,7 +660,7 @@
     }
 </script>
 
-<Toast />
+<Toast zIndex="z-[1100]" />
 <Modal />
 <Drawer regionDrawer={'flex justify-center'} zIndex={'z-50'}>
     {#if $drawerID === DrawerIDs.AppMenu}
@@ -672,228 +673,16 @@
 </Drawer>
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
     <svelte:fragment slot="header">
-        {#if !hideTopbar}
-            <AppBar
-                gridColumns="grid-cols-3"
-                slotDefault="place-content-center"
-                slotTrail="place-content-end "
-            >
-                <svelte:fragment slot="lead">
-                    <div class="flex gap-x-2 items-center">
-                        <h3 class="h3 font-bold">WoT:</h3>
-                        <div>
-                            {#if !$loggedIn}
-                                <i
-                                    class="fa-solid fa-circle-question text-2xl text-error-500"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div
-                                        class="card font-bold w-40 p-4 text-error-500 max-h-60 overflow-y-auto"
-                                    >
-                                        Log in to Load your Web of Trust!
-                                    </div>
-                                </div>
-                            {:else if $wot?.size < 3}
-                                <i
-                                    class="fa-solid fa-circle-exclamation text-2xl
-                                    text-error-500"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div
-                                        class="card font-bold w-40 p-4 bg-error-500 max-h-60 overflow-y-auto"
-                                    >
-                                        No Web of Trust! Turn on SatShoot WoT in Settings or follow
-                                        more people on nostr!
-                                    </div>
-                                </div>
-                            {:else if $wot && $wot.size < 3 && $wotUpdating}
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-error-500"
-                                    track="stroke-error-500/30"
-                                    strokeLinecap="round"
-                                    width="w-8"
-                                />
-                            {:else if $wot && $wot.size > 2 && $wotUpdating}
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-success-500"
-                                    track="stroke-success-500/30"
-                                    strokeLinecap="round"
-                                    width="w-8"
-                                />
-                            {:else if $wot && $useSatShootWoT && $wotUpdateNoResults}
-                                <i
-                                    class="fa-solid fa-circle-check text-2xl
-                                    text-primary-500"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div
-                                        class="card font-bold w-40 p-4 bg-primary-500
-                                        max-h-60 overflow-y-auto"
-                                    >
-                                        Using SatShoot WoT only
-                                    </div>
-                                </div>
-                            {:else if $wot && $wot.size > 2}
-                                <i
-                                    class="fa-solid fa-circle-check text-2xl {trustColor}"
-                                    use:popup={popupWoT}
-                                >
-                                </i>
-                                <div data-popup="popupWoT">
-                                    <div
-                                        class="card font-bold w-40 p-4 {bgTrustColor}
-                                        max-h-60 overflow-y-auto"
-                                    >
-                                        Web of Trust Loaded
-                                    </div>
-                                </div>
-                            {/if}
-                        </div>
-                    </div>
-                </svelte:fragment>
-
-                <div class="flex justify-center lg:ml-20">
-                    <div class="flex gap-x-2 justify-center items-center">
-                        <button
-                            class="btn btn-icon w-16"
-                            on:click={() => {
-                                goto('/ticket-feed');
-                            }}
-                        >
-                            <img src="/satshoot.svg" alt="logo" />
-                        </button>
-                    </div>
-                </div>
-
-                <svelte:fragment slot="trail">
-                    {#if $loggedIn}
-                        <button on:click={openAppMenu}>
-                            <!-- Avatar image -->
-                            <Avatar
-                                class="rounded-full border-white placeholder-white"
-                                border="border-4 border-surface-300-600-token hover:!border-primary-500"
-                                cursor="cursor-pointer"
-                                src={$currentUser?.profile?.image ??
-                                    `https://robohash.org/${$currentUser.pubkey}`}
-                            />
-                        </button>
-                    {:else if $loggingIn}
-                        <div class="flex gap-x-2">
-                            <h3 class="h6 md:h3 font-bold">Logging in...</h3>
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={80}
-                                meter="stroke-primary-500"
-                                track="stroke-primary-500/30"
-                                strokeLinecap="round"
-                                width="w-12"
-                            />
-                        </div>
-                    {:else if $loginMethod === 'local'}
-                        <button
-                            class="btn bg-primary-300-600-token"
-                            type="button"
-                            on:click={restoreLogin}
-                        >
-                            Login
-                        </button>
-                    {:else}
-                        <a href="/login" class="btn btn-md bg-primary-300-600-token">
-                            <span>Login</span>
-                        </a>
-                    {/if}
-                </svelte:fragment>
-            </AppBar>
-        {/if}
-    </svelte:fragment>
-    <!-- Sidebar. Hidden on small screens -->
-    <svelte:fragment slot="sidebarLeft">
-        {#if !hideAppMenu}
-            <AppRail
-                class="hidden lg:block min-w-28"
-                hover="hover:variant-soft-primary"
-                active="bg-primary-300-600-token"
-                background="bg-surface-100-800-token"
-            >
-                <svelte:fragment slot="lead">
-                    <AppRailAnchor
-                        href="/ticket-feed"
-                        selected={$page.url.pathname === '/ticket-feed'}
-                    >
-                        <FreelanceIcon extraClasses={'text-2xl sm:text-3xl'} />
-                    </AppRailAnchor>
-
-                    <AppRailAnchor
-                        href="/post-ticket"
-                        selected={$page.url.pathname.includes('/post-ticket')}
-                    >
-                        <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
-                    </AppRailAnchor>
-                    <AppRailAnchor
-                        href="/messages"
-                        selected={$page.url.pathname.includes('/messages') &&
-                            !$page.url.pathname.includes('naddr')}
-                    >
-                        <MessagesIcon sizeClass={'text-2xl sm:text-3xl'} />
-                    </AppRailAnchor>
-                    <AppRailAnchor
-                        href="/notifications"
-                        selected={$page.url.pathname.includes('/notifications')}
-                    >
-                        <NotificationsIcon sizeClass={'text-2xl sm:text-3xl'} />
-                    </AppRailAnchor>
-                </svelte:fragment>
-            </AppRail>
-        {/if}
+        <Header />
     </svelte:fragment>
 
     <!-- Router Slot -->
     <slot />
 
-    <!-- Footer: Only visible on small and medium screens(sm, md) -->
     <svelte:fragment slot="footer">
-        <TabGroup
-            justify="justify-center"
-            flex="flex-1"
-            rounded=""
-            border=""
-            hover="hover:variant-soft-primary"
-            active="bg-primary-300-600-token"
-            background="bg-surface-100-800-token"
-            class="lg:hidden w-full {hideAppMenu ? 'hidden' : ''}"
-        >
-            <TabAnchor href="/ticket-feed" selected={$page.url.pathname === '/ticket-feed'}>
-                <FreelanceIcon extraClasses={'text-2xl sm:text-3xl'} />
-            </TabAnchor>
-
-            <TabAnchor href="/post-ticket" selected={$page.url.pathname.includes('/post-ticket')}>
-                <PostTicketIcon sizeClass={'text-2xl sm:text-3xl'} />
-            </TabAnchor>
-            <TabAnchor
-                href="/messages"
-                selected={$page.url.pathname.includes('/messages') &&
-                    !$page.url.pathname.includes('naddr')}
-            >
-                <MessagesIcon sizeClass={'text-2xl sm:text-3xl'} />
-            </TabAnchor>
-            <TabAnchor
-                href="/notifications"
-                selected={$page.url.pathname.includes('/notifications')}
-            >
-                <NotificationsIcon sizeClass={'text-2xl sm:text-3xl'} />
-            </TabAnchor>
-        </TabGroup>
+        <Footer />
     </svelte:fragment>
 </AppShell>
+<BottomNav />
 
 <!-- <AppHeader /> -->

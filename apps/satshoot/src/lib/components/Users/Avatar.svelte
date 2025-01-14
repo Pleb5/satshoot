@@ -1,21 +1,15 @@
 <script lang="ts">
-    import type { NDKSubscriptionOptions, NDKUser, NDKUserProfile } from '@nostr-dev-kit/ndk';
-    import { Avatar } from '@nostr-dev-kit/ndk-svelte-components';
+    import type { NDKUser, NDKUserProfile } from '@nostr-dev-kit/ndk';
     import ndk from '$lib/stores/ndk';
+    import { onMount } from 'svelte';
 
-    export let pubkey: string | undefined = undefined;
-    export let npub: string | undefined = undefined;
-    export let user: NDKUser | undefined = undefined;
+    export let pubkey: string;
     export let userProfile: NDKUserProfile | undefined = undefined;
-    export let subOpts: NDKSubscriptionOptions | undefined = undefined;
     export let size: 'tiny' | 'small' | 'medium' | 'large' | undefined = undefined;
     export let type: 'square' | 'circle' = 'circle';
     export let ring = false;
-    /**
-     * Flag when the fetching is being done in a higher component
-     **/
-    export let fetching: boolean | undefined = undefined;
 
+    let user: NDKUser;
     let sizeClass = '';
     let shapeClass = '';
 
@@ -43,52 +37,61 @@
             break;
     }
 
-    if (fetching === undefined && !userProfile) {
-        fetching = true;
-        user ??= $ndk.getUser({ npub, pubkey });
-        user?.fetchProfile(subOpts)
-            .then((p) => {
-                if (p) userProfile = p;
+    // Fetch user profile reactively
+    $: if (!userProfile && user) {
+        user.fetchProfile({
+            closeOnEose: true,
+            groupable: true,
+            groupableDelay: 200,
+        })
+            .then((profile) => {
+                if (profile) {
+                    userProfile = profile;
+                }
             })
-            .catch((err) => {
-                console.error(
-                    'An error occurred in fetching user profile in avatar component',
-                    err
-                );
-            })
-            .finally(() => {
-                fetching = false;
-            });
+            .catch(() => {});
     }
 
-    let randSeed = Math.floor(Math.random() * 10) + 1;
+    onMount(() => {
+        if (pubkey) {
+            user = $ndk.getUser({ pubkey });
+        }
+    });
 </script>
 
-{#if !userProfile && fetching}
-    <img
-        alt="Avatar loading..."
-        src="https://api.dicebear.com/8.x/thumbs/svg?seed={user?.pubkey ?? randSeed}"
-        class="
-            {$$props.class}
-            {$$props.loadingClass ? $$props.loadingClass : ''}
-            {sizeClass} {shapeClass}
-        "
-        style={$$props.loadingStyle ?? ''}
-    />
-{:else if userProfile || user || pubkey || npub}
+{#if user}
     <div
         class="
         flex-none {sizeClass} {shapeClass}
         {ring ? 'ring-4 ring-accent p-0.5' : ''}
     "
     >
-        <Avatar
-            ndk={$ndk}
-            {pubkey}
-            {npub}
-            {user}
-            {userProfile}
-            class="flex-none object-cover {shapeClass} {sizeClass} {$$props.class ?? ''}"
+        <img
+            alt="user avatar"
+            src={userProfile?.image || `https://robohash.org/${user.pubkey}`}
+            class="object-cover {sizeClass} {shapeClass}"
         />
     </div>
+{:else}
+    <img alt="" class="avatar avatar--loading" />
 {/if}
+
+<style lang="postcss">
+    .avatar {
+        background-color: #ccc;
+    }
+
+    .avatar--loading {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+        0%,
+        100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+</style>

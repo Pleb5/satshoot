@@ -1,0 +1,232 @@
+<script lang="ts">
+    import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
+    import currentUser from '$lib/stores/user';
+    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
+    import ShareJobModal from './ShareJobModal.svelte';
+    import CloseJobModal from './CloseJobModal.svelte';
+    import ndk from '$lib/stores/ndk';
+    import { onMount } from 'svelte';
+    import { OfferEvent } from '$lib/events/OfferEvent';
+    import NewReviewClientModal from './NewReviewClientModal.svelte';
+    import { clientReviews } from '$lib/stores/reviews';
+    import CloseModal from '../UI/Buttons/CloseModal.svelte';
+    import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
+    import { paymentDetail } from '$lib/stores/payment';
+    import PaymentModal from './PaymentModal.svelte';
+    import { ticketToEdit } from '$lib/stores/ticket-to-edit';
+    import { goto } from '$app/navigation';
+
+    const modalStore = getModalStore();
+
+    export let job: TicketEvent;
+
+    let bech32ID = '';
+    $: if (job) {
+        bech32ID = job.encode();
+    }
+
+    let myJob = false;
+    $: if ($currentUser && job && $currentUser.pubkey === job.pubkey) {
+        myJob = true;
+    } else {
+        myJob = false;
+    }
+
+    let isWinner = false;
+    $: if ($currentUser && job.winnerFreelancer === $currentUser.pubkey) {
+        isWinner = true;
+    } else {
+        isWinner = false;
+    }
+
+    let canReviewClient = false;
+    $: if (isWinner && $clientReviews) {
+        const hasAlreadyReviewed = $clientReviews.some(
+            (review) => review.reviewedEventAddress === job.ticketAddress
+        );
+
+        if (hasAlreadyReviewed) {
+            canReviewClient = false;
+        } else {
+            canReviewClient = true;
+        }
+    }
+
+    let showMessageButton = false;
+    $: if ($currentUser && (!myJob || job.acceptedOfferAddress)) {
+        showMessageButton = true;
+    } else {
+        showMessageButton = false;
+    }
+
+    let winnerOffer: OfferEvent | null = null;
+
+    onMount(async () => {
+        if (job.acceptedOfferAddress) {
+            const winnerOfferEvent = await $ndk.fetchEvent(job.acceptedOfferAddress);
+            if (winnerOfferEvent) {
+                winnerOffer = OfferEvent.from(winnerOfferEvent);
+            }
+        }
+    });
+
+    function handleShare() {
+        const modalComponent: ModalComponent = {
+            ref: ShareJobModal,
+            props: { job },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.clear();
+        modalStore.trigger(modal);
+    }
+
+    function handleCloseJob() {
+        const modalComponent: ModalComponent = {
+            ref: CloseJobModal,
+            props: { job, offer: winnerOffer },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.clear();
+        modalStore.trigger(modal);
+    }
+
+    function handleReviewClient() {
+        const modalComponent: ModalComponent = {
+            ref: NewReviewClientModal,
+            props: { jobAddress: job.ticketAddress },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.clear();
+        modalStore.trigger(modal);
+    }
+
+    function selectChatPartner() {
+        if (job.pubkey !== $currentUser!.pubkey) {
+            $selectedPerson = job.pubkey + '$' + bech32ID;
+        } else if (job.acceptedOfferAddress) {
+            $offerMakerToSelect = job.winnerFreelancer as string;
+        }
+
+        modalStore.close();
+    }
+
+    function handlePay() {
+        if (!winnerOffer) return;
+
+        $paymentDetail = {
+            ticket: job,
+            offer: winnerOffer,
+        };
+
+        const modalComponent: ModalComponent = {
+            ref: PaymentModal,
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.clear();
+        modalStore.trigger(modal);
+    }
+
+    function handleEdit() {
+        if (job) {
+            $ticketToEdit = job;
+
+            goto('/post-job');
+            modalStore.clear();
+        }
+    }
+
+    const menuItemClasses =
+        'transition-all ease duration-[0.3s] py-[5px] px-[10px] justify-start items-center flex flex-row w-full gap-[10px] rounded-[4px] ' +
+        'text-[rgb(0,0,0,0.5)] border-[1px] border-[rgb(0,0,0,0.1)] hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-[#3b73f6]';
+</script>
+
+{#if $modalStore[0]}
+    <div
+        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
+    >
+        <div
+            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
+        >
+            <div class="w-full flex flex-col justify-start items-center">
+                <div class="w-full max-w-[500px] justify-start items-center">
+                    <div
+                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
+                    >
+                        <div
+                            class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
+                        >
+                            <p class="font-[500] text-[18px]">Job Menu</p>
+
+                            <CloseModal />
+                        </div>
+                        <div class="w-full flex flex-col">
+                            <!-- popups Job-Post-Menu start -->
+                            <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
+                                <button class={menuItemClasses} on:click={handleShare}>
+                                    <i class="bx bxs-share text-[20px]"></i>
+                                    <p class="">Share</p>
+                                </button>
+
+                                {#if myJob && job.status === TicketStatus.New}
+                                    <button class={menuItemClasses} on:click={handleEdit}>
+                                        <i class="bx bxs-edit-alt text-[20px]"></i>
+                                        <p class="">Edit</p>
+                                    </button>
+                                {/if}
+
+                                {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
+                                    <button class={menuItemClasses} on:click={handleCloseJob}>
+                                        <i class="bx bx-window-close text-[20px]"></i>
+                                        <p class="">Close Job</p>
+                                    </button>
+                                {/if}
+
+                                {#if myJob && job.status !== TicketStatus.New && winnerOffer}
+                                    <button class={menuItemClasses} on:click={handlePay}>
+                                        <i class="bx bx-window-close text-[20px]"></i>
+                                        <p class="">Pay</p>
+                                    </button>
+                                {/if}
+
+                                {#if showMessageButton && bech32ID}
+                                    <a
+                                        href={'/messages/' + bech32ID}
+                                        on:click={selectChatPartner}
+                                        class={menuItemClasses}
+                                    >
+                                        <i class="bx bxs-conversation" />
+                                        <p class="">Message</p>
+                                    </a>
+                                {/if}
+
+                                {#if canReviewClient}
+                                    <button class={menuItemClasses} on:click={handleReviewClient}>
+                                        <i class="bx bx-window-close text-[20px]"></i>
+                                        <p class="">Review Client</p>
+                                    </button>
+                                {/if}
+                            </div>
+                            <!-- popups Job-Post-Menu end -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
