@@ -28,6 +28,9 @@
     const modalStore = getModalStore();
 
     export let offer: OfferEvent;
+    export let skipUserProfile = false;
+    export let skipReputation = false;
+    export let viewJob = false;
 
     let freelancerPaid = 0;
     let satshootPaid = 0;
@@ -244,8 +247,12 @@
 <div
     class="w-full flex flex-col gap-[15px] rounded-[8px] p-[15px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)] bg-white flex-wrap"
 >
-    <UserProfile pubkey={offer.pubkey} />
-    <NewReputationCard user={offer.pubkey} type={ReviewType.Freelancer} />
+    {#if !skipUserProfile}
+        <UserProfile pubkey={offer.pubkey} />
+    {/if}
+    {#if !skipReputation}
+        <NewReputationCard user={offer.pubkey} type={ReviewType.Freelancer} />
+    {/if}
     <div class="w-full border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] bg-[rgb(0,0,0,0.05)]">
         <ExpandableText text={offer.description} maxCharacters={200} />
         <div
@@ -305,6 +312,10 @@
             >
                 Message
             </a>
+        {/if}
+
+        {#if viewJob && job}
+            <a href={'/' + job.encode() + '/'} class={offerActionBtnClasses}> View Offer's Job </a>
         {/if}
     </div>
 </div>
