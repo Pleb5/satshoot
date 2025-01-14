@@ -4,7 +4,6 @@ node_modules
 /.svelte-kit
 /package
 .env
-.envrc
 .env.*
 !.env.example
 vite.config.js.timestamp-*
@@ -12,5 +11,8 @@ vite.config.ts.timestamp-*
 notes.md
 .turbo
 pnpm-lock.yaml
+
+# nix related
 flake.*
 .direnv/
+.envrc
