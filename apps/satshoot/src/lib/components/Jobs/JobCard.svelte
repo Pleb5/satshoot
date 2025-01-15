@@ -5,7 +5,6 @@
     import JobActions from './JobActions.svelte';
     import JobDetails from './JobDetails.svelte';
     import Ratings from './Ratings.svelte';
-    import TrustedNetwork from './TrustedNetwork.svelte';
 
     export let ticket: TicketEvent;
     let bech32ID = '';
@@ -18,7 +17,6 @@
         JobDescription,
         Earning,
         Reputation,
-        Network,
         Actions,
     }
 
@@ -34,10 +32,6 @@
         {
             icon: 'bxs-star',
             name: Tabs.Reputation,
-        },
-        {
-            icon: 'bxs-network-chart',
-            name: Tabs.Network,
         },
         {
             icon: 'bxs-grid-alt',
@@ -68,8 +62,6 @@
                 ratingAsFreelancer={4}
                 totalFreelancerReviews={250}
             />
-        {:else if selectedTab === Tabs.Network}
-            <TrustedNetwork user={ticket.pubkey} />
         {:else if selectedTab === Tabs.Actions}
             <JobActions />
         {/if}
@@ -93,11 +85,6 @@
         </div>
     </div>
     <div class="w-full flex flex-row gap-[0px] border-t-[1px_solid_rgba(0,0,0,0.11)]">
-        <button
-            class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] text-[rgb(255,255,255)] p-[10px_20px] font-semibold text-[18px] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] bg-[rgba(59,115,246,0)] text-[rgba(0,0,0,0.5)] border-r-[1px] border-r-solid border-r-[rgba(0,0,0,0.1)] hover:border-r-[rgba(0,0,0,0.0)] hover:bg-[rgb(59,130,246)] hover:text-white"
-        >
-            <i class="bx bxs-cog"></i>
-        </button>
         <button
             class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] text-[rgb(255,255,255)] p-[10px_20px] font-semibold text-[18px] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full bg-[rgba(59,115,246,0)] text-[rgba(0,0,0,0.5)] hover:bg-[rgb(59,130,246)] hover:text-white"
             on:click={() => goto('/' + bech32ID + '/')}
