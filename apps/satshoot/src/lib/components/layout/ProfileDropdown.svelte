@@ -11,6 +11,7 @@
     import BullhornIcon from '../Icons/BullhornIcon.svelte';
     import { createEventDispatcher, onDestroy, onMount } from 'svelte';
     import { browser } from '$app/environment';
+    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
 
     export let classes: string;
 
@@ -96,19 +97,25 @@
             },
         },
         {
-            href: '/my-tickets/',
+            href: profileHref,
             label: 'My Tickets',
             icon: {
                 component: TicketIcon,
                 props: { sizeClass: '' },
             },
+            callback: () => {
+                $profileTabStore = ProfilePageTabs.Jobs;
+            },
         },
         {
-            href: '/my-offers/',
+            href: profileHref,
             label: 'My offers',
             icon: {
                 component: BitcoinIcon,
                 props: { extraClasses: 'text-lg' },
+            },
+            callback: () => {
+                $profileTabStore = ProfilePageTabs.Offers;
             },
         },
         {
@@ -166,11 +173,13 @@
     {#if profileDropdownOpen}
         <div class={profileDropdownWrapperClass} bind:this={dropdownElement}>
             <div class="p-[5px] flex flex-col gap-2" role="menu">
-                {#each profileMenuItems as { href, label, icon }}
+                {#each profileMenuItems as { href, label, icon, callback }}
                     <a
                         {href}
                         class={profileMenuItemClass}
                         on:click={() => {
+                            if (callback) callback();
+
                             toggleProfileDropdown();
                             dispatch('click');
                         }}
