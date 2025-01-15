@@ -12,6 +12,7 @@
     } from '@skeletonlabs/skeleton';
     import { onMount, tick } from 'svelte';
     import CloseModal from '../UI/Buttons/CloseModal.svelte';
+    import Card from '../UI/Card.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -98,9 +99,7 @@
         >
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
-                    >
+                    <Card>
                         <div
                             class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
                         >
@@ -157,7 +156,7 @@
                             </div>
                             <!-- popups Share Job Post end -->
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>

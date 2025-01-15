@@ -24,6 +24,7 @@
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import NewReputationCard from './NewReputationCard.svelte';
     import NewTakeOfferModal from '../Modals/NewTakeOfferModal.svelte';
+    import Card from '../UI/Card.svelte';
 
     const modalStore = getModalStore();
 
@@ -244,9 +245,7 @@
         'text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white max-[768px]:grow-[1]';
 </script>
 
-<div
-    class="w-full flex flex-col gap-[15px] rounded-[8px] p-[15px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)] bg-white flex-wrap"
->
+<Card classes="flex-wrap gap-[15px]">
     {#if !skipUserProfile}
         <UserProfile pubkey={offer.pubkey} />
     {/if}
@@ -318,4 +317,4 @@
             <a href={'/' + job.encode() + '/'} class={offerActionBtnClasses}> View Offer's Job </a>
         {/if}
     </div>
-</div>
+</Card>

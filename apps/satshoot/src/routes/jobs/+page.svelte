@@ -1,24 +1,22 @@
 <script lang="ts">
-    import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
-    import TicketCard from '$lib/components/Cards/TicketCard.svelte';
+    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 
-    import { wot } from '$lib/stores/wot';
     import ndk, { connected } from '$lib/stores/ndk';
     import { online } from '$lib/stores/network';
+    import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from '@nostr-dev-kit/ndk';
 
-    import { InputChip } from '@skeletonlabs/skeleton';
-    import ReadyToWorkModal from '$lib/components/Modals/ReadyToWorkModal.svelte';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { onDestroy, onMount } from 'svelte';
+    import { page } from '$app/stores';
     import BullhornIcon from '$lib/components/Icons/BullhornIcon.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
+    import ReadyToWorkModal from '$lib/components/Modals/ReadyToWorkModal.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
-    import { page } from '$app/stores';
+    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { onDestroy, onMount } from 'svelte';
 
     const modalStore = getModalStore();
 

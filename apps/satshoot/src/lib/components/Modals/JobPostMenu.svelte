@@ -15,6 +15,7 @@
     import PaymentModal from './PaymentModal.svelte';
     import { ticketToEdit } from '$lib/stores/ticket-to-edit';
     import { goto } from '$app/navigation';
+    import Card from '../UI/Card.svelte';
 
     const modalStore = getModalStore();
 
@@ -165,9 +166,7 @@
         >
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
-                    >
+                    <Card>
                         <div
                             class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
                         >
@@ -224,7 +223,7 @@
                             </div>
                             <!-- popups Job-Post-Menu end -->
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>
