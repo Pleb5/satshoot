@@ -10,10 +10,9 @@
     <div class="w-full flex flex-row flex-wrap gap-[10px]">
         <div class="w-full flex flex-row flex-wrap gap-[10px]">
             <button class={btnClasses} type="button">
-                <i class="bx bxs-message-rounded" />Message</button
+                <i class="bx bxs-share" />
+                Share</button
             >
-            <button class={btnClasses} type="button"> <i class="bx bxs-share" />Share</button>
-            <button class={btnClasses} type="button"> <i class="bx bxs-megaphone" />Report</button>
         </div>
     </div>
 </div>
