@@ -1,32 +1,25 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+    import currentUser, { loggingIn } from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
-    import currentUser, { loggingIn, loginAlert } from '$lib/stores/user';
 
-    import type { NDKTag } from '@nostr-dev-kit/ndk';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import type { NDKTag } from '@nostr-dev-kit/ndk';
 
     import { ticketToEdit } from '$lib/stores/ticket-to-edit';
 
-    import tabStore from '$lib/stores/tab-store';
+    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
 
-    import { InputChip } from '@skeletonlabs/skeleton';
-    import { Autocomplete } from '@skeletonlabs/skeleton';
-    import type { AutocompleteOption, filter } from '@skeletonlabs/skeleton';
     import tagOptions from '$lib/utils/tag-options';
 
-    import { getToastStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import type { ModalComponent, ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
 
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
     import ShareTicketModal from '$lib/components/Modals/ShareTicketModal.svelte';
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
 
-    import { onMount, tick } from 'svelte';
     import { beforeNavigate, goto } from '$app/navigation';
-    import { navigating, page } from '$app/stores';
-    import redirectStore from '$lib/stores/network';
+    import { onMount, tick } from 'svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -83,13 +76,6 @@
         allowPostTicket = false;
     } else {
         allowPostTicket = true;
-    }
-
-    // todo: navigate to ticket
-    $: if ($navigating) {
-        if ($navigating.to?.url.pathname === '/my-tickets') {
-            $tabStore = 0;
-        }
     }
 
     onMount(() => {
@@ -222,8 +208,8 @@
                     };
                     modalStore.trigger(postAsTextModal);
 
-                    $tabStore = 0;
-                    goto('/my-tickets');
+                    $profileTabStore = ProfilePageTabs.Jobs;
+                    goto('/' + $currentUser.npub + '/');
                 } catch (e) {
                     posting = false;
                     console.log(ticket);

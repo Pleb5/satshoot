@@ -8,16 +8,12 @@
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import ndk from '$lib/stores/ndk';
+    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import currentUser from '$lib/stores/user';
     import { orderEventsChronologically } from '$lib/utils/helpers';
     import { NDKKind } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy } from 'svelte';
-
-    enum Tab {
-        Jobs,
-        Offers,
-    }
 
     enum OfferStatus {
         Unknown,
@@ -26,7 +22,6 @@
         Lost,
     }
 
-    let selectedTab = Tab.Jobs;
     let jobFilter = {
         new: true,
         inProgress: false,
@@ -148,8 +143,8 @@
     $: isOwnProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
 
     $: tabs = [
-        { id: Tab.Jobs, label: `${isOwnProfile ? 'My' : ''} Jobs` },
-        { id: Tab.Offers, label: `${isOwnProfile ? 'My' : ''} Offers` },
+        { id: ProfilePageTabs.Jobs, label: `${isOwnProfile ? 'My' : ''} Jobs` },
+        { id: ProfilePageTabs.Offers, label: `${isOwnProfile ? 'My' : ''} Offers` },
     ];
 </script>
 
@@ -162,9 +157,9 @@
                     <NewUserCard {user} />
                     <div class="w-full flex flex-col gap-[15px] relative">
                         <div class="w-full flex flex-col gap-[10px]">
-                            <TabSelector {tabs} bind:selectedTab />
+                            <TabSelector {tabs} bind:selectedTab={$profileTabStore} />
                             <div class="w-full flex flex-col">
-                                {#if selectedTab === Tab.Jobs}
+                                {#if $profileTabStore === ProfilePageTabs.Jobs}
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <div
                                             class="w-full flex flex-row gap-[10px] bg-white rounded-[6px] p-[5px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)] flex-wrap"
