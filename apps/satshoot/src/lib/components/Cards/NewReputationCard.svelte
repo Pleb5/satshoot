@@ -26,6 +26,7 @@
     import ReviewSummaryAsFreelancer from '../Modals/ReviewSummaryAsFreelancer.svelte';
     import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import ReviewSummaryAsClient from '../Modals/ReviewSummaryAsClient.svelte';
+    import Card from '../UI/Card.svelte';
 
     const modalStore = getModalStore();
 
@@ -338,9 +339,7 @@
 {/if}
 
 {#if forUserCard}
-    <div
-        class="w-full flex flex-col gap-[15px] rounded-[8px] p-[10px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)] bg-white"
-    >
+    <Card classes="gap-[15px]">
         <div class="w-full flex flex-col gap-[15px]">
             <div class="w-full flex flex-col gap-[10px]">
                 <p class="w-full font-[600] pl-[5px]">User's Overall Reputation</p>
@@ -428,5 +427,5 @@
                 </div>
             </div>
         </div>
-    </div>
+    </Card>
 {/if}

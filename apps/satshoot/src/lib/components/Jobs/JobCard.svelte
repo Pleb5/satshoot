@@ -1,6 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { TicketEvent } from '$lib/events/TicketEvent';
+    import Card from '../UI/Card.svelte';
     import EarningDetails from './EarningDetails.svelte';
     import JobActions from './JobActions.svelte';
     import JobDetails from './JobDetails.svelte';
@@ -47,9 +48,7 @@
         'flex-grow rounded-[4px] hover:text-[rgba(255,255,255,0.5)] hover:bg-[rgba(59,115,246,0.75)]';
 </script>
 
-<div
-    class="jobCard w-full bg-white border-[1px_solid_rgba(0,0,0,0.1)] flex flex-col gap-[0px] rounded-[8px] overflow-hidden p-[0px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]"
->
+<Card classes="border-[1px_solid_rgba(0,0,0,0.1)] gap-[0px]  overflow-hidden p-[0px]">
     <div class="jobCardDetails w-full flex flex-col gap-[0px] p-[10px] min-h-[165px]">
         {#if selectedTab === Tabs.JobDescription}
             <JobDetails title={ticket.title} description={ticket.description} {bech32ID} />
@@ -92,4 +91,4 @@
             <i class="bx bxs-show"></i>
         </button>
     </div>
-</div>
+</Card>

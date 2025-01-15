@@ -20,6 +20,7 @@
 
     import { beforeNavigate, goto } from '$app/navigation';
     import { onMount, tick } from 'svelte';
+    import Card from '$lib/components/UI/Card.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -250,9 +251,7 @@
                     </h2>
                     <p>Start writing up and publish a job you want to receive offers for</p>
                 </div>
-                <div
-                    class="w-full flex flex-col gap-[25px] bg-white rounded-[8px] p-[15px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)]"
-                >
+                <Card classes="gap-[25px">
                     <div class="flex flex-col gap-[5px]">
                         <label class="m-[0px] text-[14px]" for="tile">
                             Title (min. 10 chars)
@@ -380,7 +379,7 @@
                             {/if}
                         </button>
                     </div>
-                </div>
+                </Card>
             </div>
         </div>
     </div>

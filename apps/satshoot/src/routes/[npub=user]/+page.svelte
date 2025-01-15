@@ -4,6 +4,7 @@
     import NewUserCard from '$lib/components/Cards/NewUserCard.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
+    import Card from '$lib/components/UI/Card.svelte';
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
@@ -161,9 +162,7 @@
                             <div class="w-full flex flex-col">
                                 {#if $profileTabStore === ProfilePageTabs.Jobs}
                                     <div class="w-full flex flex-col gap-[10px]">
-                                        <div
-                                            class="w-full flex flex-row gap-[10px] bg-white rounded-[6px] p-[5px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)] flex-wrap"
-                                        >
+                                        <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
                                             <Checkbox
                                                 id="new-jobs"
                                                 label="New"
@@ -179,7 +178,7 @@
                                                 label="Closed"
                                                 bind:checked={jobFilter.closed}
                                             />
-                                        </div>
+                                        </Card>
                                         <div class="w-full flex flex-col gap-[15px]">
                                             <div
                                                 class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
@@ -193,9 +192,7 @@
                                     </div>
                                 {:else}
                                     <div class="w-full flex flex-col gap-[10px]">
-                                        <div
-                                            class="w-full flex flex-row gap-[10px] bg-white rounded-[6px] p-[5px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)] flex-wrap"
-                                        >
+                                        <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
                                             <Checkbox
                                                 id="pending-offers"
                                                 label="Pending"
@@ -211,7 +208,7 @@
                                                 label="Lost"
                                                 bind:checked={offerFilter.lost}
                                             />
-                                        </div>
+                                        </Card>
                                         <div class="w-full flex flex-col gap-[15px]">
                                             <div class="w-full flex flex-col gap-[15px]">
                                                 {#each filteredOffers as offer (offer.id)}

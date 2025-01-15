@@ -28,6 +28,7 @@
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import { selectedPerson } from '$lib/stores/messages';
     import ShareModal from '../Modals/ShareModal.svelte';
+    import Card from '../UI/Card.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -309,9 +310,7 @@
 <div class="w-full max-w-[350px] flex flex-col gap-[25px] max-[768px]:max-w-full">
     <div class="w-full flex flex-col gap-[15px] max-[768px]:mt-[15px]">
         <!-- profile section -->
-        <div
-            class="w-full flex flex-col gap-[15px] rounded-[8px] p-[10px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)] bg-white"
-        >
+        <Card classes="gap-[15px]">
             <div class="w-full flex flex-col">
                 <div
                     class="w-full overflow-hidden relative rounded-[6px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)] bg-[rgb(0,0,0,0.1)] pt-[25%]"
@@ -476,7 +475,7 @@
                     </button>
                 </div>
             {/if}
-        </div>
+        </Card>
         <!-- reputation -->
         <NewReputationCard user={user.pubkey} forUserCard />
     </div>

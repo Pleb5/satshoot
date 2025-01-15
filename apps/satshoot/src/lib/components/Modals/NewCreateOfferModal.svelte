@@ -17,6 +17,7 @@
     import { goto } from '$app/navigation';
     import { wallet } from '$lib/stores/wallet';
     import { insertThousandSeparator } from '$lib/utils/misc';
+    import Card from '../UI/Card.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -224,9 +225,7 @@
         >
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
-                    >
+                    <Card>
                         <div class="flex flex-row justify-between gap-[10px] pb-[5px]">
                             <p class="font-[500] text-[18px]">Create Offer</p>
                             <CloseModal />
@@ -357,7 +356,7 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>
