@@ -8,13 +8,13 @@
         },
         {
             icon: 'bxs-lock',
-            title: 'Private Control',
+            title: 'User Control',
             description: 'SatShoot cannot stop You from getting a deal.',
             hoverText: 'You can switch to another app at any time you like.',
         },
         {
             icon: 'bxs-check-shield',
-            title: 'Trusted Protection',
+            title: 'Trust your own Network',
             description: 'Only engage with your cryptographically verified Web of Trust (WoT).',
             hoverText:
                 'Exclude bad actors based on your follows, mutes and reports across all ' +
@@ -23,8 +23,8 @@
         },
         {
             icon: 'bx-money',
-            title: 'Instant & Final Settlements',
-            description: 'Pay and earn in Sats using Lightning Network and eCash.',
+            title: 'Instant and Final Payments',
+            description: 'Pay and earn sats using Cashu and the Lightning network.',
             hoverText: 'Instant, direct payments. No charge back risk.<br />',
         },
     ];

@@ -10,15 +10,15 @@
             </div>
             <Card classes="justify-center items-center text-center text-[18px] p-[25px]">
                 <p>
-                    Enjoy unrestricted freedom to find the talent that you need, for the work that
-                    needs to be done, as you hire them to complete the tasks you set for them. They
-                    would also enjoy that same freedom to find you and help you solve your problems
-                    that you&#39;ve announced.<br /><br />SatShoot is a Free and Open Source
-                    Software (FOSS) project, where it was created for the purpose of providing the
-                    general public with the means to work together for commercial purposes, without
-                    any restrictions that&#39;s usually found on most traditional job boards and
-                    bounty sites, and that is made possible because of the latest advancements in
-                    freedom technology.
+                    SatShoot creates a job market worthy of the values bitcoin represents: A place
+                    for Clients and Freelancers to connect without restrictions.
+                    <br />
+                    <br />
+                    Current centralized solutions have one thing in common: They control and exploit
+                    users wherever they can. SatShoot makes use of top-notch freedom-technologies to
+                    create an unstoppable gig-economy for freedom-minded professionals. No more rent-seeking
+                    middle-men and bad incentives leading to a catastrophic race to the bottom. Just
+                    satoshis paid for honest Proof of Work.
                 </p>
             </Card>
         </div>

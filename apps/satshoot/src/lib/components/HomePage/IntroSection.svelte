@@ -19,9 +19,8 @@
                             Unstoppable Freelancing
                         </h1>
                         <p class="max-w-[1000px] text-center text-[24px] max-[576px]:text-[18px]">
-                            Join the freedom economy, where you hold the power and your connection
-                            hold the power for the work that needs to be done. No third-parties. No
-                            middlemen.
+                            Join the Freedom Economy. Take full control. No third-parties. No
+                            middle-men.
                         </p>
                         <div class="w-full flex flex-row justify-center items-center gap-[10px]">
                             <button
@@ -40,7 +39,7 @@
                             <h2 class="text-center font-[800] text-[32px]">Find Skilled People</h2>
                             <p class="text-center">
                                 If you have an issue you want solved or a project you want
-                                developed, create a job post about it and start getting offers
+                                developed, create a job post and start getting offers
                             </p>
                             <button
                                 type="button"
@@ -55,8 +54,8 @@
                         >
                             <h2 class="text-center font-[800] text-[32px]">Look For Work</h2>
                             <p class="text-center">
-                                See what problems are available to solve, or projects to build, and
-                                give your best offer to solve said problem or finish the project
+                                See available Jobs that match your expertise. Work out your
+                                conditions and make your Offer
                             </p>
                             <button
                                 type="button"
