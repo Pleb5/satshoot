@@ -308,7 +308,7 @@
                     });
                 } catch (error) {
                     console.error('An error occurred in payment process', error);
-                    errorMessage = `Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "Satshoot's"} zap receipt: ${error}`;
+                    errorMessage = `Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "SatShoot's"} zap receipt: ${error}`;
                 }
             }
 
@@ -421,7 +421,7 @@
                         })
                         .catch((err) => {
                             const failedPaymentRecipient =
-                                userEnum === UserEnum.Freelancer ? 'freelancer' : 'satshoot';
+                                userEnum === UserEnum.Freelancer ? 'Freelancer' : 'SatShoot';
 
                             console.error(`Failed to pay ${failedPaymentRecipient}`, err);
                             errorMessage = `Failed to pay ${failedPaymentRecipient}:${err?.message || err}`;
@@ -721,7 +721,7 @@
                                             </div>
                                             <div class="grow-[1]">
                                                 <p class="font-[500]">
-                                                    Satshoot Paid: <span class="font-[300]"
+                                                    SatShoot Paid: <span class="font-[300]"
                                                         >{insertThousandSeparator(satshootPaid)} sats</span
                                                     >
                                                 </p>

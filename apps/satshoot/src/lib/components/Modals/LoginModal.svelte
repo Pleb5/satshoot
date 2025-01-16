@@ -523,7 +523,7 @@
                                     <p
                                         class="w-full px-[10px] py-[5px] border-[2px] border-b-[0px] border-[rgb(0,0,0,0.1)] rounded-t-[6px]"
                                     >
-                                        Satshoot is built on Nostr, which has its own unique way of
+                                        SatShoot is built on Nostr, which has its own unique way of
                                         account creation and login
                                     </p>
                                     <a href="/about" target="_blank" class={learnMoreBtnClasses}>

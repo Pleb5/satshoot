@@ -39,7 +39,7 @@
                             alt="Satshoot logo"
                             class="w-full max-w-[65px]"
                         />
-                        <p>Satshoot</p>
+                        <p>SatShoot</p>
                     </a>
                 </div>
                 <div class="flex-grow flex flex-row gap-4 justify-end items-center flex-wrap">
