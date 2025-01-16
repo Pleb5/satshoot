@@ -13,7 +13,7 @@
                     Enjoy unrestricted freedom to find the talent that you need, for the work that
                     needs to be done, as you hire them to complete the tasks you set for them. They
                     would also enjoy that same freedom to find you and help you solve your problems
-                    that you&#39;ve announced.<br /><br />Satshoot is a Free and Open Source
+                    that you&#39;ve announced.<br /><br />SatShoot is a Free and Open Source
                     Software (FOSS) project, where it was created for the purpose of providing the
                     general public with the means to work together for commercial purposes, without
                     any restrictions that&#39;s usually found on most traditional job boards and

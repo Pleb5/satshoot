@@ -37,7 +37,7 @@
     <div class="w-[100%] flex flex-row grow-1 gap-[10px] p-[10px] justify-center items-center">
         <div class={satshootMobileLogoClass}>
             <img src="/img/satshoot.svg" alt="satshoot logo" class="w-full max-w-[65px]" />
-            <p>Satshoot</p>
+            <p>SatShoot</p>
         </div>
         <button on:click={toggleMobileNav} class={mobileNavMenuIconBtnClass}>
             <i class="bx bx-menu text-[32px]"></i>
