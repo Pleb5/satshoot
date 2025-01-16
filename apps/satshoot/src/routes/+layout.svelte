@@ -59,8 +59,6 @@
     import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
     import { storePopup, type PopupSettings } from '@skeletonlabs/skeleton';
-    // App menu in drawer
-    import AppMenu from '$lib/components/DrawerContents/AppMenu.svelte';
 
     // Menu Items
 
@@ -663,9 +661,7 @@
 <Toast zIndex="z-[1100]" />
 <Modal />
 <Drawer regionDrawer={'flex justify-center'} zIndex={'z-50'}>
-    {#if $drawerID === DrawerIDs.AppMenu}
-        <AppMenu />
-    {:else if $drawerID === DrawerIDs.ReviewBreakdown}
+    {#if $drawerID === DrawerIDs.ReviewBreakdown}
         <ReviewBreakdown />
     {:else if $drawerID === DrawerIDs.UserReviewBreakdown}
         <UserReviewBreakdown />
