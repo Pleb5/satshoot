@@ -131,7 +131,14 @@
                         <i class={`bx ${icon}`} />
                     </a>
                 {:else if icon === 'bx-search'}
-                    <button class={itemClasses} on:click={handleSearch}>
+                    <button
+                        class={itemClasses}
+                        class:bg-[rgb(59,115,246)]={filterList.length !== 0}
+                        class:bg-[rgb(59,115,246,0)]={filterList.length === 0}
+                        class:text-white={filterList.length !== 0}
+                        class:text-[rgb(0,0,0,0.35)]={filterList.length === 0}
+                        on:click={handleSearch}
+                    >
                         <i class="bx bx-search"></i></button
                     >
                 {/if}

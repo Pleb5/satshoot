@@ -284,7 +284,7 @@
             </p>
         {/if}
         <p class="font-[500] grow-[1] flex flex-row flex-wrap">
-            Status:
+            Offer Status:
             <span class="ml-[5px] font-[300] {statusColor}"> {status} </span>
         </p>
     </div>

@@ -146,10 +146,6 @@
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-col gap-[15px] justify-start">
                     <h2 class="text-[40px] font-[500]">Latest Job Listings</h2>
-                    <p>
-                        Discover latest jobs posts by individuals who are looking to have their
-                        project developed or issue solved
-                    </p>
                 </div>
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <div class="w-full flex flex-col gap-[25px]">

@@ -50,14 +50,8 @@
     <div class={statusRowWrapperClasses}>
         <p title="Publication Date/Time" class="{statusRowItemClasses} {statusColor}">
             <i class="bx bx-info-circle" />
-            Status: {statusString}
+            Job Status: {statusString}
         </p>
-        {#if job.created_at}
-            <p title="Publication Date/Time" class={statusRowItemClasses}>
-                <i class="bx bxs-news" />
-                {formatDate(job.created_at * 1000, 'dd-MMM-yyyy, h:m:ss a')}
-            </p>
-        {/if}
         {#if job.created_at}
             <p title="Edit Date/Time" class={statusRowItemClasses}>
                 <i class="bx bx-edit-alt" />
@@ -73,7 +67,7 @@
             <i class="bx bx-globe" />
             satshoot.com
         </a>
-        <Button variant="text" title="Options" on:click={handleOptionClick}>
+        <Button title="Options" on:click={handleOptionClick}>
             <i class="bx bx-dots-vertical-rounded" />
         </Button>
     </div>

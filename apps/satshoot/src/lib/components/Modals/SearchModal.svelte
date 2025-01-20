@@ -30,6 +30,13 @@
         goto(url.toString(), { replaceState: true });
     }
 
+    // Function to handle the "Enter" key press
+    function handleEnterKey(event: KeyboardEvent) {
+        if (event.key === 'Enter') {
+            handleAdd();
+        }
+    }
+
     function handleAdd() {
         if (searchInput) {
             searchTerms.update((terms) => {
@@ -90,7 +97,7 @@
                         <div
                             class="flex flex-row justify-between gap-[10px] pb-[10px] border-b-[1px] border-b-[rgb(0,0,0,0.1)] items-center"
                         >
-                            <p class="font-[500] text-[18px]">Search Modal</p>
+                            <p class="font-[500] text-[18px]">Search</p>
                             <CloseModal />
                         </div>
                         <div class="w-full flex flex-col">
@@ -105,6 +112,7 @@
                                                 <input
                                                     id="search-input"
                                                     bind:value={searchInput}
+                                                    on:keydown={handleEnterKey}
                                                     class={inputClasses}
                                                     type="text"
                                                     placeholder="Search term or add tag"

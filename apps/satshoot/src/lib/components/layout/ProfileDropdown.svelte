@@ -99,7 +99,7 @@
         },
         {
             href: profileHref,
-            label: 'My Tickets',
+            label: 'My Jobs',
             icon: {
                 component: TicketIcon,
                 props: { sizeClass: '' },
@@ -110,7 +110,7 @@
         },
         {
             href: profileHref,
-            label: 'My offers',
+            label: 'My Offers',
             icon: {
                 component: BitcoinIcon,
                 props: { extraClasses: 'text-lg' },
