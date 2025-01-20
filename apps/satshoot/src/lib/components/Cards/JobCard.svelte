@@ -6,6 +6,7 @@
     import { formatDate } from 'date-fns';
     import JobPostMenu from '../Modals/JobPostMenu.svelte';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
@@ -36,10 +37,6 @@
     const statusRowItemClasses =
         'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center grow-[1] items-center ' +
         'px-[10px] py-[5px] rounded-[4px] hover:text-white hover:bg-[#3b73f6] max-[768px]:justify-start';
-
-    const optionsBtnClasses =
-        'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center items-center px-[10px] ' +
-        'py-[5px] rounded-[4px] hover:text-white hover:bg-[#3b73f6] max-[768px]:justify-start';
 
     const tagItemClasses =
         'transition ease duration-[0.3s] flex flex-row px-[10px] py-[5px] border-[1px] border-[rgb(0,0,0,0.15)] ' +
@@ -76,9 +73,9 @@
             <i class="bx bx-globe" />
             satshoot.com
         </a>
-        <button title="Options" class={optionsBtnClasses} on:click={handleOptionClick}>
+        <Button variant="text" title="Options" on:click={handleOptionClick}>
             <i class="bx bx-dots-vertical-rounded" />
-        </button>
+        </Button>
     </div>
     <div class="w-full flex flex-col gap-[10px]">
         {@html processedDescription}

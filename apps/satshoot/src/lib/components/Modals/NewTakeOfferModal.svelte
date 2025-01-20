@@ -15,6 +15,7 @@
     import OfferTakenModal from './OfferTakenModal.svelte';
     import { goto } from '$app/navigation';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -75,11 +76,6 @@
             modalStore.close();
         }
     }
-
-    const btnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] grow-[1] ' +
-        'border-[1px] border-[rgb(0,0,0,0.1)] bg-[#3b73f6] text-[rgb(255,255,255,0.5)] ' +
-        'hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-blue-500';
 </script>
 
 {#if $modalStore[0]}
@@ -114,12 +110,7 @@
                                     </p>
                                 </div>
                                 <div class="w-full flex flex-row gap-[5px]">
-                                    <button
-                                        class={btnClasses}
-                                        type="button"
-                                        on:click={takeOffer}
-                                        disabled={takingOffer}
-                                    >
+                                    <Button grow on:click={takeOffer} disabled={takingOffer}>
                                         {#if takingOffer}
                                             <span>
                                                 <ProgressRadial
@@ -134,7 +125,7 @@
                                         {:else}
                                             Take Offer
                                         {/if}
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                             <!-- popups Share Job Post end -->

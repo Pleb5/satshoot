@@ -3,6 +3,7 @@
     import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import SearchModal from '../Modals/SearchModal.svelte';
     import { page } from '$app/stores';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
@@ -80,10 +81,8 @@
         'justify-center items-center gap-[8px] hover:bg-[rgb(59,130,246)] hover:text-white';
 
     const collapseTriggerBtnClasses =
-        'transition-all ease-in-out duration-[0.4s] py-[15px] px-[5px] ' +
         'bg-[rgb(255,255,255)] text-[rgba(0,0,0,0.25)] shadow-[0_0_4px_0_rgba(0,0,0,0.25)] ' +
-        'rounded-[5px] hover:bg-white hover:text-[rgba(0,0,0,0.75)] focus:shadow-[0_0_4px_0_rgba(0,0,0,0.25)] ' +
-        'focus:py-[15px] focus:px-[5px]';
+        'hover:bg-white hover:text-[rgba(0,0,0,0.75)] py-[15px] px-[5px] ';
 </script>
 
 <div
@@ -139,16 +138,12 @@
             {/each}
         </div>
     </div>
-    <button
-        id="btnBotNavCollapseTrigger"
-        class={collapseTriggerBtnClasses}
-        on:click={toggleCollapse}
-    >
+    <Button classes={collapseTriggerBtnClasses} on:click={toggleCollapse}>
         <i
             id="btnBotNavCollapseDirection"
             class="bx bxs-chevron-right transform"
             class:rotate-180={!isCollapsed}
             class:rotate-0={isCollapsed}
         />
-    </button>
+    </Button>
 </div>

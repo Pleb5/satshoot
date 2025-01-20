@@ -17,6 +17,7 @@
     import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount } from 'svelte';
+    import Button from '$lib/components/UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
@@ -135,9 +136,8 @@
     });
 
     const paginationBtnClasses =
-        'transition-all ease duration-[0.3s] py-[10px] px-[20px] rounded-[5px] ' +
-        'font-[18px] bg-white text-[rgb(0,0,0,0.5)] hover:bg-[#3b82f6] disabled:cursor-not-allowed ' +
-        'hover:text-white max-[576px]:grow-[1] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]';
+        'font-[18px] py-[10px] px-[20px] bg-white text-[rgb(0,0,0,0.5)]' +
+        'max-[576px]:grow-[1] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]';
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
@@ -189,27 +189,25 @@
                             <div
                                 class="w-full max-w-[300px] flex flex-row gap-[15px] justify-center items-center max-[576px]:flex-wrap"
                             >
-                                <button
-                                    class="{paginationBtnClasses} max-[576px]:order-[2]"
-                                    type="button"
+                                <Button
+                                    classes="{paginationBtnClasses} max-[576px]:order-[2]"
                                     on:click={handlePrev}
                                     disabled={currentPage === 1}
                                 >
                                     <i class="bx bxs-chevron-left"></i>
-                                </button>
+                                </Button>
                                 <div
                                     class="flex flex-row justify-center items-center max-[576px]:w-[100%]"
                                 >
                                     <p>Current page: {currentPage}</p>
                                 </div>
-                                <button
-                                    class="{paginationBtnClasses} max-[576px]:order-[3]"
-                                    type="button"
+                                <Button
+                                    classes="{paginationBtnClasses} max-[576px]:order-[3]"
                                     on:click={handleNext}
                                     disabled={ticketList.size <= currentPage * JobsPerPage}
                                 >
                                     <i class="bx bxs-chevron-right"></i>
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

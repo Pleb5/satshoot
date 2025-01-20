@@ -9,6 +9,7 @@
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -90,11 +91,6 @@
         'transition ease duration-[0.3s] w-full min-h-[100px] bg-[rgb(0,0,0,0.05)] ' +
         'border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] px-[10px] py-[5px] outline-[0px] ' +
         'outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
-
-    const publishBtnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] grow-[1] ' +
-        'text-[rgb(225,225,225,0.75)] border-[1px] border-[rgb(0,0,0,0.1)] bg-[#3b73f6] ' +
-        'hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-blue-500';
 </script>
 
 {#if $modalStore[0]}
@@ -152,7 +148,7 @@
                                     />
                                 </div>
                                 <div class="w-full flex flex-row gap-[10px]">
-                                    <button class={publishBtnClasses} on:click={postClientReview}>
+                                    <Button grow on:click={postClientReview}>
                                         {#if posting}
                                             <span>
                                                 <ProgressRadial
@@ -167,7 +163,7 @@
                                         {:else}
                                             Publish review
                                         {/if}
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                             <!-- popups Job-Close end -->

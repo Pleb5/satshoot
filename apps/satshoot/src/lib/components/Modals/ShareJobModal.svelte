@@ -13,6 +13,7 @@
     import { onMount, tick } from 'svelte';
     import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -84,10 +85,6 @@
     const textAreaClasses =
         'transition ease duration-[0.3s] w-full min-h-[100px] bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] ' +
         'px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
-
-    const btnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] grow-[1] border-[1px] border-[rgb(0,0,0,0.1)] ' +
-        'bg-[#3b73f6] text-[rgb(255,255,255,0.5)] hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-blue-500';
 </script>
 
 {#if $modalStore[0]}
@@ -124,11 +121,7 @@
                                 </div>
                                 <div class="w-full flex flex-row gap-[5px]">
                                     {#if job.pubkey === $currentUser?.pubkey}
-                                        <button
-                                            on:click={postJob}
-                                            class={btnClasses}
-                                            disabled={posting}
-                                        >
+                                        <Button grow on:click={postJob} disabled={posting}>
                                             {#if posting}
                                                 <span>
                                                     <ProgressRadial
@@ -143,15 +136,13 @@
                                             {:else}
                                                 <span>Publish & Share on Nostr</span>
                                             {/if}
-                                        </button>
+                                        </Button>
                                     {/if}
-                                    <button
-                                        class={btnClasses}
-                                        use:clipboard={shareURL}
-                                        on:click={onCopyURL}
-                                    >
-                                        {copied ? 'Copied!' : 'Copy Job URL'}
-                                    </button>
+                                    <Button grow on:click={onCopyURL}>
+                                        <span use:clipboard={shareURL}>
+                                            {copied ? 'Copied!' : 'Copy Job URL'}
+                                        </span>
+                                    </Button>
                                 </div>
                             </div>
                             <!-- popups Share Job Post end -->

@@ -18,6 +18,7 @@
     import { wallet } from '$lib/stores/wallet';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -210,10 +211,6 @@
     const textareaInputClasses =
         'transition ease duration-[0.3s] w-full min-h-[100px] bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] ' +
         'rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
-
-    const btnClasses =
-        'transition ease duration-[0.3s] outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] rounded-[6px] transform whitespace-nowrap ' +
-        'flex flex-row justify-center items-center gap-[8px] font-[600] text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white';
 </script>
 
 {#if $modalStore[0]}
@@ -334,8 +331,7 @@
                                 bind:checked={sendDm}
                             />
                             <div class="w-full flex flex-row justify-center">
-                                <button
-                                    class={btnClasses}
+                                <Button
                                     on:click={postOffer}
                                     disabled={posting || !validPledgePercent}
                                 >
@@ -353,7 +349,7 @@
                                     {:else}
                                         Publish offer
                                     {/if}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </Card>
