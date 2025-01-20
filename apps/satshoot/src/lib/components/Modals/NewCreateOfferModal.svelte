@@ -13,7 +13,7 @@
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKSigner } from '@nostr-dev-kit/ndk';
-    import { offerTabStore } from '$lib/stores/tab-store';
+    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import { goto } from '$app/navigation';
     import { wallet } from '$lib/stores/wallet';
     import { insertThousandSeparator } from '$lib/utils/misc';
@@ -110,8 +110,6 @@
 
             posting = false;
 
-            $offerTabStore = OfferStatus.Pending;
-
             const t: ToastSettings = {
                 message: 'Offer Posted!',
                 timeout: 4000,
@@ -159,7 +157,8 @@
 
             modalStore.close();
 
-            goto('/my-offers');
+            $profileTabStore = ProfilePageTabs.Offers;
+            goto('/' + $currentUser?.npub + '/');
         } catch (e) {
             posting = false;
             const errorMessage = 'Error happened while publishing Offer:' + e;
