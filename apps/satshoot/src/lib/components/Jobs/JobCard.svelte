@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
@@ -59,16 +58,11 @@
         {:else if selectedTab === Tabs.Earning}
             <EarningDetails user={ticket.pubkey} />
         {:else if selectedTab === Tabs.Reputation}
-            <Ratings
-                ratingAsClient={4}
-                totalClientReviews={250}
-                ratingAsFreelancer={4}
-                totalFreelancerReviews={250}
-            />
+            <Ratings pubkey={ticket.pubkey} />
         {:else if selectedTab === Tabs.Author}
             <Author pubkey={ticket.pubkey} />
         {:else if selectedTab === Tabs.Actions}
-            <JobActions />
+            <JobActions job={ticket} />
         {/if}
     </div>
     <div
