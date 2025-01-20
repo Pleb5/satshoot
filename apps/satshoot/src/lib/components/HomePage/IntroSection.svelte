@@ -1,6 +1,10 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
+
+    function handleLearnMore() {
+        const element = document.getElementById('about');
+        element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 </script>
 
 <div
@@ -24,7 +28,7 @@
                             middle-men.
                         </p>
                         <div class="w-full flex flex-row justify-center items-center gap-[10px]">
-                            <Button>Learn more</Button>
+                            <Button on:click={handleLearnMore}>Learn more</Button>
                         </div>
                     </div>
                     <div
