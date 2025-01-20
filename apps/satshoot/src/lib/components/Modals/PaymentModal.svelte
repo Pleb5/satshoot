@@ -38,6 +38,7 @@
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { wot } from '$lib/stores/wot';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     enum ToastType {
         Success = 'success',
@@ -657,10 +658,6 @@
     const inputClasses =
         'transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] ' +
         'rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
-
-    const btnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] grow-[1] border-[1px] border-[rgb(0,0,0,0.1)] ' +
-        'bg-[#3b73f6] text-[rgb(255,255,255,0.5)] hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-blue-500 disabled:cursor-not-allowed';
 </script>
 
 {#if $modalStore[0]}
@@ -794,12 +791,7 @@
                                         </div>
                                     </div>
                                     <div class="w-full flex flex-row flex-wrap gap-[5px]">
-                                        <button
-                                            class={btnClasses}
-                                            type="button"
-                                            on:click={payWithLN}
-                                            disabled={paying}
-                                        >
+                                        <Button grow on:click={payWithLN} disabled={paying}>
                                             {#if paying}
                                                 <span>
                                                     <ProgressRadial
@@ -814,13 +806,11 @@
                                             {:else}
                                                 Make payment (Zaps)
                                             {/if}
-                                        </button>
+                                        </Button>
                                         {#if hasSenderEcashSetup}
-                                            <button
-                                                class={btnClasses}
-                                                type="button"
+                                            <Button
+                                                grow
                                                 on:click={payWithEcash}
-                                                use:popup={popupHoverCashuPaymentAvailableStatus}
                                                 disabled={paying || !canPayWithEcash}
                                             >
                                                 {#if paying}
@@ -833,15 +823,14 @@
                                                         width="w-8"
                                                     />
                                                 {/if}
-                                                Make payment (Cashu)
-                                            </button>
+                                                <span
+                                                    use:popup={popupHoverCashuPaymentAvailableStatus}
+                                                >
+                                                    Make payment (Cashu)
+                                                </span>
+                                            </Button>
                                         {:else}
-                                            <button
-                                                class={btnClasses}
-                                                type="button"
-                                                on:click={setupEcash}
-                                                use:popup={popupHoverCashuPaymentAvailableStatus}
-                                            >
+                                            <Button grow on:click={setupEcash}>
                                                 {#if paying}
                                                     <span>
                                                         <ProgressRadial
@@ -854,9 +843,12 @@
                                                         />
                                                     </span>
                                                 {/if}
-
-                                                Setup Cashu Wallet
-                                            </button>
+                                                <span
+                                                    use:popup={popupHoverCashuPaymentAvailableStatus}
+                                                >
+                                                    Setup Cashu Wallet
+                                                </span>
+                                            </Button>
                                         {/if}
                                     </div>
                                     <div data-popup="popupHover">

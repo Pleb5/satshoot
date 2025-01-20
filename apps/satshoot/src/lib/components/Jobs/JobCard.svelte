@@ -1,6 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { TicketEvent } from '$lib/events/TicketEvent';
+    import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import EarningDetails from './EarningDetails.svelte';
     import JobActions from './JobActions.svelte';
@@ -42,10 +43,7 @@
 
     let selectedTab = Tabs.JobDescription;
 
-    const jobCardBtnClasses =
-        'transition-all ease duration-[0.3s] border-0 outline-0 font-semibold transform scale-100 ' +
-        'whitespace-nowrap gap-[10px] p-[8px] flex flex-col justify-center items-center text-[16px] ' +
-        'flex-grow rounded-[4px] hover:text-[rgba(255,255,255,0.5)] hover:bg-[rgba(59,115,246,0.75)]';
+    const jobCardBtnClasses = 'border-0 scale-100 ' + 'flex-grow ';
 </script>
 
 <Card classes="border-[1px_solid_rgba(0,0,0,0.1)] gap-[0px]  overflow-hidden p-[0px]">
@@ -70,25 +68,19 @@
     >
         <div class="jobCardButtons w-full flex flex-row gap-[5px] p-[0px] h-full overflow-hidden">
             {#each tabs as tab}
-                <button
-                    class={jobCardBtnClasses}
-                    class:bg-[rgb(59,115,246)]={tab.name === selectedTab}
-                    class:text-[white]={tab.name === selectedTab}
-                    class:bg-[rgba(59,115,246,0)]={tab.name !== selectedTab}
-                    class:text-[rgba(0,0,0,0.5)]={tab.name !== selectedTab}
+                <Button
+                    variant={tab.name === selectedTab ? 'contained' : 'outlined'}
+                    classes={jobCardBtnClasses}
                     on:click={() => (selectedTab = tab.name)}
                 >
-                    <i class={`bx ${tab.icon}`}></i>
-                </button>
+                    <i class={`bx ${tab.icon}`} />
+                </Button>
             {/each}
         </div>
     </div>
     <div class="w-full flex flex-row gap-[0px] border-t-[1px_solid_rgba(0,0,0,0.11)]">
-        <button
-            class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] text-[rgb(255,255,255)] p-[10px_20px] font-semibold text-[18px] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full bg-[rgba(59,115,246,0)] text-[rgba(0,0,0,0.5)] hover:bg-[rgb(59,130,246)] hover:text-white"
-            on:click={() => goto('/' + bech32ID + '/')}
-        >
-            <i class="bx bxs-show"></i>
-        </button>
+        <Button href={'/' + bech32ID + '/'} variant="text" classes="rounded-[0]" fullWidth>
+            <i class="bx bxs-show" />
+        </Button>
     </div>
 </Card>

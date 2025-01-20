@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
+    import Button from '../UI/Buttons/Button.svelte';
 </script>
 
 <div
@@ -23,11 +24,7 @@
                             middle-men.
                         </p>
                         <div class="w-full flex flex-row justify-center items-center gap-[10px]">
-                            <button
-                                class="transition-all ease duration-[0.3s] border-0 outline-0 p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[300px] bg-[rgba(255,255,255,0)] text-[rgba(255,255,255,0.85)] hover:text-white hover:bg-[rgb(59,130,246)]"
-                            >
-                                Learn more
-                            </button>
+                            <Button>Learn more</Button>
                         </div>
                     </div>
                     <div
@@ -41,13 +38,13 @@
                                 If you have an issue you want solved or a project you want
                                 developed, create a job post and start getting offers
                             </p>
-                            <button
-                                type="button"
-                                class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] border-0 outline-0 text-[rgb(255,255,255)] p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[75%] hover:bg-[rgb(59,130,246)] hover:text-[rgb(255,255,255)] max-[576px]:max-w-[100%]"
-                                on:click={() => goto('/post-job/')}
+                            <Button
+                                classes="max-w-[75%] max-[576px]:max-w-[100%]"
+                                fullWidth
+                                href="/post-job/"
                             >
                                 Create Job Listing
-                            </button>
+                            </Button>
                         </div>
                         <div
                             class="w-full bg-[rgba(255,255,255,0.75)] rounded-[6px] shadow-[0_0_8px_0_rgba(0,0,0,0.1)] backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
@@ -57,13 +54,13 @@
                                 See available Jobs that match your expertise. Work out your
                                 conditions and make your Offer
                             </p>
-                            <button
-                                type="button"
-                                class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] border-0 outline-0 text-[rgb(255,255,255)] p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[75%] hover:bg-[rgb(59,130,246)] hover:text-[rgb(255,255,255)] max-[576px]:max-w-[100%]"
-                                on:click={() => goto('/jobs/')}
+                            <Button
+                                classes="max-w-[75%] max-[576px]:max-w-[100%]"
+                                fullWidth
+                                href="/jobs/"
                             >
                                 Discover Opportunities
-                            </button>
+                            </Button>
                         </div>
                     </div>
                     <div

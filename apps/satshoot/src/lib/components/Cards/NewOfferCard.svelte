@@ -25,6 +25,7 @@
     import NewReputationCard from './NewReputationCard.svelte';
     import NewTakeOfferModal from '../Modals/NewTakeOfferModal.svelte';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
@@ -238,11 +239,6 @@
         modalStore.clear();
         modalStore.trigger(modal);
     }
-
-    const offerActionBtnClasses =
-        'transition ease duration-[0.3s] outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] ' +
-        'rounded-[4px] transform whitespace-nowrap flex flex-row justify-center items-center gap-[8px] font-[600] ' +
-        'text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white max-[768px]:grow-[1]';
 </script>
 
 <Card classes="flex-wrap gap-[15px]">
@@ -296,25 +292,19 @@
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)] pl-[5px] pr-[5px] pt-[10px] justify-end"
     >
         {#if myJob && job && job.status === TicketStatus.New}
-            <button class={offerActionBtnClasses} on:click={takeOffer}> Take offer </button>
+            <Button on:click={takeOffer}>Take offer</Button>
         {/if}
 
         {#if showPaymentButton}
-            <button class={offerActionBtnClasses} on:click={handlePay}> Pay </button>
+            <Button on:click={handlePay}>Pay</Button>
         {/if}
 
         {#if job && myJob}
-            <a
-                on:click={setChatPartner}
-                href={'/messages/' + job.encode()}
-                class={offerActionBtnClasses}
-            >
-                Message
-            </a>
+            <Button on:click={setChatPartner} href={'/messages/' + job.encode()}>Message</Button>
         {/if}
 
         {#if viewJob && job}
-            <a href={'/' + job.encode() + '/'} class={offerActionBtnClasses}> View Offer's Job </a>
+            <Button href={'/' + job.encode() + '/'}>View Offer's Job</Button>
         {/if}
     </div>
 </Card>

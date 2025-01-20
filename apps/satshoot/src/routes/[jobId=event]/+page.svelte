@@ -4,6 +4,7 @@
     import NewOfferCard from '$lib/components/Cards/NewOfferCard.svelte';
     import NewUserCard from '$lib/components/Cards/NewUserCard.svelte';
     import NewCreateOfferModal from '$lib/components/Modals/NewCreateOfferModal.svelte';
+    import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
@@ -218,11 +219,6 @@
         { id: OfferTab.Won, label: 'Won' },
         { id: OfferTab.Lost, label: 'Lost' },
     ];
-
-    const offerBtnClasses =
-        'transition ease duration-[0.3s] outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] ' +
-        'rounded-[6px] transform whitespace-nowrap flex flex-row justify-center items-center gap-[8px] font-[600] ' +
-        'text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white max-[768px]:grow-[1]';
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
@@ -253,13 +249,12 @@
 
                                     {#if allowCreateOffer}
                                         <div class="flex flex-row justify-center">
-                                            <button
-                                                type="button"
+                                            <Button
                                                 on:click={() => createOffer(offerToEdit)}
-                                                class={offerBtnClasses}
+                                                classes="max-[768px]:grow-[1]"
                                             >
                                                 {btnActionText}
-                                            </button>
+                                            </Button>
                                         </div>
                                     {:else}
                                         <div

@@ -21,6 +21,7 @@
     import { beforeNavigate, goto } from '$app/navigation';
     import { onMount, tick } from 'svelte';
     import Card from '$lib/components/UI/Card.svelte';
+    import Button from '$lib/components/UI/Buttons/Button.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -356,11 +357,7 @@
                     <div
                         class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-[rgb(0,0,0,0.1)] pt-[10px] mt-[10px]"
                     >
-                        <button
-                            class="transition ease duration-[0.3s] py-[5px] px-[10px] w-full max-w-[300px] rounded-[4px] text-center font-[600] cursor-pointer text-white bg-[rgb(59,115,246)] hover:bg-blue-500"
-                            on:click={postTicket}
-                            disabled={!allowPostTicket || posting}
-                        >
+                        <Button on:click={postTicket} disabled={!allowPostTicket || posting}>
                             {#if !allowPostTicket}
                                 Log in To Post
                             {:else if posting}
@@ -377,7 +374,7 @@
                             {:else}
                                 <span>Publish Job Post</span>
                             {/if}
-                        </button>
+                        </Button>
                     </div>
                 </Card>
             </div>

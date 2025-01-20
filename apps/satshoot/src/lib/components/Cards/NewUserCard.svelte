@@ -29,6 +29,7 @@
     import { selectedPerson } from '$lib/stores/messages';
     import ShareModal from '../Modals/ShareModal.svelte';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -285,26 +286,12 @@
         'outline outline-[4px] outline-[rgb(255,255,255)] hover:outline-[rgb(59,115,246)] hover:scale-[1.02] ' +
         'transform w-[75px] h-[75px] min-w-[75px] min-h-[75px] shadow-[0_0_8px_4px_rgba(0,0,0,0.5)] hover:scale-[1.03]';
 
-    const btnClasses =
-        'transition ease duration-[0.3s] outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] ' +
-        'rounded-[6px] transform whitespace-nowrap flex flex-row justify-center items-center gap-[8px] font-[600] ' +
-        'text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white';
-
     const iconBtnClasses =
         'flex flex-row justify-center items-center px-[10px] py-[5px] text-[18px] ' +
         'text-[rgb(0,0,0,0.25)] bg-[rgb(0,0,0,0.1)] group-hover:bg-[rgb(225,255,225,0.1)]';
 
-    const copyBtnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[15px] rounded-[0px] ' +
-        'text-[rgb(0,0,0,0.25)] hover:text-white hover:bg-[#3b73f6]';
-
-    const actionBtnClasses =
-        'transition ease duration-[0.3s] px-[15px] py-[10px] bg-[rgb(255,255,255)] ' +
-        'text-[rgb(0,0,0,0.35)] rounded-[4px] hover:bg-[rgb(59,115,246)] hover:text-white';
-
     const addressCopyBtnClasses =
-        'transition-all ease duration-[0.3s] bg-white py-[5px] px-[15px] rounded-[0px] text-[rgb(0,0,0,0.25)] ' +
-        'border-l-[1px] border-l-[rgb(0,0,0,0.1)] hover:border-l-[rgb(0,0,0,0.0)] hover:text-white hover:bg-[#3b73f6]';
+        'bg-white rounded-[0px] border-l-[1px] border-l-[rgb(0,0,0,0.1)] hover:border-l-[rgb(0,0,0,0.0)] ';
 </script>
 
 <div class="w-full max-w-[350px] flex flex-col gap-[25px] max-[768px]:max-w-full">
@@ -374,9 +361,9 @@
                                     </button>
                                 {/if}
 
-                                <button class={copyBtnClasses} use:clipboard={text}>
-                                    <i class={iconClass} />
-                                </button>
+                                <Button variant="text" classes="rounded-[0] ">
+                                    <i class={iconClass} use:clipboard={text} />
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -391,29 +378,26 @@
                 class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden bg-[rgb(0,0,0,0.1)] flex-wrap p-[4px]"
             >
                 {#if showMessageButton}
-                    <a
+                    <Button
+                        variant="outlined"
+                        classes="bg-white"
+                        fullWidth
                         href={'/messages/' + bech32ID}
-                        on:click={selectChatPartner}
                         title="Message (DM) user"
-                        class="{actionBtnClasses} w-full flex justify-center"
+                        on:click={selectChatPartner}
                     >
                         <i class="bx bxs-conversation" />
-                    </a>
+                    </Button>
                 {/if}
-
-                <button
+                <Button
+                    variant="outlined"
+                    classes="bg-white"
+                    fullWidth
                     title="Share (Copy profile page link)"
-                    class="{actionBtnClasses} grow-[1]"
                     on:click={handleShare}
                 >
                     <i class="bx bxs-share-alt" />
-                </button>
-                <!-- <button title="Block user" class="{actionBtnClasses} grow-[1]">
-                    <i class="bx bx-block" />
-                </button>
-                <button title="Report user" class="{actionBtnClasses} grow-[1]">
-                    <i class="bx bx-error" />
-                </button> -->
+                </Button>
             </div>
             <div class="w-full flex flex-col gap-[5px]">
                 <div
@@ -426,12 +410,12 @@
                         placeholder="nPubAddress"
                         value={user.npub}
                     />
-                    <button class={addressCopyBtnClasses}>
+                    <Button variant="outlined" classes={addressCopyBtnClasses}>
                         <i class="bx bx-qr" />
-                    </button>
-                    <button class={addressCopyBtnClasses} use:clipboard={user.npub}>
-                        <i class="bx bxs-copy" />
-                    </button>
+                    </Button>
+                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                        <i class="bx bxs-copy" use:clipboard={user.npub} />
+                    </Button>
                 </div>
                 <div
                     class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
@@ -443,21 +427,20 @@
                         placeholder="nProfileAddress"
                         value={nip19.nprofileEncode({ pubkey: user.pubkey })}
                     />
-                    <button class={addressCopyBtnClasses}>
+                    <Button variant="outlined" classes={addressCopyBtnClasses}>
                         <i class="bx bx-qr" />
-                    </button>
-                    <button
-                        class={addressCopyBtnClasses}
-                        use:clipboard={nip19.nprofileEncode({ pubkey: user.pubkey })}
-                    >
-                        <i class="bx bxs-copy" />
-                    </button>
+                    </Button>
+                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                        <i
+                            class="bx bxs-copy"
+                            use:clipboard={nip19.nprofileEncode({ pubkey: user.pubkey })}
+                        />
+                    </Button>
                 </div>
             </div>
             {#if $currentUser && $currentUser.npub !== npub}
                 <div class="flex flex-col gap-[10px]">
-                    <button
-                        class={btnClasses}
+                    <Button
                         on:click={followStatus === FollowStatus.isFollowing ? unFollow : follow}
                     >
                         {#if processingFollowEvent}
@@ -472,7 +455,7 @@
                         {:else}
                             {followBtnText}
                         {/if}
-                    </button>
+                    </Button>
                 </div>
             {/if}
         </Card>

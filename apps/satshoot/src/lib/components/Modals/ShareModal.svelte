@@ -3,6 +3,7 @@
     import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import { page } from '$app/stores';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
@@ -13,10 +14,6 @@
             copied = false;
         }, 1000);
     }
-
-    const btnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] grow-[1] border-[1px] border-[rgb(0,0,0,0.1)] ' +
-        'bg-[#3b73f6] text-[rgb(255,255,255,0.5)] hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-blue-500';
 </script>
 
 {#if $modalStore[0]}
@@ -36,13 +33,11 @@
                             <CloseModal />
                         </div>
                         <div class="w-full flex flex-row justify-center py-[10px] px-[5px]">
-                            <button
-                                class={btnClasses}
-                                use:clipboard={$page.url.href}
-                                on:click={onCopyURL}
-                            >
-                                {copied ? 'Copied!' : 'Copy Page URL'}
-                            </button>
+                            <Button grow on:click={onCopyURL}>
+                                <span use:clipboard={$page.url.href}>
+                                    {copied ? 'Copied!' : 'Copy Page URL'}
+                                </span>
+                            </Button>
                         </div>
                     </Card>
                 </div>

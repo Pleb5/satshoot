@@ -5,6 +5,7 @@
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
     import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -69,10 +70,6 @@
         'w-full border-[0px] border-[rgb(0,0,0,0.15)] ' +
         'rounded-[0px] outline outline-[0px] py-[5px] px-[10px]';
 
-    const inputBtnClasses =
-        'transition-all ease duration-[0.3s] bg-[#3b73f6] py-[5px] px-[10px] ' +
-        'rounded-[0px] text-white hover:text-white hover:bg-[#3b82f6]';
-
     const termWrapperClasses =
         'flex flex-row gap-[5px] px-[10px] py-[1px] bg-[rgb(0,0,0,0.1)] ' +
         'border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] items-center hover:bg-[#3b73f6] group';
@@ -112,20 +109,12 @@
                                                     type="text"
                                                     placeholder="Search term or add tag"
                                                 />
-                                                <button
-                                                    class={inputBtnClasses}
-                                                    type="button"
-                                                    on:click={handleAdd}
-                                                >
+                                                <Button on:click={handleAdd}>
                                                     <i class="bx bx-plus" />
-                                                </button>
-                                                <button
-                                                    class={inputBtnClasses}
-                                                    type="button"
-                                                    on:click={handleSearch}
-                                                >
+                                                </Button>
+                                                <Button on:click={handleSearch}>
                                                     <i class="bx bx-search" />
-                                                </button>
+                                                </Button>
                                             </div>
                                         </div>
                                         <div class="w-full flex flex-col gap-[5px]">
