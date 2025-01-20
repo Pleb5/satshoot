@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { linkifyText } from '$lib/utils/misc';
+
     export let title: string;
     export let description: string;
     export let bech32ID: string;
@@ -12,9 +14,9 @@
     $: {
         if (description) {
             if (description.length > 80) {
-                processedDescription = description.substring(0, 80) + '...';
+                processedDescription = linkifyText(description.substring(0, 80)) + ' ...';
             } else {
-                processedDescription = description;
+                processedDescription = linkifyText(description);
             }
         } else {
             processedDescription = 'No description!';

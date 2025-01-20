@@ -3,6 +3,7 @@
     import { TicketEvent } from '$lib/events/TicketEvent';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
+    import Author from './Author.svelte';
     import EarningDetails from './EarningDetails.svelte';
     import JobActions from './JobActions.svelte';
     import JobDetails from './JobDetails.svelte';
@@ -19,6 +20,7 @@
         JobDescription,
         Earning,
         Reputation,
+        Author,
         Actions,
     }
 
@@ -34,6 +36,10 @@
         {
             icon: 'bxs-star',
             name: Tabs.Reputation,
+        },
+        {
+            icon: 'bxs-user',
+            name: Tabs.Author,
         },
         {
             icon: 'bxs-grid-alt',
@@ -59,6 +65,8 @@
                 ratingAsFreelancer={4}
                 totalFreelancerReviews={250}
             />
+        {:else if selectedTab === Tabs.Author}
+            <Author pubkey={ticket.pubkey} />
         {:else if selectedTab === Tabs.Actions}
             <JobActions />
         {/if}

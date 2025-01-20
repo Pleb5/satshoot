@@ -17,6 +17,10 @@
 
     let userProfile: NDKUserProfile | undefined = undefined;
 
+    $: if (userProfile?.image) {
+        avatarImage = userProfile.image;
+    }
+
     onMount(async () => {
         const user = $ndk.getUser({ pubkey });
 

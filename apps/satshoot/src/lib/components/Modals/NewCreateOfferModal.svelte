@@ -261,7 +261,7 @@
                                     <div class="flex flex-col gap-[5px] grow-[1]">
                                         <div class="">
                                             <label class="font-[600]" for="">
-                                                Your offer's price (sats)
+                                                Price({pricingMethod ? 'sats/min' : 'sats'})
                                             </label>
                                         </div>
                                         <div class="w-full flex flex-row items-center">
@@ -321,10 +321,17 @@
                                     </div>
                                 </div>
                             </div>
-                            <textarea
-                                placeholder="Describe why you should get this job"
-                                class={textareaInputClasses}
-                            />
+                            <div class="flex flex-col gap-[5px] grow-[1]">
+                                <div class="">
+                                    <label class="font-[600]" for="description"> Your Pitch </label>
+                                </div>
+
+                                <textarea
+                                    placeholder="Describe why you should get this job"
+                                    class={textareaInputClasses}
+                                    bind:value={description}
+                                />
+                            </div>
                             <Checkbox
                                 id="dm-checkbox"
                                 label="Send offer as a Direct Message (DM) to the job poster"
