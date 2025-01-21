@@ -1,19 +1,38 @@
 <script lang="ts">
-    const btnClasses =
-        'transition ease-in-out duration-[0.3s] border-none outline-none rounded-[5px] ' +
-        'font-[600] transform scale-[1] whitespace-nowrap flex flex-row items-center gap-[10px] ' +
-        'w-auto flex-grow bg-[rgba(0,0,0,0.1)] text-[rgba(0,0,0,0.5)] justify-start p-[8px_12px] ' +
-        'text-[16px] hover:bg-[rgb(59,130,246)] hover:text-[rgb(255,255,255)]';
+    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
+    import Button from '../UI/Buttons/Button.svelte';
+    import ShareJobModal from '../Modals/ShareJobModal.svelte';
+    import { TicketEvent } from '$lib/events/TicketEvent';
+
+    const modalStore = getModalStore();
+
+    export let job: TicketEvent;
+
+    function handleShare() {
+        const modalComponent: ModalComponent = {
+            ref: ShareJobModal,
+            props: { job },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.clear();
+        modalStore.trigger(modal);
+    }
 </script>
 
 <div class="flex-grow-1 flex flex-col gap-[10px] p-[0px]">
     <div class="w-full flex flex-row flex-wrap gap-[10px]">
         <div class="w-full flex flex-row flex-wrap gap-[10px]">
-            <button class={btnClasses} type="button">
-                <i class="bx bxs-message-rounded" />Message</button
+            <Button
+                classes="bg-[rgba(0,0,0,0.1)] text-[rgba(0,0,0,0.5)] scale-[1] w-auto flex-grow justify-start"
+                on:click={handleShare}
             >
-            <button class={btnClasses} type="button"> <i class="bx bxs-share" />Share</button>
-            <button class={btnClasses} type="button"> <i class="bx bxs-megaphone" />Report</button>
+                <i class="bx bxs-share" />
+                Share
+            </Button>
         </div>
     </div>
 </div>

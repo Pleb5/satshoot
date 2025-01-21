@@ -1,6 +1,7 @@
 <script lang="ts">
     import { validateSingleSeedWord } from '$lib/utils/login';
     import { clipboard } from '@skeletonlabs/skeleton';
+    import Button from './UI/Buttons/Button.svelte';
 
     export let words: string[];
     export let inputsDisabled = false;
@@ -23,10 +24,6 @@
 
     const btnWrapperClasses =
         'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-[rgb(0,0,0,0.15)] border-t-[0px]';
-
-    const btnClasses =
-        'transition ease duration-[0.3s] grow-[1] p-[5px] font-[500] flex justify-center ' +
-        'text-[rgb(0,0,0,0.5)] hover:bg-[rgb(59,115,246)] hover:text-white hover:border-[rgb(59,115,246)]';
 </script>
 
 <div class="w-full flex flex-row gap-[5px]">
@@ -57,8 +54,10 @@
 </div>
 {#if showCopyButton}
     <div class={btnWrapperClasses}>
-        <button class={btnClasses} use:clipboard={words.join(' ')} on:click={onCopySeed}>
-            {copiedSeed ? 'Copied' : 'Copy'}
-        </button>
+        <Button variant="outlined" on:click={onCopySeed} classes="rounded-[0]" grow>
+            <span use:clipboard={words.join(' ')}>
+                {copiedSeed ? 'Copied' : 'Copy'}
+            </span>
+        </Button>
     </div>
 {/if}

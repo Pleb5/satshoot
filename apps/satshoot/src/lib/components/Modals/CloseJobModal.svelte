@@ -13,9 +13,11 @@
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import { tick } from 'svelte';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -115,26 +117,10 @@
         }
     }
 
-    const toggleBtnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] grow-[1] ' +
-        'text-center text-[rgb(0,0,0,0.5)] cursor-pointer hover:text-white hover:bg-[#3b73f6]';
-
-    const checkboxInputClasses =
-        'appearance-none h-[20px] w-[20px] border-[1px] border-[rgb(0,0,0,0.25)] ' +
-        'rounded-[4px] checked:bg-blue-500 checked:border-[rgb(0,0,0,0.0)] peer';
-
-    const checkboxClasses =
-        'bx bx-check hidden peer-checked:block absolute pointer-events-none text-white';
-
     const textAreaClasses =
         'transition ease duration-[0.3s] w-full min-h-[100px] bg-[rgb(0,0,0,0.05)] ' +
         'border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] px-[10px] py-[5px] outline-[0px] ' +
         'outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
-
-    const closeJobBtnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] grow-[1] ' +
-        'text-[rgb(225,225,225,0.75)] border-[1px] border-[rgb(0,0,0,0.1)] bg-[#3b73f6] ' +
-        'hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-blue-500';
 </script>
 
 {#if $modalStore[0]}
@@ -146,15 +132,8 @@
         >
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
-                    >
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
-                        >
-                            <p class="font-[500] text-[18px]">Close job?</p>
-                            <CloseModal />
-                        </div>
+                    <Card>
+                        <ModalHeader title="Close Job?" />
                         <div class="w-full flex flex-col">
                             <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
                                 <ReviewToggleQuestion
@@ -200,11 +179,7 @@
                                 </div>
 
                                 <div class="w-full flex flex-row gap-[10px]">
-                                    <button
-                                        class={closeJobBtnClasses}
-                                        on:click={closeJob}
-                                        disabled={closing}
-                                    >
+                                    <Button grow on:click={closeJob} disabled={closing}>
                                         {#if closing}
                                             <span>
                                                 <ProgressRadial
@@ -221,12 +196,12 @@
                                                 {'Close job' + (offer ? ' and Pay' : '')}
                                             </span>
                                         {/if}
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                             <!-- popups Job-Close end -->
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>

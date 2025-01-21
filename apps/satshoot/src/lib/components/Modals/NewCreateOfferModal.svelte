@@ -5,7 +5,6 @@
         ProgressRadial,
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
@@ -13,10 +12,13 @@
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKSigner } from '@nostr-dev-kit/ndk';
-    import { offerTabStore } from '$lib/stores/tab-store';
+    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import { goto } from '$app/navigation';
     import { wallet } from '$lib/stores/wallet';
     import { insertThousandSeparator } from '$lib/utils/misc';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -108,8 +110,6 @@
 
             posting = false;
 
-            $offerTabStore = OfferStatus.Pending;
-
             const t: ToastSettings = {
                 message: 'Offer Posted!',
                 timeout: 4000,
@@ -157,7 +157,8 @@
 
             modalStore.close();
 
-            goto('/my-offers');
+            $profileTabStore = ProfilePageTabs.Offers;
+            goto('/' + $currentUser?.npub + '/');
         } catch (e) {
             posting = false;
             const errorMessage = 'Error happened while publishing Offer:' + e;
@@ -209,10 +210,6 @@
     const textareaInputClasses =
         'transition ease duration-[0.3s] w-full min-h-[100px] bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] ' +
         'rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
-
-    const btnClasses =
-        'transition ease duration-[0.3s] outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] rounded-[6px] transform whitespace-nowrap ' +
-        'flex flex-row justify-center items-center gap-[8px] font-[600] text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white';
 </script>
 
 {#if $modalStore[0]}
@@ -224,13 +221,8 @@
         >
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
-                    >
-                        <div class="flex flex-row justify-between gap-[10px] pb-[5px]">
-                            <p class="font-[500] text-[18px]">Create Offer</p>
-                            <CloseModal />
-                        </div>
+                    <Card>
+                        <ModalHeader title="Create Offer" />
                         <div class="w-full flex flex-col gap-[15px]">
                             <div
                                 class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
@@ -265,7 +257,7 @@
                                     <div class="flex flex-col gap-[5px] grow-[1]">
                                         <div class="">
                                             <label class="font-[600]" for="">
-                                                Your offer's price (sats)
+                                                Price({pricingMethod ? 'sats/min' : 'sats'})
                                             </label>
                                         </div>
                                         <div class="w-full flex flex-row items-center">
@@ -325,18 +317,24 @@
                                     </div>
                                 </div>
                             </div>
-                            <textarea
-                                placeholder="Describe why you should get this job"
-                                class={textareaInputClasses}
-                            />
+                            <div class="flex flex-col gap-[5px] grow-[1]">
+                                <div class="">
+                                    <label class="font-[600]" for="description"> Your Pitch </label>
+                                </div>
+
+                                <textarea
+                                    placeholder="Describe why you should get this job"
+                                    class={textareaInputClasses}
+                                    bind:value={description}
+                                />
+                            </div>
                             <Checkbox
                                 id="dm-checkbox"
                                 label="Send offer as a Direct Message (DM) to the job poster"
                                 bind:checked={sendDm}
                             />
                             <div class="w-full flex flex-row justify-center">
-                                <button
-                                    class={btnClasses}
+                                <Button
                                     on:click={postOffer}
                                     disabled={posting || !validPledgePercent}
                                 >
@@ -354,10 +352,10 @@
                                     {:else}
                                         Publish offer
                                     {/if}
-                                </button>
+                                </Button>
                             </div>
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>

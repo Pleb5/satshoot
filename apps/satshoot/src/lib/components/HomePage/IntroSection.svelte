@@ -1,5 +1,10 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
+    import Button from '../UI/Buttons/Button.svelte';
+
+    function handleLearnMore() {
+        const element = document.getElementById('about');
+        element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 </script>
 
 <div
@@ -19,16 +24,11 @@
                             Unstoppable Freelancing
                         </h1>
                         <p class="max-w-[1000px] text-center text-[24px] max-[576px]:text-[18px]">
-                            Join the freedom economy, where you hold the power and your connection
-                            hold the power for the work that needs to be done. No third-parties. No
-                            middlemen.
+                            Join the Freedom Economy. Take full control. No third-parties. No
+                            middle-men.
                         </p>
                         <div class="w-full flex flex-row justify-center items-center gap-[10px]">
-                            <button
-                                class="transition-all ease duration-[0.3s] border-0 outline-0 p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[300px] bg-[rgba(255,255,255,0)] text-[rgba(255,255,255,0.85)] hover:text-white hover:bg-[rgb(59,130,246)]"
-                            >
-                                Learn more
-                            </button>
+                            <Button on:click={handleLearnMore}>Learn more</Button>
                         </div>
                     </div>
                     <div
@@ -40,31 +40,31 @@
                             <h2 class="text-center font-[800] text-[32px]">Find Skilled People</h2>
                             <p class="text-center">
                                 If you have an issue you want solved or a project you want
-                                developed, create a job post about it and start getting offers
+                                developed, create a job post and start getting offers
                             </p>
-                            <button
-                                type="button"
-                                class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] border-0 outline-0 text-[rgb(255,255,255)] p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[75%] hover:bg-[rgb(59,130,246)] hover:text-[rgb(255,255,255)] max-[576px]:max-w-[100%]"
-                                on:click={() => goto('/post-job/')}
+                            <Button
+                                classes="max-w-[75%] max-[576px]:max-w-[100%]"
+                                fullWidth
+                                href="/post-job/"
                             >
                                 Create Job Listing
-                            </button>
+                            </Button>
                         </div>
                         <div
                             class="w-full bg-[rgba(255,255,255,0.75)] rounded-[6px] shadow-[0_0_8px_0_rgba(0,0,0,0.1)] backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
                         >
                             <h2 class="text-center font-[800] text-[32px]">Look For Work</h2>
                             <p class="text-center">
-                                See what problems are available to solve, or projects to build, and
-                                give your best offer to solve said problem or finish the project
+                                See available Jobs that match your expertise. Work out your
+                                conditions and make your Offer
                             </p>
-                            <button
-                                type="button"
-                                class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] border-0 outline-0 text-[rgb(255,255,255)] p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[75%] hover:bg-[rgb(59,130,246)] hover:text-[rgb(255,255,255)] max-[576px]:max-w-[100%]"
-                                on:click={() => goto('/jobs/')}
+                            <Button
+                                classes="max-w-[75%] max-[576px]:max-w-[100%]"
+                                fullWidth
+                                href="/jobs/"
                             >
                                 Discover Opportunities
-                            </button>
+                            </Button>
                         </div>
                     </div>
                     <div

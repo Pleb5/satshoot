@@ -1,279 +1,234 @@
 <script lang="ts">
-import { page } from '$app/stores';
-import ReputationCard from '$lib/components/Cards/ReputationCard.svelte';
-import UserCard from "$lib/components/Cards/UserCard.svelte";
-import { TicketEvent } from '$lib/events/TicketEvent';
-import currentUser, { loggedIn } from '$lib/stores/user';
-import ndk from '$lib/stores/ndk';
-import { NDKKind } from '@nostr-dev-kit/ndk';
-import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
-import { OfferEvent } from '$lib/events/OfferEvent';
-import TicketCard from '$lib/components/Cards/TicketCard.svelte';
-import OfferCard from '$lib/components/Cards/OfferCard.svelte';
-import { onDestroy, onMount } from 'svelte';
-import { derived } from 'svelte/store';
-import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
-import TicketIcon from '$lib/components/Icons/TicketIcon.svelte';
-import HandshakeIcon from '$lib/components/Icons/HandshakeIcon.svelte';
-import PostTicketIcon from '$lib/components/Icons/PostTicketIcon.svelte';
-import BitcoinIcon from '$lib/components/Icons/BitcoinIcon.svelte';
+    import { page } from '$app/stores';
+    import NewOfferCard from '$lib/components/Cards/NewOfferCard.svelte';
+    import NewUserCard from '$lib/components/Cards/NewUserCard.svelte';
+    import JobCard from '$lib/components/Jobs/JobCard.svelte';
+    import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
+    import Card from '$lib/components/UI/Card.svelte';
+    import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
+    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import ndk from '$lib/stores/ndk';
+    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
+    import currentUser from '$lib/stores/user';
     import { orderEventsChronologically } from '$lib/utils/helpers';
+    import { NDKKind } from '@nostr-dev-kit/ndk';
+    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+    import { onDestroy } from 'svelte';
 
-$: npub = $page.params.npub;
-$: user = $ndk.getUser({npub: npub});
+    enum OfferStatus {
+        Unknown,
+        Pending,
+        Won,
+        Lost,
+    }
 
-const subOptions = {
-    autoStart: true,
-};
+    let jobFilter = {
+        new: true,
+        inProgress: false,
+        closed: false,
+    };
 
-let allTicketsOfUser:NDKEventStore<ExtendedBaseType<TicketEvent>>;
-let allOffersOfUser:NDKEventStore<ExtendedBaseType<OfferEvent>>;
-let ticketsWithUser;
-let offersWithUser;
+    let offerFilter = {
+        pending: true,
+        success: false,
+        lost: false,
+    };
 
+    $: npub = $page.params.npub;
+    $: user = $ndk.getUser({ npub: npub });
 
-$: if (user) {
-    if (allTicketsOfUser) allTicketsOfUser.empty();
-    if (allOffersOfUser) allOffersOfUser.empty();
+    const subOptions = {
+        autoStart: true,
+    };
 
-    allTicketsOfUser = $ndk.storeSubscribe<TicketEvent>(
-        {
-            kinds: [NDKKind.FreelanceTicket],
-            authors: [user.pubkey],
-        },
-        subOptions,
-        TicketEvent
-    );
+    let allTicketsOfUser: NDKEventStore<ExtendedBaseType<TicketEvent>>;
+    let allOffersOfUser: NDKEventStore<ExtendedBaseType<OfferEvent>>;
+    let filteredTickets: ExtendedBaseType<ExtendedBaseType<TicketEvent>>[] = [];
+    let filteredOffers: ExtendedBaseType<ExtendedBaseType<OfferEvent>>[] = [];
 
-    allOffersOfUser = $ndk.storeSubscribe<OfferEvent>(
-        {
-            kinds: [NDKKind.FreelanceOffer],
-            authors: [user.pubkey],
-        },
-        subOptions,
-        OfferEvent
-    );
-}
+    // jobs on which use has made offers
+    let appliedJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
 
-$: orderEventsChronologically($allTicketsOfUser);
+    $: if (user) {
+        if (allTicketsOfUser) allTicketsOfUser.empty();
+        if (allOffersOfUser) allOffersOfUser.empty();
 
-$: orderEventsChronologically($allOffersOfUser);
+        allTicketsOfUser = $ndk.storeSubscribe<TicketEvent>(
+            {
+                kinds: [NDKKind.FreelanceTicket],
+                authors: [user.pubkey],
+            },
+            subOptions,
+            TicketEvent
+        );
 
+        allOffersOfUser = $ndk.storeSubscribe<OfferEvent>(
+            {
+                kinds: [NDKKind.FreelanceOffer],
+                authors: [user.pubkey],
+            },
+            subOptions,
+            OfferEvent
+        );
+    }
 
-$: if ($loggedIn) {
-    ticketsWithUser = derived(
-        [allTicketsOfUser, currentUser],
-        ([$allTicketsOfUser, $currentUser]) => {
-            const tickets = $allTicketsOfUser.filter((ticket: TicketEvent) => {
-                const winner = ticket.acceptedOfferAddress;
-                if (
-                    winner
-                    && $currentUser
-                    && winner.split(':')[1] === $currentUser.pubkey
-                ) {
-                    return true;
-                } 
+    $: if ($allOffersOfUser.length > 0) {
+        const dTagOfJobs = $allOffersOfUser.map(
+            (offer) => offer.referencedTicketAddress.split(':')[2]
+        );
 
-                return false;
-            });
+        appliedJobs = $ndk.storeSubscribe<TicketEvent>(
+            {
+                kinds: [NDKKind.FreelanceTicket],
+                '#d': dTagOfJobs,
+            },
+            {
+                autoStart: true,
+                closeOnEose: false,
+                groupable: true,
+                groupableDelay: 1000,
+            },
+            TicketEvent
+        );
+    }
 
-            orderEventsChronologically(tickets);
+    $: {
+        orderEventsChronologically($allTicketsOfUser);
 
-            return tickets;
-        }
-    );
+        filteredTickets = $allTicketsOfUser.filter((ticket) => {
+            const { new: isNew, inProgress, closed } = jobFilter;
+            const { status } = ticket;
 
-    offersWithUser = derived(
-        [allOffersOfUser, currentUser],
-        ([$allOffersOfUser, $currentUser]) => {
-            const offers = $allOffersOfUser.filter((offer: OfferEvent) => {
-                const ticketPubkey = offer.referencedTicketAddress.split(':')[1];
-                if (ticketPubkey === $currentUser?.pubkey) {
-                    return true;
-                }
+            return (
+                (isNew && status === TicketStatus.New) ||
+                (inProgress && status === TicketStatus.InProgress) ||
+                (closed && (status === TicketStatus.Resolved || status === TicketStatus.Failed))
+            );
+        });
+    }
 
-                return false;
-            });
+    $: {
+        orderEventsChronologically($allOffersOfUser);
 
-            orderEventsChronologically(offers);
+        filteredOffers = $allOffersOfUser.filter((offer) => {
+            const job = $appliedJobs.find(
+                (job) => job.ticketAddress === offer.referencedTicketAddress
+            );
 
-            return offers;
-        }
-    );
+            const offerStatus = job
+                ? job.acceptedOfferAddress
+                    ? job.acceptedOfferAddress === offer.offerAddress
+                        ? OfferStatus.Won
+                        : OfferStatus.Lost
+                    : OfferStatus.Pending
+                : OfferStatus.Unknown;
 
-}
+            const { pending, success, lost } = offerFilter;
 
-onMount(() => {
-    const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
-    // Scroll to top as soon as ticket arrives
-    elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
-});
+            return (
+                (pending && offerStatus === OfferStatus.Pending) ||
+                (success && offerStatus === OfferStatus.Won) ||
+                (lost && offerStatus === OfferStatus.Lost) ||
+                offerStatus === OfferStatus.Unknown
+            );
+        });
+    }
 
-onDestroy(()=>{
-    if (allTicketsOfUser) allTicketsOfUser.empty();
-    if (allOffersOfUser) allOffersOfUser.empty();
-});
+    onDestroy(() => {
+        if (allTicketsOfUser) allTicketsOfUser.empty();
+        if (allOffersOfUser) allOffersOfUser.empty();
+        if (appliedJobs) appliedJobs.empty();
+    });
 
+    $: isOwnProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
+
+    $: tabs = [
+        { id: ProfilePageTabs.Jobs, label: `${isOwnProfile ? 'My' : ''} Jobs` },
+        { id: ProfilePageTabs.Offers, label: `${isOwnProfile ? 'My' : ''} Offers` },
+    ];
 </script>
 
-<div class="flex flex-col gap-y-4 items-center p-4">
-    <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-        <UserCard {user} />
-    </div>
-    <!-- Show reputation defaulting ratings to the type of review
-    <!-- that contains more reviews -->
-    {#if $currentUser}
-    <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-            <ReputationCard user={user.pubkey} type={undefined}/>
-    </div>
-    {/if}
-
-    <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-        {#if $loggedIn && (user.pubkey !== $currentUser?.pubkey)}
-            {#if $ticketsWithUser?.length > 0 
-                || $offersWithUser?.length > 0}
-                <Accordion>
-                    <AccordionItem>
-                        <svelte:fragment slot="lead">
-                            <HandshakeIcon/>
-                        </svelte:fragment>
-                        <svelte:fragment slot="summary">
-                            <h3 class="h3 text-center underline">
-                                Deals with User
-                            </h3>
-                        </svelte:fragment>
-                        <svelte:fragment slot="content">
-                            <Accordion>
-                                <AccordionItem>
-                                    <svelte:fragment slot="lead">
-                                        <PostTicketIcon/>
-                                    </svelte:fragment>
-                                    <svelte:fragment slot="summary">
-                                        <h3 class="h3 text-center underline">
-                                            You as a Freelancer
-                                        </h3>
-                                    </svelte:fragment>
-                                    <svelte:fragment slot="content">
-                                        {#if $ticketsWithUser?.length > 0}
-                                            <div class="flex flex-col items-center gap-y-8">
-                                                {#each $ticketsWithUser as ticket (ticket.id)}
-                                                    <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-                                                        <TicketCard
-                                                        {ticket}
-                                                        titleSize={'md lg:text-xl'}
-                                                        showReputation={false}
-                                                    />
-                                                    </div>
+<div class="w-full flex flex-col gap-0 flex-grow">
+    <!-- Section start -->
+    <div class="w-full flex flex-col justify-center items-center py-[50px]">
+        <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
+            <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
+                <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
+                    <NewUserCard {user} />
+                    <div class="w-full flex flex-col gap-[15px] relative">
+                        <div class="w-full flex flex-col gap-[10px]">
+                            <TabSelector {tabs} bind:selectedTab={$profileTabStore} />
+                            <div class="w-full flex flex-col">
+                                {#if $profileTabStore === ProfilePageTabs.Jobs}
+                                    <div class="w-full flex flex-col gap-[10px]">
+                                        <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
+                                            <Checkbox
+                                                id="new-jobs"
+                                                label="New"
+                                                bind:checked={jobFilter.new}
+                                            />
+                                            <Checkbox
+                                                id="inProgress-jobs"
+                                                label="In Progress"
+                                                bind:checked={jobFilter.inProgress}
+                                            />
+                                            <Checkbox
+                                                id="closed-jobs"
+                                                label="Closed"
+                                                bind:checked={jobFilter.closed}
+                                            />
+                                        </Card>
+                                        <div class="w-full flex flex-col gap-[15px]">
+                                            <div
+                                                class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
+                                            >
+                                                {#each filteredTickets as ticket (ticket.id)}
+                                                    <JobCard {ticket} />
                                                 {/each}
                                             </div>
-                                        {:else}
-                                            <h4 class="text-center">
-                                                No Tickets found!
-                                            </h4>
-                                        {/if}
-                                    </svelte:fragment>
-                                </AccordionItem>
-                            </Accordion>
-                            <Accordion>
-                                <AccordionItem>
-                                    <svelte:fragment slot="lead">
-                                        <BitcoinIcon/>
-                                    </svelte:fragment>
-                                    <svelte:fragment slot="summary">
-                                        <h3 class="h3 text-center underline">
-                                            You as a Client
-                                        </h3>
-                                    </svelte:fragment>
-                                    <svelte:fragment slot="content">
-                                        {#if $offersWithUser?.length > 0}
-                                            <div class="flex flex-col items-center gap-y-8">
-                                                {#each $offersWithUser as offer (offer.id)}
-                                                    <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-                                                        <OfferCard 
+                                            <!-- Pagination -->
+                                        </div>
+                                    </div>
+                                {:else}
+                                    <div class="w-full flex flex-col gap-[10px]">
+                                        <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
+                                            <Checkbox
+                                                id="pending-offers"
+                                                label="Pending"
+                                                bind:checked={offerFilter.pending}
+                                            />
+                                            <Checkbox
+                                                id="success-offers"
+                                                label="Success"
+                                                bind:checked={offerFilter.success}
+                                            />
+                                            <Checkbox
+                                                id="lost-offers"
+                                                label="Lost"
+                                                bind:checked={offerFilter.lost}
+                                            />
+                                        </Card>
+                                        <div class="w-full flex flex-col gap-[15px]">
+                                            <div class="w-full flex flex-col gap-[15px]">
+                                                {#each filteredOffers as offer (offer.id)}
+                                                    <NewOfferCard
                                                         {offer}
-                                                        enableChat={false}
-                                                        showReputation={false}
+                                                        skipUserProfile
+                                                        skipReputation
+                                                        viewJob
                                                     />
-                                                    </div>
                                                 {/each}
                                             </div>
-                                        {:else}
-                                            <h4 class="text-center">
-                                                This user did not make Offers on your Tickets!
-                                            </h4>
-                                        {/if}
-                                    </svelte:fragment>
-                                </AccordionItem>
-                            </Accordion>
-                        </svelte:fragment>
-                    </AccordionItem>
-                </Accordion>
-            {:else}
-                <h3 class="h3 text-center">
-                    No Deals yet with this User
-                </h3>
-            {/if}
-            
-        {:else if (user.pubkey !== $currentUser?.pubkey)}
-            <div class="h4">Login to view your deals with this user!</div>
-        {/if}
-        <Accordion>
-            <AccordionItem>
-                <svelte:fragment slot="lead">
-                    <TicketIcon/>
-                </svelte:fragment>
-                <svelte:fragment slot="summary">
-                    <h3 class="h3 text-center underline">
-                        All Tickets of User
-                    </h3>
-                </svelte:fragment>
-                <svelte:fragment slot="content">
-                    {#if $allTicketsOfUser.length > 0}
-                        <div class="flex flex-col items-center gap-y-8">
-                            {#each $allTicketsOfUser as ticket (ticket.id)}
-                                <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-                                    <TicketCard
-                                    {ticket}
-                                    titleSize={'md lg:text-xl'}
-                                    showReputation={false}
-                                />
-                                </div>
-                            {/each}
+                                            <!-- Pagination -->
+                                        </div>
+                                    </div>
+                                {/if}
+                            </div>
                         </div>
-                    {:else}
-                        <h4 class="text-center">No Tickets found!</h4>
-                    {/if}
-                </svelte:fragment>
-            </AccordionItem>
-        </Accordion>
-        <Accordion>
-            <AccordionItem>
-                <svelte:fragment slot="lead">
-                    <BitcoinIcon/>
-                </svelte:fragment>
-                <svelte:fragment slot="summary">
-                    <h3 class="h3 text-center underline">
-                        All Offers of User
-                    </h3>
-                </svelte:fragment>
-                <svelte:fragment slot="content">
-                    {#if $allOffersOfUser.length > 0}
-                        <div class="flex flex-col items-center gap-y-8">
-                            {#each $allOffersOfUser as offer (offer.id)}
-                                <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-                                    <OfferCard 
-                                    {offer}
-                                    enableChat={false}
-                                    showReputation={false}
-                                />
-                                </div>
-                            {/each}
-                        </div>
-                    {:else}
-                        <h4 class="text-center">No Offers found!</h4>
-                    {/if}
-                </svelte:fragment>
-            </AccordionItem>
-        </Accordion>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

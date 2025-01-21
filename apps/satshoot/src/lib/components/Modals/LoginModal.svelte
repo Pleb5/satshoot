@@ -32,7 +32,9 @@
     import { hexToBytes } from '@noble/hashes/utils';
     import { encryptSecret } from '$lib/utils/crypto';
     import { privateKeyFromNsec } from '$lib/utils/nip19';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -433,10 +435,6 @@
         },
     ];
 
-    const learnMoreBtnClasses =
-        'transition ease duration-[0.3s] w-full border-[2px] border-[rgb(0,0,0,0.1)] p-[5px] font-[500] flex justify-center ' +
-        'text-[rgb(0,0,0,0.5)] rounded-b-[6px] hover:bg-[rgb(59,115,246)] hover:text-white hover:border-[rgb(59,115,246)]';
-
     const labelClasses =
         'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-[rgb(0,0,0,0.15)] border-b-[0px] text-[14px]';
 
@@ -448,26 +446,6 @@
 
     const btnWrapperClasses =
         'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-[rgb(0,0,0,0.15)] border-t-[0px]';
-
-    const btnClasses =
-        'transition ease duration-[0.3s] grow-[1] p-[5px] font-[500] flex justify-center ' +
-        'text-[rgb(0,0,0,0.5)] hover:bg-[rgb(59,115,246)] hover:text-white hover:border-[rgb(59,115,246)]';
-
-    const bunkerLogoBtnClasses =
-        'transition ease duration-[0.3s] text-[rgb(0,0,0,0.5)] px-[10px] border-l-[1px] border-l-[rgb(0,0,0,0.1)] ' +
-        'flex flex-row justify-center items-center hover:bg-[rgb(59,115,246)] hover:text-white hover:border-l-[rgb(0,0,0,0.0)]';
-
-    const loginBtnClasses =
-        'transition ease duration-[0.3s] grow-[1] text-[rgb(0,0,0,0.5)] px-[10px] py-[5px] ' +
-        'flex flex-row justify-center items-center font-[500] gap-[10px] hover:bg-[rgb(59,115,246)] hover:text-white';
-
-    const advLoginBtnClasses =
-        'transition ease duration-[0.3s] grow-[1] p-[5px] font-[500] text-[rgb(0,0,0,0.5)] ' +
-        'flex flex-row justify-center items-center gap-[10px] bg-[rgb(59,115,246)] text-white hover:text-white hover:bg-blue-500';
-
-    const showPasswordBtnClasses =
-        'transition ease duration-[0.3s] text-[rgb(0,0,0,0.5)] px-[10px] border-l-[1px] border-l-[rgb(0,0,0,0.1)] ' +
-        'flex flex-row justify-center items-center hover:bg-[rgb(59,115,246)] hover:text-white hover:border-l-[rgb(0,0,0,0.0)]';
 </script>
 
 {#if $modalStore[0]}
@@ -502,15 +480,8 @@
         >
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
-                    >
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
-                        >
-                            <p class="font-[500] text-[18px]">Login</p>
-                            <CloseModal />
-                        </div>
+                    <Card>
+                        <ModalHeader title="Login" />
                         <div class="w-full flex flex-col">
                             <div class="w-full flex flex-col gap-[10px] pt-[10px]">
                                 {#if statusMessage}
@@ -524,12 +495,17 @@
                                     <p
                                         class="w-full px-[10px] py-[5px] border-[2px] border-b-[0px] border-[rgb(0,0,0,0.1)] rounded-t-[6px]"
                                     >
-                                        Satshoot is built on Nostr, which has its own unique way of
+                                        SatShoot is built on Nostr, which has its own unique way of
                                         account creation and login
                                     </p>
-                                    <a href="/about" target="_blank" class={learnMoreBtnClasses}>
+                                    <Button
+                                        variant="outlined"
+                                        href="/about"
+                                        target="_blank"
+                                        classes="rounded-b-[6px]"
+                                    >
                                         Learn More
-                                    </a>
+                                    </Button>
                                 </div>
                                 <div class="w-full flex flex-col">
                                     <div class="w-full flex flex-row gap-[5px]">
@@ -542,18 +518,25 @@
                                             placeholder="bunker://..."
                                             class={inputClasses}
                                         />
-                                        <button
-                                            class={bunkerLogoBtnClasses}
+                                        <Button
+                                            variant="outlined"
+                                            classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
                                             on:click={connectBunker}
                                         >
                                             <i class="bx bx-log-in-circle" />
-                                        </button>
+                                        </Button>
                                     </div>
                                     <div class={btnWrapperClasses}>
                                         {#each bunkerExamples as { href, label }}
-                                            <a {href} target="_blank" class={btnClasses}>
+                                            <Button
+                                                variant="outlined"
+                                                {href}
+                                                target="_blank"
+                                                classes="rounded-[0]"
+                                                grow
+                                            >
                                                 {label}
-                                            </a>
+                                            </Button>
                                         {/each}
                                     </div>
                                 </div>
@@ -562,16 +545,27 @@
                                         <p class={labelClasses}>Extension</p>
                                     </div>
                                     <div class={inputWrapperClasses}>
-                                        <button class={loginBtnClasses} on:click={nip07Login}>
+                                        <Button
+                                            variant="outlined"
+                                            classes="rounded-[0]"
+                                            grow
+                                            on:click={nip07Login}
+                                        >
                                             <i class="bx bx-log-in-circle" />
                                             Connect
-                                        </button>
+                                        </Button>
                                     </div>
                                     <div class={btnWrapperClasses}>
                                         {#each extensionExamples as { href, label }}
-                                            <a {href} target="_blank" class={btnClasses}>
+                                            <Button
+                                                variant="outlined"
+                                                {href}
+                                                target="_blank"
+                                                classes="rounded-[0]"
+                                                grow
+                                            >
                                                 {label}
-                                            </a>
+                                            </Button>
                                         {/each}
                                     </div>
                                 </div>
@@ -604,9 +598,6 @@
                                                         placeholder="Your private key..."
                                                         class={inputClasses}
                                                     />
-                                                    <button class={showPasswordBtnClasses}>
-                                                        <i class="bx bxs-show" />
-                                                    </button>
                                                 </div>
                                                 <Passphrase
                                                     bind:passphrase={passphraseForNsec}
@@ -630,12 +621,13 @@
                                     <div
                                         class="w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px]"
                                     >
-                                        <button
-                                            class={advLoginBtnClasses}
+                                        <Button
+                                            classes="rounded-[0]"
+                                            grow
                                             on:click={toggleLocalKey}
                                         >
                                             Local Key
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                                 <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
@@ -674,13 +666,16 @@
                                                     />
                                                 </div>
                                                 <div class={btnWrapperClasses}>
-                                                    <button
-                                                        class={btnClasses}
-                                                        use:clipboard={generatedNsec}
+                                                    <Button
+                                                        variant="outlined"
                                                         on:click={onCopyNsec}
+                                                        classes="rounded-[0]"
+                                                        grow
                                                     >
-                                                        {copiedNsec ? 'Copied' : 'Copy'}
-                                                    </button>
+                                                        <span use:clipboard={generatedNsec}>
+                                                            {copiedNsec ? 'Copied' : 'Copy'}
+                                                        </span>
+                                                    </Button>
                                                 </div>
                                             </div>
                                             <div class="w-full flex flex-col mt-[10px]">
@@ -697,13 +692,16 @@
                                                     />
                                                 </div>
                                                 <div class={btnWrapperClasses}>
-                                                    <button
-                                                        class={btnClasses}
-                                                        use:clipboard={generatedNpub}
+                                                    <Button
+                                                        variant="outlined"
                                                         on:click={onCopyNpub}
+                                                        classes="rounded-[0]"
+                                                        grow
                                                     >
-                                                        {copiedNpub ? 'Copied' : 'Copy'}
-                                                    </button>
+                                                        <span use:clipboard={generatedNpub}>
+                                                            {copiedNpub ? 'Copied' : 'Copy'}
+                                                        </span>
+                                                    </Button>
                                                 </div>
                                             </div>
                                             <div class="w-full flex flex-col mt-[10px]">
@@ -721,19 +719,20 @@
                                     <div
                                         class="w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px]"
                                     >
-                                        <button
-                                            class={advLoginBtnClasses}
+                                        <Button
+                                            classes="rounded-[0]"
+                                            grow
                                             on:click={() =>
                                                 (displayGeneratedAccount =
                                                     !displayGeneratedAccount)}
                                         >
                                             Account Generation
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>

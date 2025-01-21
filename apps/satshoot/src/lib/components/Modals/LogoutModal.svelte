@@ -3,6 +3,10 @@
     import { backupWallet } from '$lib/utils/cashu';
     import { logout } from '$lib/utils/helpers';
     import { getModalStore, getDrawerStore, getToastStore } from '@skeletonlabs/skeleton';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import Checkbox from '../UI/Inputs/Checkbox.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -47,60 +51,68 @@
 
 {#if $modalStore[0]}
     <div
-        class="modal block overflow-y-auto bg-surface-100-800-token w-modal h-auto p-4 space-y-4 rounded-container-token shadow-xl"
+        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
     >
-        <header class="modal-header text-2xl font-bold">Confirm log out</header>
+        <div
+            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
+        >
+            <div class="w-full flex flex-col justify-start items-center">
+                <div class="w-full max-w-[500px] justify-start items-center">
+                    <Card>
+                        <ModalHeader title="Confirm Logout" />
+                        <div class="w-full flex flex-col">
+                            <!-- popups Logout start -->
+                            <div class="w-full py-[10px] px-[5px]">
+                                <div
+                                    class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px]"
+                                >
+                                    <p class="w-full">Do really you wish to log out?</p>
+                                    <div
+                                        class="w-full py-[5px] px-[10px] rounded-[6px] bg-[rgb(255,99,71,0.75)] border-[2px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
+                                    >
+                                        <p
+                                            class="font-[600] text-[16px] text-[rgb(255,255,255,0.75)]"
+                                        >
+                                            If you are logged in with a Local Keypair, it will be
+                                            deleted from local storage!
+                                        </p>
+                                    </div>
+                                    {#if showBackupCheckbox}
+                                        <Checkbox
+                                            id="backup-wallet"
+                                            label="Backup Cashu wallet before logging out"
+                                            bind:checked={backupBeforeLogout}
+                                        />
 
-        <article class="modal-body max-h-[200px] overflow-hidden">
-            <p>Do really you wish to log out?</p>
-            <strong class="text-error-400-500-token">
-                If you are logged in with a Local Keypair, it will be deleted from local storage!
-            </strong>
-            {#if showBackupCheckbox}
-                <div class="flex items-center space-x-2 mt-4">
-                    <input
-                        type="checkbox"
-                        id="additionalAction"
-                        bind:checked={backupBeforeLogout}
-                    />
-                    <label for="additionalAction"> Backup Cashu wallet before logging out </label>
+                                        {#if backupBeforeLogout}
+                                            <Checkbox
+                                                id="encrypt-wallet-backup"
+                                                label="Encrypt backup with passphrase"
+                                                bind:checked={encryptWalletBackup}
+                                            />
+
+                                            {#if encryptWalletBackup}
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter passphrase for encryption (min. 14 chars)"
+                                                    aria-label="passphrase"
+                                                    bind:value={passphrase}
+                                                    class="transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]"
+                                                />
+                                            {/if}
+                                        {/if}
+                                    {/if}
+
+                                    <Button fullWidth on:click={confirmLogout}>
+                                        Confirm Logout
+                                    </Button>
+                                </div>
+                            </div>
+                            <!-- popups Logout end -->
+                        </div>
+                    </Card>
                 </div>
-            {/if}
-
-            {#if backupBeforeLogout}
-                <div class="flex items-center space-x-2 mt-4">
-                    <input
-                        type="checkbox"
-                        id="encryptWalletBackup"
-                        bind:checked={encryptWalletBackup}
-                    />
-                    <label for="encryptWalletBackup"> Encrypt backup with passphrase </label>
-                </div>
-            {/if}
-
-            {#if encryptWalletBackup}
-                <input
-                    type="text"
-                    class="input rounded-md mt-4"
-                    aria-label="passphrase"
-                    placeholder="Enter passphrase for encryption (min. 14 chars)"
-                    bind:value={passphrase}
-                />
-            {/if}
-        </article>
-
-        <footer class="modal-footer flex justify-end space-x-2">
-            <button
-                type="button"
-                class="btn variant-ghost-surface"
-                on:click={() => modalStore.close()}>Cancel</button
-            >
-            <button type="button" class="btn variant-filled" on:click={confirmLogout}
-                >Confirm</button
-            >
-        </footer>
-        {#if passphrase}
-            <div class="text-error-500 text-center">{errorMessage}</div>
-        {/if}
+            </div>
+        </div>
     </div>
 {/if}

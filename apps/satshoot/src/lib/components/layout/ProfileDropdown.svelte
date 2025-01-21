@@ -11,8 +11,10 @@
     import BullhornIcon from '../Icons/BullhornIcon.svelte';
     import { createEventDispatcher, onDestroy, onMount } from 'svelte';
     import { browser } from '$app/environment';
+    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
+    import Button from '../UI/Buttons/Button.svelte';
 
-    export let classes: string;
+    export let classes = '';
 
     const modalStore = getModalStore();
     const dispatch = createEventDispatcher();
@@ -96,19 +98,25 @@
             },
         },
         {
-            href: '/my-tickets/',
-            label: 'My Tickets',
+            href: profileHref,
+            label: 'My Jobs',
             icon: {
                 component: TicketIcon,
                 props: { sizeClass: '' },
             },
+            callback: () => {
+                $profileTabStore = ProfilePageTabs.Jobs;
+            },
         },
         {
-            href: '/my-offers/',
-            label: 'My offers',
+            href: profileHref,
+            label: 'My Offers',
             icon: {
                 component: BitcoinIcon,
                 props: { extraClasses: 'text-lg' },
+            },
+            callback: () => {
+                $profileTabStore = ProfilePageTabs.Offers;
             },
         },
         {
@@ -141,36 +149,40 @@
         'dropdown-menu absolute right-0 z-10 mt-[5px] w-[100%] min-w-[150px] bg-white ' +
         'rounded-[6px] border-[1px] border-[rgb(0,0,0,0.1)] shadow-[0_0px_8px_rgba(0,0,0,0.1)]';
 
-    const profileMenuItemClass =
-        'transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[4px] py-[4px] ' +
-        'hover:bg-[rgb(59,115,246)] hover:text-white flex justify-start gap-2';
+    const profileMenuItemClass = 'px-[4px] py-[4px] gap-2  justify-start';
 
     const extraClassesForLogoutBtn =
-        'bg-red-500 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-800 px-4 py-2 ' +
-        'rounded flex items-center justify-center';
+        'bg-red-500 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-800 px-4 py-2 justify-center';
 </script>
 
 {#if $currentUser}
-    <button on:click={toggleProfileDropdown} class={classes} data-ignore-outside-click>
-        <img
-            src={$currentUser.profile?.image ?? `https://robohash.org/${$currentUser.pubkey}`}
-            alt="user profile"
-            class="w-[25px] h-[25px] rounded-[100%]"
-        />
-        <span class="overflow-hidden whitespace-nowrap overflow-ellipsis max-w-[200px]"
-            >{$currentUser.profile?.name ??
-                $currentUser.profile?.displayName ??
-                shortenTextWithEllipsesInMiddle($currentUser.npub, 15)}</span
-        >
-    </button>
+    <div data-ignore-outside-click>
+        <Button variant="outlined" on:click={toggleProfileDropdown} {classes}>
+            <img
+                src={$currentUser.profile?.image ?? `https://robohash.org/${$currentUser.pubkey}`}
+                alt="user profile"
+                class="w-[25px] h-[25px] rounded-[100%]"
+            />
+            <span class="overflow-hidden whitespace-nowrap overflow-ellipsis max-w-[200px]"
+                >{$currentUser.profile?.name ??
+                    $currentUser.profile?.displayName ??
+                    shortenTextWithEllipsesInMiddle($currentUser.npub, 15)}</span
+            >
+        </Button>
+    </div>
+
     {#if profileDropdownOpen}
         <div class={profileDropdownWrapperClass} bind:this={dropdownElement}>
             <div class="p-[5px] flex flex-col gap-2" role="menu">
-                {#each profileMenuItems as { href, label, icon }}
-                    <a
+                {#each profileMenuItems as { href, label, icon, callback }}
+                    <Button
                         {href}
-                        class={profileMenuItemClass}
+                        variant="text"
+                        classes={profileMenuItemClass}
+                        fullWidth
                         on:click={() => {
+                            if (callback) callback();
+
                             toggleProfileDropdown();
                             dispatch('click');
                         }}
@@ -183,30 +195,30 @@
                             {/if}
                         </span>
                         <span>{label}</span>
-                    </a>
+                    </Button>
                 {/each}
 
-                <button class="w-full {profileMenuItemClass}" on:click={readyToWork}>
+                <Button variant="text" classes={profileMenuItemClass} on:click={readyToWork}>
                     <span class="w-6 text-center">
                         <BullhornIcon extraClasses={''} />
                     </span>
                     <span>Work</span>
-                </button>
+                </Button>
 
-                <button class="w-full {profileMenuItemClass}" on:click={feedback}>
+                <Button variant="text" classes={profileMenuItemClass} on:click={feedback}>
                     <span class="w-6 text-center">
                         <i class="fa-regular fa-comment" />
                     </span>
                     <span>Feedback</span>
-                </button>
+                </Button>
 
                 {#if $loggedIn}
-                    <button
-                        class="{profileMenuItemClass} {extraClassesForLogoutBtn} justify-"
+                    <Button
+                        classes="{profileMenuItemClass} {extraClassesForLogoutBtn} "
                         on:click={onLogout}
                     >
                         Logout
-                    </button>
+                    </Button>
                 {/if}
             </div>
         </div>

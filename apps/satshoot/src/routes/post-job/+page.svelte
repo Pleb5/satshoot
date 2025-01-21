@@ -1,32 +1,27 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
+    import currentUser, { loggingIn } from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
-    import currentUser, { loggingIn, loginAlert } from '$lib/stores/user';
 
-    import type { NDKTag } from '@nostr-dev-kit/ndk';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import type { NDKTag } from '@nostr-dev-kit/ndk';
 
     import { ticketToEdit } from '$lib/stores/ticket-to-edit';
 
-    import tabStore from '$lib/stores/tab-store';
+    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
 
-    import { InputChip } from '@skeletonlabs/skeleton';
-    import { Autocomplete } from '@skeletonlabs/skeleton';
-    import type { AutocompleteOption, filter } from '@skeletonlabs/skeleton';
     import tagOptions from '$lib/utils/tag-options';
 
-    import { getToastStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import type { ModalComponent, ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
 
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
     import ShareTicketModal from '$lib/components/Modals/ShareTicketModal.svelte';
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
 
-    import { onMount, tick } from 'svelte';
     import { beforeNavigate, goto } from '$app/navigation';
-    import { navigating, page } from '$app/stores';
-    import redirectStore from '$lib/stores/network';
+    import { onMount, tick } from 'svelte';
+    import Card from '$lib/components/UI/Card.svelte';
+    import Button from '$lib/components/UI/Buttons/Button.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -50,7 +45,7 @@
     let titleState = '';
     let descriptionState = '';
 
-    let allowPostTicket: boolean = true;
+    let allowPostJob: boolean = true;
     let posting = false;
 
     // Checking Title and description values on user input
@@ -74,22 +69,21 @@
 
     $: transformedTag = tagInput.length > 0 ? transFormTag(tagInput) : '';
 
+    $: sortedTagOptions = tagOptions.sort((a, b) => {
+        if (a.label < b.label) return -1;
+        if (a.label > b.label) return 1;
+        return 0;
+    });
+
     $: filteredTagOptions =
         tagInput.length > 0
-            ? tagOptions.filter((option) => option.value.includes(transformedTag))
-            : tagOptions;
+            ? sortedTagOptions.filter((option) => option.value.includes(transformedTag))
+            : sortedTagOptions;
 
     $: if (!$currentUser || $loggingIn) {
-        allowPostTicket = false;
+        allowPostJob = false;
     } else {
-        allowPostTicket = true;
-    }
-
-    // todo: navigate to ticket
-    $: if ($navigating) {
-        if ($navigating.to?.url.pathname === '/my-tickets') {
-            $tabStore = 0;
-        }
+        allowPostJob = true;
     }
 
     onMount(() => {
@@ -157,32 +151,32 @@
         return valid;
     }
 
-    async function postTicket() {
+    async function postJob() {
         if (titleValid && descriptionValid) {
-            // Post the ticket...
+            // Post the Job...
             if ($currentUser) {
                 posting = true;
                 await tick();
 
-                const ticket = new TicketEvent($ndk);
+                const job = new TicketEvent($ndk);
 
-                ticket.title = titleText;
-                ticket.description = descriptionText;
-                ticket.status = TicketStatus.New;
+                job.title = titleText;
+                job.description = descriptionText;
+                job.status = TicketStatus.New;
                 tagList.forEach((tag) => {
-                    ticket.tags.push(['t', tag]);
+                    job.tags.push(['t', tag]);
                 });
                 // Generate 'd' tag and tags from description hashtags
-                // only if we are not editing but creating a new ticket
+                // only if we are not editing but creating a new job
                 if (!$ticketToEdit) {
-                    ticket.generateTags();
+                    job.generateTags();
                 } else {
-                    ticket.removeTag('d');
-                    ticket.tags.push(['d', $ticketToEdit.tagValue('d') as string]);
+                    job.removeTag('d');
+                    job.tags.push(['d', $ticketToEdit.tagValue('d') as string]);
                 }
 
                 try {
-                    await ticket.publish();
+                    await job.publish();
 
                     posting = false;
 
@@ -193,16 +187,16 @@
                         type: 'alert',
                         // Data
                         title: 'Success!',
-                        body: 'Ticket posted successfully!',
+                        body: 'Job posted successfully!',
                         buttonTextCancel: 'Ok',
                     };
                     modalStore.trigger(modal);
 
-                    let shareTicketResponse = function (r: boolean) {
+                    let shareJobResponse = function (r: boolean) {
                         if (r) {
                             const modalComponent: ModalComponent = {
                                 ref: ShareTicketModal,
-                                props: { ticket: ticket },
+                                props: { ticket: job },
                             };
 
                             const shareModal: ModalSettings = {
@@ -214,21 +208,21 @@
                     };
                     const postAsTextModal: ModalSettings = {
                         type: 'confirm',
-                        title: 'Share Ticket as Text Note?',
+                        title: 'Share Job as Text Note?',
                         body: 'It will show up in your feed on popular clients.',
                         buttonTextCancel: 'No thanks',
                         buttonTextConfirm: 'Of course!',
-                        response: shareTicketResponse,
+                        response: shareJobResponse,
                     };
                     modalStore.trigger(postAsTextModal);
 
-                    $tabStore = 0;
-                    goto('/my-tickets');
+                    $profileTabStore = ProfilePageTabs.Jobs;
+                    goto('/' + $currentUser.npub + '/');
                 } catch (e) {
                     posting = false;
-                    console.log(ticket);
+                    console.log(job);
                     const t: ToastSettings = {
-                        message: 'Could not post ticket: ' + e,
+                        message: 'Could not post Job: ' + e,
                         timeout: 7000,
                         background: 'bg-error-300-600-token',
                     };
@@ -236,7 +230,7 @@
                 }
             } else {
                 const t: ToastSettings = {
-                    message: 'Log in to post the Ticket!',
+                    message: 'Log in to post the Job!',
                     timeout: 7000,
                     background: 'bg-error-300-600-token',
                 };
@@ -245,7 +239,7 @@
         } else {
             const t: ToastSettings = {
                 message:
-                    '<p style="text-align:center;"><strong>Invalid Ticket!</strong></p><br/>Please fill in a <strong>valid Ticket Title</strong> and <strong>Description</strong> before posting!',
+                    '<p style="text-align:center;"><strong>Invalid Job!</strong></p><br/>Please fill in a <strong>valid Job Title</strong> and <strong>Description</strong> before posting!',
                 timeout: 7000,
                 background: 'bg-error-300-600-token',
             };
@@ -262,11 +256,8 @@
                     <h2 class="text-[40px] font-[500]">
                         {$ticketToEdit ? 'Edit' : 'New'} Job Post
                     </h2>
-                    <p>Start writing up and publish a job you want to receive offers for</p>
                 </div>
-                <div
-                    class="w-full flex flex-col gap-[25px] bg-white rounded-[8px] p-[15px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)]"
-                >
+                <Card classes="gap-[25px">
                     <div class="flex flex-col gap-[5px]">
                         <label class="m-[0px] text-[14px]" for="tile">
                             Title (min. 10 chars)
@@ -371,12 +362,8 @@
                     <div
                         class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-[rgb(0,0,0,0.1)] pt-[10px] mt-[10px]"
                     >
-                        <button
-                            class="transition ease duration-[0.3s] py-[5px] px-[10px] w-full max-w-[300px] rounded-[4px] text-center font-[600] cursor-pointer text-white bg-[rgb(59,115,246)] hover:bg-blue-500"
-                            on:click={postTicket}
-                            disabled={!allowPostTicket || posting}
-                        >
-                            {#if !allowPostTicket}
+                        <Button on:click={postJob} disabled={!allowPostJob || posting}>
+                            {#if !allowPostJob}
                                 Log in To Post
                             {:else if posting}
                                 <span>
@@ -392,9 +379,9 @@
                             {:else}
                                 <span>Publish Job Post</span>
                             {/if}
-                        </button>
+                        </Button>
                     </div>
-                </div>
+                </Card>
             </div>
         </div>
     </div>

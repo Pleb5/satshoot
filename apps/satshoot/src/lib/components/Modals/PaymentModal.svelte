@@ -6,7 +6,6 @@
         ProgressRadial,
         type PopupSettings,
     } from '@skeletonlabs/skeleton';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
@@ -37,6 +36,9 @@
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { wot } from '$lib/stores/wot';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     enum ToastType {
         Success = 'success',
@@ -307,7 +309,7 @@
                     });
                 } catch (error) {
                     console.error('An error occurred in payment process', error);
-                    errorMessage = `Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "Satshoot's"} zap receipt: ${error}`;
+                    errorMessage = `Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "SatShoot's"} zap receipt: ${error}`;
                 }
             }
 
@@ -420,7 +422,7 @@
                         })
                         .catch((err) => {
                             const failedPaymentRecipient =
-                                userEnum === UserEnum.Freelancer ? 'freelancer' : 'satshoot';
+                                userEnum === UserEnum.Freelancer ? 'Freelancer' : 'SatShoot';
 
                             console.error(`Failed to pay ${failedPaymentRecipient}`, err);
                             errorMessage = `Failed to pay ${failedPaymentRecipient}:${err?.message || err}`;
@@ -656,10 +658,6 @@
     const inputClasses =
         'transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] ' +
         'rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
-
-    const btnClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] rounded-[4px] grow-[1] border-[1px] border-[rgb(0,0,0,0.1)] ' +
-        'bg-[#3b73f6] text-[rgb(255,255,255,0.5)] hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-blue-500 disabled:cursor-not-allowed';
 </script>
 
 {#if $modalStore[0]}
@@ -671,15 +669,8 @@
         >
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
-                    >
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
-                        >
-                            <p class="font-[500] text-[18px]">Pay Freelancer</p>
-                            <CloseModal />
-                        </div>
+                    <Card>
+                        <ModalHeader title="Pay Freelancer" />
                         {#if ticket && offer}
                             <div class="w-full flex flex-col">
                                 <!-- popups Share Job Post start -->
@@ -722,7 +713,7 @@
                                             </div>
                                             <div class="grow-[1]">
                                                 <p class="font-[500]">
-                                                    Satshoot Paid: <span class="font-[300]"
+                                                    SatShoot Paid: <span class="font-[300]"
                                                         >{insertThousandSeparator(satshootPaid)} sats</span
                                                     >
                                                 </p>
@@ -795,12 +786,7 @@
                                         </div>
                                     </div>
                                     <div class="w-full flex flex-row flex-wrap gap-[5px]">
-                                        <button
-                                            class={btnClasses}
-                                            type="button"
-                                            on:click={payWithLN}
-                                            disabled={paying}
-                                        >
+                                        <Button grow on:click={payWithLN} disabled={paying}>
                                             {#if paying}
                                                 <span>
                                                     <ProgressRadial
@@ -815,13 +801,11 @@
                                             {:else}
                                                 Make payment (Zaps)
                                             {/if}
-                                        </button>
+                                        </Button>
                                         {#if hasSenderEcashSetup}
-                                            <button
-                                                class={btnClasses}
-                                                type="button"
+                                            <Button
+                                                grow
                                                 on:click={payWithEcash}
-                                                use:popup={popupHoverCashuPaymentAvailableStatus}
                                                 disabled={paying || !canPayWithEcash}
                                             >
                                                 {#if paying}
@@ -834,15 +818,14 @@
                                                         width="w-8"
                                                     />
                                                 {/if}
-                                                Make payment (Cashu)
-                                            </button>
+                                                <span
+                                                    use:popup={popupHoverCashuPaymentAvailableStatus}
+                                                >
+                                                    Make payment (Cashu)
+                                                </span>
+                                            </Button>
                                         {:else}
-                                            <button
-                                                class={btnClasses}
-                                                type="button"
-                                                on:click={setupEcash}
-                                                use:popup={popupHoverCashuPaymentAvailableStatus}
-                                            >
+                                            <Button grow on:click={setupEcash}>
                                                 {#if paying}
                                                     <span>
                                                         <ProgressRadial
@@ -855,9 +838,12 @@
                                                         />
                                                     </span>
                                                 {/if}
-
-                                                Setup Cashu Wallet
-                                            </button>
+                                                <span
+                                                    use:popup={popupHoverCashuPaymentAvailableStatus}
+                                                >
+                                                    Setup Cashu Wallet
+                                                </span>
+                                            </Button>
                                         {/if}
                                     </div>
                                     <div data-popup="popupHover">
@@ -873,7 +859,7 @@
                                 Error: Ticket & Offer is missing!
                             </h2>
                         {/if}
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>

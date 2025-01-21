@@ -9,12 +9,14 @@
     import { OfferEvent } from '$lib/events/OfferEvent';
     import NewReviewClientModal from './NewReviewClientModal.svelte';
     import { clientReviews } from '$lib/stores/reviews';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from './PaymentModal.svelte';
     import { ticketToEdit } from '$lib/stores/ticket-to-edit';
     import { goto } from '$app/navigation';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const modalStore = getModalStore();
 
@@ -150,10 +152,6 @@
             modalStore.clear();
         }
     }
-
-    const menuItemClasses =
-        'transition-all ease duration-[0.3s] py-[5px] px-[10px] justify-start items-center flex flex-row w-full gap-[10px] rounded-[4px] ' +
-        'text-[rgb(0,0,0,0.5)] border-[1px] border-[rgb(0,0,0,0.1)] hover:border-[rgb(0,0,0,0.0)] hover:text-white hover:bg-[#3b73f6]';
 </script>
 
 {#if $modalStore[0]}
@@ -165,66 +163,85 @@
         >
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
-                    >
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
-                        >
-                            <p class="font-[500] text-[18px]">Job Menu</p>
-
-                            <CloseModal />
-                        </div>
+                    <Card>
+                        <ModalHeader title="Job Menu" />
                         <div class="w-full flex flex-col">
                             <!-- popups Job-Post-Menu start -->
                             <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
-                                <button class={menuItemClasses} on:click={handleShare}>
+                                <Button
+                                    variant="outlined"
+                                    classes="justify-start"
+                                    fullWidth
+                                    on:click={handleShare}
+                                >
                                     <i class="bx bxs-share text-[20px]"></i>
                                     <p class="">Share</p>
-                                </button>
+                                </Button>
 
                                 {#if myJob && job.status === TicketStatus.New}
-                                    <button class={menuItemClasses} on:click={handleEdit}>
+                                    <Button
+                                        variant="outlined"
+                                        classes="justify-start"
+                                        fullWidth
+                                        on:click={handleEdit}
+                                    >
                                         <i class="bx bxs-edit-alt text-[20px]"></i>
                                         <p class="">Edit</p>
-                                    </button>
+                                    </Button>
                                 {/if}
 
                                 {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
-                                    <button class={menuItemClasses} on:click={handleCloseJob}>
+                                    <Button
+                                        variant="outlined"
+                                        classes="justify-start"
+                                        fullWidth
+                                        on:click={handleCloseJob}
+                                    >
                                         <i class="bx bx-window-close text-[20px]"></i>
                                         <p class="">Close Job</p>
-                                    </button>
+                                    </Button>
                                 {/if}
 
                                 {#if myJob && job.status !== TicketStatus.New && winnerOffer}
-                                    <button class={menuItemClasses} on:click={handlePay}>
+                                    <Button
+                                        variant="outlined"
+                                        classes="justify-start"
+                                        fullWidth
+                                        on:click={handlePay}
+                                    >
                                         <i class="bx bx-window-close text-[20px]"></i>
                                         <p class="">Pay</p>
-                                    </button>
+                                    </Button>
                                 {/if}
 
                                 {#if showMessageButton && bech32ID}
-                                    <a
+                                    <Button
                                         href={'/messages/' + bech32ID}
                                         on:click={selectChatPartner}
-                                        class={menuItemClasses}
+                                        variant="outlined"
+                                        classes="justify-start"
+                                        fullWidth
                                     >
                                         <i class="bx bxs-conversation" />
                                         <p class="">Message</p>
-                                    </a>
+                                    </Button>
                                 {/if}
 
                                 {#if canReviewClient}
-                                    <button class={menuItemClasses} on:click={handleReviewClient}>
+                                    <Button
+                                        variant="outlined"
+                                        classes="justify-start"
+                                        fullWidth
+                                        on:click={handleReviewClient}
+                                    >
                                         <i class="bx bx-window-close text-[20px]"></i>
                                         <p class="">Review Client</p>
-                                    </button>
+                                    </Button>
                                 {/if}
                             </div>
                             <!-- popups Job-Post-Menu end -->
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>

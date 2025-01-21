@@ -1,24 +1,23 @@
 <script lang="ts">
-    import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
-    import TicketCard from '$lib/components/Cards/TicketCard.svelte';
+    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 
-    import { wot } from '$lib/stores/wot';
     import ndk, { connected } from '$lib/stores/ndk';
     import { online } from '$lib/stores/network';
+    import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from '@nostr-dev-kit/ndk';
 
-    import { InputChip } from '@skeletonlabs/skeleton';
-    import ReadyToWorkModal from '$lib/components/Modals/ReadyToWorkModal.svelte';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { onDestroy, onMount } from 'svelte';
+    import { page } from '$app/stores';
     import BullhornIcon from '$lib/components/Icons/BullhornIcon.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
+    import ReadyToWorkModal from '$lib/components/Modals/ReadyToWorkModal.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
-    import { page } from '$app/stores';
+    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { onDestroy, onMount } from 'svelte';
+    import Button from '$lib/components/UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
@@ -137,9 +136,8 @@
     });
 
     const paginationBtnClasses =
-        'transition-all ease duration-[0.3s] py-[10px] px-[20px] rounded-[5px] ' +
-        'font-[18px] bg-white text-[rgb(0,0,0,0.5)] hover:bg-[#3b82f6] disabled:cursor-not-allowed ' +
-        'hover:text-white max-[576px]:grow-[1] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]';
+        'font-[18px] py-[10px] px-[20px] bg-white text-[rgb(0,0,0,0.5)]' +
+        'max-[576px]:grow-[1] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]';
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
@@ -148,10 +146,6 @@
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-col gap-[15px] justify-start">
                     <h2 class="text-[40px] font-[500]">Latest Job Listings</h2>
-                    <p>
-                        Discover latest jobs posts by individuals who are looking to have their
-                        project developed or issue solved
-                    </p>
                 </div>
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <div class="w-full flex flex-col gap-[25px]">
@@ -191,27 +185,25 @@
                             <div
                                 class="w-full max-w-[300px] flex flex-row gap-[15px] justify-center items-center max-[576px]:flex-wrap"
                             >
-                                <button
-                                    class="{paginationBtnClasses} max-[576px]:order-[2]"
-                                    type="button"
+                                <Button
+                                    classes="{paginationBtnClasses} max-[576px]:order-[2]"
                                     on:click={handlePrev}
                                     disabled={currentPage === 1}
                                 >
                                     <i class="bx bxs-chevron-left"></i>
-                                </button>
+                                </Button>
                                 <div
                                     class="flex flex-row justify-center items-center max-[576px]:w-[100%]"
                                 >
                                     <p>Current page: {currentPage}</p>
                                 </div>
-                                <button
-                                    class="{paginationBtnClasses} max-[576px]:order-[3]"
-                                    type="button"
+                                <Button
+                                    classes="{paginationBtnClasses} max-[576px]:order-[3]"
                                     on:click={handleNext}
                                     disabled={ticketList.size <= currentPage * JobsPerPage}
                                 >
                                     <i class="bx bxs-chevron-right"></i>
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

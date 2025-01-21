@@ -9,7 +9,7 @@
 </script>
 
 <div
-    class="w-full rounded-[6px] overflow-hidden border-[1px] border-[rgb(0,0,0,0.1)] px-[10px] py-[5px]"
+    class="grow-[1] rounded-[6px] overflow-hidden border-[1px] border-[rgb(0,0,0,0.1)] px-[10px] py-[5px]"
 >
     <div class="flex flex-row gap-[10px] items-center">
         <div class="flex flex-row justify-center items-center relative">

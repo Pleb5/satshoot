@@ -8,9 +8,10 @@
     import type { Hexpubkey } from '@nostr-dev-kit/ndk';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import ReviewCard from '../Cards/ReviewCard.svelte';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import currentUser from '$lib/stores/user';
+    import Card from '../UI/Card.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const modalStore = getModalStore();
 
@@ -66,15 +67,8 @@
         >
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[900px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] gap-[5px]"
-                    >
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
-                        >
-                            <p class="font-[500] text-[18px]">What freelancers say</p>
-                            <CloseModal />
-                        </div>
+                    <Card>
+                        <ModalHeader title="What freelancers say" />
                         <div class="w-full flex flex-col">
                             <!-- popups reviews-as-a-freelancer start -->
                             <div class="w-full py-[10px] px-[5px] flex flex-col gap-[15px]">
@@ -167,7 +161,7 @@
 
                             <!-- popups reviews-as-a-freelancer end -->
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>

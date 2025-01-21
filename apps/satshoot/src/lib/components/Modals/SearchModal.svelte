@@ -3,7 +3,9 @@
     import { page } from '$app/stores';
     import { searchTerms } from '$lib/stores/search';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -26,6 +28,13 @@
 
         // Navigate to the updated
         goto(url.toString(), { replaceState: true });
+    }
+
+    // Function to handle the "Enter" key press
+    function handleEnterKey(event: KeyboardEvent) {
+        if (event.key === 'Enter') {
+            handleAdd();
+        }
     }
 
     function handleAdd() {
@@ -68,10 +77,6 @@
         'w-full border-[0px] border-[rgb(0,0,0,0.15)] ' +
         'rounded-[0px] outline outline-[0px] py-[5px] px-[10px]';
 
-    const inputBtnClasses =
-        'transition-all ease duration-[0.3s] bg-[#3b73f6] py-[5px] px-[10px] ' +
-        'rounded-[0px] text-white hover:text-white hover:bg-[#3b82f6]';
-
     const termWrapperClasses =
         'flex flex-row gap-[5px] px-[10px] py-[1px] bg-[rgb(0,0,0,0.1)] ' +
         'border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] items-center hover:bg-[#3b73f6] group';
@@ -88,15 +93,8 @@
         <div class="w-full flex flex-col justify-start items-center px-[10px] relative">
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
-                    <div
-                        class="w-full bg-white p-[15px] rounded-[8px] shadow-[0_0_8px_0_rgb(0,0,0,0.25)] flex flex-col gap-[10px]"
-                    >
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[10px] border-b-[1px] border-b-[rgb(0,0,0,0.1)] items-center"
-                        >
-                            <p class="font-[500] text-[18px]">Search Modal</p>
-                            <CloseModal />
-                        </div>
+                    <Card classes="gap-[10px]">
+                        <ModalHeader title="Search" />
                         <div class="w-full flex flex-col">
                             <div class="w-full flex flex-col gap-[10px]">
                                 <div class="flex flex-col gap-[5px]">
@@ -109,24 +107,17 @@
                                                 <input
                                                     id="search-input"
                                                     bind:value={searchInput}
+                                                    on:keydown={handleEnterKey}
                                                     class={inputClasses}
                                                     type="text"
                                                     placeholder="Search term or add tag"
                                                 />
-                                                <button
-                                                    class={inputBtnClasses}
-                                                    type="button"
-                                                    on:click={handleAdd}
-                                                >
+                                                <Button on:click={handleAdd}>
                                                     <i class="bx bx-plus" />
-                                                </button>
-                                                <button
-                                                    class={inputBtnClasses}
-                                                    type="button"
-                                                    on:click={handleSearch}
-                                                >
+                                                </Button>
+                                                <Button on:click={handleSearch}>
                                                     <i class="bx bx-search" />
-                                                </button>
+                                                </Button>
                                             </div>
                                         </div>
                                         <div class="w-full flex flex-col gap-[5px]">
@@ -158,7 +149,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>

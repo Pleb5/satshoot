@@ -1,11 +1,12 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
     import { TicketEvent } from '$lib/events/TicketEvent';
+    import Button from '../UI/Buttons/Button.svelte';
+    import Card from '../UI/Card.svelte';
+    import Author from './Author.svelte';
     import EarningDetails from './EarningDetails.svelte';
     import JobActions from './JobActions.svelte';
     import JobDetails from './JobDetails.svelte';
     import Ratings from './Ratings.svelte';
-    import TrustedNetwork from './TrustedNetwork.svelte';
 
     export let ticket: TicketEvent;
     let bech32ID = '';
@@ -18,7 +19,7 @@
         JobDescription,
         Earning,
         Reputation,
-        Network,
+        Author,
         Actions,
     }
 
@@ -36,8 +37,8 @@
             name: Tabs.Reputation,
         },
         {
-            icon: 'bxs-network-chart',
-            name: Tabs.Network,
+            icon: 'bxs-user',
+            name: Tabs.Author,
         },
         {
             icon: 'bxs-grid-alt',
@@ -47,31 +48,21 @@
 
     let selectedTab = Tabs.JobDescription;
 
-    const jobCardBtnClasses =
-        'transition-all ease duration-[0.3s] border-0 outline-0 font-semibold transform scale-100 ' +
-        'whitespace-nowrap gap-[10px] p-[8px] flex flex-col justify-center items-center text-[16px] ' +
-        'flex-grow rounded-[4px] hover:text-[rgba(255,255,255,0.5)] hover:bg-[rgba(59,115,246,0.75)]';
+    const jobCardBtnClasses = 'border-0 scale-100 ' + 'flex-grow ';
 </script>
 
-<div
-    class="jobCard w-full bg-white border-[1px_solid_rgba(0,0,0,0.1)] flex flex-col gap-[0px] rounded-[8px] overflow-hidden p-[0px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]"
->
+<Card classes="border-[1px_solid_rgba(0,0,0,0.1)] gap-[0px]  overflow-hidden p-[0px]">
     <div class="jobCardDetails w-full flex flex-col gap-[0px] p-[10px] min-h-[165px]">
         {#if selectedTab === Tabs.JobDescription}
             <JobDetails title={ticket.title} description={ticket.description} {bech32ID} />
         {:else if selectedTab === Tabs.Earning}
             <EarningDetails user={ticket.pubkey} />
         {:else if selectedTab === Tabs.Reputation}
-            <Ratings
-                ratingAsClient={4}
-                totalClientReviews={250}
-                ratingAsFreelancer={4}
-                totalFreelancerReviews={250}
-            />
-        {:else if selectedTab === Tabs.Network}
-            <TrustedNetwork user={ticket.pubkey} />
+            <Ratings pubkey={ticket.pubkey} />
+        {:else if selectedTab === Tabs.Author}
+            <Author pubkey={ticket.pubkey} />
         {:else if selectedTab === Tabs.Actions}
-            <JobActions />
+            <JobActions job={ticket} />
         {/if}
     </div>
     <div
@@ -79,30 +70,19 @@
     >
         <div class="jobCardButtons w-full flex flex-row gap-[5px] p-[0px] h-full overflow-hidden">
             {#each tabs as tab}
-                <button
-                    class={jobCardBtnClasses}
-                    class:bg-[rgb(59,115,246)]={tab.name === selectedTab}
-                    class:text-[white]={tab.name === selectedTab}
-                    class:bg-[rgba(59,115,246,0)]={tab.name !== selectedTab}
-                    class:text-[rgba(0,0,0,0.5)]={tab.name !== selectedTab}
+                <Button
+                    variant={tab.name === selectedTab ? 'contained' : 'outlined'}
+                    classes={jobCardBtnClasses}
                     on:click={() => (selectedTab = tab.name)}
                 >
-                    <i class={`bx ${tab.icon}`}></i>
-                </button>
+                    <i class={`bx ${tab.icon}`} />
+                </Button>
             {/each}
         </div>
     </div>
     <div class="w-full flex flex-row gap-[0px] border-t-[1px_solid_rgba(0,0,0,0.11)]">
-        <button
-            class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] text-[rgb(255,255,255)] p-[10px_20px] font-semibold text-[18px] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] bg-[rgba(59,115,246,0)] text-[rgba(0,0,0,0.5)] border-r-[1px] border-r-solid border-r-[rgba(0,0,0,0.1)] hover:border-r-[rgba(0,0,0,0.0)] hover:bg-[rgb(59,130,246)] hover:text-white"
-        >
-            <i class="bx bxs-cog"></i>
-        </button>
-        <button
-            class="transition-all ease duration-[0.3s] bg-[rgb(59,115,246)] text-[rgb(255,255,255)] p-[10px_20px] font-semibold text-[18px] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full bg-[rgba(59,115,246,0)] text-[rgba(0,0,0,0.5)] hover:bg-[rgb(59,130,246)] hover:text-white"
-            on:click={() => goto('/' + bech32ID + '/')}
-        >
-            <i class="bx bxs-show"></i>
-        </button>
+        <Button href={'/' + bech32ID + '/'} variant="text" classes="rounded-[0]" fullWidth>
+            <i class="bx bxs-show" />
+        </Button>
     </div>
-</div>
+</Card>

@@ -4,11 +4,12 @@
     import NewOfferCard from '$lib/components/Cards/NewOfferCard.svelte';
     import NewUserCard from '$lib/components/Cards/NewUserCard.svelte';
     import NewCreateOfferModal from '$lib/components/Modals/NewCreateOfferModal.svelte';
+    import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import ndk, { connected } from '$lib/stores/ndk';
-    import currentUser from '$lib/stores/user';
+    import currentUser, { loggedIn } from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { insertThousandSeparator } from '$lib/utils/misc';
@@ -69,6 +70,11 @@
         }
     }
 
+    $: if (!$loggedIn) {
+        allowCreateOffer = false;
+        disallowCreateOfferReason = 'To make an offer please login first';
+    }
+
     let needSetup = true;
     // Wait for ndk to connect then setup subscription on ticket from URL params
     // Also check for existing ndk because we try to add relays from the naddr here
@@ -115,7 +121,7 @@
             if (jobPost.status !== TicketStatus.New) {
                 allowCreateOffer = false;
                 disallowCreateOfferReason =
-                    "Status of this ticket not 'New' anymore! Cannot Create/Edit Offer!";
+                    "Status of the Job not 'New' anymore! Cannot Create/Edit Offer!";
             }
 
             // Subscribe on Offers of this ticket. Do this only once
@@ -218,11 +224,6 @@
         { id: OfferTab.Won, label: 'Won' },
         { id: OfferTab.Lost, label: 'Lost' },
     ];
-
-    const offerBtnClasses =
-        'transition ease duration-[0.3s] outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] ' +
-        'rounded-[6px] transform whitespace-nowrap flex flex-row justify-center items-center gap-[8px] font-[600] ' +
-        'text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white max-[768px]:grow-[1]';
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
@@ -237,15 +238,17 @@
 
                             {#if !myJob}
                                 <div class="w-full flex flex-col gap-[15px]">
-                                    <div
-                                        class="w-full flex flex-row flex-wrap gap-[10px] justify-between items-center"
-                                    >
-                                        <p
-                                            class="font-[600] text-[24px] flex flex-row gap-[5px] items-center"
+                                    {#if $loggedIn}
+                                        <div
+                                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between items-center"
                                         >
-                                            My Submission
-                                        </p>
-                                    </div>
+                                            <p
+                                                class="font-[600] text-[24px] flex flex-row gap-[5px] items-center"
+                                            >
+                                                My Submission
+                                            </p>
+                                        </div>
+                                    {/if}
 
                                     {#if offerToEdit}
                                         <NewOfferCard offer={offerToEdit} />
@@ -253,13 +256,12 @@
 
                                     {#if allowCreateOffer}
                                         <div class="flex flex-row justify-center">
-                                            <button
-                                                type="button"
+                                            <Button
                                                 on:click={() => createOffer(offerToEdit)}
-                                                class={offerBtnClasses}
+                                                classes="max-[768px]:grow-[1]"
                                             >
                                                 {btnActionText}
-                                            </button>
+                                            </Button>
                                         </div>
                                     {:else}
                                         <div
@@ -329,7 +331,12 @@
                         </div>
                         <!-- user card -->
                         {#if user}
-                            <NewUserCard {user} job={jobPost} />
+                            <div class="flex flex-col">
+                                <div class="w-full hidden max-[768px]:flex">
+                                    <p class="font-[600] text-[24px]">Posted By</p>
+                                </div>
+                                <NewUserCard {user} job={jobPost} />
+                            </div>
                         {/if}
                     </div>
                 {:else}

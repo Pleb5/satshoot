@@ -24,10 +24,15 @@
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import NewReputationCard from './NewReputationCard.svelte';
     import NewTakeOfferModal from '../Modals/NewTakeOfferModal.svelte';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
     export let offer: OfferEvent;
+    export let skipUserProfile = false;
+    export let skipReputation = false;
+    export let viewJob = false;
 
     let freelancerPaid = 0;
     let satshootPaid = 0;
@@ -234,18 +239,15 @@
         modalStore.clear();
         modalStore.trigger(modal);
     }
-
-    const offerActionBtnClasses =
-        'transition ease duration-[0.3s] outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] ' +
-        'rounded-[4px] transform whitespace-nowrap flex flex-row justify-center items-center gap-[8px] font-[600] ' +
-        'text-[rgb(255,255,255,0.5)] bg-[rgb(59,115,246)] hover:bg-[#3b82f6] hover:text-white max-[768px]:grow-[1]';
 </script>
 
-<div
-    class="w-full flex flex-col gap-[15px] rounded-[8px] p-[15px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)] bg-white flex-wrap"
->
-    <UserProfile pubkey={offer.pubkey} />
-    <NewReputationCard user={offer.pubkey} type={ReviewType.Freelancer} />
+<Card classes="flex-wrap gap-[15px]">
+    {#if !skipUserProfile}
+        <UserProfile pubkey={offer.pubkey} />
+    {/if}
+    {#if !skipReputation}
+        <NewReputationCard user={offer.pubkey} type={ReviewType.Freelancer} />
+    {/if}
     <div class="w-full border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] bg-[rgb(0,0,0,0.05)]">
         <ExpandableText text={offer.description} maxCharacters={200} />
         <div
@@ -282,7 +284,7 @@
             </p>
         {/if}
         <p class="font-[500] grow-[1] flex flex-row flex-wrap">
-            Status:
+            Offer Status:
             <span class="ml-[5px] font-[300] {statusColor}"> {status} </span>
         </p>
     </div>
@@ -290,21 +292,19 @@
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)] pl-[5px] pr-[5px] pt-[10px] justify-end"
     >
         {#if myJob && job && job.status === TicketStatus.New}
-            <button class={offerActionBtnClasses} on:click={takeOffer}> Take offer </button>
+            <Button on:click={takeOffer}>Take offer</Button>
         {/if}
 
         {#if showPaymentButton}
-            <button class={offerActionBtnClasses} on:click={handlePay}> Pay </button>
+            <Button on:click={handlePay}>Pay</Button>
         {/if}
 
         {#if job && myJob}
-            <a
-                on:click={setChatPartner}
-                href={'/messages/' + job.encode()}
-                class={offerActionBtnClasses}
-            >
-                Message
-            </a>
+            <Button on:click={setChatPartner} href={'/messages/' + job.encode()}>Message</Button>
+        {/if}
+
+        {#if viewJob && job}
+            <Button href={'/' + job.encode() + '/'}>View Offer's Job</Button>
         {/if}
     </div>
-</div>
+</Card>

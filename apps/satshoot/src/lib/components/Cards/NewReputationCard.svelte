@@ -26,6 +26,8 @@
     import ReviewSummaryAsFreelancer from '../Modals/ReviewSummaryAsFreelancer.svelte';
     import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import ReviewSummaryAsClient from '../Modals/ReviewSummaryAsClient.svelte';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
@@ -149,6 +151,7 @@
             },
             subOptions
         );
+        asFreelancerRatingConsensus;
 
         allPaymentsStore = $ndk.storeSubscribe(
             { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#e': allWinnerOffersForUser },
@@ -308,17 +311,22 @@
 </script>
 
 {#if !forUserCard}
-    <div class="w-full flex flex-row flex-wrap gap-[10px] px-[5px]">
+    <div class="w-full flex flex-row flex-wrap items-center gap-[10px] px-[5px]">
         {#if reviewType === ReviewType.Freelancer}
-            <button class="flex flex-row grow-[1]" on:click={showFreelancerReviewBreakdown}>
+            <Button
+                variant="outlined"
+                classes="justify-start"
+                grow
+                on:click={showFreelancerReviewBreakdown}
+            >
                 <p class="font-[500]">
                     Freelancer Reputation:
                     <span class="badge px-4 {ratingColor}">
-                        {ratingConsensus}
+                        {asFreelancerRatingConsensus}
                     </span>
                 </p>
-            </button>
-            <div class="flex flex-row grow-[1]">
+            </Button>
+            <div class="flex flex-row grow-[1] px-[20px]">
                 <p class="font-[500]">
                     Total Earnings:
                     <span class="font-[300]">
@@ -328,7 +336,31 @@
             </div>
         {/if}
 
-        <div class="flex flex-row grow-[1]">
+        {#if reviewType === ReviewType.Client}
+            <Button
+                variant="outlined"
+                classes="justify-start"
+                grow
+                on:click={showClientReviewBreakdown}
+            >
+                <p class="font-[500]">
+                    Client Reputation:
+                    <span class="badge px-4 {ratingColor}">
+                        {asClientRatingConsensus}
+                    </span>
+                </p>
+            </Button>
+            <div class="flex flex-row grow-[1] px-[20px]">
+                <p class="font-[500]">
+                    Total Earnings:
+                    <span class="font-[300]">
+                        {insertThousandSeparator(allPayments) + ' sats'}
+                    </span>
+                </p>
+            </div>
+        {/if}
+
+        <div class="flex flex-row grow-[1] px-[20px]">
             <p class="font-[500]">
                 Total Pledges:
                 <span class="font-[300]"> {insertThousandSeparator(allPledges) + ' sats'} </span>
@@ -338,9 +370,7 @@
 {/if}
 
 {#if forUserCard}
-    <div
-        class="w-full flex flex-col gap-[15px] rounded-[8px] p-[10px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)] bg-white"
-    >
+    <Card classes="gap-[15px]">
         <div class="w-full flex flex-col gap-[15px]">
             <div class="w-full flex flex-col gap-[10px]">
                 <p class="w-full font-[600] pl-[5px]">User's Overall Reputation</p>
@@ -428,5 +458,5 @@
                 </div>
             </div>
         </div>
-    </div>
+    </Card>
 {/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
+    import Button from './UI/Buttons/Button.svelte';
 
     const dispatch = createEventDispatcher();
 
@@ -21,16 +22,8 @@
     const inputClasses =
         'grow-[1] border-[0px] border-[rgb(0,0,0,0.15)] rounded-[0px] outline outline-[0px] py-[5px] px-[10px] bg-[rgb(0,0,0,0)]';
 
-    const showPassphraseBtnClasses =
-        'transition ease duration-[0.3s] text-[rgb(0,0,0,0.5)] px-[10px] border-l-[1px] border-l-[rgb(0,0,0,0.1)] ' +
-        'flex flex-row justify-center items-center hover:bg-[rgb(59,115,246)] hover:text-white hover:border-l-[rgb(0,0,0,0.0)]';
-
     const btnWrapperClasses =
         'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-[rgb(0,0,0,0.15)] border-t-[0px]';
-
-    const btnClasses =
-        'transition ease duration-[0.3s] grow-[1] text-[rgb(0,0,0,0.5)] px-[10px] py-[5px] ' +
-        'flex flex-row justify-center items-center font-[500] gap-[10px] hover:bg-[rgb(59,115,246)] hover:text-white';
 </script>
 
 <!-- Passphrase Input -->
@@ -52,9 +45,13 @@
             class:input-error={!passphraseValid}
         />
     {/if}
-    <button class={showPassphraseBtnClasses} on:click={() => (showPassphrase = !showPassphrase)}>
+    <Button
+        variant="outlined"
+        classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
+        on:click={() => (showPassphrase = !showPassphrase)}
+    >
         <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
-    </button>
+    </Button>
 </div>
 
 <!-- Confirm Passphrase Input -->
@@ -76,21 +73,24 @@
             class:input-error={!confirmPassphraseValid}
         />
     {/if}
-    <button
-        class={showPassphraseBtnClasses}
+    <Button
+        variant="outlined"
+        classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
         on:click={() => (showConfirmPassphrase = !showConfirmPassphrase)}
     >
         <i class={showConfirmPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
-    </button>
+    </Button>
 </div>
 
 <div class={btnWrapperClasses}>
-    <button
-        class={btnClasses}
+    <Button
+        variant="outlined"
+        classes="font-[500] rounded-[0]"
+        grow
         disabled={!passphraseValid || !confirmPassphraseValid}
         on:click={() => dispatch('submit')}
     >
         <i class="bx bx-log-in-circle" />
         {btnLabel}
-    </button>
+    </Button>
 </div>

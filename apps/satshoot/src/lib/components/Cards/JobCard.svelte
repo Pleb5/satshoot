@@ -5,6 +5,8 @@
     import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { formatDate } from 'date-fns';
     import JobPostMenu from '../Modals/JobPostMenu.svelte';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
@@ -36,36 +38,20 @@
         'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center grow-[1] items-center ' +
         'px-[10px] py-[5px] rounded-[4px] hover:text-white hover:bg-[#3b73f6] max-[768px]:justify-start';
 
-    const optionsBtnClasses =
-        'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center items-center px-[10px] ' +
-        'py-[5px] rounded-[4px] hover:text-white hover:bg-[#3b73f6] max-[768px]:justify-start';
-
-    const tagsWrapperClasses =
-        'w-full flex flex-row gap-[10px] rounded-[8px] ' +
-        'p-[15px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)] bg-white flex-wrap';
-
     const tagItemClasses =
         'transition ease duration-[0.3s] flex flex-row px-[10px] py-[5px] border-[1px] border-[rgb(0,0,0,0.15)] ' +
         'rounded-[4px] font-[500] text-[rgb(0,0,0,0.5)] hover:bg-[rgb(59,115,246)] hover:text-white hover:border-[rgb(0,0,0,0.0)]';
 </script>
 
-<div
-    class="w-full flex flex-col gap-[15px] rounded-[8px] p-[15px] shadow-[0_0_4px_0_rgba(0,0,0,0.1)] bg-white"
->
+<Card classes="gap-[15px]">
     <div class="w-full flex flex-col gap-[5px]">
         <h1 class="w-full text-center font-[700] text-[32px]">{job.title || 'No Title!'}</h1>
     </div>
     <div class={statusRowWrapperClasses}>
         <p title="Publication Date/Time" class="{statusRowItemClasses} {statusColor}">
             <i class="bx bx-info-circle" />
-            Status: {statusString}
+            Job Status: {statusString}
         </p>
-        {#if job.created_at}
-            <p title="Publication Date/Time" class={statusRowItemClasses}>
-                <i class="bx bxs-news" />
-                {formatDate(job.created_at * 1000, 'dd-MMM-yyyy, h:m:ss a')}
-            </p>
-        {/if}
         {#if job.created_at}
             <p title="Edit Date/Time" class={statusRowItemClasses}>
                 <i class="bx bx-edit-alt" />
@@ -81,16 +67,17 @@
             <i class="bx bx-globe" />
             satshoot.com
         </a>
-        <button title="Options" class={optionsBtnClasses} on:click={handleOptionClick}>
+        <Button title="Options" on:click={handleOptionClick}>
             <i class="bx bx-dots-vertical-rounded" />
-        </button>
+        </Button>
     </div>
     <div class="w-full flex flex-col gap-[10px]">
         {@html processedDescription}
     </div>
-</div>
+</Card>
+
 {#if job.tTags.length > 0}
-    <div class={tagsWrapperClasses}>
+    <Card classes="flex-row flex-wrap">
         {#each job.tTags as tag}
             <button
                 class={tagItemClasses}
@@ -101,5 +88,5 @@
                 {tag[1]}
             </button>
         {/each}
-    </div>
+    </Card>
 {/if}
