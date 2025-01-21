@@ -3,9 +3,9 @@
     import { page } from '$app/stores';
     import { searchTerms } from '$lib/stores/search';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -94,12 +94,7 @@
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
                     <Card classes="gap-[10px]">
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[10px] border-b-[1px] border-b-[rgb(0,0,0,0.1)] items-center"
-                        >
-                            <p class="font-[500] text-[18px]">Search</p>
-                            <CloseModal />
-                        </div>
+                        <ModalHeader title="Search" />
                         <div class="w-full flex flex-col">
                             <div class="w-full flex flex-col gap-[10px]">
                                 <div class="flex flex-col gap-[5px]">

@@ -7,7 +7,6 @@
         type ModalSettings,
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import ndk from '$lib/stores/ndk';
@@ -16,6 +15,7 @@
     import { goto } from '$app/navigation';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -88,12 +88,7 @@
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
                     <Card>
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
-                        >
-                            <p class="font-[500] text-[18px]">Take Offer</p>
-                            <CloseModal />
-                        </div>
+                        <ModalHeader title="Take Offer" />
                         <div class="w-full flex flex-col">
                             <!-- popups Share Job Post start -->
                             <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
