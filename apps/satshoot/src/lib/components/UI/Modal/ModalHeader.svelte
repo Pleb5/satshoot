@@ -12,7 +12,7 @@
 </script>
 
 <div
-    class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
+    class="flex flex-row justify-between items-center gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
 >
     <p class="font-[500] text-[18px]">{title}</p>
 
