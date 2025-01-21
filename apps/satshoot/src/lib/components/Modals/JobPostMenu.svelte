@@ -9,7 +9,6 @@
     import { OfferEvent } from '$lib/events/OfferEvent';
     import NewReviewClientModal from './NewReviewClientModal.svelte';
     import { clientReviews } from '$lib/stores/reviews';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from './PaymentModal.svelte';
@@ -17,6 +16,7 @@
     import { goto } from '$app/navigation';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const modalStore = getModalStore();
 
@@ -164,13 +164,7 @@
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
                     <Card>
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
-                        >
-                            <p class="font-[500] text-[18px]">Job Menu</p>
-
-                            <CloseModal />
-                        </div>
+                        <ModalHeader title="Job Menu" />
                         <div class="w-full flex flex-col">
                             <!-- popups Job-Post-Menu start -->
                             <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">

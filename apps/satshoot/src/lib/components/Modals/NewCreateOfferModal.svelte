@@ -5,7 +5,6 @@
         ProgressRadial,
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
@@ -19,6 +18,7 @@
     import { insertThousandSeparator } from '$lib/utils/misc';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -222,10 +222,7 @@
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
                     <Card>
-                        <div class="flex flex-row justify-between gap-[10px] pb-[5px]">
-                            <p class="font-[500] text-[18px]">Create Offer</p>
-                            <CloseModal />
-                        </div>
+                        <ModalHeader title="Create Offer" />
                         <div class="w-full flex flex-col gap-[15px]">
                             <div
                                 class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"

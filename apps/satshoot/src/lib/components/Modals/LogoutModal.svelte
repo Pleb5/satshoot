@@ -4,9 +4,9 @@
     import { logout } from '$lib/utils/helpers';
     import { getModalStore, getDrawerStore, getToastStore } from '@skeletonlabs/skeleton';
     import Card from '../UI/Card.svelte';
-    import CloseModal from '../UI/Buttons/CloseModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -59,12 +59,7 @@
             <div class="w-full flex flex-col justify-start items-center">
                 <div class="w-full max-w-[500px] justify-start items-center">
                     <Card>
-                        <div
-                            class="flex flex-row justify-between gap-[10px] pb-[5px] border-b-[1px] border-b-[rgb(0,0,0,0.1)]"
-                        >
-                            <p class="font-[500] text-[18px]">Confirm logout</p>
-                            <CloseModal />
-                        </div>
+                        <ModalHeader title="Confirm Logout" />
                         <div class="w-full flex flex-col">
                             <!-- popups Logout start -->
                             <div class="w-full py-[10px] px-[5px]">
