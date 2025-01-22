@@ -39,6 +39,7 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     enum ToastType {
         Success = 'success',
@@ -654,10 +655,6 @@
     };
 
     const popupClasses = 'card w-60 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto';
-
-    const inputClasses =
-        'transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] ' +
-        'rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
 </script>
 
 {#if $modalStore[0]}
@@ -734,7 +731,7 @@
                                                 <label class="font-[500]" for="service-payment"
                                                     >Pay for service</label
                                                 >
-                                                <input
+                                                <Input
                                                     id="service-payment"
                                                     type="number"
                                                     step="1"
@@ -742,7 +739,7 @@
                                                     max="100_000_000"
                                                     placeholder="000,000"
                                                     bind:value={amount}
-                                                    class={inputClasses}
+                                                    fullWidth
                                                 />
                                             </div>
                                             <div class="w-full flex flex-col gap-[5px]">
@@ -751,15 +748,15 @@
                                                     for="plattform-contribution"
                                                     >Contribute to SatShoot</label
                                                 >
-                                                <input
+                                                <Input
                                                     id="plattform-contribution"
                                                     type="number"
                                                     step="1"
                                                     min="0"
-                                                    max="100_000_000"
+                                                    max="100"
                                                     placeholder="000,000"
                                                     bind:value={pledgedAmount}
-                                                    class={inputClasses}
+                                                    fullWidth
                                                 />
                                             </div>
                                         </div>

@@ -18,6 +18,7 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -116,11 +117,6 @@
             modalStore.close();
         }
     }
-
-    const textAreaClasses =
-        'transition ease duration-[0.3s] w-full min-h-[100px] bg-[rgb(0,0,0,0.05)] ' +
-        'border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] px-[10px] py-[5px] outline-[0px] ' +
-        'outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
 </script>
 
 {#if $modalStore[0]}
@@ -171,11 +167,13 @@
                                     <div class="w-full max-h-[50vh] overflow-auto">
                                         <p class="w-full">Share your experience to help others:</p>
                                     </div>
-                                    <textarea
-                                        placeholder="Describe your experience..."
-                                        class={textAreaClasses}
+                                    <Input
                                         bind:value={reviewText}
-                                    ></textarea>
+                                        placeholder="Describe your experience..."
+                                        classes="min-h-[100px]"
+                                        fullWidth
+                                        textarea
+                                    />
                                 </div>
 
                                 <div class="w-full flex flex-row gap-[10px]">

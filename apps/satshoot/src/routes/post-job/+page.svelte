@@ -22,6 +22,7 @@
     import { onMount, tick } from 'svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
+    import Input from '$lib/components/UI/Inputs/input.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -263,12 +264,12 @@
                             Title (min. 10 chars)
                         </label>
                         <div class="flex flex-row rounded-[6px] overflow-hidden bg-white">
-                            <input
+                            <Input
                                 id="title"
-                                type="text"
-                                class="{titleState} transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]"
-                                placeholder="Title of your job post"
                                 bind:value={titleText}
+                                placeholder="Title of your job post"
+                                classes={titleState}
+                                fullWidth
                             />
                         </div>
                     </div>
@@ -277,14 +278,16 @@
                             Description (min. 20 chars)
                         </label>
                         <div class="flex flex-row rounded-[6px] overflow-hidden bg-white">
-                            <textarea
+                            <Input
                                 id="description"
-                                rows="4"
-                                minlength={minDescriptionLength}
                                 bind:value={descriptionText}
-                                class="{descriptionState} transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]"
                                 placeholder="Detailed description of your job/work/issue"
-                            ></textarea>
+                                classes="min-h-[100px] {descriptionState}"
+                                fullWidth
+                                textarea
+                                rows={4}
+                                minlength={minDescriptionLength}
+                            />
                         </div>
                     </div>
                     <div class="">
@@ -293,11 +296,10 @@
                             <div
                                 class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white"
                             >
-                                <input
-                                    type="text"
+                                <Input
                                     bind:value={tagInput}
-                                    class="transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]"
                                     placeholder="Search and add a tag, or add a custom tag"
+                                    fullWidth
                                 />
                                 <div
                                     class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.1)] bg-[rgb(0,0,0,0.05)] flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"

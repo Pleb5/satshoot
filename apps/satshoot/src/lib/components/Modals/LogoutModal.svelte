@@ -7,6 +7,7 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
@@ -92,12 +93,10 @@
                                             />
 
                                             {#if encryptWalletBackup}
-                                                <input
-                                                    type="text"
-                                                    placeholder="Enter passphrase for encryption (min. 14 chars)"
-                                                    aria-label="passphrase"
+                                                <Input
                                                     bind:value={passphrase}
-                                                    class="transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]"
+                                                    placeholder="Enter passphrase for encryption (min. 14 chars)"
+                                                    fullWidth
                                                 />
                                             {/if}
                                         {/if}
