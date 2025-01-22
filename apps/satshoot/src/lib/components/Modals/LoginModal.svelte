@@ -19,8 +19,10 @@
         clipboard,
         getModalStore,
         getToastStore,
+        popup,
         ProgressRadial,
         type ModalSettings,
+        type PopupSettings,
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import { nip19 } from 'nostr-tools';
@@ -38,6 +40,27 @@
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
+
+    // For tooltip
+    const bunkerTooltip: PopupSettings = {
+        event: 'click',
+        target: 'bunkerTooltip',
+        placement: 'top',
+    };
+
+    const extensionTooltip: PopupSettings = {
+        event: 'click',
+        target: 'extensionTooltip',
+        placement: 'top',
+    };
+
+    const localKeyTooltip: PopupSettings = {
+        event: 'click',
+        target: 'localKeyTooltip',
+        placement: 'top',
+    };
+
+    let aboutSectionExpanded = false;
 
     let statusMessage = '';
     let statusColor = 'text-tertiary-200-700-token';
@@ -72,8 +95,11 @@
         if (!bunkerUrl || !bunkerUrl.startsWith('bunker://')) {
             // User tried to submit invalid token string
             attemptingBunkerConnection = false;
-            statusMessage = 'Invalid Bunker token! URL must start with "bunker://"';
-
+            toastStore.trigger({
+                message: 'Invalid Bunker token! URL must start with "bunker://"',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
             return;
         }
 
@@ -87,11 +113,19 @@
         console.log('secret', secret);
         if (!relayURLs) {
             attemptingBunkerConnection = false;
-            statusMessage = 'Error: No Relay URLs specified in Bunker token!';
+            toastStore.trigger({
+                message: 'Error: No Relay URLs specified in Bunker token!',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
             return;
         } else if (!remotePubkey) {
             attemptingBunkerConnection = false;
-            statusMessage = 'Error: No Remote Pubkey specified in Bunker token!';
+            toastStore.trigger({
+                message: 'Error: No Remote Pubkey specified in Bunker token!',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
             return;
         }
 
@@ -225,6 +259,26 @@
     }
 
     async function loginWithNsec() {
+        if ([passphraseForNsec].length < 14) {
+            toastStore.trigger({
+                message: 'Passphrase should be at least 14 characters long',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
+
+            return;
+        }
+
+        if (confirmPassphraseForNsec !== passphraseForNsec) {
+            toastStore.trigger({
+                message: 'Confirm passphrase does not match passphrase',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
+
+            return;
+        }
+
         await loginWithSecret(
             nsecForLocalKey,
             passphraseForNsec,
@@ -234,9 +288,32 @@
     }
 
     async function loginWithSeedWords() {
+        if (passphraseForSeedWords.length < 14) {
+            toastStore.trigger({
+                message: 'Passphrase should be at least 14 characters long',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
+
+            return;
+        }
+
+        if (confirmPassphraseForSeedWords !== passphraseForSeedWords) {
+            toastStore.trigger({
+                message: 'Confirm passphrase does not match passphrase',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
+
+            return;
+        }
+
         if (!validateSeedWordInputs(seedWordsForLocalKey)) {
-            statusMessage = 'Invalid seed words input!';
-            statusColor = 'text-red-500';
+            toastStore.trigger({
+                message: 'Invalid seed words input!',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
             return;
         }
 
@@ -297,10 +374,11 @@
             // Close login modal
             modalStore.close();
         } catch (e) {
-            statusMessage = `${failureMessage} ${e}`;
-            setTimeout(() => {
-                statusColor = 'text-red-500';
-            }, 800);
+            toastStore.trigger({
+                message: `${failureMessage} ${e}`,
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
         }
     }
 
@@ -320,6 +398,26 @@
     }
 
     async function finalizeAccountGeneration() {
+        if (passphraseForGeneratedAccount.length < 14) {
+            toastStore.trigger({
+                message: 'Passphrase should be at least 14 characters long',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
+
+            return;
+        }
+
+        if (confirmPassphraseForGeneratedAccount !== passphraseForGeneratedAccount) {
+            toastStore.trigger({
+                message: 'Confirm passphrase does not match passphrase',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
+
+            return;
+        }
+
         if (generatedSeedWords && generatedNpub) {
             const encryptedSeed = encryptSecret(
                 generatedSeedWords.join(' '),
@@ -386,54 +484,26 @@
         });
 
         if (!allFilledIn) {
-            statusMessage = 'Fill in all words!';
-            setTimeout(() => {
-                statusColor = 'text-red-500';
-            }, 800);
+            toastStore.trigger({
+                message: 'Fill in all seed words!',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
             return false;
         }
 
         // validate valid bip39 wordlist provided
         if (!validateWords(seedWords.join(' '))) {
-            statusMessage = 'Check the seed words again! Not a valid bip39 wordlist!';
-            setTimeout(() => {
-                statusColor = 'text-red-500';
-            }, 800);
+            toastStore.trigger({
+                message: 'Check the seed words again! Not a valid bip39 wordlist!',
+                background: 'bg-error-300-600-token',
+                timeout: 5000,
+            });
             return false;
         }
 
         return true;
     }
-
-    const bunkerExamples = [
-        {
-            label: 'nsec.app (Web)',
-            href: 'https://nsec.app/',
-        },
-        {
-            label: 'Amber (Android)',
-            href: 'https://github.com/greenart7c3/Amber',
-        },
-    ];
-
-    const extensionExamples = [
-        {
-            label: 'Alby',
-            href: 'https://getalby.com/',
-        },
-        {
-            label: 'nos2x',
-            href: 'https://chromewebstore.google.com/detail/nos2x/kpgefcfmnafjgpblomihpgmejjdanjjp?pli=1',
-        },
-        {
-            label: 'horse',
-            href: 'https://chromewebstore.google.com/detail/horse/ogdjeglchjlenflecdcoonkngmmipcoe',
-        },
-        {
-            label: 'Flamingo',
-            href: 'https://www.getflamingo.org/',
-        },
-    ];
 
     const labelClasses =
         'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-[rgb(0,0,0,0.15)] border-b-[0px] text-[14px]';
@@ -492,24 +562,81 @@
                                 <div
                                     class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px]"
                                 >
-                                    <p
-                                        class="w-full px-[10px] py-[5px] border-[2px] border-b-[0px] border-[rgb(0,0,0,0.1)] rounded-t-[6px]"
+                                    <div
+                                        class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] border-b-[0px] rounded-t-[6px]"
                                     >
-                                        SatShoot is built on Nostr, which has its own unique way of
-                                        account creation and login
-                                    </p>
+                                        <p>
+                                            SatShoot is built on Nostr, which has its own unique way
+                                            of account creation and login
+                                        </p>
+
+                                        {#if aboutSectionExpanded}
+                                            <div class="mt-3 space-y-3">
+                                                <p class="text-sm text-gray-700">
+                                                    Nostr enables
+                                                    <strong> sovereign identities </strong>
+                                                    through cryptographic keys. Your
+                                                    <strong> "secret" or "private" key </strong>
+                                                    is used by Nostr apps to digitally sign all actions
+                                                    you take.
+                                                </p>
+                                                <p class="text-sm text-gray-700">
+                                                    In the case of
+                                                    <strong> SatShoot </strong>
+                                                    , these actions include:
+                                                </p>
+                                                <ul class="pl-5 list-disc text-sm text-gray-700">
+                                                    <li>Posting a Job or an Offer</li>
+                                                    <li>Taking Offers</li>
+                                                    <li>Sending messages</li>
+                                                    <li>Creating reviews</li>
+                                                </ul>
+                                                <p class="text-sm text-gray-700">
+                                                    This ensures that your data is cryptographically
+                                                    verifiable, proving it belongs solely to you.
+                                                    You generate your private key, and it's
+                                                    <strong> your responsibility </strong>
+                                                    to keep it secure.
+                                                </p>
+                                                <p class="text-sm text-gray-700">
+                                                    Apps require your permission to get signatures
+                                                    for publishing data to Nostr relays. You can
+                                                    grant this permission in various ways, meaning
+                                                    there are multiple
+                                                    <strong>"login"</strong>
+                                                    methods with different security tradeoffs.
+                                                    <em>Do your own research and choose wisely.</em>
+                                                </p>
+                                            </div>
+                                        {/if}
+                                    </div>
+
                                     <Button
                                         variant="outlined"
-                                        href="/about"
-                                        target="_blank"
                                         classes="rounded-b-[6px]"
+                                        on:click={() =>
+                                            (aboutSectionExpanded = !aboutSectionExpanded)}
                                     >
-                                        Learn More
+                                        {aboutSectionExpanded ? 'Collapse' : 'Learn More'}
                                     </Button>
                                 </div>
                                 <div class="w-full flex flex-col">
-                                    <div class="w-full flex flex-row gap-[5px]">
+                                    <div class="w-full flex flex-row items-center gap-[5px]">
                                         <p class={labelClasses}>Bunker</p>
+                                        <i
+                                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
+                                            use:popup={bunkerTooltip}
+                                        />
+                                        <div data-popup="bunkerTooltip">
+                                            <Card>
+                                                <p>
+                                                    A central place where apps go to ask for data to
+                                                    be signed via nostr relays. Considered to be the
+                                                    most secure but connection to the Bunker can be
+                                                    unreliable.
+                                                </p>
+                                            </Card>
+                                        </div>
                                     </div>
                                     <div class={inputWrapperClasses}>
                                         <input
@@ -527,22 +654,36 @@
                                         </Button>
                                     </div>
                                     <div class={btnWrapperClasses}>
-                                        {#each bunkerExamples as { href, label }}
-                                            <Button
-                                                variant="outlined"
-                                                {href}
-                                                target="_blank"
-                                                classes="rounded-[0]"
-                                                grow
-                                            >
-                                                {label}
-                                            </Button>
-                                        {/each}
+                                        <Button
+                                            variant="outlined"
+                                            href="https://nostrapps.com/#signers"
+                                            target="_blank"
+                                            classes="rounded-[0]"
+                                            grow
+                                        >
+                                            Browse Signer Apps
+                                        </Button>
                                     </div>
                                 </div>
                                 <div class="w-full flex flex-col">
-                                    <div class="w-full flex flex-row gap-[5px]">
+                                    <div class="w-full flex flex-row items-center gap-[5px]">
                                         <p class={labelClasses}>Extension</p>
+                                        <i
+                                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
+                                            use:popup={extensionTooltip}
+                                        />
+                                        <div data-popup="extensionTooltip">
+                                            <Card>
+                                                <p>
+                                                    Browser extensions can communicate fairly
+                                                    securely with any website locally in your
+                                                    browser. Connection to them is much more stable
+                                                    than Bunkers. However, extensions have access to
+                                                    any sensitive data you might load on any
+                                                    website.
+                                                </p>
+                                            </Card>
+                                        </div>
                                     </div>
                                     <div class={inputWrapperClasses}>
                                         <Button
@@ -556,17 +697,15 @@
                                         </Button>
                                     </div>
                                     <div class={btnWrapperClasses}>
-                                        {#each extensionExamples as { href, label }}
-                                            <Button
-                                                variant="outlined"
-                                                {href}
-                                                target="_blank"
-                                                classes="rounded-[0]"
-                                                grow
-                                            >
-                                                {label}
-                                            </Button>
-                                        {/each}
+                                        <Button
+                                            variant="outlined"
+                                            href="https://nostrapps.com/#signers"
+                                            target="_blank"
+                                            classes="rounded-[0]"
+                                            grow
+                                        >
+                                            Browse Signer Apps
+                                        </Button>
                                     </div>
                                 </div>
                                 <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
@@ -582,9 +721,8 @@
                                                 >
                                                     Your secret key will be stored locally in
                                                     encrypted form and unencrypted until your
-                                                    session ends. For the Passphrase, please provide
-                                                    a strong passphrase for encryption at rest(min.
-                                                    14chars).
+                                                    session ends. Please provide a strong passphrase
+                                                    for encryption at rest(min. 14chars).
                                                 </p>
                                             </div>
                                             <div class="w-full flex flex-col">
@@ -595,7 +733,7 @@
                                                     <input
                                                         type="text"
                                                         bind:value={nsecForLocalKey}
-                                                        placeholder="Your private key..."
+                                                        placeholder="nsec..."
                                                         class={inputClasses}
                                                     />
                                                 </div>
@@ -669,11 +807,13 @@
                                                     <Button
                                                         variant="outlined"
                                                         on:click={onCopyNsec}
-                                                        classes="rounded-[0]"
+                                                        classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
                                                         grow
                                                     >
                                                         <span use:clipboard={generatedNsec}>
-                                                            {copiedNsec ? 'Copied' : 'Copy'}
+                                                            {copiedNsec
+                                                                ? 'Copied'
+                                                                : 'Dangerously Copy'}
                                                         </span>
                                                     </Button>
                                                 </div>

@@ -87,7 +87,6 @@
         variant="outlined"
         classes="font-[500] rounded-[0]"
         grow
-        disabled={!passphraseValid || !confirmPassphraseValid}
         on:click={() => dispatch('submit')}
     >
         <i class="bx bx-log-in-circle" />

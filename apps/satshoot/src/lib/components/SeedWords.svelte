@@ -54,9 +54,14 @@
 </div>
 {#if showCopyButton}
     <div class={btnWrapperClasses}>
-        <Button variant="outlined" on:click={onCopySeed} classes="rounded-[0]" grow>
+        <Button
+            variant="outlined"
+            on:click={onCopySeed}
+            classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
+            grow
+        >
             <span use:clipboard={words.join(' ')}>
-                {copiedSeed ? 'Copied' : 'Copy'}
+                {copiedSeed ? 'Copied' : 'Dangerously Copy'}
             </span>
         </Button>
     </div>
