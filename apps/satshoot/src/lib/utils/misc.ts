@@ -108,6 +108,46 @@ export function insertThousandSeparator(amount: number) {
     return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
+export function abbreviateNumber(num: number): string {
+    const suffixes = ['', 'K', 'M', 'B', 'T']; // Extendable for larger units
+    let tier = 0;
+
+    // Determine the appropriate tier for abbreviation
+    while (Math.abs(num) >= 1000 && tier < suffixes.length - 1) {
+        num /= 1000;
+        tier++;
+    }
+
+    // Format the number to 1 decimal place if it has a fraction
+    const formattedNum = num % 1 === 0 ? num.toFixed(0) : num.toFixed(1);
+
+    return `${formattedNum}${suffixes[tier]}`;
+}
+
+export function linkifyText(text: string): string {
+    // test with https://www.example.com/some/long/url
+    // Regular expression to detect URLs
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    // Replace URLs with <a> tags, using the URL class to parse the URLs
+    return text.replace(urlRegex, (urlString) => {
+        try {
+            // Create a URL object
+            const url = new URL(urlString);
+
+            // Shorten the displayed URL text to 20 characters with '...'
+            const displayText =
+                urlString.length > 20 ? urlString.substring(0, 20) + '...' : urlString;
+
+            // Return the HTML anchor tag
+            return `<a class='anchor' href="${url.href}" target="_blank">${displayText}</a>`;
+        } catch (e) {
+            // If an invalid URL is encountered, just return the original text
+            return urlString;
+        }
+    });
+}
+
 export function isNDKTagArray(value: any): value is NDKTag[] {
     return (
         Array.isArray(value) &&
