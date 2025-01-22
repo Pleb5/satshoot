@@ -523,29 +523,6 @@
     <div
         class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
     >
-        {#if askingForNip07Permission}
-            <div
-                class="absolute top-1/2 left-1/2 z-[100] transform -translate-x-1/2 -translate-y-1/2 card p-8 flex flex-col items-center bg-surface-400-500-token"
-            >
-                <h3 class="h3 text-center font-bold mb-8">Asking for permission</h3>
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-primary-500"
-                    track="stroke-primary-500/30"
-                    strokeLinecap="round"
-                    width="w-16"
-                />
-                <button
-                    type="button"
-                    class="btn btn-sm sm:btn-md bg-error-300-600-token w-24 mt-8"
-                    on:click={() => (askingForNip07Permission = false)}
-                >
-                    Cancel
-                </button>
-            </div>
-        {/if}
-
         <div
             class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
         >
@@ -693,10 +670,22 @@
                                             variant="outlined"
                                             classes="rounded-[0]"
                                             grow
+                                            disabled={askingForNip07Permission}
                                             on:click={nip07Login}
                                         >
-                                            <i class="bx bx-log-in-circle" />
-                                            Connect
+                                            {#if askingForNip07Permission}
+                                                <ProgressRadial
+                                                    value={undefined}
+                                                    stroke={60}
+                                                    meter="stroke-primary-500"
+                                                    track="stroke-primary-500/30"
+                                                    strokeLinecap="round"
+                                                    width="w-16"
+                                                />
+                                            {:else}
+                                                <i class="bx bx-log-in-circle" />
+                                                Connect
+                                            {/if}
                                         </Button>
                                     </div>
                                     <div class={btnWrapperClasses}>
@@ -722,10 +711,15 @@
                                                 <p
                                                     class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] rounded-t-[6px]"
                                                 >
-                                                    Your secret key will be stored locally in
-                                                    encrypted form and unencrypted until your
-                                                    session ends. Please provide a strong passphrase
-                                                    for encryption at rest(min. 14chars).
+                                                    Local keys are stored in an easily-accessible
+                                                    place in the browser called Local storage. This
+                                                    makes local keys the most convenient and stable
+                                                    way to grant permission.
+                                                    <span class="text-yellow-600">
+                                                        BUT ALSO MAKES THIS METHOD VULNERABLE TO
+                                                        MOST KINDS OF BROWSER OR WEBSITE BUGS AND
+                                                        EXPLOITS
+                                                    </span>
                                                 </p>
                                             </div>
                                             <div class="w-full flex flex-col">
