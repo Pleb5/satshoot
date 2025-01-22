@@ -37,6 +37,7 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -259,7 +260,7 @@
     }
 
     async function loginWithNsec() {
-        if ([passphraseForNsec].length < 14) {
+        if (passphraseForNsec.length < 14) {
             toastStore.trigger({
                 message: 'Passphrase should be at least 14 characters long',
                 background: 'bg-error-300-600-token',
@@ -639,11 +640,13 @@
                                         </div>
                                     </div>
                                     <div class={inputWrapperClasses}>
-                                        <input
-                                            type="url"
+                                        <Input
                                             bind:value={bunkerUrl}
                                             placeholder="bunker://..."
-                                            class={inputClasses}
+                                            type="url"
+                                            grow
+                                            noBorder
+                                            notRounded
                                         />
                                         <Button
                                             variant="outlined"
@@ -730,11 +733,12 @@
                                                     <p class={labelClasses}>Secret key</p>
                                                 </div>
                                                 <div class={inputWrapperClasses}>
-                                                    <input
-                                                        type="text"
+                                                    <Input
                                                         bind:value={nsecForLocalKey}
                                                         placeholder="nsec..."
-                                                        class={inputClasses}
+                                                        grow
+                                                        noBorder
+                                                        notRounded
                                                     />
                                                 </div>
                                                 <Passphrase
@@ -795,12 +799,12 @@
                                                     <p class={labelClasses}>Private key</p>
                                                 </div>
                                                 <div class={inputWrapperClasses}>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Generated Private Key"
+                                                    <Input
                                                         value={generatedNsec}
                                                         disabled
-                                                        class={inputClasses}
+                                                        grow
+                                                        noBorder
+                                                        notRounded
                                                     />
                                                 </div>
                                                 <div class={btnWrapperClasses}>
@@ -823,12 +827,12 @@
                                                     <p class={labelClasses}>Public key</p>
                                                 </div>
                                                 <div class={inputWrapperClasses}>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Generated Pubkey"
+                                                    <Input
                                                         value={generatedNpub}
                                                         disabled
-                                                        class={inputClasses}
+                                                        grow
+                                                        noBorder
+                                                        notRounded
                                                     />
                                                 </div>
                                                 <div class={btnWrapperClasses}>

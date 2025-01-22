@@ -14,6 +14,7 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -106,11 +107,12 @@
                                 >
                                     <p class="">Share your job post with others</p>
                                     {#if job.pubkey === $currentUser?.pubkey}
-                                        <textarea
-                                            rows="10"
-                                            placeholder="Describe why you should get this job"
-                                            class={textAreaClasses}
+                                        <Input
                                             bind:value={message}
+                                            classes="min-h-[100px]"
+                                            fullWidth
+                                            textarea
+                                            rows={10}
                                         />
                                     {/if}
                                 </div>

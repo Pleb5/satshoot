@@ -6,6 +6,7 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -73,10 +74,6 @@
         'flex flex-row rounded-[6px] overflow-hidden bg-white outline ' +
         'outline-[5px] outline-white border-[1px] border-[rgb(0,0,0,0.1)] gap-[2px]';
 
-    const inputClasses =
-        'w-full border-[0px] border-[rgb(0,0,0,0.15)] ' +
-        'rounded-[0px] outline outline-[0px] py-[5px] px-[10px]';
-
     const termWrapperClasses =
         'flex flex-row gap-[5px] px-[10px] py-[1px] bg-[rgb(0,0,0,0.1)] ' +
         'border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] items-center hover:bg-[#3b73f6] group';
@@ -104,13 +101,14 @@
                                     <div class="flex flex-col gap-[10px]">
                                         <div class="w-full flex flex-col gap-[5px]">
                                             <div class={inputWrapperClasses}>
-                                                <input
+                                                <Input
                                                     id="search-input"
                                                     bind:value={searchInput}
-                                                    on:keydown={handleEnterKey}
-                                                    class={inputClasses}
-                                                    type="text"
+                                                    onKeyPress={handleEnterKey}
                                                     placeholder="Search term or add tag"
+                                                    fullWidth
+                                                    noBorder
+                                                    notRounded
                                                 />
                                                 <Button on:click={handleAdd}>
                                                     <i class="bx bx-plus" />

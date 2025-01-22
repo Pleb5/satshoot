@@ -30,6 +30,7 @@
     import ShareModal from '../Modals/ShareModal.svelte';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -403,13 +404,7 @@
                 <div
                     class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
                 >
-                    <input
-                        readonly
-                        class="w-full border-[0px] border-[rgb(0,0,0,0.15)] outline outline-[0px] py-[5px] px-[10px] bg-[rgb(0,0,0,0.05)]"
-                        type="text"
-                        placeholder="nPubAddress"
-                        value={user.npub}
-                    />
+                    <Input value={user.npub} placeholder="npub..." fullWidth disabled noBorder />
                     <Button variant="outlined" classes={addressCopyBtnClasses}>
                         <i class="bx bx-qr" />
                     </Button>
@@ -420,12 +415,12 @@
                 <div
                     class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
                 >
-                    <input
-                        readonly
-                        class="w-full border-[0px] border-[rgb(0,0,0,0.15)] outline outline-[0px] py-[5px] px-[10px] bg-[rgb(0,0,0,0.05)]"
-                        type="text"
-                        placeholder="nProfileAddress"
+                    <Input
                         value={nip19.nprofileEncode({ pubkey: user.pubkey })}
+                        placeholder="nprofile1..."
+                        fullWidth
+                        disabled
+                        noBorder
                     />
                     <Button variant="outlined" classes={addressCopyBtnClasses}>
                         <i class="bx bx-qr" />

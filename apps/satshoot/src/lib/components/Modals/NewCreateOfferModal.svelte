@@ -19,6 +19,7 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -202,14 +203,6 @@
 
     const selectOptionClasses =
         'transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-[rgb(59,115,246)] hover:text-white';
-
-    const inputClasses =
-        'transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] ' +
-        'px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
-
-    const textareaInputClasses =
-        'transition ease duration-[0.3s] w-full min-h-[100px] bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] ' +
-        'rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
 </script>
 
 {#if $modalStore[0]}
@@ -261,14 +254,14 @@
                                             </label>
                                         </div>
                                         <div class="w-full flex flex-row items-center">
-                                            <input
+                                            <Input
                                                 type="number"
                                                 step="1"
                                                 min="0"
                                                 max="100_000_000"
                                                 placeholder="Amount"
-                                                class={inputClasses}
                                                 bind:value={amount}
+                                                fullWidth
                                             />
                                         </div>
                                     </div>
@@ -277,14 +270,14 @@
                                             <label class="font-[600]" for=""> Pledge split </label>
                                         </div>
                                         <div class="w-full flex flex-row items-center relative">
-                                            <input
+                                            <Input
                                                 type="number"
                                                 step="1"
                                                 min="0"
                                                 max="100"
                                                 placeholder="Percentage"
-                                                class={inputClasses}
                                                 bind:value={pledgeSplit}
+                                                fullWidth
                                             />
                                             <span
                                                 class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-[rgb(0,0,0,0.5)] pointer-events-none"
@@ -321,11 +314,12 @@
                                 <div class="">
                                     <label class="font-[600]" for="description"> Your Pitch </label>
                                 </div>
-
-                                <textarea
-                                    placeholder="Describe why you should get this job"
-                                    class={textareaInputClasses}
+                                <Input
                                     bind:value={description}
+                                    placeholder="Describe why you should get this job"
+                                    classes="min-h-[100px]"
+                                    fullWidth
+                                    textarea
                                 />
                             </div>
                             <Checkbox
