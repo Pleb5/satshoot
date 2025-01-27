@@ -6,7 +6,7 @@
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import type { NDKTag } from '@nostr-dev-kit/ndk';
 
-    import { ticketToEdit } from '$lib/stores/ticket-to-edit';
+    import { jobToEdit } from '$lib/stores/job-to-edit';
 
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
 
@@ -88,10 +88,10 @@
     }
 
     onMount(() => {
-        if ($ticketToEdit) {
-            titleText = $ticketToEdit.title;
-            descriptionText = $ticketToEdit.description;
-            $ticketToEdit.tTags.forEach((tag: NDKTag) => {
+        if ($jobToEdit) {
+            titleText = $jobToEdit.title;
+            descriptionText = $jobToEdit.description;
+            $jobToEdit.tTags.forEach((tag: NDKTag) => {
                 tagList.push((tag as string[])[1]);
             });
             tagList = tagList;
@@ -100,7 +100,7 @@
     });
 
     beforeNavigate(async () => {
-        $ticketToEdit = null;
+        $jobToEdit = null;
     });
 
     function addTag(tag: string) {
@@ -169,11 +169,11 @@
                 });
                 // Generate 'd' tag and tags from description hashtags
                 // only if we are not editing but creating a new job
-                if (!$ticketToEdit) {
+                if (!$jobToEdit) {
                     job.generateTags();
                 } else {
                     job.removeTag('d');
-                    job.tags.push(['d', $ticketToEdit.tagValue('d') as string]);
+                    job.tags.push(['d', $jobToEdit.tagValue('d') as string]);
                 }
 
                 try {
@@ -181,7 +181,7 @@
 
                     posting = false;
 
-                    $ticketToEdit = null;
+                    $jobToEdit = null;
 
                     // Ticket posted Modal
                     const modal: ModalSettings = {
@@ -255,7 +255,7 @@
             <div class="w-full flex flex-col gap-[15px]">
                 <div class="w-full flex flex-col gap-[5px] justify-start">
                     <h2 class="text-[40px] font-[500]">
-                        {$ticketToEdit ? 'Edit' : 'New'} Job Post
+                        {$jobToEdit ? 'Edit' : 'New'} Job Post
                     </h2>
                 </div>
                 <Card classes="gap-[25px">
