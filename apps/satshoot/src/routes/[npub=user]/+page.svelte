@@ -1,7 +1,7 @@
 <script lang="ts">
     import { page } from '$app/stores';
-    import NewOfferCard from '$lib/components/Cards/NewOfferCard.svelte';
-    import NewUserCard from '$lib/components/Cards/NewUserCard.svelte';
+    import OfferCard from '$lib/components/Cards/OfferCard.svelte';
+    import UserCard from '$lib/components/Cards/UserCard.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import Card from '$lib/components/UI/Card.svelte';
@@ -155,7 +155,7 @@
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
-                    <NewUserCard {user} />
+                    <UserCard {user} />
                     <div class="w-full flex flex-col gap-[15px] relative">
                         <div class="w-full flex flex-col gap-[10px]">
                             <TabSelector {tabs} bind:selectedTab={$profileTabStore} />
@@ -212,7 +212,7 @@
                                         <div class="w-full flex flex-col gap-[15px]">
                                             <div class="w-full flex flex-col gap-[15px]">
                                                 {#each filteredOffers as offer (offer.id)}
-                                                    <NewOfferCard
+                                                    <OfferCard
                                                         {offer}
                                                         skipUserProfile
                                                         skipReputation

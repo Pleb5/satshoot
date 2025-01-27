@@ -5,6 +5,8 @@
         fetchFreelanceFollowEvent,
         freelanceFollowEvents,
     } from '$lib/stores/user';
+    import { fetchEventFromRelaysFirst, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import { filterValidPTags } from '$lib/utils/misc';
     import {
         NDKEvent,
         NDKKind,
@@ -12,23 +14,23 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-
-    import { wot } from '$lib/stores/wot';
-
-    import EditProfileModal from '../Modals/EditProfileModal.svelte';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
-
-    import { Avatar } from '@skeletonlabs/skeleton';
-    import { clipboard } from '@skeletonlabs/skeleton';
-    import { getToastStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings } from '@skeletonlabs/skeleton';
-    import { popup } from '@skeletonlabs/skeleton';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { broadcastUserProfile } from '$lib/utils/helpers';
-    import { fetchEventFromRelaysFirst } from '$lib/utils/helpers';
-    import { shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
-    import { filterValidPTags } from '$lib/utils/misc';
+    import {
+        clipboard,
+        getModalStore,
+        getToastStore,
+        ProgressRadial,
+        type ModalComponent,
+        type ModalSettings,
+    } from '@skeletonlabs/skeleton';
+    import { nip19 } from 'nostr-tools';
+    import ReputationCard from './ReputationCard.svelte';
+    import ExpandableText from '../UI/Display/ExpandableText.svelte';
+    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import { selectedPerson } from '$lib/stores/messages';
+    import ShareModal from '../Modals/ShareModal.svelte';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -36,44 +38,34 @@
         none,
     }
 
-    const toastStore = getToastStore();
     const modalStore = getModalStore();
+    const toastStore = getToastStore();
 
     export let user: NDKUser;
+    export let job: TicketEvent | undefined = undefined;
+
     let userProfile: NDKUserProfile;
     let followBtnText = 'Follow';
     let followStatus = FollowStatus.none;
 
     $: npub = user.npub;
-    $: editable = $currentUser?.npub === npub;
+    $: profileHref = '/' + npub;
     $: avatarImage = `https://robohash.org/${user.pubkey}`;
-    $: nip05 = userProfile?.nip05;
-    $: lud16 = userProfile?.lud16;
+    $: nip05 = userProfile?.nip05 || '';
+    $: lud16 = userProfile?.lud16 || '';
+    $: website = userProfile?.website || '';
 
-    $: website = userProfile?.website
-        ? userProfile.website.length <= 20
-            ? userProfile.website
-            : userProfile.website.substring(0, 20) + '...'
-        : '?';
+    $: bech32ID = job ? job.encode() : '';
 
-    let validNIP05 = false;
-
-    $: partOfWoT = $wot.has(user.pubkey);
-    $: trustColor = partOfWoT ? 'text-tertiary-500' : 'text-error-500';
-    $: bgTrustColor = partOfWoT ? 'bg-tertiary-500' : 'bg-error-500';
-    $: nip05TrustColor = validNIP05 ? 'text-tertiary-500' : 'text-error-500';
-    $: bgNip05TrustColor = validNIP05 ? 'bg-tertiary-500' : 'bg-error-500';
+    let showMessageButton = false;
+    $: if (job && job.pubkey !== $currentUser?.pubkey) {
+        showMessageButton = true;
+    } else {
+        showMessageButton = false;
+    }
 
     $: if (user) {
         setProfile();
-    }
-
-    $: if (user && nip05) {
-        user.validateNip05(nip05).then((response: boolean | null) => {
-            if (response) {
-                validNIP05 = true;
-            }
-        });
     }
 
     $: if (user.pubkey !== $currentUser?.pubkey) {
@@ -106,8 +98,13 @@
         }
     }
 
+    let processingFollowEvent = false;
+
     async function follow() {
         if (!$currentUser) return;
+
+        processingFollowEvent = true;
+
         const followEvent = $freelanceFollowEvents.get($currentUser.pubkey);
 
         if (followEvent) {
@@ -151,6 +148,9 @@
                     autohide: true,
                     timeout: 5000,
                 });
+            })
+            .finally(() => {
+                processingFollowEvent = false;
             });
     }
 
@@ -159,6 +159,8 @@
         const followEvent = $freelanceFollowEvents.get($currentUser.pubkey);
 
         if (!followEvent) return;
+
+        processingFollowEvent = true;
 
         // publish delete event with reference to previous follow event
         const deleteEvent = new NDKEvent($ndk);
@@ -201,6 +203,9 @@
                     autohide: true,
                     timeout: 5000,
                 });
+            })
+            .finally(() => {
+                processingFollowEvent = false;
             });
     }
 
@@ -235,303 +240,221 @@
         }
     }
 
-    async function editProfile() {
-        if ($currentUser) {
-            try {
-                $currentUser.profile = userProfile;
-                await broadcastUserProfile($ndk, userProfile);
-
-                const t: ToastSettings = {
-                    message: `Profile changed!`,
-                };
-                toastStore.trigger(t);
-            } catch (e) {
-                const t: ToastSettings = {
-                    message: `Profile update failed! Reason: ${e}`,
-                };
-                toastStore.trigger(t);
-            }
-        }
+    function selectChatPartner() {
+        $selectedPerson = job!.pubkey + '$' + bech32ID;
     }
 
-    function editName() {
-        // If user confirms modal do the editing
-        new Promise<string | undefined>((resolve) => {
-            const data = userProfile.name ?? userProfile.displayName ?? '';
-            const modalComponent: ModalComponent = {
-                ref: EditProfileModal,
-                props: { dataToEdit: data, fieldName: 'Name' },
-            };
+    function handleShare() {
+        const modalComponent: ModalComponent = {
+            ref: ShareModal,
+        };
 
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (editedData: string | undefined) => {
-                    resolve(editedData);
-                },
-            };
-            modalStore.trigger(modal);
-            // We got some kind of response from modal
-        }).then((editedData: string | undefined) => {
-            if (editedData) {
-                userProfile.name = editedData;
-                editProfile();
-            }
-        });
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.trigger(modal);
     }
 
-    function editAbout() {
-        new Promise<string | undefined>((resolve) => {
-            const data = userProfile.about ?? userProfile.bio ?? '';
-            const modalComponent: ModalComponent = {
-                ref: EditProfileModal,
-                props: { dataToEdit: data, fieldName: 'About' },
-            };
+    $: userInfoItems = [
+        {
+            text: nip05,
+            href: profileHref,
+            isExternal: false,
+            title: 'Verified',
+            iconClass: 'bx bxs-badge-check',
+            hoverColor: 'rgb(225,255,225,0.75)',
+        },
+        {
+            text: lud16,
+            title: 'Zap',
+            iconClass: 'bx bxs-bolt',
+            hoverColor: 'rgb(250,250,0,0.75)',
+        },
+        {
+            text: website,
+            href: website,
+            isExternal: true,
+            title: 'Website',
+            iconClass: 'bx bx-globe',
+            hoverColor: 'rgb(225,255,225,0.75)',
+        },
+    ];
 
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (editedData: string | undefined) => {
-                    resolve(editedData);
-                },
-            };
-            modalStore.trigger(modal);
-            // We got some kind of response from modal
-        }).then((editedData: string | undefined) => {
-            if (editedData) {
-                userProfile.about = editedData;
-                editProfile();
-            }
-        });
-    }
+    const profileLinkClasses =
+        'transition transition-ease duration-[0.3s] transform w-[55px] h-[55px] min-w-[55px] min-h-[55px] ' +
+        'overflow-hidden relative rounded-[100%] shadow-[0_0_4px_4px_rgba(0,0,0,0.5)] bg-[rgb(0,0,0,0.1)] ' +
+        'outline outline-[4px] outline-[rgb(255,255,255)] hover:outline-[rgb(59,115,246)] hover:scale-[1.02] ' +
+        'transform w-[75px] h-[75px] min-w-[75px] min-h-[75px] shadow-[0_0_8px_4px_rgba(0,0,0,0.5)] hover:scale-[1.03]';
 
-    function editLud16() {
-        new Promise<string | undefined>((resolve) => {
-            const data = userProfile.lud16 ?? '';
-            const modalComponent: ModalComponent = {
-                ref: EditProfileModal,
-                props: { dataToEdit: data, fieldName: 'LN Address' },
-            };
+    const iconBtnClasses =
+        'flex flex-row justify-center items-center px-[10px] py-[5px] text-[18px] ' +
+        'text-[rgb(0,0,0,0.25)] bg-[rgb(0,0,0,0.1)] group-hover:bg-[rgb(225,255,225,0.1)]';
 
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (editedData: string | undefined) => {
-                    resolve(editedData);
-                },
-            };
-            modalStore.trigger(modal);
-            // We got some kind of response from modal
-        }).then((editedData: string | undefined) => {
-            if (editedData) {
-                userProfile.lud16 = editedData;
-                editProfile();
-            }
-        });
-    }
-
-    function editWebsite() {
-        new Promise<string | undefined>((resolve) => {
-            const data = userProfile?.website ?? '';
-            const modalComponent: ModalComponent = {
-                ref: EditProfileModal,
-                props: { dataToEdit: data, fieldName: 'Website' },
-            };
-
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (editedData: string | undefined) => {
-                    resolve(editedData);
-                },
-            };
-            modalStore.trigger(modal);
-            // We got some kind of response from modal
-        }).then((editedData: string | undefined) => {
-            if (editedData != undefined) {
-                userProfile.website = editedData;
-                editProfile();
-            }
-        });
-    }
-
-    // For tooltip
-    const popupWoT: PopupSettings = {
-        event: 'click',
-        target: 'partOfWoT',
-        placement: 'bottom',
-    };
-
-    const popupNip05: PopupSettings = {
-        event: 'click',
-        target: 'popupNip05',
-        placement: 'left',
-    };
+    const addressCopyBtnClasses =
+        'bg-white rounded-[0px] border-l-[1px] border-l-[rgb(0,0,0,0.1)] hover:border-l-[rgb(0,0,0,0.0)] ';
 </script>
 
-<div class="card p-4 bg-surface-200-700-token flex-grow">
-    <header class="mb-8">
-        <div class="grid grid-cols-[auto_1fr_auto] items-center justify-center gap-x-2">
-            <div>
-                <Avatar class="rounded-full border-white" src={avatarImage} />
+<div class="w-full max-w-[350px] flex flex-col gap-[25px] max-[768px]:max-w-full">
+    <div class="w-full flex flex-col gap-[15px] max-[768px]:mt-[15px]">
+        <!-- profile section -->
+        <Card classes="gap-[15px]">
+            <div class="w-full flex flex-col">
+                <div
+                    class="w-full overflow-hidden relative rounded-[6px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)] bg-[rgb(0,0,0,0.1)] pt-[25%]"
+                >
+                    <img
+                        class="w-full h-full absolute inset-0 object-cover"
+                        src={userProfile?.banner || avatarImage}
+                        alt="banner"
+                    />
+                </div>
+                <div class="w-full mt-[-35px] flex flex-col justify-center items-center">
+                    <a href={profileHref} class={profileLinkClasses}>
+                        <img
+                            class="w-full h-full absolute inset-0 object-cover"
+                            src={userProfile?.image || avatarImage}
+                            alt="profile"
+                        />
+                    </a>
+                </div>
             </div>
-            <div class="flex items-center justify-center gap-x-4">
-                <h2 class="h2 text-center font-bold text-lg sm:text-2xl">
+            <div class="flex flex-col gap-[10px]">
+                <a href={profileHref} class="font-[600]">
                     {userProfile?.name ??
                         userProfile?.displayName ??
                         shortenTextWithEllipsesInMiddle(npub, 15)}
-                </h2>
-                <span>
-                    {#if partOfWoT}
-                        <i
-                            class="fa-solid fa-circle-check text-2xl {trustColor}"
-                            use:popup={popupWoT}
+                </a>
+
+                {#each userInfoItems as { text, href, isExternal, title, hoverColor, iconClass }}
+                    <div
+                        class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)]"
+                    >
+                        <div
+                            class="transition ease duration-[0.3s] w-full flex flex-row bg-[white] hover:bg-[rgb(59,115,246)] hover:text-white group"
                         >
-                        </i>
-                        <div data-popup="partOfWoT">
-                            <div
-                                class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto"
-                            >
-                                This person is part of your Web of Trust
-                                <div class="arrow {bgTrustColor}" />
+                            <div class="w-full flex flex-row bg-[rgb(0,0,0,0.05)]">
+                                {#if href}
+                                    <a
+                                        {href}
+                                        target={isExternal ? '_blank' : '_self'}
+                                        class="grow-[1] px-[10px] py-[5px] overflow-hidden whitespace-nowrap overflow-ellipsis"
+                                    >
+                                        {text}
+                                    </a>
+                                    <div
+                                        {title}
+                                        class="{iconBtnClasses} group-hover:text-[{hoverColor}]"
+                                    >
+                                        <i class={iconClass} />
+                                    </div>
+                                {:else}
+                                    <button
+                                        class="grow-[1] px-[10px] py-[5px] text-start overflow-hidden whitespace-nowrap overflow-ellipsis"
+                                    >
+                                        {text}
+                                    </button>
+                                    <button
+                                        {title}
+                                        class="{iconBtnClasses} group-hover:text-[{hoverColor}]"
+                                    >
+                                        <i class="bx bxs-bolt" />
+                                    </button>
+                                {/if}
+
+                                <Button variant="text" classes="rounded-[0] ">
+                                    <i class={iconClass} use:clipboard={text} />
+                                </Button>
                             </div>
                         </div>
-                    {:else}
-                        <i
-                            class="fa-solid fa-circle-question text-2xl {trustColor}"
-                            use:popup={popupWoT}
-                        >
-                        </i>
-                        <div data-popup="partOfWoT">
-                            <div
-                                class="card font-bold w-40 p-4 {bgTrustColor} max-h-60 overflow-y-auto"
-                            >
-                                This person is NOT part of your Web of Trust!
-                                <div class="arrow {bgTrustColor}" />
-                            </div>
-                        </div>
-                    {/if}
-                </span>
+                    </div>
+                {/each}
             </div>
-            {#if editable}
-                <button class="justify-self-end" on:click={editName}>
-                    <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
-                </button>
-            {:else if $currentUser && followBtnText}
-                <button
-                    class="btn text-primary-400-500-token justify-self-end"
-                    on:click={followStatus === FollowStatus.isFollowing ? unFollow : follow}
-                >
-                    {followBtnText}
-                </button>
+            {#if userProfile?.about}
+                <div class="w-full rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]">
+                    <ExpandableText text={userProfile.about} expandText="View Full About" />
+                </div>
             {/if}
-        </div>
-    </header>
-    <div class="flex items-center gap-x-2">
-        <h4 class="h4 underline">About</h4>
-        {#if editable}
-            <button on:click={editAbout}>
-                <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
-            </button>
-        {/if}
-    </div>
-    <div class="max-w-80 break-words whitespace-pre-line">
-        {userProfile?.about ?? userProfile?.bio ?? '?'}
-    </div>
-    <footer class="mt-4">
-        <div class="flex flex-col gap-y-1">
-            <div class="flex items-center gap-x-1 max-w-full flex-wrap">
-                <div class="underline">Npub:</div>
-                <div class="max-w-full break-words">
-                    {shortenTextWithEllipsesInMiddle(npub, 18)}
-                </div>
-                {#if npub}
-                    <div>
-                        <button class="btn btn-icon" use:clipboard={npub}>
-                            <span>
-                                <i class="fa-regular fa-copy" />
-                            </span>
-                            <button> </button></button
-                        >
-                    </div>
+            <div
+                class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden bg-[rgb(0,0,0,0.1)] flex-wrap p-[4px]"
+            >
+                {#if showMessageButton}
+                    <Button
+                        variant="outlined"
+                        classes="bg-white"
+                        fullWidth
+                        href={'/messages/' + bech32ID}
+                        title="Message (DM) user"
+                        on:click={selectChatPartner}
+                    >
+                        <i class="bx bxs-conversation" />
+                    </Button>
                 {/if}
+                <Button
+                    variant="outlined"
+                    classes="bg-white"
+                    fullWidth
+                    title="Share (Copy profile page link)"
+                    on:click={handleShare}
+                >
+                    <i class="bx bxs-share-alt" />
+                </Button>
             </div>
-            <div class="flex items-center gap-x-1 max-w-full flex-wrap">
-                <div class="underline">Nip05:</div>
-                <div class="flex items-center gap-x-2 flex-wrap max-w-full">
-                    <div class="max-w-full break-words">{nip05 ?? '?'}</div>
-                    {#if nip05}
-                        <div>
-                            <button class="btn btn-icon" use:clipboard={nip05}>
-                                <span>
-                                    <i class="fa-regular fa-copy" />
-                                </span>
-                                <button> </button></button
-                            >
-                        </div>
-                        <div>
-                            {#if validNIP05}
-                                <i
-                                    class="fa-solid fa-circle-check text-xl {nip05TrustColor}"
-                                    use:popup={popupNip05}
-                                >
-                                </i>
-                                <div data-popup="popupNip05">
-                                    <div
-                                        class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto"
-                                    >
-                                        Valid Nip05
-                                        <div class="arrow {bgNip05TrustColor}" />
-                                    </div>
-                                </div>
-                            {:else}
-                                <i
-                                    class="fa-solid fa-circle-question text-xl {nip05TrustColor}"
-                                    use:popup={popupNip05}
-                                >
-                                </i>
-                                <div data-popup="popupNip05">
-                                    <div
-                                        class="card font-bold w-40 p-4 {bgNip05TrustColor} max-h-60 overflow-y-auto"
-                                    >
-                                        Could NOT validate Nip05!
-                                        <div class="arrow {bgNip05TrustColor}" />
-                                    </div>
-                                </div>
-                            {/if}
-                        </div>
-                    {/if}
+            <div class="w-full flex flex-col gap-[5px]">
+                <div
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
+                >
+                    <Input value={user.npub} placeholder="npub..." fullWidth disabled noBorder />
+                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                        <i class="bx bx-qr" />
+                    </Button>
+                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                        <i class="bx bxs-copy" use:clipboard={user.npub} />
+                    </Button>
+                </div>
+                <div
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
+                >
+                    <Input
+                        value={nip19.nprofileEncode({ pubkey: user.pubkey })}
+                        placeholder="nprofile1..."
+                        fullWidth
+                        disabled
+                        noBorder
+                    />
+                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                        <i class="bx bx-qr" />
+                    </Button>
+                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                        <i
+                            class="bx bxs-copy"
+                            use:clipboard={nip19.nprofileEncode({ pubkey: user.pubkey })}
+                        />
+                    </Button>
                 </div>
             </div>
-            <div class="flex items-center gap-x-2 max-w-full flex-wrap">
-                <div class="flex gap-x-1 max-w-full flex-wrap">
-                    <div class="underline">Website:</div>
-                    <div class="flex items-center flex-wrap max-w-full gap-x-1">
-                        <a class="anchor max-w-full" href={website}>
-                            <div class="max-w-full break-words">{website}</div>
-                        </a>
-                        {#if editable}
-                            <button on:click={editWebsite}>
-                                <i
-                                    class="text-primary-300-600-token
-                                    fa-solid fa-pen-to-square text-lg"
-                                />
-                            </button>
+            {#if $currentUser && $currentUser.npub !== npub}
+                <div class="flex flex-col gap-[10px]">
+                    <Button
+                        on:click={followStatus === FollowStatus.isFollowing ? unFollow : follow}
+                    >
+                        {#if processingFollowEvent}
+                            <ProgressRadial
+                                value={undefined}
+                                stroke={60}
+                                meter="stroke-tertiary-500"
+                                track="stroke-tertiary-500/30"
+                                strokeLinecap="round"
+                                width="w-8"
+                            />
+                        {:else}
+                            {followBtnText}
                         {/if}
-                    </div>
+                    </Button>
                 </div>
-            </div>
-            <div class=" flex items-center gap-x-2 max-w-full flex-wrap">
-                <div class="flex gap-x-2 items-center max-w-full flex-wrap">
-                    <div class="underline">LN Address:</div>
-                    <div class="max-w-full break-words">{lud16 ?? '?'}</div>
-                </div>
-                {#if editable}
-                    <button on:click={editLud16}>
-                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-lg" />
-                    </button>
-                {/if}
-            </div>
-        </div>
-    </footer>
+            {/if}
+        </Card>
+        <!-- reputation -->
+        <ReputationCard user={user.pubkey} forUserCard />
+    </div>
 </div>

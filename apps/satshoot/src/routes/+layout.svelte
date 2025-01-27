@@ -73,15 +73,13 @@
     import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
     import { beforeNavigate } from '$app/navigation';
-    import ReviewBreakdown from '$lib/components/DrawerContents/ReviewBreakdown.svelte';
-    import UserReviewBreakdown from '$lib/components/DrawerContents/UserReviewBreakdown.svelte';
     import BottomNav from '$lib/components/layout/BottomNav.svelte';
     import Footer from '$lib/components/layout/Footer.svelte';
     import Header from '$lib/components/layout/Header.svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import type { TicketEvent } from '$lib/events/TicketEvent';
-    import drawerID, { DrawerIDs } from '$lib/stores/drawer';
+
     import { hideAppBarsStore } from '$lib/stores/gui';
     import { searchTerms } from '$lib/stores/search';
     import {
@@ -92,16 +90,10 @@
     } from '$lib/stores/wallet';
     import { cleanWallet, isCashuMintListSynced, resyncWalletAndBackup } from '$lib/utils/cashu';
     import { debounce } from '$lib/utils/misc';
-    import {
-        Drawer,
-        getDrawerStore,
-        initializeStores,
-        type DrawerSettings,
-    } from '@skeletonlabs/skeleton';
+    import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount, tick } from 'svelte';
 
     initializeStores();
-    const drawerStore = getDrawerStore();
 
     // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
@@ -650,28 +642,10 @@
      * Therefore, we are just referencing cashuPaymentInfoMap to subscribe it and use in payment modal
      */
     console.log('cashuPaymentInfoMap :>> ', $cashuPaymentInfoMap);
-
-    function openAppMenu() {
-        $drawerID = DrawerIDs.AppMenu;
-        const drawerSettings: DrawerSettings = {
-            id: $drawerID.toString(),
-            width: 'w-[50vw] sm:w-[40vw] md:w-[30vw]',
-            position: 'right',
-            bgDrawer: 'bg-surface-300-600-token',
-        };
-        drawerStore.open(drawerSettings);
-    }
 </script>
 
 <Toast zIndex="z-[1100]" />
 <Modal />
-<Drawer regionDrawer={'flex justify-center'} zIndex={'z-50'}>
-    {#if $drawerID === DrawerIDs.ReviewBreakdown}
-        <ReviewBreakdown />
-    {:else if $drawerID === DrawerIDs.UserReviewBreakdown}
-        <UserReviewBreakdown />
-    {/if}
-</Drawer>
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
     <svelte:fragment slot="header">
         <Header />
