@@ -1,36 +1,33 @@
 <script lang="ts">
-    import { onMount, type SvelteComponent } from 'svelte';
+    import {
+        getModalStore,
+        getToastStore,
+        ProgressRadial,
+        type ToastSettings,
+    } from '@skeletonlabs/skeleton';
+    import Checkbox from '../UI/Inputs/Checkbox.svelte';
+    import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
+    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { onMount } from 'svelte';
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKSigner } from '@nostr-dev-kit/ndk';
-    import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
-    import { TicketEvent } from '$lib/events/TicketEvent';
-
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings } from '@skeletonlabs/skeleton';
-    import { getToastStore } from '@skeletonlabs/skeleton';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-    import { popup } from '@skeletonlabs/skeleton';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
-
+    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import { goto } from '$app/navigation';
-    import { navigating } from '$app/stores';
-    import tabStore from '$lib/stores/tab-store';
-    import { offerTabStore } from '$lib/stores/tab-store';
-    import { insertThousandSeparator } from '$lib/utils/misc';
     import { wallet } from '$lib/stores/wallet';
-
-    // Props
-    /** Exposes parent props to this component. */
-    // export let parent: SvelteComponent;
-
-    export let ticket: TicketEvent;
-    const ticketAddress = ticket.ticketAddress;
-
-    export let offerToEdit: OfferEvent | undefined = undefined;
+    import { insertThousandSeparator } from '$lib/utils/misc';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
+
+    export let ticket: TicketEvent;
+    export let offerToEdit: OfferEvent | undefined = undefined;
+
+    const ticketAddress = ticket.ticketAddress;
 
     let validPledgePercent = true;
     let pricingMethod: Pricing;
@@ -46,16 +43,22 @@
     let errorText = '';
     let posting = false;
 
-    const cBase =
-        'card bg-surface-100-800-token w-screen/2 h-screen/2 p-4 flex justify-center items-center';
-
     $: if (pledgeSplit >= 0 && pledgeSplit <= 100) {
         validPledgePercent = true;
         errorText = '';
     } else {
         validPledgePercent = false;
-        errorText = 'Set a valid Pledge Split percent!'
+        errorText = 'Set a valid Pledge Split percent!';
     }
+
+    onMount(() => {
+        if (offerToEdit) {
+            pricingMethod = offerToEdit.pricing;
+            amount = offerToEdit.amount;
+            pledgeSplit = offerToEdit.pledgeSplit;
+            description = offerToEdit.description;
+        }
+    });
 
     async function postOffer() {
         if (!validate()) {
@@ -108,8 +111,6 @@
 
             posting = false;
 
-            $offerTabStore = OfferStatus.Pending;
-
             const t: ToastSettings = {
                 message: 'Offer Posted!',
                 timeout: 4000,
@@ -157,7 +158,8 @@
 
             modalStore.close();
 
-            goto('/my-offers');
+            $profileTabStore = ProfilePageTabs.Offers;
+            goto('/' + $currentUser?.npub + '/');
         } catch (e) {
             posting = false;
             const errorMessage = 'Error happened while publishing Offer:' + e;
@@ -195,173 +197,161 @@
         return valid;
     }
 
-    $: if ($navigating) {
-        if ($navigating.to?.url.pathname === '/my-tickets') {
-            $tabStore = 1;
-        }
-    }
+    const selectInputClasses =
+        'transition ease duration-[0.3s] w-full outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] rounded-[6px] ' +
+        'transform scale-100 whitespace-nowrap flex flex-row justify-between items-center gap-[8px] hover:bg-[#3b82f6] hover:text-white';
 
-    onMount(() => {
-        if (offerToEdit) {
-            pricingMethod = offerToEdit.pricing;
-            amount = offerToEdit.amount;
-            pledgeSplit = offerToEdit.pledgeSplit;
-            description = offerToEdit.description;
-        }
-    });
-
-    // For tooltip
-    const popupPledgeSplit: PopupSettings = {
-        event: 'click',
-        target: 'popupPledgeSplit',
-        placement: 'bottom',
-    };
+    const selectOptionClasses =
+        'transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-[rgb(59,115,246)] hover:text-white';
 </script>
 
 {#if $modalStore[0]}
-    <div class={cBase}>
-        {#if ticketAddress}
-            <div class="grid grid-cols-1 p-4">
-                <h2 class="h2 text-center">Create Offer</h2>
-                <!-- Pricing -->
-                <label class="my-4">
-                    <span>Pricing Method</span>
-                    <select class="select" bind:value={pricingMethod}>
-                        <option value={Pricing.Absolute}>Absolute Price(sats)</option>
-                        <option value={Pricing.SatsPerMin}>Time-based Price(sats/minute)</option>
-                    </select>
-                </label>
-                <!-- Amount -->
-                <label class="my-4">
-                    <span>Amount</span>
-                    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-                        <div class="input-group-shim">
-                            <i class="fa-brands fa-bitcoin text-3xl" />
-                        </div>
-                        <input
-                            class="text-lg max-w-md"
-                            type="number"
-                            min="0"
-                            max="100_000_000"
-                            placeholder="Amount"
-                            bind:value={amount}
-                        />
-                        <div>{pricingMethod ? 'sats/min' : 'sats'}</div>
-                    </div>
-                </label>
-                <!-- Pledge Split -->
-                <div class="flex justify-start gap-x-1">
-                    <span class="mr-2">Pledge Split</span>
-                    <i
-                        class="text-primary-300-600-token fa-solid fa-circle-question text-xl
-                    [&>*]:pointer-events-none"
-                        use:popup={popupPledgeSplit}
-                    />
-                    <div data-popup="popupPledgeSplit">
-                        <div
-                            class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto"
-                        >
-                            <p>
-                                Pledge a percentage of your potential revenue to support
-                                development.
-                            </p>
-                            <br />
-                            <p>The percentage pledged will show up for the potential Client.</p>
-                            <div class="arrow bg-primary-300-600-token" />
-                        </div>
-                    </div>
-                </div>
-                <label class="mb-4 mt-1">
-                    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-                        <div class="input-group-shim">
-                            <i class="fa-brands fa-bitcoin text-3xl" />
-                        </div>
-                        <input
-                            class="text-lg max-w-md"
-                            type="number"
-                            min="0"
-                            max="100"
-                            placeholder="Percentage"
-                            bind:value={pledgeSplit}
-                        />
-                        <div>%</div>
-                    </div>
-                </label>
-                <div class="flex justify-between">
-                    <div class="flex flex-col">
-                        <div class="underline">You get:</div>
-                        <div class="font-bold">
-                            {insertThousandSeparator(freelancerShare) +
-                                (pricingMethod ? 'sats/min' : 'sats')}
-                        </div>
-                    </div>
-                    <div class="flex flex-col">
-                        <div class="underline">You pledge:</div>
-                        <div class="font-bold">
-                            {insertThousandSeparator(pledgedShare) +
-                                (pricingMethod ? 'sats/min' : 'sats')}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Description -->
-                <label class="label max-w-xl mt-4 mb-2">
-                    <span>Your Pitch:</span>
-                    <textarea
-                        class="textarea"
-                        rows="3"
-                        placeholder="Describe why you should get the job"
-                        bind:value={description}
-                    />
-                </label>
-                <!-- Send DM -->
-                <div class="mb-6">
-                    <label class="flex items-center space-x-2">
-                        <input class="checkbox" type="checkbox" bind:checked={sendDm} />
-                        <p>Send Offer as NIP04 DM to Ticket Holder</p>
-                    </label>
-                </div>
-                <!-- Cancel and Post Offer buttons -->
-                <div class="flex gap-x-4 justify-center mb-2">
-                    <button
-                        type="button"
-                        class="btn btn-sm sm:btn-md bg-error-300-600-token"
-                        on:click={() => modalStore.close()}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        class="btn font-bold bg-success-400-500-token w-72"
-                        on:click={postOffer}
-                        disabled={posting || !validPledgePercent}
-                    >
-                        {#if posting}
-                            <span>
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-tertiary-500"
-                                    track="stroke-tertiary-500/30"
-                                    strokeLinecap="round"
-                                    width="w-8"
+    <div
+        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
+    >
+        <div
+            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
+        >
+            <div class="w-full flex flex-col justify-start items-center">
+                <div class="w-full max-w-[500px] justify-start items-center">
+                    <Card>
+                        <ModalHeader title="Create Offer" />
+                        <div class="w-full flex flex-col gap-[15px]">
+                            <div
+                                class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
+                            >
+                                <div class="w-full flex flex-col gap-[10px] p-[10px]">
+                                    <div class="flex flex-col gap-[5px] grow-[1]">
+                                        <div class="">
+                                            <label class="font-[600]" for="">
+                                                Pricing method
+                                            </label>
+                                        </div>
+                                        <div class="w-full flex flex-row items-center">
+                                            <select
+                                                class={selectInputClasses}
+                                                bind:value={pricingMethod}
+                                            >
+                                                <option
+                                                    value={Pricing.Absolute}
+                                                    class={selectOptionClasses}
+                                                >
+                                                    Absolute Price(sats)
+                                                </option>
+                                                <option
+                                                    value={Pricing.SatsPerMin}
+                                                    class={selectOptionClasses}
+                                                >
+                                                    Time-based Price(sats/minute)
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col gap-[5px] grow-[1]">
+                                        <div class="">
+                                            <label class="font-[600]" for="">
+                                                Price({pricingMethod ? 'sats/min' : 'sats'})
+                                            </label>
+                                        </div>
+                                        <div class="w-full flex flex-row items-center">
+                                            <Input
+                                                type="number"
+                                                step="1"
+                                                min="0"
+                                                max="100_000_000"
+                                                placeholder="Amount"
+                                                bind:value={amount}
+                                                fullWidth
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col gap-[5px] grow-[1]">
+                                        <div class="">
+                                            <label class="font-[600]" for=""> Pledge split </label>
+                                        </div>
+                                        <div class="w-full flex flex-row items-center relative">
+                                            <Input
+                                                type="number"
+                                                step="1"
+                                                min="0"
+                                                max="100"
+                                                placeholder="Percentage"
+                                                bind:value={pledgeSplit}
+                                                fullWidth
+                                            />
+                                            <span
+                                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-[rgb(0,0,0,0.5)] pointer-events-none"
+                                            >
+                                                %
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div
+                                    class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-[rgb(0,0,0,0.15)]"
+                                >
+                                    <div class="grow-[1]">
+                                        <p class="font-[500]">
+                                            You'd get:
+                                            <span class="font-[400]">
+                                                {insertThousandSeparator(freelancerShare) +
+                                                    (pricingMethod ? 'sats/min' : 'sats')}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="grow-[1]">
+                                        <p class="font-[500]">
+                                            Your pledge:
+                                            <span class="font-[400]">
+                                                {insertThousandSeparator(pledgedShare) +
+                                                    (pricingMethod ? 'sats/min' : 'sats')}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-[5px] grow-[1]">
+                                <div class="">
+                                    <label class="font-[600]" for="description"> Your Pitch </label>
+                                </div>
+                                <Input
+                                    bind:value={description}
+                                    placeholder="Describe why you should get this job"
+                                    classes="min-h-[100px]"
+                                    fullWidth
+                                    textarea
                                 />
-                            </span>
-                        {:else}
-                            <span>Post Offer</span>
-                        {/if}
-                    </button>
+                            </div>
+                            <Checkbox
+                                id="dm-checkbox"
+                                label="Send offer as a Direct Message (DM) to the job poster"
+                                bind:checked={sendDm}
+                            />
+                            <div class="w-full flex flex-row justify-center">
+                                <Button
+                                    on:click={postOffer}
+                                    disabled={posting || !validPledgePercent}
+                                >
+                                    {#if posting}
+                                        <span>
+                                            <ProgressRadial
+                                                value={undefined}
+                                                stroke={60}
+                                                meter="stroke-tertiary-500"
+                                                track="stroke-tertiary-500/30"
+                                                strokeLinecap="round"
+                                                width="w-8"
+                                            />
+                                        </span>
+                                    {:else}
+                                        Publish offer
+                                    {/if}
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
-                {#if errorText}
-                    <h4 class="h4 font-bold text-center text-error-300-600-token">
-                        {errorText}
-                    </h4>
-                {/if}
             </div>
-        {:else}
-            <h2 class="h2 font-bold text-center text-error-300-600-token">
-                Error: Ticket is missing!
-            </h2>
-        {/if}
+        </div>
     </div>
 {/if}

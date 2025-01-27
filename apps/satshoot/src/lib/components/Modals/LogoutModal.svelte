@@ -2,14 +2,13 @@
     import { wallet } from '$lib/stores/wallet';
     import { backupWallet } from '$lib/utils/cashu';
     import { logout } from '$lib/utils/helpers';
-    import { getModalStore, getDrawerStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import ModalHeader from '../UI/Modal/ModalHeader.svelte';
     import Input from '../UI/Inputs/input.svelte';
 
-    const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
@@ -44,7 +43,6 @@
         }
 
         modalStore.close();
-        drawerStore.close();
 
         logout();
     }

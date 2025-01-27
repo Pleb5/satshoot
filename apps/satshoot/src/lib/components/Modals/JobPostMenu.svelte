@@ -7,7 +7,7 @@
     import ndk from '$lib/stores/ndk';
     import { onMount } from 'svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
-    import NewReviewClientModal from './NewReviewClientModal.svelte';
+    import ReviewClientModal from './ReviewClientModal.svelte';
     import { clientReviews } from '$lib/stores/reviews';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { paymentDetail } from '$lib/stores/payment';
@@ -102,7 +102,7 @@
 
     function handleReviewClient() {
         const modalComponent: ModalComponent = {
-            ref: NewReviewClientModal,
+            ref: ReviewClientModal,
             props: { jobAddress: job.ticketAddress },
         };
 

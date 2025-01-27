@@ -1,42 +1,44 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
-    import { OfferEvent } from '$lib/events/OfferEvent';
-    import { TicketEvent } from "$lib/events/TicketEvent";
-
-    import { getToastStore } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings, ModalSettings } from '@skeletonlabs/skeleton';
-    import { ProgressRadial, type ModalComponent } from '@skeletonlabs/skeleton';
-
-    import { type SvelteComponent, tick } from "svelte";
-    import { goto } from "$app/navigation";
-
-    import OfferTakenModal from "$lib/components/Modals/OfferTakenModal.svelte";
+    import {
+        getModalStore,
+        getToastStore,
+        ProgressRadial,
+        type ModalComponent,
+        type ModalSettings,
+        type ToastSettings,
+    } from '@skeletonlabs/skeleton';
+    import { TicketEvent } from '$lib/events/TicketEvent';
+    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import ndk from '$lib/stores/ndk';
+    import { tick } from 'svelte';
+    import OfferTakenModal from './OfferTakenModal.svelte';
+    import { goto } from '$app/navigation';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    /** Exposes parent props to this component. */
-    export let parent: SvelteComponent;
-    export let ticket: TicketEvent;
+    export let job: TicketEvent;
     export let offer: OfferEvent;
 
     let takingOffer = false;
 
     async function takeOffer() {
-        if (ticket && offer) {
+        if (job && offer) {
             // User chose to take offer
-            let ticketToPublish = new TicketEvent($ndk);
-            ticketToPublish.tags = ticket.tags;
-            ticketToPublish.description = ticket.description;
+            let jobToPublish = new TicketEvent($ndk);
+            jobToPublish.tags = job.tags;
+            jobToPublish.description = job.description;
             // Important part! This also sets status to in progress
-            ticketToPublish.acceptedOfferAddress = offer.offerAddress;
+            jobToPublish.acceptedOfferAddress = offer.offerAddress;
 
             try {
                 takingOffer = true;
                 await tick();
 
-                await ticketToPublish.publish();
+                await jobToPublish.publish();
 
                 takingOffer = false;
                 modalStore.close();
@@ -51,13 +53,13 @@
                 };
                 modalStore.trigger(modal);
 
-                // Navigate to ticket messages
-                goto('/messages/' + ticket.encode());
-
-            } catch(e) {
-                console.log(e)
+                // Navigate to job messages
+                goto('/messages/' + job.encode());
+            } catch (e) {
+                console.log(e);
                 const t: ToastSettings = {
-                    message: 'Error while accepting Offer! Fix connection with Relays and try again!',
+                    message:
+                        'Error while accepting Offer! Fix connection with Relays and try again!',
                     timeout: 7000,
                     background: 'bg-error-300-600-token',
                 };
@@ -66,7 +68,7 @@
             }
         } else {
             const t: ToastSettings = {
-                message: 'Cannot accept Offer, Ticket not found!',
+                message: 'Cannot accept Offer, Job not found!',
                 timeout: 7000,
                 background: 'bg-error-300-600-token',
             };
@@ -74,50 +76,58 @@
             modalStore.close();
         }
     }
-
 </script>
 
 {#if $modalStore[0]}
-    {#if ticket}
-        <div class="card p-4">
-            <h4 class="h4 text-center mb-2">{'Take Offer'}</h4>
-            <div class="flex flex-col justify-center gap-y-4">
-                <div class="text-center font-bold">
-                    Do really want to take this Offer?
-                </div>
-                <strong class="text-error-500 text-center">
-                    You agree to pay the fee listed on the Offer!
-                </strong>
-                <div class="grid grid-cols-[30%_1fr] gap-x-2">
-                    <button 
-                        type="button"
-                        class="btn btn-sm sm:btn-md bg-error-300-600-token"
-                        on:click={()=> modalStore.close()}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        on:click={takeOffer}
-                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-                        disabled={takingOffer}
-                    >
-                        {#if takingOffer}
-                            <span>
-                                <ProgressRadial value={undefined} stroke={60} meter="stroke-error-500"
-                                    track="stroke-error-500/30" strokeLinecap="round" width="w-8" />
-                            </span>
-                        {:else}
-                            <span>Take Offer</span>
-                        {/if}
-
-                    </button>
+    <div
+        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
+    >
+        <div
+            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
+        >
+            <div class="w-full flex flex-col justify-start items-center">
+                <div class="w-full max-w-[500px] justify-start items-center">
+                    <Card>
+                        <ModalHeader title="Take Offer" />
+                        <div class="w-full flex flex-col">
+                            <!-- popups Share Job Post start -->
+                            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+                                <div
+                                    class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]"
+                                >
+                                    <p class="w-full font-[600]">
+                                        Do you really want to take this offer?
+                                    </p>
+                                    <p
+                                        class="w-full font-[600] text-center py-[5px] px-[10px] rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)] text-[rgb(255,99,71,1)]"
+                                    >
+                                        You agree to pay the fee listed on the Offer!
+                                    </p>
+                                </div>
+                                <div class="w-full flex flex-row gap-[5px]">
+                                    <Button grow on:click={takeOffer} disabled={takingOffer}>
+                                        {#if takingOffer}
+                                            <span>
+                                                <ProgressRadial
+                                                    value={undefined}
+                                                    stroke={60}
+                                                    meter="stroke-tertiary-500"
+                                                    track="stroke-tertiary-500/30"
+                                                    strokeLinecap="round"
+                                                    width="w-8"
+                                                />
+                                            </span>
+                                        {:else}
+                                            Take Offer
+                                        {/if}
+                                    </Button>
+                                </div>
+                            </div>
+                            <!-- popups Share Job Post end -->
+                        </div>
+                    </Card>
                 </div>
             </div>
         </div>
-    {:else}
-        <h2 class="h2 font-bold text-center text-error-300-600-token">
-            Error: Ticket is missing!
-        </h2>
-    {/if}
+    </div>
 {/if}
