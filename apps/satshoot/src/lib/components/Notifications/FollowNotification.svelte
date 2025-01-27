@@ -1,8 +1,11 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import type { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
-    import { Avatar } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
+    import { formatDate, formatDistanceToNow } from 'date-fns';
+    import Card from '../UI/Card.svelte';
+    import ProfileImage from '../UI/Display/ProfileImage.svelte';
+    import NotificationTimestamp from './NotificationTimestamp.svelte';
 
     export let followEvent: NDKEvent;
 
@@ -24,14 +27,13 @@
     });
 </script>
 
-<div class="flex">
-    <div class="card p-4 flex items-center space-x-4 bg-surface-300-600-token rounded-tl-none">
-        <a href={'/' + follower.npub} class="flex items-center space-x-4">
-            <Avatar src={followerImage} width="w-12" />
-            <div>
-                <p class="font-bold text-sm md:text-lg">{followerName}</p>
-                <p>has followed you</p>
-            </div>
-        </a>
-    </div>
-</div>
+<Card>
+    <NotificationTimestamp ndkEvent={followEvent} />
+    <a href={'/' + follower.npub} class="flex flex-row items-center gap-[10px]">
+        <ProfileImage src={followerImage} />
+        <div class="flex flex-col gap-[0px]">
+            <p class="font-bold text-sm md:text-lg">{followerName}</p>
+            <p>has followed you</p>
+        </div>
+    </a>
+</Card>
