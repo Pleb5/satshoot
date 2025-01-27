@@ -48,7 +48,7 @@
         <h1 class="w-full text-center font-[700] text-[32px]">{job.title || 'No Title!'}</h1>
     </div>
     <div class={statusRowWrapperClasses}>
-        <p title="Publication Date/Time" class="{statusRowItemClasses} {statusColor}">
+        <p title="Job Status" class="{statusRowItemClasses} {statusColor}">
             <i class="bx bx-info-circle" />
             Job Status: {statusString}
         </p>
