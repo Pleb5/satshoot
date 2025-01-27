@@ -12,7 +12,7 @@
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from './PaymentModal.svelte';
-    import { ticketToEdit } from '$lib/stores/ticket-to-edit';
+    import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
@@ -146,7 +146,7 @@
 
     function handleEdit() {
         if (job) {
-            $ticketToEdit = job;
+            $jobToEdit = job;
 
             goto('/post-job');
             modalStore.clear();
