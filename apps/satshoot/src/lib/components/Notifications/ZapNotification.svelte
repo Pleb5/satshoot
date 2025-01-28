@@ -18,6 +18,7 @@
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
+    import { readNotifications } from '$lib/stores/notifications';
 
     export let zapEvent: NDKEvent;
 
@@ -106,7 +107,12 @@
     });
 </script>
 
-<Card>
+<Card
+    classes={$readNotifications.has(zapEvent.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    on:click={() => {
+        readNotifications.update((notifications) => notifications.add(zapEvent.id));
+    }}
+>
     <NotificationTimestamp ndkEvent={zapEvent} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + zapper.npub}>

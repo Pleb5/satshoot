@@ -5,6 +5,7 @@
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
+    import { readNotifications } from '$lib/stores/notifications';
 
     export let followEvent: NDKEvent;
 
@@ -26,7 +27,12 @@
     });
 </script>
 
-<Card>
+<Card
+    classes={$readNotifications.has(followEvent.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    on:click={() => {
+        readNotifications.update((notifications) => notifications.add(followEvent.id));
+    }}
+>
     <NotificationTimestamp ndkEvent={followEvent} />
     <a href={'/' + follower.npub} class="flex flex-row items-center gap-[10px]">
         <ProfileImage src={followerImage} />

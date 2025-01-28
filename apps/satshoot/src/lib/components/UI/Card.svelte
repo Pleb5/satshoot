@@ -9,8 +9,15 @@
 
     // Merge defaultClasses and classes, ensuring classes take precedence
     $: finalClasses = mergeClasses(defaultClasses, classes);
+
+    function handleKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault(); // Prevent scrolling on space
+            event.currentTarget?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        }
+    }
 </script>
 
-<div class={finalClasses}>
+<div class={finalClasses} role="button" tabindex={0} on:click on:keydown={handleKeyDown}>
     <slot></slot>
 </div>

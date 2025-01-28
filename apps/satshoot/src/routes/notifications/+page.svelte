@@ -9,16 +9,15 @@
     import {
         followNotifications,
         messageNotifications,
-        notifications,
         notificationsEnabled,
         offerNotifications,
+        readNotifications,
         receivedZapsNotifications,
         reviewNotifications,
         ticketNotifications,
     } from '$lib/stores/notifications';
     import currentUser from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
-    import { type NDKEvent } from '@nostr-dev-kit/ndk';
     import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
 
@@ -69,23 +68,57 @@
         toastStore.trigger(t);
     }
 
-    async function removeNotification(event: NDKEvent) {
-        $notifications = $notifications.filter((e: NDKEvent) => e.id !== event.id);
-    }
-
-    function clearAll() {
-        $notifications = [];
-    }
-
     onMount(() => checkRelayConnections());
 
-    const tabs = [
-        { id: Tab.Follows, label: 'Follows', icon: 'user' },
-        { id: Tab.Zaps, label: 'Zaps', icon: 'bolt' },
-        { id: Tab.Jobs, label: 'Jobs', icon: 'briefcase' },
-        { id: Tab.Offers, label: 'Offers', icon: 'file' },
-        { id: Tab.Messages, label: 'Messages', icon: 'conversation' },
-        { id: Tab.Reviews, label: 'Reviews', icon: 'star' },
+    $: tabs = [
+        {
+            id: Tab.Follows,
+            label: 'Follows',
+            icon: 'user',
+            notificationCount: $followNotifications.filter(
+                (notification) => !$readNotifications.has(notification.id)
+            ).length,
+        },
+        {
+            id: Tab.Zaps,
+            label: 'Zaps',
+            icon: 'bolt',
+            notificationCount: $receivedZapsNotifications.filter(
+                (notification) => !$readNotifications.has(notification.id)
+            ).length,
+        },
+        {
+            id: Tab.Jobs,
+            label: 'Jobs',
+            icon: 'briefcase',
+            notificationCount: $ticketNotifications.filter(
+                (notification) => !$readNotifications.has(notification.id)
+            ).length,
+        },
+        {
+            id: Tab.Offers,
+            label: 'Offers',
+            icon: 'file',
+            notificationCount: $offerNotifications.filter(
+                (notification) => !$readNotifications.has(notification.id)
+            ).length,
+        },
+        {
+            id: Tab.Messages,
+            label: 'Messages',
+            icon: 'conversation',
+            notificationCount: $messageNotifications.filter(
+                (notification) => !$readNotifications.has(notification.id)
+            ).length,
+        },
+        {
+            id: Tab.Reviews,
+            label: 'Reviews',
+            icon: 'star',
+            notificationCount: $followNotifications.filter(
+                (notification) => !$readNotifications.has(notification.id)
+            ).length,
+        },
     ];
 </script>
 
