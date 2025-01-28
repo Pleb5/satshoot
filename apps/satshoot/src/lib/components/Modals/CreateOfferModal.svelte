@@ -16,10 +16,9 @@
     import { goto } from '$app/navigation';
     import { wallet } from '$lib/stores/wallet';
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
-    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
     import Input from '../UI/Inputs/input.svelte';
+    import Popup from '../UI/Popup.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -206,152 +205,125 @@
 </script>
 
 {#if $modalStore[0]}
-    <div
-        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
-    >
-        <div
-            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
-        >
-            <div class="w-full flex flex-col justify-start items-center">
-                <div class="w-full max-w-[500px] justify-start items-center">
-                    <Card>
-                        <ModalHeader title="Create Offer" />
-                        <div class="w-full flex flex-col gap-[15px]">
-                            <div
-                                class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
-                            >
-                                <div class="w-full flex flex-col gap-[10px] p-[10px]">
-                                    <div class="flex flex-col gap-[5px] grow-[1]">
-                                        <div class="">
-                                            <label class="font-[600]" for="">
-                                                Pricing method
-                                            </label>
-                                        </div>
-                                        <div class="w-full flex flex-row items-center">
-                                            <select
-                                                class={selectInputClasses}
-                                                bind:value={pricingMethod}
-                                            >
-                                                <option
-                                                    value={Pricing.Absolute}
-                                                    class={selectOptionClasses}
-                                                >
-                                                    Absolute Price(sats)
-                                                </option>
-                                                <option
-                                                    value={Pricing.SatsPerMin}
-                                                    class={selectOptionClasses}
-                                                >
-                                                    Time-based Price(sats/minute)
-                                                </option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col gap-[5px] grow-[1]">
-                                        <div class="">
-                                            <label class="font-[600]" for="">
-                                                Price({pricingMethod ? 'sats/min' : 'sats'})
-                                            </label>
-                                        </div>
-                                        <div class="w-full flex flex-row items-center">
-                                            <Input
-                                                type="number"
-                                                step="1"
-                                                min="0"
-                                                max="100_000_000"
-                                                placeholder="Amount"
-                                                bind:value={amount}
-                                                fullWidth
-                                            />
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col gap-[5px] grow-[1]">
-                                        <div class="">
-                                            <label class="font-[600]" for=""> Pledge split </label>
-                                        </div>
-                                        <div class="w-full flex flex-row items-center relative">
-                                            <Input
-                                                type="number"
-                                                step="1"
-                                                min="0"
-                                                max="100"
-                                                placeholder="Percentage"
-                                                bind:value={pledgeSplit}
-                                                fullWidth
-                                            />
-                                            <span
-                                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-[rgb(0,0,0,0.5)] pointer-events-none"
-                                            >
-                                                %
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div
-                                    class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-[rgb(0,0,0,0.15)]"
-                                >
-                                    <div class="grow-[1]">
-                                        <p class="font-[500]">
-                                            You'd get:
-                                            <span class="font-[400]">
-                                                {insertThousandSeparator(freelancerShare) +
-                                                    (pricingMethod ? 'sats/min' : 'sats')}
-                                            </span>
-                                        </p>
-                                    </div>
-                                    <div class="grow-[1]">
-                                        <p class="font-[500]">
-                                            Your pledge:
-                                            <span class="font-[400]">
-                                                {insertThousandSeparator(pledgedShare) +
-                                                    (pricingMethod ? 'sats/min' : 'sats')}
-                                            </span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex flex-col gap-[5px] grow-[1]">
-                                <div class="">
-                                    <label class="font-[600]" for="description"> Your Pitch </label>
-                                </div>
-                                <Input
-                                    bind:value={description}
-                                    placeholder="Describe why you should get this job"
-                                    classes="min-h-[100px]"
-                                    fullWidth
-                                    textarea
-                                />
-                            </div>
-                            <Checkbox
-                                id="dm-checkbox"
-                                label="Send offer as a Direct Message (DM) to the job poster"
-                                bind:checked={sendDm}
-                            />
-                            <div class="w-full flex flex-row justify-center">
-                                <Button
-                                    on:click={postOffer}
-                                    disabled={posting || !validPledgePercent}
-                                >
-                                    {#if posting}
-                                        <span>
-                                            <ProgressRadial
-                                                value={undefined}
-                                                stroke={60}
-                                                meter="stroke-tertiary-500"
-                                                track="stroke-tertiary-500/30"
-                                                strokeLinecap="round"
-                                                width="w-8"
-                                            />
-                                        </span>
-                                    {:else}
-                                        Publish offer
-                                    {/if}
-                                </Button>
-                            </div>
+    <Popup title="Create Offer">
+        <div class="w-full flex flex-col gap-[15px]">
+            <div
+                class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
+            >
+                <div class="w-full flex flex-col gap-[10px] p-[10px]">
+                    <div class="flex flex-col gap-[5px] grow-[1]">
+                        <div class="">
+                            <label class="font-[600]" for=""> Pricing method </label>
                         </div>
-                    </Card>
+                        <div class="w-full flex flex-row items-center">
+                            <select class={selectInputClasses} bind:value={pricingMethod}>
+                                <option value={Pricing.Absolute} class={selectOptionClasses}>
+                                    Absolute Price(sats)
+                                </option>
+                                <option value={Pricing.SatsPerMin} class={selectOptionClasses}>
+                                    Time-based Price(sats/minute)
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-[5px] grow-[1]">
+                        <div class="">
+                            <label class="font-[600]" for="">
+                                Price({pricingMethod ? 'sats/min' : 'sats'})
+                            </label>
+                        </div>
+                        <div class="w-full flex flex-row items-center">
+                            <Input
+                                type="number"
+                                step="1"
+                                min="0"
+                                max="100_000_000"
+                                placeholder="Amount"
+                                bind:value={amount}
+                                fullWidth
+                            />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-[5px] grow-[1]">
+                        <div class="">
+                            <label class="font-[600]" for=""> Pledge split </label>
+                        </div>
+                        <div class="w-full flex flex-row items-center relative">
+                            <Input
+                                type="number"
+                                step="1"
+                                min="0"
+                                max="100"
+                                placeholder="Percentage"
+                                bind:value={pledgeSplit}
+                                fullWidth
+                            />
+                            <span
+                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-[rgb(0,0,0,0.5)] pointer-events-none"
+                            >
+                                %
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-[rgb(0,0,0,0.15)]"
+                >
+                    <div class="grow-[1]">
+                        <p class="font-[500]">
+                            You'd get:
+                            <span class="font-[400]">
+                                {insertThousandSeparator(freelancerShare) +
+                                    (pricingMethod ? 'sats/min' : 'sats')}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="grow-[1]">
+                        <p class="font-[500]">
+                            Your pledge:
+                            <span class="font-[400]">
+                                {insertThousandSeparator(pledgedShare) +
+                                    (pricingMethod ? 'sats/min' : 'sats')}
+                            </span>
+                        </p>
+                    </div>
                 </div>
             </div>
+            <div class="flex flex-col gap-[5px] grow-[1]">
+                <div class="">
+                    <label class="font-[600]" for="description"> Your Pitch </label>
+                </div>
+                <Input
+                    bind:value={description}
+                    placeholder="Describe why you should get this job"
+                    classes="min-h-[100px]"
+                    fullWidth
+                    textarea
+                />
+            </div>
+            <Checkbox
+                id="dm-checkbox"
+                label="Send offer as a Direct Message (DM) to the job poster"
+                bind:checked={sendDm}
+            />
+            <div class="w-full flex flex-row justify-center">
+                <Button on:click={postOffer} disabled={posting || !validPledgePercent}>
+                    {#if posting}
+                        <span>
+                            <ProgressRadial
+                                value={undefined}
+                                stroke={60}
+                                meter="stroke-tertiary-500"
+                                track="stroke-tertiary-500/30"
+                                strokeLinecap="round"
+                                width="w-8"
+                            />
+                        </span>
+                    {:else}
+                        Publish offer
+                    {/if}
+                </Button>
+            </div>
         </div>
-    </div>
+    </Popup>
 {/if}

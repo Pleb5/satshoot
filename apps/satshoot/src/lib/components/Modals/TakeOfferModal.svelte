@@ -13,9 +13,8 @@
     import { tick } from 'svelte';
     import OfferTakenModal from './OfferTakenModal.svelte';
     import { goto } from '$app/navigation';
-    import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
-    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Popup from '../UI/Popup.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -79,55 +78,38 @@
 </script>
 
 {#if $modalStore[0]}
-    <div
-        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
-    >
-        <div
-            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
-        >
-            <div class="w-full flex flex-col justify-start items-center">
-                <div class="w-full max-w-[500px] justify-start items-center">
-                    <Card>
-                        <ModalHeader title="Take Offer" />
-                        <div class="w-full flex flex-col">
-                            <!-- popups Share Job Post start -->
-                            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
-                                <div
-                                    class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]"
-                                >
-                                    <p class="w-full font-[600]">
-                                        Do you really want to take this offer?
-                                    </p>
-                                    <p
-                                        class="w-full font-[600] text-center py-[5px] px-[10px] rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)] text-[rgb(255,99,71,1)]"
-                                    >
-                                        You agree to pay the fee listed on the Offer!
-                                    </p>
-                                </div>
-                                <div class="w-full flex flex-row gap-[5px]">
-                                    <Button grow on:click={takeOffer} disabled={takingOffer}>
-                                        {#if takingOffer}
-                                            <span>
-                                                <ProgressRadial
-                                                    value={undefined}
-                                                    stroke={60}
-                                                    meter="stroke-tertiary-500"
-                                                    track="stroke-tertiary-500/30"
-                                                    strokeLinecap="round"
-                                                    width="w-8"
-                                                />
-                                            </span>
-                                        {:else}
-                                            Take Offer
-                                        {/if}
-                                    </Button>
-                                </div>
-                            </div>
-                            <!-- popups Share Job Post end -->
-                        </div>
-                    </Card>
+    <Popup title="Take Offer">
+        <div class="w-full flex flex-col">
+            <!-- popups Share Job Post start -->
+            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+                <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]">
+                    <p class="w-full font-[600]">Do you really want to take this offer?</p>
+                    <p
+                        class="w-full font-[600] text-center py-[5px] px-[10px] rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)] text-[rgb(255,99,71,1)]"
+                    >
+                        You agree to pay the fee listed on the Offer!
+                    </p>
+                </div>
+                <div class="w-full flex flex-row gap-[5px]">
+                    <Button grow on:click={takeOffer} disabled={takingOffer}>
+                        {#if takingOffer}
+                            <span>
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-tertiary-500"
+                                    track="stroke-tertiary-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
+                            </span>
+                        {:else}
+                            Take Offer
+                        {/if}
+                    </Button>
                 </div>
             </div>
+            <!-- popups Share Job Post end -->
         </div>
-    </div>
+    </Popup>
 {/if}
