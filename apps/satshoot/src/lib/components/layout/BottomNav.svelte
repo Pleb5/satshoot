@@ -4,6 +4,7 @@
     import SearchModal from '../Modals/SearchModal.svelte';
     import { page } from '$app/stores';
     import Button from '../UI/Buttons/Button.svelte';
+    import { unReadNotifications } from '$lib/stores/notifications';
 
     const modalStore = getModalStore();
 
@@ -78,7 +79,7 @@
         'transition ease-in-out duration-[0.3s] ' +
         'text-[24px] border-0 outline-none py-[10px] px-[15px] ' +
         'rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row ' +
-        'justify-center items-center gap-[8px] hover:bg-[rgb(59,130,246)] hover:text-white';
+        'justify-center items-center gap-[8px] hover:bg-[rgb(59,130,246)] hover:text-white relative';
 
     const collapseTriggerBtnClasses =
         'bg-[rgb(255,255,255)] text-[rgba(0,0,0,0.25)] shadow-[0_0_4px_0_rgba(0,0,0,0.25)] ' +
@@ -129,6 +130,15 @@
                         class:text-[rgb(0,0,0,0.35)]={href !== $page.url.pathname}
                     >
                         <i class={`bx ${icon}`} />
+                        {#if href === '/notifications/' && $unReadNotifications.length > 0}
+                            <span
+                                class="absolute top-0 right-0 bg-[red] text-white rounded-full text-[12px] min-w-[20px] h-[20px] flex items-center justify-center p-[2px]"
+                            >
+                                {$unReadNotifications.length > 9
+                                    ? '9+'
+                                    : $unReadNotifications.length}
+                            </span>
+                        {/if}
                     </a>
                 {:else if icon === 'bx-search'}
                     <button

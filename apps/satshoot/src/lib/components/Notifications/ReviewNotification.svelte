@@ -11,6 +11,7 @@
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
+    import { readNotifications } from '$lib/stores/notifications';
 
     const modalStore = getModalStore();
 
@@ -73,7 +74,12 @@
     }
 </script>
 
-<Card>
+<Card
+    classes={$readNotifications.has(review.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    on:click={() => {
+        readNotifications.update((notifications) => notifications.add(review.id));
+    }}
+>
     <NotificationTimestamp ndkEvent={review} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + user.npub}>

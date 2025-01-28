@@ -9,6 +9,7 @@
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
+    import { readNotifications } from '$lib/stores/notifications';
 
     export let job: TicketEvent;
 
@@ -34,7 +35,12 @@
     });
 </script>
 
-<Card>
+<Card
+    classes={$readNotifications.has(job.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    on:click={() => {
+        readNotifications.update((notifications) => notifications.add(job.id));
+    }}
+>
     <NotificationTimestamp ndkEvent={job} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + user.npub}>

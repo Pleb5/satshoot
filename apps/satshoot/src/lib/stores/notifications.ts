@@ -21,6 +21,15 @@ export const seenIDs: Writable<Set<string>> = persisted('seenIDs', new Set(), {
 
 export const notifications = writable<NDKEvent[]>([]);
 
+export const readNotifications = writable<Set<string>>(new Set());
+
+export const unReadNotifications = derived(
+    [notifications, readNotifications],
+    ([$notifications, $readNotifications]) => {
+        return $notifications.filter((notification) => !$readNotifications.has(notification.id));
+    }
+);
+
 export const ticketNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
         return notification.kind === NDKKind.FreelanceTicket;
