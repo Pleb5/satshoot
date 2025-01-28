@@ -36,8 +36,8 @@
     import { privateKeyFromNsec } from '$lib/utils/nip19';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
-    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
     import Input from '../UI/Inputs/input.svelte';
+    import Popup from '../UI/Popup.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -520,359 +520,322 @@
 </script>
 
 {#if $modalStore[0]}
-    <div
-        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
-    >
-        <div
-            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
-        >
-            <div class="w-full flex flex-col justify-start items-center">
-                <div class="w-full max-w-[500px] justify-start items-center">
-                    <Card>
-                        <ModalHeader title="Login" />
-                        <div class="w-full flex flex-col">
-                            <div class="w-full flex flex-col gap-[10px] pt-[10px]">
-                                {#if statusMessage}
-                                    <h5 class="h5 font-bold text-center mt-4 {statusColor}">
-                                        {statusMessage}
-                                    </h5>
-                                {/if}
-                                <div
-                                    class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px]"
+    <Popup title="Login">
+        <div class="w-full flex flex-col">
+            <div class="w-full flex flex-col gap-[10px] pt-[10px]">
+                {#if statusMessage}
+                    <h5 class="h5 font-bold text-center mt-4 {statusColor}">
+                        {statusMessage}
+                    </h5>
+                {/if}
+                <div class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px]">
+                    <div
+                        class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] border-b-[0px] rounded-t-[6px]"
+                    >
+                        <p>
+                            SatShoot is built on Nostr, which has its own unique way of account
+                            creation and login
+                        </p>
+
+                        {#if aboutSectionExpanded}
+                            <div class="mt-3 space-y-3">
+                                <p class="text-sm text-gray-700">
+                                    Nostr enables
+                                    <strong> sovereign identities </strong>
+                                    through cryptographic keys. Your
+                                    <strong> "secret" or "private" key </strong>
+                                    is used by Nostr apps to digitally sign all actions you take.
+                                </p>
+                                <p class="text-sm text-gray-700">
+                                    In the case of
+                                    <strong> SatShoot </strong>
+                                    , these actions include:
+                                </p>
+                                <ul class="pl-5 list-disc text-sm text-gray-700">
+                                    <li>Posting a Job or an Offer</li>
+                                    <li>Taking Offers</li>
+                                    <li>Sending messages</li>
+                                    <li>Creating reviews</li>
+                                </ul>
+                                <p class="text-sm text-gray-700">
+                                    This ensures that your data is cryptographically verifiable,
+                                    proving it belongs solely to you. You generate your private key,
+                                    and it's
+                                    <strong> your responsibility </strong>
+                                    to keep it secure.
+                                </p>
+                                <p class="text-sm text-gray-700">
+                                    Apps require your permission to get signatures for publishing
+                                    data to Nostr relays. You can grant this permission in various
+                                    ways, meaning there are multiple
+                                    <strong>"login"</strong>
+                                    methods with different security tradeoffs.
+                                    <em>Do your own research and choose wisely.</em>
+                                </p>
+                            </div>
+                        {/if}
+                    </div>
+
+                    <Button
+                        variant="outlined"
+                        classes="rounded-b-[6px]"
+                        on:click={() => (aboutSectionExpanded = !aboutSectionExpanded)}
+                    >
+                        {aboutSectionExpanded ? 'Collapse' : 'Learn More'}
+                    </Button>
+                </div>
+                <div class="w-full flex flex-col">
+                    <div class="w-full flex flex-row items-center gap-[5px]">
+                        <p class={labelClasses}>Bunker</p>
+                        <i
+                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
+                            use:popup={bunkerTooltip}
+                        />
+                        <div data-popup="bunkerTooltip">
+                            <Card>
+                                <p>
+                                    A central place where apps go to ask for data to be signed via
+                                    nostr relays. Considered to be the most secure but connection to
+                                    the Bunker can be unreliable.
+                                </p>
+                            </Card>
+                        </div>
+                    </div>
+                    <div class={inputWrapperClasses}>
+                        <Input
+                            bind:value={bunkerUrl}
+                            placeholder="bunker://..."
+                            type="url"
+                            grow
+                            noBorder
+                            notRounded
+                        />
+                        <Button
+                            variant="outlined"
+                            classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
+                            on:click={connectBunker}
+                        >
+                            <i class="bx bx-log-in-circle" />
+                        </Button>
+                    </div>
+                    <div class={btnWrapperClasses}>
+                        <Button
+                            variant="outlined"
+                            href="https://nostrapps.com/#signers"
+                            target="_blank"
+                            classes="rounded-[0]"
+                            grow
+                        >
+                            Browse Signer Apps
+                        </Button>
+                    </div>
+                </div>
+                <div class="w-full flex flex-col">
+                    <div class="w-full flex flex-row items-center gap-[5px]">
+                        <p class={labelClasses}>Extension</p>
+                        <i
+                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
+                            use:popup={extensionTooltip}
+                        />
+                        <div data-popup="extensionTooltip">
+                            <Card>
+                                <p>
+                                    Browser extensions can communicate fairly securely with any
+                                    website locally in your browser. Connection to them is much more
+                                    stable than Bunkers. However, extensions have access to any
+                                    sensitive data you might load on any website.
+                                </p>
+                            </Card>
+                        </div>
+                    </div>
+                    <div class={inputWrapperClasses}>
+                        <Button
+                            variant="outlined"
+                            classes="rounded-[0]"
+                            grow
+                            disabled={askingForNip07Permission}
+                            on:click={nip07Login}
+                        >
+                            {#if askingForNip07Permission}
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-primary-500"
+                                    track="stroke-primary-500/30"
+                                    strokeLinecap="round"
+                                    width="w-16"
+                                />
+                            {:else}
+                                <i class="bx bx-log-in-circle" />
+                                Connect
+                            {/if}
+                        </Button>
+                    </div>
+                    <div class={btnWrapperClasses}>
+                        <Button
+                            variant="outlined"
+                            href="https://nostrapps.com/#signers"
+                            target="_blank"
+                            classes="rounded-[0]"
+                            grow
+                        >
+                            Browse Signer Apps
+                        </Button>
+                    </div>
+                </div>
+                <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
+                    {#if displayLocalKeyLogin}
+                        <div
+                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[rgb(0,0,0,0.15)] border-b-[0px] flex flex-col gap-[10px]"
+                        >
+                            <div class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px]">
+                                <p
+                                    class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] rounded-t-[6px]"
                                 >
-                                    <div
-                                        class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] border-b-[0px] rounded-t-[6px]"
-                                    >
-                                        <p>
-                                            SatShoot is built on Nostr, which has its own unique way
-                                            of account creation and login
-                                        </p>
-
-                                        {#if aboutSectionExpanded}
-                                            <div class="mt-3 space-y-3">
-                                                <p class="text-sm text-gray-700">
-                                                    Nostr enables
-                                                    <strong> sovereign identities </strong>
-                                                    through cryptographic keys. Your
-                                                    <strong> "secret" or "private" key </strong>
-                                                    is used by Nostr apps to digitally sign all actions
-                                                    you take.
-                                                </p>
-                                                <p class="text-sm text-gray-700">
-                                                    In the case of
-                                                    <strong> SatShoot </strong>
-                                                    , these actions include:
-                                                </p>
-                                                <ul class="pl-5 list-disc text-sm text-gray-700">
-                                                    <li>Posting a Job or an Offer</li>
-                                                    <li>Taking Offers</li>
-                                                    <li>Sending messages</li>
-                                                    <li>Creating reviews</li>
-                                                </ul>
-                                                <p class="text-sm text-gray-700">
-                                                    This ensures that your data is cryptographically
-                                                    verifiable, proving it belongs solely to you.
-                                                    You generate your private key, and it's
-                                                    <strong> your responsibility </strong>
-                                                    to keep it secure.
-                                                </p>
-                                                <p class="text-sm text-gray-700">
-                                                    Apps require your permission to get signatures
-                                                    for publishing data to Nostr relays. You can
-                                                    grant this permission in various ways, meaning
-                                                    there are multiple
-                                                    <strong>"login"</strong>
-                                                    methods with different security tradeoffs.
-                                                    <em>Do your own research and choose wisely.</em>
-                                                </p>
-                                            </div>
-                                        {/if}
-                                    </div>
-
-                                    <Button
-                                        variant="outlined"
-                                        classes="rounded-b-[6px]"
-                                        on:click={() =>
-                                            (aboutSectionExpanded = !aboutSectionExpanded)}
-                                    >
-                                        {aboutSectionExpanded ? 'Collapse' : 'Learn More'}
-                                    </Button>
+                                    Local keys are stored in an easily-accessible place in the
+                                    browser called Local storage. This makes local keys the most
+                                    convenient and stable way to grant permission.
+                                    <span class="text-yellow-600">
+                                        BUT ALSO MAKES THIS METHOD VULNERABLE TO MOST KINDS OF
+                                        BROWSER OR WEBSITE BUGS AND EXPLOITS
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="w-full flex flex-col">
+                                <div class="w-full flex flex-row gap-[5px]">
+                                    <p class={labelClasses}>Secret key</p>
                                 </div>
-                                <div class="w-full flex flex-col">
-                                    <div class="w-full flex flex-row items-center gap-[5px]">
-                                        <p class={labelClasses}>Bunker</p>
-                                        <i
-                                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
-                                            use:popup={bunkerTooltip}
-                                        />
-                                        <div data-popup="bunkerTooltip">
-                                            <Card>
-                                                <p>
-                                                    A central place where apps go to ask for data to
-                                                    be signed via nostr relays. Considered to be the
-                                                    most secure but connection to the Bunker can be
-                                                    unreliable.
-                                                </p>
-                                            </Card>
-                                        </div>
-                                    </div>
-                                    <div class={inputWrapperClasses}>
-                                        <Input
-                                            bind:value={bunkerUrl}
-                                            placeholder="bunker://..."
-                                            type="url"
-                                            grow
-                                            noBorder
-                                            notRounded
-                                        />
-                                        <Button
-                                            variant="outlined"
-                                            classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
-                                            on:click={connectBunker}
-                                        >
-                                            <i class="bx bx-log-in-circle" />
-                                        </Button>
-                                    </div>
-                                    <div class={btnWrapperClasses}>
-                                        <Button
-                                            variant="outlined"
-                                            href="https://nostrapps.com/#signers"
-                                            target="_blank"
-                                            classes="rounded-[0]"
-                                            grow
-                                        >
-                                            Browse Signer Apps
-                                        </Button>
-                                    </div>
+                                <div class={inputWrapperClasses}>
+                                    <Input
+                                        bind:value={nsecForLocalKey}
+                                        placeholder="nsec..."
+                                        grow
+                                        noBorder
+                                        notRounded
+                                    />
                                 </div>
-                                <div class="w-full flex flex-col">
-                                    <div class="w-full flex flex-row items-center gap-[5px]">
-                                        <p class={labelClasses}>Extension</p>
-                                        <i
-                                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
-                                            use:popup={extensionTooltip}
-                                        />
-                                        <div data-popup="extensionTooltip">
-                                            <Card>
-                                                <p>
-                                                    Browser extensions can communicate fairly
-                                                    securely with any website locally in your
-                                                    browser. Connection to them is much more stable
-                                                    than Bunkers. However, extensions have access to
-                                                    any sensitive data you might load on any
-                                                    website.
-                                                </p>
-                                            </Card>
-                                        </div>
-                                    </div>
-                                    <div class={inputWrapperClasses}>
-                                        <Button
-                                            variant="outlined"
-                                            classes="rounded-[0]"
-                                            grow
-                                            disabled={askingForNip07Permission}
-                                            on:click={nip07Login}
-                                        >
-                                            {#if askingForNip07Permission}
-                                                <ProgressRadial
-                                                    value={undefined}
-                                                    stroke={60}
-                                                    meter="stroke-primary-500"
-                                                    track="stroke-primary-500/30"
-                                                    strokeLinecap="round"
-                                                    width="w-16"
-                                                />
-                                            {:else}
-                                                <i class="bx bx-log-in-circle" />
-                                                Connect
-                                            {/if}
-                                        </Button>
-                                    </div>
-                                    <div class={btnWrapperClasses}>
-                                        <Button
-                                            variant="outlined"
-                                            href="https://nostrapps.com/#signers"
-                                            target="_blank"
-                                            classes="rounded-[0]"
-                                            grow
-                                        >
-                                            Browse Signer Apps
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
-                                    {#if displayLocalKeyLogin}
-                                        <div
-                                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[rgb(0,0,0,0.15)] border-b-[0px] flex flex-col gap-[10px]"
-                                        >
-                                            <div
-                                                class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px]"
-                                            >
-                                                <p
-                                                    class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] rounded-t-[6px]"
-                                                >
-                                                    Local keys are stored in an easily-accessible
-                                                    place in the browser called Local storage. This
-                                                    makes local keys the most convenient and stable
-                                                    way to grant permission.
-                                                    <span class="text-yellow-600">
-                                                        BUT ALSO MAKES THIS METHOD VULNERABLE TO
-                                                        MOST KINDS OF BROWSER OR WEBSITE BUGS AND
-                                                        EXPLOITS
-                                                    </span>
-                                                </p>
-                                            </div>
-                                            <div class="w-full flex flex-col">
-                                                <div class="w-full flex flex-row gap-[5px]">
-                                                    <p class={labelClasses}>Secret key</p>
-                                                </div>
-                                                <div class={inputWrapperClasses}>
-                                                    <Input
-                                                        bind:value={nsecForLocalKey}
-                                                        placeholder="nsec..."
-                                                        grow
-                                                        noBorder
-                                                        notRounded
-                                                    />
-                                                </div>
-                                                <Passphrase
-                                                    bind:passphrase={passphraseForNsec}
-                                                    bind:confirmPassphrase={confirmPassphraseForNsec}
-                                                    btnLabel="Login"
-                                                    on:submit={loginWithNsec}
-                                                />
-                                            </div>
-                                            <div class="w-full flex flex-col">
-                                                <SeedWords bind:words={seedWordsForLocalKey} />
-                                                <Passphrase
-                                                    bind:passphrase={passphraseForSeedWords}
-                                                    bind:confirmPassphrase={confirmPassphraseForSeedWords}
-                                                    btnLabel="Login"
-                                                    on:submit={loginWithSeedWords}
-                                                />
-                                            </div>
-                                        </div>
-                                    {/if}
-
-                                    <div
-                                        class="w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px]"
-                                    >
-                                        <Button
-                                            classes="rounded-[0]"
-                                            grow
-                                            on:click={toggleLocalKey}
-                                        >
-                                            Local Key
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
-                                    {#if displayGeneratedAccount && generatedSeedWords}
-                                        <div
-                                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[rgb(255,91,91,0.5)] border-b-[0px] flex flex-col"
-                                        >
-                                            <div
-                                                class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px] mb-[10px]"
-                                            >
-                                                <p
-                                                    class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px]"
-                                                >
-                                                    Backup your account. Put these words in a safe
-                                                    place to be able to access your account later.
-                                                </p>
-                                            </div>
-                                            <div class="w-full flex flex-col">
-                                                <SeedWords
-                                                    words={generatedSeedWords}
-                                                    inputsDisabled
-                                                    showCopyButton
-                                                />
-                                            </div>
-                                            <div class="w-full flex flex-col mt-[10px]">
-                                                <div class="w-full flex flex-row gap-[5px]">
-                                                    <p class={labelClasses}>Private key</p>
-                                                </div>
-                                                <div class={inputWrapperClasses}>
-                                                    <Input
-                                                        value={generatedNsec}
-                                                        disabled
-                                                        grow
-                                                        noBorder
-                                                        notRounded
-                                                    />
-                                                </div>
-                                                <div class={btnWrapperClasses}>
-                                                    <Button
-                                                        variant="outlined"
-                                                        on:click={onCopyNsec}
-                                                        classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
-                                                        grow
-                                                    >
-                                                        <span use:clipboard={generatedNsec}>
-                                                            {copiedNsec
-                                                                ? 'Copied'
-                                                                : 'Dangerously Copy'}
-                                                        </span>
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <div class="w-full flex flex-col mt-[10px]">
-                                                <div class="w-full flex flex-row gap-[5px]">
-                                                    <p class={labelClasses}>Public key</p>
-                                                </div>
-                                                <div class={inputWrapperClasses}>
-                                                    <Input
-                                                        value={generatedNpub}
-                                                        disabled
-                                                        grow
-                                                        noBorder
-                                                        notRounded
-                                                    />
-                                                </div>
-                                                <div class={btnWrapperClasses}>
-                                                    <Button
-                                                        variant="outlined"
-                                                        on:click={onCopyNpub}
-                                                        classes="rounded-[0]"
-                                                        grow
-                                                    >
-                                                        <span use:clipboard={generatedNpub}>
-                                                            {copiedNpub ? 'Copied' : 'Copy'}
-                                                        </span>
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <div class="w-full flex flex-col mt-[10px]">
-                                                <Passphrase
-                                                    bind:passphrase={passphraseForGeneratedAccount}
-                                                    bind:confirmPassphrase={confirmPassphraseForGeneratedAccount}
-                                                    btnLabel="Finish"
-                                                    on:submit={finalizeAccountGeneration}
-                                                    roundedTop
-                                                />
-                                            </div>
-                                        </div>
-                                    {/if}
-
-                                    <div
-                                        class="w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px]"
-                                    >
-                                        <Button
-                                            classes="rounded-[0]"
-                                            grow
-                                            on:click={() =>
-                                                (displayGeneratedAccount =
-                                                    !displayGeneratedAccount)}
-                                        >
-                                            Account Generation
-                                        </Button>
-                                    </div>
-                                </div>
+                                <Passphrase
+                                    bind:passphrase={passphraseForNsec}
+                                    bind:confirmPassphrase={confirmPassphraseForNsec}
+                                    btnLabel="Login"
+                                    on:submit={loginWithNsec}
+                                />
+                            </div>
+                            <div class="w-full flex flex-col">
+                                <SeedWords bind:words={seedWordsForLocalKey} />
+                                <Passphrase
+                                    bind:passphrase={passphraseForSeedWords}
+                                    bind:confirmPassphrase={confirmPassphraseForSeedWords}
+                                    btnLabel="Login"
+                                    on:submit={loginWithSeedWords}
+                                />
                             </div>
                         </div>
-                    </Card>
+                    {/if}
+
+                    <div class="w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px]">
+                        <Button classes="rounded-[0]" grow on:click={toggleLocalKey}>
+                            Local Key
+                        </Button>
+                    </div>
+                </div>
+                <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
+                    {#if displayGeneratedAccount && generatedSeedWords}
+                        <div
+                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[rgb(255,91,91,0.5)] border-b-[0px] flex flex-col"
+                        >
+                            <div
+                                class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px] mb-[10px]"
+                            >
+                                <p
+                                    class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px]"
+                                >
+                                    Backup your account. Put these words in a safe place to be able
+                                    to access your account later.
+                                </p>
+                            </div>
+                            <div class="w-full flex flex-col">
+                                <SeedWords
+                                    words={generatedSeedWords}
+                                    inputsDisabled
+                                    showCopyButton
+                                />
+                            </div>
+                            <div class="w-full flex flex-col mt-[10px]">
+                                <div class="w-full flex flex-row gap-[5px]">
+                                    <p class={labelClasses}>Private key</p>
+                                </div>
+                                <div class={inputWrapperClasses}>
+                                    <Input
+                                        value={generatedNsec}
+                                        disabled
+                                        grow
+                                        noBorder
+                                        notRounded
+                                    />
+                                </div>
+                                <div class={btnWrapperClasses}>
+                                    <Button
+                                        variant="outlined"
+                                        on:click={onCopyNsec}
+                                        classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
+                                        grow
+                                    >
+                                        <span use:clipboard={generatedNsec}>
+                                            {copiedNsec ? 'Copied' : 'Dangerously Copy'}
+                                        </span>
+                                    </Button>
+                                </div>
+                            </div>
+                            <div class="w-full flex flex-col mt-[10px]">
+                                <div class="w-full flex flex-row gap-[5px]">
+                                    <p class={labelClasses}>Public key</p>
+                                </div>
+                                <div class={inputWrapperClasses}>
+                                    <Input
+                                        value={generatedNpub}
+                                        disabled
+                                        grow
+                                        noBorder
+                                        notRounded
+                                    />
+                                </div>
+                                <div class={btnWrapperClasses}>
+                                    <Button
+                                        variant="outlined"
+                                        on:click={onCopyNpub}
+                                        classes="rounded-[0]"
+                                        grow
+                                    >
+                                        <span use:clipboard={generatedNpub}>
+                                            {copiedNpub ? 'Copied' : 'Copy'}
+                                        </span>
+                                    </Button>
+                                </div>
+                            </div>
+                            <div class="w-full flex flex-col mt-[10px]">
+                                <Passphrase
+                                    bind:passphrase={passphraseForGeneratedAccount}
+                                    bind:confirmPassphrase={confirmPassphraseForGeneratedAccount}
+                                    btnLabel="Finish"
+                                    on:submit={finalizeAccountGeneration}
+                                    roundedTop
+                                />
+                            </div>
+                        </div>
+                    {/if}
+
+                    <div class="w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px]">
+                        <Button
+                            classes="rounded-[0]"
+                            grow
+                            on:click={() => (displayGeneratedAccount = !displayGeneratedAccount)}
+                        >
+                            Account Generation
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </Popup>
 {/if}
