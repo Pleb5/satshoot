@@ -15,7 +15,6 @@
 
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import { formatDate, formatDistanceToNow } from 'date-fns';
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';

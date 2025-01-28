@@ -2,7 +2,6 @@
     import ndk from '$lib/stores/ndk';
     import type { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
-    import { formatDate, formatDistanceToNow } from 'date-fns';
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';

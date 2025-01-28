@@ -1,17 +1,17 @@
 <script lang="ts">
+    import { TicketEvent } from '$lib/events/TicketEvent';
+    import ndk from '$lib/stores/ndk';
+    import currentUser from '$lib/stores/user';
     import {
         NDKSubscriptionCacheUsage,
         type NDKEvent,
         type NDKSigner,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import Card from '../UI/Card.svelte';
-    import { formatDate, formatDistanceToNow } from 'date-fns';
-    import ndk from '$lib/stores/ndk';
+    import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
+    import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
-    import currentUser from '$lib/stores/user';
-    import { TicketEvent } from '$lib/events/TicketEvent';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
 
     export let message: NDKEvent;
@@ -73,11 +73,22 @@
             <a href={'/' + user.npub}>
                 <p>{userName}</p>
             </a>
-            <div class="flex flex-row gap-[5px] flex-wrap">
-                <a href={messageLink}>
-                    {decryptedDM.slice(0, 90)}{decryptedDM.length > 90 ? '...' : ''}
-                </a>
-            </div>
+            {#if decryptedDM}
+                <div class="flex flex-row gap-[5px] flex-wrap">
+                    <a href={messageLink}>
+                        {decryptedDM.slice(0, 90)}{decryptedDM.length > 90 ? '...' : ''}
+                    </a>
+                </div>
+            {:else}
+                <ProgressRadial
+                    value={undefined}
+                    stroke={60}
+                    meter="stroke-primary-500"
+                    track="stroke-primary-500/30"
+                    strokeLinecap="round"
+                    width="w-8"
+                />
+            {/if}
         </div>
     </div>
 </Card>

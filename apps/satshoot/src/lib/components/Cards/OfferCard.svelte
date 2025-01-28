@@ -211,7 +211,7 @@
         if (job) {
             const modalComponent: ModalComponent = {
                 ref: TakeOfferModal,
-                props: { ticket: job, offer: offer },
+                props: { job, offer },
             };
 
             const modal: ModalSettings = {

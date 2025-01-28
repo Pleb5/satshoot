@@ -5,7 +5,6 @@
     import ndk from '$lib/stores/ndk';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
-    import { formatDate, formatDistanceToNow } from 'date-fns';
     import { onMount } from 'svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
@@ -80,7 +79,7 @@
         <a href={'/' + user.npub}>
             <ProfileImage src={userImage} />
         </a>
-        <div class="flex flex-col">
+        <div class="flex flex-col grow-[1]">
             <a href={'/' + user.npub}>
                 <p>{userName}</p>
             </a>
