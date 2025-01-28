@@ -131,7 +131,7 @@
                                 </div>
                             {/if}
                         {:else if selectedTab === Tab.Jobs}
-                            {#if $receivedZapsNotifications.length > 0}
+                            {#if $ticketNotifications.length > 0}
                                 <div class="w-full flex flex-col gap-[10px]">
                                     {#each $ticketNotifications as job (job.id)}
                                         <JobNotification {job} />
@@ -147,7 +147,7 @@
                                 </div>
                             {/if}
                         {:else if selectedTab === Tab.Offers}
-                            {#if $receivedZapsNotifications.length > 0}
+                            {#if $offerNotifications.length > 0}
                                 <div class="w-full flex flex-col gap-[10px]">
                                     {#each $offerNotifications as offer (offer.id)}
                                         <OfferNotification {offer} />
@@ -163,7 +163,7 @@
                                 </div>
                             {/if}
                         {:else if selectedTab === Tab.Messages}
-                            {#if $receivedZapsNotifications.length > 0}
+                            {#if $messageNotifications.length > 0}
                                 <div class="w-full flex flex-col gap-[10px]">
                                     {#each $messageNotifications as message (message.id)}
                                         <MessageNotification {message} />
@@ -190,7 +190,7 @@
                                     class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
                                 >
                                     <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
-                                        No New Messages!
+                                        No New Review!
                                     </p>
                                 </div>
                             {/if}

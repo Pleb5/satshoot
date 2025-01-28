@@ -11,11 +11,10 @@
     import { onMount } from 'svelte';
 
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import { formatDate, formatDistanceToNow } from 'date-fns';
-    import Card from '../UI/Card.svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import currentUser from '$lib/stores/user';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
+    import Card from '../UI/Card.svelte';
+    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
 
     export let offer: OfferEvent;
