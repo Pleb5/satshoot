@@ -14,7 +14,7 @@
         readNotifications,
         receivedZapsNotifications,
         reviewNotifications,
-        ticketNotifications,
+        jobNotifications,
     } from '$lib/stores/notifications';
     import currentUser from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
@@ -34,8 +34,8 @@
 
     let selectedTab = Tab.Follows;
 
-    $: if ($ticketNotifications) {
-        // console.log('ticket notifs', $ticketNotifications);
+    $: if ($jobNotifications) {
+        // console.log('ticket notifs', $jobNotifications);
     }
     $: if ($offerNotifications) {
         // console.log('offer notifs', $offerNotifications);
@@ -91,7 +91,7 @@
             id: Tab.Jobs,
             label: 'Jobs',
             icon: 'briefcase',
-            notificationCount: $ticketNotifications.filter(
+            notificationCount: $jobNotifications.filter(
                 (notification) => !$readNotifications.has(notification.id)
             ).length,
         },
@@ -164,9 +164,9 @@
                                 </div>
                             {/if}
                         {:else if selectedTab === Tab.Jobs}
-                            {#if $ticketNotifications.length > 0}
+                            {#if $jobNotifications.length > 0}
                                 <div class="w-full flex flex-col gap-[10px]">
-                                    {#each $ticketNotifications as job (job.id)}
+                                    {#each $jobNotifications as job (job.id)}
                                         <JobNotification {job} />
                                     {/each}
                                 </div>
