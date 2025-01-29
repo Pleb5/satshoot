@@ -37,6 +37,7 @@
 
 <Card
     classes={$readNotifications.has(job.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    actAsButton
     on:click={() => {
         readNotifications.update((notifications) => notifications.add(job.id));
     }}

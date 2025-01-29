@@ -109,6 +109,7 @@
 
 <Card
     classes={$readNotifications.has(zapEvent.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    actAsButton
     on:click={() => {
         readNotifications.update((notifications) => notifications.add(zapEvent.id));
     }}
