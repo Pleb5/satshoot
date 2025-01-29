@@ -1,12 +1,12 @@
 <script lang="ts">
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
-    import { linkifyText } from '$lib/utils/misc';
     import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { formatDate } from 'date-fns';
     import JobPostMenu from '../Modals/JobPostMenu.svelte';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import Markdown from './Markdown.svelte';
 
     const modalStore = getModalStore();
 
@@ -15,7 +15,6 @@
 
     $: statusString = getJobStatusString(job.status);
     $: statusColor = getJobStatusColor(job.status);
-    $: processedDescription = job.description ? linkifyText(job.description) : 'No description!';
 
     function handleOptionClick() {
         const modalComponent: ModalComponent = {
@@ -72,7 +71,7 @@
         </Button>
     </div>
     <div class="w-full flex flex-col gap-[10px]">
-        {@html processedDescription}
+        <Markdown content={job.description} />
     </div>
 </Card>
 

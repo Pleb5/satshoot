@@ -1,24 +1,16 @@
 <script lang="ts">
-    import { 
-        marked,
-        type Token,
-        type Tokens,
-        type TokenizerAndRendererExtension
-    } from 'marked';
+    import { marked, type Token, type Tokens, type TokenizerAndRendererExtension } from 'marked';
     import DOMPurify from 'dompurify';
     import ndk from '$lib/stores/ndk';
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
-
     export let content = '';
     let sanitizedContent = '';
-
     const getPub = async (token: Token) => {
         if (token.type === 'nostr') {
             const id = `${token.tagType}${token.content}`;
             const { type, data } = nip19.decode(id);
             let npub = '';
-
             switch (type) {
                 case 'nprofile':
                     npub = data.pubkey;
@@ -29,9 +21,7 @@
                 default:
                     return;
             }
-
             let user = $ndk.getUser({ hexpubkey: npub });
-
             try {
                 const profile = await user.fetchProfile({
                     cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
@@ -52,7 +42,6 @@
                     token.isNip05 = true;
                     token.tagType = 'npub';
                     token.content = user.npub;
-
                     // Fetch user profile
                     const profile = await user.fetchProfile({
                         cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
@@ -60,7 +49,6 @@
                         groupable: true,
                         groupableDelay: 1000,
                     });
-
                     if (profile) {
                         token.userName = profile.name || profile.displayName || token.text;
                     } else {
@@ -73,9 +61,7 @@
             }
         }
     };
-
     const nostrRegex = /^(nostr:)?n(event|ote|pub|profile|addr)([a-zA-Z0-9]{10,1000})/;
-
     const nostrTokenizer: TokenizerAndRendererExtension = {
         name: 'nostr',
         level: 'inline',
@@ -103,7 +89,6 @@
             const { tagType, content, userName } = token;
             let url = `/${tagType}${content}`;
             let linkText = userName ? `@${userName}` : `${tagType}${content}`.slice(0, 20) + '...';
-
             switch (tagType) {
                 case 'nevent':
                 case 'note':
@@ -116,12 +101,10 @@
                 case 'naddr':
                     break;
             }
-            return `<a href="${url}" class="anchor">${linkText}</a>`;
+            return `<a href="${url}">${linkText}</a>`;
         },
     };
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+/;
-
     const emailTokenizer: TokenizerAndRendererExtension = {
         name: 'email',
         level: 'inline',
@@ -149,13 +132,12 @@
                 const { tagType, content, userName } = token;
                 let url = `/${content}`;
                 let linkText = userName ? `@${userName}` : token.text;
-                return `<a href="${url}" class="anchor">${linkText}</a>`;
+                return `<a href="${url}">${linkText}</a>`;
             } else {
-                return `<a href="${token.href}" class="anchor">${token.text}</a>`;
+                return `<a href="${token.href}">${token.text}</a>`;
             }
         },
     };
-
     marked.use({
         extensions: [nostrTokenizer, emailTokenizer],
         async: true,
@@ -164,21 +146,8 @@
             image() {
                 return '';
             },
-            link(token) {
-                // Check if the URL starts with https://
-                if (token.href.startsWith('https://')) {
-                    // Customize the rendering of https:// URLs
-                    const shortenedURL = token.text.length > 20 
-                        ? token.text.slice(0, 20) + '...'
-                        : token.text;
-                    return `<a href="${token.href}" class="anchor">${shortenedURL}</a>`;
-                }
-                // Default rendering for other links
-                return `<a href="${token.href}" class="anchor">${token.text}</a>`;
-            },
         },
     });
-
     $: if (content) {
         (async () => {
             const parsed = await marked(content);

@@ -11,10 +11,10 @@
     import { onMount } from 'svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
 
-import { goto } from "$app/navigation";
-import { page } from '$app/stores';
-import { selectedPerson } from "$lib/stores/messages";
-import Markdown from './Markdown.svelte'
+    import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
+    import { selectedPerson } from '$lib/stores/messages';
+    import Markdown from './Markdown.svelte';
 
     export let avatarRight = true;
     export let message: NDKEvent;

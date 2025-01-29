@@ -249,7 +249,7 @@
         <ReputationCard user={offer.pubkey} type={ReviewType.Freelancer} />
     {/if}
     <div class="w-full border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] bg-[rgb(0,0,0,0.05)]">
-        <ExpandableText text={offer.description} maxCharacters={200} />
+        <ExpandableText text={offer.description} maxCharacters={200} renderAsMarkdown />
         <div
             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)]"
         >
