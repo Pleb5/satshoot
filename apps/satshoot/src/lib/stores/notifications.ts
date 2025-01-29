@@ -30,7 +30,7 @@ export const unReadNotifications = derived(
     }
 );
 
-export const ticketNotifications = derived([notifications], ([$notifications]) => {
+export const jobNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
         return notification.kind === NDKKind.FreelanceTicket;
     });
