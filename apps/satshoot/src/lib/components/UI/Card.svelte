@@ -2,6 +2,7 @@
     import { mergeClasses } from '$lib/utils/styles';
 
     export let classes = '';
+    export let actAsButton = false;
 
     const defaultClasses =
         'w-full flex flex-col gap-[5px] rounded-[8px] p-[15px] ' +
@@ -18,6 +19,12 @@
     }
 </script>
 
-<div class={finalClasses} role="button" tabindex={0} on:click on:keydown={handleKeyDown}>
-    <slot></slot>
-</div>
+{#if actAsButton}
+    <div class={finalClasses} role="button" tabindex={0} on:click on:keydown={handleKeyDown}>
+        <slot></slot>
+    </div>
+{:else}
+    <div class={finalClasses}>
+        <slot></slot>
+    </div>
+{/if}
