@@ -39,6 +39,7 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
+    import Card from '../UI/Card.svelte';
 
     enum ToastType {
         Success = 'success',
@@ -166,8 +167,6 @@
     }
 
     let paying = false;
-    let errorMessage = '';
-
     let amount = 0;
     let pledgedAmount = 0;
     let satshootShare = 0;
@@ -184,7 +183,6 @@
     // All checks passed, user can pay with ecash
     $: if (canPayWithEcash) {
         ecashTooltipText = '';
-        errorMessage = '';
     }
 
     $: {
@@ -195,15 +193,14 @@
             canPayWithEcash = true;
 
             if (!hasSenderEcashSetup) {
-                errorMessage = 'Setup Cashu wallet to pay with ecash!';
+                canPayWithEcash = false;
+                ecashTooltipText = 'Setup Cashu wallet to pay with ecash!';
             } else if (!hasFreelancerEcashSetup) {
                 canPayWithEcash = false;
                 ecashTooltipText = 'Freelancer does not have ecash wallet';
-                errorMessage = 'Freelancer does not have ecash wallet';
             } else if (!$wallet) {
                 canPayWithEcash = false;
                 ecashTooltipText = 'Wallet is not initialized yet';
-                errorMessage = 'Wallet is not initialized yet';
             } else {
                 $wallet
                     .balance()
@@ -212,11 +209,9 @@
                         if (!balance) {
                             canPayWithEcash = false;
                             ecashTooltipText = `Don't have enough balance in ecash wallet`;
-                            errorMessage = `Don't have enough balance in ecash wallet`;
                         } else if (balance[0].amount < totalAmount) {
                             canPayWithEcash = false;
-                            ecashTooltipText = `Don't have enough balance in ecash wallet`;
-                            errorMessage = `Don't have enough balance in 
+                            ecashTooltipText = `Don't have enough balance in 
                                             ecash wallet(${balance[0].amount} sats)`;
                         }
                     })
@@ -224,7 +219,6 @@
                         console.error('An error occurred in fetching wallet balance', err);
                         canPayWithEcash = false;
                         ecashTooltipText = `Don't have enough balance in ecash wallet`;
-                        errorMessage = `Don't have enough balance in ecash wallet`;
                     });
             }
         }
@@ -252,7 +246,12 @@
                     zapRequestRelays,
                     invoices,
                     'offer'
-                );
+                ).catch((err) => {
+                    handleToast(
+                        `An error occurred in fetching Freelancer's payment info: ${err.message || err}`,
+                        ToastType.Error
+                    );
+                });
             }
 
             if (satshootSumMillisats > 0) {
@@ -263,7 +262,12 @@
                     zapRequestRelays,
                     invoices,
                     'ticket'
-                );
+                ).catch((err) => {
+                    handleToast(
+                        `An error occurred in fetching satshoot's payment info: ${err.message || err}`,
+                        ToastType.Error
+                    );
+                });
             }
 
             const { init, launchPaymentModal, closeModal, onModalClosed } = await import(
@@ -309,7 +313,10 @@
                     });
                 } catch (error) {
                     console.error('An error occurred in payment process', error);
-                    errorMessage = `Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "SatShoot's"} zap receipt: ${error}`;
+                    handleToast(
+                        `Error: Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "SatShoot's"} zap receipt: ${error}`,
+                        ToastType.Error
+                    );
                 }
             }
 
@@ -356,19 +363,16 @@
                 if (amountMillisats > 0 && $cashuPaymentInfoMap.has(pubkey)) {
                     const cashuPaymentInfo = $cashuPaymentInfoMap.get(pubkey);
                     if (!cashuPaymentInfo) {
-                        errorMessage = `Could not fetch cashu payment info for ${userEnum}!`;
-                        return;
+                        throw new Error(`Could not fetch cashu payment info for ${userEnum}!`);
                     }
 
                     if (!$wallet) {
-                        errorMessage = 'Wallet is not initialized!';
-                        return;
+                        throw new Error('Wallet is not initialized!');
                     }
 
                     const balance = await $wallet.balance();
                     if (!balance) {
-                        errorMessage = `Don't have enough balance`;
-                        return;
+                        throw new Error(`Don't have enough balance`);
                     }
 
                     let balanceInMilliSats = balance[0].amount;
@@ -377,8 +381,7 @@
                     }
 
                     if (balanceInMilliSats < amountMillisats) {
-                        errorMessage = `Don't have enough balance`;
-                        return;
+                        throw new Error(`Don't have enough balance`);
                     }
 
                     const mintPromises = cashuPaymentInfo.mints.map(async (mintUrl) => {
@@ -406,8 +409,7 @@
                     });
 
                     if (mints.length === 0) {
-                        errorMessage = `Could not find a mint for ${userEnum} that support sats!`;
-                        return;
+                        throw new Error(`Could not find a mint for ${userEnum} that support sats!`);
                     }
 
                     const cashuResult = await $wallet
@@ -421,19 +423,8 @@
                             comment: 'satshoot',
                         })
                         .catch((err) => {
-                            const failedPaymentRecipient =
-                                userEnum === UserEnum.Freelancer ? 'Freelancer' : 'SatShoot';
-
-                            console.error(`Failed to pay ${failedPaymentRecipient}`, err);
-                            errorMessage = `Failed to pay ${failedPaymentRecipient}:${err?.message || err}`;
-                            return null;
+                            throw new Error(`Failed to pay: ${err?.message || err}`);
                         });
-
-                    console.log('cashuResult :>> ', cashuResult);
-
-                    if (!cashuResult) {
-                        return;
-                    }
 
                     const nutzapEvent = new NDKNutzap($ndk);
                     nutzapEvent.mint = cashuResult.mint;
@@ -480,7 +471,16 @@
                 }
             }
 
-            await processPayment(UserEnum.Freelancer, offer!.pubkey, freelancerShareMillisats);
+            await processPayment(
+                UserEnum.Freelancer,
+                offer!.pubkey,
+                freelancerShareMillisats
+            ).catch((err) => {
+                handleToast(
+                    `An error occurred in processing payment for freelancer: ${err.message || err}`,
+                    ToastType.Error
+                );
+            });
 
             // its possible that after one payment wallet may contains used tokens
             // so, resync wallet and backup before making other payment
@@ -489,7 +489,14 @@
                 await resyncWalletAndBackup($wallet!, $cashuTokensBackup, $unsavedProofsBackup);
             }
 
-            await processPayment(UserEnum.Satshoot, SatShootPubkey, satshootSumMillisats);
+            await processPayment(UserEnum.Satshoot, SatShootPubkey, satshootSumMillisats).catch(
+                (err) => {
+                    handleToast(
+                        `An error occurred in processing payment for satshoot: ${err.message || err}`,
+                        ToastType.Error
+                    );
+                }
+            );
 
             handlePaymentStatus(
                 paid,
@@ -524,7 +531,6 @@
             return null;
         }
 
-        errorMessage = '';
         paying = true;
         await tick();
 
@@ -532,8 +538,8 @@
         const satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
 
         if (freelancerShareMillisats + satshootSumMillisats === 0) {
-            errorMessage = 'Cannot pay 0 sats!';
             paying = false;
+            handleToast('Error: Cannot pay 0 sats!', ToastType.Error);
             return null;
         }
 
@@ -563,18 +569,14 @@
                 zapRequestRelays
             );
 
-            if (invoice) {
-                invoices.set(userEnum, {
-                    paymentRequest: invoice,
-                    receiver: pubkey,
-                    eventId: key === 'ticket' ? ticket.id : offer!.id,
-                    zapper: zapConfig.nostrPubkey,
-                });
-            } else {
-                errorMessage = `Could not zap ${userEnum}: Failed to fetch payment invoice`;
-            }
+            invoices.set(userEnum, {
+                paymentRequest: invoice,
+                receiver: pubkey,
+                eventId: key === 'ticket' ? ticket.id : offer!.id,
+                zapper: zapConfig.nostrPubkey,
+            });
         } else {
-            errorMessage = `Could not fetch ${userEnum} zap info!`;
+            throw new Error(`Could not fetch ${userEnum}'s zap config!`);
         }
     }
 
@@ -605,7 +607,7 @@
             return null;
         });
 
-        if (!zapRequest) return;
+        if (!zapRequest) throw new Error('Failed to generate zap request');
 
         const relayUrls = zapRequest.tags.find((t) => t[0] === 'relays')?.slice(1) || [];
 
@@ -615,6 +617,8 @@
             console.log('Error: An error occurred in getting LnInvoice!', err);
             return null;
         });
+
+        if (!invoice) throw new Error('Failed to get LNInvoice');
 
         return invoice;
     }
@@ -647,9 +651,9 @@
         goto('/my-cashu-wallet/');
     }
 
-    const popupHoverCashuPaymentAvailableStatus: PopupSettings = {
-        event: 'hover',
-        target: 'popupHover',
+    const cashuTooltip: PopupSettings = {
+        event: 'click',
+        target: 'cashuTooltip',
         placement: 'top',
     };
 
@@ -777,30 +781,14 @@
                                 Make payment (Zaps)
                             {/if}
                         </Button>
-                        {#if hasSenderEcashSetup}
-                            <Button
-                                grow
-                                on:click={payWithEcash}
-                                disabled={paying || !canPayWithEcash}
-                            >
-                                {#if paying}
-                                    <ProgressRadial
-                                        value={undefined}
-                                        stroke={60}
-                                        meter="stroke-tertiary-500"
-                                        track="stroke-tertiary-500/30"
-                                        strokeLinecap="round"
-                                        width="w-8"
-                                    />
-                                {/if}
-                                <span use:popup={popupHoverCashuPaymentAvailableStatus}>
-                                    Make payment (Cashu)
-                                </span>
-                            </Button>
-                        {:else}
-                            <Button grow on:click={setupEcash}>
-                                {#if paying}
-                                    <span>
+                        <div class="w-full flex flex-row items-center gap-[2px]">
+                            {#if hasSenderEcashSetup}
+                                <Button
+                                    grow
+                                    on:click={payWithEcash}
+                                    disabled={paying || !canPayWithEcash}
+                                >
+                                    {#if paying}
                                         <ProgressRadial
                                             value={undefined}
                                             stroke={60}
@@ -809,17 +797,37 @@
                                             strokeLinecap="round"
                                             width="w-8"
                                         />
-                                    </span>
-                                {/if}
-                                <span use:popup={popupHoverCashuPaymentAvailableStatus}>
-                                    Setup Cashu Wallet
-                                </span>
-                            </Button>
-                        {/if}
-                    </div>
-                    <div data-popup="popupHover">
-                        <div class={popupClasses}>
-                            <p>{ecashTooltipText}</p>
+                                    {/if}
+                                    <span> Make payment (Cashu) </span>
+                                </Button>
+                            {:else}
+                                <Button grow on:click={setupEcash}>
+                                    {#if paying}
+                                        <span>
+                                            <ProgressRadial
+                                                value={undefined}
+                                                stroke={60}
+                                                meter="stroke-tertiary-500"
+                                                track="stroke-tertiary-500/30"
+                                                strokeLinecap="round"
+                                                width="w-8"
+                                            />
+                                        </span>
+                                    {/if}
+                                    <span> Setup Cashu Wallet </span>
+                                </Button>
+                            {/if}
+                            {#if ecashTooltipText}
+                                <i
+                                    class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                    use:popup={cashuTooltip}
+                                />
+                                <div data-popup="cashuTooltip">
+                                    <Card>
+                                        <p>{ecashTooltipText}</p>
+                                    </Card>
+                                </div>
+                            {/if}
                         </div>
                     </div>
                 </div>
