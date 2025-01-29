@@ -15,6 +15,7 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
     import { selectedPerson } from '$lib/stores/messages';
+    import Markdown from './Markdown.svelte';
 
     export let avatarRight = true;
     export let message: NDKEvent;
@@ -129,7 +130,7 @@
                     <p class="font-bold text-sm md:text-lg">{name}</p>
                     <small class="opacity-50">{timestamp}</small>
                 </header>
-                <p>{decryptedDM}</p>
+                <Markdown content={decryptedDM} />
                 {#if messageLink && !$page.url.pathname.includes('/messages')}
                     <div class="flex justify-center mr-4">
                         <button
