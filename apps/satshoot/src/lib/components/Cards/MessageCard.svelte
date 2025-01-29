@@ -1,140 +1,127 @@
 <script lang="ts">
-import ndk from "$lib/stores/ndk";
-import currentUser from "$lib/stores/user";
-import { 
-    NDKEvent,
-    NDKSubscriptionCacheUsage,
-    type NDKSigner, 
-    type NDKUser, 
-    type NDKUserProfile 
-} from "@nostr-dev-kit/ndk";
-import { Avatar } from '@skeletonlabs/skeleton';
-import { onMount } from "svelte";
-import { TicketEvent } from "$lib/events/TicketEvent";
+    import ndk from '$lib/stores/ndk';
+    import currentUser from '$lib/stores/user';
+    import {
+        NDKEvent,
+        NDKSubscriptionCacheUsage,
+        type NDKSigner,
+        type NDKUser,
+    } from '@nostr-dev-kit/ndk';
+    import { Avatar } from '@skeletonlabs/skeleton';
+    import { onMount } from 'svelte';
+    import { TicketEvent } from '$lib/events/TicketEvent';
 
 import { goto } from "$app/navigation";
 import { page } from '$app/stores';
 import { selectedPerson } from "$lib/stores/messages";
 import Markdown from './Markdown.svelte'
 
+    export let avatarRight = true;
+    export let message: NDKEvent;
+    export let searchText = '';
+    export let isFirstOfDay = false;
 
-export let avatarRight = true;
-export let message: NDKEvent;
-export let searchText = '';
-export let isFirstOfDay = false;
+    let decryptedDM: string;
+    const senderUser = $ndk.getUser({ pubkey: message.pubkey });
+    let name = (senderUser as NDKUser).npub.substring(0, 10);
+    let avatarImage = `https://robohash.org/${message.pubkey}`;
+    const recipient = message.tagValue('p');
 
-let decryptedDM: string;
-const senderUser = $ndk.getUser({pubkey: message.pubkey});
-let name = (senderUser as NDKUser).npub.substring(0,10);
-let avatarImage = `https://robohash.org/${message.pubkey}`;
-const recipient = message.tagValue('p');
+    const messageDate = new Date((message.created_at as number) * 1000);
+    // Time is shown in local time zone
+    const timestamp = messageDate.toLocaleString();
+    const ticketAddress = message.tagValue('t');
+    let messageLink = '';
 
-const messageDate = new Date(message.created_at as number * 1000);
-// Time is shown in local time zone
-const timestamp = messageDate.toLocaleString();
-const ticketAddress = message.tagValue('t');
-let messageLink = '';
+    let extraClasses = 'variant-soft-primary rounded-tr-none';
+    let templateColumn = 'grid-cols-[auto_1fr]';
 
-let extraClasses = 'variant-soft-primary rounded-tr-none'
-let templateColumn = 'grid-cols-[auto_1fr]';
+    function formatDate(date: Date): string {
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - date.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-function formatDate(date: Date): string {
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays <= 7) {
-        return diffDays === 1 ? "Yesterday" : `${diffDays} days ago`;
-    } else {
-        return date.toLocaleDateString();
-    }
-}
-
-onMount(async () => {
-    if (avatarRight) {
-        extraClasses = 'variant-soft rounded-tl-none'
-        templateColumn = 'grid-cols-[1fr_auto]';
+        if (diffDays <= 7) {
+            return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
+        } else {
+            return date.toLocaleDateString();
+        }
     }
 
-    // Decrypt message
-    // ECDH DEMANDS THAT DECRYPTION ALWAYS USES THE PUBKEY OF THE OTHER PARTY
-    // BE IT THE SENDER OR THE RECIPIENT OF THE ACTUAL MESSAGE
-    // 
-    // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
+    onMount(async () => {
+        if (avatarRight) {
+            extraClasses = 'variant-soft rounded-tl-none';
+            templateColumn = 'grid-cols-[1fr_auto]';
+        }
 
-    // ALWAYS USE OTHER USER REGARDLESS OF WHO SENT THE MESSAGE
-    console.log('start decryption', message)
-    try {
-        const peerPubkey = (
-            message.tagValue('p') === $currentUser!.pubkey
-            ? message.pubkey : message.tagValue('p')
-        )
-        const peerUser = $ndk.getUser({pubkey: peerPubkey});
-        decryptedDM = await ($ndk.signer as NDKSigner)
-                .decrypt(peerUser, message.content); 
-    } catch (e) {
-        console.trace(e);
-    }
+        // Decrypt message
+        // ECDH DEMANDS THAT DECRYPTION ALWAYS USES THE PUBKEY OF THE OTHER PARTY
+        // BE IT THE SENDER OR THE RECIPIENT OF THE ACTUAL MESSAGE
+        //
+        // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
 
-    const profile = await senderUser.fetchProfile(
-        {
+        // ALWAYS USE OTHER USER REGARDLESS OF WHO SENT THE MESSAGE
+        console.log('start decryption', message);
+        try {
+            const peerPubkey =
+                message.tagValue('p') === $currentUser!.pubkey
+                    ? message.pubkey
+                    : message.tagValue('p');
+            const peerUser = $ndk.getUser({ pubkey: peerPubkey });
+            decryptedDM = await ($ndk.signer as NDKSigner).decrypt(peerUser, message.content);
+        } catch (e) {
+            console.trace(e);
+        }
+
+        const profile = await senderUser.fetchProfile({
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             closeOnEose: true,
             groupable: true,
             groupableDelay: 500,
+        });
+        if (senderUser.profile) {
+            console.log('profile', profile);
+            console.log('pubkey', senderUser.pubkey);
+            if (senderUser.profile.displayName) name = senderUser.profile.displayName;
+            if (senderUser.profile.name) name = senderUser.profile.name;
+            if (senderUser.profile.image) avatarImage = senderUser.profile.image;
+        } else {
+            console.log('no profile');
         }
-    );
-    if (senderUser.profile) {
-        console.log('profile', profile)
-        console.log('pubkey', senderUser.pubkey)
-        if (senderUser.profile.displayName) name = senderUser.profile.displayName;
-        if (senderUser.profile.name) name = senderUser.profile.name;
-        if (senderUser.profile.image) avatarImage = senderUser.profile.image;
 
-    } else {
-        console.log('no profile')
-    }
-
-    if (ticketAddress) {
-        const event = await $ndk.fetchEvent(
-            ticketAddress,
-            {
+        if (ticketAddress) {
+            const event = await $ndk.fetchEvent(ticketAddress, {
                 groupable: true,
                 groupableDelay: 800,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-            },
-        );
-        if (event) {
-            const ticketEvent = TicketEvent.from(event);
-            messageLink = "/messages/" + ticketEvent.encode();
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            });
+            if (event) {
+                const ticketEvent = TicketEvent.from(event);
+                messageLink = '/messages/' + ticketEvent.encode();
+            }
+            console.log('message link', messageLink);
         }
-        console.log('message link', messageLink)
+    });
+
+    let showMyself = false;
+    $: if (decryptedDM) {
+        showMyself = decryptedDM.includes(searchText);
     }
-});
-
-let showMyself = false;
-$: if (decryptedDM) {
-    showMyself = decryptedDM.includes(searchText);
-}
-
-
 </script>
 
-<div class="{showMyself ? '' : 'hidden'}">
+<div class={showMyself ? '' : 'hidden'}>
     {#if isFirstOfDay}
         <div class="date-separator">
-            <hr>
+            <hr />
             <span>{formatDate(messageDate)}</span>
-            <hr>
+            <hr />
         </div>
     {/if}
     {#if decryptedDM}
-        <div class="grid {templateColumn} gap-x-2 ">
+        <div class="grid {templateColumn} gap-x-2">
             {#if !avatarRight}
                 <a href={'/' + senderUser.npub}>
-                    <Avatar
-                    src={avatarImage}
-                    width="w-12" />
+                    <Avatar src={avatarImage} width="w-12" />
                 </a>
             {/if}
             <div class="card p-4 space-y-2 {extraClasses}">
@@ -146,9 +133,9 @@ $: if (decryptedDM) {
                 {#if messageLink && !$page.url.pathname.includes('/messages')}
                     <div class="flex justify-center mr-4">
                         <button
-                            type="button" 
+                            type="button"
                             class="btn btn-icon-lg p-2 text-primary-400-500-token"
-                            on:click={()=>{
+                            on:click={() => {
                                 $selectedPerson = message.pubkey + '$' + ticketAddress;
                                 goto(messageLink);
                             }}
@@ -163,13 +150,11 @@ $: if (decryptedDM) {
             </div>
             {#if avatarRight}
                 <a href={'/' + senderUser.npub}>
-                    <Avatar
-                    src={avatarImage}
-                    width="w-12" />
+                    <Avatar src={avatarImage} width="w-12" />
                 </a>
             {/if}
         </div>
-    {:else} 
+    {:else}
         <div class="p-4 space-y-4 w-32">
             <div class="grid grid-cols-1">
                 <div class="placeholder animate-pulse" />
