@@ -1,20 +1,20 @@
 <script lang="ts">
-    import ndk from "$lib/stores/ndk";
-    import { type ClientRating , ReviewEvent } from "$lib/events/ReviewEvent";
+    import { type ClientRating, ReviewEvent } from '$lib/events/ReviewEvent';
+    import ndk from '$lib/stores/ndk';
 
-    import { getToastStore } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings, ModalSettings } from '@skeletonlabs/skeleton';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-    import { RadioGroup, RadioItem } from '@skeletonlabs/skeleton';
-    import { type SvelteComponent, tick } from "svelte";
+    import type { ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { tick } from 'svelte';
+    import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
+    import Checkbox from '../UI/Inputs/Checkbox.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import Input from '../UI/Inputs/input.svelte';
+    import Popup from '../UI/Popup.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    /** Exposes parent props to this component. */
-    export let parent: SvelteComponent;
-    export let ticketAddress: string;
+    export let jobAddress: string;
 
     let thumb = true;
     let availability = false;
@@ -25,21 +25,21 @@
     let posting = false;
 
     async function postClientReview() {
-        if (ticketAddress) {
+        if (jobAddress) {
             try {
                 posting = true;
                 await tick();
 
                 // Post review data if applicable
                 const reviewEvent = new ReviewEvent($ndk);
-                reviewEvent.reviewedEventAddress = ticketAddress;
+                reviewEvent.reviewedEventAddress = jobAddress;
 
                 const rating: ClientRating = {
                     thumb: false,
                     availability: false,
                     communication: false,
                     reviewText: reviewText,
-                }
+                };
 
                 rating.thumb = thumb;
                 rating.availability = availability;
@@ -63,11 +63,11 @@
                         Freelancing just got better for everyone!
                         </p>
                         `,
-                    buttonTextCancel:'Ok',
+                    buttonTextCancel: 'Ok',
                 };
                 modalStore.trigger(modal);
-            } catch(e) {
-                console.log(e)
+            } catch (e) {
+                console.log(e);
                 const t: ToastSettings = {
                     message: 'Error posting Review!',
                     timeout: 7000,
@@ -86,90 +86,68 @@
             toastStore.trigger(t);
         }
     }
-
 </script>
 
 {#if $modalStore[0]}
-    {#if ticketAddress}
-        <div class="card p-4">
-            <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Review Client</h4>
-            <div class="flex flex-col justify-center min-w-60 gap-y-4">
-                <div class="text-md sm:text-xl text-center font-bold">
-                    Overall experience with this Client:
-                </div>
-                <RadioGroup 
-                    active="variant-filled-primary"
-                    hover="hover:variant-soft-primary"
-                >
-						<RadioItem 
-                            class='text-xl'
-                            bind:group={thumb}
-                            name="thumb"
-                            value={true}
-                        >
-                            👍
-                        </RadioItem>
-						<RadioItem
-                            class='text-xl'
-                            bind:group={thumb}
-                            name="thumb" 
-                            value={false}
-                        >
-                            👎
-                        </RadioItem>
-                </RadioGroup>
-                <div class="text-md sm:text-xl text-center font-bold">
-                    Select excellent qualities of the Client, if any:
-                </div>
-                <div class="space-y-2">
-                    <label class="flex items-center space-x-2 text-sm sm:text-lg">
-                        <input class="checkbox" type="checkbox" bind:value={availability} />
-                        <p>Highly available, attentive and responsive</p>
-                    </label>
-                    <label class="flex items-center space-x-2 text-sm sm:text-lg">
-                        <input class="checkbox" type="checkbox" bind:value={communication} />
-                        <p>Especially clear and kind communication</p>
-                    </label>
-                </div>
-                <label class="label max-w-xl">
-                    <span class="text-md sm:text-xl">Share your experience to help others:</span>
-                    <textarea 
-                    class="textarea"
-                    rows="3"
-                    placeholder="Describe your experience..."
-                    bind:value={reviewText}
+    <Popup title="Review Client">
+        <div class="w-full flex flex-col">
+            <!-- popups Job-Close start -->
+            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+                <ReviewToggleQuestion
+                    question="Were you satisfied with the work?"
+                    bind:value={thumb}
+                    trueLabel="Yes"
+                    falseLabel="No"
                 />
-                </label>
-                <div class="grid grid-cols-[30%_1fr] gap-x-2">
-                    <button 
-                        type="button"
-                        class="btn btn-sm sm:btn-md bg-error-300-600-token"
-                        on:click={()=> modalStore.close()}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        on:click={postClientReview}
-                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-                        disabled={posting}
-                    >
+                <div class="w-full flex flex-col gap-[5px]">
+                    <div class="w-full max-h-[50vh] overflow-auto">
+                        <p class="w-full">Select excellent qualities of the Client, if any:</p>
+                    </div>
+                    <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
+                        <Checkbox
+                            id="availability"
+                            label="Highly available, attentive, and responsive"
+                            bind:checked={availability}
+                        />
+                        <Checkbox
+                            id="communication"
+                            label="Especially clear and kind communication"
+                            bind:checked={communication}
+                        />
+                    </div>
+                </div>
+                <div class="w-full flex flex-col gap-[5px]">
+                    <div class="w-full max-h-[50vh] overflow-auto">
+                        <p class="w-full">Share your experience to help others:</p>
+                    </div>
+                    <Input
+                        bind:value={reviewText}
+                        placeholder="Describe your experience..."
+                        classes="min-h-[100px]"
+                        fullWidth
+                        textarea
+                    />
+                </div>
+                <div class="w-full flex flex-row gap-[10px]">
+                    <Button grow on:click={postClientReview}>
                         {#if posting}
                             <span>
-                                <ProgressRadial value={undefined} stroke={60} meter="stroke-error-500"
-                                    track="stroke-error-500/30" strokeLinecap="round" width="w-8" />
+                                <ProgressRadial
+                                    value={undefined}
+                                    stroke={60}
+                                    meter="stroke-tertiary-500"
+                                    track="stroke-tertiary-500/30"
+                                    strokeLinecap="round"
+                                    width="w-8"
+                                />
                             </span>
                         {:else}
-                            <span>Post Review</span>
+                            Publish review
                         {/if}
-
-                    </button>
+                    </Button>
                 </div>
             </div>
+            <!-- popups Job-Close end -->
         </div>
-    {:else}
-        <h2 class="h2 font-bold text-center text-error-300-600-token">
-            Error: Ticket is missing!
-        </h2>
-    {/if}
+    </Popup>
 {/if}

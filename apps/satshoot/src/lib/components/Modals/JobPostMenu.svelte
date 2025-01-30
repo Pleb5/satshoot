@@ -7,16 +7,15 @@
     import ndk from '$lib/stores/ndk';
     import { onMount } from 'svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
-    import NewReviewClientModal from './NewReviewClientModal.svelte';
+    import ReviewClientModal from './ReviewClientModal.svelte';
     import { clientReviews } from '$lib/stores/reviews';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from './PaymentModal.svelte';
-    import { ticketToEdit } from '$lib/stores/ticket-to-edit';
+    import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';
-    import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
-    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Popup from '../UI/Popup.svelte';
 
     const modalStore = getModalStore();
 
@@ -102,7 +101,7 @@
 
     function handleReviewClient() {
         const modalComponent: ModalComponent = {
-            ref: NewReviewClientModal,
+            ref: ReviewClientModal,
             props: { jobAddress: job.ticketAddress },
         };
 
@@ -146,7 +145,7 @@
 
     function handleEdit() {
         if (job) {
-            $ticketToEdit = job;
+            $jobToEdit = job;
 
             goto('/post-job');
             modalStore.clear();
@@ -155,95 +154,77 @@
 </script>
 
 {#if $modalStore[0]}
-    <div
-        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
-    >
-        <div
-            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
-        >
-            <div class="w-full flex flex-col justify-start items-center">
-                <div class="w-full max-w-[500px] justify-start items-center">
-                    <Card>
-                        <ModalHeader title="Job Menu" />
-                        <div class="w-full flex flex-col">
-                            <!-- popups Job-Post-Menu start -->
-                            <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
-                                <Button
-                                    variant="outlined"
-                                    classes="justify-start"
-                                    fullWidth
-                                    on:click={handleShare}
-                                >
-                                    <i class="bx bxs-share text-[20px]"></i>
-                                    <p class="">Share</p>
-                                </Button>
+    <Popup title="Job Menu">
+        <div class="w-full flex flex-col">
+            <!-- popups Job-Post-Menu start -->
+            <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
+                <Button variant="outlined" classes="justify-start" fullWidth on:click={handleShare}>
+                    <i class="bx bxs-share text-[20px]"></i>
+                    <p class="">Share</p>
+                </Button>
 
-                                {#if myJob && job.status === TicketStatus.New}
-                                    <Button
-                                        variant="outlined"
-                                        classes="justify-start"
-                                        fullWidth
-                                        on:click={handleEdit}
-                                    >
-                                        <i class="bx bxs-edit-alt text-[20px]"></i>
-                                        <p class="">Edit</p>
-                                    </Button>
-                                {/if}
+                {#if myJob && job.status === TicketStatus.New}
+                    <Button
+                        variant="outlined"
+                        classes="justify-start"
+                        fullWidth
+                        on:click={handleEdit}
+                    >
+                        <i class="bx bxs-edit-alt text-[20px]"></i>
+                        <p class="">Edit</p>
+                    </Button>
+                {/if}
 
-                                {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
-                                    <Button
-                                        variant="outlined"
-                                        classes="justify-start"
-                                        fullWidth
-                                        on:click={handleCloseJob}
-                                    >
-                                        <i class="bx bx-window-close text-[20px]"></i>
-                                        <p class="">Close Job</p>
-                                    </Button>
-                                {/if}
+                {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
+                    <Button
+                        variant="outlined"
+                        classes="justify-start"
+                        fullWidth
+                        on:click={handleCloseJob}
+                    >
+                        <i class="bx bx-window-close text-[20px]"></i>
+                        <p class="">Close Job</p>
+                    </Button>
+                {/if}
 
-                                {#if myJob && job.status !== TicketStatus.New && winnerOffer}
-                                    <Button
-                                        variant="outlined"
-                                        classes="justify-start"
-                                        fullWidth
-                                        on:click={handlePay}
-                                    >
-                                        <i class="bx bx-window-close text-[20px]"></i>
-                                        <p class="">Pay</p>
-                                    </Button>
-                                {/if}
+                {#if myJob && job.status !== TicketStatus.New && winnerOffer}
+                    <Button
+                        variant="outlined"
+                        classes="justify-start"
+                        fullWidth
+                        on:click={handlePay}
+                    >
+                        <i class="bx bx-window-close text-[20px]"></i>
+                        <p class="">Pay</p>
+                    </Button>
+                {/if}
 
-                                {#if showMessageButton && bech32ID}
-                                    <Button
-                                        href={'/messages/' + bech32ID}
-                                        on:click={selectChatPartner}
-                                        variant="outlined"
-                                        classes="justify-start"
-                                        fullWidth
-                                    >
-                                        <i class="bx bxs-conversation" />
-                                        <p class="">Message</p>
-                                    </Button>
-                                {/if}
+                {#if showMessageButton && bech32ID}
+                    <Button
+                        href={'/messages/' + bech32ID}
+                        on:click={selectChatPartner}
+                        variant="outlined"
+                        classes="justify-start"
+                        fullWidth
+                    >
+                        <i class="bx bxs-conversation" />
+                        <p class="">Message</p>
+                    </Button>
+                {/if}
 
-                                {#if canReviewClient}
-                                    <Button
-                                        variant="outlined"
-                                        classes="justify-start"
-                                        fullWidth
-                                        on:click={handleReviewClient}
-                                    >
-                                        <i class="bx bx-window-close text-[20px]"></i>
-                                        <p class="">Review Client</p>
-                                    </Button>
-                                {/if}
-                            </div>
-                            <!-- popups Job-Post-Menu end -->
-                        </div>
-                    </Card>
-                </div>
+                {#if canReviewClient}
+                    <Button
+                        variant="outlined"
+                        classes="justify-start"
+                        fullWidth
+                        on:click={handleReviewClient}
+                    >
+                        <i class="bx bx-window-close text-[20px]"></i>
+                        <p class="">Review Client</p>
+                    </Button>
+                {/if}
             </div>
+            <!-- popups Job-Post-Menu end -->
         </div>
-    </div>
+    </Popup>
 {/if}

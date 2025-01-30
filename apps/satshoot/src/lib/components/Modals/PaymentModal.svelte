@@ -36,9 +36,10 @@
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { wot } from '$lib/stores/wot';
-    import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
-    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
+    import Popup from '../UI/Popup.svelte';
+    import Card from '../UI/Card.svelte';
 
     enum ToastType {
         Success = 'success',
@@ -166,8 +167,6 @@
     }
 
     let paying = false;
-    let errorMessage = '';
-
     let amount = 0;
     let pledgedAmount = 0;
     let satshootShare = 0;
@@ -184,7 +183,6 @@
     // All checks passed, user can pay with ecash
     $: if (canPayWithEcash) {
         ecashTooltipText = '';
-        errorMessage = '';
     }
 
     $: {
@@ -195,15 +193,14 @@
             canPayWithEcash = true;
 
             if (!hasSenderEcashSetup) {
-                errorMessage = 'Setup Cashu wallet to pay with ecash!';
+                canPayWithEcash = false;
+                ecashTooltipText = 'Setup Cashu wallet to pay with ecash!';
             } else if (!hasFreelancerEcashSetup) {
                 canPayWithEcash = false;
                 ecashTooltipText = 'Freelancer does not have ecash wallet';
-                errorMessage = 'Freelancer does not have ecash wallet';
             } else if (!$wallet) {
                 canPayWithEcash = false;
                 ecashTooltipText = 'Wallet is not initialized yet';
-                errorMessage = 'Wallet is not initialized yet';
             } else {
                 $wallet
                     .balance()
@@ -212,11 +209,9 @@
                         if (!balance) {
                             canPayWithEcash = false;
                             ecashTooltipText = `Don't have enough balance in ecash wallet`;
-                            errorMessage = `Don't have enough balance in ecash wallet`;
                         } else if (balance[0].amount < totalAmount) {
                             canPayWithEcash = false;
-                            ecashTooltipText = `Don't have enough balance in ecash wallet`;
-                            errorMessage = `Don't have enough balance in 
+                            ecashTooltipText = `Don't have enough balance in 
                                             ecash wallet(${balance[0].amount} sats)`;
                         }
                     })
@@ -224,7 +219,6 @@
                         console.error('An error occurred in fetching wallet balance', err);
                         canPayWithEcash = false;
                         ecashTooltipText = `Don't have enough balance in ecash wallet`;
-                        errorMessage = `Don't have enough balance in ecash wallet`;
                     });
             }
         }
@@ -252,7 +246,12 @@
                     zapRequestRelays,
                     invoices,
                     'offer'
-                );
+                ).catch((err) => {
+                    handleToast(
+                        `An error occurred in fetching Freelancer's payment info: ${err.message || err}`,
+                        ToastType.Error
+                    );
+                });
             }
 
             if (satshootSumMillisats > 0) {
@@ -263,7 +262,12 @@
                     zapRequestRelays,
                     invoices,
                     'ticket'
-                );
+                ).catch((err) => {
+                    handleToast(
+                        `An error occurred in fetching satshoot's payment info: ${err.message || err}`,
+                        ToastType.Error
+                    );
+                });
             }
 
             const { init, launchPaymentModal, closeModal, onModalClosed } = await import(
@@ -309,7 +313,10 @@
                     });
                 } catch (error) {
                     console.error('An error occurred in payment process', error);
-                    errorMessage = `Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "SatShoot's"} zap receipt: ${error}`;
+                    handleToast(
+                        `Error: Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "SatShoot's"} zap receipt: ${error}`,
+                        ToastType.Error
+                    );
                 }
             }
 
@@ -356,19 +363,16 @@
                 if (amountMillisats > 0 && $cashuPaymentInfoMap.has(pubkey)) {
                     const cashuPaymentInfo = $cashuPaymentInfoMap.get(pubkey);
                     if (!cashuPaymentInfo) {
-                        errorMessage = `Could not fetch cashu payment info for ${userEnum}!`;
-                        return;
+                        throw new Error(`Could not fetch cashu payment info for ${userEnum}!`);
                     }
 
                     if (!$wallet) {
-                        errorMessage = 'Wallet is not initialized!';
-                        return;
+                        throw new Error('Wallet is not initialized!');
                     }
 
                     const balance = await $wallet.balance();
                     if (!balance) {
-                        errorMessage = `Don't have enough balance`;
-                        return;
+                        throw new Error(`Don't have enough balance`);
                     }
 
                     let balanceInMilliSats = balance[0].amount;
@@ -377,8 +381,7 @@
                     }
 
                     if (balanceInMilliSats < amountMillisats) {
-                        errorMessage = `Don't have enough balance`;
-                        return;
+                        throw new Error(`Don't have enough balance`);
                     }
 
                     const mintPromises = cashuPaymentInfo.mints.map(async (mintUrl) => {
@@ -406,8 +409,7 @@
                     });
 
                     if (mints.length === 0) {
-                        errorMessage = `Could not find a mint for ${userEnum} that support sats!`;
-                        return;
+                        throw new Error(`Could not find a mint for ${userEnum} that support sats!`);
                     }
 
                     const cashuResult = await $wallet
@@ -421,19 +423,8 @@
                             comment: 'satshoot',
                         })
                         .catch((err) => {
-                            const failedPaymentRecipient =
-                                userEnum === UserEnum.Freelancer ? 'Freelancer' : 'SatShoot';
-
-                            console.error(`Failed to pay ${failedPaymentRecipient}`, err);
-                            errorMessage = `Failed to pay ${failedPaymentRecipient}:${err?.message || err}`;
-                            return null;
+                            throw new Error(`Failed to pay: ${err?.message || err}`);
                         });
-
-                    console.log('cashuResult :>> ', cashuResult);
-
-                    if (!cashuResult) {
-                        return;
-                    }
 
                     const nutzapEvent = new NDKNutzap($ndk);
                     nutzapEvent.mint = cashuResult.mint;
@@ -480,7 +471,16 @@
                 }
             }
 
-            await processPayment(UserEnum.Freelancer, offer!.pubkey, freelancerShareMillisats);
+            await processPayment(
+                UserEnum.Freelancer,
+                offer!.pubkey,
+                freelancerShareMillisats
+            ).catch((err) => {
+                handleToast(
+                    `An error occurred in processing payment for freelancer: ${err.message || err}`,
+                    ToastType.Error
+                );
+            });
 
             // its possible that after one payment wallet may contains used tokens
             // so, resync wallet and backup before making other payment
@@ -489,7 +489,14 @@
                 await resyncWalletAndBackup($wallet!, $cashuTokensBackup, $unsavedProofsBackup);
             }
 
-            await processPayment(UserEnum.Satshoot, SatShootPubkey, satshootSumMillisats);
+            await processPayment(UserEnum.Satshoot, SatShootPubkey, satshootSumMillisats).catch(
+                (err) => {
+                    handleToast(
+                        `An error occurred in processing payment for satshoot: ${err.message || err}`,
+                        ToastType.Error
+                    );
+                }
+            );
 
             handlePaymentStatus(
                 paid,
@@ -524,7 +531,6 @@
             return null;
         }
 
-        errorMessage = '';
         paying = true;
         await tick();
 
@@ -532,8 +538,8 @@
         const satshootSumMillisats = (satshootShare + pledgedAmount) * 1000;
 
         if (freelancerShareMillisats + satshootSumMillisats === 0) {
-            errorMessage = 'Cannot pay 0 sats!';
             paying = false;
+            handleToast('Error: Cannot pay 0 sats!', ToastType.Error);
             return null;
         }
 
@@ -563,18 +569,14 @@
                 zapRequestRelays
             );
 
-            if (invoice) {
-                invoices.set(userEnum, {
-                    paymentRequest: invoice,
-                    receiver: pubkey,
-                    eventId: key === 'ticket' ? ticket.id : offer!.id,
-                    zapper: zapConfig.nostrPubkey,
-                });
-            } else {
-                errorMessage = `Could not zap ${userEnum}: Failed to fetch payment invoice`;
-            }
+            invoices.set(userEnum, {
+                paymentRequest: invoice,
+                receiver: pubkey,
+                eventId: key === 'ticket' ? ticket.id : offer!.id,
+                zapper: zapConfig.nostrPubkey,
+            });
         } else {
-            errorMessage = `Could not fetch ${userEnum} zap info!`;
+            throw new Error(`Could not fetch ${userEnum}'s zap config!`);
         }
     }
 
@@ -605,7 +607,7 @@
             return null;
         });
 
-        if (!zapRequest) return;
+        if (!zapRequest) throw new Error('Failed to generate zap request');
 
         const relayUrls = zapRequest.tags.find((t) => t[0] === 'relays')?.slice(1) || [];
 
@@ -615,6 +617,8 @@
             console.log('Error: An error occurred in getting LnInvoice!', err);
             return null;
         });
+
+        if (!invoice) throw new Error('Failed to get LNInvoice');
 
         return invoice;
     }
@@ -647,221 +651,192 @@
         goto('/my-cashu-wallet/');
     }
 
-    const popupHoverCashuPaymentAvailableStatus: PopupSettings = {
-        event: 'hover',
-        target: 'popupHover',
+    const cashuTooltip: PopupSettings = {
+        event: 'click',
+        target: 'cashuTooltip',
         placement: 'top',
     };
 
     const popupClasses = 'card w-60 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto';
-
-    const inputClasses =
-        'transition ease duration-[0.3s] w-full bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] ' +
-        'rounded-[6px] px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
 </script>
 
 {#if $modalStore[0]}
-    <div
-        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
-    >
-        <div
-            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
-        >
-            <div class="w-full flex flex-col justify-start items-center">
-                <div class="w-full max-w-[500px] justify-start items-center">
-                    <Card>
-                        <ModalHeader title="Pay Freelancer" />
-                        {#if ticket && offer}
-                            <div class="w-full flex flex-col">
-                                <!-- popups Share Job Post start -->
-                                <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
-                                    <div
-                                        class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)] p-[10px]"
-                                    >
-                                        <UserProfile pubkey={offer.pubkey} />
-                                        <div
-                                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)]"
-                                        >
-                                            <div class="grow-[1]">
-                                                <p class="font-[500]">
-                                                    Offer cost:
-                                                    <span class="font-[300]">
-                                                        {insertThousandSeparator(offer.amount) +
-                                                            ' ' +
-                                                            pricing}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                            <div class="grow-[1]">
-                                                <p class="font-[500]">
-                                                    Pledge split:
-                                                    <span class="font-[300]">
-                                                        {offer.pledgeSplit} %</span
-                                                    >
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)]"
-                                        >
-                                            <div class="grow-[1]">
-                                                <p class="font-[500]">
-                                                    Freelancer Paid: <span class="font-[300]"
-                                                        >{insertThousandSeparator(freelancerPaid)} sats</span
-                                                    >
-                                                </p>
-                                            </div>
-                                            <div class="grow-[1]">
-                                                <p class="font-[500]">
-                                                    SatShoot Paid: <span class="font-[300]"
-                                                        >{insertThousandSeparator(satshootPaid)} sats</span
-                                                    >
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div
-                                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] px-[10px] py-[10px]"
-                                    >
-                                        <p class="">Compensation for:</p>
-                                        <p class="">{ticket.title}</p>
-                                    </div>
-                                    <div
-                                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] px-[10px] py-[10px]"
-                                    >
-                                        <div class="w-full flex flex-col gap-[5px]">
-                                            <div class="w-full flex flex-col gap-[5px]">
-                                                <label class="font-[500]" for="service-payment"
-                                                    >Pay for service</label
-                                                >
-                                                <input
-                                                    id="service-payment"
-                                                    type="number"
-                                                    step="1"
-                                                    min="0"
-                                                    max="100_000_000"
-                                                    placeholder="000,000"
-                                                    bind:value={amount}
-                                                    class={inputClasses}
-                                                />
-                                            </div>
-                                            <div class="w-full flex flex-col gap-[5px]">
-                                                <label
-                                                    class="font-[500]"
-                                                    for="plattform-contribution"
-                                                    >Contribute to SatShoot</label
-                                                >
-                                                <input
-                                                    id="plattform-contribution"
-                                                    type="number"
-                                                    step="1"
-                                                    min="0"
-                                                    max="100_000_000"
-                                                    placeholder="000,000"
-                                                    bind:value={pledgedAmount}
-                                                    class={inputClasses}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-[rgb(0,0,0,0.1)]"
-                                        >
-                                            <p class="grow-[1] text-center">
-                                                Freelancer gets: {insertThousandSeparator(
-                                                    freelancerShare
-                                                )} sats
-                                            </p>
-                                            <p class="grow-[1] text-center">
-                                                SatShoot gets: {insertThousandSeparator(
-                                                    satshootShare
-                                                ) +
-                                                    ' + ' +
-                                                    insertThousandSeparator(pledgedAmount ?? 0) +
-                                                    ' = ' +
-                                                    insertThousandSeparator(
-                                                        satshootShare + (pledgedAmount ?? 0)
-                                                    ) +
-                                                    ' sats'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="w-full flex flex-row flex-wrap gap-[5px]">
-                                        <Button grow on:click={payWithLN} disabled={paying}>
-                                            {#if paying}
-                                                <span>
-                                                    <ProgressRadial
-                                                        value={undefined}
-                                                        stroke={60}
-                                                        meter="stroke-tertiary-500"
-                                                        track="stroke-tertiary-500/30"
-                                                        strokeLinecap="round"
-                                                        width="w-8"
-                                                    />
-                                                </span>
-                                            {:else}
-                                                Make payment (Zaps)
-                                            {/if}
-                                        </Button>
-                                        {#if hasSenderEcashSetup}
-                                            <Button
-                                                grow
-                                                on:click={payWithEcash}
-                                                disabled={paying || !canPayWithEcash}
-                                            >
-                                                {#if paying}
-                                                    <ProgressRadial
-                                                        value={undefined}
-                                                        stroke={60}
-                                                        meter="stroke-tertiary-500"
-                                                        track="stroke-tertiary-500/30"
-                                                        strokeLinecap="round"
-                                                        width="w-8"
-                                                    />
-                                                {/if}
-                                                <span
-                                                    use:popup={popupHoverCashuPaymentAvailableStatus}
-                                                >
-                                                    Make payment (Cashu)
-                                                </span>
-                                            </Button>
-                                        {:else}
-                                            <Button grow on:click={setupEcash}>
-                                                {#if paying}
-                                                    <span>
-                                                        <ProgressRadial
-                                                            value={undefined}
-                                                            stroke={60}
-                                                            meter="stroke-tertiary-500"
-                                                            track="stroke-tertiary-500/30"
-                                                            strokeLinecap="round"
-                                                            width="w-8"
-                                                        />
-                                                    </span>
-                                                {/if}
-                                                <span
-                                                    use:popup={popupHoverCashuPaymentAvailableStatus}
-                                                >
-                                                    Setup Cashu Wallet
-                                                </span>
-                                            </Button>
-                                        {/if}
-                                    </div>
-                                    <div data-popup="popupHover">
-                                        <div class={popupClasses}>
-                                            <p>{ecashTooltipText}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- popups Share Job Post end -->
+    <Popup title="Pay Freelancer">
+        {#if ticket && offer}
+            <div class="w-full flex flex-col">
+                <!-- popups Share Job Post start -->
+                <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+                    <div
+                        class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)] p-[10px]"
+                    >
+                        <UserProfile pubkey={offer.pubkey} />
+                        <div
+                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)]"
+                        >
+                            <div class="grow-[1]">
+                                <p class="font-[500]">
+                                    Offer cost:
+                                    <span class="font-[300]">
+                                        {insertThousandSeparator(offer.amount) + ' ' + pricing}
+                                    </span>
+                                </p>
                             </div>
-                        {:else}
-                            <h2 class="h2 font-bold text-center text-error-300-600-token">
-                                Error: Ticket & Offer is missing!
-                            </h2>
-                        {/if}
-                    </Card>
+                            <div class="grow-[1]">
+                                <p class="font-[500]">
+                                    Pledge split:
+                                    <span class="font-[300]"> {offer.pledgeSplit} %</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)]"
+                        >
+                            <div class="grow-[1]">
+                                <p class="font-[500]">
+                                    Freelancer Paid: <span class="font-[300]"
+                                        >{insertThousandSeparator(freelancerPaid)} sats</span
+                                    >
+                                </p>
+                            </div>
+                            <div class="grow-[1]">
+                                <p class="font-[500]">
+                                    SatShoot Paid: <span class="font-[300]"
+                                        >{insertThousandSeparator(satshootPaid)} sats</span
+                                    >
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] px-[10px] py-[10px]"
+                    >
+                        <p class="">Compensation for:</p>
+                        <p class="">{ticket.title}</p>
+                    </div>
+                    <div
+                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] px-[10px] py-[10px]"
+                    >
+                        <div class="w-full flex flex-col gap-[5px]">
+                            <div class="w-full flex flex-col gap-[5px]">
+                                <label class="font-[500]" for="service-payment"
+                                    >Pay for service</label
+                                >
+                                <Input
+                                    id="service-payment"
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    max="100_000_000"
+                                    placeholder="000,000"
+                                    bind:value={amount}
+                                    fullWidth
+                                />
+                            </div>
+                            <div class="w-full flex flex-col gap-[5px]">
+                                <label class="font-[500]" for="plattform-contribution"
+                                    >Contribute to SatShoot</label
+                                >
+                                <Input
+                                    id="plattform-contribution"
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    max="100"
+                                    placeholder="000,000"
+                                    bind:value={pledgedAmount}
+                                    fullWidth
+                                />
+                            </div>
+                        </div>
+                        <div
+                            class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-[rgb(0,0,0,0.1)]"
+                        >
+                            <p class="grow-[1] text-center">
+                                Freelancer gets: {insertThousandSeparator(freelancerShare)} sats
+                            </p>
+                            <p class="grow-[1] text-center">
+                                SatShoot gets: {insertThousandSeparator(satshootShare) +
+                                    ' + ' +
+                                    insertThousandSeparator(pledgedAmount ?? 0) +
+                                    ' = ' +
+                                    insertThousandSeparator(satshootShare + (pledgedAmount ?? 0)) +
+                                    ' sats'}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="w-full flex flex-row flex-wrap gap-[5px]">
+                        <Button grow on:click={payWithLN} disabled={paying}>
+                            {#if paying}
+                                <span>
+                                    <ProgressRadial
+                                        value={undefined}
+                                        stroke={60}
+                                        meter="stroke-tertiary-500"
+                                        track="stroke-tertiary-500/30"
+                                        strokeLinecap="round"
+                                        width="w-8"
+                                    />
+                                </span>
+                            {:else}
+                                Make payment (Zaps)
+                            {/if}
+                        </Button>
+                        <div class="w-full flex flex-row items-center gap-[2px]">
+                            {#if hasSenderEcashSetup}
+                                <Button
+                                    grow
+                                    on:click={payWithEcash}
+                                    disabled={paying || !canPayWithEcash}
+                                >
+                                    {#if paying}
+                                        <ProgressRadial
+                                            value={undefined}
+                                            stroke={60}
+                                            meter="stroke-tertiary-500"
+                                            track="stroke-tertiary-500/30"
+                                            strokeLinecap="round"
+                                            width="w-8"
+                                        />
+                                    {/if}
+                                    <span> Make payment (Cashu) </span>
+                                </Button>
+                            {:else}
+                                <Button grow on:click={setupEcash}>
+                                    {#if paying}
+                                        <span>
+                                            <ProgressRadial
+                                                value={undefined}
+                                                stroke={60}
+                                                meter="stroke-tertiary-500"
+                                                track="stroke-tertiary-500/30"
+                                                strokeLinecap="round"
+                                                width="w-8"
+                                            />
+                                        </span>
+                                    {/if}
+                                    <span> Setup Cashu Wallet </span>
+                                </Button>
+                            {/if}
+                            {#if ecashTooltipText}
+                                <i
+                                    class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                    use:popup={cashuTooltip}
+                                />
+                                <div data-popup="cashuTooltip">
+                                    <Card>
+                                        <p>{ecashTooltipText}</p>
+                                    </Card>
+                                </div>
+                            {/if}
+                        </div>
+                    </div>
                 </div>
+                <!-- popups Share Job Post end -->
             </div>
-        </div>
-    </div>
+        {:else}
+            <h2 class="h2 font-bold text-center text-error-300-600-token">
+                Error: Ticket & Offer is missing!
+            </h2>
+        {/if}
+    </Popup>
 {/if}

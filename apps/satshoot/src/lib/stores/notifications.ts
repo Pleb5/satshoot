@@ -1,71 +1,73 @@
 // import ndk from "./ndk";
-import { persisted } from "svelte-persisted-store";
+import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
-import { derived, writable } from "svelte/store";
+import { derived, writable } from 'svelte/store';
 import { getSetSerializer } from '$lib//utils/misc';
-import { get } from "svelte/store";
-import { type NDKEvent, NDKKind } from "@nostr-dev-kit/ndk";
-import { TicketEvent } from "$lib/events/TicketEvent";
-import { OfferEvent } from "$lib/events/OfferEvent";
-import { ReviewEvent } from "$lib/events/ReviewEvent";
-import currentUser from "./user";
+import { get } from 'svelte/store';
+import { type NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
+import { TicketEvent } from '$lib/events/TicketEvent';
+import { OfferEvent } from '$lib/events/OfferEvent';
+import { ReviewEvent } from '$lib/events/ReviewEvent';
+import currentUser from './user';
 
-import { getActiveServiceWorker, orderEventsChronologically } from "$lib/utils/helpers";
-import { goto } from "$app/navigation";
+import { getActiveServiceWorker, orderEventsChronologically } from '$lib/utils/helpers';
+import { goto } from '$app/navigation';
 
-export const notificationsEnabled: Writable<boolean> = persisted('notificationsEnabled', false) ;
+export const notificationsEnabled: Writable<boolean> = persisted('notificationsEnabled', true);
 
-export const seenIDs: Writable<Set<string>> = persisted(
-    'seenIDs',
-    new Set(),
-    {serializer: getSetSerializer()}
-);
+export const seenIDs: Writable<Set<string>> = persisted('seenIDs', new Set(), {
+    serializer: getSetSerializer(),
+});
 
 export const notifications = writable<NDKEvent[]>([]);
 
-export const ticketNotifications = derived(
-    [notifications],
-    ([$notifications]) => {
+export const readNotifications = writable<Set<string>>(new Set());
 
-        const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === NDKKind.FreelanceTicket;
-        });
-
-        const tickets: TicketEvent[] = [];
-        filteredEvents.forEach((t: NDKEvent)=>{tickets.push(TicketEvent.from(t))});
-
-        orderEventsChronologically(tickets);
-
-        return tickets;
+export const unReadNotifications = derived(
+    [notifications, readNotifications],
+    ([$notifications, $readNotifications]) => {
+        return $notifications.filter((notification) => !$readNotifications.has(notification.id));
     }
 );
 
-export const offerNotifications = derived(
-    [notifications],
-    ([$notifications]) => {
+export const jobNotifications = derived([notifications], ([$notifications]) => {
+    const filteredEvents = $notifications.filter((notification: NDKEvent) => {
+        return notification.kind === NDKKind.FreelanceTicket;
+    });
 
-        const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === NDKKind.FreelanceOffer;
-        });
+    const tickets: TicketEvent[] = [];
+    filteredEvents.forEach((t: NDKEvent) => {
+        tickets.push(TicketEvent.from(t));
+    });
 
-        const offers: OfferEvent[] = [];
-        filteredEvents.forEach((o: NDKEvent)=>{offers.push(OfferEvent.from(o))});
+    orderEventsChronologically(tickets);
 
-        orderEventsChronologically(offers);
+    return tickets;
+});
 
-        return offers;
-    }
-);
+export const offerNotifications = derived([notifications], ([$notifications]) => {
+    const filteredEvents = $notifications.filter((notification: NDKEvent) => {
+        return notification.kind === NDKKind.FreelanceOffer;
+    });
+
+    const offers: OfferEvent[] = [];
+    filteredEvents.forEach((o: NDKEvent) => {
+        offers.push(OfferEvent.from(o));
+    });
+
+    orderEventsChronologically(offers);
+
+    return offers;
+});
 
 export const messageNotifications = derived(
     [notifications, currentUser],
     ([$notifications, $currentUser]) => {
-
         let messages: NDKEvent[] = [];
         if ($currentUser) {
             messages = $notifications.filter((notification: NDKEvent) => {
-                const dmKind = (notification.kind === NDKKind.EncryptedDirectMessage);
-                const notSentByUser = (notification.pubkey !== $currentUser.pubkey);
+                const dmKind = notification.kind === NDKKind.EncryptedDirectMessage;
+                const notSentByUser = notification.pubkey !== $currentUser.pubkey;
                 return dmKind && notSentByUser;
             });
         }
@@ -76,37 +78,31 @@ export const messageNotifications = derived(
     }
 );
 
-export const reviewNotifications = derived(
-    [notifications],
-    ([$notifications]) => {
+export const reviewNotifications = derived([notifications], ([$notifications]) => {
+    const filteredEvents = $notifications.filter((notification: NDKEvent) => {
+        return notification.kind === NDKKind.Review;
+    });
 
-        const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === NDKKind.Review;
-        });
+    const reviews: ReviewEvent[] = [];
+    filteredEvents.forEach((r: NDKEvent) => {
+        reviews.push(ReviewEvent.from(r));
+    });
 
-        const reviews: ReviewEvent[] = [];
-        filteredEvents.forEach((r: NDKEvent)=>{reviews.push(ReviewEvent.from(r))});
+    orderEventsChronologically(reviews);
 
-        orderEventsChronologically(reviews);
+    return reviews;
+});
 
-        return reviews;
-    }
-);
+export const receivedZapsNotifications = derived([notifications], ([$notifications]) => {
+    // Check for zap kinds and if zap has an 'a' tag referring to an Offer
+    const filteredEvents = $notifications.filter((notification: NDKEvent) => {
+        return notification.kind === NDKKind.Zap || notification.kind === NDKKind.Nutzap;
+    });
 
-export const receivedZapsNotifications = derived(
-    [notifications],
-    ([$notifications]) => {
-        // Check for zap kinds and if zap has an 'a' tag referring to an Offer
-        const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-            return notification.kind === NDKKind.Zap
-                    || notification.kind === NDKKind.Nutzap;
-        });
+    orderEventsChronologically(filteredEvents);
 
-        orderEventsChronologically(filteredEvents);
-
-        return filteredEvents;
-    }
-);
+    return filteredEvents;
+});
 
 export const followNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
@@ -121,9 +117,7 @@ export const followNotifications = derived([notifications], ([$notifications]) =
 export async function sendNotification(event: NDKEvent) {
     const $seenIDs = get(seenIDs);
     const $notifications = get(notifications);
-    if(get(notificationsEnabled) 
-        && !$seenIDs.has(event.id)
-    ) {
+    if (get(notificationsEnabled) && !$seenIDs.has(event.id)) {
         $seenIDs.add(event.id);
         seenIDs.set($seenIDs);
         $notifications.push(event);
@@ -132,7 +126,7 @@ export async function sendNotification(event: NDKEvent) {
         let title = '';
         let body = '';
         let tag = '';
-        const icon = '/satshoot.svg'
+        const icon = '/satshoot.svg';
 
         // The Ticket of our _Offer_ was updated
         if (event.kind === NDKKind.FreelanceTicket) {
@@ -140,7 +134,7 @@ export async function sendNotification(event: NDKEvent) {
             body = '🔔 Check your Notifications!';
             tag = NDKKind.FreelanceTicket.toString();
             // The Offer on our _Ticket_ was updated
-        } else if(event.kind === NDKKind.FreelanceOffer) {
+        } else if (event.kind === NDKKind.FreelanceOffer) {
             title = 'Update!';
             body = '🔔 Check your Notifications!';
             tag = NDKKind.FreelanceOffer.toString();
@@ -162,8 +156,8 @@ export async function sendNotification(event: NDKEvent) {
             tag = NDKKind.KindScopedFollow.toString();
         }
 
-        const activeSW = await getActiveServiceWorker()
-        if(activeSW) {
+        const activeSW = await getActiveServiceWorker();
+        if (activeSW) {
             activeSW.postMessage({
                 notification: 'true',
                 title: title,
@@ -183,7 +177,6 @@ export async function sendNotification(event: NDKEvent) {
                 goto('/notifications/');
             };
         }
-
     }
 }
 

@@ -3,10 +3,8 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import Author from './Author.svelte';
-    import EarningDetails from './EarningDetails.svelte';
     import JobActions from './JobActions.svelte';
     import JobDetails from './JobDetails.svelte';
-    import Ratings from './Ratings.svelte';
 
     export let ticket: TicketEvent;
     let bech32ID = '';
@@ -17,8 +15,6 @@
 
     enum Tabs {
         JobDescription,
-        Earning,
-        Reputation,
         Author,
         Actions,
     }
@@ -27,14 +23,6 @@
         {
             icon: 'bxs-card',
             name: Tabs.JobDescription,
-        },
-        {
-            icon: 'bxs-bolt',
-            name: Tabs.Earning,
-        },
-        {
-            icon: 'bxs-star',
-            name: Tabs.Reputation,
         },
         {
             icon: 'bxs-user',
@@ -55,12 +43,8 @@
     <div class="jobCardDetails w-full flex flex-col gap-[0px] p-[10px] min-h-[165px]">
         {#if selectedTab === Tabs.JobDescription}
             <JobDetails title={ticket.title} description={ticket.description} {bech32ID} />
-        {:else if selectedTab === Tabs.Earning}
-            <EarningDetails user={ticket.pubkey} />
-        {:else if selectedTab === Tabs.Reputation}
-            <Ratings pubkey={ticket.pubkey} />
         {:else if selectedTab === Tabs.Author}
-            <Author pubkey={ticket.pubkey} />
+            <Author user={ticket.pubkey} />
         {:else if selectedTab === Tabs.Actions}
             <JobActions job={ticket} />
         {/if}

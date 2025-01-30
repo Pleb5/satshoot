@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import Button from './UI/Buttons/Button.svelte';
+    import Input from './UI/Inputs/input.svelte';
 
     const dispatch = createEventDispatcher();
 
@@ -19,32 +20,21 @@
     const inputWrapperClasses =
         'w-full flex flex-row bg-[rgb(0,0,0,0.05)] border-[1px] border-[rgb(0,0,0,0.1)] border-t-[0px] overflow-hidden';
 
-    const inputClasses =
-        'grow-[1] border-[0px] border-[rgb(0,0,0,0.15)] rounded-[0px] outline outline-[0px] py-[5px] px-[10px] bg-[rgb(0,0,0,0)]';
-
     const btnWrapperClasses =
         'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-[rgb(0,0,0,0.15)] border-t-[0px]';
 </script>
 
 <!-- Passphrase Input -->
 <div class={inputWrapperClasses} class:rounded-t-[6px]={roundedTop}>
-    {#if showPassphrase}
-        <input
-            bind:value={passphrase}
-            type="text"
-            placeholder="Enter Passphrase..."
-            class={inputClasses}
-            class:input-error={!passphraseValid}
-        />
-    {:else}
-        <input
-            bind:value={passphrase}
-            type="password"
-            placeholder="Enter Passphrase..."
-            class={inputClasses}
-            class:input-error={!passphraseValid}
-        />
-    {/if}
+    <Input
+        type={showPassphrase ? 'text' : 'password'}
+        placeholder="Enter Passphrase..."
+        classes={!passphraseValid ? 'input-error' : ''}
+        bind:value={passphrase}
+        grow
+        noBorder
+        notRounded
+    />
     <Button
         variant="outlined"
         classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
@@ -56,23 +46,15 @@
 
 <!-- Confirm Passphrase Input -->
 <div class={inputWrapperClasses}>
-    {#if showConfirmPassphrase}
-        <input
-            bind:value={confirmPassphrase}
-            type="text"
-            placeholder="Confirm Passphrase..."
-            class={inputClasses}
-            class:input-error={!confirmPassphraseValid}
-        />
-    {:else}
-        <input
-            bind:value={confirmPassphrase}
-            type="password"
-            placeholder="Confirm Passphrase..."
-            class={inputClasses}
-            class:input-error={!confirmPassphraseValid}
-        />
-    {/if}
+    <Input
+        type={showConfirmPassphrase ? 'text' : 'password'}
+        placeholder="Confirm Passphrase..."
+        classes={!confirmPassphraseValid ? 'input-error' : ''}
+        bind:value={confirmPassphrase}
+        grow
+        noBorder
+        notRounded
+    />
     <Button
         variant="outlined"
         classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
@@ -87,7 +69,6 @@
         variant="outlined"
         classes="font-[500] rounded-[0]"
         grow
-        disabled={!passphraseValid || !confirmPassphraseValid}
         on:click={() => dispatch('submit')}
     >
         <i class="bx bx-log-in-circle" />
