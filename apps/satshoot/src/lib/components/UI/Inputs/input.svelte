@@ -24,13 +24,13 @@
     export let onKeyPress: (event: KeyboardEvent) => void = () => {}; // Default is a no-op
 
     const baseClasses =
-        'transition ease duration-[0.3s] px-[10px] py-[5px] bg-[rgb(0,0,0,0.05)] focus:bg-[rgb(0,0,0,0.08)]' +
-        'outline outline-[0px] outline-[rgb(59,115,246,0.0)] focus:outline focus:outline-[0px] focus:outline-[rgb(59,115,246,0.0)]';
+        'transition ease duration-[0.3s] px-[10px] py-[5px] bg-black-50 focus:bg-black-100' +
+        'outline outline-[0px] outline-blue-0 focus:outline focus:outline-[0px] focus:outline-blue-0';
 
     // Conditional classes for border and rounded corners
     $: borderClasses = noBorder
         ? 'border-[0px]'
-        : 'border-[2px] border-[rgb(0,0,0,0.1)] focus:border-[rgb(59,115,246)]';
+        : 'border-[2px] border-black-100 focus:border-blue-500';
     $: roundedClasses = notRounded ? 'rounded-[0px]' : 'rounded-[6px]';
     $: growClasses = grow ? 'grow-[1]' : '';
     $: fullWidthClasses = fullWidth ? 'w-full' : '';

@@ -28,7 +28,7 @@
 </script>
 
 <Card
-    classes={$readNotifications.has(followEvent.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    classes={$readNotifications.has(followEvent.id) ? 'bg-black-50' : ''}
     actAsButton
     on:click={() => {
         readNotifications.update((notifications) => notifications.add(followEvent.id));

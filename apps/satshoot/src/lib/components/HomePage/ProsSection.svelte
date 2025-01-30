@@ -33,11 +33,11 @@
         'transition-all ease duration-[0.4s] flex-grow w-0 bg-white p-[25px_15px] ' +
         'shadow-[0_0_4px_rgba(0,0,0,0.1)] gap-[25px] flex flex-col justify-center ' +
         'items-center rounded-[10px] relative overflow-hidden min-h-[175px] min-w-[200px] ' +
-        'hover:bg-[#3b73f6] hover:text-white hover:scale-[1.02] hover:shadow-[0_0_4px_rgba(0,0,0,0)] group';
+        'hover:bg-blue-500 hover:text-white hover:scale-[1.02] hover:shadow-[0_0_4px_rgba(0,0,0,0)] group';
 
     const itemHoverClasses =
         'ease duration-[0.4s] transition-[padding_1s_0s,height_1s_0s] ' +
-        'absolute top-0 bottom-0 right-0 left-0 bg-[rgba(0,0,0,0.5)] ' +
+        'absolute top-0 bottom-0 right-0 left-0 bg-black-500 ' +
         'backdrop-blur-[10px] text-white flex flex-col justify-center items-center text-center ' +
         'h-0 overflow-hidden group-hover:ease group-hover:duration-[0.4s] group-hover:delay-500 ' +
         'group-hover:transition-[padding_1s_0.4s,height_1s_0.4s] group-hover:p-[25px] group-hover:h-full';
@@ -50,7 +50,7 @@
                 {#each items as item}
                     <div class={itemWrapperClasses}>
                         <i
-                            class={`bx ${item.icon} transition-all ease duration-[0.4s] text-[48px] text-center text-[#3b73f6] group-hover:text-white`}
+                            class={`bx ${item.icon} transition-all ease duration-[0.4s] text-[48px] text-center text-blue-500 group-hover:text-white`}
                         />
                         <p class="text-center font-bold">{item.title}</p>
                         <p class="text-center mt-[-10px]">

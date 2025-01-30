@@ -18,10 +18,10 @@
     $: confirmPassphraseValid = passphraseValid && passphrase === confirmPassphrase;
 
     const inputWrapperClasses =
-        'w-full flex flex-row bg-[rgb(0,0,0,0.05)] border-[1px] border-[rgb(0,0,0,0.1)] border-t-[0px] overflow-hidden';
+        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 border-t-[0px] overflow-hidden';
 
     const btnWrapperClasses =
-        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-[rgb(0,0,0,0.15)] border-t-[0px]';
+        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 border-t-[0px]';
 </script>
 
 <!-- Passphrase Input -->
@@ -37,7 +37,7 @@
     />
     <Button
         variant="outlined"
-        classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
+        classes="border-l-[1px] border-l-black-100 rounded-[0px]"
         on:click={() => (showPassphrase = !showPassphrase)}
     >
         <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
@@ -57,7 +57,7 @@
     />
     <Button
         variant="outlined"
-        classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
+        classes="border-l-[1px] border-l-black-100 rounded-[0px]"
         on:click={() => (showConfirmPassphrase = !showConfirmPassphrase)}
     >
         <i class={showConfirmPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />

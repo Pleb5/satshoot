@@ -55,9 +55,9 @@
                 <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px]">
                     <p class="w-full">Do really you wish to log out?</p>
                     <div
-                        class="w-full py-[5px] px-[10px] rounded-[6px] bg-[rgb(255,99,71,0.75)] border-[2px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
+                        class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 flex flex-col justify-center items-center"
                     >
-                        <p class="font-[600] text-[16px] text-[rgb(255,255,255,0.75)]">
+                        <p class="font-[600] text-[16px] text-white-700">
                             If you are logged in with a Local Keypair, it will be deleted from local
                             storage!
                         </p>

@@ -83,8 +83,8 @@
     });
 
     const textAreaClasses =
-        'transition ease duration-[0.3s] w-full min-h-[100px] bg-[rgb(0,0,0,0.05)] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px] ' +
-        'px-[10px] py-[5px] outline-[0px] outline-[rgb(59,115,246,0.0)] focus:border-[rgb(59,115,246)] focus:bg-[rgb(0,0,0,0.08)]';
+        'transition ease duration-[0.3s] w-full min-h-[100px] bg-black-50 border-[2px] border-black-100 rounded-[6px] ' +
+        'px-[10px] py-[5px] outline-[0px] outline-blue-0 focus:border-blue-500 focus:bg-black-100';
 </script>
 
 {#if $modalStore[0]}

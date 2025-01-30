@@ -140,9 +140,9 @@
                                 </div>
                             {:else}
                                 <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
+                                    class="w-full min-h-[100px] rounded-[8px] bg-black-100 border-[4px] border-black-100 flex flex-col justify-center items-center"
                                 >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
+                                    <p class="font-[600] text-[18px] text-black-300">
                                         No New Follower!
                                     </p>
                                 </div>
@@ -156,9 +156,9 @@
                                 </div>
                             {:else}
                                 <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
+                                    class="w-full min-h-[100px] rounded-[8px] bg-black-100 border-[4px] border-black-100 flex flex-col justify-center items-center"
                                 >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
+                                    <p class="font-[600] text-[18px] text-black-300">
                                         No New Zaps!
                                     </p>
                                 </div>
@@ -172,9 +172,9 @@
                                 </div>
                             {:else}
                                 <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
+                                    class="w-full min-h-[100px] rounded-[8px] bg-black-100 border-[4px] border-black-100 flex flex-col justify-center items-center"
                                 >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
+                                    <p class="font-[600] text-[18px] text-black-300">
                                         No New Jobs!
                                     </p>
                                 </div>
@@ -188,9 +188,9 @@
                                 </div>
                             {:else}
                                 <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
+                                    class="w-full min-h-[100px] rounded-[8px] bg-black-100 border-[4px] border-black-100 flex flex-col justify-center items-center"
                                 >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
+                                    <p class="font-[600] text-[18px] text-black-300">
                                         No New Offers!
                                     </p>
                                 </div>
@@ -204,9 +204,9 @@
                                 </div>
                             {:else}
                                 <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
+                                    class="w-full min-h-[100px] rounded-[8px] bg-black-100 border-[4px] border-black-100 flex flex-col justify-center items-center"
                                 >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
+                                    <p class="font-[600] text-[18px] text-black-300">
                                         No New Messages!
                                     </p>
                                 </div>
@@ -220,9 +220,9 @@
                                 </div>
                             {:else}
                                 <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
+                                    class="w-full min-h-[100px] rounded-[8px] bg-black-100 border-[4px] border-black-100 flex flex-col justify-center items-center"
                                 >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
+                                    <p class="font-[600] text-[18px] text-black-300">
                                         No New Review!
                                     </p>
                                 </div>

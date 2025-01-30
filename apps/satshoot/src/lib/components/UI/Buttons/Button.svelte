@@ -24,14 +24,13 @@
         'cursor-pointer disabled:cursor-not-allowed';
 
     const containedClasses =
-        'bg-[rgb(59,115,246)] text-white hover:bg-blue-500 hover:text-white whitespace-nowrap';
+        'bg-blue-500 text-white hover:bg-blue-500 hover:text-white whitespace-nowrap';
 
     const outlinedClasses =
-        'text-[rgb(0,0,0,0.5)] border-[1px] border-[rgb(0,0,0,0.1)] ' +
-        'hover:text-white hover:bg-[rgb(59,115,246)] hover:border-[rgb(0,0,0,0.0)]';
+        'text-black-500 border-[1px] border-black-100 ' +
+        'hover:text-white hover:bg-blue-500 hover:border-transparent';
 
-    const textClasses =
-        'border-[0px] text-[rgb(0,0,0,0.5)] hover:text-white hover:bg-[rgb(59,115,246)]';
+    const textClasses = 'border-[0px] text-black-500 hover:text-white hover:bg-blue-500';
 
     $: variantClasses =
         variant === 'contained'
@@ -44,7 +43,7 @@
 
     $: fullWidthClasses = fullWidth ? 'w-full' : ''; // Add w-full if fullWidth is true
 
-    $: combinedClasses = `${baseClasses} ${variantClasses} ${growClasses} ${fullWidthClasses} ${isToggle && selected ? 'bg-[rgb(59,115,246)] text-white' : ''}`;
+    $: combinedClasses = `${baseClasses} ${variantClasses} ${growClasses} ${fullWidthClasses} ${isToggle && selected ? 'bg-blue-500 text-white' : ''}`;
 
     $: finalClasses = mergeClasses(combinedClasses, classes);
 </script>

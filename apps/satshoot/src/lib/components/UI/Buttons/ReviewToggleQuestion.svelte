@@ -20,7 +20,7 @@
         <p class="w-full">{question}</p>
     </div>
     <div
-        class="w-full flex flex-row flex-wrap gap-[10px] rounded-[6px] bg-[rgb(0,0,0,0.1)] p-[5px] border-[1px] border-[rgb(0,0,0,0.1)]"
+        class="w-full flex flex-row flex-wrap gap-[10px] rounded-[6px] bg-black-100 p-[5px] border-[1px] border-black-100"
     >
         <Button variant="text" selected={value} grow isToggle on:click={handleOptionTrueClick}>
             {trueLabel}

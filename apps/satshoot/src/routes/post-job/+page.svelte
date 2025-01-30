@@ -302,15 +302,15 @@
                                     fullWidth
                                 />
                                 <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.1)] bg-[rgb(0,0,0,0.05)] flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
+                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
                                 >
                                     {#if transformedTag.length > 0 && !filteredTagOptions.some(({ value }) => transformedTag === value)}
                                         <div
-                                            class="flex flex-row rounded-[4px] bg-[rgb(0,0,0,0.2)] text-[rgb(0,0,0,0.5)] gap-[10px] overflow-hidden"
+                                            class="flex flex-row rounded-[4px] bg-black-200 text-black-500 gap-[10px] overflow-hidden"
                                         >
                                             <span class="pl-[10px] py-[5px]"> {tagInput} </span>
                                             <button
-                                                class="transition ease duration-[0.3s] px-[10px] border-l-[1px] border-[rgb(0,0,0,0.1)] hover:bg-[rgb(255,255,255,0.15)]"
+                                                class="transition ease duration-[0.3s] px-[10px] border-l-[1px] border-black-100 hover:bg-white-200"
                                                 on:click={() => addTag(tagInput)}
                                                 disabled={tagList.length >= maxTags}
                                             >
@@ -321,11 +321,11 @@
 
                                     {#each filteredTagOptions as { label, value }}
                                         <div
-                                            class="flex flex-row rounded-[4px] bg-[rgb(0,0,0,0.2)] text-[rgb(0,0,0,0.5)] gap-[10px] overflow-hidden"
+                                            class="flex flex-row rounded-[4px] bg-black-200 text-black-500 gap-[10px] overflow-hidden"
                                         >
                                             <span class="pl-[10px] py-[5px]"> {label} </span>
                                             <button
-                                                class="transition ease duration-[0.3s] px-[10px] border-l-[1px] border-[rgb(0,0,0,0.1)] hover:bg-[rgb(255,255,255,0.15)]"
+                                                class="transition ease duration-[0.3s] px-[10px] border-l-[1px] border-black-100 hover:bg-white-200"
                                                 on:click={() => addTag(value)}
                                                 disabled={tagList.length >= maxTags}
                                             >
@@ -342,15 +342,15 @@
                                 class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white"
                             >
                                 <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.1)] bg-[rgb(0,0,0,0.05)] flex-wrap p-[10px]"
+                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px]"
                                 >
                                     {#each tagList as tag}
                                         <div
-                                            class="flex flex-row rounded-[4px] bg-[rgb(59,115,246)] text-white gap-[10px] overflow-hidden"
+                                            class="flex flex-row rounded-[4px] bg-blue-500 text-white gap-[10px] overflow-hidden"
                                         >
                                             <span class="pl-[10px] py-[5px]">{tag}</span>
                                             <button
-                                                class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-[rgb(255,255,255,0.1)] hover:bg-blue-500"
+                                                class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-white-100 hover:bg-blue-500"
                                                 on:click={() => removeTag(tag)}
                                             >
                                                 <i class="bx bx-x"></i>
@@ -362,7 +362,7 @@
                         </div>
                     </div>
                     <div
-                        class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-[rgb(0,0,0,0.1)] pt-[10px] mt-[10px]"
+                        class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-black-100 pt-[10px] mt-[10px]"
                     >
                         <Button on:click={postJob} disabled={!allowPostJob || posting}>
                             {#if !allowPostJob}

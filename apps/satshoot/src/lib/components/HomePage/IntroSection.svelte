@@ -7,9 +7,7 @@
     }
 </script>
 
-<div
-    class="w-full flex flex-col justify-center items-center py-[50px] bg-[rgba(0,0,0,0.1)] mb-[50px]"
->
+<div class="w-full flex flex-col justify-center items-center py-[50px] bg-black-100 mb-[50px]">
     <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
         <div class="w-full flex flex-col gap-[50px]">
             <div class="w-full flex flex-col gap-[0px] items-center">
@@ -35,7 +33,7 @@
                         class="w-full flex flex-row justify-center items-center gap-[50px] mb-[-150px] z-[1] max-[992px]:flex-col max-[992px]:gap-[25px] max-[992px]:mb-[-125px]"
                     >
                         <div
-                            class="w-full bg-[rgba(255,255,255,0.75)] rounded-[6px] shadow-[0_0_8px_0_rgba(0,0,0,0.1)] backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
+                            class="w-full bg-white-700 rounded-[6px] shadow-[0_0_8px_0_rgba(0,0,0,0.1)] backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
                         >
                             <h2 class="text-center font-[800] text-[32px]">Find Skilled People</h2>
                             <p class="text-center">
@@ -51,7 +49,7 @@
                             </Button>
                         </div>
                         <div
-                            class="w-full bg-[rgba(255,255,255,0.75)] rounded-[6px] shadow-[0_0_8px_0_rgba(0,0,0,0.1)] backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
+                            class="w-full bg-white-700 rounded-[6px] shadow-[0_0_8px_0_rgba(0,0,0,0.1)] backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
                         >
                             <h2 class="text-center font-[800] text-[32px]">Look For Work</h2>
                             <p class="text-center">
@@ -68,7 +66,7 @@
                         </div>
                     </div>
                     <div
-                        class="absolute inset-0 rounded-[8px] bg-[rgba(0,0,0,0.25)] transition-all ease duration-[0.4s] z-0"
+                        class="absolute inset-0 rounded-[8px] bg-black-300 transition-all ease duration-[0.4s] z-0"
                     ></div>
                 </div>
             </div>

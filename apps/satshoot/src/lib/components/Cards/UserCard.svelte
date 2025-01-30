@@ -263,13 +263,13 @@
             isExternal: false,
             title: 'Verified',
             iconClass: 'bx bxs-badge-check',
-            hoverColor: 'rgb(225,255,225,0.75)',
+            hoverColor: 'green-500',
         },
         {
             text: lud16,
             title: 'Zap',
             iconClass: 'bx bxs-bolt',
-            hoverColor: 'rgb(250,250,0,0.75)',
+            hoverColor: 'yellow-500',
         },
         {
             text: website,
@@ -277,22 +277,22 @@
             isExternal: true,
             title: 'Website',
             iconClass: 'bx bx-globe',
-            hoverColor: 'rgb(225,255,225,0.75)',
+            hoverColor: 'green-500',
         },
     ];
 
     const profileLinkClasses =
         'transition transition-ease duration-[0.3s] transform w-[55px] h-[55px] min-w-[55px] min-h-[55px] ' +
-        'overflow-hidden relative rounded-[100%] shadow-[0_0_4px_4px_rgba(0,0,0,0.5)] bg-[rgb(0,0,0,0.1)] ' +
-        'outline outline-[4px] outline-[rgb(255,255,255)] hover:outline-[rgb(59,115,246)] hover:scale-[1.02] ' +
+        'overflow-hidden relative rounded-[100%] shadow-[0_0_4px_4px_rgba(0,0,0,0.5)] bg-black-100 ' +
+        'outline outline-[4px] outline-white hover:outline-blue-500 hover:scale-[1.02] ' +
         'transform w-[75px] h-[75px] min-w-[75px] min-h-[75px] shadow-[0_0_8px_4px_rgba(0,0,0,0.5)] hover:scale-[1.03]';
 
     const iconBtnClasses =
         'flex flex-row justify-center items-center px-[10px] py-[5px] text-[18px] ' +
-        'text-[rgb(0,0,0,0.25)] bg-[rgb(0,0,0,0.1)] group-hover:bg-[rgb(225,255,225,0.1)]';
+        'text-black-300 bg-black-100 group-hover:bg-green-100';
 
     const addressCopyBtnClasses =
-        'bg-white rounded-[0px] border-l-[1px] border-l-[rgb(0,0,0,0.1)] hover:border-l-[rgb(0,0,0,0.0)] ';
+        'bg-white rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
 </script>
 
 <div class="w-full max-w-[350px] flex flex-col gap-[25px] max-[768px]:max-w-full">
@@ -301,7 +301,7 @@
         <Card classes="gap-[15px]">
             <div class="w-full flex flex-col">
                 <div
-                    class="w-full overflow-hidden relative rounded-[6px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)] bg-[rgb(0,0,0,0.1)] pt-[25%]"
+                    class="w-full overflow-hidden relative rounded-[6px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)] bg-black-100 pt-[25%]"
                 >
                     <img
                         class="w-full h-full absolute inset-0 object-cover"
@@ -328,12 +328,12 @@
 
                 {#each userInfoItems as { text, href, isExternal, title, hoverColor, iconClass }}
                     <div
-                        class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)]"
+                        class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100"
                     >
                         <div
-                            class="transition ease duration-[0.3s] w-full flex flex-row bg-[white] hover:bg-[rgb(59,115,246)] hover:text-white group"
+                            class="transition ease duration-[0.3s] w-full flex flex-row bg-[white] hover:bg-blue-500 hover:text-white group"
                         >
-                            <div class="w-full flex flex-row bg-[rgb(0,0,0,0.05)]">
+                            <div class="w-full flex flex-row bg-black-50">
                                 {#if href}
                                     <a
                                         {href}
@@ -371,12 +371,12 @@
                 {/each}
             </div>
             {#if userProfile?.about}
-                <div class="w-full rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]">
+                <div class="w-full rounded-[6px] border-[1px] border-black-200">
                     <ExpandableText text={userProfile.about} expandText="View Full About" />
                 </div>
             {/if}
             <div
-                class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden bg-[rgb(0,0,0,0.1)] flex-wrap p-[4px]"
+                class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden bg-black-100 flex-wrap p-[4px]"
             >
                 {#if showMessageButton}
                     <Button
@@ -402,7 +402,7 @@
             </div>
             <div class="w-full flex flex-col gap-[5px]">
                 <div
-                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
                 >
                     <Input value={user.npub} placeholder="npub..." fullWidth disabled noBorder />
                     <Button variant="outlined" classes={addressCopyBtnClasses}>
@@ -413,7 +413,7 @@
                     </Button>
                 </div>
                 <div
-                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
                 >
                     <Input
                         value={nip19.nprofileEncode({ pubkey: user.pubkey })}
