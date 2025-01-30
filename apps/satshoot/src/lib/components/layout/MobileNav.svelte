@@ -32,7 +32,7 @@
     {#if mobileNavOpen}
         <div class="w-[100%] h-screen bg-white flex flex-col">
             <div
-                class="w-[100%] border-t-[1px] border-t-[rgb(0,0,0,0.1)] px-[10px] py-[10px] flex flex-col gap-[10px]"
+                class="w-[100%] border-t-[1px] border-t-black-100 px-[10px] py-[10px] flex flex-col gap-[10px]"
             >
                 {#if !$loggedIn}
                     <Button
@@ -54,7 +54,7 @@
                 {/if}
             </div>
             <div
-                class="w-[100%] border-t-[1px] border-t-[rgb(0,0,0,0.1)] px-[10px] py-[10px] flex flex-col gap-[10px] overflow-auto"
+                class="w-[100%] border-t-[1px] border-t-black-100 px-[10px] py-[10px] flex flex-col gap-[10px] overflow-auto"
             >
                 <NavLinks on:click={toggleMobileNav} />
             </div>

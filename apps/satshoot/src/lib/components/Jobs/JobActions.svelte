@@ -27,7 +27,7 @@
     <div class="w-full flex flex-row flex-wrap gap-[10px]">
         <div class="w-full flex flex-row flex-wrap gap-[10px]">
             <Button
-                classes="bg-[rgba(0,0,0,0.1)] text-[rgba(0,0,0,0.5)] scale-[1] w-auto flex-grow justify-start"
+                classes="bg-black-100 text-black-500 scale-[1] w-auto flex-grow justify-start"
                 on:click={handleShare}
             >
                 <i class="bx bxs-share" />

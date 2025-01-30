@@ -75,7 +75,7 @@
 </script>
 
 <Card
-    classes={$readNotifications.has(review.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    classes={$readNotifications.has(review.id) ? 'bg-black-50' : ''}
     actAsButton
     on:click={() => {
         readNotifications.update((notifications) => notifications.add(review.id));

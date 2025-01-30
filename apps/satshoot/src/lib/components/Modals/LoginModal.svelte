@@ -507,16 +507,13 @@
     }
 
     const labelClasses =
-        'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-[rgb(0,0,0,0.15)] border-b-[0px] text-[14px]';
+        'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-black-200 border-b-[0px] text-[14px]';
 
     const inputWrapperClasses =
-        'w-full flex flex-row bg-[rgb(0,0,0,0.05)] border-[1px] border-[rgb(0,0,0,0.1)] rounded-tr-[6px] overflow-hidden';
-
-    const inputClasses =
-        'grow-[1] border-[0px] border-[rgb(0,0,0,0.15)] rounded-[0px] outline outline-[0px] py-[5px] px-[10px] bg-[rgb(0,0,0,0)]';
+        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 rounded-tr-[6px] overflow-hidden';
 
     const btnWrapperClasses =
-        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-[rgb(0,0,0,0.15)] border-t-[0px]';
+        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 border-t-[0px]';
 </script>
 
 {#if $modalStore[0]}
@@ -528,9 +525,9 @@
                         {statusMessage}
                     </h5>
                 {/if}
-                <div class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px]">
+                <div class="w-full flex flex-col bg-black-50 rounded-[6px]">
                     <div
-                        class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] border-b-[0px] rounded-t-[6px]"
+                        class="w-full px-[10px] py-[5px] border-[2px] border-black-100 border-b-[0px] rounded-t-[6px]"
                     >
                         <p>
                             SatShoot is built on Nostr, which has its own unique way of account
@@ -588,7 +585,7 @@
                     <div class="w-full flex flex-row items-center gap-[5px]">
                         <p class={labelClasses}>Bunker</p>
                         <i
-                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
+                            class="bx bx-question-mark bg-blue-500 text-white p-[3px] rounded-[50%]"
                             use:popup={bunkerTooltip}
                         />
                         <div data-popup="bunkerTooltip">
@@ -612,7 +609,7 @@
                         />
                         <Button
                             variant="outlined"
-                            classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
+                            classes="border-l-[1px] border-l-black-100 rounded-[0px]"
                             on:click={connectBunker}
                         >
                             <i class="bx bx-log-in-circle" />
@@ -634,7 +631,7 @@
                     <div class="w-full flex flex-row items-center gap-[5px]">
                         <p class={labelClasses}>Extension</p>
                         <i
-                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
+                            class="bx bx-question-mark bg-blue-500 text-white p-[3px] rounded-[50%]"
                             use:popup={extensionTooltip}
                         />
                         <div data-popup="extensionTooltip">
@@ -686,11 +683,11 @@
                 <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
                     {#if displayLocalKeyLogin}
                         <div
-                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[rgb(0,0,0,0.15)] border-b-[0px] flex flex-col gap-[10px]"
+                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-black-200 border-b-[0px] flex flex-col gap-[10px]"
                         >
-                            <div class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px]">
+                            <div class="w-full flex flex-col bg-black-50 rounded-[6px]">
                                 <p
-                                    class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] rounded-t-[6px]"
+                                    class="w-full px-[10px] py-[5px] border-[2px] border-black-100 rounded-t-[6px]"
                                 >
                                     Local keys are stored in an easily-accessible place in the
                                     browser called Local storage. This makes local keys the most
@@ -742,13 +739,11 @@
                 <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
                     {#if displayGeneratedAccount && generatedSeedWords}
                         <div
-                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[rgb(255,91,91,0.5)] border-b-[0px] flex flex-col"
+                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[red-500] border-b-[0px] flex flex-col"
                         >
-                            <div
-                                class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px] mb-[10px]"
-                            >
+                            <div class="w-full flex flex-col bg-black-50 rounded-[6px] mb-[10px]">
                                 <p
-                                    class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px]"
+                                    class="w-full px-[10px] py-[5px] border-[2px] border-black-100 rounded-[6px]"
                                 >
                                     Backup your account. Put these words in a safe place to be able
                                     to access your account later.

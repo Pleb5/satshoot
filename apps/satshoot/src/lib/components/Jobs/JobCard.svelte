@@ -50,7 +50,7 @@
         {/if}
     </div>
     <div
-        class="w-full flex flex-col gap-[0px] p-[8px] border-t-[1px_solid_rgba(0,0,0,0.1)] bg-[rgba(0,0,0,0.05)]"
+        class="w-full flex flex-col gap-[0px] p-[8px] border-t-[1px_solid_rgba(0,0,0,0.1)] bg-black-50"
     >
         <div class="jobCardButtons w-full flex flex-row gap-[5px] p-[0px] h-full overflow-hidden">
             {#each tabs as tab}

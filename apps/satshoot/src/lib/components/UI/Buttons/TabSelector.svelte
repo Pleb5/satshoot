@@ -13,7 +13,7 @@
     };
 
     const tabSelectorClasses =
-        'w-full flex flex-row flex-wrap p-[5px] gap-[10px] rounded-[6px] bg-[rgb(255,255,255,1)] border-[2px] border-[rgb(0,0,0,0.1)]';
+        'w-full flex flex-row flex-wrap p-[5px] gap-[10px] rounded-[6px] bg-white border-[2px] border-black-100';
 </script>
 
 <div class={tabSelectorClasses}>

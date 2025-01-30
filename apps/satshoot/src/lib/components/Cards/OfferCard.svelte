@@ -248,10 +248,10 @@
     {#if !skipReputation}
         <ReputationCard user={offer.pubkey} type={ReviewType.Freelancer} />
     {/if}
-    <div class="w-full border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] bg-[rgb(0,0,0,0.05)]">
+    <div class="w-full border-[1px] border-black-100 rounded-[4px] bg-black-50">
         <ExpandableText text={offer.description} maxCharacters={200} renderAsMarkdown />
         <div
-            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)]"
+            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-black-100"
         >
             <div class="grow-[1]">
                 <p class="font-[500]">
@@ -270,7 +270,7 @@
         </div>
     </div>
     <div
-        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)] pl-[5px] pr-[5px] pt-[10px]"
+        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 pl-[5px] pr-[5px] pt-[10px]"
     >
         {#if offer.created_at}
             <p class="font-[500] grow-[1] flex flex-row flex-wrap">
@@ -289,7 +289,7 @@
         </p>
     </div>
     <div
-        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)] pl-[5px] pr-[5px] pt-[10px] justify-end"
+        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
     >
         {#if myJob && job && job.status === TicketStatus.New}
             <Button on:click={takeOffer}>Take offer</Button>

@@ -257,23 +257,23 @@
     const profileImageWrapperClasses =
         'transition ease-in-out duration-[0.3s] min-w-[40px] min-h-[40px] w-[40px] h-[40px] ' +
         'rounded-full border border-[3px] border-white shadow-[0_0_4px_2px_rgba(0,0,0,0.35)] ' +
-        'flex flex-col justify-center items-center relative overflow-hidden bg-[rgba(255,255,255,0.2)] ' +
-        'backdrop-blur-[10px] text-[12px] leading-[1] hover:border-[3px] hover:border-[rgb(59,130,246)] ' +
+        'flex flex-col justify-center items-center relative overflow-hidden bg-white-200 ' +
+        'backdrop-blur-[10px] text-[12px] leading-[1] hover:border-[3px] hover:border-blue-600 ' +
         'hover:scale-[1.1] hover:shadow-[0_0_4px_2px_rgba(0,0,0,0.1)]';
 
     const ratingConsensusWrapperClasses =
         'w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] ' +
-        'bg-[rgb(0,0,0,0.05)] border-[1px] border-[rgb(0,0,0,0.1)]';
+        'bg-black-50 border-[1px] border-black-100';
 
     const paymentWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] flex flex-row flex-grow gap-[5px] p-[5px_10px] rounded-[6px] ' +
-        'bg-[rgba(0,0,0,0.1)] text-[rgba(0,0,0,0.5)] items-center outline outline-[2px] outline-[rgba(0,0,0,0.15)] ' +
-        'text-[14px] hover:outline-[#ffb800]';
+        'bg-black-100 text-black-500 items-center outline outline-[2px] outline-black-200 ' +
+        'text-[14px] hover:outline-yellow-600';
 </script>
 
 <div class="flex-grow-1 flex flex-col gap-[10px] p-[0px]">
     <div class="w-full flex flex-row gap-[5px]">
-        <div class="flex flex-row p-[0_8px_0_0] m-[0_5px_0_0] border-r border-[rgba(0,0,0,0.1)]">
+        <div class="flex flex-row p-[0_8px_0_0] m-[0_5px_0_0] border-r border-black-100">
             <a
                 class="transition ease-in-out duration-[0.3s] flex flex-col justify-center items-center"
                 href={profileLink}
@@ -294,9 +294,7 @@
                     shortenTextWithEllipsesInMiddle(npub, 15)}
             </a>
             <div class={ratingConsensusWrapperClasses}>
-                <i
-                    class="bx bxs-star border-r-[1px] border-r-[rgb(0,0,0,0.1)] text-[rgb(0,0,0,0.5)] pr-[5px]"
-                />
+                <i class="bx bxs-star border-r-[1px] border-r-black-100 text-black-500 pr-[5px]" />
                 <p class="font-[700] grow-[1]">{ratingConsensus}</p>
             </div>
         </div>

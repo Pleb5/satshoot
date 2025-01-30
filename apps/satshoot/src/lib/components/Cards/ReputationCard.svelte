@@ -299,15 +299,15 @@
 
     const reputationBlockWrapperClasses =
         'transition ease duration-[0.3s] flex flex-col cursor-pointer w-full gap-[5px] hover:text-white ' +
-        'p-[10px] rounded-[4px] hover:bg-[rgb(59,115,246)] hover:shadow-[0_0_8px_rgb(0,0,0,0.25)] group';
+        'p-[10px] rounded-[4px] hover:bg-blue-500 hover:shadow-[0_0_8px_rgb(0,0,0,0.25)] group';
 
     const satsWrapperClasses =
         'transition ease duration-[0.3s] w-full flex flex-row flex-wrap gap-[10px] justify-between ' +
-        'items-center rounded-[4px] px-[10px] py-[5px] hover:bg-[rgb(59,115,246)] group';
+        'items-center rounded-[4px] px-[10px] py-[5px] hover:bg-blue-500 group';
 
     const boltIconWrapperClasses =
         'flex flex-row gap-[5px] items-center flex-wrap grow-[1] group-hover:border-r-[1px] ' +
-        'group-hover:border-r-[rgb(255,255,255,0.15)] group-hover:text-white';
+        'group-hover:border-r-white-200 group-hover:text-white';
 </script>
 
 {#if !forUserCard}
@@ -375,15 +375,15 @@
             <div class="w-full flex flex-col gap-[10px]">
                 <p class="w-full font-[600] pl-[5px]">User's Overall Reputation</p>
                 <div
-                    class="w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] bg-[rgb(0,0,0,0.1)] border-[1px] border-[rgb(0,0,0,0.1)]"
+                    class="w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] bg-black-100 border-[1px] border-black-100"
                 >
                     <i
-                        class="bx bxs-star border-r-[1px] border-r-[rgb(0,0,0,0.1)] text-[rgb(0,0,0,0.5)] pr-[5px]"
+                        class="bx bxs-star border-r-[1px] border-r-black-100 text-black-500 pr-[5px]"
                     />
                     <p class="font-[700] grow-[1]">{ratingConsensus}</p>
                 </div>
                 <div
-                    class="w-full flex flex-col gap-[10px] border-[1px] border-[rgb(0,0,0,0.1)] p-[10px] rounded-[4px] max-[768px]:flex-col"
+                    class="w-full flex flex-col gap-[10px] border-[1px] border-black-100 p-[10px] rounded-[4px] max-[768px]:flex-col"
                 >
                     <button
                         class={reputationBlockWrapperClasses}
@@ -391,10 +391,10 @@
                     >
                         <p class="w-full text-start font-[600] pl-[5px]">As a freelancer</p>
                         <div
-                            class="w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] bg-[rgb(0,0,0,0.1)] border-[1px] border-[rgb(0,0,0,0.1)]"
+                            class="w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] bg-black-100 border-[1px] border-black-100"
                         >
                             <i
-                                class="bx bxs-star transition ease duration-[0.3s] border-r-[1px] border-r-[rgb(0,0,0,0.1)] text-[rgb(0,0,0,0.5)] pr-[5px] group-hover:text-white"
+                                class="bx bxs-star transition ease duration-[0.3s] border-r-[1px] border-r-black-100 text-black-500 pr-[5px] group-hover:text-white"
                             />
                             <p class="font-[700] grow-[1]">{asFreelancerRatingConsensus}</p>
                         </div>
@@ -405,10 +405,10 @@
                     >
                         <p class="w-full text-start font-[600] pl-[5px]">As a client</p>
                         <div
-                            class="w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] bg-[rgb(0,0,0,0.1)] border-[1px] border-[rgb(0,0,0,0.1)]"
+                            class="w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] bg-black-100 border-[1px] border-black-100"
                         >
                             <i
-                                class="bx bxs-star transition ease duration-[0.3s] border-r-[1px] border-r-[rgb(0,0,0,0.1)] text-[rgb(0,0,0,0.5)] pr-[5px] group-hover:text-white"
+                                class="bx bxs-star transition ease duration-[0.3s] border-r-[1px] border-r-black-100 text-black-500 pr-[5px] group-hover:text-white"
                             />
                             <p class="font-[700] grow-[1]">{asClientRatingConsensus}</p>
                         </div>
@@ -416,7 +416,7 @@
                 </div>
             </div>
             <div
-                class="w-full flex flex-col gap-[5px] rounded-[5px] p-[10px] border-[1px] border-[rgb(0,0,0,0.15)]"
+                class="w-full flex flex-col gap-[5px] rounded-[5px] p-[10px] border-[1px] border-black-200"
             >
                 <div
                     title="The total amount of money this user has received for completing jobs"
@@ -424,7 +424,7 @@
                 >
                     <p class="group {boltIconWrapperClasses}">
                         <i
-                            class="bx bxsatsWrapperClassess-bolt text-[rgb(0,0,0,0.5)] group-hover:text-yellow-200"
+                            class="bx bxsatsWrapperClassess-bolt text-black-500 group-hover:text-yellow-200"
                         />
                         Total earnings
                     </p>
@@ -437,7 +437,7 @@
                     class={satsWrapperClasses}
                 >
                     <p class={boltIconWrapperClasses}>
-                        <i class="bx bxs-bolt text-[rgb(0,0,0,0.5)] group-hover:text-yellow-200" />
+                        <i class="bx bxs-bolt text-black-500 group-hover:text-yellow-200" />
                         Total payments
                     </p>
                     <p class="group-hover:text-white">
@@ -449,7 +449,7 @@
                     class={satsWrapperClasses}
                 >
                     <p class={boltIconWrapperClasses}>
-                        <i class="bx bxs-bolt text-[rgb(0,0,0,0.5)] group-hover:text-yellow-200" />
+                        <i class="bx bxs-bolt text-black-500 group-hover:text-yellow-200" />
                         Total pledges
                     </p>
                     <p class="group-hover:text-white">

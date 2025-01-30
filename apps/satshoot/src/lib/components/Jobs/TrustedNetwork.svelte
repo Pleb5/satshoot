@@ -49,8 +49,8 @@
     const profileImageWrapperClasses =
         'transition ease-in-out duration-[0.3s] min-w-[40px] min-h-[40px] w-[40px] h-[40px] ' +
         'rounded-full border-[3px] border-white shadow-[0_0_4px_2px_rgba(0,0,0,0.35)] ' +
-        'flex flex-col justify-center items-center relative overflow-hidden bg-[rgba(255,255,255,0.2)] ' +
-        'backdrop-blur-[10px] text-[12px] leading-[1] hover:border-[3px] hover:border-[rgb(59,130,246)] ' +
+        'flex flex-col justify-center items-center relative overflow-hidden bg-white-200 ' +
+        'backdrop-blur-[10px] text-[12px] leading-[1] hover:border-[3px] hover:border-blue-600 ' +
         'hover:scale-[1.1] hover:shadow-[0_0_4px_2px_rgba(0,0,0,0.1)]';
 </script>
 
@@ -61,9 +61,7 @@
                 <p class="text-[14px] font-[600]">Trusted Network (Followed by):</p>
             </div>
             <div class="w-full flex flex-row gap-[5px]">
-                <div
-                    class="flex flex-row p-[0_8px_0_0] m-[0_5px_0_0] border-r border-[rgba(0,0,0,0.1)]"
-                >
+                <div class="flex flex-row p-[0_8px_0_0] m-[0_5px_0_0] border-r border-black-100">
                     <a
                         class="transition ease-in-out duration-[0.3s] flex flex-col justify-center items-center"
                         href={'/' + SatShootPubkey + '/'}
@@ -87,7 +85,7 @@
 
                     {#if followedBySatshootNetwork.size > 5}
                         <div
-                            class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center text-[rgba(0,0,0,0.5)] font-[800] no-underline leading-[1] ml-[-15px] hover:ml-0 hover:mr-[15px] hover:p-[0_10px]"
+                            class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center text-black-500 font-[800] no-underline leading-[1] ml-[-15px] hover:ml-0 hover:mr-[15px] hover:p-[0_10px]"
                         >
                             <div class={profileImageWrapperClasses}>
                                 <p>{followedBySatshootNetwork.size - 5}</p>
@@ -99,7 +97,7 @@
             {#if $loggedIn && $currentUser}
                 <div class="w-full flex flex-row gap-[5px]">
                     <div
-                        class="flex flex-row p-[0_8px_0_0] m-[0_5px_0_0] border-r border-[rgba(0,0,0,0.1)]"
+                        class="flex flex-row p-[0_8px_0_0] m-[0_5px_0_0] border-r border-black-100"
                     >
                         <a
                             class="transition ease-in-out duration-[0.3s] flex flex-col justify-center items-center"
@@ -124,7 +122,7 @@
 
                         {#if followedByUserNetwork.size > 5}
                             <div
-                                class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center text-[rgba(0,0,0,0.5)] font-[800] no-underline leading-[1] ml-[-15px] hover:ml-0 hover:mr-[15px] hover:p-[0_10px]"
+                                class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center text-black-500 font-[800] no-underline leading-[1] ml-[-15px] hover:ml-0 hover:mr-[15px] hover:p-[0_10px]"
                             >
                                 <div class={profileImageWrapperClasses}>
                                     <p>{followedByUserNetwork.size - 5}</p>

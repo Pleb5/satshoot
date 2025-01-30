@@ -85,7 +85,7 @@
                 <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]">
                     <p class="w-full font-[600]">Do you really want to take this offer?</p>
                     <p
-                        class="w-full font-[600] text-center py-[5px] px-[10px] rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)] text-[rgb(255,99,71,1)]"
+                        class="w-full font-[600] text-center py-[5px] px-[10px] rounded-[4px] border-[1px] border-black-100 text-orange-600"
                     >
                         You agree to pay the fee listed on the Offer!
                     </p>
