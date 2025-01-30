@@ -30,6 +30,7 @@
     import { TicketEvent } from '$lib/events/TicketEvent';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import { abbreviateNumber, insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
+    import ProfileImage from '../UI/Display/ProfileImage.svelte';
 
     export let user: Hexpubkey;
 
@@ -254,13 +255,6 @@
         }
     });
 
-    const profileImageWrapperClasses =
-        'transition ease-in-out duration-[0.3s] min-w-[40px] min-h-[40px] w-[40px] h-[40px] ' +
-        'rounded-full border border-[3px] border-white shadow-[0_0_4px_2px_rgba(0,0,0,0.35)] ' +
-        'flex flex-col justify-center items-center relative overflow-hidden bg-white-200 ' +
-        'backdrop-blur-[10px] text-[12px] leading-[1] hover:border-[3px] hover:border-blue-600 ' +
-        'hover:scale-[1.1]';
-
     const ratingConsensusWrapperClasses =
         'w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] ' +
         'bg-black-50 border-[1px] border-black-100';
@@ -278,13 +272,7 @@
                 class="transition ease-in-out duration-[0.3s] flex flex-col justify-center items-center"
                 href={profileLink}
             >
-                <div class={profileImageWrapperClasses}>
-                    <img
-                        class="w-full h-full absolute top-0 bottom-0 right-0 left-0 object-cover"
-                        src={avatarImage}
-                        alt="user profile"
-                    />
-                </div>
+                <ProfileImage src={avatarImage} />
             </a>
         </div>
         <div class="w-full flex flex-col gap-[5px]">

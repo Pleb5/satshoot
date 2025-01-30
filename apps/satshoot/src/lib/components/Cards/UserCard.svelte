@@ -31,6 +31,7 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
+    import ProfileImage from '../UI/Display/ProfileImage.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -281,12 +282,6 @@
         },
     ];
 
-    const profileLinkClasses =
-        'transition transition-ease duration-[0.3s] transform w-[55px] h-[55px] min-w-[55px] min-h-[55px] ' +
-        'overflow-hidden relative rounded-[100%] bg-black-100 ' +
-        'outline outline-[4px] outline-white hover:outline-blue-500 hover:scale-[1.02] ' +
-        'transform w-[75px] h-[75px] min-w-[75px] min-h-[75px] shadow-strong hover:scale-[1.03]';
-
     const iconBtnClasses =
         'flex flex-row justify-center items-center px-[10px] py-[5px] text-[18px] ' +
         'text-black-300 bg-black-100 group-hover:bg-green-100';
@@ -310,12 +305,8 @@
                     />
                 </div>
                 <div class="w-full mt-[-35px] flex flex-col justify-center items-center">
-                    <a href={profileHref} class={profileLinkClasses}>
-                        <img
-                            class="w-full h-full absolute inset-0 object-cover"
-                            src={userProfile?.image || avatarImage}
-                            alt="profile"
-                        />
+                    <a href={profileHref}>
+                        <ProfileImage src={userProfile?.image || avatarImage} size="md" />
                     </a>
                 </div>
             </div>
