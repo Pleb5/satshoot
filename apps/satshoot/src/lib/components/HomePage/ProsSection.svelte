@@ -31,9 +31,9 @@
 
     const itemWrapperClasses =
         'transition-all ease duration-[0.4s] flex-grow w-0 bg-white p-[25px_15px] ' +
-        'shadow-[0_0_4px_rgba(0,0,0,0.1)] gap-[25px] flex flex-col justify-center ' +
+        'shadow-subtle gap-[25px] flex flex-col justify-center ' +
         'items-center rounded-[10px] relative overflow-hidden min-h-[175px] min-w-[200px] ' +
-        'hover:bg-blue-500 hover:text-white hover:scale-[1.02] hover:shadow-[0_0_4px_rgba(0,0,0,0)] group';
+        'hover:bg-blue-500 hover:text-white hover:scale-[1.02] group';
 
     const itemHoverClasses =
         'ease duration-[0.4s] transition-[padding_1s_0s,height_1s_0s] ' +

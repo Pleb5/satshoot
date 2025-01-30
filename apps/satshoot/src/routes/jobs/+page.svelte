@@ -137,7 +137,7 @@
 
     const paginationBtnClasses =
         'font-[18px] py-[10px] px-[20px] bg-white text-black-500' +
-        'max-[576px]:grow-[1] shadow-[0_0_4px_0_rgba(0,0,0,0.1)]';
+        'max-[576px]:grow-[1] shadow-subtle';
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">

@@ -37,8 +37,9 @@
 
     const profileLinkClasses =
         'transition transition-ease duration-[0.3s] transform w-[55px] h-[55px] min-w-[55px] min-h-[55px] ' +
-        'overflow-hidden relative rounded-[100%] shadow-[0_0_4px_4px_rgba(0,0,0,0.5)] bg-black-100 ' +
-        'outline outline-[4px] outline-white hover:outline-bs hover:scale-[1.02]';
+        'overflow-hidden relative rounded-[100%] bg-black-100 ' +
+        'outline outline-[4px] outline-white hover:outline-blue-500 hover:scale-[1.02] ' +
+        'transform w-[75px] h-[75px] min-w-[75px] min-h-[75px] shadow-strong hover:scale-[1.03]';
 </script>
 
 <div class="w-full flex flex-row gap-[20px] p-[5px]">

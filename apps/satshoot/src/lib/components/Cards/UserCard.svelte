@@ -283,9 +283,9 @@
 
     const profileLinkClasses =
         'transition transition-ease duration-[0.3s] transform w-[55px] h-[55px] min-w-[55px] min-h-[55px] ' +
-        'overflow-hidden relative rounded-[100%] shadow-[0_0_4px_4px_rgba(0,0,0,0.5)] bg-black-100 ' +
+        'overflow-hidden relative rounded-[100%] bg-black-100 ' +
         'outline outline-[4px] outline-white hover:outline-blue-500 hover:scale-[1.02] ' +
-        'transform w-[75px] h-[75px] min-w-[75px] min-h-[75px] shadow-[0_0_8px_4px_rgba(0,0,0,0.5)] hover:scale-[1.03]';
+        'transform w-[75px] h-[75px] min-w-[75px] min-h-[75px] shadow-strong hover:scale-[1.03]';
 
     const iconBtnClasses =
         'flex flex-row justify-center items-center px-[10px] py-[5px] text-[18px] ' +
@@ -301,7 +301,7 @@
         <Card classes="gap-[15px]">
             <div class="w-full flex flex-col">
                 <div
-                    class="w-full overflow-hidden relative rounded-[6px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)] bg-black-100 pt-[25%]"
+                    class="w-full overflow-hidden relative rounded-[6px] shadow-subtle bg-black-100 pt-[25%]"
                 >
                     <img
                         class="w-full h-full absolute inset-0 object-cover"

@@ -72,7 +72,7 @@
 
     const collapseBoxClass =
         'transition-all ease-in-out duration-[0.0s] ' +
-        'bg-gray-600 rounded-[10px] shadow-[0_0_8px_rgba(0,0,0,0.25)] ' +
+        'bg-gray-600 rounded-[10px] shadow-soft ' +
         'flex flex-row border-white';
 
     const itemClasses =
@@ -82,7 +82,7 @@
         'justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
 
     const collapseTriggerBtnClasses =
-        'bg-white text-black-300 shadow-[0_0_4px_0_rgba(0,0,0,0.25)] ' +
+        'bg-white text-black-300 shadow-subtle ' +
         'hover:bg-white hover:text-black-700 py-[15px] px-[5px] ';
 </script>
 
@@ -95,7 +95,7 @@
         {#if filterList.length > 0}
             <div
                 id="btnBotNavCollapseBoxSearch"
-                class="p-[4px] bg-white rounded-[4px] shadow-[0_0_4px_rgba(0,0,0,0.15)] flex flex-row"
+                class="p-[4px] bg-white rounded-[4px] shadow-subtle flex flex-row"
             >
                 <p class="w-full text-[14px] font-[500] text-center text-black-500">
                     There's currently an active search on this page

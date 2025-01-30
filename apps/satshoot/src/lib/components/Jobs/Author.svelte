@@ -259,7 +259,7 @@
         'rounded-full border border-[3px] border-white shadow-[0_0_4px_2px_rgba(0,0,0,0.35)] ' +
         'flex flex-col justify-center items-center relative overflow-hidden bg-white-200 ' +
         'backdrop-blur-[10px] text-[12px] leading-[1] hover:border-[3px] hover:border-blue-600 ' +
-        'hover:scale-[1.1] hover:shadow-[0_0_4px_2px_rgba(0,0,0,0.1)]';
+        'hover:scale-[1.1]';
 
     const ratingConsensusWrapperClasses =
         'w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] ' +

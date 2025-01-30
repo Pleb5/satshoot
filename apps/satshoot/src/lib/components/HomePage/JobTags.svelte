@@ -15,8 +15,8 @@
     const tagLinkClasses =
         'transition-all ease duration-[0.3s] w-full relative p-[15px] rounded-[10px] bg-white ' +
         'border-[3px] border-white flex flex-col justify-center items-center gap-[25px] ' +
-        'shadow-[0_0_4px_0_rgba(0,0,0,0.1)] text-black-500 font-[700] text-[18px] ' +
-        'text-center hover:scale-[1.01] hover:shadow-[0_0_4px_0_rgba(0,0,0,0.2)] hover:border-[3px] ' +
+        'shadow-subtle text-black-500 font-[700] text-[18px] ' +
+        'text-center hover:scale-[1.01] hover:shadow-deep hover:border-[3px] ' +
         'hover:border-blue-500 hover:no-underline';
 
     const viewMoreBtnClasses =
