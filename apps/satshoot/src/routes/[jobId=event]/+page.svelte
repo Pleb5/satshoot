@@ -1,9 +1,9 @@
 <script lang="ts">
     import { page } from '$app/stores';
     import JobCard from '$lib/components/Cards/JobCard.svelte';
-    import NewOfferCard from '$lib/components/Cards/NewOfferCard.svelte';
-    import NewUserCard from '$lib/components/Cards/NewUserCard.svelte';
-    import NewCreateOfferModal from '$lib/components/Modals/NewCreateOfferModal.svelte';
+    import OfferCard from '$lib/components/Cards/OfferCard.svelte';
+    import UserCard from '$lib/components/Cards/UserCard.svelte';
+    import CreateOfferModal from '$lib/components/Modals/CreateOfferModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
@@ -201,7 +201,7 @@
         }
         const offerPosted: boolean = await new Promise<boolean>((resolve) => {
             const modalComponent: ModalComponent = {
-                ref: NewCreateOfferModal,
+                ref: CreateOfferModal,
                 props: {
                     ticket: jobPost,
                     offerToEdit: offer,
@@ -251,7 +251,7 @@
                                     {/if}
 
                                     {#if offerToEdit}
-                                        <NewOfferCard offer={offerToEdit} />
+                                        <OfferCard offer={offerToEdit} />
                                     {/if}
 
                                     {#if allowCreateOffer}
@@ -301,7 +301,7 @@
                                                 <div class="w-full flex flex-col gap-[15px]">
                                                     <!-- Offer post start-->
                                                     {#each pendingOffers as offer}
-                                                        <NewOfferCard {offer} />
+                                                        <OfferCard {offer} />
                                                     {/each}
                                                 </div>
                                             </div>
@@ -309,7 +309,7 @@
                                             {#if winningOffer}
                                                 <div class="w-full flex flex-col">
                                                     <div class="w-full flex flex-col gap-[15px]">
-                                                        <NewOfferCard offer={winningOffer} />
+                                                        <OfferCard offer={winningOffer} />
                                                     </div>
                                                 </div>
                                             {/if}
@@ -318,7 +318,7 @@
                                                 <div class="w-full flex flex-col gap-[15px]">
                                                     <!-- Offer post start-->
                                                     {#each lostOffers as offer}
-                                                        <NewOfferCard {offer} />
+                                                        <OfferCard {offer} />
                                                     {/each}
                                                 </div>
                                             </div>
@@ -335,7 +335,7 @@
                                 <div class="w-full hidden max-[768px]:flex">
                                     <p class="font-[600] text-[24px]">Posted By</p>
                                 </div>
-                                <NewUserCard {user} job={jobPost} />
+                                <UserCard {user} job={jobPost} />
                             </div>
                         {/if}
                     </div>

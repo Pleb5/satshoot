@@ -2,6 +2,7 @@
     import { validateSingleSeedWord } from '$lib/utils/login';
     import { clipboard } from '@skeletonlabs/skeleton';
     import Button from './UI/Buttons/Button.svelte';
+    import Input from './UI/Inputs/input.svelte';
 
     export let words: string[];
     export let inputsDisabled = false;
@@ -18,9 +19,6 @@
 
     const labelClasses =
         'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-[rgb(0,0,0,0.15)] border-b-[0px] text-[14px]';
-
-    const inputClasses =
-        'grow-[1] border-[0px] border-[rgb(0,0,0,0.15)] rounded-[0px] outline outline-[0px] py-[5px] px-[10px] bg-[rgb(0,0,0,0)]';
 
     const btnWrapperClasses =
         'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-[rgb(0,0,0,0.15)] border-t-[0px]';
@@ -41,22 +39,28 @@
             >
                 {index + 1 < 10 ? `0${index + 1}` : index + 1}
             </p>
-            <input
+            <Input
                 type="text"
                 bind:value={words[index]}
                 disabled={inputsDisabled}
                 placeholder="Seed word..."
-                class={inputClasses}
-                class:input-error={!validateSingleSeedWord(words[index])}
+                classes={!validateSingleSeedWord(words[index]) ? 'input-error' : ''}
+                noBorder
+                notRounded
             />
         </div>
     {/each}
 </div>
 {#if showCopyButton}
     <div class={btnWrapperClasses}>
-        <Button variant="outlined" on:click={onCopySeed} classes="rounded-[0]" grow>
+        <Button
+            variant="outlined"
+            on:click={onCopySeed}
+            classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
+            grow
+        >
             <span use:clipboard={words.join(' ')}>
-                {copiedSeed ? 'Copied' : 'Copy'}
+                {copiedSeed ? 'Copied' : 'Dangerously Copy'}
             </span>
         </Button>
     </div>

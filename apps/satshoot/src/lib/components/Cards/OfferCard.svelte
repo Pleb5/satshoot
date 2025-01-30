@@ -1,96 +1,74 @@
 <script lang="ts">
+    import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
+    import { ReviewType } from '$lib/events/ReviewEvent';
+    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk from '$lib/stores/ndk';
+    import { paymentDetail } from '$lib/stores/payment';
     import currentUser from '$lib/stores/user';
+    import { wot } from '$lib/stores/wot';
+    import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import {
         NDKKind,
         NDKNutzap,
-        NDKSubscriptionCacheUsage,
         zapInvoiceFromEvent,
-        type NDKUser,
+        type NDKEvent,
+        type NDKFilter,
     } from '@nostr-dev-kit/ndk';
-
-    import { nip19 } from 'nostr-tools';
-    import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
-
-    import TicketCard from './TicketCard.svelte';
-    import { TicketStatus, TicketEvent } from '$lib/events/TicketEvent';
-
-    import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
-
-    import type { NDKFilter, NDKEvent } from '@nostr-dev-kit/ndk';
-
-    import CreateOfferModal from '../Modals/CreateOfferModal.svelte';
-    import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
-    import { Avatar, getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
-    import { popup } from '@skeletonlabs/skeleton';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
-
-    import { onDestroy, onMount } from 'svelte';
-    import ReputationCard from './ReputationCard.svelte';
-    import { ReviewEvent, ReviewType, type FreelancerRating } from '$lib/events/ReviewEvent';
-    import UserReviewCard from '../Cards/UserReviewCard.svelte';
-    import { clientReviews, freelancerReviews } from '$lib/stores/reviews';
-
-    import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { wot } from '$lib/stores/wot';
-    import TicketIcon from '../Icons/TicketIcon.svelte';
+    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { formatDate, formatDistanceToNow } from 'date-fns';
+    import { onDestroy, onMount } from 'svelte';
+    import PaymentModal from '../Modals/PaymentModal.svelte';
+    import ExpandableText from '../UI/Display/ExpandableText.svelte';
+    import UserProfile from '../UI/Display/UserProfile.svelte';
+    import ReputationCard from './ReputationCard.svelte';
+    import TakeOfferModal from '../Modals/TakeOfferModal.svelte';
+    import Card from '../UI/Card.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
     export let offer: OfferEvent;
-    let avatarImage = `https://robohash.org/${offer.pubkey}`;
-    let name = '';
-    export let countAllOffers = true;
-    export let showDescription = true;
-    export let showReputation = true;
-    export let showPoster = true;
-    export let showDetails = true;
-    let ticket: TicketEvent | undefined = undefined;
-    export let enableChat = false;
-
-    export let maxWidth = 'max-w-[90vw] sm:max-w-[70vw] lg:max-w-[60vw]';
-    export let showTicket = true;
-    export let showTicketReputation = true;
-    export let showTicketReview = true;
-    export let openTicket = false;
-    export let openTicketReputation = false;
-
-    export let showOfferReview = true;
-    export let openReview = false;
-
-    let freelancerReview: FreelancerRating | null = null;
-    let reviewer: NDKUser;
+    export let skipUserProfile = false;
+    export let skipReputation = false;
+    export let viewJob = false;
 
     let freelancerPaid = 0;
     let satshootPaid = 0;
     let freelancerPaymentStore: NDKEventStore<NDKEvent>;
     let satshootPaymentStore: NDKEventStore<NDKEvent>;
 
-    let ticketFilter: NDKFilter<NDKKind.FreelanceTicket> = {
+    let jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
         kinds: [NDKKind.FreelanceTicket],
         '#d': [],
     };
-    let dTagOfTicket: string;
-    let ticketStore: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let npub: string;
-    let timeSincePosted: string;
+    let dTagOfJob: string;
+    let jobStore: NDKEventStore<ExtendedBaseType<TicketEvent>>;
+    let job: TicketEvent | undefined = undefined;
     let pricing: string = '';
 
-    let editOffer: boolean = false;
-
-    // Because Tickets drive the status of Offers, this is calculated always
-    // as soon as the ticket for this offer is fetched
     let winner = false;
     let status = '?';
     let statusColor = 'text-primary-400-500-token';
-    let canReviewClient = true;
 
-    if (offer) {
-        dTagOfTicket = offer.referencedTicketAddress.split(':')[2];
-        ticketFilter['#d'] = [dTagOfTicket];
+    let myJob = false;
+    $: if ($currentUser && job && $currentUser.pubkey === job.pubkey) {
+        myJob = true;
+    } else {
+        myJob = false;
+    }
+
+    let showPaymentButton = false;
+    $: if (myJob && winner) {
+        showPaymentButton = true;
+    } else {
+        showPaymentButton = false;
+    }
+
+    $: if (offer) {
+        dTagOfJob = offer.referencedTicketAddress.split(':')[2];
+        jobFilter['#d'] = [dTagOfJob];
 
         switch (offer.pricing) {
             case Pricing.Absolute:
@@ -99,27 +77,6 @@
             case Pricing.SatsPerMin:
                 pricing = 'sats/min';
                 break;
-        }
-
-        npub = nip19.npubEncode(offer.pubkey);
-
-        if (offer.created_at) {
-            // Created_at is in Unix time seconds
-            let seconds = Math.floor(Date.now() / 1000 - offer.created_at);
-            let minutes = Math.floor(seconds / 60);
-            let hours = Math.floor(minutes / 60);
-            let days = Math.floor(hours / 24);
-            if (days >= 1) {
-                timeSincePosted = days.toString() + ' day(s) ago';
-            } else if (hours >= 1) {
-                timeSincePosted = hours.toString() + ' hour(s) ago';
-            } else if (minutes >= 1) {
-                timeSincePosted = minutes.toString() + ' minute(s) ago';
-            } else if (seconds >= 20) {
-                timeSincePosted = seconds.toString() + ' second(s) ago';
-            } else {
-                timeSincePosted = 'just now';
-            }
         }
 
         freelancerPaymentStore = $ndk.storeSubscribe(
@@ -155,65 +112,16 @@
                 autoStart: true,
             }
         );
-    } else {
-        console.log('offer is null yet!');
     }
 
-    function editMyOffer() {
-        if (ticket && offer) {
-            const modalComponent: ModalComponent = {
-                ref: CreateOfferModal,
-                props: { ticket: ticket, offerToEdit: offer },
-            };
-
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-            };
-            modalStore.trigger(modal);
-        }
-    }
-
-    function reviewClient() {
-        if (offer) {
-            const modalComponent: ModalComponent = {
-                ref: ReviewClientModal,
-                props: { ticketAddress: offer.referencedTicketAddress },
-            };
-
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-            };
-            modalStore.trigger(modal);
-        }
-    }
-
-    function startTicketSub() {
-        if (ticketFilter['#d']!.length > 0) {
-            ticketStore = $ndk.storeSubscribe<TicketEvent>(
-                ticketFilter,
-                {
-                    autoStart: true,
-                    closeOnEose: false,
-                    groupable: true,
-                    groupableDelay: 1000,
-                },
-                TicketEvent
-            );
-        } else {
-            console.log('Cannot start ticket sub! Filter does not contain a ticket d-tag!');
-        }
-    }
-
-    $: if ($ticketStore?.length > 0) {
-        ticket = $ticketStore[0];
-        const winnerId = ticket.acceptedOfferAddress;
+    $: if ($jobStore?.length > 0) {
+        job = $jobStore[0];
+        const winnerId = job.acceptedOfferAddress;
         if (winnerId === offer!.offerAddress) {
             winner = true;
             status = 'Won';
             statusColor = 'text-warning-500';
-        } else if (winnerId || ticket.isClosed()) {
+        } else if (winnerId || job.isClosed()) {
             status = 'Lost';
             statusColor = 'text-error-500';
         } else {
@@ -222,15 +130,6 @@
             status = 'Pending';
             statusColor = 'text-primary-400-500-token';
         }
-        offer = offer;
-    }
-
-    $: if ($clientReviews && ticket) {
-        $clientReviews.forEach((review: ReviewEvent) => {
-            if (review.reviewedEventAddress === ticket!.ticketAddress) {
-                canReviewClient = false;
-            }
-        });
     }
 
     $: if ($freelancerPaymentStore) {
@@ -277,266 +176,135 @@
         });
     }
 
-    // Only allow editing offer if the ticket still accepts offers(no winner yet)
-    $: if (offer && ticket) {
-        if ($currentUser && $currentUser.npub === npub && ticket.status === TicketStatus.New) {
-            editOffer = true;
+    function startJobSub() {
+        if (jobFilter['#d']!.length > 0) {
+            jobStore = $ndk.storeSubscribe<TicketEvent>(
+                jobFilter,
+                {
+                    autoStart: true,
+                    closeOnEose: false,
+                    groupable: true,
+                    groupableDelay: 1000,
+                },
+                TicketEvent
+            );
         } else {
-            editOffer = false;
-        }
-
-        if (winner) {
-            $freelancerReviews.forEach((review: ReviewEvent) => {
-                if (review.reviewedEventAddress === offer!.offerAddress) {
-                    freelancerReview = review.freelancerRatings;
-                    const reviewerPubkey = review.pubkey;
-                    reviewer = $ndk.getUser({ pubkey: reviewerPubkey });
-                }
-            });
+            console.log('Cannot start job sub! Filter does not contain a job d-tag!');
         }
     }
 
     function setChatPartner() {
-        if (ticket!.pubkey === $currentUser!.pubkey) {
-            $offerMakerToSelect = (offer as OfferEvent).pubkey;
-        } else {
-            $selectedPerson = ticket!.pubkey + '$' + ticket!.encode();
-        }
+        $offerMakerToSelect = offer.pubkey;
     }
 
     onMount(async () => {
-        startTicketSub();
-        const user = $ndk.getUser({ pubkey: offer.pubkey });
-
-        const profile = await user.fetchProfile({
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            closeOnEose: true,
-            groupable: true,
-            groupableDelay: 1000,
-        });
-        if (profile) {
-            if (profile.name) name = profile.name;
-            if (profile.image) avatarImage = profile.image;
-        }
+        startJobSub();
     });
 
     onDestroy(() => {
-        if (ticketStore) ticketStore.empty();
+        if (jobStore) jobStore.empty();
         if (freelancerPaymentStore) freelancerPaymentStore.empty();
         if (satshootPaymentStore) satshootPaymentStore.empty();
     });
 
-    // For context menu: Edit ticket, close ticket, share ticket
-    const contextMenu: PopupSettings = {
-        event: 'click',
-        target: `contextMenu_${offer?.id}`,
-        placement: 'bottom',
-    };
+    function takeOffer() {
+        if (job) {
+            const modalComponent: ModalComponent = {
+                ref: TakeOfferModal,
+                props: { job, offer },
+            };
 
-    const pledgeInfoPopup: PopupSettings = {
-        event: 'click',
-        target: `pledgeInfo_${offer?.id}`,
-        placement: 'top',
-    };
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+            };
+            modalStore.trigger(modal);
+        }
+    }
+
+    function handlePay() {
+        $paymentDetail = {
+            ticket: job!,
+            offer,
+        };
+
+        const modalComponent: ModalComponent = {
+            ref: PaymentModal,
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.clear();
+        modalStore.trigger(modal);
+    }
 </script>
 
-<div class="card pt-2 bg-surface-200-700-token flex-grow {maxWidth}">
-    {#if offer}
-        <div class="grid grid-cols-[15%_1fr_15%] justify-center items-center mx-2">
-            {#if $currentUser && enableChat && ticket}
-                <a
-                    on:click={setChatPartner}
-                    href={'/messages/' + ticket.encode()}
-                    class="btn btn-icon btn-sm justify-self-start"
-                >
-                    <i class="fa-solid fa-comment text-2xl"></i>
-                </a>
-            {/if}
-            <h3 class="h4 md:h3 col-start-2 text-center text-tertiary-500">
-                {(editOffer ? 'My ' : '') +
-                    'Offer: ' +
-                    insertThousandSeparator(offer.amount) +
-                    ' ' +
-                    pricing}
-            </h3>
-            {#if $currentUser && offer.pubkey === $currentUser.pubkey}
-                <div class="col-start-3 justify-self-end">
-                    <div class="justify-self-end">
-                        <button
-                            type="button"
-                            class="btn btn-icon w-8 h-8 bg-primary-400-500-token"
-                            use:popup={contextMenu}
-                        >
-                            <i class="fa text-sm fa-ellipsis-v"></i>
-                        </button>
-                        <div data-popup="contextMenu_{offer.id}">
-                            <div class="card p-2 bg-primary-300-600-token shadow-xl z-50">
-                                <ul class="list space-y-4">
-                                    <!-- Edit Offer -->
-                                    {#if editOffer}
-                                        <li>
-                                            <button class="" on:click={editMyOffer}>
-                                                <span><i class="fa-solid fa-pen-to-square" /></span>
-                                                <span class="flex-auto">Edit</span>
-                                            </button>
-                                        </li>
-                                    {/if}
-                                    {#if winner && canReviewClient}
-                                        <li>
-                                            <button class="" on:click={reviewClient}>
-                                                <span
-                                                    ><i
-                                                        class="fa-regular fa-star-half-stroke"
-                                                    /></span
-                                                >
-                                                <span class="flex-auto">Review Client</span>
-                                            </button>
-                                        </li>
-                                    {/if}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {/if}
-        </div>
-        <div class="flex justify-center items-center gap-x-2">
-            <h4 class="h5 md:h4 col-start-2 text-center text-tertiary-500">
-                {'Pledged: ' + offer.pledgeSplit + ' %'}
-            </h4>
-            <i
-                class="text-primary-300-600-token fa-solid fa-circle-question text-xl
-                [&>*]:pointer-events-none"
-                use:popup={pledgeInfoPopup}
-            />
-            <div data-popup="pledgeInfo_{offer.id}">
-                <div class="card w-80 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto">
-                    <p>
-                        Revenue share percentage the Freelancer pledged to SatShoot to support
-                        development.
-                    </p>
-                    <div class="arrow bg-primary-300-600-token" />
-                </div>
-            </div>
-        </div>
-        {#if winner}
-            <div class="flex flex-col gap-2">
-                <h4 class="h5 md:h4 col-start-2 text-center text-success-500">
-                    <div class="flex flex-col items-center gap-y-2">
-                        <div>
-                            <div>
-                                Freelancer Paid: 
-                            </div>
-                            <div>
-                                {
-                                (insertThousandSeparator(freelancerPaid) ?? '?') +
-                                    ' sats'
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </h4>
-                <h4 class="h5 md:h4 col-start-2 text-center text-success-500">
-                    <div class="flex flex-col items-center gap-y-2">
-                        <div>
-                            <div>
-                                Satshoot Paid:
-                            </div>
-                            <div>
-                                {
-                                (insertThousandSeparator(satshootPaid) ?? '?') +
-                                    ' sats'
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </h4>
-            </div>
-        {/if}
-        {#if showDescription}
-            <div class="h5 sm:h4 text-center mt-2">
-                Pitch:
-            </div>
-            <div class="text-center text-base md:text-lg p-2">
-                {offer.description}
-            </div>
-        {/if}
-        <slot name="takeOffer" />
-        <div class="flex flex-col gap-y-1 justify-start px-4 pt-2 pb-4">
-            {#if showPoster}
-                <div class="flex flex-col items-center mb-4">
-                    <div class="flex items-center">
-                        <h4 class="h5 sm:h4">Posted by:</h4>
-                    </div>
-                    <a class="anchor text-lg sm:text-xl" href={'/' + npub}>
-                        <div class="flex justify-center items-center gap-x-2">
-                            <Avatar src={avatarImage} width="w-12" />
-                            {name ? name : npub.slice(0, 10) + '...'}
-                        </div>
-                    </a>
-                </div>
-            {/if}
-            {#if showReputation && $currentUser && offer.pubkey !== $currentUser.pubkey}
-                <ReputationCard type={ReviewType.Freelancer} user={offer.pubkey} />
-            {/if}
-            {#if showDetails}
-                <div class="">
-                    <span class="">Status: </span>
-                    <span class="font-bold {statusColor}">{status}</span>
-                </div>
-                <div class="">{timeSincePosted}</div>
-            {/if}
-            {#if showTicket}
-                <hr class="my-2" />
-                <Accordion>
-                    <AccordionItem bind:open={openTicket}>
-                        <svelte:fragment slot="lead">
-                            <TicketIcon sizeClass={'text-xl'} />
-                        </svelte:fragment>
-                        <svelte:fragment slot="summary">
-                            <div class="flex items-center justify-center">
-                                <h3 class="h4 sm:h3 text-center">Ticket</h3>
-                            </div>
-                        </svelte:fragment>
-                        <svelte:fragment slot="content">
-                            {#if ticket}
-                                <TicketCard
-                                    {ticket}
-                                    titleSize={'md md:text-xl'}
-                                    showChat={false}
-                                    {countAllOffers}
-                                    showReputation={showTicketReputation}
-                                    openReputation={openTicketReputation}
-                                    showReview={showTicketReview}
-                                    showWinner={!winner}
-                                ></TicketCard>
-                            {:else}
-                                <section class="w-full">
-                                    <div class="p-4 space-y-4">
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="grid grid-cols-3 gap-8">
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
-                                        </div>
-                                        <div class="grid grid-cols-4 gap-4">
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
-                                        </div>
-                                    </div>
-                                </section>
-                            {/if}
-                        </svelte:fragment>
-                    </AccordionItem>
-                </Accordion>
-            {/if}
-            {#if showOfferReview && freelancerReview && reviewer}
-                <UserReviewCard rating={freelancerReview} {reviewer} open={openReview} />
-            {/if}
-        </div>
-    {:else}
-        <h2 class="h2 text-center text-error-500">Error: Offer not found!</h2>
+<Card classes="flex-wrap gap-[15px]">
+    {#if !skipUserProfile}
+        <UserProfile pubkey={offer.pubkey} />
     {/if}
-</div>
+    {#if !skipReputation}
+        <ReputationCard user={offer.pubkey} type={ReviewType.Freelancer} />
+    {/if}
+    <div class="w-full border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] bg-[rgb(0,0,0,0.05)]">
+        <ExpandableText text={offer.description} maxCharacters={200} renderAsMarkdown />
+        <div
+            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)]"
+        >
+            <div class="grow-[1]">
+                <p class="font-[500]">
+                    Offer cost:
+                    <span class="font-[300]">
+                        {insertThousandSeparator(offer.amount) + ' ' + pricing}
+                    </span>
+                </p>
+            </div>
+            <div class="grow-[1]">
+                <p class="font-[500]">
+                    Pledge split:
+                    <span class="font-[300]"> {offer.pledgeSplit + ' %'} </span>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div
+        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)] pl-[5px] pr-[5px] pt-[10px]"
+    >
+        {#if offer.created_at}
+            <p class="font-[500] grow-[1] flex flex-row flex-wrap">
+                Offer published on:
+                <span class="font-[300]">
+                    {formatDate(offer.created_at * 1000, 'dd-MMM-yyyy, h:m a') +
+                        ', ' +
+                        formatDistanceToNow(offer.created_at * 1000) +
+                        ' Ago'}
+                </span>
+            </p>
+        {/if}
+        <p class="font-[500] grow-[1] flex flex-row flex-wrap">
+            Offer Status:
+            <span class="ml-[5px] font-[300] {statusColor}"> {status} </span>
+        </p>
+    </div>
+    <div
+        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)] pl-[5px] pr-[5px] pt-[10px] justify-end"
+    >
+        {#if myJob && job && job.status === TicketStatus.New}
+            <Button on:click={takeOffer}>Take offer</Button>
+        {/if}
+
+        {#if showPaymentButton}
+            <Button on:click={handlePay}>Pay</Button>
+        {/if}
+
+        {#if job && myJob}
+            <Button on:click={setChatPartner} href={'/messages/' + job.encode()}>Message</Button>
+        {/if}
+
+        {#if viewJob && job}
+            <Button href={'/' + job.encode() + '/'}>View Offer's Job</Button>
+        {/if}
+    </div>
+</Card>

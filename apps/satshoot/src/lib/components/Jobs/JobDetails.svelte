@@ -1,5 +1,6 @@
 <script lang="ts">
     import { linkifyText } from '$lib/utils/misc';
+    import Markdown from '../Cards/Markdown.svelte';
 
     export let title: string;
     export let description: string;
@@ -14,9 +15,9 @@
     $: {
         if (description) {
             if (description.length > 80) {
-                processedDescription = linkifyText(description.substring(0, 80)) + ' ...';
+                processedDescription = description.substring(0, 80) + ' ...';
             } else {
-                processedDescription = linkifyText(description);
+                processedDescription = description;
             }
         } else {
             processedDescription = 'No description!';
@@ -33,7 +34,7 @@
         </a>
         <div class="w-full">
             <p class="font-normal text-[15px] overflow-hidden line-clamp-3">
-                {@html processedDescription}
+                <Markdown content={processedDescription} />
             </p>
         </div>
     </div>

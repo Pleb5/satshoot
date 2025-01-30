@@ -11,9 +11,9 @@
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import { onMount, tick } from 'svelte';
-    import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
-    import ModalHeader from '../UI/Modal/ModalHeader.svelte';
+    import Input from '../UI/Inputs/input.svelte';
+    import Popup from '../UI/Popup.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -88,63 +88,49 @@
 </script>
 
 {#if $modalStore[0]}
-    <div
-        class="fixed inset-[0] z-[90] bg-[rgb(0,0,0,0.5)] backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
-    >
-        <div
-            class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative"
-        >
-            <div class="w-full flex flex-col justify-start items-center">
-                <div class="w-full max-w-[500px] justify-start items-center">
-                    <Card>
-                        <ModalHeader title="Share" />
-                        <div class="w-full flex flex-col">
-                            <!-- popups Share Job Post start -->
-                            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
-                                <div
-                                    class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]"
-                                >
-                                    <p class="">Share your job post with others</p>
-                                    {#if job.pubkey === $currentUser?.pubkey}
-                                        <textarea
-                                            rows="10"
-                                            placeholder="Describe why you should get this job"
-                                            class={textAreaClasses}
-                                            bind:value={message}
-                                        />
-                                    {/if}
-                                </div>
-                                <div class="w-full flex flex-row gap-[5px]">
-                                    {#if job.pubkey === $currentUser?.pubkey}
-                                        <Button grow on:click={postJob} disabled={posting}>
-                                            {#if posting}
-                                                <span>
-                                                    <ProgressRadial
-                                                        value={undefined}
-                                                        stroke={60}
-                                                        meter="stroke-tertiary-500"
-                                                        track="stroke-tertiary-500/30"
-                                                        strokeLinecap="round"
-                                                        width="w-8"
-                                                    />
-                                                </span>
-                                            {:else}
-                                                <span>Publish & Share on Nostr</span>
-                                            {/if}
-                                        </Button>
-                                    {/if}
-                                    <Button grow on:click={onCopyURL}>
-                                        <span use:clipboard={shareURL}>
-                                            {copied ? 'Copied!' : 'Copy Job URL'}
-                                        </span>
-                                    </Button>
-                                </div>
-                            </div>
-                            <!-- popups Share Job Post end -->
-                        </div>
-                    </Card>
+    <Popup title="Share">
+        <div class="w-full flex flex-col">
+            <!-- popups Share Job Post start -->
+            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+                <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]">
+                    <p class="">Share your job post with others</p>
+                    {#if job.pubkey === $currentUser?.pubkey}
+                        <Input
+                            bind:value={message}
+                            classes="min-h-[100px]"
+                            fullWidth
+                            textarea
+                            rows={10}
+                        />
+                    {/if}
+                </div>
+                <div class="w-full flex flex-row gap-[5px]">
+                    {#if job.pubkey === $currentUser?.pubkey}
+                        <Button grow on:click={postJob} disabled={posting}>
+                            {#if posting}
+                                <span>
+                                    <ProgressRadial
+                                        value={undefined}
+                                        stroke={60}
+                                        meter="stroke-tertiary-500"
+                                        track="stroke-tertiary-500/30"
+                                        strokeLinecap="round"
+                                        width="w-8"
+                                    />
+                                </span>
+                            {:else}
+                                <span>Publish & Share on Nostr</span>
+                            {/if}
+                        </Button>
+                    {/if}
+                    <Button grow on:click={onCopyURL}>
+                        <span use:clipboard={shareURL}>
+                            {copied ? 'Copied!' : 'Copy Job URL'}
+                        </span>
+                    </Button>
                 </div>
             </div>
+            <!-- popups Share Job Post end -->
         </div>
-    </div>
+    </Popup>
 {/if}

@@ -422,7 +422,12 @@ export async function getZapConfiguration(pubkey: string) {
 
     const metadataRelays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    const metadataEvent = await fetchEventFromRelays(metadataFilter, 5000, false, metadataRelays);
+    const metadataEvent = await fetchEventFromRelaysFirst(
+        metadataFilter,
+        5000,
+        false,
+        metadataRelays
+    );
 
     if (!metadataEvent) return null;
 

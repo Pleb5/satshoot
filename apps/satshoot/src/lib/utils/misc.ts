@@ -108,6 +108,22 @@ export function insertThousandSeparator(amount: number) {
     return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
+export function abbreviateNumber(num: number): string {
+    const suffixes = ['', 'K', 'M', 'B', 'T']; // Extendable for larger units
+    let tier = 0;
+
+    // Determine the appropriate tier for abbreviation
+    while (Math.abs(num) >= 1000 && tier < suffixes.length - 1) {
+        num /= 1000;
+        tier++;
+    }
+
+    // Format the number to 1 decimal place if it has a fraction
+    const formattedNum = num % 1 === 0 ? num.toFixed(0) : num.toFixed(1);
+
+    return `${formattedNum}${suffixes[tier]}`;
+}
+
 export function linkifyText(text: string): string {
     // test with https://www.example.com/some/long/url
     // Regular expression to detect URLs
