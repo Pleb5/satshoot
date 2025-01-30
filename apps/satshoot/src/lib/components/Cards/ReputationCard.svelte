@@ -299,7 +299,7 @@
 
     const reputationBlockWrapperClasses =
         'transition ease duration-[0.3s] flex flex-col cursor-pointer w-full gap-[5px] hover:text-white ' +
-        'p-[10px] rounded-[4px] hover:bg-blue-500 hover:shadow-[0_0_8px_rgb(0,0,0,0.25)] group';
+        'p-[10px] rounded-[4px] hover:bg-blue-500 hover:shadow-soft group';
 
     const satsWrapperClasses =
         'transition ease duration-[0.3s] w-full flex flex-row flex-wrap gap-[10px] justify-between ' +

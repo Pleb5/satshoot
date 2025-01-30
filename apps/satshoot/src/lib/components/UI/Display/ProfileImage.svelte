@@ -3,7 +3,7 @@
 
     const wrapperClasses =
         'transition-all ease-in-out duration-[0.3s] min-w-[50px] min-h-[50px] w-[50px] h-[50px] ' +
-        'rounded-full border-[4px] border-white shadow-[0_0_4px_2px_rgba(0,0,0,0.15)] ' +
+        'rounded-full border-[4px] border-white shadow-[0_0_4px_2px_rgba(0,0,0,0.35)] ' +
         'flex flex-col justify-center items-center relative overflow-hidden bg-white-200';
 </script>
 

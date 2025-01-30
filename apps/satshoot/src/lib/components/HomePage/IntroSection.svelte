@@ -12,7 +12,7 @@
         <div class="w-full flex flex-col gap-[50px]">
             <div class="w-full flex flex-col gap-[0px] items-center">
                 <div
-                    class="w-full rounded-[8px] shadow-[0_0_8px_4px_rgba(0,0,0,0.25)] outline outline-[8px] outline-[white] relative flex flex-col justify-end gap-[50px] p-[50px] bg-[url('https://image.nostr.build/925b24ec1aaf7cbde131b2ea2c178cead8a5dfb9514e1d4ae4d4b4cc2a318fb3.jpg')] bg-center bg-cover bg-no-repeat max-[992px]:gap-[15px] max-[992px]:p-[15px]"
+                    class="w-full rounded-[8px] shadow-soft outline outline-[8px] outline-[white] relative flex flex-col justify-end gap-[50px] p-[50px] bg-[url('https://image.nostr.build/925b24ec1aaf7cbde131b2ea2c178cead8a5dfb9514e1d4ae4d4b4cc2a318fb3.jpg')] bg-center bg-cover bg-no-repeat max-[992px]:gap-[15px] max-[992px]:p-[15px]"
                 >
                     <div
                         class="w-full flex flex-col justify-center items-center gap-[15px] text-white z-[1]"
@@ -33,7 +33,7 @@
                         class="w-full flex flex-row justify-center items-center gap-[50px] mb-[-150px] z-[1] max-[992px]:flex-col max-[992px]:gap-[25px] max-[992px]:mb-[-125px]"
                     >
                         <div
-                            class="w-full bg-white-700 rounded-[6px] shadow-[0_0_8px_0_rgba(0,0,0,0.1)] backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
+                            class="w-full bg-white-700 rounded-[6px] shadow-soft backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
                         >
                             <h2 class="text-center font-[800] text-[32px]">Find Skilled People</h2>
                             <p class="text-center">
@@ -49,7 +49,7 @@
                             </Button>
                         </div>
                         <div
-                            class="w-full bg-white-700 rounded-[6px] shadow-[0_0_8px_0_rgba(0,0,0,0.1)] backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
+                            class="w-full bg-white-700 rounded-[6px] shadow-soft backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center"
                         >
                             <h2 class="text-center font-[800] text-[32px]">Look For Work</h2>
                             <p class="text-center">

@@ -14,6 +14,12 @@ const config = {
     theme: {
         extend: {
             colors: colors,
+            boxShadow: {
+                soft: '0 0 8px rgba(0, 0, 0, 0.25)',
+                strong: '0 0 8px 4px rgba(0, 0, 0, 0.5)',
+                subtle: '0 0 4px rgba(0, 0, 0, 0.25)',
+                deep: '0 0 4px 2px rgba(0, 0, 0, 0.35)',
+            },
         },
         fontFamily: {
             sans: [
