@@ -199,3 +199,18 @@ export function getFileExtension(filename: string): string | null {
     const parts = filename.split('.');
     return parts.length > 1 ? parts.pop()! : null;
 }
+
+// Function to clip text up to maxLength + next whitespace
+export function clipText(text: string, maxLength: number) {
+    if (text.length <= maxLength) return text;
+
+    // Find the next whitespace after maxLength
+    let clippedText = text.slice(0, maxLength);
+    const nextWhitespaceIndex = text.slice(maxLength).search(/\s/);
+
+    if (nextWhitespaceIndex !== -1) {
+        clippedText = text.slice(0, maxLength + nextWhitespaceIndex);
+    }
+
+    return clippedText + ' ...';
+}

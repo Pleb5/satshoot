@@ -25,13 +25,17 @@
         'cursor-pointer disabled:cursor-not-allowed';
 
     const containedClasses =
-        'bg-blue-500 text-white hover:bg-blue-600 hover:text-white whitespace-nowrap';
+        'bg-blue-500 text-white hover:bg-blue-600 hover:text-white whitespace-nowrap ' +
+        'disabled:bg-gray-400 disabled:hover:bg-gray-400'; // Disabled state styles
 
     const outlinedClasses =
         'text-black-500 border-[1px] border-black-100 ' +
-        'hover:text-white hover:bg-blue-500 hover:border-transparent';
+        'hover:text-white hover:bg-blue-500 hover:border-transparent ' +
+        'disabled:bg-gray-200 disabled:hover:bg-gray-200 disabled:text-gray-500'; // Disabled state styles
 
-    const textClasses = 'border-[0px] text-black-500 hover:text-white hover:bg-blue-500';
+    const textClasses =
+        'border-[0px] text-black-500 hover:text-white hover:bg-blue-500 ' +
+        'disabled:bg-transparent disabled:text-gray-400'; // Disabled state styles
 
     $: variantClasses =
         variant === 'contained'

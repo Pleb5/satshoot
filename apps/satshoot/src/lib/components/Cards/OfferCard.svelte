@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
-    import { ReviewType } from '$lib/events/ReviewEvent';
+    import { ReviewEvent, ReviewType } from '$lib/events/ReviewEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk from '$lib/stores/ndk';
@@ -26,6 +26,8 @@
     import TakeOfferModal from '../Modals/TakeOfferModal.svelte';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import { freelancerReviews } from '$lib/stores/reviews';
+    import ReviewModal from '../Notifications/ReviewModal.svelte';
 
     const modalStore = getModalStore();
 
@@ -64,6 +66,13 @@
         showPaymentButton = true;
     } else {
         showPaymentButton = false;
+    }
+
+    let review: ReviewEvent | undefined = undefined;
+    $: if ($freelancerReviews) {
+        review = $freelancerReviews.find(
+            (review) => review.reviewedEventAddress === offer.offerAddress
+        );
     }
 
     $: if (offer) {
@@ -239,6 +248,20 @@
         modalStore.clear();
         modalStore.trigger(modal);
     }
+
+    function handleCheckReview() {
+        const modalComponent: ModalComponent = {
+            ref: ReviewModal,
+            props: { review },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.clear();
+        modalStore.trigger(modal);
+    }
 </script>
 
 <Card classes="flex-wrap gap-[15px]">
@@ -301,6 +324,10 @@
 
         {#if job && myJob}
             <Button on:click={setChatPartner} href={'/messages/' + job.encode()}>Message</Button>
+        {/if}
+
+        {#if review}
+            <Button on:click={handleCheckReview}>Check Review</Button>
         {/if}
 
         {#if viewJob && job}

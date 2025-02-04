@@ -7,23 +7,11 @@
                 <div
                     class="transition-all ease-[0.4s] w-full flex flex-col justify-center items-center relative overflow-hidden rounded-[8px] pt-[56%] outline outline-4 outline-solid outline-purple-0 hover:outline-blue-500 max-[768px]:order-[2]"
                 >
-                    <div
-                        class="absolute inset-0 h-full w-full flex flex-col bg-purple-600 justify-center items-center"
-                    >
-                        <!-- First Row: Bitcoin Image -->
-                        <div class="flex justify-center mb-4">
-                            <img class="h-24 w-auto" src="/img/bitcoin.png" alt="Bitcoin icon" />
-                        </div>
-                        <!-- Second Row: Lightning and Cashu Images -->
-                        <div class="flex justify-between w-1/2">
-                            <img
-                                class="h-16 w-auto"
-                                src="/img/lightning.png"
-                                alt="Lightning icon"
-                            />
-                            <img class="h-16 w-auto" src="/img/cashu.png" alt="Cashu icon" />
-                        </div>
-                    </div>
+                    <img
+                        class="absolute top-0 bottom-0 right-0 left-0 h-full w-full object-cover"
+                        src="/img/payment-options.jpg"
+                        alt="Bitcoin icon"
+                    />
                     <div
                         class="group transition-all ease duration-[0.4s] w-full absolute top-0 bottom-0 left-0 right-0 bg-white-0 backdrop-blur-[0px] flex flex-col justify-center items-center p-[25px] gap-[10px] text-purple-0 font-bold text-[38px] hover:bg-white-500 hover:backdrop-blur-[10px] hover:text-blue-500"
                     >
