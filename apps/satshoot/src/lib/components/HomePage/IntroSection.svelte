@@ -37,8 +37,8 @@
                         >
                             <h2 class="text-center font-[800] text-[32px]">Find Skilled People</h2>
                             <p class="text-center">
-                                If you have an issue you want solved or a project you want
-                                developed, create a job post and start getting offers
+                                Have a technical issue? Need a hand in development? Create Job Post
+                                and start getting Offers from Freelancers!
                             </p>
                             <Button
                                 classes="max-w-[75%] max-[576px]:max-w-[100%]"

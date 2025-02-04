@@ -1,6 +1,7 @@
 <script lang="ts">
     import { mergeClasses } from '$lib/utils/styles';
     import { createEventDispatcher } from 'svelte';
+    import { goto } from '$app/navigation';
     import type { HTMLAttributeAnchorTarget } from 'svelte/elements';
 
     type Variant = 'contained' | 'outlined' | 'text';
@@ -24,7 +25,7 @@
         'cursor-pointer disabled:cursor-not-allowed';
 
     const containedClasses =
-        'bg-blue-500 text-white hover:bg-blue-500 hover:text-white whitespace-nowrap';
+        'bg-blue-500 text-white hover:bg-blue-600 hover:text-white whitespace-nowrap';
 
     const outlinedClasses =
         'text-black-500 border-[1px] border-black-100 ' +
@@ -46,16 +47,28 @@
     $: combinedClasses = `${baseClasses} ${variantClasses} ${growClasses} ${fullWidthClasses} ${isToggle && selected ? 'bg-blue-500 text-white' : ''}`;
 
     $: finalClasses = mergeClasses(combinedClasses, classes);
+
+    // Determine if the link is external
+    $: isExternal = href && /^https?:\/\//.test(href);
+
+    // Handle click for internal links
+    function handleClick(event: MouseEvent) {
+        if (href && !isExternal && !target) {
+            event.preventDefault(); // Prevent default anchor behavior
+            goto(href); // Use SvelteKit's client-side navigation
+        }
+        dispatch('click'); // Emit the click event
+    }
 </script>
 
 {#if href}
     <!-- Render anchor tag if href is provided -->
-    <a {href} {target} {title} class={finalClasses} on:click={() => dispatch('click')}>
+    <a {href} {title} class={finalClasses} {target} on:click={handleClick}>
         <slot />
     </a>
 {:else}
     <!-- Render button tag otherwise -->
-    <button {title} {disabled} class={finalClasses} on:click={() => dispatch('click')}>
+    <button {title} {disabled} class={finalClasses} on:click={handleClick}>
         <slot />
     </button>
 {/if}

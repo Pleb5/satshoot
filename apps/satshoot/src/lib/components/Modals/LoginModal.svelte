@@ -1,6 +1,6 @@
 <script lang="ts">
     import { browser } from '$app/environment';
-    import ndk, { bunkerNDK, sessionPK, type LoginMethod } from '$lib/stores/ndk';
+    import ndk, { bunkerNDK, sessionPK, LoginMethod } from '$lib/stores/ndk';
     import { loginMethod } from '$lib/stores/user';
     import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
     import {
@@ -176,8 +176,8 @@
                 $ndk.signer = remoteSigner;
                 console.log('user logged in');
 
-                $loginMethod = 'bunker';
-                localStorage.setItem('login-method', $loginMethod as LoginMethod);
+                $loginMethod = LoginMethod.Bunker;
+                localStorage.setItem('login-method', $loginMethod);
                 localStorage.setItem('bunkerLocalSignerPK', localSigner.privateKey as string);
                 localStorage.setItem('bunkerTargetNpub', remoteUserNpub);
                 localStorage.setItem('bunkerRelayURLs', relayURLs.join(','));
@@ -232,9 +232,9 @@
                 const returnedUser = await nip07Signer.blockUntilReady();
 
                 if (returnedUser.npub) {
-                    $loginMethod = 'nip07';
+                    $loginMethod = LoginMethod.Nip07;
                     $ndk.signer = nip07Signer;
-                    localStorage.setItem('login-method', $loginMethod as LoginMethod);
+                    localStorage.setItem('login-method', $loginMethod);
                     initializeUser($ndk);
                     askingForNip07Permission = false;
                     modalStore.close();
@@ -353,8 +353,8 @@
             const encryptedSecret = encryptSecret(secret, passphrase, npub);
             localStorage.setItem(storageKey, encryptedSecret);
             localStorage.setItem('nostr-npub', npub);
-            $loginMethod = 'local';
-            localStorage.setItem('login-method', $loginMethod as LoginMethod);
+            $loginMethod = LoginMethod.Local;
+            localStorage.setItem('login-method', $loginMethod);
 
             $sessionPK = privateKey;
 
@@ -428,8 +428,8 @@
 
             localStorage.setItem('nostr-seedwords', encryptedSeed);
             localStorage.setItem('nostr-npub', generatedNpub);
-            $loginMethod = 'local';
-            localStorage.setItem('login-method', $loginMethod as LoginMethod);
+            $loginMethod = LoginMethod.Local;
+            localStorage.setItem('login-method', $loginMethod);
 
             // assign ndk signer
             $ndk.signer = new NDKPrivateKeySigner(generatedNsec);

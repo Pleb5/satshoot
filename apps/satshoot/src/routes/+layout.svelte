@@ -40,7 +40,7 @@
 
     import { wotUpdateFailed, wotUpdateNoResults } from '$lib/stores/wot';
 
-    import { RestoreMethod, type LoginMethod } from '$lib/stores/ndk';
+    import { LoginMethod, RestoreMethod } from '$lib/stores/ndk';
 
     import {
         NDKKind,
@@ -211,7 +211,7 @@
         $loginMethod = (method as LoginMethod) ?? null;
 
         if ($loginMethod) {
-            if ($loginMethod === 'local') {
+            if ($loginMethod === LoginMethod.Local) {
                 // We either get the private key from sessionStorage or decrypt from localStorage
                 if ($sessionPK) {
                     $ndk.signer = new NDKPrivateKeySigner($sessionPK);
@@ -275,7 +275,7 @@
                         toastStore.trigger(t);
                     }
                 }
-            } else if ($loginMethod === 'bunker') {
+            } else if ($loginMethod === LoginMethod.Bunker) {
                 const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
                 const bunkerTargetNpub = localStorage.getItem('bunkerTargetNpub');
                 const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
@@ -349,7 +349,7 @@
                         return;
                     }
                 }
-            } else if ($loginMethod === 'nip07') {
+            } else if ($loginMethod === LoginMethod.Nip07) {
                 if (!$ndk.signer) {
                     $ndk.signer = new NDKNip07Signer();
                 }
