@@ -1,8 +1,9 @@
 identifier: satshoot
 maintainers:
-- npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw
+  - npub16p8v7varqwjes5hak6q7mz6pygqm4pwc6gve4mrned3xs8tz42gq7kfhdw
+  - npub1ws84n8scnfs5dsluurmhrcn87tcmdf8qqstmyaxh5tvt6mqhdcxsn9jawx
 relays:
-- wss://relay.damus.io/
-- wss://nos.lol/
-- wss://relay.snort.social/
-- wss://bitcoiner.social/
+  - wss://relay.damus.io/
+  - wss://nos.lol/
+  - wss://relay.snort.social/
+  - wss://bitcoiner.social/

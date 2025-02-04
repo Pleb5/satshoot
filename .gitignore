@@ -11,3 +11,8 @@ vite.config.ts.timestamp-*
 notes.md
 .turbo
 pnpm-lock.yaml
+
+# nix related
+flake.*
+.direnv/
+.envrc
