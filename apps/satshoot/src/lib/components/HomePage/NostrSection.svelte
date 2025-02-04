@@ -37,7 +37,7 @@
                         <Button
                             href="https://nostr.how/en/what-is-nostr"
                             target="_blank"
-                            classes="transform scale-[1] max-w-[200px] text-[18px] opacity-0 group-hover:opacity-100 "
+                            classes="transform scale-[1] max-w-[200px] text-white text-[18px] opacity-0 group-hover:opacity-100 "
                             fullWidth
                         >
                             Learn More

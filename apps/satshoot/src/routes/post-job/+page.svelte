@@ -79,7 +79,7 @@
     $: filteredTagOptions =
         tagInput.length > 0
             ? sortedTagOptions.filter((option) => option.value.includes(transformedTag))
-            : sortedTagOptions;
+            : [];
 
     $: if (!$currentUser || $loggingIn) {
         allowPostJob = false;
@@ -103,10 +103,16 @@
         $jobToEdit = null;
     });
 
+    function handleEnterKeyOnTagInput(event: KeyboardEvent) {
+        if (event.key === 'Enter') {
+            addTag(tagInput);
+        }
+    }
+
     function addTag(tag: string) {
         if (tagList.length >= maxTags) {
             const t: ToastSettings = {
-                message: `Only ${maxTags} tags are allowed!`,
+                message: `Cannot add more than ${maxTags} tags!`,
                 timeout: 4000,
                 background: 'bg-error-300-600-token',
             };
@@ -120,6 +126,8 @@
         if (checkValidTag(transformedTag)) {
             tagList = [...tagList, transformedTag];
         }
+
+        tagInput = '';
     }
 
     function removeTag(tag: string) {
@@ -250,15 +258,15 @@
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
-    <div class="w-full flex flex-col justify-center items-center py-[50px]">
+    <div class="w-full flex flex-col justify-center items-center py-[10px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
-            <div class="w-full flex flex-col gap-[15px]">
+            <div class="w-full flex flex-col gap-[10px]">
                 <div class="w-full flex flex-col gap-[5px] justify-start">
                     <h2 class="text-[40px] font-[500]">
                         {$jobToEdit ? 'Edit' : 'New'} Job Post
                     </h2>
                 </div>
-                <Card classes="gap-[25px">
+                <Card classes="gap-[15px]">
                     <div class="flex flex-col gap-[5px]">
                         <label class="m-[0px] text-[14px]" for="tile">
                             Title (min. 10 chars)
@@ -285,7 +293,7 @@
                                 classes="min-h-[100px] {descriptionState}"
                                 fullWidth
                                 textarea
-                                rows={4}
+                                rows={6}
                                 minlength={minDescriptionLength}
                             />
                         </div>
@@ -299,39 +307,38 @@
                                 <Input
                                     bind:value={tagInput}
                                     placeholder="Search and add a tag, or add a custom tag"
+                                    onKeyPress={handleEnterKeyOnTagInput}
                                     fullWidth
                                 />
                                 <div
                                     class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
                                 >
                                     {#if transformedTag.length > 0 && !filteredTagOptions.some(({ value }) => transformedTag === value)}
-                                        <div
-                                            class="flex flex-row rounded-[4px] bg-black-200 text-black-500 gap-[10px] overflow-hidden"
+                                        <Button
+                                            classes="bg-black-200 text-black-500 p-[5px] font-400"
+                                            on:click={() => addTag(tagInput)}
                                         >
-                                            <span class="pl-[10px] py-[5px]"> {tagInput} </span>
-                                            <button
-                                                class="transition ease duration-[0.3s] px-[10px] border-l-[1px] border-black-100 hover:bg-white-200"
-                                                on:click={() => addTag(tagInput)}
-                                                disabled={tagList.length >= maxTags}
+                                            <span class="pl-[10px]"> {tagInput} </span>
+                                            <span
+                                                class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100"
                                             >
-                                                <i class="bx bx-plus"> </i>
-                                            </button>
-                                        </div>
+                                                <i class="bx bx-plus" />
+                                            </span>
+                                        </Button>
                                     {/if}
 
                                     {#each filteredTagOptions as { label, value }}
-                                        <div
-                                            class="flex flex-row rounded-[4px] bg-black-200 text-black-500 gap-[10px] overflow-hidden"
+                                        <Button
+                                            classes="bg-black-200 text-black-500 p-[5px] font-400"
+                                            on:click={() => addTag(value)}
                                         >
-                                            <span class="pl-[10px] py-[5px]"> {label} </span>
-                                            <button
-                                                class="transition ease duration-[0.3s] px-[10px] border-l-[1px] border-black-100 hover:bg-white-200"
-                                                on:click={() => addTag(value)}
-                                                disabled={tagList.length >= maxTags}
+                                            <span class="pl-[10px]"> {label} </span>
+                                            <span
+                                                class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100"
                                             >
-                                                <i class="bx bx-plus"> </i>
-                                            </button>
-                                        </div>
+                                                <i class="bx bx-plus" />
+                                            </span>
+                                        </Button>
                                     {/each}
                                 </div>
                             </div>

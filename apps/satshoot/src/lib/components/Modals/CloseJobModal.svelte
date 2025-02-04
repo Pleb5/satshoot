@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewEvent, type FreelancerRating } from '$lib/events/ReviewEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
@@ -10,6 +8,8 @@
         getModalStore,
         getToastStore,
         ProgressRadial,
+        type ModalComponent,
+        type ModalSettings,
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import { tick } from 'svelte';
@@ -18,6 +18,7 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
+    import PaymentModal from './PaymentModal.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -94,11 +95,16 @@
                         offer,
                     };
 
-                    const currentPath = $page.url.pathname;
-                    const paymentUrl = new URL('payment', window.location.origin);
-                    paymentUrl.searchParams.set('redirectPath', currentPath);
+                    const modalComponent: ModalComponent = {
+                        ref: PaymentModal,
+                    };
 
-                    goto(paymentUrl);
+                    const modal: ModalSettings = {
+                        type: 'component',
+                        component: modalComponent,
+                    };
+                    modalStore.clear();
+                    modalStore.trigger(modal);
                 }
             } catch (e) {
                 console.log(e);
@@ -128,41 +134,47 @@
                     trueLabel="Yes"
                     falseLabel="No"
                 />
+                {#if job.acceptedOfferAddress}
+                    {#if isIssueResolved}
+                        <div class="w-full flex flex-col gap-[5px]">
+                            <div class="w-full max-h-[50vh] overflow-auto">
+                                <p class="w-full">
+                                    Select excellent qualities of the Freelancer, if any:
+                                </p>
+                            </div>
+                            <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
+                                <Checkbox
+                                    id="expertise"
+                                    label="A skilled expert"
+                                    bind:checked={expertise}
+                                />
+                                <Checkbox
+                                    id="availability"
+                                    label="Highly available, attentive and responsive"
+                                    bind:checked={availability}
+                                />
+                                <Checkbox
+                                    id="communication"
+                                    label="Especially clear and kind communication"
+                                    bind:checked={communication}
+                                />
+                            </div>
+                        </div>
+                    {/if}
 
-                <div class="w-full flex flex-col gap-[5px]">
-                    <div class="w-full max-h-[50vh] overflow-auto">
-                        <p class="w-full">Select excellent qualities of the Freelancer, if any:</p>
-                    </div>
-                    <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
-                        <Checkbox
-                            id="expertise"
-                            label="A skilled expert"
-                            bind:checked={expertise}
-                        />
-                        <Checkbox
-                            id="availability"
-                            label="Highly available, attentive and responsive"
-                            bind:checked={availability}
-                        />
-                        <Checkbox
-                            id="communication"
-                            label="Especially clear and kind communication"
-                            bind:checked={communication}
+                    <div class="w-full flex flex-col gap-[5px]">
+                        <div class="w-full max-h-[50vh] overflow-auto">
+                            <p class="w-full">Share your experience to help others:</p>
+                        </div>
+                        <Input
+                            bind:value={reviewText}
+                            placeholder="Describe your experience..."
+                            classes="min-h-[100px]"
+                            fullWidth
+                            textarea
                         />
                     </div>
-                </div>
-                <div class="w-full flex flex-col gap-[5px]">
-                    <div class="w-full max-h-[50vh] overflow-auto">
-                        <p class="w-full">Share your experience to help others:</p>
-                    </div>
-                    <Input
-                        bind:value={reviewText}
-                        placeholder="Describe your experience..."
-                        classes="min-h-[100px]"
-                        fullWidth
-                        textarea
-                    />
-                </div>
+                {/if}
 
                 <div class="w-full flex flex-row gap-[10px]">
                     <Button grow on:click={closeJob} disabled={closing}>

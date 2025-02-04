@@ -778,7 +778,7 @@
                                     />
                                 </span>
                             {:else}
-                                Make payment (Zaps)
+                                Pay with LN
                             {/if}
                         </Button>
                         <div class="w-full flex flex-row items-center gap-[2px]">
@@ -798,7 +798,7 @@
                                             width="w-8"
                                         />
                                     {/if}
-                                    <span> Make payment (Cashu) </span>
+                                    <span>Pay with Cashu</span>
                                 </Button>
                             {:else}
                                 <Button grow on:click={setupEcash}>

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const dispatch = createEventDispatcher();
 
@@ -17,15 +18,15 @@
             label: 'About',
         },
     ];
-
-    const classesForNavLink =
-        'flex flex-col items-center justify-center text-center ' +
-        'font-[700] text-black-500 text-[18px] p-[5px_15px] ' +
-        'no-underline transition ease-in-out duration-[0.3s] hover:text-[#3b82f6] hover:no-underline';
 </script>
 
 {#each navLinks as { label, href }}
-    <a class={classesForNavLink} {href} on:click={() => dispatch('click')}>
-        <p>{label}</p>
-    </a>
+    <Button
+        variant="text"
+        {href}
+        classes="font-[700] text-black-500 text-[18px] hover:text-blue-500 hover:bg-transparent"
+        on:click={() => dispatch('click')}
+    >
+        {label}
+    </Button>
 {/each}

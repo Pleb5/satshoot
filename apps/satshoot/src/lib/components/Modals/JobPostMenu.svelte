@@ -182,7 +182,7 @@
                         fullWidth
                         on:click={handleCloseJob}
                     >
-                        <i class="bx bx-window-close text-[20px]"></i>
+                        <i class="bx bx-x-circle text-[20px]"></i>
                         <p class="">Close Job</p>
                     </Button>
                 {/if}
@@ -194,7 +194,7 @@
                         fullWidth
                         on:click={handlePay}
                     >
-                        <i class="bx bx-window-close text-[20px]"></i>
+                        <i class="bx bxs-bolt text-[20px]"></i>
                         <p class="">Pay</p>
                     </Button>
                 {/if}
@@ -219,7 +219,7 @@
                         fullWidth
                         on:click={handleReviewClient}
                     >
-                        <i class="bx bx-window-close text-[20px]"></i>
+                        <i class="bx bxs-show text-[20px]"></i>
                         <p class="">Review Client</p>
                     </Button>
                 {/if}
