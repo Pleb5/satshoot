@@ -16,6 +16,8 @@
     import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
     import Popup from '../UI/Popup.svelte';
+    import type { ReviewEvent } from '$lib/events/ReviewEvent';
+    import ReviewModal from '../Notifications/ReviewModal.svelte';
 
     const modalStore = getModalStore();
 
@@ -40,15 +42,14 @@
         isWinner = false;
     }
 
+    let review: ReviewEvent | undefined = undefined;
     let canReviewClient = false;
-    $: if (isWinner && $clientReviews) {
-        const hasAlreadyReviewed = $clientReviews.some(
-            (review) => review.reviewedEventAddress === job.ticketAddress
-        );
+    $: if ($clientReviews) {
+        review = $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress);
 
-        if (hasAlreadyReviewed) {
+        if (review) {
             canReviewClient = false;
-        } else {
+        } else if (isWinner) {
             canReviewClient = true;
         }
     }
@@ -151,6 +152,20 @@
             modalStore.clear();
         }
     }
+
+    function handleCheckReview() {
+        const modalComponent: ModalComponent = {
+            ref: ReviewModal,
+            props: { review },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.clear();
+        modalStore.trigger(modal);
+    }
 </script>
 
 {#if $modalStore[0]}
@@ -219,8 +234,18 @@
                         fullWidth
                         on:click={handleReviewClient}
                     >
-                        <i class="bx bxs-show text-[20px]"></i>
+                        <i class="bx bxs-star text-[20px]"></i>
                         <p class="">Review Client</p>
+                    </Button>
+                {:else if review}
+                    <Button
+                        variant="outlined"
+                        classes="justify-start"
+                        fullWidth
+                        on:click={handleCheckReview}
+                    >
+                        <i class="bx bxs-star text-[20px]"></i>
+                        <p class="">Check Review</p>
                     </Button>
                 {/if}
             </div>

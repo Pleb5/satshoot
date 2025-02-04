@@ -726,7 +726,6 @@
                                     type="number"
                                     step="1"
                                     min="0"
-                                    max="100_000_000"
                                     placeholder="000,000"
                                     bind:value={amount}
                                     fullWidth
@@ -741,7 +740,6 @@
                                     type="number"
                                     step="1"
                                     min="0"
-                                    max="100"
                                     placeholder="000,000"
                                     bind:value={pledgedAmount}
                                     fullWidth
@@ -764,44 +762,15 @@
                             </p>
                         </div>
                     </div>
-                    <div class="w-full flex flex-row flex-wrap gap-[5px]">
-                        <Button grow on:click={payWithLN} disabled={paying}>
-                            {#if paying}
-                                <span>
-                                    <ProgressRadial
-                                        value={undefined}
-                                        stroke={60}
-                                        meter="stroke-tertiary-500"
-                                        track="stroke-tertiary-500/30"
-                                        strokeLinecap="round"
-                                        width="w-8"
-                                    />
-                                </span>
-                            {:else}
-                                Pay with LN
-                            {/if}
-                        </Button>
-                        <div class="w-full flex flex-row items-center gap-[2px]">
-                            {#if hasSenderEcashSetup}
+                    <div class="flex flex-row justify-center">
+                        <div class="flex flex-col gap-[5px]">
+                            <div class="flex flex-row">
                                 <Button
                                     grow
-                                    on:click={payWithEcash}
-                                    disabled={paying || !canPayWithEcash}
+                                    classes="w-[200px] max-w-[200px]"
+                                    on:click={payWithLN}
+                                    disabled={paying}
                                 >
-                                    {#if paying}
-                                        <ProgressRadial
-                                            value={undefined}
-                                            stroke={60}
-                                            meter="stroke-tertiary-500"
-                                            track="stroke-tertiary-500/30"
-                                            strokeLinecap="round"
-                                            width="w-8"
-                                        />
-                                    {/if}
-                                    <span>Pay with Cashu</span>
-                                </Button>
-                            {:else}
-                                <Button grow on:click={setupEcash}>
                                     {#if paying}
                                         <span>
                                             <ProgressRadial
@@ -813,21 +782,76 @@
                                                 width="w-8"
                                             />
                                         </span>
+                                    {:else}
+                                        <img
+                                            class="h-[20px] w-auto"
+                                            src="/img/lightning.png"
+                                            alt="Lightning icon"
+                                        />
+                                        <span> Pay with LN</span>
                                     {/if}
-                                    <span> Setup Cashu Wallet </span>
                                 </Button>
-                            {/if}
-                            {#if ecashTooltipText}
-                                <i
-                                    class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
-                                    use:popup={cashuTooltip}
-                                />
-                                <div data-popup="cashuTooltip">
-                                    <Card>
-                                        <p>{ecashTooltipText}</p>
-                                    </Card>
-                                </div>
-                            {/if}
+                            </div>
+                            <div class="flex flex-row items-center gap-[2px]">
+                                {#if hasSenderEcashSetup}
+                                    <Button
+                                        grow
+                                        classes="w-[200px] max-w-[200px]"
+                                        on:click={payWithEcash}
+                                        disabled={paying || !canPayWithEcash}
+                                    >
+                                        {#if paying}
+                                            <ProgressRadial
+                                                value={undefined}
+                                                stroke={60}
+                                                meter="stroke-tertiary-500"
+                                                track="stroke-tertiary-500/30"
+                                                strokeLinecap="round"
+                                                width="w-8"
+                                            />
+                                        {:else}
+                                            <img
+                                                class="h-[20px] w-auto"
+                                                src="/img/cashu.png"
+                                                alt="Cashu icon"
+                                            />
+                                            <span>Pay with Cashu</span>
+                                        {/if}
+                                    </Button>
+                                {:else}
+                                    <Button
+                                        grow
+                                        classes="w-[200px] max-w-[200px]"
+                                        on:click={setupEcash}
+                                    >
+                                        {#if paying}
+                                            <span>
+                                                <ProgressRadial
+                                                    value={undefined}
+                                                    stroke={60}
+                                                    meter="stroke-tertiary-500"
+                                                    track="stroke-tertiary-500/30"
+                                                    strokeLinecap="round"
+                                                    width="w-8"
+                                                />
+                                            </span>
+                                        {/if}
+                                        <span> Setup Cashu Wallet </span>
+                                    </Button>
+                                {/if}
+
+                                {#if ecashTooltipText}
+                                    <i
+                                        class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                        use:popup={cashuTooltip}
+                                    />
+                                    <div data-popup="cashuTooltip">
+                                        <Card>
+                                            <p>{ecashTooltipText}</p>
+                                        </Card>
+                                    </div>
+                                {/if}
+                            </div>
                         </div>
                     </div>
                 </div>

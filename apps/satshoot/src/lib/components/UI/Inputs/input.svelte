@@ -57,12 +57,24 @@
         class={finalClasses}
         bind:value
     />
-{:else}
+{:else if type === 'number'}
     <input
         {id}
         {step}
         {min}
         {max}
+        {placeholder}
+        {disabled}
+        {readonly}
+        type="number"
+        class={finalClasses}
+        bind:value
+        bind:this={inputElement}
+        on:keydown={onKeyPress}
+    />
+{:else}
+    <input
+        {id}
         {placeholder}
         {disabled}
         {readonly}

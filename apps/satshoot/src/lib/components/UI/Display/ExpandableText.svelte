@@ -1,5 +1,6 @@
 <script>
     import Markdown from '$lib/components/Cards/Markdown.svelte';
+    import { clipText } from '$lib/utils/misc';
     import Button from '../Buttons/Button.svelte';
 
     export let text = ''; // The full text to display
@@ -14,9 +15,7 @@
         isExpanded = !isExpanded;
     };
 
-    $: textToDisplay = isExpanded
-        ? text
-        : `${text.slice(0, maxCharacters)}${text.length > maxCharacters ? '...' : ''}`;
+    $: textToDisplay = isExpanded ? text : clipText(text, maxCharacters);
 </script>
 
 <div class="flex flex-col gap-[10px] font-[500] px-[10px] py-[10px]">

@@ -15,7 +15,6 @@
     import type { ModalComponent, ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
 
-    import ShareTicketModal from '$lib/components/Modals/ShareTicketModal.svelte';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 
     import { beforeNavigate, goto } from '$app/navigation';
@@ -23,6 +22,7 @@
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
+    import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -144,7 +144,7 @@
 
         const valid =
             !!tagValue &&
-            /^[a-z0-9_]+$/i.test(tagValue) &&
+            /^[a-z0-9_\-\.]+$/i.test(tagValue) &&
             tagList.length <= maxTags &&
             occurrence === 0;
 
@@ -191,39 +191,16 @@
 
                     $jobToEdit = null;
 
-                    // Ticket posted Modal
-                    const modal: ModalSettings = {
-                        type: 'alert',
-                        // Data
-                        title: 'Success!',
-                        body: 'Job posted successfully!',
-                        buttonTextCancel: 'Ok',
+                    const successModal: ModalComponent = {
+                        ref: JobPostSuccess,
+                        props: { job },
                     };
-                    modalStore.trigger(modal);
 
-                    let shareJobResponse = function (r: boolean) {
-                        if (r) {
-                            const modalComponent: ModalComponent = {
-                                ref: ShareTicketModal,
-                                props: { ticket: job },
-                            };
-
-                            const shareModal: ModalSettings = {
-                                type: 'component',
-                                component: modalComponent,
-                            };
-                            modalStore.trigger(shareModal);
-                        }
+                    const shareModal: ModalSettings = {
+                        type: 'component',
+                        component: successModal,
                     };
-                    const postAsTextModal: ModalSettings = {
-                        type: 'confirm',
-                        title: 'Share Job as Text Note?',
-                        body: 'It will show up in your feed on popular clients.',
-                        buttonTextCancel: 'No thanks',
-                        buttonTextConfirm: 'Of course!',
-                        response: shareJobResponse,
-                    };
-                    modalStore.trigger(postAsTextModal);
+                    modalStore.trigger(shareModal);
 
                     $profileTabStore = ProfilePageTabs.Jobs;
                     goto('/' + $currentUser.npub + '/');
