@@ -9,7 +9,12 @@
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
-    import { paymentDetail } from '$lib/stores/payment';
+    import {
+        createPaymentFilters,
+        createPaymentStore,
+        paymentDetail,
+        type PaymentStore,
+    } from '$lib/stores/payment';
     import currentUser from '$lib/stores/user';
     import {
         cashuPaymentInfoMap,
@@ -30,7 +35,7 @@
         zapInvoiceFromEvent,
     } from '@nostr-dev-kit/ndk';
     import { broadcastEvent, fetchUserOutboxRelays, getZapConfiguration } from '$lib/utils/helpers';
-    import { tick } from 'svelte';
+    import { onDestroy, tick } from 'svelte';
     import { CashuMint } from '@cashu/cashu-ts';
     import { resyncWalletAndBackup } from '$lib/utils/cashu';
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
@@ -72,8 +77,8 @@
 
     let freelancerPaid = 0;
     let satshootPaid = 0;
-    let freelancerPaymentStore: NDKEventStore<NDKEvent>;
-    let satshootPaymentStore: NDKEventStore<NDKEvent>;
+    let freelancerPaymentStore: PaymentStore;
+    let satshootPaymentStore: PaymentStore;
 
     let pricing = '';
 
@@ -87,82 +92,18 @@
                 break;
         }
 
-        freelancerPaymentStore = $ndk.storeSubscribe(
-            [
-                { kinds: [NDKKind.Zap], '#e': [offer.id] },
-                { kinds: [NDKKind.Nutzap], '#a': [offer.offerAddress] },
-            ],
-            {
-                closeOnEose: false,
-                groupable: true,
-                groupableDelay: 1500,
-                autoStart: true,
-            }
-        );
+        const freelancerFilters = createPaymentFilters(offer, 'freelancer');
+        const satshootFilters = createPaymentFilters(offer, 'satshoot');
 
-        satshootPaymentStore = $ndk.storeSubscribe(
-            [
-                {
-                    kinds: [NDKKind.Zap],
-                    '#p': [SatShootPubkey],
-                    '#a': [offer.referencedTicketAddress],
-                },
-                {
-                    kinds: [NDKKind.Nutzap],
-                    '#p': [SatShootPubkey],
-                    '#a': [offer.referencedTicketAddress],
-                },
-            ],
-            {
-                closeOnEose: false,
-                groupable: true,
-                groupableDelay: 1500,
-                autoStart: true,
-            }
-        );
-    }
+        freelancerPaymentStore = createPaymentStore(freelancerFilters);
+        satshootPaymentStore = createPaymentStore(satshootFilters);
 
-    $: if ($freelancerPaymentStore) {
-        freelancerPaid = 0;
-        $freelancerPaymentStore.forEach((zap: NDKEvent) => {
-            if (zap.kind === NDKKind.Zap) {
-                const zapInvoice = zapInvoiceFromEvent(zap);
-                if (zapInvoice) {
-                    const zappee = zapInvoice.zappee;
-                    if ($wot.has(zappee)) {
-                        freelancerPaid += Math.round(zapInvoice.amount / 1000);
-                    }
-                }
-            } else if (zap.kind === NDKKind.Nutzap) {
-                const nutzap = NDKNutzap.from(zap);
-                if (nutzap) {
-                    if ($wot.has(nutzap.pubkey)) {
-                        freelancerPaid += Math.round(nutzap.amount / 1000);
-                    }
-                }
-            }
+        freelancerPaymentStore.totalPaid.subscribe((value) => {
+            freelancerPaid = value;
         });
-    }
 
-    $: if ($satshootPaymentStore) {
-        satshootPaid = 0;
-        $satshootPaymentStore.forEach((zap: NDKEvent) => {
-            if (zap.kind === NDKKind.Zap) {
-                const zapInvoice = zapInvoiceFromEvent(zap);
-                if (zapInvoice) {
-                    const zappee = zapInvoice.zappee;
-                    if ($wot.has(zappee)) {
-                        satshootPaid += Math.round(zapInvoice.amount / 1000);
-                    }
-                }
-            } else if (zap.kind === NDKKind.Nutzap) {
-                const nutzap = NDKNutzap.from(zap);
-                if (nutzap) {
-                    if ($wot.has(nutzap.pubkey)) {
-                        satshootPaid += Math.round(nutzap.amount / 1000);
-                    }
-                }
-            }
+        satshootPaymentStore.totalPaid.subscribe((value) => {
+            satshootPaid = value;
         });
     }
 
@@ -223,6 +164,11 @@
             }
         }
     }
+
+    onDestroy(() => {
+        if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.empty();
+        if (satshootPaymentStore) satshootPaymentStore.paymentStore.empty();
+    });
 
     async function payWithLN() {
         const paymentData = await initializePayment();

@@ -307,7 +307,10 @@
                                             {#if winningOffer}
                                                 <div class="w-full flex flex-col">
                                                     <div class="w-full flex flex-col gap-[15px]">
-                                                        <OfferCard offer={winningOffer} />
+                                                        <OfferCard
+                                                            offer={winningOffer}
+                                                            showPayments
+                                                        />
                                                     </div>
                                                 </div>
                                             {/if}

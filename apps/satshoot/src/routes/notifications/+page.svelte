@@ -34,29 +34,59 @@
 
     let selectedTab = Tab.Follows;
 
-    $: if ($jobNotifications) {
-        // console.log('ticket notifs', $jobNotifications);
-    }
-    $: if ($offerNotifications) {
-        // console.log('offer notifs', $offerNotifications);
-    }
-    $: if ($messageNotifications) {
-        // console.log('message notifs', $messageNotifications);
-    }
-    $: if ($reviewNotifications) {
-        // console.log('review notifs', $reviewNotifications);
-    }
+    $: markNotificationsAsRead(selectedTab);
 
-    $: if ($receivedZapsNotifications) {
-        // console.log('received a zap notification', $receivedZapsNotifications);
-    }
-
-    $: if ($messageNotifications) {
-        // console.log('received message notification')
-    }
-
-    $: if ($followNotifications) {
-        // console.log('received message notification')
+    function markNotificationsAsRead(tab: Tab) {
+        switch (tab) {
+            case Tab.Follows:
+                readNotifications.update((notifications) => {
+                    $followNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Zaps:
+                readNotifications.update((notifications) => {
+                    $receivedZapsNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Jobs:
+                readNotifications.update((notifications) => {
+                    $jobNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Offers:
+                readNotifications.update((notifications) => {
+                    $offerNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Messages:
+                readNotifications.update((notifications) => {
+                    $messageNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Reviews:
+                readNotifications.update((notifications) => {
+                    $reviewNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+        }
     }
 
     $: if (!$notificationsEnabled) {
@@ -115,7 +145,7 @@
             id: Tab.Reviews,
             label: 'Reviews',
             icon: 'star',
-            notificationCount: $followNotifications.filter(
+            notificationCount: $reviewNotifications.filter(
                 (notification) => !$readNotifications.has(notification.id)
             ).length,
         },

@@ -1,8 +1,9 @@
 <script lang="ts">
     export let src: string;
-    export let size: 'sm' | 'md' | 'lg' = 'sm'; // Default to "sm"
+    export let size: 'xs' | 'sm' | 'md' | 'lg' = 'sm'; // Default to "sm"
 
     const sizeClasses = {
+        xs: 'w-[35px] h-[35px] min-w-[35px] min-h-[35px]',
         sm: 'w-[50px] h-[50px] min-w-[50px] min-h-[50px]',
         md: 'w-[75px] h-[75px] min-w-[75px] min-h-[75px]',
         lg: 'w-[100px] h-[100px] min-w-[100px] min-h-[100px]',

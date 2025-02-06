@@ -10,31 +10,31 @@
     import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
 
-    let newTickets: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let ticketList: Set<TicketEvent> = new Set();
+    let newJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
+    let jobList: Set<TicketEvent> = new Set();
 
-    $: if ($newTickets) {
-        // We just received a ticket
-        orderEventsChronologically($newTickets);
-        const newTicketList = new Set(
-            $newTickets.filter((t: TicketEvent) => {
-                // New ticket check: if a ticket status is changed this removes not new tickets
-                const newTicket = t.status === TicketStatus.New;
+    $: if ($newJobs) {
+        // We just received a job
+        orderEventsChronologically($newJobs);
+        const newJobList = new Set(
+            $newJobs.filter((t: TicketEvent) => {
+                // New job check: if a job status is changed this removes not new jobs
+                const newJob = t.status === TicketStatus.New;
                 // wot is always at least 3 if there is a user logged in
                 // only update filter if other users are also present
                 const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
 
-                return newTicket && partOfWot;
+                return newJob && partOfWot;
             })
         );
 
-        ticketList = new Set(Array.from(newTicketList).slice(0, 8));
+        jobList = new Set(Array.from(newJobList).slice(0, 8));
     }
 
     onMount(() => {
         checkRelayConnections();
 
-        newTickets = $ndk.storeSubscribe(
+        newJobs = $ndk.storeSubscribe(
             {
                 kinds: [NDKKind.FreelanceTicket],
             },
@@ -46,11 +46,11 @@
             },
             TicketEvent
         );
-        $newTickets = $newTickets;
+        $newJobs = $newJobs;
     });
 
     onDestroy(() => {
-        if (newTickets) newTickets.unsubscribe();
+        if (newJobs) newJobs.unsubscribe();
     });
 
     const viewMoreBtnClasses = 'transform scale-100 w-full max-w-[200px] hover:max-w-[225px]';
@@ -65,9 +65,9 @@
             <div
                 class="w-full grid grid-cols-4 gap-[25px] max-[1200px]:grid-cols-3 max-[992px]:grid-cols-2 max-[768px]:grid-cols-1"
             >
-                {#if ticketList.size > 0}
-                    {#each Array.from(ticketList) as ticket (ticket.id)}
-                        <JobCard {ticket} />
+                {#if jobList.size > 0}
+                    {#each Array.from(jobList) as job (job.id)}
+                        <JobCard {job} />
                     {/each}
                 {:else}
                     <div class="p-4 space-y-4 w-full">

@@ -81,6 +81,15 @@
             ? sortedTagOptions.filter((option) => option.value.includes(transformedTag))
             : [];
 
+    // Always include the input tag as the first item, even if it's an exact match
+    $: displayOptions =
+        transformedTag.length > 0
+            ? [
+                  { label: tagInput, value: transformedTag },
+                  ...filteredTagOptions.filter((option) => option.value !== transformedTag),
+              ]
+            : filteredTagOptions;
+
     $: if (!$currentUser || $loggingIn) {
         allowPostJob = false;
     } else {
@@ -290,21 +299,7 @@
                                 <div
                                     class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
                                 >
-                                    {#if transformedTag.length > 0 && !filteredTagOptions.some(({ value }) => transformedTag === value)}
-                                        <Button
-                                            classes="bg-black-200 text-black-500 p-[5px] font-400"
-                                            on:click={() => addTag(tagInput)}
-                                        >
-                                            <span class="pl-[10px]"> {tagInput} </span>
-                                            <span
-                                                class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100"
-                                            >
-                                                <i class="bx bx-plus" />
-                                            </span>
-                                        </Button>
-                                    {/if}
-
-                                    {#each filteredTagOptions as { label, value }}
+                                    {#each displayOptions as { label, value }}
                                         <Button
                                             classes="bg-black-200 text-black-500 p-[5px] font-400"
                                             on:click={() => addTag(value)}
