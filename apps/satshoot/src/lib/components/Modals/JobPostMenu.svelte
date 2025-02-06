@@ -55,7 +55,7 @@
     }
 
     let showMessageButton = false;
-    $: if ($currentUser && (!myJob || job.acceptedOfferAddress)) {
+    $: if ($currentUser && (myJob || job.winnerFreelancer === $currentUser.pubkey)) {
         showMessageButton = true;
     } else {
         showMessageButton = false;
@@ -115,10 +115,10 @@
     }
 
     function selectChatPartner() {
-        if (job.pubkey !== $currentUser!.pubkey) {
+        if ($currentUser && $currentUser.pubkey !== job.pubkey) {
             $selectedPerson = job.pubkey + '$' + bech32ID;
-        } else if (job.acceptedOfferAddress) {
-            $offerMakerToSelect = job.winnerFreelancer as string;
+        } else if (job.winnerFreelancer) {
+            $offerMakerToSelect = job.winnerFreelancer;
         }
 
         modalStore.close();
@@ -153,7 +153,7 @@
         }
     }
 
-    function handleCheckReview() {
+    function handlePreviewReview() {
         const modalComponent: ModalComponent = {
             ref: ReviewModal,
             props: { review },
@@ -242,10 +242,10 @@
                         variant="outlined"
                         classes="justify-start"
                         fullWidth
-                        on:click={handleCheckReview}
+                        on:click={handlePreviewReview}
                     >
                         <i class="bx bxs-star text-[20px]"></i>
-                        <p class="">Check Review</p>
+                        <p class="">Preview Review</p>
                     </Button>
                 {/if}
             </div>

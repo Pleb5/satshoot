@@ -42,19 +42,19 @@
         autoStart: true,
     };
 
-    let allTicketsOfUser: NDKEventStore<ExtendedBaseType<TicketEvent>>;
+    let allJobsOfUser: NDKEventStore<ExtendedBaseType<TicketEvent>>;
     let allOffersOfUser: NDKEventStore<ExtendedBaseType<OfferEvent>>;
-    let filteredTickets: ExtendedBaseType<ExtendedBaseType<TicketEvent>>[] = [];
+    let filteredJobs: ExtendedBaseType<ExtendedBaseType<TicketEvent>>[] = [];
     let filteredOffers: ExtendedBaseType<ExtendedBaseType<OfferEvent>>[] = [];
 
     // jobs on which use has made offers
     let appliedJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
 
     $: if (user) {
-        if (allTicketsOfUser) allTicketsOfUser.empty();
+        if (allJobsOfUser) allJobsOfUser.empty();
         if (allOffersOfUser) allOffersOfUser.empty();
 
-        allTicketsOfUser = $ndk.storeSubscribe<TicketEvent>(
+        allJobsOfUser = $ndk.storeSubscribe<TicketEvent>(
             {
                 kinds: [NDKKind.FreelanceTicket],
                 authors: [user.pubkey],
@@ -94,11 +94,11 @@
     }
 
     $: {
-        orderEventsChronologically($allTicketsOfUser);
+        orderEventsChronologically($allJobsOfUser);
 
-        filteredTickets = $allTicketsOfUser.filter((ticket) => {
+        filteredJobs = $allJobsOfUser.filter((job) => {
             const { new: isNew, inProgress, closed } = jobFilter;
-            const { status } = ticket;
+            const { status } = job;
 
             return (
                 (isNew && status === TicketStatus.New) ||
@@ -136,7 +136,7 @@
     }
 
     onDestroy(() => {
-        if (allTicketsOfUser) allTicketsOfUser.empty();
+        if (allJobsOfUser) allJobsOfUser.empty();
         if (allOffersOfUser) allOffersOfUser.empty();
         if (appliedJobs) appliedJobs.empty();
     });
@@ -183,8 +183,8 @@
                                             <div
                                                 class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
                                             >
-                                                {#each filteredTickets as ticket (ticket.id)}
-                                                    <JobCard {ticket} />
+                                                {#each filteredJobs as job (job.id)}
+                                                    <JobCard {job} showOffersDetail />
                                                 {/each}
                                             </div>
                                             <!-- Pagination -->
@@ -216,7 +216,7 @@
                                                         {offer}
                                                         skipUserProfile
                                                         skipReputation
-                                                        viewJob
+                                                        showJobDetail
                                                     />
                                                 {/each}
                                             </div>

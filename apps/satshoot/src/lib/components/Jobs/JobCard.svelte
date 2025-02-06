@@ -5,17 +5,21 @@
     import Author from './Author.svelte';
     import JobActions from './JobActions.svelte';
     import JobDetails from './JobDetails.svelte';
+    import JobOffers from './JobOffers.svelte';
 
-    export let ticket: TicketEvent;
+    export let job: TicketEvent;
+    export let showOffersDetail = false;
+
     let bech32ID = '';
 
-    $: if (ticket) {
-        bech32ID = ticket.encode();
+    $: if (job) {
+        bech32ID = job.encode();
     }
 
     enum Tabs {
         JobDescription,
         Author,
+        Offers,
         Actions,
     }
 
@@ -24,10 +28,15 @@
             icon: 'bxs-card',
             name: Tabs.JobDescription,
         },
-        {
-            icon: 'bxs-user',
-            name: Tabs.Author,
-        },
+        showOffersDetail
+            ? {
+                  icon: 'bxs-info-circle',
+                  name: Tabs.Offers,
+              }
+            : {
+                  icon: 'bxs-user',
+                  name: Tabs.Author,
+              },
         {
             icon: 'bxs-grid-alt',
             name: Tabs.Actions,
@@ -42,11 +51,13 @@
 <Card classes="border-[1px_solid_rgba(0,0,0,0.1)] gap-[0px]  overflow-hidden p-[0px]">
     <div class="jobCardDetails w-full flex flex-col gap-[0px] p-[10px] min-h-[165px]">
         {#if selectedTab === Tabs.JobDescription}
-            <JobDetails title={ticket.title} description={ticket.description} {bech32ID} />
+            <JobDetails title={job.title} description={job.description} {bech32ID} />
         {:else if selectedTab === Tabs.Author}
-            <Author user={ticket.pubkey} />
+            <Author user={job.pubkey} />
+        {:else if selectedTab === Tabs.Offers}
+            <JobOffers {job} />
         {:else if selectedTab === Tabs.Actions}
-            <JobActions job={ticket} />
+            <JobActions {job} />
         {/if}
     </div>
     <div

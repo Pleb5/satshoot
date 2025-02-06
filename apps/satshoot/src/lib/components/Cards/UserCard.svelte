@@ -32,6 +32,8 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
+    import CopyButton from '../UI/Buttons/CopyButton.svelte';
+    import QrCodeModal from '../Modals/QRCodeModal.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -130,7 +132,7 @@
             .publish()
             .then(() => {
                 toastStore.trigger({
-                    message: 'Followed!!!',
+                    message: 'Followed!',
                     background: `bg-success-300-600-token`,
                     autohide: true,
                     timeout: 5000,
@@ -182,7 +184,7 @@
             .publish()
             .then(() => {
                 toastStore.trigger({
-                    message: 'Un-followed!!!',
+                    message: 'Un-followed!',
                     background: `bg-success-300-600-token`,
                     autohide: true,
                     timeout: 5000,
@@ -259,32 +261,22 @@
 
     $: userInfoItems = [
         {
-            text: nip05,
+            text: userProfile?.nip05,
             href: profileHref,
             isExternal: false,
-            title: 'Verified',
-            iconClass: 'bx bxs-badge-check',
-            hoverColor: 'green-500',
+            title: 'nip05',
         },
         {
-            text: lud16,
-            title: 'Zap',
-            iconClass: 'bx bxs-bolt',
-            hoverColor: 'yellow-500',
+            text: userProfile?.lud16,
+            title: 'Lightning address',
         },
         {
-            text: website,
+            text: userProfile?.website,
             href: website,
             isExternal: true,
-            title: 'Website',
-            iconClass: 'bx bx-globe',
-            hoverColor: 'green-500',
+            title: 'website address',
         },
     ];
-
-    const iconBtnClasses =
-        'flex flex-row justify-center items-center px-[10px] py-[5px] text-[18px] ' +
-        'text-black-300 bg-black-100 group-hover:bg-green-100';
 
     const addressCopyBtnClasses =
         'bg-white rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
@@ -317,48 +309,37 @@
                         shortenTextWithEllipsesInMiddle(npub, 15)}
                 </a>
 
-                {#each userInfoItems as { text, href, isExternal, title, hoverColor, iconClass }}
-                    <div
-                        class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100"
-                    >
+                {#each userInfoItems as { text, href, isExternal, title }}
+                    {#if text}
                         <div
-                            class="transition ease duration-[0.3s] w-full flex flex-row bg-[white] hover:bg-blue-500 hover:text-white group"
+                            class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100"
                         >
-                            <div class="w-full flex flex-row bg-black-50">
-                                {#if href}
-                                    <a
-                                        {href}
-                                        target={isExternal ? '_blank' : '_self'}
-                                        class="grow-[1] px-[10px] py-[5px] overflow-hidden whitespace-nowrap overflow-ellipsis"
-                                    >
-                                        {text}
-                                    </a>
-                                    <div
-                                        {title}
-                                        class="{iconBtnClasses} group-hover:text-[{hoverColor}]"
-                                    >
-                                        <i class={iconClass} />
-                                    </div>
-                                {:else}
-                                    <button
-                                        class="grow-[1] px-[10px] py-[5px] text-start overflow-hidden whitespace-nowrap overflow-ellipsis"
-                                    >
-                                        {text}
-                                    </button>
-                                    <button
-                                        {title}
-                                        class="{iconBtnClasses} group-hover:text-[{hoverColor}]"
-                                    >
-                                        <i class="bx bxs-bolt" />
-                                    </button>
-                                {/if}
-
-                                <Button variant="text" classes="rounded-[0] ">
-                                    <i class={iconClass} use:clipboard={text} />
-                                </Button>
+                            <div class="w-full flex flex-row">
+                                <div class="w-full flex flex-row bg-black-50">
+                                    {#if href}
+                                        <a
+                                            {href}
+                                            target={isExternal ? '_blank' : '_self'}
+                                            class="grow-[1] px-[10px] py-[5px] overflow-hidden whitespace-nowrap overflow-ellipsis"
+                                        >
+                                            {text}
+                                        </a>
+                                    {:else}
+                                        <p
+                                            class="grow-[1] px-[10px] py-[5px] text-start overflow-hidden whitespace-nowrap overflow-ellipsis"
+                                        >
+                                            {text}
+                                        </p>
+                                    {/if}
+                                </div>
+                                <CopyButton
+                                    {text}
+                                    feedbackMessage={title + ' copied!'}
+                                    classes="rounded-[0] border-l-[1px]"
+                                />
                             </div>
                         </div>
-                    </div>
+                    {/if}
                 {/each}
             </div>
             {#if userProfile?.about}
@@ -396,12 +377,26 @@
                     class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
                 >
                     <Input value={user.npub} placeholder="npub..." fullWidth disabled noBorder />
-                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                    <Button
+                        variant="outlined"
+                        classes={addressCopyBtnClasses}
+                        on:click={() => {
+                            modalStore.trigger({
+                                type: 'component',
+                                component: {
+                                    ref: QrCodeModal,
+                                    props: { title: "User's Npub", data: user.npub },
+                                },
+                            });
+                        }}
+                    >
                         <i class="bx bx-qr" />
                     </Button>
-                    <Button variant="outlined" classes={addressCopyBtnClasses}>
-                        <i class="bx bxs-copy" use:clipboard={user.npub} />
-                    </Button>
+                    <CopyButton
+                        text={user.npub}
+                        feedbackMessage="npub copied!"
+                        classes="rounded-[0] border-l-[1px]"
+                    />
                 </div>
                 <div
                     class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
@@ -413,15 +408,29 @@
                         disabled
                         noBorder
                     />
-                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                    <Button
+                        variant="outlined"
+                        classes={addressCopyBtnClasses}
+                        on:click={() => {
+                            modalStore.trigger({
+                                type: 'component',
+                                component: {
+                                    ref: QrCodeModal,
+                                    props: {
+                                        title: "User's Profile Address",
+                                        data: nip19.nprofileEncode({ pubkey: user.pubkey }),
+                                    },
+                                },
+                            });
+                        }}
+                    >
                         <i class="bx bx-qr" />
                     </Button>
-                    <Button variant="outlined" classes={addressCopyBtnClasses}>
-                        <i
-                            class="bx bxs-copy"
-                            use:clipboard={nip19.nprofileEncode({ pubkey: user.pubkey })}
-                        />
-                    </Button>
+                    <CopyButton
+                        text={nip19.nprofileEncode({ pubkey: user.pubkey })}
+                        feedbackMessage="profile address copied!"
+                        classes="rounded-[0] border-l-[1px]"
+                    />
                 </div>
             </div>
             {#if $currentUser && $currentUser.npub !== npub}

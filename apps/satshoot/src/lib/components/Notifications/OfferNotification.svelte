@@ -90,7 +90,7 @@
 
                     <a
                         href={'/' + job.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] hover:text-blue-500"
+                        class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
                     >
                         "{job.title}"
                     </a>

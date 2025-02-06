@@ -38,6 +38,12 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
+    import TabSelector from '../UI/Buttons/TabSelector.svelte';
+
+    enum LocalKeyLoginTabs {
+        SecretKey,
+        SeedWords,
+    }
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -506,6 +512,18 @@
         return true;
     }
 
+    let activeTabForLocalKeyLogin = LocalKeyLoginTabs.SecretKey;
+    const localKeyLoginTabs = [
+        {
+            id: LocalKeyLoginTabs.SecretKey,
+            label: 'Secret Key',
+        },
+        {
+            id: LocalKeyLoginTabs.SeedWords,
+            label: 'Seed Words',
+        },
+    ];
+
     const labelClasses =
         'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-black-200 border-b-[0px] text-[14px]';
 
@@ -598,7 +616,7 @@
                             </Card>
                         </div>
                     </div>
-                    <div class={inputWrapperClasses}>
+                    <div class="{inputWrapperClasses} rounded-b-[6px]">
                         <Input
                             bind:value={bunkerUrl}
                             placeholder="bunker://..."
@@ -613,17 +631,6 @@
                             on:click={connectBunker}
                         >
                             <i class="bx bx-log-in-circle" />
-                        </Button>
-                    </div>
-                    <div class={btnWrapperClasses}>
-                        <Button
-                            variant="outlined"
-                            href="https://nostrapps.com/#signers"
-                            target="_blank"
-                            classes="rounded-[0]"
-                            grow
-                        >
-                            Browse Signer Apps
                         </Button>
                     </div>
                 </div>
@@ -645,7 +652,7 @@
                             </Card>
                         </div>
                     </div>
-                    <div class={inputWrapperClasses}>
+                    <div class="{inputWrapperClasses} rounded-b-[6px]">
                         <Button
                             variant="outlined"
                             classes="rounded-[0]"
@@ -668,18 +675,15 @@
                             {/if}
                         </Button>
                     </div>
-                    <div class={btnWrapperClasses}>
-                        <Button
-                            variant="outlined"
-                            href="https://nostrapps.com/#signers"
-                            target="_blank"
-                            classes="rounded-[0]"
-                            grow
-                        >
-                            Browse Signer Apps
-                        </Button>
-                    </div>
                 </div>
+                <Button
+                    variant="outlined"
+                    href="https://nostrapps.com/#signers"
+                    target="_blank"
+                    grow
+                >
+                    Browse Signer Apps
+                </Button>
                 <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
                     {#if displayLocalKeyLogin}
                         <div
@@ -698,34 +702,45 @@
                                     </span>
                                 </p>
                             </div>
-                            <div class="w-full flex flex-col">
-                                <div class="w-full flex flex-row gap-[5px]">
-                                    <p class={labelClasses}>Secret key</p>
-                                </div>
-                                <div class={inputWrapperClasses}>
-                                    <Input
-                                        bind:value={nsecForLocalKey}
-                                        placeholder="nsec..."
-                                        grow
-                                        noBorder
-                                        notRounded
-                                    />
-                                </div>
-                                <Passphrase
-                                    bind:passphrase={passphraseForNsec}
-                                    bind:confirmPassphrase={confirmPassphraseForNsec}
-                                    btnLabel="Login"
-                                    on:submit={loginWithNsec}
+
+                            <!-- tabs start-->
+                            <div class="w-full flex flex-col gap-[10px]">
+                                <TabSelector
+                                    tabs={localKeyLoginTabs}
+                                    bind:selectedTab={activeTabForLocalKeyLogin}
                                 />
-                            </div>
-                            <div class="w-full flex flex-col">
-                                <SeedWords bind:words={seedWordsForLocalKey} />
-                                <Passphrase
-                                    bind:passphrase={passphraseForSeedWords}
-                                    bind:confirmPassphrase={confirmPassphraseForSeedWords}
-                                    btnLabel="Login"
-                                    on:submit={loginWithSeedWords}
-                                />
+                                {#if activeTabForLocalKeyLogin === LocalKeyLoginTabs.SecretKey}
+                                    <div class="w-full flex flex-col">
+                                        <div class="w-full flex flex-row gap-[5px]">
+                                            <p class={labelClasses}>Secret key</p>
+                                        </div>
+                                        <div class={inputWrapperClasses}>
+                                            <Input
+                                                bind:value={nsecForLocalKey}
+                                                placeholder="nsec..."
+                                                grow
+                                                noBorder
+                                                notRounded
+                                            />
+                                        </div>
+                                        <Passphrase
+                                            bind:passphrase={passphraseForNsec}
+                                            bind:confirmPassphrase={confirmPassphraseForNsec}
+                                            btnLabel="Login"
+                                            on:submit={loginWithNsec}
+                                        />
+                                    </div>
+                                {:else if activeTabForLocalKeyLogin === LocalKeyLoginTabs.SeedWords}
+                                    <div class="w-full flex flex-col">
+                                        <SeedWords bind:words={seedWordsForLocalKey} />
+                                        <Passphrase
+                                            bind:passphrase={passphraseForSeedWords}
+                                            bind:confirmPassphrase={confirmPassphraseForSeedWords}
+                                            btnLabel="Login"
+                                            on:submit={loginWithSeedWords}
+                                        />
+                                    </div>
+                                {/if}
                             </div>
                         </div>
                     {/if}
