@@ -12,7 +12,7 @@
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import currentUser from '$lib/stores/user';
     import { orderEventsChronologically } from '$lib/utils/helpers';
-    import { NDKKind } from '@nostr-dev-kit/ndk';
+    import { NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy } from 'svelte';
 
@@ -35,6 +35,8 @@
         lost: false,
     };
 
+    $: searchQuery = $page.url.searchParams.get('searchTerms');
+    $: filterList = searchQuery ? searchQuery.split(',') : [];
     $: npub = $page.params.npub;
     $: user = $ndk.getUser({ npub: npub });
 
@@ -93,9 +95,10 @@
         );
     }
 
-    $: {
+    $: if ($allJobsOfUser && filterList) {
         orderEventsChronologically($allJobsOfUser);
 
+        // filter based on status
         filteredJobs = $allJobsOfUser.filter((job) => {
             const { new: isNew, inProgress, closed } = jobFilter;
             const { status } = job;
@@ -106,9 +109,11 @@
                 (closed && (status === TicketStatus.Resolved || status === TicketStatus.Failed))
             );
         });
+
+        filterJobs();
     }
 
-    $: {
+    $: if ($allOffersOfUser && filterList) {
         orderEventsChronologically($allOffersOfUser);
 
         filteredOffers = $allOffersOfUser.filter((offer) => {
@@ -133,6 +138,8 @@
                 offerStatus === OfferStatus.Unknown
             );
         });
+
+        filterOffers();
     }
 
     onDestroy(() => {
@@ -140,6 +147,54 @@
         if (allOffersOfUser) allOffersOfUser.empty();
         if (appliedJobs) appliedJobs.empty();
     });
+
+    // filter based on search terms
+    function filterJobs() {
+        // We need to check all jobs against all filters
+        if (filterList.length > 0) {
+            filteredJobs = filteredJobs.filter((job) => {
+                const lowerCaseTitle = job.title.toLowerCase();
+                const lowerCaseDescription = job.description.toLowerCase();
+
+                // Check if the job matches any filter
+                const matchesFilter = filterList.some((filter: string) => {
+                    const lowerCaseFilter = filter.toLowerCase();
+
+                    // Check title and description and tags
+                    const titleContains = lowerCaseTitle.includes(lowerCaseFilter);
+                    const descContains = lowerCaseDescription.includes(lowerCaseFilter);
+                    const tagsContain = job.tags.some((tag: NDKTag) =>
+                        (tag[1] as string).toLowerCase().includes(lowerCaseFilter)
+                    );
+
+                    return titleContains || descContains || tagsContain;
+                });
+
+                return matchesFilter;
+            });
+        }
+    }
+
+    // filter based on search terms
+    function filterOffers() {
+        // We need to check all jobs against all filters
+        if (filterList.length > 0) {
+            filteredOffers = filteredOffers.filter((offer) => {
+                const lowerCaseDescription = offer.description.toLowerCase();
+
+                // Check if the job matches any filter
+                const matchesFilter = filterList.some((filter: string) => {
+                    const lowerCaseFilter = filter.toLowerCase();
+
+                    const descContains = lowerCaseDescription.includes(lowerCaseFilter);
+
+                    return descContains;
+                });
+
+                return matchesFilter;
+            });
+        }
+    }
 
     $: isOwnProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
 

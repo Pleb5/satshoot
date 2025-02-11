@@ -4,8 +4,13 @@
     import ndk from '$lib/stores/ndk';
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
+    import hljs from 'highlight.js';
+    import 'highlight.js/styles/github-dark.css'; // Choose your preferred style
+
     export let content = '';
+
     let sanitizedContent = '';
+
     const getPub = async (token: Token) => {
         if (token.type === 'nostr') {
             const id = `${token.tagType}${token.content}`;
@@ -22,6 +27,8 @@
                     return;
             }
             let user = $ndk.getUser({ hexpubkey: npub });
+            token.npub = user.npub;
+
             try {
                 const profile = await user.fetchProfile({
                     cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
@@ -61,6 +68,7 @@
             }
         }
     };
+
     const nostrRegex = /^(nostr:)?n(event|ote|pub|profile|addr)([a-zA-Z0-9]{10,1000})/;
     const nostrTokenizer: TokenizerAndRendererExtension = {
         name: 'nostr',
@@ -86,22 +94,24 @@
             }
         },
         renderer(token: Tokens.Generic) {
-            const { tagType, content, userName } = token;
+            const { tagType, content, userName, npub } = token;
             let url = `/${tagType}${content}`;
-            let linkText = userName ? `@${userName}` : `${tagType}${content}`.slice(0, 20) + '...';
+            let linkText = userName
+                ? `@${userName}`
+                : `${(tagType + content).slice(0, 10)}:${(tagType + content).slice(-10)}`;
             switch (tagType) {
                 case 'nevent':
                 case 'note':
                     url = `https://coracle.social/notes/${tagType}${content}`;
                     break;
                 case 'nprofile':
-                    url = `https://coracle.social/people/${tagType}${content}`;
+                    url = npub ? `/${npub}` : `https://coracle.social/people/${tagType}${content}`;
                     break;
                 case 'npub':
                 case 'naddr':
                     break;
             }
-            return `<a href="${url}">${linkText}</a>`;
+            return `<a href="${url}" class="text-blue-600 hover:text-blue-800 hover:underline">${linkText}</a>`;
         },
     };
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+/;
@@ -132,22 +142,56 @@
                 const { tagType, content, userName } = token;
                 let url = `/${content}`;
                 let linkText = userName ? `@${userName}` : token.text;
-                return `<a href="${url}">${linkText}</a>`;
+                return `<a href="${url}" class="text-blue-600 hover:text-blue-800 hover:underline">${linkText}</a>`;
             } else {
-                return `<a href="${token.href}">${token.text}</a>`;
+                return `<a href="${token.href}" class="text-blue-600 hover:text-blue-800 hover:underline">${token.text}</a>`;
             }
         },
     };
+
     marked.use({
         extensions: [nostrTokenizer, emailTokenizer],
         async: true,
+        breaks: true,
         walkTokens: getPub,
         renderer: {
             image() {
                 return '';
             },
+            link(token) {
+                console.log('token link :>> ', token);
+                const { href, text } = token;
+
+                return `<a href="${href}" class="text-blue-600 hover:text-blue-800 hover:underline">${text}</a>`;
+            },
+            list(token) {
+                const listItems = token.items
+                    .map((listItem) => {
+                        return `<li>${listItem.text}</li>`;
+                    })
+                    .join('\n');
+
+                const listClass = token.ordered
+                    ? 'list-decimal list-inside'
+                    : 'list-disc list-inside';
+
+                return token.ordered
+                    ? `<ol class="${listClass}">${listItems}</ol>`
+                    : `<ul class="${listClass}">${listItems}</ul>`;
+            },
+            code(token) {
+                const validLang = token.lang || 'plaintext';
+                const highlightedCode = hljs.highlight(token.text, {
+                    language: validLang,
+                }).value;
+
+                return `
+                    <pre class="hljs"><code class="language-${validLang}">${highlightedCode}</code></pre>
+                `;
+            },
         },
     });
+
     $: if (content) {
         (async () => {
             const parsed = await marked(content);

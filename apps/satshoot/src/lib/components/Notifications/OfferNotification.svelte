@@ -18,9 +18,9 @@
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
 
-    export let offer: OfferEvent;
+    export let notification: OfferEvent;
 
-    $: user = $ndk.getUser({ pubkey: offer.pubkey });
+    $: user = $ndk.getUser({ pubkey: notification.pubkey });
     $: userName = user.npub.substring(0, 8);
     $: userImage = `https://robohash.org/${user.pubkey}`;
 
@@ -38,7 +38,7 @@
             }
         }
 
-        const dTagOfJob = offer.referencedTicketAddress.split(':')[2];
+        const dTagOfJob = notification.referencedTicketAddress.split(':')[2];
         const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
             kinds: [NDKKind.FreelanceTicket],
             '#d': [dTagOfJob],
@@ -57,13 +57,13 @@
 </script>
 
 <Card
-    classes={$readNotifications.has(offer.id) ? 'bg-black-50' : ''}
+    classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
     on:click={() => {
-        readNotifications.update((notifications) => notifications.add(offer.id));
+        readNotifications.update((notifications) => notifications.add(notification.id));
     }}
 >
-    <NotificationTimestamp ndkEvent={offer} />
+    <NotificationTimestamp ndkEvent={notification} />
     {#if job}
         <div class="w-full flex flex-row gap-[15px]">
             <a href={'/' + user.npub}>
@@ -74,8 +74,8 @@
                     <p>{userName}</p>
                 </a>
                 <div class="flex flex-row gap-[5px] flex-wrap">
-                    {#if offer.pubkey === $currentUser?.pubkey}
-                        {#if job.acceptedOfferAddress === offer.offerAddress}
+                    {#if notification.pubkey === $currentUser?.pubkey}
+                        {#if job.acceptedOfferAddress === notification.offerAddress}
                             <p>
                                 You have <span class="text-warning-500">Won</span> the offer on the job:
                             </p>
