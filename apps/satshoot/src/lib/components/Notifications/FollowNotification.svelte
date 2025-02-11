@@ -7,9 +7,9 @@
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
 
-    export let followEvent: NDKEvent;
+    export let notification: NDKEvent;
 
-    const follower = $ndk.getUser({ pubkey: followEvent.pubkey });
+    const follower = $ndk.getUser({ pubkey: notification.pubkey });
     let followerName = follower.npub.substring(0, 8);
     let followerImage = `https://robohash.org/${follower.pubkey}`;
     let followerProfile: NDKUserProfile | null;
@@ -28,17 +28,17 @@
 </script>
 
 <Card
-    classes={$readNotifications.has(followEvent.id) ? 'bg-black-50' : ''}
+    classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
     on:click={() => {
-        readNotifications.update((notifications) => notifications.add(followEvent.id));
+        readNotifications.update((notifications) => notifications.add(notification.id));
     }}
 >
-    <NotificationTimestamp ndkEvent={followEvent} />
+    <NotificationTimestamp ndkEvent={notification} />
     <a href={'/' + follower.npub} class="flex flex-row items-center gap-[10px]">
         <ProfileImage src={followerImage} />
         <div class="flex flex-col gap-[0px]">
-            <p class="font-bold text-sm md:text-lg">{followerName}</p>
+            <p>{followerName}</p>
             <p>has followed you</p>
         </div>
     </a>

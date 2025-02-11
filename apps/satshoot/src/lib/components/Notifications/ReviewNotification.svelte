@@ -15,9 +15,9 @@
 
     const modalStore = getModalStore();
 
-    export let review: ReviewEvent;
+    export let notification: ReviewEvent;
 
-    $: user = $ndk.getUser({ pubkey: review.pubkey });
+    $: user = $ndk.getUser({ pubkey: notification.pubkey });
     $: userName = user.npub.substring(0, 8);
     $: userImage = `https://robohash.org/${user.pubkey}`;
 
@@ -35,15 +35,15 @@
             }
         }
 
-        if (review.reviewedEventAddress) {
-            const reviewedEvent = await $ndk.fetchEvent(review.reviewedEventAddress, {
+        if (notification.reviewedEventAddress) {
+            const reviewedEvent = await $ndk.fetchEvent(notification.reviewedEventAddress, {
                 groupable: true,
                 groupableDelay: 1000,
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             });
 
             if (reviewedEvent) {
-                if (review.type === ReviewType.Client) {
+                if (notification.type === ReviewType.Client) {
                     job = TicketEvent.from(reviewedEvent);
                 } else {
                     const offer = OfferEvent.from(reviewedEvent);
@@ -63,7 +63,7 @@
     function handlePreview() {
         const modalComponent: ModalComponent = {
             ref: ReviewModal,
-            props: { review },
+            props: { review: notification },
         };
 
         const modal: ModalSettings = {
@@ -75,13 +75,13 @@
 </script>
 
 <Card
-    classes={$readNotifications.has(review.id) ? 'bg-black-50' : ''}
+    classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
     on:click={() => {
-        readNotifications.update((notifications) => notifications.add(review.id));
+        readNotifications.update((notifications) => notifications.add(notification.id));
     }}
 >
-    <NotificationTimestamp ndkEvent={review} />
+    <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + user.npub}>
             <ProfileImage src={userImage} />
