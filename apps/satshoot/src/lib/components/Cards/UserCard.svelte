@@ -31,6 +31,9 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
+    import ProfileImage from '../UI/Display/ProfileImage.svelte';
+    import CopyButton from '../UI/Buttons/CopyButton.svelte';
+    import QrCodeModal from '../Modals/QRCodeModal.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -129,7 +132,7 @@
             .publish()
             .then(() => {
                 toastStore.trigger({
-                    message: 'Followed!!!',
+                    message: 'Followed!',
                     background: `bg-success-300-600-token`,
                     autohide: true,
                     timeout: 5000,
@@ -181,7 +184,7 @@
             .publish()
             .then(() => {
                 toastStore.trigger({
-                    message: 'Un-followed!!!',
+                    message: 'Un-followed!',
                     background: `bg-success-300-600-token`,
                     autohide: true,
                     timeout: 5000,
@@ -258,41 +261,25 @@
 
     $: userInfoItems = [
         {
-            text: nip05,
+            text: userProfile?.nip05,
             href: profileHref,
             isExternal: false,
-            title: 'Verified',
-            iconClass: 'bx bxs-badge-check',
-            hoverColor: 'rgb(225,255,225,0.75)',
+            title: 'nip05',
         },
         {
-            text: lud16,
-            title: 'Zap',
-            iconClass: 'bx bxs-bolt',
-            hoverColor: 'rgb(250,250,0,0.75)',
+            text: userProfile?.lud16,
+            title: 'Lightning address',
         },
         {
-            text: website,
+            text: userProfile?.website,
             href: website,
             isExternal: true,
-            title: 'Website',
-            iconClass: 'bx bx-globe',
-            hoverColor: 'rgb(225,255,225,0.75)',
+            title: 'website address',
         },
     ];
 
-    const profileLinkClasses =
-        'transition transition-ease duration-[0.3s] transform w-[55px] h-[55px] min-w-[55px] min-h-[55px] ' +
-        'overflow-hidden relative rounded-[100%] shadow-[0_0_4px_4px_rgba(0,0,0,0.5)] bg-[rgb(0,0,0,0.1)] ' +
-        'outline outline-[4px] outline-[rgb(255,255,255)] hover:outline-[rgb(59,115,246)] hover:scale-[1.02] ' +
-        'transform w-[75px] h-[75px] min-w-[75px] min-h-[75px] shadow-[0_0_8px_4px_rgba(0,0,0,0.5)] hover:scale-[1.03]';
-
-    const iconBtnClasses =
-        'flex flex-row justify-center items-center px-[10px] py-[5px] text-[18px] ' +
-        'text-[rgb(0,0,0,0.25)] bg-[rgb(0,0,0,0.1)] group-hover:bg-[rgb(225,255,225,0.1)]';
-
     const addressCopyBtnClasses =
-        'bg-white rounded-[0px] border-l-[1px] border-l-[rgb(0,0,0,0.1)] hover:border-l-[rgb(0,0,0,0.0)] ';
+        'bg-white rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
 </script>
 
 <div class="w-full max-w-[350px] flex flex-col gap-[25px] max-[768px]:max-w-full">
@@ -301,7 +288,7 @@
         <Card classes="gap-[15px]">
             <div class="w-full flex flex-col">
                 <div
-                    class="w-full overflow-hidden relative rounded-[6px] shadow-[0_0_4px_0_rgb(0,0,0,0.1)] bg-[rgb(0,0,0,0.1)] pt-[25%]"
+                    class="w-full overflow-hidden relative rounded-[6px] shadow-subtle bg-black-100 pt-[25%]"
                 >
                     <img
                         class="w-full h-full absolute inset-0 object-cover"
@@ -310,12 +297,8 @@
                     />
                 </div>
                 <div class="w-full mt-[-35px] flex flex-col justify-center items-center">
-                    <a href={profileHref} class={profileLinkClasses}>
-                        <img
-                            class="w-full h-full absolute inset-0 object-cover"
-                            src={userProfile?.image || avatarImage}
-                            alt="profile"
-                        />
+                    <a href={profileHref}>
+                        <ProfileImage src={userProfile?.image || avatarImage} size="md" />
                     </a>
                 </div>
             </div>
@@ -326,57 +309,46 @@
                         shortenTextWithEllipsesInMiddle(npub, 15)}
                 </a>
 
-                {#each userInfoItems as { text, href, isExternal, title, hoverColor, iconClass }}
-                    <div
-                        class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)]"
-                    >
+                {#each userInfoItems as { text, href, isExternal, title }}
+                    {#if text}
                         <div
-                            class="transition ease duration-[0.3s] w-full flex flex-row bg-[white] hover:bg-[rgb(59,115,246)] hover:text-white group"
+                            class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100"
                         >
-                            <div class="w-full flex flex-row bg-[rgb(0,0,0,0.05)]">
-                                {#if href}
-                                    <a
-                                        {href}
-                                        target={isExternal ? '_blank' : '_self'}
-                                        class="grow-[1] px-[10px] py-[5px] overflow-hidden whitespace-nowrap overflow-ellipsis"
-                                    >
-                                        {text}
-                                    </a>
-                                    <div
-                                        {title}
-                                        class="{iconBtnClasses} group-hover:text-[{hoverColor}]"
-                                    >
-                                        <i class={iconClass} />
-                                    </div>
-                                {:else}
-                                    <button
-                                        class="grow-[1] px-[10px] py-[5px] text-start overflow-hidden whitespace-nowrap overflow-ellipsis"
-                                    >
-                                        {text}
-                                    </button>
-                                    <button
-                                        {title}
-                                        class="{iconBtnClasses} group-hover:text-[{hoverColor}]"
-                                    >
-                                        <i class="bx bxs-bolt" />
-                                    </button>
-                                {/if}
-
-                                <Button variant="text" classes="rounded-[0] ">
-                                    <i class={iconClass} use:clipboard={text} />
-                                </Button>
+                            <div class="w-full flex flex-row">
+                                <div class="w-full flex flex-row bg-black-50">
+                                    {#if href}
+                                        <a
+                                            {href}
+                                            target={isExternal ? '_blank' : '_self'}
+                                            class="grow-[1] px-[10px] py-[5px] overflow-hidden whitespace-nowrap overflow-ellipsis"
+                                        >
+                                            {text}
+                                        </a>
+                                    {:else}
+                                        <p
+                                            class="grow-[1] px-[10px] py-[5px] text-start overflow-hidden whitespace-nowrap overflow-ellipsis"
+                                        >
+                                            {text}
+                                        </p>
+                                    {/if}
+                                </div>
+                                <CopyButton
+                                    {text}
+                                    feedbackMessage={title + ' copied!'}
+                                    classes="rounded-[0] border-l-[1px]"
+                                />
                             </div>
                         </div>
-                    </div>
+                    {/if}
                 {/each}
             </div>
             {#if userProfile?.about}
-                <div class="w-full rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]">
+                <div class="w-full rounded-[6px] border-[1px] border-black-200">
                     <ExpandableText text={userProfile.about} expandText="View Full About" />
                 </div>
             {/if}
             <div
-                class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden bg-[rgb(0,0,0,0.1)] flex-wrap p-[4px]"
+                class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden bg-black-100 flex-wrap p-[4px]"
             >
                 {#if showMessageButton}
                     <Button
@@ -402,18 +374,32 @@
             </div>
             <div class="w-full flex flex-col gap-[5px]">
                 <div
-                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
                 >
                     <Input value={user.npub} placeholder="npub..." fullWidth disabled noBorder />
-                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                    <Button
+                        variant="outlined"
+                        classes={addressCopyBtnClasses}
+                        on:click={() => {
+                            modalStore.trigger({
+                                type: 'component',
+                                component: {
+                                    ref: QrCodeModal,
+                                    props: { title: "User's Npub", data: user.npub },
+                                },
+                            });
+                        }}
+                    >
                         <i class="bx bx-qr" />
                     </Button>
-                    <Button variant="outlined" classes={addressCopyBtnClasses}>
-                        <i class="bx bxs-copy" use:clipboard={user.npub} />
-                    </Button>
+                    <CopyButton
+                        text={user.npub}
+                        feedbackMessage="npub copied!"
+                        classes="rounded-[0] border-l-[1px]"
+                    />
                 </div>
                 <div
-                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
                 >
                     <Input
                         value={nip19.nprofileEncode({ pubkey: user.pubkey })}
@@ -422,15 +408,29 @@
                         disabled
                         noBorder
                     />
-                    <Button variant="outlined" classes={addressCopyBtnClasses}>
+                    <Button
+                        variant="outlined"
+                        classes={addressCopyBtnClasses}
+                        on:click={() => {
+                            modalStore.trigger({
+                                type: 'component',
+                                component: {
+                                    ref: QrCodeModal,
+                                    props: {
+                                        title: "User's Profile Address",
+                                        data: nip19.nprofileEncode({ pubkey: user.pubkey }),
+                                    },
+                                },
+                            });
+                        }}
+                    >
                         <i class="bx bx-qr" />
                     </Button>
-                    <Button variant="outlined" classes={addressCopyBtnClasses}>
-                        <i
-                            class="bx bxs-copy"
-                            use:clipboard={nip19.nprofileEncode({ pubkey: user.pubkey })}
-                        />
-                    </Button>
+                    <CopyButton
+                        text={nip19.nprofileEncode({ pubkey: user.pubkey })}
+                        feedbackMessage="profile address copied!"
+                        classes="rounded-[0] border-l-[1px]"
+                    />
                 </div>
             </div>
             {#if $currentUser && $currentUser.npub !== npub}

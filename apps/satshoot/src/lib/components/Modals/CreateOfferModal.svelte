@@ -197,19 +197,17 @@
     }
 
     const selectInputClasses =
-        'transition ease duration-[0.3s] w-full outline outline-[1px] outline-[rgb(0,0,0,0.1)] py-[6px] px-[12px] rounded-[6px] ' +
+        'transition ease duration-[0.3s] w-full outline outline-[1px] outline-black-100 py-[6px] px-[12px] rounded-[6px] ' +
         'transform scale-100 whitespace-nowrap flex flex-row justify-between items-center gap-[8px] hover:bg-[#3b82f6] hover:text-white';
 
     const selectOptionClasses =
-        'transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-[rgb(59,115,246)] hover:text-white';
+        'transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
 </script>
 
 {#if $modalStore[0]}
     <Popup title="Create Offer">
         <div class="w-full flex flex-col gap-[15px]">
-            <div
-                class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.15)]"
-            >
+            <div class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-black-200">
                 <div class="w-full flex flex-col gap-[10px] p-[10px]">
                     <div class="flex flex-col gap-[5px] grow-[1]">
                         <div class="">
@@ -259,7 +257,7 @@
                                 fullWidth
                             />
                             <span
-                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-[rgb(0,0,0,0.5)] pointer-events-none"
+                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 pointer-events-none"
                             >
                                 %
                             </span>
@@ -267,7 +265,7 @@
                     </div>
                 </div>
                 <div
-                    class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-[rgb(0,0,0,0.15)]"
+                    class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-black-200"
                 >
                     <div class="grow-[1]">
                         <p class="font-[500]">

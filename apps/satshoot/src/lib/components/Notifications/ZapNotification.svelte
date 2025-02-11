@@ -20,14 +20,14 @@
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
 
-    export let zapEvent: NDKEvent;
+    export let notification: NDKEvent;
 
-    const zapInvoice: NDKZapInvoice | null = zapInvoiceFromEvent(zapEvent);
+    const zapInvoice: NDKZapInvoice | null = zapInvoiceFromEvent(notification);
 
     const zapper =
-        zapEvent.kind === NDKKind.Zap
-            ? $ndk.getUser({ pubkey: zapEvent.tagValue('P') })
-            : $ndk.getUser({ pubkey: zapEvent.pubkey });
+        notification.kind === NDKKind.Zap
+            ? $ndk.getUser({ pubkey: notification.tagValue('P') })
+            : $ndk.getUser({ pubkey: notification.pubkey });
 
     let zapperName = zapper.npub.substring(0, 8);
     let zapperImage = `https://robohash.org/${zapper.pubkey}`;
@@ -86,13 +86,13 @@
             if (zapInvoice.amount) {
                 amount = Math.round(zapInvoice.amount / 1000);
             }
-        } else if (zapEvent.kind === NDKKind.Nutzap) {
+        } else if (notification.kind === NDKKind.Nutzap) {
             // Nutzap
-            const nutZapAmount = zapEvent.tagValue('amount');
+            const nutZapAmount = notification.tagValue('amount');
             if (nutZapAmount) {
                 amount = Math.round(parseInt(nutZapAmount) / 1000);
             }
-            const zappedOfferID = zapEvent.tagValue('e');
+            const zappedOfferID = notification.tagValue('e');
             if (zappedOfferID) {
                 const offerEvent = await $ndk.fetchEvent(zappedOfferID, {
                     groupable: true,
@@ -108,13 +108,15 @@
 </script>
 
 <Card
-    classes={$readNotifications.has(zapEvent.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
     on:click={() => {
-        readNotifications.update((notifications) => notifications.add(zapEvent.id));
+        if (!$readNotifications.has(notification.id)) {
+            readNotifications.update((notifications) => notifications.add(notification.id));
+        }
     }}
 >
-    <NotificationTimestamp ndkEvent={zapEvent} />
+    <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + zapper.npub}>
             <ProfileImage src={zapperImage} />
@@ -130,7 +132,7 @@
                 {#if job}
                     <a
                         href={'/' + job.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] hover:text-blue-500"
+                        class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
                     >
                         for the job: "{job.title}"
                     </a>

@@ -147,7 +147,7 @@
 
     const profileDropdownWrapperClass =
         'dropdown-menu absolute right-0 z-10 mt-[5px] w-[100%] min-w-[150px] bg-white ' +
-        'rounded-[6px] border-[1px] border-[rgb(0,0,0,0.1)] shadow-[0_0px_8px_rgba(0,0,0,0.1)]';
+        'rounded-[6px] border-[1px] border-black-100 shadow-soft';
 
     const profileMenuItemClass = 'px-[4px] py-[4px] gap-2  justify-start';
 

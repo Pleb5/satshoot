@@ -2,6 +2,7 @@
     import FollowNotification from '$lib/components/Notifications/FollowNotification.svelte';
     import JobNotification from '$lib/components/Notifications/JobNotification.svelte';
     import MessageNotification from '$lib/components/Notifications/MessageNotification.svelte';
+    import NotificationsList from '$lib/components/Notifications/NotificationsList.svelte';
     import OfferNotification from '$lib/components/Notifications/OfferNotification.svelte';
     import ReviewNotification from '$lib/components/Notifications/ReviewNotification.svelte';
     import ZapNotification from '$lib/components/Notifications/ZapNotification.svelte';
@@ -33,30 +34,66 @@
     const toastStore = getToastStore();
 
     let selectedTab = Tab.Follows;
+    let previousTab: Tab | null = null;
 
-    $: if ($jobNotifications) {
-        // console.log('ticket notifs', $jobNotifications);
-    }
-    $: if ($offerNotifications) {
-        // console.log('offer notifs', $offerNotifications);
-    }
-    $: if ($messageNotifications) {
-        // console.log('message notifs', $messageNotifications);
-    }
-    $: if ($reviewNotifications) {
-        // console.log('review notifs', $reviewNotifications);
+    $: {
+        if (previousTab !== null && previousTab !== selectedTab) {
+            markNotificationsAsRead(previousTab);
+        }
+        previousTab = selectedTab;
     }
 
-    $: if ($receivedZapsNotifications) {
-        // console.log('received a zap notification', $receivedZapsNotifications);
-    }
-
-    $: if ($messageNotifications) {
-        // console.log('received message notification')
-    }
-
-    $: if ($followNotifications) {
-        // console.log('received message notification')
+    function markNotificationsAsRead(tab: Tab) {
+        switch (tab) {
+            case Tab.Follows:
+                readNotifications.update((notifications) => {
+                    $followNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Zaps:
+                readNotifications.update((notifications) => {
+                    $receivedZapsNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Jobs:
+                readNotifications.update((notifications) => {
+                    $jobNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Offers:
+                readNotifications.update((notifications) => {
+                    $offerNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Messages:
+                readNotifications.update((notifications) => {
+                    $messageNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case Tab.Reviews:
+                readNotifications.update((notifications) => {
+                    $reviewNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+        }
     }
 
     $: if (!$notificationsEnabled) {
@@ -115,7 +152,7 @@
             id: Tab.Reviews,
             label: 'Reviews',
             icon: 'star',
-            notificationCount: $followNotifications.filter(
+            notificationCount: $reviewNotifications.filter(
                 (notification) => !$readNotifications.has(notification.id)
             ).length,
         },
@@ -132,101 +169,35 @@
                     <TabSelector {tabs} bind:selectedTab />
                     <div class="w-full flex flex-col flex-grow overflow-y-auto">
                         {#if selectedTab === Tab.Follows}
-                            {#if $followNotifications.length > 0}
-                                <div class="w-full flex flex-col gap-[10px]">
-                                    {#each $followNotifications as followEvent (followEvent.id)}
-                                        <FollowNotification {followEvent} />
-                                    {/each}
-                                </div>
-                            {:else}
-                                <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
-                                >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
-                                        No New Follower!
-                                    </p>
-                                </div>
-                            {/if}
+                            <NotificationsList
+                                notifications={$followNotifications}
+                                NotificationComponent={FollowNotification}
+                            />
                         {:else if selectedTab === Tab.Zaps}
-                            {#if $receivedZapsNotifications.length > 0}
-                                <div class="w-full flex flex-col gap-[10px]">
-                                    {#each $receivedZapsNotifications as zap (zap.id)}
-                                        <ZapNotification zapEvent={zap} />
-                                    {/each}
-                                </div>
-                            {:else}
-                                <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
-                                >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
-                                        No New Zaps!
-                                    </p>
-                                </div>
-                            {/if}
+                            <NotificationsList
+                                notifications={$receivedZapsNotifications}
+                                NotificationComponent={ZapNotification}
+                            />
                         {:else if selectedTab === Tab.Jobs}
-                            {#if $jobNotifications.length > 0}
-                                <div class="w-full flex flex-col gap-[10px]">
-                                    {#each $jobNotifications as job (job.id)}
-                                        <JobNotification {job} />
-                                    {/each}
-                                </div>
-                            {:else}
-                                <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
-                                >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
-                                        No New Jobs!
-                                    </p>
-                                </div>
-                            {/if}
+                            <NotificationsList
+                                notifications={$jobNotifications}
+                                NotificationComponent={JobNotification}
+                            />
                         {:else if selectedTab === Tab.Offers}
-                            {#if $offerNotifications.length > 0}
-                                <div class="w-full flex flex-col gap-[10px]">
-                                    {#each $offerNotifications as offer (offer.id)}
-                                        <OfferNotification {offer} />
-                                    {/each}
-                                </div>
-                            {:else}
-                                <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
-                                >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
-                                        No New Offers!
-                                    </p>
-                                </div>
-                            {/if}
+                            <NotificationsList
+                                notifications={$offerNotifications}
+                                NotificationComponent={OfferNotification}
+                            />
                         {:else if selectedTab === Tab.Messages}
-                            {#if $messageNotifications.length > 0}
-                                <div class="w-full flex flex-col gap-[10px]">
-                                    {#each $messageNotifications as message (message.id)}
-                                        <MessageNotification {message} />
-                                    {/each}
-                                </div>
-                            {:else}
-                                <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
-                                >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
-                                        No New Messages!
-                                    </p>
-                                </div>
-                            {/if}
+                            <NotificationsList
+                                notifications={$messageNotifications}
+                                NotificationComponent={MessageNotification}
+                            />
                         {:else if selectedTab === Tab.Reviews}
-                            {#if $reviewNotifications.length > 0}
-                                <div class="w-full flex flex-col gap-[10px]">
-                                    {#each $reviewNotifications as review (review.id)}
-                                        <ReviewNotification {review} />
-                                    {/each}
-                                </div>
-                            {:else}
-                                <div
-                                    class="w-full min-h-[100px] rounded-[8px] bg-[rgb(0,0,0,0.1)] border-[4px] border-[rgb(0,0,0,0.1)] flex flex-col justify-center items-center"
-                                >
-                                    <p class="font-[600] text-[18px] text-[rgb(0,0,0,0.35)]">
-                                        No New Review!
-                                    </p>
-                                </div>
-                            {/if}
+                            <NotificationsList
+                                notifications={$reviewNotifications}
+                                NotificationComponent={ReviewNotification}
+                            />
                         {/if}
                     </div>
                 </div>

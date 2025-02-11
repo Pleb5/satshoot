@@ -99,23 +99,26 @@
                     trueLabel="Yes"
                     falseLabel="No"
                 />
-                <div class="w-full flex flex-col gap-[5px]">
-                    <div class="w-full max-h-[50vh] overflow-auto">
-                        <p class="w-full">Select excellent qualities of the Client, if any:</p>
+                {#if thumb}
+                    <div class="w-full flex flex-col gap-[5px]">
+                        <div class="w-full max-h-[50vh] overflow-auto">
+                            <p class="w-full">Select excellent qualities of the Client, if any:</p>
+                        </div>
+                        <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
+                            <Checkbox
+                                id="availability"
+                                label="Highly available, attentive, and responsive"
+                                bind:checked={availability}
+                            />
+                            <Checkbox
+                                id="communication"
+                                label="Especially clear and kind communication"
+                                bind:checked={communication}
+                            />
+                        </div>
                     </div>
-                    <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
-                        <Checkbox
-                            id="availability"
-                            label="Highly available, attentive, and responsive"
-                            bind:checked={availability}
-                        />
-                        <Checkbox
-                            id="communication"
-                            label="Especially clear and kind communication"
-                            bind:checked={communication}
-                        />
-                    </div>
-                </div>
+                {/if}
+
                 <div class="w-full flex flex-col gap-[5px]">
                     <div class="w-full max-h-[50vh] overflow-auto">
                         <p class="w-full">Share your experience to help others:</p>

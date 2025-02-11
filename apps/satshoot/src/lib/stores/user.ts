@@ -10,7 +10,7 @@ import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
 
 import { filterValidPTags, getSetSerializer } from '../utils/misc';
-import ndk, { type LoginMethod } from '$lib/stores/ndk';
+import ndk, { LoginMethod } from '$lib/stores/ndk';
 
 export const loginAlert = writable(true);
 

@@ -15,16 +15,16 @@
     const tagLinkClasses =
         'transition-all ease duration-[0.3s] w-full relative p-[15px] rounded-[10px] bg-white ' +
         'border-[3px] border-white flex flex-col justify-center items-center gap-[25px] ' +
-        'shadow-[0_0_4px_0_rgba(0,0,0,0.1)] text-[rgba(0,0,0,0.5)] font-[700] text-[18px] ' +
-        'text-center hover:scale-[1.01] hover:shadow-[0_0_4px_0_rgba(0,0,0,0.2)] hover:border-[3px] ' +
-        'hover:border-[#3b73f6] hover:no-underline';
+        'shadow-subtle text-black-500 font-[700] text-[18px] ' +
+        'text-center hover:scale-[1.01] hover:shadow-deep hover:border-[3px] ' +
+        'hover:border-blue-500 hover:no-underline';
 
     const viewMoreBtnClasses =
         'transition-all ease duration-[0.3s] outline-0 p-[10px_20px] rounded-[5px] ' +
         'font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row ' +
-        'justify-center items-center gap-[10px] bg-[rgba(255,255,255,0)] text-[rgba(0,0,0,0.5)] ' +
-        'border-[1px] border-solid border-[rgba(0,0,0,0.1)] w-full max-w-[200px] hover:bg-[#3b73f6] ' +
-        'hover:text-[rgb(255,255,255)] hover:border-[1px_solid_rgba(0,0,0,0)] hover:max-w-[225px]';
+        'justify-center items-center gap-[10px] bg-white-0 text-black-500 ' +
+        'border-[1px] border-solid border-black-100 w-full max-w-[200px] hover:bg-blue-500 ' +
+        'hover:text-white hover:border-[1px_solid_transparent] hover:max-w-[225px]';
 </script>
 
 <div class="w-full flex flex-col justify-center items-center py-[50px]">

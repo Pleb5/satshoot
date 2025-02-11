@@ -31,15 +31,15 @@
 
     const statusRowWrapperClasses =
         'w-full flex flex-row gap-[5px] flex-wrap justify-around rounded-[4px] ' +
-        'border-[1px] border-[rgb(0,0,0,0.1)] text-[rgb(0,0,0,0.5)] font-[600] p-[5px]';
+        'border-[1px] border-black-100 text-black-500 font-[600] p-[5px]';
 
     const statusRowItemClasses =
         'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center grow-[1] items-center ' +
-        'px-[10px] py-[5px] rounded-[4px] hover:text-white hover:bg-[#3b73f6] max-[768px]:justify-start';
+        'px-[10px] py-[5px] rounded-[4px] hover:text-white hover:bg-blue-500 max-[768px]:justify-start';
 
     const tagItemClasses =
-        'transition ease duration-[0.3s] flex flex-row px-[10px] py-[5px] border-[1px] border-[rgb(0,0,0,0.15)] ' +
-        'rounded-[4px] font-[500] text-[rgb(0,0,0,0.5)] hover:bg-[rgb(59,115,246)] hover:text-white hover:border-[rgb(0,0,0,0.0)]';
+        'transition ease duration-[0.3s] flex flex-row px-[10px] py-[5px] border-[1px] border-black-200 ' +
+        'rounded-[4px] font-[500] text-black-500 hover:bg-blue-500 hover:text-white hover:border-transparent';
 </script>
 
 <Card classes="gap-[15px]">

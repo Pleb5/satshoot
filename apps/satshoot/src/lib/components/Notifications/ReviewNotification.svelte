@@ -15,11 +15,11 @@
 
     const modalStore = getModalStore();
 
-    export let review: ReviewEvent;
+    export let notification: ReviewEvent;
 
-    $: user = $ndk.getUser({ pubkey: review.pubkey });
-    $: userName = user.npub.substring(0, 8);
-    $: userImage = `https://robohash.org/${user.pubkey}`;
+    let user = $ndk.getUser({ pubkey: notification.pubkey });
+    let userName = user.npub.substring(0, 8);
+    let userImage = `https://robohash.org/${user.pubkey}`;
 
     let userProfile: NDKUserProfile | null;
     let job: TicketEvent | null;
@@ -35,15 +35,15 @@
             }
         }
 
-        if (review.reviewedEventAddress) {
-            const reviewedEvent = await $ndk.fetchEvent(review.reviewedEventAddress, {
+        if (notification.reviewedEventAddress) {
+            const reviewedEvent = await $ndk.fetchEvent(notification.reviewedEventAddress, {
                 groupable: true,
                 groupableDelay: 1000,
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             });
 
             if (reviewedEvent) {
-                if (review.type === ReviewType.Client) {
+                if (notification.type === ReviewType.Client) {
                     job = TicketEvent.from(reviewedEvent);
                 } else {
                     const offer = OfferEvent.from(reviewedEvent);
@@ -63,7 +63,7 @@
     function handlePreview() {
         const modalComponent: ModalComponent = {
             ref: ReviewModal,
-            props: { review },
+            props: { review: notification },
         };
 
         const modal: ModalSettings = {
@@ -75,18 +75,20 @@
 </script>
 
 <Card
-    classes={$readNotifications.has(review.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
     on:click={() => {
-        readNotifications.update((notifications) => notifications.add(review.id));
+        if (!$readNotifications.has(notification.id)) {
+            readNotifications.update((notifications) => notifications.add(notification.id));
+        }
     }}
 >
-    <NotificationTimestamp ndkEvent={review} />
+    <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + user.npub}>
             <ProfileImage src={userImage} />
         </a>
-        <div class="flex flex-col grow-[1]">
+        <div class="flex flex-col grow-[1] items-start">
             <a href={'/' + user.npub}>
                 <p>{userName}</p>
             </a>
@@ -95,7 +97,7 @@
                 {#if job}
                     <a
                         href={'/' + job.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] hover:text-blue-500"
+                        class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
                     >
                         "{job.title}"
                     </a>

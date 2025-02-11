@@ -47,7 +47,7 @@ import {
 } from '$lib/stores/freelance-eventstores';
 
 import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
-import { notifications } from '../stores/notifications';
+import { notifications, seenIDs } from '../stores/notifications';
 
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
@@ -145,6 +145,7 @@ export function logout() {
 
     sessionPK.set('');
 
+    seenIDs.set(new Set());
     myTickets.empty();
     myOffers.empty();
     myTicketFilter.authors = [];

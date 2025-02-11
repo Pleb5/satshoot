@@ -1,10 +1,20 @@
 <script lang="ts">
     export let src: string;
+    export let size: 'xs' | 'sm' | 'md' | 'lg' = 'sm'; // Default to "sm"
 
-    const wrapperClasses =
-        'transition-all ease-in-out duration-[0.3s] min-w-[50px] min-h-[50px] w-[50px] h-[50px] ' +
-        'rounded-full border-[4px] border-white shadow-[0_0_4px_2px_rgba(0,0,0,0.15)] ' +
-        'flex flex-col justify-center items-center relative overflow-hidden bg-[rgba(255,255,255,0.2)]';
+    const sizeClasses = {
+        xs: 'w-[35px] h-[35px] min-w-[35px] min-h-[35px]',
+        sm: 'w-[50px] h-[50px] min-w-[50px] min-h-[50px]',
+        md: 'w-[75px] h-[75px] min-w-[75px] min-h-[75px]',
+        lg: 'w-[100px] h-[100px] min-w-[100px] min-h-[100px]',
+    };
+
+    $: wrapperClasses =
+        'transition-all ease-in-out duration-[0.3s] flex flex-col ' +
+        'justify-center items-center relative overflow-hidden bg-white-200 ' +
+        'rounded-full border-[4px] border-white shadow-strong ' +
+        'ring-4 ring-white hover:ring-blue-500 hover:scale-[1.02] ' +
+        sizeClasses[size];
 </script>
 
 <div class={wrapperClasses}>

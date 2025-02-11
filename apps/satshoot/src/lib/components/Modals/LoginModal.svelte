@@ -1,6 +1,6 @@
 <script lang="ts">
     import { browser } from '$app/environment';
-    import ndk, { bunkerNDK, sessionPK, type LoginMethod } from '$lib/stores/ndk';
+    import ndk, { bunkerNDK, sessionPK, LoginMethod } from '$lib/stores/ndk';
     import { loginMethod } from '$lib/stores/user';
     import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
     import {
@@ -38,6 +38,12 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
+    import TabSelector from '../UI/Buttons/TabSelector.svelte';
+
+    enum LocalKeyLoginTabs {
+        SecretKey,
+        SeedWords,
+    }
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -176,8 +182,8 @@
                 $ndk.signer = remoteSigner;
                 console.log('user logged in');
 
-                $loginMethod = 'bunker';
-                localStorage.setItem('login-method', $loginMethod as LoginMethod);
+                $loginMethod = LoginMethod.Bunker;
+                localStorage.setItem('login-method', $loginMethod);
                 localStorage.setItem('bunkerLocalSignerPK', localSigner.privateKey as string);
                 localStorage.setItem('bunkerTargetNpub', remoteUserNpub);
                 localStorage.setItem('bunkerRelayURLs', relayURLs.join(','));
@@ -232,9 +238,9 @@
                 const returnedUser = await nip07Signer.blockUntilReady();
 
                 if (returnedUser.npub) {
-                    $loginMethod = 'nip07';
+                    $loginMethod = LoginMethod.Nip07;
                     $ndk.signer = nip07Signer;
-                    localStorage.setItem('login-method', $loginMethod as LoginMethod);
+                    localStorage.setItem('login-method', $loginMethod);
                     initializeUser($ndk);
                     askingForNip07Permission = false;
                     modalStore.close();
@@ -353,8 +359,8 @@
             const encryptedSecret = encryptSecret(secret, passphrase, npub);
             localStorage.setItem(storageKey, encryptedSecret);
             localStorage.setItem('nostr-npub', npub);
-            $loginMethod = 'local';
-            localStorage.setItem('login-method', $loginMethod as LoginMethod);
+            $loginMethod = LoginMethod.Local;
+            localStorage.setItem('login-method', $loginMethod);
 
             $sessionPK = privateKey;
 
@@ -428,8 +434,8 @@
 
             localStorage.setItem('nostr-seedwords', encryptedSeed);
             localStorage.setItem('nostr-npub', generatedNpub);
-            $loginMethod = 'local';
-            localStorage.setItem('login-method', $loginMethod as LoginMethod);
+            $loginMethod = LoginMethod.Local;
+            localStorage.setItem('login-method', $loginMethod);
 
             // assign ndk signer
             $ndk.signer = new NDKPrivateKeySigner(generatedNsec);
@@ -506,17 +512,26 @@
         return true;
     }
 
+    let activeTabForLocalKeyLogin = LocalKeyLoginTabs.SecretKey;
+    const localKeyLoginTabs = [
+        {
+            id: LocalKeyLoginTabs.SecretKey,
+            label: 'Secret Key',
+        },
+        {
+            id: LocalKeyLoginTabs.SeedWords,
+            label: 'Seed Words',
+        },
+    ];
+
     const labelClasses =
-        'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-[rgb(0,0,0,0.15)] border-b-[0px] text-[14px]';
+        'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-black-200 border-b-[0px] text-[14px]';
 
     const inputWrapperClasses =
-        'w-full flex flex-row bg-[rgb(0,0,0,0.05)] border-[1px] border-[rgb(0,0,0,0.1)] rounded-tr-[6px] overflow-hidden';
-
-    const inputClasses =
-        'grow-[1] border-[0px] border-[rgb(0,0,0,0.15)] rounded-[0px] outline outline-[0px] py-[5px] px-[10px] bg-[rgb(0,0,0,0)]';
+        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 rounded-tr-[6px] overflow-hidden';
 
     const btnWrapperClasses =
-        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-[rgb(0,0,0,0.15)] border-t-[0px]';
+        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 border-t-[0px]';
 </script>
 
 {#if $modalStore[0]}
@@ -528,9 +543,9 @@
                         {statusMessage}
                     </h5>
                 {/if}
-                <div class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px]">
+                <div class="w-full flex flex-col bg-black-50 rounded-[6px]">
                     <div
-                        class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] border-b-[0px] rounded-t-[6px]"
+                        class="w-full px-[10px] py-[5px] border-[2px] border-black-100 border-b-[0px] rounded-t-[6px]"
                     >
                         <p>
                             SatShoot is built on Nostr, which has its own unique way of account
@@ -588,7 +603,7 @@
                     <div class="w-full flex flex-row items-center gap-[5px]">
                         <p class={labelClasses}>Bunker</p>
                         <i
-                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
+                            class="bx bx-question-mark bg-blue-500 text-white p-[3px] rounded-[50%]"
                             use:popup={bunkerTooltip}
                         />
                         <div data-popup="bunkerTooltip">
@@ -601,7 +616,7 @@
                             </Card>
                         </div>
                     </div>
-                    <div class={inputWrapperClasses}>
+                    <div class="{inputWrapperClasses} rounded-b-[6px]">
                         <Input
                             bind:value={bunkerUrl}
                             placeholder="bunker://..."
@@ -612,21 +627,10 @@
                         />
                         <Button
                             variant="outlined"
-                            classes="border-l-[1px] border-l-[rgb(0,0,0,0.1)] rounded-[0px]"
+                            classes="border-l-[1px] border-l-black-100 rounded-[0px]"
                             on:click={connectBunker}
                         >
                             <i class="bx bx-log-in-circle" />
-                        </Button>
-                    </div>
-                    <div class={btnWrapperClasses}>
-                        <Button
-                            variant="outlined"
-                            href="https://nostrapps.com/#signers"
-                            target="_blank"
-                            classes="rounded-[0]"
-                            grow
-                        >
-                            Browse Signer Apps
                         </Button>
                     </div>
                 </div>
@@ -634,7 +638,7 @@
                     <div class="w-full flex flex-row items-center gap-[5px]">
                         <p class={labelClasses}>Extension</p>
                         <i
-                            class="bx bx-question-mark bg-[rgb(59,115,246)] text-white p-[3px] rounded-[50%]"
+                            class="bx bx-question-mark bg-blue-500 text-white p-[3px] rounded-[50%]"
                             use:popup={extensionTooltip}
                         />
                         <div data-popup="extensionTooltip">
@@ -648,7 +652,7 @@
                             </Card>
                         </div>
                     </div>
-                    <div class={inputWrapperClasses}>
+                    <div class="{inputWrapperClasses} rounded-b-[6px]">
                         <Button
                             variant="outlined"
                             classes="rounded-[0]"
@@ -671,26 +675,23 @@
                             {/if}
                         </Button>
                     </div>
-                    <div class={btnWrapperClasses}>
-                        <Button
-                            variant="outlined"
-                            href="https://nostrapps.com/#signers"
-                            target="_blank"
-                            classes="rounded-[0]"
-                            grow
-                        >
-                            Browse Signer Apps
-                        </Button>
-                    </div>
                 </div>
+                <Button
+                    variant="outlined"
+                    href="https://nostrapps.com/#signers"
+                    target="_blank"
+                    grow
+                >
+                    Browse Signer Apps
+                </Button>
                 <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
                     {#if displayLocalKeyLogin}
                         <div
-                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[rgb(0,0,0,0.15)] border-b-[0px] flex flex-col gap-[10px]"
+                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-black-200 border-b-[0px] flex flex-col gap-[10px]"
                         >
-                            <div class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px]">
+                            <div class="w-full flex flex-col bg-black-50 rounded-[6px]">
                                 <p
-                                    class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] rounded-t-[6px]"
+                                    class="w-full px-[10px] py-[5px] border-[2px] border-black-100 rounded-t-[6px]"
                                 >
                                     Local keys are stored in an easily-accessible place in the
                                     browser called Local storage. This makes local keys the most
@@ -701,34 +702,45 @@
                                     </span>
                                 </p>
                             </div>
-                            <div class="w-full flex flex-col">
-                                <div class="w-full flex flex-row gap-[5px]">
-                                    <p class={labelClasses}>Secret key</p>
-                                </div>
-                                <div class={inputWrapperClasses}>
-                                    <Input
-                                        bind:value={nsecForLocalKey}
-                                        placeholder="nsec..."
-                                        grow
-                                        noBorder
-                                        notRounded
-                                    />
-                                </div>
-                                <Passphrase
-                                    bind:passphrase={passphraseForNsec}
-                                    bind:confirmPassphrase={confirmPassphraseForNsec}
-                                    btnLabel="Login"
-                                    on:submit={loginWithNsec}
+
+                            <!-- tabs start-->
+                            <div class="w-full flex flex-col gap-[10px]">
+                                <TabSelector
+                                    tabs={localKeyLoginTabs}
+                                    bind:selectedTab={activeTabForLocalKeyLogin}
                                 />
-                            </div>
-                            <div class="w-full flex flex-col">
-                                <SeedWords bind:words={seedWordsForLocalKey} />
-                                <Passphrase
-                                    bind:passphrase={passphraseForSeedWords}
-                                    bind:confirmPassphrase={confirmPassphraseForSeedWords}
-                                    btnLabel="Login"
-                                    on:submit={loginWithSeedWords}
-                                />
+                                {#if activeTabForLocalKeyLogin === LocalKeyLoginTabs.SecretKey}
+                                    <div class="w-full flex flex-col">
+                                        <div class="w-full flex flex-row gap-[5px]">
+                                            <p class={labelClasses}>Secret key</p>
+                                        </div>
+                                        <div class={inputWrapperClasses}>
+                                            <Input
+                                                bind:value={nsecForLocalKey}
+                                                placeholder="nsec..."
+                                                grow
+                                                noBorder
+                                                notRounded
+                                            />
+                                        </div>
+                                        <Passphrase
+                                            bind:passphrase={passphraseForNsec}
+                                            bind:confirmPassphrase={confirmPassphraseForNsec}
+                                            btnLabel="Login"
+                                            on:submit={loginWithNsec}
+                                        />
+                                    </div>
+                                {:else if activeTabForLocalKeyLogin === LocalKeyLoginTabs.SeedWords}
+                                    <div class="w-full flex flex-col">
+                                        <SeedWords bind:words={seedWordsForLocalKey} />
+                                        <Passphrase
+                                            bind:passphrase={passphraseForSeedWords}
+                                            bind:confirmPassphrase={confirmPassphraseForSeedWords}
+                                            btnLabel="Login"
+                                            on:submit={loginWithSeedWords}
+                                        />
+                                    </div>
+                                {/if}
                             </div>
                         </div>
                     {/if}
@@ -742,13 +754,11 @@
                 <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
                     {#if displayGeneratedAccount && generatedSeedWords}
                         <div
-                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[rgb(255,91,91,0.5)] border-b-[0px] flex flex-col"
+                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-[red-500] border-b-[0px] flex flex-col"
                         >
-                            <div
-                                class="w-full flex flex-col bg-[rgb(0,0,0,0.05)] rounded-[6px] mb-[10px]"
-                            >
+                            <div class="w-full flex flex-col bg-black-50 rounded-[6px] mb-[10px]">
                                 <p
-                                    class="w-full px-[10px] py-[5px] border-[2px] border-[rgb(0,0,0,0.1)] rounded-[6px]"
+                                    class="w-full px-[10px] py-[5px] border-[2px] border-black-100 rounded-[6px]"
                                 >
                                     Backup your account. Put these words in a safe place to be able
                                     to access your account later.

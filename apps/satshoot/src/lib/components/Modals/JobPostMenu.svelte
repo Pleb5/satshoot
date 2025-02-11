@@ -16,6 +16,8 @@
     import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
     import Popup from '../UI/Popup.svelte';
+    import type { ReviewEvent } from '$lib/events/ReviewEvent';
+    import ReviewModal from '../Notifications/ReviewModal.svelte';
 
     const modalStore = getModalStore();
 
@@ -40,21 +42,20 @@
         isWinner = false;
     }
 
+    let review: ReviewEvent | undefined = undefined;
     let canReviewClient = false;
-    $: if (isWinner && $clientReviews) {
-        const hasAlreadyReviewed = $clientReviews.some(
-            (review) => review.reviewedEventAddress === job.ticketAddress
-        );
+    $: if ($clientReviews) {
+        review = $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress);
 
-        if (hasAlreadyReviewed) {
+        if (review) {
             canReviewClient = false;
-        } else {
+        } else if (isWinner) {
             canReviewClient = true;
         }
     }
 
     let showMessageButton = false;
-    $: if ($currentUser && (!myJob || job.acceptedOfferAddress)) {
+    $: if ($currentUser && (myJob || job.winnerFreelancer === $currentUser.pubkey)) {
         showMessageButton = true;
     } else {
         showMessageButton = false;
@@ -114,10 +115,10 @@
     }
 
     function selectChatPartner() {
-        if (job.pubkey !== $currentUser!.pubkey) {
+        if ($currentUser && $currentUser.pubkey !== job.pubkey) {
             $selectedPerson = job.pubkey + '$' + bech32ID;
-        } else if (job.acceptedOfferAddress) {
-            $offerMakerToSelect = job.winnerFreelancer as string;
+        } else if (job.winnerFreelancer) {
+            $offerMakerToSelect = job.winnerFreelancer;
         }
 
         modalStore.close();
@@ -151,6 +152,20 @@
             modalStore.clear();
         }
     }
+
+    function handlePreviewReview() {
+        const modalComponent: ModalComponent = {
+            ref: ReviewModal,
+            props: { review },
+        };
+
+        const modal: ModalSettings = {
+            type: 'component',
+            component: modalComponent,
+        };
+        modalStore.clear();
+        modalStore.trigger(modal);
+    }
 </script>
 
 {#if $modalStore[0]}
@@ -182,7 +197,7 @@
                         fullWidth
                         on:click={handleCloseJob}
                     >
-                        <i class="bx bx-window-close text-[20px]"></i>
+                        <i class="bx bx-x-circle text-[20px]"></i>
                         <p class="">Close Job</p>
                     </Button>
                 {/if}
@@ -194,7 +209,7 @@
                         fullWidth
                         on:click={handlePay}
                     >
-                        <i class="bx bx-window-close text-[20px]"></i>
+                        <i class="bx bxs-bolt text-[20px]"></i>
                         <p class="">Pay</p>
                     </Button>
                 {/if}
@@ -219,8 +234,18 @@
                         fullWidth
                         on:click={handleReviewClient}
                     >
-                        <i class="bx bx-window-close text-[20px]"></i>
+                        <i class="bx bxs-star text-[20px]"></i>
                         <p class="">Review Client</p>
+                    </Button>
+                {:else if review}
+                    <Button
+                        variant="outlined"
+                        classes="justify-start"
+                        fullWidth
+                        on:click={handlePreviewReview}
+                    >
+                        <i class="bx bxs-star text-[20px]"></i>
+                        <p class="">Preview Review</p>
                     </Button>
                 {/if}
             </div>

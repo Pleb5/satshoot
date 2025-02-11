@@ -15,13 +15,13 @@ import { goto } from '$app/navigation';
 
 export const notificationsEnabled: Writable<boolean> = persisted('notificationsEnabled', true);
 
-export const seenIDs: Writable<Set<string>> = persisted('seenIDs', new Set(), {
-    serializer: getSetSerializer(),
-});
+export const seenIDs = writable<Set<string>>(new Set());
 
 export const notifications = writable<NDKEvent[]>([]);
 
-export const readNotifications = writable<Set<string>>(new Set());
+export const readNotifications: Writable<Set<string>> = persisted('readNotifications', new Set(), {
+    serializer: getSetSerializer(),
+});
 
 export const unReadNotifications = derived(
     [notifications, readNotifications],
@@ -122,6 +122,13 @@ export async function sendNotification(event: NDKEvent) {
         seenIDs.set($seenIDs);
         $notifications.push(event);
         notifications.set($notifications);
+
+        const $readNotifications = get(readNotifications);
+        if($readNotifications.has(event.id)) {
+            // this event is already in read notifications set
+            // so, no need to generate the notification
+            return
+        }
 
         let title = '';
         let body = '';

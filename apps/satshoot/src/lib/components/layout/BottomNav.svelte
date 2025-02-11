@@ -72,18 +72,18 @@
 
     const collapseBoxClass =
         'transition-all ease-in-out duration-[0.0s] ' +
-        'bg-[#dcdcdc] rounded-[10px] shadow-[0_0_8px_rgba(0,0,0,0.25)] ' +
+        'bg-gray-600 rounded-[10px] shadow-soft ' +
         'flex flex-row border-white';
 
     const itemClasses =
         'transition ease-in-out duration-[0.3s] ' +
         'text-[24px] border-0 outline-none py-[10px] px-[15px] ' +
         'rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row ' +
-        'justify-center items-center gap-[8px] hover:bg-[rgb(59,130,246)] hover:text-white relative';
+        'justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
 
     const collapseTriggerBtnClasses =
-        'bg-[rgb(255,255,255)] text-[rgba(0,0,0,0.25)] shadow-[0_0_4px_0_rgba(0,0,0,0.25)] ' +
-        'hover:bg-white hover:text-[rgba(0,0,0,0.75)] py-[15px] px-[5px] ';
+        'bg-white text-black-300 shadow-subtle ' +
+        'hover:bg-white hover:text-black-700 py-[15px] px-[5px] ';
 </script>
 
 <div
@@ -95,9 +95,9 @@
         {#if filterList.length > 0}
             <div
                 id="btnBotNavCollapseBoxSearch"
-                class="p-[4px] bg-white rounded-[4px] shadow-[0_0_4px_rgba(0,0,0,0.15)] flex flex-row"
+                class="p-[4px] bg-white rounded-[4px] shadow-subtle flex flex-row"
             >
-                <p class="w-full text-[14px] font-[500] text-center text-[rgb(0,0,0,0.5)]">
+                <p class="w-full text-[14px] font-[500] text-center text-black-500">
                     There's currently an active search on this page
                 </p>
             </div>
@@ -124,10 +124,10 @@
                     <a
                         {href}
                         class={itemClasses}
-                        class:bg-[rgb(59,115,246)]={href === $page.url.pathname}
-                        class:bg-[rgb(59,115,246,0)]={href !== $page.url.pathname}
+                        class:bg-blue-500={href === $page.url.pathname}
+                        class:bg-blue-0={href !== $page.url.pathname}
                         class:text-white={href === $page.url.pathname}
-                        class:text-[rgb(0,0,0,0.35)]={href !== $page.url.pathname}
+                        class:text-black-300={href !== $page.url.pathname}
                     >
                         <i class={`bx ${icon}`} />
                         {#if href === '/notifications/' && $unReadNotifications.length > 0}
@@ -143,10 +143,10 @@
                 {:else if icon === 'bx-search'}
                     <button
                         class={itemClasses}
-                        class:bg-[rgb(59,115,246)]={filterList.length !== 0}
-                        class:bg-[rgb(59,115,246,0)]={filterList.length === 0}
+                        class:bg-blue-500={filterList.length !== 0}
+                        class:bg-blue-0={filterList.length === 0}
                         class:text-white={filterList.length !== 0}
-                        class:text-[rgb(0,0,0,0.35)]={filterList.length === 0}
+                        class:text-black-300={filterList.length === 0}
                         on:click={handleSearch}
                     >
                         <i class="bx bx-search"></i></button

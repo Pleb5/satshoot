@@ -14,17 +14,18 @@
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
+    import { goto } from '$app/navigation';
 
-    export let message: NDKEvent;
+    export let notification: NDKEvent;
 
-    $: user = $ndk.getUser({ pubkey: message.pubkey });
-    $: userName = user.npub.substring(0, 8);
-    $: userImage = `https://robohash.org/${user.pubkey}`;
+    let user = $ndk.getUser({ pubkey: notification.pubkey });
+    let userName = user.npub.substring(0, 8);
+    let userImage = `https://robohash.org/${user.pubkey}`;
 
     let userProfile: NDKUserProfile | null;
     let decryptedDM: string;
     let messageLink = '';
-    const ticketAddress = message.tagValue('t');
+    const ticketAddress = notification.tagValue('t');
 
     onMount(async () => {
         userProfile = await user.fetchProfile();
@@ -39,12 +40,12 @@
 
         try {
             const peerPubkey =
-                message.tagValue('p') === $currentUser!.pubkey
-                    ? message.pubkey
-                    : message.tagValue('p');
+                notification.tagValue('p') === $currentUser!.pubkey
+                    ? notification.pubkey
+                    : notification.tagValue('p');
 
             const peerUser = $ndk.getUser({ pubkey: peerPubkey });
-            decryptedDM = await ($ndk.signer as NDKSigner).decrypt(peerUser, message.content);
+            decryptedDM = await ($ndk.signer as NDKSigner).decrypt(peerUser, notification.content);
         } catch (e) {
             console.trace(e);
         }
@@ -65,13 +66,16 @@
 </script>
 
 <Card
-    classes={$readNotifications.has(message.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
     on:click={() => {
-        readNotifications.update((notifications) => notifications.add(message.id));
+        if (!$readNotifications.has(notification.id)) {
+            readNotifications.update((notifications) => notifications.add(notification.id));
+        }
+        goto(messageLink);
     }}
 >
-    <NotificationTimestamp ndkEvent={message} />
+    <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + user.npub}>
             <ProfileImage src={userImage} />

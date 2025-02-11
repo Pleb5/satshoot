@@ -15,7 +15,6 @@
     import type { ModalComponent, ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
 
-    import ShareTicketModal from '$lib/components/Modals/ShareTicketModal.svelte';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 
     import { beforeNavigate, goto } from '$app/navigation';
@@ -23,6 +22,7 @@
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
+    import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -79,7 +79,16 @@
     $: filteredTagOptions =
         tagInput.length > 0
             ? sortedTagOptions.filter((option) => option.value.includes(transformedTag))
-            : sortedTagOptions;
+            : [];
+
+    // Always include the input tag as the first item, even if it's an exact match
+    $: displayOptions =
+        transformedTag.length > 0
+            ? [
+                  { label: tagInput, value: transformedTag },
+                  ...filteredTagOptions.filter((option) => option.value !== transformedTag),
+              ]
+            : filteredTagOptions;
 
     $: if (!$currentUser || $loggingIn) {
         allowPostJob = false;
@@ -103,10 +112,16 @@
         $jobToEdit = null;
     });
 
+    function handleEnterKeyOnTagInput(event: KeyboardEvent) {
+        if (event.key === 'Enter') {
+            addTag(tagInput);
+        }
+    }
+
     function addTag(tag: string) {
         if (tagList.length >= maxTags) {
             const t: ToastSettings = {
-                message: `Only ${maxTags} tags are allowed!`,
+                message: `Cannot add more than ${maxTags} tags!`,
                 timeout: 4000,
                 background: 'bg-error-300-600-token',
             };
@@ -120,6 +135,8 @@
         if (checkValidTag(transformedTag)) {
             tagList = [...tagList, transformedTag];
         }
+
+        tagInput = '';
     }
 
     function removeTag(tag: string) {
@@ -136,7 +153,7 @@
 
         const valid =
             !!tagValue &&
-            /^[a-z0-9_]+$/i.test(tagValue) &&
+            /^[a-z0-9_\-\.]+$/i.test(tagValue) &&
             tagList.length <= maxTags &&
             occurrence === 0;
 
@@ -183,39 +200,16 @@
 
                     $jobToEdit = null;
 
-                    // Ticket posted Modal
-                    const modal: ModalSettings = {
-                        type: 'alert',
-                        // Data
-                        title: 'Success!',
-                        body: 'Job posted successfully!',
-                        buttonTextCancel: 'Ok',
+                    const successModal: ModalComponent = {
+                        ref: JobPostSuccess,
+                        props: { job },
                     };
-                    modalStore.trigger(modal);
 
-                    let shareJobResponse = function (r: boolean) {
-                        if (r) {
-                            const modalComponent: ModalComponent = {
-                                ref: ShareTicketModal,
-                                props: { ticket: job },
-                            };
-
-                            const shareModal: ModalSettings = {
-                                type: 'component',
-                                component: modalComponent,
-                            };
-                            modalStore.trigger(shareModal);
-                        }
+                    const shareModal: ModalSettings = {
+                        type: 'component',
+                        component: successModal,
                     };
-                    const postAsTextModal: ModalSettings = {
-                        type: 'confirm',
-                        title: 'Share Job as Text Note?',
-                        body: 'It will show up in your feed on popular clients.',
-                        buttonTextCancel: 'No thanks',
-                        buttonTextConfirm: 'Of course!',
-                        response: shareJobResponse,
-                    };
-                    modalStore.trigger(postAsTextModal);
+                    modalStore.trigger(shareModal);
 
                     $profileTabStore = ProfilePageTabs.Jobs;
                     goto('/' + $currentUser.npub + '/');
@@ -250,15 +244,15 @@
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
-    <div class="w-full flex flex-col justify-center items-center py-[50px]">
+    <div class="w-full flex flex-col justify-center items-center py-[10px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
-            <div class="w-full flex flex-col gap-[15px]">
+            <div class="w-full flex flex-col gap-[10px]">
                 <div class="w-full flex flex-col gap-[5px] justify-start">
                     <h2 class="text-[40px] font-[500]">
                         {$jobToEdit ? 'Edit' : 'New'} Job Post
                     </h2>
                 </div>
-                <Card classes="gap-[25px">
+                <Card classes="gap-[15px]">
                     <div class="flex flex-col gap-[5px]">
                         <label class="m-[0px] text-[14px]" for="tile">
                             Title (min. 10 chars)
@@ -285,7 +279,7 @@
                                 classes="min-h-[100px] {descriptionState}"
                                 fullWidth
                                 textarea
-                                rows={4}
+                                rows={6}
                                 minlength={minDescriptionLength}
                             />
                         </div>
@@ -299,39 +293,24 @@
                                 <Input
                                     bind:value={tagInput}
                                     placeholder="Search and add a tag, or add a custom tag"
+                                    onKeyPress={handleEnterKeyOnTagInput}
                                     fullWidth
                                 />
                                 <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.1)] bg-[rgb(0,0,0,0.05)] flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
+                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
                                 >
-                                    {#if transformedTag.length > 0 && !filteredTagOptions.some(({ value }) => transformedTag === value)}
-                                        <div
-                                            class="flex flex-row rounded-[4px] bg-[rgb(0,0,0,0.2)] text-[rgb(0,0,0,0.5)] gap-[10px] overflow-hidden"
+                                    {#each displayOptions as { label, value }}
+                                        <Button
+                                            classes="bg-black-200 text-black-500 p-[5px] font-400"
+                                            on:click={() => addTag(value)}
                                         >
-                                            <span class="pl-[10px] py-[5px]"> {tagInput} </span>
-                                            <button
-                                                class="transition ease duration-[0.3s] px-[10px] border-l-[1px] border-[rgb(0,0,0,0.1)] hover:bg-[rgb(255,255,255,0.15)]"
-                                                on:click={() => addTag(tagInput)}
-                                                disabled={tagList.length >= maxTags}
+                                            <span class="pl-[10px]"> {label} </span>
+                                            <span
+                                                class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100"
                                             >
-                                                <i class="bx bx-plus"> </i>
-                                            </button>
-                                        </div>
-                                    {/if}
-
-                                    {#each filteredTagOptions as { label, value }}
-                                        <div
-                                            class="flex flex-row rounded-[4px] bg-[rgb(0,0,0,0.2)] text-[rgb(0,0,0,0.5)] gap-[10px] overflow-hidden"
-                                        >
-                                            <span class="pl-[10px] py-[5px]"> {label} </span>
-                                            <button
-                                                class="transition ease duration-[0.3s] px-[10px] border-l-[1px] border-[rgb(0,0,0,0.1)] hover:bg-[rgb(255,255,255,0.15)]"
-                                                on:click={() => addTag(value)}
-                                                disabled={tagList.length >= maxTags}
-                                            >
-                                                <i class="bx bx-plus"> </i>
-                                            </button>
-                                        </div>
+                                                <i class="bx bx-plus" />
+                                            </span>
+                                        </Button>
                                     {/each}
                                 </div>
                             </div>
@@ -342,15 +321,15 @@
                                 class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white"
                             >
                                 <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-[rgb(0,0,0,0.1)] bg-[rgb(0,0,0,0.05)] flex-wrap p-[10px]"
+                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px]"
                                 >
                                     {#each tagList as tag}
                                         <div
-                                            class="flex flex-row rounded-[4px] bg-[rgb(59,115,246)] text-white gap-[10px] overflow-hidden"
+                                            class="flex flex-row rounded-[4px] bg-blue-500 text-white gap-[10px] overflow-hidden"
                                         >
                                             <span class="pl-[10px] py-[5px]">{tag}</span>
                                             <button
-                                                class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-[rgb(255,255,255,0.1)] hover:bg-blue-500"
+                                                class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-white-100 hover:bg-blue-500"
                                                 on:click={() => removeTag(tag)}
                                             >
                                                 <i class="bx bx-x"></i>
@@ -362,7 +341,7 @@
                         </div>
                     </div>
                     <div
-                        class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-[rgb(0,0,0,0.1)] pt-[10px] mt-[10px]"
+                        class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-black-100 pt-[10px] mt-[10px]"
                     >
                         <Button on:click={postJob} disabled={!allowPostJob || posting}>
                             {#if !allowPostJob}

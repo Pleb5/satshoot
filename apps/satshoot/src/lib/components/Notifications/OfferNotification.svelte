@@ -18,11 +18,11 @@
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
 
-    export let offer: OfferEvent;
+    export let notification: OfferEvent;
 
-    $: user = $ndk.getUser({ pubkey: offer.pubkey });
-    $: userName = user.npub.substring(0, 8);
-    $: userImage = `https://robohash.org/${user.pubkey}`;
+    let user = $ndk.getUser({ pubkey: notification.pubkey });
+    let userName = user.npub.substring(0, 8);
+    let userImage = `https://robohash.org/${user.pubkey}`;
 
     let userProfile: NDKUserProfile | null;
     let job: TicketEvent | null;
@@ -38,7 +38,7 @@
             }
         }
 
-        const dTagOfJob = offer.referencedTicketAddress.split(':')[2];
+        const dTagOfJob = notification.referencedTicketAddress.split(':')[2];
         const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
             kinds: [NDKKind.FreelanceTicket],
             '#d': [dTagOfJob],
@@ -57,25 +57,27 @@
 </script>
 
 <Card
-    classes={$readNotifications.has(offer.id) ? 'bg-[rgb(0,0,0,0.05)]' : ''}
+    classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
     on:click={() => {
-        readNotifications.update((notifications) => notifications.add(offer.id));
+        if (!$readNotifications.has(notification.id)) {
+            readNotifications.update((notifications) => notifications.add(notification.id));
+        }
     }}
 >
-    <NotificationTimestamp ndkEvent={offer} />
+    <NotificationTimestamp ndkEvent={notification} />
     {#if job}
         <div class="w-full flex flex-row gap-[15px]">
             <a href={'/' + user.npub}>
                 <ProfileImage src={userImage} />
             </a>
-            <div class="flex flex-col">
+            <div class="flex flex-col items-start">
                 <a href={'/' + user.npub}>
                     <p>{userName}</p>
                 </a>
                 <div class="flex flex-row gap-[5px] flex-wrap">
-                    {#if offer.pubkey === $currentUser?.pubkey}
-                        {#if job.acceptedOfferAddress === offer.offerAddress}
+                    {#if notification.pubkey === $currentUser?.pubkey}
+                        {#if job.acceptedOfferAddress === notification.offerAddress}
                             <p>
                                 You have <span class="text-warning-500">Won</span> the offer on the job:
                             </p>
@@ -90,7 +92,7 @@
 
                     <a
                         href={'/' + job.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] hover:text-blue-500"
+                        class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
                     >
                         "{job.title}"
                     </a>

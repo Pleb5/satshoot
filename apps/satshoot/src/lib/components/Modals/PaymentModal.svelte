@@ -9,7 +9,12 @@
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
-    import { paymentDetail } from '$lib/stores/payment';
+    import {
+        createPaymentFilters,
+        createPaymentStore,
+        paymentDetail,
+        type PaymentStore,
+    } from '$lib/stores/payment';
     import currentUser from '$lib/stores/user';
     import {
         cashuPaymentInfoMap,
@@ -30,7 +35,7 @@
         zapInvoiceFromEvent,
     } from '@nostr-dev-kit/ndk';
     import { broadcastEvent, fetchUserOutboxRelays, getZapConfiguration } from '$lib/utils/helpers';
-    import { tick } from 'svelte';
+    import { onDestroy, tick } from 'svelte';
     import { CashuMint } from '@cashu/cashu-ts';
     import { resyncWalletAndBackup } from '$lib/utils/cashu';
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
@@ -72,8 +77,8 @@
 
     let freelancerPaid = 0;
     let satshootPaid = 0;
-    let freelancerPaymentStore: NDKEventStore<NDKEvent>;
-    let satshootPaymentStore: NDKEventStore<NDKEvent>;
+    let freelancerPaymentStore: PaymentStore;
+    let satshootPaymentStore: PaymentStore;
 
     let pricing = '';
 
@@ -87,82 +92,18 @@
                 break;
         }
 
-        freelancerPaymentStore = $ndk.storeSubscribe(
-            [
-                { kinds: [NDKKind.Zap], '#e': [offer.id] },
-                { kinds: [NDKKind.Nutzap], '#a': [offer.offerAddress] },
-            ],
-            {
-                closeOnEose: false,
-                groupable: true,
-                groupableDelay: 1500,
-                autoStart: true,
-            }
-        );
+        const freelancerFilters = createPaymentFilters(offer, 'freelancer');
+        const satshootFilters = createPaymentFilters(offer, 'satshoot');
 
-        satshootPaymentStore = $ndk.storeSubscribe(
-            [
-                {
-                    kinds: [NDKKind.Zap],
-                    '#p': [SatShootPubkey],
-                    '#a': [offer.referencedTicketAddress],
-                },
-                {
-                    kinds: [NDKKind.Nutzap],
-                    '#p': [SatShootPubkey],
-                    '#a': [offer.referencedTicketAddress],
-                },
-            ],
-            {
-                closeOnEose: false,
-                groupable: true,
-                groupableDelay: 1500,
-                autoStart: true,
-            }
-        );
-    }
+        freelancerPaymentStore = createPaymentStore(freelancerFilters);
+        satshootPaymentStore = createPaymentStore(satshootFilters);
 
-    $: if ($freelancerPaymentStore) {
-        freelancerPaid = 0;
-        $freelancerPaymentStore.forEach((zap: NDKEvent) => {
-            if (zap.kind === NDKKind.Zap) {
-                const zapInvoice = zapInvoiceFromEvent(zap);
-                if (zapInvoice) {
-                    const zappee = zapInvoice.zappee;
-                    if ($wot.has(zappee)) {
-                        freelancerPaid += Math.round(zapInvoice.amount / 1000);
-                    }
-                }
-            } else if (zap.kind === NDKKind.Nutzap) {
-                const nutzap = NDKNutzap.from(zap);
-                if (nutzap) {
-                    if ($wot.has(nutzap.pubkey)) {
-                        freelancerPaid += Math.round(nutzap.amount / 1000);
-                    }
-                }
-            }
+        freelancerPaymentStore.totalPaid.subscribe((value) => {
+            freelancerPaid = value;
         });
-    }
 
-    $: if ($satshootPaymentStore) {
-        satshootPaid = 0;
-        $satshootPaymentStore.forEach((zap: NDKEvent) => {
-            if (zap.kind === NDKKind.Zap) {
-                const zapInvoice = zapInvoiceFromEvent(zap);
-                if (zapInvoice) {
-                    const zappee = zapInvoice.zappee;
-                    if ($wot.has(zappee)) {
-                        satshootPaid += Math.round(zapInvoice.amount / 1000);
-                    }
-                }
-            } else if (zap.kind === NDKKind.Nutzap) {
-                const nutzap = NDKNutzap.from(zap);
-                if (nutzap) {
-                    if ($wot.has(nutzap.pubkey)) {
-                        satshootPaid += Math.round(nutzap.amount / 1000);
-                    }
-                }
-            }
+        satshootPaymentStore.totalPaid.subscribe((value) => {
+            satshootPaid = value;
         });
     }
 
@@ -223,6 +164,11 @@
             }
         }
     }
+
+    onDestroy(() => {
+        if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.empty();
+        if (satshootPaymentStore) satshootPaymentStore.paymentStore.empty();
+    });
 
     async function payWithLN() {
         const paymentData = await initializePayment();
@@ -667,11 +613,11 @@
                 <!-- popups Share Job Post start -->
                 <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
                     <div
-                        class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-[rgb(0,0,0,0.1)] p-[10px]"
+                        class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 p-[10px]"
                     >
                         <UserProfile pubkey={offer.pubkey} />
                         <div
-                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)]"
+                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                         >
                             <div class="grow-[1]">
                                 <p class="font-[500]">
@@ -689,7 +635,7 @@
                             </div>
                         </div>
                         <div
-                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-[rgb(0,0,0,0.1)]"
+                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                         >
                             <div class="grow-[1]">
                                 <p class="font-[500]">
@@ -708,13 +654,13 @@
                         </div>
                     </div>
                     <div
-                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] px-[10px] py-[10px]"
+                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 rounded-[4px] px-[10px] py-[10px]"
                     >
                         <p class="">Compensation for:</p>
                         <p class="">{ticket.title}</p>
                     </div>
                     <div
-                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-[rgb(0,0,0,0.1)] rounded-[4px] px-[10px] py-[10px]"
+                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 rounded-[4px] px-[10px] py-[10px]"
                     >
                         <div class="w-full flex flex-col gap-[5px]">
                             <div class="w-full flex flex-col gap-[5px]">
@@ -726,7 +672,6 @@
                                     type="number"
                                     step="1"
                                     min="0"
-                                    max="100_000_000"
                                     placeholder="000,000"
                                     bind:value={amount}
                                     fullWidth
@@ -741,7 +686,6 @@
                                     type="number"
                                     step="1"
                                     min="0"
-                                    max="100"
                                     placeholder="000,000"
                                     bind:value={pledgedAmount}
                                     fullWidth
@@ -749,7 +693,7 @@
                             </div>
                         </div>
                         <div
-                            class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-[rgb(0,0,0,0.1)]"
+                            class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100"
                         >
                             <p class="grow-[1] text-center">
                                 Freelancer gets: {insertThousandSeparator(freelancerShare)} sats
@@ -764,44 +708,15 @@
                             </p>
                         </div>
                     </div>
-                    <div class="w-full flex flex-row flex-wrap gap-[5px]">
-                        <Button grow on:click={payWithLN} disabled={paying}>
-                            {#if paying}
-                                <span>
-                                    <ProgressRadial
-                                        value={undefined}
-                                        stroke={60}
-                                        meter="stroke-tertiary-500"
-                                        track="stroke-tertiary-500/30"
-                                        strokeLinecap="round"
-                                        width="w-8"
-                                    />
-                                </span>
-                            {:else}
-                                Make payment (Zaps)
-                            {/if}
-                        </Button>
-                        <div class="w-full flex flex-row items-center gap-[2px]">
-                            {#if hasSenderEcashSetup}
+                    <div class="flex flex-row justify-center">
+                        <div class="flex flex-col gap-[5px]">
+                            <div class="flex flex-row">
                                 <Button
                                     grow
-                                    on:click={payWithEcash}
-                                    disabled={paying || !canPayWithEcash}
+                                    classes="w-[200px] max-w-[200px]"
+                                    on:click={payWithLN}
+                                    disabled={paying}
                                 >
-                                    {#if paying}
-                                        <ProgressRadial
-                                            value={undefined}
-                                            stroke={60}
-                                            meter="stroke-tertiary-500"
-                                            track="stroke-tertiary-500/30"
-                                            strokeLinecap="round"
-                                            width="w-8"
-                                        />
-                                    {/if}
-                                    <span> Make payment (Cashu) </span>
-                                </Button>
-                            {:else}
-                                <Button grow on:click={setupEcash}>
                                     {#if paying}
                                         <span>
                                             <ProgressRadial
@@ -813,21 +728,76 @@
                                                 width="w-8"
                                             />
                                         </span>
+                                    {:else}
+                                        <img
+                                            class="h-[20px] w-auto"
+                                            src="/img/lightning.png"
+                                            alt="Lightning icon"
+                                        />
+                                        <span> Pay with LN</span>
                                     {/if}
-                                    <span> Setup Cashu Wallet </span>
                                 </Button>
-                            {/if}
-                            {#if ecashTooltipText}
-                                <i
-                                    class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
-                                    use:popup={cashuTooltip}
-                                />
-                                <div data-popup="cashuTooltip">
-                                    <Card>
-                                        <p>{ecashTooltipText}</p>
-                                    </Card>
-                                </div>
-                            {/if}
+                            </div>
+                            <div class="flex flex-row items-center gap-[2px]">
+                                {#if hasSenderEcashSetup}
+                                    <Button
+                                        grow
+                                        classes="w-[200px] max-w-[200px]"
+                                        on:click={payWithEcash}
+                                        disabled={paying || !canPayWithEcash}
+                                    >
+                                        {#if paying}
+                                            <ProgressRadial
+                                                value={undefined}
+                                                stroke={60}
+                                                meter="stroke-tertiary-500"
+                                                track="stroke-tertiary-500/30"
+                                                strokeLinecap="round"
+                                                width="w-8"
+                                            />
+                                        {:else}
+                                            <img
+                                                class="h-[20px] w-auto"
+                                                src="/img/cashu.png"
+                                                alt="Cashu icon"
+                                            />
+                                            <span>Pay with Cashu</span>
+                                        {/if}
+                                    </Button>
+                                {:else}
+                                    <Button
+                                        grow
+                                        classes="w-[200px] max-w-[200px]"
+                                        on:click={setupEcash}
+                                    >
+                                        {#if paying}
+                                            <span>
+                                                <ProgressRadial
+                                                    value={undefined}
+                                                    stroke={60}
+                                                    meter="stroke-tertiary-500"
+                                                    track="stroke-tertiary-500/30"
+                                                    strokeLinecap="round"
+                                                    width="w-8"
+                                                />
+                                            </span>
+                                        {/if}
+                                        <span> Setup Cashu Wallet </span>
+                                    </Button>
+                                {/if}
+
+                                {#if ecashTooltipText}
+                                    <i
+                                        class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                        use:popup={cashuTooltip}
+                                    />
+                                    <div data-popup="cashuTooltip">
+                                        <Card>
+                                            <p>{ecashTooltipText}</p>
+                                        </Card>
+                                    </div>
+                                {/if}
+                            </div>
                         </div>
                     </div>
                 </div>

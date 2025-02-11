@@ -12,7 +12,7 @@
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import currentUser from '$lib/stores/user';
     import { orderEventsChronologically } from '$lib/utils/helpers';
-    import { NDKKind } from '@nostr-dev-kit/ndk';
+    import { NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy } from 'svelte';
 
@@ -35,6 +35,8 @@
         lost: false,
     };
 
+    $: searchQuery = $page.url.searchParams.get('searchTerms');
+    $: filterList = searchQuery ? searchQuery.split(',') : [];
     $: npub = $page.params.npub;
     $: user = $ndk.getUser({ npub: npub });
 
@@ -42,19 +44,19 @@
         autoStart: true,
     };
 
-    let allTicketsOfUser: NDKEventStore<ExtendedBaseType<TicketEvent>>;
+    let allJobsOfUser: NDKEventStore<ExtendedBaseType<TicketEvent>>;
     let allOffersOfUser: NDKEventStore<ExtendedBaseType<OfferEvent>>;
-    let filteredTickets: ExtendedBaseType<ExtendedBaseType<TicketEvent>>[] = [];
+    let filteredJobs: ExtendedBaseType<ExtendedBaseType<TicketEvent>>[] = [];
     let filteredOffers: ExtendedBaseType<ExtendedBaseType<OfferEvent>>[] = [];
 
     // jobs on which use has made offers
     let appliedJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
 
     $: if (user) {
-        if (allTicketsOfUser) allTicketsOfUser.empty();
+        if (allJobsOfUser) allJobsOfUser.empty();
         if (allOffersOfUser) allOffersOfUser.empty();
 
-        allTicketsOfUser = $ndk.storeSubscribe<TicketEvent>(
+        allJobsOfUser = $ndk.storeSubscribe<TicketEvent>(
             {
                 kinds: [NDKKind.FreelanceTicket],
                 authors: [user.pubkey],
@@ -93,12 +95,13 @@
         );
     }
 
-    $: {
-        orderEventsChronologically($allTicketsOfUser);
+    $: if ($allJobsOfUser && filterList) {
+        orderEventsChronologically($allJobsOfUser);
 
-        filteredTickets = $allTicketsOfUser.filter((ticket) => {
+        // filter based on status
+        filteredJobs = $allJobsOfUser.filter((job) => {
             const { new: isNew, inProgress, closed } = jobFilter;
-            const { status } = ticket;
+            const { status } = job;
 
             return (
                 (isNew && status === TicketStatus.New) ||
@@ -106,9 +109,11 @@
                 (closed && (status === TicketStatus.Resolved || status === TicketStatus.Failed))
             );
         });
+
+        filterJobs();
     }
 
-    $: {
+    $: if ($allOffersOfUser && filterList) {
         orderEventsChronologically($allOffersOfUser);
 
         filteredOffers = $allOffersOfUser.filter((offer) => {
@@ -133,13 +138,63 @@
                 offerStatus === OfferStatus.Unknown
             );
         });
+
+        filterOffers();
     }
 
     onDestroy(() => {
-        if (allTicketsOfUser) allTicketsOfUser.empty();
+        if (allJobsOfUser) allJobsOfUser.empty();
         if (allOffersOfUser) allOffersOfUser.empty();
         if (appliedJobs) appliedJobs.empty();
     });
+
+    // filter based on search terms
+    function filterJobs() {
+        // We need to check all jobs against all filters
+        if (filterList.length > 0) {
+            filteredJobs = filteredJobs.filter((job) => {
+                const lowerCaseTitle = job.title.toLowerCase();
+                const lowerCaseDescription = job.description.toLowerCase();
+
+                // Check if the job matches any filter
+                const matchesFilter = filterList.some((filter: string) => {
+                    const lowerCaseFilter = filter.toLowerCase();
+
+                    // Check title and description and tags
+                    const titleContains = lowerCaseTitle.includes(lowerCaseFilter);
+                    const descContains = lowerCaseDescription.includes(lowerCaseFilter);
+                    const tagsContain = job.tags.some((tag: NDKTag) =>
+                        (tag[1] as string).toLowerCase().includes(lowerCaseFilter)
+                    );
+
+                    return titleContains || descContains || tagsContain;
+                });
+
+                return matchesFilter;
+            });
+        }
+    }
+
+    // filter based on search terms
+    function filterOffers() {
+        // We need to check all jobs against all filters
+        if (filterList.length > 0) {
+            filteredOffers = filteredOffers.filter((offer) => {
+                const lowerCaseDescription = offer.description.toLowerCase();
+
+                // Check if the job matches any filter
+                const matchesFilter = filterList.some((filter: string) => {
+                    const lowerCaseFilter = filter.toLowerCase();
+
+                    const descContains = lowerCaseDescription.includes(lowerCaseFilter);
+
+                    return descContains;
+                });
+
+                return matchesFilter;
+            });
+        }
+    }
 
     $: isOwnProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
 
@@ -183,8 +238,8 @@
                                             <div
                                                 class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
                                             >
-                                                {#each filteredTickets as ticket (ticket.id)}
-                                                    <JobCard {ticket} />
+                                                {#each filteredJobs as job (job.id)}
+                                                    <JobCard {job} showOffersDetail />
                                                 {/each}
                                             </div>
                                             <!-- Pagination -->
@@ -216,7 +271,7 @@
                                                         {offer}
                                                         skipUserProfile
                                                         skipReputation
-                                                        viewJob
+                                                        showJobDetail
                                                     />
                                                 {/each}
                                             </div>

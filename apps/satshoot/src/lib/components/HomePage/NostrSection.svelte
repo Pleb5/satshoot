@@ -23,7 +23,7 @@
                     </div>
                 </div>
                 <div
-                    class="transition-all ease-[0.4s] w-full flex flex-col justify-center items-center relative overflow-hidden rounded-[8px] pt-[56%] outline outline-4 outline-solid outline-[rgba(128,0,128,0)] hover:outline-[rgba(59,115,246,1)]"
+                    class="transition-all ease-[0.4s] w-full flex flex-col justify-center items-center relative overflow-hidden rounded-[8px] pt-[56%] outline outline-4 outline-solid outline-purple-0 hover:outline-blue-500"
                 >
                     <img
                         class="absolute top-0 bottom-0 right-0 left-0 h-full w-full object-cover"
@@ -31,13 +31,13 @@
                         alt="nostr"
                     />
                     <div
-                        class="group transition-all ease duration-[0.4s] w-full absolute top-0 bottom-0 left-0 right-0 bg-[rgba(255,255,255,0)] backdrop-blur-[0px] flex flex-col justify-center items-center p-[25px] gap-[10px] text-[rgba(128,0,128,0)] font-bold text-[38px] hover:bg-[rgba(255,255,255,0.5)] hover:backdrop-blur-[10px] hover:text-[#3b73f6]"
+                        class="group transition-all ease duration-[0.4s] w-full absolute top-0 bottom-0 left-0 right-0 bg-white-0 backdrop-blur-[0px] flex flex-col justify-center items-center p-[25px] gap-[10px] text-purple-0 font-bold text-[38px] hover:bg-white-500 hover:backdrop-blur-[10px] hover:text-blue-500"
                     >
                         <p class="opacity-0 group-hover:opacity-100">Nostr</p>
                         <Button
                             href="https://nostr.how/en/what-is-nostr"
                             target="_blank"
-                            classes="transform scale-[1] max-w-[200px] text-[18px] opacity-0 group-hover:opacity-100 "
+                            classes="transform scale-[1] max-w-[200px] text-white text-[18px] opacity-0 group-hover:opacity-100 "
                             fullWidth
                         >
                             Learn More
