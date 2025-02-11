@@ -18,9 +18,9 @@
 
     export let notification: NDKEvent;
 
-    $: user = $ndk.getUser({ pubkey: notification.pubkey });
-    $: userName = user.npub.substring(0, 8);
-    $: userImage = `https://robohash.org/${user.pubkey}`;
+    let user = $ndk.getUser({ pubkey: notification.pubkey });
+    let userName = user.npub.substring(0, 8);
+    let userImage = `https://robohash.org/${user.pubkey}`;
 
     let userProfile: NDKUserProfile | null;
     let decryptedDM: string;
@@ -69,7 +69,9 @@
     classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
     on:click={() => {
-        readNotifications.update((notifications) => notifications.add(notification.id));
+        if (!$readNotifications.has(notification.id)) {
+            readNotifications.update((notifications) => notifications.add(notification.id));
+        }
         goto(messageLink);
     }}
 >
