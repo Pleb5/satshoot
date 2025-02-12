@@ -128,14 +128,6 @@
             },
         },
         {
-            href: '/network/',
-            label: 'Network',
-            icon: {
-                component: null, // No component, just an HTML icon class
-                props: { class: 'fa-solid fa-globe' },
-            },
-        },
-        {
             href: '/settings/',
             label: 'Settings',
             icon: {
