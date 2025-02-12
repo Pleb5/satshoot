@@ -54,9 +54,6 @@
     $: npub = user.npub;
     $: profileHref = '/' + npub;
     $: avatarImage = `https://robohash.org/${user.pubkey}`;
-    $: nip05 = userProfile?.nip05 || '';
-    $: lud16 = userProfile?.lud16 || '';
-    $: website = userProfile?.website || '';
 
     $: bech32ID = job ? job.encode() : '';
 
@@ -272,7 +269,7 @@
         },
         {
             text: userProfile?.website,
-            href: website,
+            href: userProfile?.website || '',
             isExternal: true,
             title: 'website address',
         },

@@ -20,7 +20,7 @@
     const dispatch = createEventDispatcher();
 
     const baseClasses =
-        'transition-all ease duration-[0.3s] p-[10px_20px] rounded-[5px] ' +
+        'transition-all ease duration-[0.3s] p-[6px_15px] rounded-[6px] ' +
         'flex flex-row justify-center items-center gap-[10px] font-[600] ' +
         'cursor-pointer disabled:cursor-not-allowed';
 

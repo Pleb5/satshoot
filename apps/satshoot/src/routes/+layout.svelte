@@ -54,7 +54,7 @@
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
     import { page, updated } from '$app/stores';
-    import { AppShell } from '@skeletonlabs/skeleton';
+    import { AppShell, getModeAutoPrefers } from '@skeletonlabs/skeleton';
     // Popups
     import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
@@ -366,7 +366,7 @@
     function configureBasics() {
         localStorage.debug = '*';
         if (!$modeCurrent) {
-            setModeCurrent(true);
+            setModeCurrent(getModeAutoPrefers());
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {

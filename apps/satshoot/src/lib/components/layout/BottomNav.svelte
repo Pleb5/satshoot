@@ -84,6 +84,11 @@
     const collapseTriggerBtnClasses =
         'bg-white text-black-300 shadow-subtle ' +
         'hover:bg-white hover:text-black-700 py-[15px] px-[5px] ';
+
+    // Helper function to check if the current path is under /settings/
+    function isSettingsPath(path: string): boolean {
+        return path.startsWith('/settings/');
+    }
 </script>
 
 <div
@@ -124,10 +129,14 @@
                     <a
                         {href}
                         class={itemClasses}
-                        class:bg-blue-500={href === $page.url.pathname}
-                        class:bg-blue-0={href !== $page.url.pathname}
-                        class:text-white={href === $page.url.pathname}
-                        class:text-black-300={href !== $page.url.pathname}
+                        class:bg-blue-500={href === $page.url.pathname ||
+                            (href === '/settings/' && isSettingsPath($page.url.pathname))}
+                        class:bg-blue-0={href !== $page.url.pathname &&
+                            !(href === '/settings/' && isSettingsPath($page.url.pathname))}
+                        class:text-white={href === $page.url.pathname ||
+                            (href === '/settings/' && isSettingsPath($page.url.pathname))}
+                        class:text-black-300={href !== $page.url.pathname &&
+                            !(href === '/settings/' && isSettingsPath($page.url.pathname))}
                     >
                         <i class={`bx ${icon}`} />
                         {#if href === '/notifications/' && $unReadNotifications.length > 0}
