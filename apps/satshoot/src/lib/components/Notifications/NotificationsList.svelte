@@ -36,7 +36,7 @@
     {/if}
 {:else}
     <div
-        class="w-full min-h-[100px] rounded-[8px] bg-black-100 border-[4px] border-black-100 flex flex-col justify-center items-center"
+        class="w-full min-h-[100px] rounded-[8px] bg-black-100 border-[4px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
     >
         <p class="font-[600] text-[18px] text-black-300">No Notification Yet</p>
     </div>

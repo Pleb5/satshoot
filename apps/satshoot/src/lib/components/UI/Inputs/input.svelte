@@ -30,7 +30,7 @@
     // Conditional classes for border and rounded corners
     $: borderClasses = noBorder
         ? 'border-[0px]'
-        : 'border-[2px] border-black-100 focus:border-blue-500';
+        : 'border-[2px] border-black-100 dark:border-white-100 focus:border-blue-500';
     $: roundedClasses = notRounded ? 'rounded-[0px]' : 'rounded-[6px]';
     $: growClasses = grow ? 'grow-[1]' : '';
     $: fullWidthClasses = fullWidth ? 'w-full' : '';

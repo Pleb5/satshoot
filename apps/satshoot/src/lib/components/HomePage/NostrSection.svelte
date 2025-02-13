@@ -31,13 +31,13 @@
                         alt="nostr"
                     />
                     <div
-                        class="group transition-all ease duration-[0.4s] w-full absolute top-0 bottom-0 left-0 right-0 bg-white-0 backdrop-blur-[0px] flex flex-col justify-center items-center p-[25px] gap-[10px] text-purple-0 font-bold text-[38px] hover:bg-white-500 hover:backdrop-blur-[10px] hover:text-blue-500"
+                        class="group transition-all ease duration-[0.4s] w-full absolute top-0 bottom-0 left-0 right-0 bg-white-0 backdrop-blur-[0px] flex flex-col justify-center items-center p-[25px] gap-[10px] text-purple-0 font-bold text-[38px] hover:bg-white-500 hover:backdrop-blur-[10px] hover:text-blue-500 dark:hover:bg-black-500 dark:hover:text-white"
                     >
                         <p class="opacity-0 group-hover:opacity-100">Nostr</p>
                         <Button
                             href="https://nostr.how/en/what-is-nostr"
                             target="_blank"
-                            classes="transform scale-[1] max-w-[200px] text-white text-[18px] opacity-0 group-hover:opacity-100 "
+                            classes="transform scale-[1] max-w-[200px] text-white text-[18px] opacity-0 group-hover:opacity-100 dark:text-white-800"
                             fullWidth
                         >
                             Learn More

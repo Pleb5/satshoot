@@ -200,7 +200,7 @@
                 Add a custom relay server
             </label>
             <div
-                class="flex flex-row rounded-[6px] overflow-hidden bg-white border-[2px] border-black-100 gap-[2px]"
+                class="flex flex-row rounded-[6px] overflow-hidden bg-white border-[2px] border-black-100 dark:border-white-100 gap-[2px]"
             >
                 <Input
                     type="text"
@@ -219,7 +219,9 @@
                 </Button>
             </div>
         </div>
-        <div class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100">
+        <div
+            class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
+        >
             {#each readRelays as relay (relay.url)}
                 <RelayListElement {relay} on:remove={() => removeRelay(relay.url, true)} />
             {/each}
@@ -228,7 +230,7 @@
 
     <!-- Outbox Relays Section -->
     <div
-        class="w-full flex flex-col gap-[10px] border-t-[1px] border-black-200 pt-[10px] mt-[10px]"
+        class="w-full flex flex-col gap-[10px] border-t-[1px] border-black-200 dark:border-white-200 pt-[10px] mt-[10px]"
     >
         <p class="font-[600]">Outbox Relays</p>
         <div class="flex flex-col gap-[5px]">
@@ -236,7 +238,7 @@
                 Add a custom relay server
             </label>
             <div
-                class="flex flex-row rounded-[6px] overflow-hidden bg-white border-[2px] border-black-100 gap-[2px]"
+                class="flex flex-row rounded-[6px] overflow-hidden bg-white border-[2px] border-black-100 dark:border-white-100 gap-[2px]"
             >
                 <Input
                     type="text"
@@ -255,7 +257,9 @@
                 </Button>
             </div>
         </div>
-        <div class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100">
+        <div
+            class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
+        >
             {#each writeRelays as relay (relay.url)}
                 <RelayListElement {relay} on:remove={() => removeRelay(relay.url, false)} />
             {/each}

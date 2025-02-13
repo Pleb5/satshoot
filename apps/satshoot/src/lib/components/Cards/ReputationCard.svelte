@@ -408,7 +408,7 @@
             <div class="w-full flex flex-col gap-[10px]">
                 <RatingBlock label="User's Overall Reputation" rating={ratingConsensus} />
                 <div
-                    class="w-full flex flex-col gap-[10px] border-[1px] border-black-100 p-[10px] rounded-[4px] max-[768px]:flex-col"
+                    class="w-full flex flex-col gap-[10px] border-[1px] border-black-100 dark:border-white-100 p-[10px] rounded-[4px] max-[768px]:flex-col"
                 >
                     <button
                         class={reputationBlockWrapperClasses}
@@ -435,12 +435,14 @@
                 </div>
             </div>
             <div
-                class="w-full flex flex-col gap-[5px] rounded-[5px] p-[10px] border-[1px] border-black-200"
+                class="w-full flex flex-col gap-[5px] rounded-[5px] p-[10px] border-[1px] border-black-200 dark:border-white-200"
             >
                 {#each financialItems as { title, label, amount }}
                     <div {title} class={satsWrapperClasses}>
                         <p class={boltIconWrapperClasses}>
-                            <i class="bx bxs-bolt text-black-500 group-hover:text-yellow-200" />
+                            <i
+                                class="bx bxs-bolt text-black-500 dark:text-white-500 group-hover:text-yellow-200"
+                            />
                             {label}
                         </p>
                         <p class="group-hover:text-white">

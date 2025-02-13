@@ -276,7 +276,7 @@
     ];
 
     const addressCopyBtnClasses =
-        'bg-white rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
+        'bg-white dark:bg-brightGray rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
 </script>
 
 <div class="w-full max-w-[350px] flex flex-col gap-[25px] max-[768px]:max-w-full">
@@ -309,7 +309,7 @@
                 {#each userInfoItems as { text, href, isExternal, title }}
                     {#if text}
                         <div
-                            class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100"
+                            class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100 dark:border-white-100"
                         >
                             <div class="w-full flex flex-row">
                                 <div class="w-full flex flex-row bg-black-50">
@@ -340,17 +340,19 @@
                 {/each}
             </div>
             {#if userProfile?.about}
-                <div class="w-full rounded-[6px] border-[1px] border-black-200">
+                <div
+                    class="w-full rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
+                >
                     <ExpandableText text={userProfile.about} expandText="View Full About" />
                 </div>
             {/if}
             <div
-                class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden bg-black-100 flex-wrap p-[4px]"
+                class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden flex-wrap p-[4px]"
             >
                 {#if showMessageButton}
                     <Button
                         variant="outlined"
-                        classes="bg-white"
+                        classes="bg-white dark:bg-brightGray"
                         fullWidth
                         href={'/messages/' + bech32ID}
                         title="Message (DM) user"
@@ -361,7 +363,7 @@
                 {/if}
                 <Button
                     variant="outlined"
-                    classes="bg-white"
+                    classes="bg-white dark:bg-brightGray"
                     fullWidth
                     title="Share (Copy profile page link)"
                     on:click={handleShare}
@@ -371,7 +373,7 @@
             </div>
             <div class="w-full flex flex-col gap-[5px]">
                 <div
-                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
                 >
                     <Input value={user.npub} placeholder="npub..." fullWidth disabled noBorder />
                     <Button
@@ -396,7 +398,7 @@
                     />
                 </div>
                 <div
-                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
                 >
                     <Input
                         value={nip19.nprofileEncode({ pubkey: user.pubkey })}

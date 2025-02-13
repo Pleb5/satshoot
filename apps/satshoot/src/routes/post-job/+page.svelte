@@ -297,16 +297,16 @@
                                     fullWidth
                                 />
                                 <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
+                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
                                 >
                                     {#each displayOptions as { label, value }}
                                         <Button
-                                            classes="bg-black-200 text-black-500 p-[5px] font-400"
+                                            classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white-500 p-[5px] font-400"
                                             on:click={() => addTag(value)}
                                         >
                                             <span class="pl-[10px]"> {label} </span>
                                             <span
-                                                class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100"
+                                                class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100 dark:border-white-100"
                                             >
                                                 <i class="bx bx-plus" />
                                             </span>
@@ -321,7 +321,7 @@
                                 class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white"
                             >
                                 <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px]"
+                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px]"
                                 >
                                     {#each tagList as tag}
                                         <div
@@ -341,7 +341,7 @@
                         </div>
                     </div>
                     <div
-                        class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-black-100 pt-[10px] mt-[10px]"
+                        class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-black-100 dark:border-white-100 pt-[10px] mt-[10px]"
                     >
                         <Button on:click={postJob} disabled={!allowPostJob || posting}>
                             {#if !allowPostJob}

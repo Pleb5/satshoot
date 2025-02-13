@@ -50,7 +50,7 @@
 
     const jobFulfilledStatusClasses =
         'transition ease duration-[0.3s] flex flex-row gap-[5px] grow-[1] pl-[10px] font-[600] rounded-[4px] ' +
-        'border-[1px] border-black-100 overflow-hidden justify-center items-center group';
+        'border-[1px] border-black-100 dark:border-white-100 overflow-hidden justify-center items-center group';
 
     const qualitiesBadgeClasses =
         'transition ease duration-[0.3s] flex flex-row gap-[5px] grow-[1] pl-[10px] font-[600] rounded-[4px] border-[1px] ' +
@@ -63,13 +63,13 @@
             <!-- popups reviews-as-a-freelancer start -->
             <div class="w-full py-[10px] px-[5px] flex flex-col gap-[15px]">
                 <div
-                    class="w-full flex flex-col gap-[10px] pb-[15px] border-b-[1px] border-black-100"
+                    class="w-full flex flex-col gap-[10px] pb-[15px] border-b-[1px] border-black-100 dark:border-white-100"
                 >
                     <div
-                        class="w-full flex flex-col bg-black-50 gap-[10px] rounded-[6px] px-[10px] py-[15px] border-[1px] border-black-100"
+                        class="w-full flex flex-col bg-black-50 gap-[10px] rounded-[6px] px-[10px] py-[15px] border-[1px] border-black-100 dark:border-white-100"
                     >
                         <p
-                            class="w-full pb-[5px] mb-[5px] border-b-[1px] border-black-100 text-center font-[600]"
+                            class="w-full pb-[5px] mb-[5px] border-b-[1px] border-black-100 dark:border-white-100 text-center font-[600]"
                         >
                             Review Summary
                         </p>
@@ -92,7 +92,7 @@
                         {#if !isNaN(rateOfPositiveOutcome)}
                             <div class="w-full flex flex-row justify-center items-center mb-[5px]">
                                 <p
-                                    class="py-[5px] px-[15px] bg-black-100 rounded-[6px] border-[1px] border-black-100 grow-[1] text-center"
+                                    class="py-[5px] px-[15px] bg-black-100 rounded-[6px] border-[1px] border-black-100 dark:border-white-100 grow-[1] text-center"
                                 >
                                     Success rate: {rateOfPositiveOutcome}%
                                 </p>
@@ -100,10 +100,10 @@
                         {/if}
                     </div>
                     <div
-                        class="w-full flex flex-col bg-black-50 gap-[10px] rounded-[6px] px-[10px] py-[15px] border-[1px] border-black-100"
+                        class="w-full flex flex-col bg-black-50 gap-[10px] rounded-[6px] px-[10px] py-[15px] border-[1px] border-black-100 dark:border-white-100"
                     >
                         <p
-                            class="w-full pb-[5px] mb-[5px] border-b-[1px] border-black-100 text-center font-[600]"
+                            class="w-full pb-[5px] mb-[5px] border-b-[1px] border-black-100 dark:border-white-100 text-center font-[600]"
                         >
                             Exceptional Qualities Received
                         </p>

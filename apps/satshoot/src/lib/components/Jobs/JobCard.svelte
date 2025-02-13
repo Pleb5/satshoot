@@ -61,12 +61,12 @@
         {/if}
     </div>
     <div
-        class="w-full flex flex-col gap-[0px] p-[8px] border-t-[1px_solid_rgba(0,0,0,0.1)] bg-black-50"
+        class="w-full flex flex-col gap-[0px] p-[8px] border-t-[1px_solid_rgba(0,0,0,0.1)] bg-black-50 dark:bg-black-100"
     >
         <div class="jobCardButtons w-full flex flex-row gap-[5px] p-[0px] h-full overflow-hidden">
             {#each tabs as tab}
                 <Button
-                    variant={tab.name === selectedTab ? 'contained' : 'outlined'}
+                    variant={tab.name === selectedTab ? 'contained' : 'text'}
                     classes={jobCardBtnClasses}
                     on:click={() => (selectedTab = tab.name)}
                 >
