@@ -85,7 +85,7 @@
                 <input
                     id="attach-satshoot-wot"
                     type="checkbox"
-                    class="appearance-none h-[20px] w-[20px] border-[1px] border-black-200 rounded-[4px] checked:bg-blue-500 checked:border-white peer"
+                    class="appearance-none h-[20px] w-[20px] border-[1px] border-black-200 dark:border-white-200 rounded-[4px] checked:bg-blue-500 checked:border-white peer"
                     bind:checked={$useSatShootWoT}
                 />
                 <i

@@ -47,7 +47,7 @@
             <div class="w-full py-[10px] px-[5px]">
                 <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px]">
                     <div
-                        class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 flex flex-col justify-center items-center"
+                        class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                     >
                         <p class="font-[600] text-[16px] text-white-700">
                             This can solve some data loading problems but will slow down App until

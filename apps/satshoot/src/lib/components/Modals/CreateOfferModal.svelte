@@ -207,7 +207,9 @@
 {#if $modalStore[0]}
     <Popup title="Create Offer">
         <div class="w-full flex flex-col gap-[15px]">
-            <div class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-black-200">
+            <div
+                class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
+            >
                 <div class="w-full flex flex-col gap-[10px] p-[10px]">
                     <div class="flex flex-col gap-[5px] grow-[1]">
                         <div class="">
@@ -257,7 +259,7 @@
                                 fullWidth
                             />
                             <span
-                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 pointer-events-none"
+                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
                             >
                                 %
                             </span>

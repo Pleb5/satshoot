@@ -39,7 +39,7 @@
 
 <div class={itemWrapperClasses}>
     <div
-        class="flex flex-row justify-center items-center p-[10px] bg-black-200 border-r-[1px] border-black-100 max-[576px]:w-full"
+        class="flex flex-row justify-center items-center p-[10px] bg-black-200 border-r-[1px] border-black-100 dark:border-white-100 max-[576px]:w-full"
     >
         <div
             title={relayStatusText}

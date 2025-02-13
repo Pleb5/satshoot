@@ -257,17 +257,19 @@
 
     const ratingConsensusWrapperClasses =
         'w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] ' +
-        'bg-black-50 border-[1px] border-black-100';
+        'bg-black-50 dark:bg-white-50 border-[1px] border-black-100 dark:border-white-100';
 
     const paymentWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] flex flex-row flex-grow gap-[5px] p-[5px_10px] rounded-[6px] ' +
         'bg-black-100 text-black-500 items-center outline outline-[2px] outline-black-200 ' +
-        'text-[14px] hover:outline-yellow-600';
+        'text-[14px] hover:outline-yellow-600 dark:text-white dark:outline-white-200 dark:bg-white-100';
 </script>
 
 <div class="flex-grow-1 flex flex-col gap-[10px] p-[0px]">
     <div class="w-full flex flex-row gap-[5px]">
-        <div class="flex flex-row p-[0_8px_0_0] m-[0_5px_0_0] border-r border-black-100">
+        <div
+            class="flex flex-row p-[0_8px_0_0] m-[0_5px_0_0] border-r border-black-100 dark:border-white-100 dark:border-r-white-100"
+        >
             <a
                 class="transition ease-in-out duration-[0.3s] flex flex-col justify-center items-center"
                 href={profileLink}
@@ -282,7 +284,9 @@
                     shortenTextWithEllipsesInMiddle(npub, 15)}
             </a>
             <div class={ratingConsensusWrapperClasses}>
-                <i class="bx bxs-star border-r-[1px] border-r-black-100 text-black-500 pr-[5px]" />
+                <i
+                    class="bx bxs-star border-r-[1px] border-r-black-100 text-black-500 dark:text-white-500 pr-[5px]"
+                />
                 <p class="font-[700] grow-[1]">{ratingConsensus}</p>
             </div>
         </div>
