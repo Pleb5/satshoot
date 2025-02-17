@@ -28,6 +28,7 @@
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import ReputationCard from './ReputationCard.svelte';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
 
     const modalStore = getModalStore();
 
@@ -128,7 +129,7 @@
     $: if (job) {
         const jobPoster = $ndk.getUser({ pubkey: job.pubkey });
 
-        jobPosterImage = `https://robohash.org/${jobPoster.npub}`;
+        jobPosterImage = getRoboHashPicture(jobPoster.pubkey);
         jobPosterName = jobPoster.npub.substring(0, 8);
 
         jobPoster.fetchProfile().then((profile) => {
@@ -225,7 +226,9 @@
     {#if !skipReputation}
         <ReputationCard user={offer.pubkey} type={ReviewType.Freelancer} />
     {/if}
-    <div class="w-full border-[1px] border-black-100 rounded-[4px] bg-black-50">
+    <div
+        class="w-full border-[1px] border-black-100 dark:border-white-100 rounded-[4px] bg-black-50"
+    >
         <ExpandableText text={offer.description} maxCharacters={200} renderAsMarkdown />
         <div
             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-black-100"

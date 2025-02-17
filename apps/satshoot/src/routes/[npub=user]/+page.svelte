@@ -14,7 +14,7 @@
     import { orderEventsChronologically } from '$lib/utils/helpers';
     import { NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { onDestroy } from 'svelte';
+    import { onDestroy, onMount } from 'svelte';
 
     enum OfferStatus {
         Unknown,
@@ -142,6 +142,26 @@
         filterOffers();
     }
 
+    $: {
+        // Read the hash fragment
+        const hash = $page.url.hash;
+
+        // Add a small delay to ensure the DOM is fully rendered
+        setTimeout(() => {
+            if (hash === '#jobs' || hash === '#offers') {
+                const section = document.getElementById('job-and-offers');
+                if (section) {
+                    // Scroll to the section with alignment options
+                    section.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start', // Aligns the top of the section with the top of the viewport
+                        inline: 'nearest',
+                    });
+                }
+            }
+        }, 500); // Adjust the delay as needed (100ms is usually sufficient)
+    }
+
     onDestroy(() => {
         if (allJobsOfUser) allJobsOfUser.empty();
         if (allOffersOfUser) allOffersOfUser.empty();
@@ -211,7 +231,7 @@
             <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <UserCard {user} />
-                    <div class="w-full flex flex-col gap-[15px] relative">
+                    <div id="job-and-offers" class="w-full flex flex-col gap-[15px] relative">
                         <div class="w-full flex flex-col gap-[10px]">
                             <TabSelector {tabs} bind:selectedTab={$profileTabStore} />
                             <div class="w-full flex flex-col">

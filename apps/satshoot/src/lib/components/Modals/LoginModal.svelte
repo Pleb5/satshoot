@@ -525,13 +525,13 @@
     ];
 
     const labelClasses =
-        'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-black-200 border-b-[0px] text-[14px]';
+        'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-black-200 dark:border-white-200 border-b-[0px] text-[14px]';
 
     const inputWrapperClasses =
-        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 rounded-tr-[6px] overflow-hidden';
+        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 dark:border-white-100 rounded-tr-[6px] overflow-hidden';
 
     const btnWrapperClasses =
-        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 border-t-[0px]';
+        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 dark:border-white-200 border-t-[0px]';
 </script>
 
 {#if $modalStore[0]}
@@ -543,9 +543,9 @@
                         {statusMessage}
                     </h5>
                 {/if}
-                <div class="w-full flex flex-col bg-black-50 rounded-[6px]">
+                <div class="w-full flex flex-col bg-black-50 rounded-[6px] dark:bg-white-0">
                     <div
-                        class="w-full px-[10px] py-[5px] border-[2px] border-black-100 border-b-[0px] rounded-t-[6px]"
+                        class="w-full px-[10px] py-[5px] border-[2px] border-black-100 dark:border-white-100 border-b-[0px] rounded-t-[6px]"
                     >
                         <p>
                             SatShoot is built on Nostr, which has its own unique way of account
@@ -687,11 +687,11 @@
                 <div class="w-full flex flex-col rounded-[6px] overflow-hidden">
                     {#if displayLocalKeyLogin}
                         <div
-                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-black-200 border-b-[0px] flex flex-col gap-[10px]"
+                            class="w-full rounded-t-[6px] p-[10px] border-[2px] border-black-200 dark:border-white-200 border-b-[0px] flex flex-col gap-[10px]"
                         >
                             <div class="w-full flex flex-col bg-black-50 rounded-[6px]">
                                 <p
-                                    class="w-full px-[10px] py-[5px] border-[2px] border-black-100 rounded-t-[6px]"
+                                    class="w-full px-[10px] py-[5px] border-[2px] border-black-100 dark:border-white-100 rounded-t-[6px]"
                                 >
                                     Local keys are stored in an easily-accessible place in the
                                     browser called Local storage. This makes local keys the most
@@ -758,7 +758,7 @@
                         >
                             <div class="w-full flex flex-col bg-black-50 rounded-[6px] mb-[10px]">
                                 <p
-                                    class="w-full px-[10px] py-[5px] border-[2px] border-black-100 rounded-[6px]"
+                                    class="w-full px-[10px] py-[5px] border-[2px] border-black-100 dark:border-white-100 rounded-[6px]"
                                 >
                                     Backup your account. Put these words in a safe place to be able
                                     to access your account later.

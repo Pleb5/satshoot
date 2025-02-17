@@ -30,7 +30,7 @@
     ];
 
     const itemWrapperClasses =
-        'transition-all ease duration-[0.4s] flex-grow w-0 bg-white p-[25px_15px] ' +
+        'transition-all ease duration-[0.4s] flex-grow w-0 bg-white dark:bg-brightGray p-[25px_15px] ' +
         'shadow-subtle gap-[25px] flex flex-col justify-center ' +
         'items-center rounded-[10px] relative overflow-hidden min-h-[175px] min-w-[200px] ' +
         'hover:bg-blue-500 hover:text-white hover:scale-[1.02] group';

@@ -19,6 +19,7 @@
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
 
     export let notification: NDKEvent;
 
@@ -30,7 +31,7 @@
             : $ndk.getUser({ pubkey: notification.pubkey });
 
     let zapperName = zapper.npub.substring(0, 8);
-    let zapperImage = `https://robohash.org/${zapper.pubkey}`;
+    let zapperImage = getRoboHashPicture(zapper.pubkey);
     let zapperProfile: NDKUserProfile | null;
 
     let amount: number | null = null;

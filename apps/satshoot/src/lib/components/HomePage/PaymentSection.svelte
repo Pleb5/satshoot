@@ -13,7 +13,7 @@
                         alt="Bitcoin icon"
                     />
                     <div
-                        class="group transition-all ease duration-[0.4s] w-full absolute top-0 bottom-0 left-0 right-0 bg-white-0 backdrop-blur-[0px] flex flex-col justify-center items-center p-[25px] gap-[10px] text-purple-0 font-bold text-[38px] hover:bg-white-500 hover:backdrop-blur-[10px] hover:text-blue-500"
+                        class="group transition-all ease duration-[0.4s] w-full absolute top-0 bottom-0 left-0 right-0 bg-white-0 backdrop-blur-[0px] flex flex-col justify-center items-center p-[25px] gap-[10px] text-purple-0 font-bold text-[38px] hover:bg-white-500 hover:backdrop-blur-[10px] hover:text-blue-500 dark:hover:bg-black-500 dark:hover:text-white"
                     >
                         <p class="opacity-0 group-hover:opacity-100">Payments</p>
 
@@ -22,7 +22,7 @@
                             <a
                                 href="https://lightning.network/"
                                 target="_blank"
-                                class="transition-all ease duration-[0.3s] bg-blue-500 border-0 outline-0 text-white p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-[1] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[200px] opacity-0 group-hover:opacity-100 hover:bg-blue-600 hover:text-white"
+                                class="transition-all ease duration-[0.3s] bg-blue-500 border-0 outline-0 text-white p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-[1] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[200px] opacity-0 group-hover:opacity-100 hover:bg-blue-600 hover:text-white dark:text-white-800"
                             >
                                 <img
                                     src="/img/lightning.png"
@@ -36,7 +36,7 @@
                             <a
                                 href="https://cashu.space/"
                                 target="_blank"
-                                class="transition-all ease duration-[0.3s] bg-blue-500 border-0 outline-0 text-white p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-[1] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[200px] opacity-0 group-hover:opacity-100 hover:bg-blue-600 hover:text-white"
+                                class="transition-all ease duration-[0.3s] bg-blue-500 border-0 outline-0 text-white p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-[1] whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[200px] opacity-0 group-hover:opacity-100 hover:bg-blue-600 hover:text-white dark:text-white-800"
                             >
                                 <img src="/img/cashu.png" alt="Cashu Icon" class="h-6 w-6" />
                                 Cashu

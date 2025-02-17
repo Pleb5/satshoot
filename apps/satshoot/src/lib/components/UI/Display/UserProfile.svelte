@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
-    import { shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import {
         NDKSubscriptionCacheUsage,
         type Hexpubkey,
@@ -13,7 +13,7 @@
     export let pubkey: Hexpubkey;
 
     $: npub = nip19.npubEncode(pubkey);
-    $: avatarImage = `https://robohash.org/${npub}`;
+    $: avatarImage = getRoboHashPicture(pubkey);
     $: profileLink = '/' + npub;
 
     let userProfile: NDKUserProfile | undefined = undefined;

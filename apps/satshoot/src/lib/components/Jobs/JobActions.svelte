@@ -160,7 +160,8 @@
         modalStore.trigger(modal);
     }
 
-    const btnClasses = 'bg-black-100 text-black-500 scale-[1] w-auto flex-grow justify-start';
+    const btnClasses =
+        'bg-black-100 text-black-500 dark:text-white dark:bg-white-100 scale-[1] w-auto flex-grow justify-start';
 </script>
 
 <div class="flex flex-col grow-[1] gap-[10px] p-[0px]">
@@ -179,7 +180,7 @@
 
         {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
             <Button variant="outlined" classes={btnClasses} fullWidth on:click={handleCloseJob}>
-                <i class="bx bx-x-circle text-[20px]"></i>
+                <i class="bx bxs-lock text-[20px]"></i>
                 <p class="">Close Job</p>
             </Button>
         {/if}

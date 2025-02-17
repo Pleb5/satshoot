@@ -22,7 +22,7 @@
             <div class="w-full max-w-[{maxWidth}] justify-start items-center">
                 <Card>
                     <div
-                        class="flex flex-row justify-between items-center gap-[10px] pb-[5px] border-b-[1px] border-b-black-100"
+                        class="flex flex-row justify-between items-center gap-[10px] pb-[5px] border-b-[1px] border-b-black-100 dark:border-b-white-100"
                     >
                         <p class="font-[500] text-[18px]">{title}</p>
                         <Button variant="outlined" on:click={handleClose}>

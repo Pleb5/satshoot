@@ -18,10 +18,10 @@
     $: confirmPassphraseValid = passphraseValid && passphrase === confirmPassphrase;
 
     const inputWrapperClasses =
-        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 border-t-[0px] overflow-hidden';
+        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 dark:border-white-100 border-t-[0px] overflow-hidden';
 
     const btnWrapperClasses =
-        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 border-t-[0px]';
+        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 dark:border-white-200 border-t-[0px]';
 </script>
 
 <!-- Passphrase Input -->

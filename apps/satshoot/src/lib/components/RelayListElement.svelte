@@ -1,51 +1,62 @@
 <script lang="ts">
-    import type { NDKRelay } from "@nostr-dev-kit/ndk";
+    import type { NDKRelay } from '@nostr-dev-kit/ndk';
     import { NDKRelayStatus } from '@nostr-dev-kit/ndk';
+    import Button from './UI/Buttons/Button.svelte';
+    import { createEventDispatcher } from 'svelte';
+
+    const dispatch = createEventDispatcher();
 
     export let relay: NDKRelay;
     let relayStatusColor: string;
     let relayStatusText: string;
 
-    // console.log('relay in relay listelement', relay)
-    // setTimeout(()=>{
-    //     console.log('relay in relay listelement after delay', relay)
-    // }, 8000);            
-
     $: if (relay && relay.status) {
-        console.log('relay status changed: ', relay.status)
         if (
-            relay.status == NDKRelayStatus.CONNECTING
-                || relay.status === NDKRelayStatus.RECONNECTING
+            relay.status == NDKRelayStatus.CONNECTING ||
+            relay.status === NDKRelayStatus.RECONNECTING
         ) {
-            relayStatusColor = "variant-filled-warning";
-            relayStatusText = "Connecting";
+            relayStatusColor = 'bg-warning-500';
+            relayStatusText = 'Connecting';
         } else if (relay.status == NDKRelayStatus.DISCONNECTED) {
-            relayStatusColor = "variant-filled-error";
-            relayStatusText = "Disconnected";
+            relayStatusColor = 'bg-error-500';
+            relayStatusText = 'Disconnected';
         } else if (relay.status == NDKRelayStatus.CONNECTED) {
-            relayStatusColor = "variant-filled-success";
-            relayStatusText = "Connected";
+            relayStatusColor = 'bg-success-600';
+            relayStatusText = 'Connected';
         } else if (relay.status == NDKRelayStatus.FLAPPING) {
-            relayStatusColor = "variant-filled-warning";
-            relayStatusText = "Flapping";
+            relayStatusColor = 'bg-warning-500';
+            relayStatusText = 'Flapping';
         } else if (relay.status === NDKRelayStatus.AUTHENTICATING) {
-            relayStatusColor = "variant-filled-primary";
-            relayStatusText = "Authenticating";
+            relayStatusColor = 'bg-primary-500';
+            relayStatusText = 'Authenticating';
         }
     }
 
+    const itemWrapperClasses =
+        'transition ease duration-[0.3s] w-full flex flex-row gap-[10px] justify-between items-center rounded-[6px] ' +
+        'bg-black-100 overflow-hidden max-[576px]:gap-[0px] max-[576px]:flex-col hover:bg-blue-500 group';
 </script>
 
-{#if relay}
-    <div class="grid grid-cols-[1fr_40%] p-2 justify-center">
-        <div class="text-md md:text-xl">
-            { relay.url.replace("wss://","").slice(0, -1) }
-        </div>
-        <div class="badge {relayStatusColor} ">
-            {relayStatusText}
-        </div>
+<div class={itemWrapperClasses}>
+    <div
+        class="flex flex-row justify-center items-center p-[10px] bg-black-200 border-r-[1px] border-black-100 dark:border-white-100 max-[576px]:w-full"
+    >
+        <div
+            title={relayStatusText}
+            class="h-[15px] w-[15px] rounded-[4px] max-[576px]:w-full {relayStatusColor}"
+        ></div>
     </div>
+    <p
+        class="transition ease duration-[0.3s] grow-[1] group-hover:text-white break-all max-[576px]:py-[5px]"
+    >
+        {relay.url}
+    </p>
 
-{:else}
-    <p>RELAY UNDEFINED!</p>
-{/if}
+    <Button
+        on:click={() => dispatch('remove')}
+        variant="text"
+        classes="min-h-[35px] rounded-[0px] hover:bg-red-500 hover:text-white"
+    >
+        <i class="bx bxs-trash" />
+    </Button>
+</div>

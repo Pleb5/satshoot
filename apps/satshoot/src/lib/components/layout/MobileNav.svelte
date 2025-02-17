@@ -17,8 +17,7 @@
 </script>
 
 <div
-    class="w-[100%] flex-col justify-center items-center hidden max-[576px]:flex"
-    class:bg-white={mobileNavOpen}
+    class="w-[100%] flex-col justify-center items-center hidden max-[576px]:flex bg-white dark:bg-brightGray"
 >
     <div class="w-[100%] flex flex-row grow-1 gap-[10px] p-[10px] justify-center items-center">
         <div class={satshootMobileLogoClass}>
@@ -30,7 +29,7 @@
         </Button>
     </div>
     {#if mobileNavOpen}
-        <div class="w-[100%] h-screen bg-white flex flex-col">
+        <div class="w-[100%] h-screen bg-white dark:bg-brightGray flex flex-col">
             <div
                 class="w-[100%] border-t-[1px] border-t-black-100 px-[10px] py-[10px] flex flex-col gap-[10px]"
             >

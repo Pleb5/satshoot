@@ -55,6 +55,7 @@ import { dev } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit } from '$lib/stores/wallet';
+import { nip19 } from 'nostr-tools';
 
 export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init');
@@ -569,3 +570,7 @@ export function averageToRatingText(average: number): RatingConsensus {
     }
     return { ratingConsensus: ratingConsensus, ratingColor: ratingColor };
 }
+
+export const getRoboHashPicture = (pubkey: string): string => {
+    return `https://robohash.org/${pubkey}`;
+};

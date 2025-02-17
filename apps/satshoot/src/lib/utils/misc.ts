@@ -1,5 +1,6 @@
 import { nip19 } from 'nostr-tools';
 import { type NDKTag, type Hexpubkey, NDKKind, type NostrEvent } from '@nostr-dev-kit/ndk';
+import normalizeUrl from 'normalize-url';
 
 export const JobsPerPage = 9;
 
@@ -213,4 +214,22 @@ export function clipText(text: string, maxLength: number) {
     }
 
     return clippedText + ' ...';
+}
+
+// Url normalization based on the idea of Coracle.social
+// https://github.com/coracle-social/paravel/blob/7cb792ba17550f208d3c80773c4822a010139ccb/src/util/nostr.ts#L46
+const stripProto = (url: string) => url.replace(/.*:\/\//, '');
+
+export function normalizeRelayUrl(url: string) {
+    url = normalizeUrl(url, { stripHash: true, stripAuthentication: false });
+
+    // Strip protocol
+    url = stripProto(url);
+
+    // Url-s without pathnames are supposed to have a trailing slash
+    if (!url.includes('/')) {
+        url += '/';
+    }
+
+    return 'wss://' + url;
 }

@@ -5,7 +5,8 @@
     export let actAsButton = false;
 
     const defaultClasses =
-        'w-full flex flex-col gap-[5px] rounded-[8px] p-[15px] ' + 'shadow-subtle bg-white';
+        'w-full flex flex-col gap-[5px] rounded-[8px] p-[15px] ' +
+        'shadow-subtle bg-white dark:bg-brightGray';
 
     // Merge defaultClasses and classes, ensuring classes take precedence
     $: finalClasses = mergeClasses(defaultClasses, classes);

@@ -613,7 +613,7 @@
                 <!-- popups Share Job Post start -->
                 <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
                     <div
-                        class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 p-[10px]"
+                        class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 dark:border-white-100 p-[10px]"
                     >
                         <UserProfile pubkey={offer.pubkey} />
                         <div
@@ -654,13 +654,13 @@
                         </div>
                     </div>
                     <div
-                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 rounded-[4px] px-[10px] py-[10px]"
+                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
                     >
                         <p class="">Compensation for:</p>
                         <p class="">{ticket.title}</p>
                     </div>
                     <div
-                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 rounded-[4px] px-[10px] py-[10px]"
+                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
                     >
                         <div class="w-full flex flex-col gap-[5px]">
                             <div class="w-full flex flex-col gap-[5px]">
@@ -693,7 +693,7 @@
                             </div>
                         </div>
                         <div
-                            class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100"
+                            class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                         >
                             <p class="grow-[1] text-center">
                                 Freelancer gets: {insertThousandSeparator(freelancerShare)} sats

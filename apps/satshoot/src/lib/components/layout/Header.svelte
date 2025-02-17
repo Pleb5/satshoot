@@ -20,7 +20,7 @@
     }
 </script>
 
-<div class="w-full flex flex-col justify-center items-center gap-0 bg-unset">
+<div class="w-full flex flex-col justify-center items-center gap-0 bg-white dark:bg-brightGray">
     <DesktopNav on:login={handleLogin} />
     <MobileNav on:login={handleLogin} />
 </div>

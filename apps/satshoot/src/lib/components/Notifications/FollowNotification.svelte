@@ -6,12 +6,13 @@
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
 
     export let notification: NDKEvent;
 
     const follower = $ndk.getUser({ pubkey: notification.pubkey });
     let followerName = follower.npub.substring(0, 8);
-    let followerImage = `https://robohash.org/${follower.pubkey}`;
+    let followerImage = getRoboHashPicture(follower.pubkey);
     let followerProfile: NDKUserProfile | null;
 
     onMount(async () => {

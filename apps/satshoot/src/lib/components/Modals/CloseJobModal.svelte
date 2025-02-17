@@ -35,6 +35,10 @@
     let closing = false;
     let errorMessage = '';
 
+    $: if (!isIssueResolved) {
+        expertise = availability = communication = false;
+    }
+
     async function closeJob() {
         if (job) {
             const jobToPublish = new TicketEvent($ndk);

@@ -66,14 +66,14 @@
     const collapseWrapperClasses =
         'transition-all ease-in-out duration-[0.4s] w-auto fixed bottom-0 ' +
         'transform self-center max-w-[500px] ' +
-        'flex flex-row justify-center items-center gap-[8px] p-[10px] z-5 ' +
-        'min-h-[85px] max-[576px]:w-full max-[576px]:right-0 max-[576px]:left-0 ' +
+        'flex flex-row justify-center items-center gap-[8px] z-5 ' +
+        'min-h-[50px] max-[576px]:w-full max-[576px]:right-0 max-[576px]:left-0 ' +
         'max-[576px]:translate-x-0 max-[576px]:max-w-none max-[576px]:justify-end';
 
     const collapseBoxClass =
         'transition-all ease-in-out duration-[0.0s] ' +
         'bg-gray-600 rounded-[10px] shadow-soft ' +
-        'flex flex-row border-white';
+        'flex flex-row border-white dark:bg-brightGray dark:border-white-100';
 
     const itemClasses =
         'transition ease-in-out duration-[0.3s] ' +
@@ -83,7 +83,23 @@
 
     const collapseTriggerBtnClasses =
         'bg-white text-black-300 shadow-subtle ' +
-        'hover:bg-white hover:text-black-700 py-[15px] px-[5px] ';
+        'hover:bg-white hover:text-black-700 py-[15px] px-[5px] ' +
+        'dark:bg-brightGray dark:hover:bg-brightGray dark:text-white-500 dark:hover:text-white-700 dark:border-[2px] dark:border-white-100';
+
+    // Helper function to check if the current path is under /settings/
+    function isSettingsPath(path: string): boolean {
+        return path.startsWith('/settings/');
+    }
+
+    // Helper function to determine if the link is active
+    function isActive(href: string, currentPath: string) {
+        return href === currentPath || (href === '/settings/' && isSettingsPath(currentPath));
+    }
+
+    // $: linkClasses = `
+    //     ${itemClasses}
+    //     ${isActive(href, $page.url.pathname) ? 'bg-blue-500 text-white dark:text-white-400' : 'bg-blue-0 text-black-300 dark:text-gray-500'}
+    // `;
 </script>
 
 <div
@@ -95,9 +111,11 @@
         {#if filterList.length > 0}
             <div
                 id="btnBotNavCollapseBoxSearch"
-                class="p-[4px] bg-white rounded-[4px] shadow-subtle flex flex-row"
+                class="p-[4px] bg-white dark:bg-brightGray rounded-[4px] shadow-subtle flex flex-row"
             >
-                <p class="w-full text-[14px] font-[500] text-center text-black-500">
+                <p
+                    class="w-full text-[14px] font-[500] text-center text-black-500 dark:text-white-500"
+                >
                     There's currently an active search on this page
                 </p>
             </div>
@@ -123,11 +141,9 @@
                 {#if href}
                     <a
                         {href}
-                        class={itemClasses}
-                        class:bg-blue-500={href === $page.url.pathname}
-                        class:bg-blue-0={href !== $page.url.pathname}
-                        class:text-white={href === $page.url.pathname}
-                        class:text-black-300={href !== $page.url.pathname}
+                        class="{itemClasses} {isActive(href, $page.url.pathname)
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-blue-0 text-black-300 dark:text-white-400'}"
                     >
                         <i class={`bx ${icon}`} />
                         {#if href === '/notifications/' && $unReadNotifications.length > 0}
@@ -142,11 +158,9 @@
                     </a>
                 {:else if icon === 'bx-search'}
                     <button
-                        class={itemClasses}
-                        class:bg-blue-500={filterList.length !== 0}
-                        class:bg-blue-0={filterList.length === 0}
-                        class:text-white={filterList.length !== 0}
-                        class:text-black-300={filterList.length === 0}
+                        class="{itemClasses} {filterList.length !== 0
+                            ? 'bg-blue-500 text-white '
+                            : 'bg-blue-0 text-black-300 dark:text-white-400'}"
                         on:click={handleSearch}
                     >
                         <i class="bx bx-search"></i></button

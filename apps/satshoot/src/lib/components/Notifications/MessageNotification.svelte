@@ -15,12 +15,13 @@
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
     import { goto } from '$app/navigation';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
 
     export let notification: NDKEvent;
 
     let user = $ndk.getUser({ pubkey: notification.pubkey });
     let userName = user.npub.substring(0, 8);
-    let userImage = `https://robohash.org/${user.pubkey}`;
+    let userImage = getRoboHashPicture(user.pubkey);
 
     let userProfile: NDKUserProfile | null;
     let decryptedDM: string;

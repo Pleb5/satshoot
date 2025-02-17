@@ -71,11 +71,11 @@
 
     const inputWrapperClasses =
         'flex flex-row rounded-[6px] overflow-hidden bg-white outline ' +
-        'outline-[5px] outline-white border-[1px] border-black-100 gap-[2px]';
+        'outline-[5px] outline-white border-[1px] border-black-100 dark:border-white-100 gap-[2px]';
 
     const termWrapperClasses =
         'flex flex-row gap-[5px] px-[10px] py-[1px] bg-black-100 ' +
-        'border-[1px] border-black-100 rounded-[4px] items-center hover:bg-blue-500 group';
+        'border-[1px] border-black-100 dark:border-white-100 rounded-[4px] items-center hover:bg-blue-500 group';
 
     const termClasses =
         'transition ease duration-[0.2s] text-[14px] border-r-[1px] border-r-black-100 ' +
@@ -116,7 +116,7 @@
                             >
                             <div
                                 id="added-tags"
-                                class="w-full flex flex-row flex-wrap gap-[5px] p-[5px] border-[1px] border-black-100 rounded-[4px] min-h-[40px]"
+                                class="w-full flex flex-row flex-wrap gap-[5px] p-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] min-h-[40px]"
                             >
                                 {#each $searchTerms as term}
                                     <div class={termWrapperClasses}>
