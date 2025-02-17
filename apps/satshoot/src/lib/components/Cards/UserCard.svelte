@@ -5,7 +5,11 @@
         fetchFreelanceFollowEvent,
         freelanceFollowEvents,
     } from '$lib/stores/user';
-    import { fetchEventFromRelaysFirst, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import {
+        fetchEventFromRelaysFirst,
+        getRoboHashPicture,
+        shortenTextWithEllipsesInMiddle,
+    } from '$lib/utils/helpers';
     import { filterValidPTags } from '$lib/utils/misc';
     import {
         NDKEvent,
@@ -34,6 +38,8 @@
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import CopyButton from '../UI/Buttons/CopyButton.svelte';
     import QrCodeModal from '../Modals/QRCodeModal.svelte';
+    import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
 
     enum FollowStatus {
         isFollowing,
@@ -53,9 +59,10 @@
 
     $: npub = user.npub;
     $: profileHref = '/' + npub;
-    $: avatarImage = `https://robohash.org/${user.pubkey}`;
+    $: avatarImage = getRoboHashPicture(user.pubkey);
 
     $: bech32ID = job ? job.encode() : '';
+    $: canEditProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
 
     let showMessageButton = false;
     $: if (job && job.pubkey !== $currentUser?.pubkey) {
@@ -256,6 +263,13 @@
         modalStore.trigger(modal);
     }
 
+    function handleEditProfile() {
+        const currentPath = $page.url.pathname;
+        const profileSettingsUrl = new URL('/settings/profile', window.location.origin);
+        profileSettingsUrl.searchParams.set('redirectPath', currentPath);
+        goto(profileSettingsUrl);
+    }
+
     $: userInfoItems = [
         {
             text: userProfile?.nip05,
@@ -346,9 +360,19 @@
                     <ExpandableText text={userProfile.about} expandText="View Full About" />
                 </div>
             {/if}
-            <div
-                class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden flex-wrap p-[4px]"
-            >
+            <div class="w-full flex flex-col gap-[10px] rounded-[6px] p-[8px] bg-black-100">
+                {#if canEditProfile}
+                    <Button
+                        variant="outlined"
+                        classes="bg-white dark:bg-brightGray"
+                        fullWidth
+                        title="Edit Profile"
+                        on:click={handleEditProfile}
+                    >
+                        <i class="bx bxs-edit-alt" />
+                    </Button>
+                {/if}
+
                 {#if showMessageButton}
                     <Button
                         variant="outlined"

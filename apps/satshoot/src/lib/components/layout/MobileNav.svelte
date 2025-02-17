@@ -29,7 +29,7 @@
         </Button>
     </div>
     {#if mobileNavOpen}
-        <div class="w-[100%] h-screen bg-white flex flex-col">
+        <div class="w-[100%] h-screen bg-white dark:bg-brightGray flex flex-col">
             <div
                 class="w-[100%] border-t-[1px] border-t-black-100 px-[10px] py-[10px] flex flex-col gap-[10px]"
             >

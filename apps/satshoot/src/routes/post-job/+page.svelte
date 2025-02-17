@@ -23,6 +23,7 @@
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
+    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -241,6 +242,15 @@
             toastStore.trigger(t);
         }
     }
+
+    function handleLogin() {
+        modalStore.trigger({
+            type: 'component',
+            component: {
+                ref: LoginModal,
+            },
+        });
+    }
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
@@ -343,24 +353,24 @@
                     <div
                         class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-black-100 dark:border-white-100 pt-[10px] mt-[10px]"
                     >
-                        <Button on:click={postJob} disabled={!allowPostJob || posting}>
-                            {#if !allowPostJob}
-                                Log in To Post
-                            {:else if posting}
-                                <span>
+                        {#if !allowPostJob}
+                            <Button on:click={handleLogin}>Log in To Post</Button>
+                        {:else}
+                            <Button on:click={postJob} disabled={posting}>
+                                {#if posting}
                                     <ProgressRadial
                                         value={undefined}
                                         stroke={60}
-                                        meter="stroke-primary-500"
-                                        track="stroke-primary-500/3"
+                                        meter="stroke-white-500"
+                                        track="stroke-white-500/3"
                                         width="w-8"
                                         strokeLinecap="round"
                                     />
-                                </span>
-                            {:else}
-                                <span>Publish Job Post</span>
-                            {/if}
-                        </Button>
+                                {:else}
+                                    <span>Publish Job Post</span>
+                                {/if}
+                            </Button>
+                        {/if}
                     </div>
                 </Card>
             </div>

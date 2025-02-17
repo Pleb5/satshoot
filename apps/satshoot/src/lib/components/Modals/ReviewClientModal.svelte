@@ -20,6 +20,10 @@
     let availability = false;
     let communication = false;
 
+    $: if (!thumb) {
+        availability = communication = false;
+    }
+
     let reviewText = '';
 
     let posting = false;

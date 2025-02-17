@@ -15,6 +15,7 @@
     import { page } from '$app/stores';
     import { selectedPerson } from '$lib/stores/messages';
     import Markdown from './Markdown.svelte';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
 
     export let avatarRight = true;
     export let message: NDKEvent;
@@ -24,7 +25,7 @@
     let decryptedDM: string;
     const senderUser = $ndk.getUser({ pubkey: message.pubkey });
     let name = (senderUser as NDKUser).npub.substring(0, 10);
-    let avatarImage = `https://robohash.org/${message.pubkey}`;
+    let avatarImage = getRoboHashPicture(message.pubkey);
     const recipient = message.tagValue('p');
 
     const messageDate = new Date((message.created_at as number) * 1000);
