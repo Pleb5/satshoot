@@ -4,6 +4,7 @@
     import OfferCard from '$lib/components/Cards/OfferCard.svelte';
     import UserCard from '$lib/components/Cards/UserCard.svelte';
     import CreateOfferModal from '$lib/components/Modals/CreateOfferModal.svelte';
+    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
@@ -21,6 +22,7 @@
         NDKSubscription,
         type NDKSubscriptionOptions,
         NDKUser,
+        NDKSubscriptionCacheUsage,
     } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import {
@@ -58,7 +60,7 @@
     let offerToEdit: OfferEvent | undefined = undefined;
     let btnActionText = 'Create Offer';
 
-    let allowCreateOffer: boolean = true;
+    let allowCreateOffer: boolean = false;
     let disallowCreateOfferReason = '';
 
     let selectedOffersTab = OfferTab.Pending;
@@ -68,11 +70,6 @@
         if ($currentUser && $currentUser.pubkey === jobPost.pubkey) {
             myJob = true;
         }
-    }
-
-    $: if (!$loggedIn) {
-        allowCreateOffer = false;
-        disallowCreateOfferReason = 'To make an offer please login first';
     }
 
     let needSetup = true;
@@ -118,7 +115,10 @@
 
             // TODO: Some effect to show the ticket changed
 
-            if (jobPost.status !== TicketStatus.New) {
+            if (jobPost.status === TicketStatus.New) {
+                allowCreateOffer = true;
+                disallowCreateOfferReason = '';
+            } else {
                 allowCreateOffer = false;
                 disallowCreateOfferReason =
                     "Status of the Job not 'New' anymore! Cannot Create/Edit Offer!";
@@ -166,6 +166,19 @@
                 winningOffer = $offerStore.find(
                     (offer) => offer.offerAddress === jobPost?.acceptedOfferAddress
                 );
+
+                // its possible that winning offer might have been filtered out due to wot
+                // so, we'll fetch it directly instead of finding it in offerStore
+                if (!winningOffer) {
+                    // fetch winning offer
+                    $ndk.fetchEvent(jobPost.acceptedOfferAddress, {
+                        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                    }).then((event) => {
+                        if (event) {
+                            winningOffer = OfferEvent.from(event);
+                        }
+                    });
+                }
 
                 selectedOffersTab = OfferTab.Won;
             }
@@ -219,6 +232,15 @@
         });
     }
 
+    function triggerLogin() {
+        modalStore.trigger({
+            type: 'component',
+            component: {
+                ref: LoginModal,
+            },
+        });
+    }
+
     const tabs = [
         { id: OfferTab.Pending, label: 'Pending' },
         { id: OfferTab.Won, label: 'Won' },
@@ -255,19 +277,32 @@
                                     {/if}
 
                                     {#if allowCreateOffer}
-                                        <div class="flex flex-row justify-center">
-                                            <Button
-                                                on:click={() => createOffer(offerToEdit)}
-                                                classes="max-[768px]:grow-[1]"
-                                            >
-                                                {btnActionText}
-                                            </Button>
-                                        </div>
+                                        {#if $loggedIn}
+                                            <div class="flex flex-row justify-center">
+                                                <Button
+                                                    on:click={() => createOffer(offerToEdit)}
+                                                    classes="max-[768px]:grow-[1]"
+                                                >
+                                                    {btnActionText}
+                                                </Button>
+                                            </div>
+                                        {:else}
+                                            <div class="flex flex-row justify-center">
+                                                <Button
+                                                    on:click={triggerLogin}
+                                                    classes="max-[768px]:grow-[1]"
+                                                >
+                                                    Login to make offer
+                                                </Button>
+                                            </div>
+                                        {/if}
                                     {:else}
                                         <div
-                                            class="w-full min-h-[100px] rounded-[8px] bg-black-100 border-[4px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
+                                            class="w-full min-h-[100px] rounded-[8px] bg-black-100 dark:bg-white-100 border-[4px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                                         >
-                                            <p class="font-[600] text-[18px] text-black-300">
+                                            <p
+                                                class="font-[600] text-[18px] text-black-300 dark:text-white-300"
+                                            >
                                                 {disallowCreateOfferReason}
                                             </p>
                                         </div>

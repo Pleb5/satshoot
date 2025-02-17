@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import ndk from '$lib/stores/ndk';
@@ -10,14 +12,21 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+    import { getToastStore, ProgressRadial, type ToastSettings } from '@skeletonlabs/skeleton';
 
     const toastStore = getToastStore();
 
     let userProfile: NDKUserProfile = {};
+    let updating = false;
 
     $: if ($currentUser) {
         setProfile($currentUser);
+    }
+
+    let redirectPath: string | null = null;
+
+    $: {
+        redirectPath = $page.url.searchParams.get('redirectPath');
     }
 
     async function setProfile(user: NDKUser) {
@@ -49,8 +58,12 @@
     }
 
     async function updateProfile() {
+        if (updating) return;
+
         if ($currentUser) {
             try {
+                updating = true;
+
                 $currentUser.profile = userProfile;
                 await broadcastUserProfile($ndk, userProfile);
 
@@ -58,11 +71,17 @@
                     message: `Profile Updated!`,
                 };
                 toastStore.trigger(t);
+
+                if (redirectPath) {
+                    goto(redirectPath);
+                }
             } catch (e) {
                 const t: ToastSettings = {
                     message: `Profile update failed! Reason: ${e}`,
                 };
                 toastStore.trigger(t);
+            } finally {
+                updating = false;
             }
         }
     }
@@ -173,6 +192,18 @@
             </div>
         </div>
 
-        <Button on:click={updateProfile}>Save</Button>
+        <Button on:click={updateProfile} disabled={updating}>
+            Save
+            {#if updating}
+                <ProgressRadial
+                    value={undefined}
+                    stroke={60}
+                    meter="stroke-white-500"
+                    track="stroke-white-500/30"
+                    strokeLinecap="round"
+                    width="w-8"
+                />
+            {/if}
+        </Button>
     </div>
 {/if}

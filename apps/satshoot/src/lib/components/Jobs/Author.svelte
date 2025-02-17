@@ -14,6 +14,7 @@
     import { nip19 } from 'nostr-tools';
     import {
         averageToRatingText,
+        getRoboHashPicture,
         shortenTextWithEllipsesInMiddle,
         type RatingConsensus,
     } from '$lib/utils/helpers';
@@ -35,7 +36,7 @@
     export let user: Hexpubkey;
 
     $: npub = nip19.npubEncode(user);
-    $: avatarImage = `https://robohash.org/${npub}`;
+    $: avatarImage = getRoboHashPicture(user);
     $: profileLink = '/' + npub;
 
     let userProfile: NDKUserProfile | undefined = undefined;

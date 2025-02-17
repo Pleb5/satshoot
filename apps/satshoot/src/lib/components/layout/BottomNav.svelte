@@ -66,8 +66,8 @@
     const collapseWrapperClasses =
         'transition-all ease-in-out duration-[0.4s] w-auto fixed bottom-0 ' +
         'transform self-center max-w-[500px] ' +
-        'flex flex-row justify-center items-center gap-[8px] p-[10px] z-5 ' +
-        'min-h-[85px] max-[576px]:w-full max-[576px]:right-0 max-[576px]:left-0 ' +
+        'flex flex-row justify-center items-center gap-[8px] z-5 ' +
+        'min-h-[50px] max-[576px]:w-full max-[576px]:right-0 max-[576px]:left-0 ' +
         'max-[576px]:translate-x-0 max-[576px]:max-w-none max-[576px]:justify-end';
 
     const collapseBoxClass =

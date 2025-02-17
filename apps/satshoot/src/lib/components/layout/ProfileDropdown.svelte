@@ -2,7 +2,7 @@
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import LogoutModal from '../Modals/LogoutModal.svelte';
-    import { shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import TicketIcon from '../Icons/TicketIcon.svelte';
     import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import WalletIcon from '../Icons/WalletIcon.svelte';
@@ -98,7 +98,7 @@
             },
         },
         {
-            href: profileHref,
+            href: `${profileHref}#jobs`,
             label: 'My Jobs',
             icon: {
                 component: TicketIcon,
@@ -109,7 +109,7 @@
             },
         },
         {
-            href: profileHref,
+            href: `${profileHref}#offers`,
             label: 'My Offers',
             icon: {
                 component: BitcoinIcon,
@@ -138,7 +138,7 @@
     ];
 
     const profileDropdownWrapperClass =
-        'dropdown-menu absolute right-0 z-10 mt-[5px] w-[100%] min-w-[150px] bg-white dark:bg-brightGray ' +
+        'dropdown-menu absolute left-1/2 transform -translate-x-1/2 md:right-0 md:left-auto md:transform-none z-10 mt-[5px] flex min-w-[150px] bg-white dark:bg-brightGray ' +
         'rounded-[6px] border-[1px] border-black-100 dark:border-white-100 shadow-soft';
 
     const profileMenuItemClass = 'px-[4px] py-[4px] gap-2  justify-start';
@@ -151,7 +151,7 @@
     <div data-ignore-outside-click>
         <Button variant="outlined" on:click={toggleProfileDropdown} {classes}>
             <img
-                src={$currentUser.profile?.image ?? `https://robohash.org/${$currentUser.pubkey}`}
+                src={$currentUser.profile?.image ?? getRoboHashPicture($currentUser.pubkey)}
                 alt="user profile"
                 class="w-[25px] h-[25px] rounded-[100%]"
             />
@@ -194,7 +194,7 @@
                     <span class="w-6 text-center">
                         <BullhornIcon extraClasses={''} />
                     </span>
-                    <span>Work</span>
+                    <span>Announcement</span>
                 </Button>
 
                 <Button variant="text" classes={profileMenuItemClass} on:click={feedback}>

@@ -180,7 +180,7 @@
 
         {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
             <Button variant="outlined" classes={btnClasses} fullWidth on:click={handleCloseJob}>
-                <i class="bx bx-x-circle text-[20px]"></i>
+                <i class="bx bxs-lock text-[20px]"></i>
                 <p class="">Close Job</p>
             </Button>
         {/if}

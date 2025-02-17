@@ -2,6 +2,7 @@
     import type { NDKUser, NDKUserProfile } from '@nostr-dev-kit/ndk';
     import ndk from '$lib/stores/ndk';
     import { onMount } from 'svelte';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
 
     export let pubkey: string;
     export let userProfile: NDKUserProfile | undefined = undefined;
@@ -68,7 +69,7 @@
     >
         <img
             alt="user avatar"
-            src={userProfile?.image || `https://robohash.org/${user.pubkey}`}
+            src={userProfile?.image || getRoboHashPicture(user.pubkey)}
             class="object-cover {sizeClass} {shapeClass}"
         />
     </div>

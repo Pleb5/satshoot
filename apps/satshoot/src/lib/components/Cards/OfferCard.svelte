@@ -28,6 +28,7 @@
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import ReputationCard from './ReputationCard.svelte';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
 
     const modalStore = getModalStore();
 
@@ -128,7 +129,7 @@
     $: if (job) {
         const jobPoster = $ndk.getUser({ pubkey: job.pubkey });
 
-        jobPosterImage = `https://robohash.org/${jobPoster.npub}`;
+        jobPosterImage = getRoboHashPicture(jobPoster.pubkey);
         jobPosterName = jobPoster.npub.substring(0, 8);
 
         jobPoster.fetchProfile().then((profile) => {
