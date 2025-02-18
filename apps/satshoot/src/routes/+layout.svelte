@@ -658,6 +658,6 @@
         <Footer />
     </svelte:fragment>
 </AppShell>
-<BottomNav />
+<!-- <BottomNav /> -->
 
 <!-- <AppHeader /> -->

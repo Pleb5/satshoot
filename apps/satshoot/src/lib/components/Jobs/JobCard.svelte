@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import ndk from '$lib/stores/ndk';
+    import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import Author from './Author.svelte';
@@ -9,6 +11,23 @@
 
     export let job: TicketEvent;
     export let showOffersDetail = false;
+
+    let highlightOffersTab = false;
+
+    $: if (showOffersDetail && job.status === TicketStatus.New) {
+        const offersFilter: NDKFilter = {
+            kinds: [NDKKind.FreelanceOffer],
+            '#a': [job.ticketAddress],
+        };
+
+        $ndk.fetchEvents(offersFilter, {
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        }).then((offers) => {
+            if (offers.size > 0) {
+                highlightOffersTab = true;
+            }
+        });
+    }
 
     let bech32ID = '';
 
@@ -71,6 +90,11 @@
                     on:click={() => (selectedTab = tab.name)}
                 >
                     <i class={`bx ${tab.icon}`} />
+                    {#if tab.name === Tabs.Offers && highlightOffersTab}
+                        <div
+                            class="h-[4px] w-full max-w-[35px] rounded-[10px] absolute bottom-[2px] bg-red-400"
+                        ></div>
+                    {/if}
                 </Button>
             {/each}
         </div>
