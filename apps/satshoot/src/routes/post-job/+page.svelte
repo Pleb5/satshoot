@@ -298,7 +298,7 @@
                         <div class="flex flex-col gap-[5px]">
                             <label class="m-[0px] text-[14px]" for="tags">Tags</label>
                             <div
-                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white"
+                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
                             >
                                 <Input
                                     bind:value={tagInput}
@@ -311,7 +311,7 @@
                                 >
                                     {#each displayOptions as { label, value }}
                                         <Button
-                                            classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white-500 p-[5px] font-400"
+                                            classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white-500 hover:text-white p-[5px] font-400"
                                             on:click={() => addTag(value)}
                                         >
                                             <span class="pl-[10px]"> {label} </span>
@@ -328,7 +328,7 @@
                                 Added tags ({tagList.length}/{maxTags} max.)
                             </label>
                             <div
-                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white"
+                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
                             >
                                 <div
                                     class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px]"

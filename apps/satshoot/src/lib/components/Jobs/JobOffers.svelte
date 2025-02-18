@@ -107,7 +107,7 @@
 
     const boxWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] flex flex-row gap-[5px] p-[5px_10px] ' +
-        'rounded-[6px] bg-[rgba(0,0,0,0.1)] text-[rgba(0,0,0,0.5)] items-center ' +
+        'rounded-[6px] bg-black-100 text-black-500 dark:bg-white-100 dark:text-white-500 items-center ' +
         'outline outline-[2px] outline-[rgba(0,0,0,0.15)] text-[14px] flex-grow w-full';
 </script>
 

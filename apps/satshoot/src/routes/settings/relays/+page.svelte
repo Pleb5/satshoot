@@ -200,7 +200,7 @@
                 Add a custom relay server
             </label>
             <div
-                class="flex flex-row rounded-[6px] overflow-hidden bg-white border-[2px] border-black-100 dark:border-white-100 gap-[2px]"
+                class="flex flex-row rounded-[6px] overflow-hidden bg-white dark:bg-brightGray border-[2px] border-black-100 dark:border-white-100 gap-[2px]"
             >
                 <Input
                     type="text"
@@ -238,7 +238,7 @@
                 Add a custom relay server
             </label>
             <div
-                class="flex flex-row rounded-[6px] overflow-hidden bg-white border-[2px] border-black-100 dark:border-white-100 gap-[2px]"
+                class="flex flex-row rounded-[6px] overflow-hidden bg-white dark:bg-brightGray border-[2px] border-black-100 dark:border-white-100 gap-[2px]"
             >
                 <Input
                     type="text"
