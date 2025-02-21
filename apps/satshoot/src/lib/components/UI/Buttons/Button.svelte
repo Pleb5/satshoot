@@ -20,21 +20,22 @@
     const dispatch = createEventDispatcher();
 
     const baseClasses =
-        'transition-all ease duration-[0.3s] p-[10px_20px] rounded-[5px] ' +
+        'transition-all ease duration-[0.3s] p-[6px_15px] rounded-[6px] ' +
         'flex flex-row justify-center items-center gap-[10px] font-[600] ' +
         'cursor-pointer disabled:cursor-not-allowed';
 
     const containedClasses =
-        'bg-blue-500 text-white hover:bg-blue-600 hover:text-white whitespace-nowrap ' +
+        'bg-blue-500 text-white dark:text-white hover:bg-blue-600 hover:text-white-500 whitespace-nowrap ' +
         'disabled:bg-gray-400 disabled:hover:bg-gray-400'; // Disabled state styles
 
     const outlinedClasses =
-        'text-black-500 border-[1px] border-black-100 ' +
-        'hover:text-white hover:bg-blue-500 hover:border-transparent ' +
+        'text-black-500 dark:text-white-500 ' +
+        'outline outline-[1px] outline-black-100 dark:outline-white-100 ' +
+        'hover:text-white-500 hover:bg-blue-500 hover:border-transparent ' +
         'disabled:bg-gray-200 disabled:hover:bg-gray-200 disabled:text-gray-500'; // Disabled state styles
 
     const textClasses =
-        'border-[0px] text-black-500 hover:text-white hover:bg-blue-500 ' +
+        'border-[0px] text-black-500 dark:text-white-500 hover:text-white hover:bg-blue-500 ' +
         'disabled:bg-transparent disabled:text-gray-400'; // Disabled state styles
 
     $: variantClasses =

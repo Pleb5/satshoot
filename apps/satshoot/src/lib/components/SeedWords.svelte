@@ -18,24 +18,24 @@
     }
 
     const labelClasses =
-        'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-black-200 border-b-[0px] text-[14px]';
+        'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-black-200 dark:border-white-200 border-b-[0px] text-[14px]';
 
     const btnWrapperClasses =
-        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 border-t-[0px]';
+        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 dark:border-white-200 border-t-[0px]';
 </script>
 
 <div class="w-full flex flex-row gap-[5px]">
     <p class={labelClasses}>Seed words</p>
 </div>
 <div
-    class="w-full grid grid-cols-2 gap-[1px] flex-row rounded-tr-[6px] overflow-hidden border-[1px] border-black-100"
+    class="w-full grid grid-cols-2 gap-[1px] flex-row rounded-tr-[6px] overflow-hidden border-[1px] border-black-100 dark:border-white-100"
 >
     {#each words as word, index}
         <div
-            class="w-full h-[40px] flex flex-row bg-black-50 border-b-[1px] border-b-black-100 overflow-hidden"
+            class="w-full h-[40px] flex flex-row bg-black-50 border-b-[1px] border-b-black-100 overflow-hidden dark:border-white-100"
         >
             <p
-                class="h-full flex flex-row justify-center items-center min-w-[45px] bg-white font-[500] text-black-500"
+                class="h-full flex flex-row justify-center items-center min-w-[45px] bg-white font-[500] text-black-500 dark:bg-white-50 dark:text-white-500"
             >
                 {index + 1 < 10 ? `0${index + 1}` : index + 1}
             </p>

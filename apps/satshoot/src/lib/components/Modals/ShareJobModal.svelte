@@ -83,7 +83,7 @@
     });
 
     const textAreaClasses =
-        'transition ease duration-[0.3s] w-full min-h-[100px] bg-black-50 border-[2px] border-black-100 rounded-[6px] ' +
+        'transition ease duration-[0.3s] w-full min-h-[100px] bg-black-50 border-[2px] border-black-100 dark:border-white-100 rounded-[6px] ' +
         'px-[10px] py-[5px] outline-[0px] outline-blue-0 focus:border-blue-500 focus:bg-black-100';
 </script>
 

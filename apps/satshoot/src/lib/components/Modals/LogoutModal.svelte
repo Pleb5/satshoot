@@ -53,7 +53,7 @@
     }
 
     const inputWrapperClasses =
-        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 border-t-[0px] overflow-hidden rounded-[6px]';
+        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 dark:border-white-100 border-t-[0px] overflow-hidden rounded-[6px]';
 </script>
 
 {#if $modalStore[0]}
@@ -65,7 +65,7 @@
                     <p class="w-full">Do really you wish to log out?</p>
                     {#if $loginMethod === LoginMethod.Local}
                         <div
-                            class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 flex flex-col justify-center items-center"
+                            class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                         >
                             <p class="font-[600] text-[16px] text-white-700">
                                 Local Keypair will be deleted, make sure you have a backup!

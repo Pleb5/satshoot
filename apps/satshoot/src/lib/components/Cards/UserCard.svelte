@@ -5,7 +5,11 @@
         fetchFreelanceFollowEvent,
         freelanceFollowEvents,
     } from '$lib/stores/user';
-    import { fetchEventFromRelaysFirst, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import {
+        fetchEventFromRelaysFirst,
+        getRoboHashPicture,
+        shortenTextWithEllipsesInMiddle,
+    } from '$lib/utils/helpers';
     import { filterValidPTags } from '$lib/utils/misc';
     import {
         NDKEvent,
@@ -34,6 +38,8 @@
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import CopyButton from '../UI/Buttons/CopyButton.svelte';
     import QrCodeModal from '../Modals/QRCodeModal.svelte';
+    import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
 
     enum FollowStatus {
         isFollowing,
@@ -53,12 +59,10 @@
 
     $: npub = user.npub;
     $: profileHref = '/' + npub;
-    $: avatarImage = `https://robohash.org/${user.pubkey}`;
-    $: nip05 = userProfile?.nip05 || '';
-    $: lud16 = userProfile?.lud16 || '';
-    $: website = userProfile?.website || '';
+    $: avatarImage = getRoboHashPicture(user.pubkey);
 
     $: bech32ID = job ? job.encode() : '';
+    $: canEditProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
 
     let showMessageButton = false;
     $: if (job && job.pubkey !== $currentUser?.pubkey) {
@@ -259,6 +263,13 @@
         modalStore.trigger(modal);
     }
 
+    function handleEditProfile() {
+        const currentPath = $page.url.pathname;
+        const profileSettingsUrl = new URL('/settings/profile', window.location.origin);
+        profileSettingsUrl.searchParams.set('redirectPath', currentPath);
+        goto(profileSettingsUrl);
+    }
+
     $: userInfoItems = [
         {
             text: userProfile?.nip05,
@@ -272,14 +283,14 @@
         },
         {
             text: userProfile?.website,
-            href: website,
+            href: userProfile?.website || '',
             isExternal: true,
             title: 'website address',
         },
     ];
 
     const addressCopyBtnClasses =
-        'bg-white rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
+        'bg-white dark:bg-brightGray rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
 </script>
 
 <div class="w-full max-w-[350px] flex flex-col gap-[25px] max-[768px]:max-w-full">
@@ -312,7 +323,7 @@
                 {#each userInfoItems as { text, href, isExternal, title }}
                     {#if text}
                         <div
-                            class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100"
+                            class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100 dark:border-white-100"
                         >
                             <div class="w-full flex flex-row">
                                 <div class="w-full flex flex-row bg-black-50">
@@ -343,17 +354,29 @@
                 {/each}
             </div>
             {#if userProfile?.about}
-                <div class="w-full rounded-[6px] border-[1px] border-black-200">
+                <div
+                    class="w-full rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
+                >
                     <ExpandableText text={userProfile.about} expandText="View Full About" />
                 </div>
             {/if}
-            <div
-                class="w-full flex flex-row gap-[4px] rounded-[6px] overflow-hidden bg-black-100 flex-wrap p-[4px]"
-            >
+            <div class="w-full flex flex-col gap-[10px] rounded-[6px] p-[8px] bg-black-100">
+                {#if canEditProfile}
+                    <Button
+                        variant="outlined"
+                        classes="bg-white dark:bg-brightGray"
+                        fullWidth
+                        title="Edit Profile"
+                        on:click={handleEditProfile}
+                    >
+                        <i class="bx bxs-edit-alt" />
+                    </Button>
+                {/if}
+
                 {#if showMessageButton}
                     <Button
                         variant="outlined"
-                        classes="bg-white"
+                        classes="bg-white dark:bg-brightGray"
                         fullWidth
                         href={'/messages/' + bech32ID}
                         title="Message (DM) user"
@@ -364,7 +387,7 @@
                 {/if}
                 <Button
                     variant="outlined"
-                    classes="bg-white"
+                    classes="bg-white dark:bg-brightGray"
                     fullWidth
                     title="Share (Copy profile page link)"
                     on:click={handleShare}
@@ -374,7 +397,7 @@
             </div>
             <div class="w-full flex flex-col gap-[5px]">
                 <div
-                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
                 >
                     <Input value={user.npub} placeholder="npub..." fullWidth disabled noBorder />
                     <Button
@@ -399,7 +422,7 @@
                     />
                 </div>
                 <div
-                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200"
+                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
                 >
                     <Input
                         value={nip19.nprofileEncode({ pubkey: user.pubkey })}

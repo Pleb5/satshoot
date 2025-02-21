@@ -136,7 +136,7 @@
     });
 
     const paginationBtnClasses =
-        'font-[18px] py-[10px] px-[20px] bg-white text-black-500' +
+        'font-[18px] py-[10px] px-[20px] bg-white dark:bg-brightGray text-black-500 dark:text-white-500' +
         'max-[576px]:grow-[1] shadow-subtle';
 </script>
 

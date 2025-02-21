@@ -11,108 +11,89 @@
 
     export let review: ReviewEvent;
 
-    let freelancerRatings: FreelancerRating | undefined = undefined;
-    let clientRatings: ClientRating | undefined = undefined;
+    // Determine if the review is for a freelancer or client
+    const isFreelancerReview = review.type === ReviewType.Freelancer;
+    const ratings = isFreelancerReview ? review.freelancerRatings : review.clientRatings;
 
-    $: if (review.type === ReviewType.Freelancer) {
-        freelancerRatings = review.freelancerRatings;
-    } else {
-        clientRatings = review.clientRatings;
-    }
+    // Type assertions for ratings
+    const freelancerRatings = isFreelancerReview ? (ratings as FreelancerRating) : undefined;
+    const clientRatings = !isFreelancerReview ? (ratings as ClientRating) : undefined;
 
+    // Base classes for review badges
     const reviewBadgeClasses =
         'transition ease duration-[0.3s] flex flex-row gap-[5px] font-[600] rounded-[4px] border-[1px] ' +
-        'border-black-100 py-[5px] px-[10px] justify-center items-center';
+        'border-black-100 dark:border-white-100 py-[5px] px-[10px] justify-center items-center';
+
+    // Function to compute badge classes based on a condition
+    function getBadgeClasses(condition: boolean) {
+        return condition
+            ? `${reviewBadgeClasses} text-white bg-blue-500`
+            : `${reviewBadgeClasses} text-black-500 dark:text-white-500 bg-black-100`;
+    }
 </script>
 
 <div
-    class="w-full flex flex-col gap-[10px] border-[1px] border-black-100 rounded-[6px] bg-white-100 p-[10px]"
+    class="w-full flex flex-col gap-[10px] border-[1px] border-black-100 dark:border-white-100 rounded-[6px] bg-white-100 p-[10px]"
 >
     <UserProfile pubkey={review.pubkey} />
+
     {#if review.reviewText}
-        <div class="w-full border-[1px] border-black-100 rounded-[4px] bg-black-50">
+        <div
+            class="w-full border-[1px] border-black-100 dark:border-white-100 rounded-[4px] bg-black-50"
+        >
             <ExpandableText text={review.reviewText} />
         </div>
     {/if}
-    {#if freelancerRatings}
+
+    {#if ratings}
         <div class="w-full flex flex-row flex-wrap gap-[10px]">
-            {#if freelancerRatings.success}
-                <div class="{reviewBadgeClasses} text-gray-500 bg-green-600">
-                    <i class="bx bxs-check-circle" />
-                    <p class="">Job Fulfilled</p>
-                </div>
-            {:else}
-                <div class="{reviewBadgeClasses} text-white bg-red-600">
-                    <i class="bx bxs-x-circle" />
-                    <p class="">Job Unfulfilled</p>
+            {#if isFreelancerReview && freelancerRatings?.success !== undefined}
+                <!-- Freelancer-specific badges -->
+                {#if freelancerRatings.success}
+                    <div class={`${reviewBadgeClasses} text-gray-500 bg-green-600`}>
+                        <i class="bx bxs-check-circle" />
+                        <p>Job Fulfilled</p>
+                    </div>
+                {:else}
+                    <div class={`${reviewBadgeClasses} text-white bg-red-600`}>
+                        <i class="bx bxs-x-circle" />
+                        <p>Job Unfulfilled</p>
+                    </div>
+                {/if}
+            {:else if clientRatings?.thumb !== undefined}
+                <!-- Client-specific badges -->
+                {#if clientRatings.thumb}
+                    <div class={`${reviewBadgeClasses} text-gray-500 bg-green-600`}>
+                        <i class="bx bxs-check-circle" />
+                        <p>Satisfied</p>
+                    </div>
+                {:else}
+                    <div class={`${reviewBadgeClasses} text-white bg-red-600`}>
+                        <i class="bx bxs-x-circle" />
+                        <p>Dissatisfied</p>
+                    </div>
+                {/if}
+            {/if}
+
+            <!-- Shared badges -->
+            <div class={getBadgeClasses(ratings.availability)}>
+                <i class="bx bxs-star" />
+                <p>{isFreelancerReview ? 'Availability' : 'Attentive & Responsive'}</p>
+            </div>
+            <div class={getBadgeClasses(ratings.communication)}>
+                <i class="bx bxs-star" />
+                <p>{isFreelancerReview ? 'Communication' : 'Clear Communication'}</p>
+            </div>
+
+            {#if isFreelancerReview && freelancerRatings?.expertise !== undefined}
+                <div class={getBadgeClasses(freelancerRatings.expertise)}>
+                    <i class="bx bxs-star" />
+                    <p>Expertise</p>
                 </div>
             {/if}
-            <div
-                class={reviewBadgeClasses}
-                class:text-white={freelancerRatings.availability}
-                class:bg-blue-500={freelancerRatings.availability}
-                class:text-black-500={!freelancerRatings.availability}
-                class:bg-black-100={!freelancerRatings.availability}
-            >
-                <i class="bx bxs-star" />
-                <p class="">Availability</p>
-            </div>
-            <div
-                class={reviewBadgeClasses}
-                class:text-white={freelancerRatings.communication}
-                class:bg-blue-500={freelancerRatings.communication}
-                class:text-black-500={!freelancerRatings.communication}
-                class:bg-black-100={!freelancerRatings.communication}
-            >
-                <i class="bx bxs-star" />
-                <p class="">Communication</p>
-            </div>
-            <div
-                class="{reviewBadgeClasses} "
-                class:text-white={freelancerRatings.expertise}
-                class:bg-blue-500={freelancerRatings.expertise}
-                class:text-black-500={!freelancerRatings.expertise}
-                class:bg-black-100={!freelancerRatings.expertise}
-            >
-                <i class="bx bxs-star" />
-                <p class="">Expertise</p>
-            </div>
-        </div>
-    {:else if clientRatings}
-        <div class="w-full flex flex-row flex-wrap gap-[10px]">
-            {#if clientRatings.thumb}
-                <div class="{reviewBadgeClasses} text-gray-500 bg-green-600">
-                    <i class="bx bxs-check-circle"></i>
-                    <p class="">Satisfied</p>
-                </div>
-            {:else}
-                <div class="{reviewBadgeClasses} text-white bg-red-600">
-                    <i class="bx bxs-x-circle"></i>
-                    <p class="">Dissatisfied</p>
-                </div>
-            {/if}
-            <div
-                class="{reviewBadgeClasses} "
-                class:text-white={clientRatings.availability}
-                class:bg-blue-500={clientRatings.availability}
-                class:text-black-500={!clientRatings.availability}
-                class:bg-black-100={!clientRatings.availability}
-            >
-                <i class="bx bxs-star"></i>
-                <p class="">Attentive & responsive</p>
-            </div>
-            <div
-                class="{reviewBadgeClasses} "
-                class:text-white={clientRatings.communication}
-                class:bg-blue-500={clientRatings.communication}
-                class:text-black-500={!clientRatings.communication}
-                class:bg-black-100={!clientRatings.communication}
-            >
-                <i class="bx bxs-star"></i>
-                <p class="">Clear communication</p>
-            </div>
         </div>
     {/if}
+
     {#if review.created_at}
         <div
             class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 pl-[5px] pr-[5px] pt-[10px]"

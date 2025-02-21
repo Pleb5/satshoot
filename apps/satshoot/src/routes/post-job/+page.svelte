@@ -23,6 +23,7 @@
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
+    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -241,6 +242,15 @@
             toastStore.trigger(t);
         }
     }
+
+    function handleLogin() {
+        modalStore.trigger({
+            type: 'component',
+            component: {
+                ref: LoginModal,
+            },
+        });
+    }
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
@@ -288,7 +298,7 @@
                         <div class="flex flex-col gap-[5px]">
                             <label class="m-[0px] text-[14px]" for="tags">Tags</label>
                             <div
-                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white"
+                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
                             >
                                 <Input
                                     bind:value={tagInput}
@@ -297,16 +307,16 @@
                                     fullWidth
                                 />
                                 <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
+                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
                                 >
                                     {#each displayOptions as { label, value }}
                                         <Button
-                                            classes="bg-black-200 text-black-500 p-[5px] font-400"
+                                            classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white-500 hover:text-white p-[5px] font-400"
                                             on:click={() => addTag(value)}
                                         >
                                             <span class="pl-[10px]"> {label} </span>
                                             <span
-                                                class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100"
+                                                class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100 dark:border-white-100"
                                             >
                                                 <i class="bx bx-plus" />
                                             </span>
@@ -318,10 +328,10 @@
                                 Added tags ({tagList.length}/{maxTags} max.)
                             </label>
                             <div
-                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white"
+                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
                             >
                                 <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 bg-black-50 flex-wrap p-[10px]"
+                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px]"
                                 >
                                     {#each tagList as tag}
                                         <div
@@ -341,26 +351,26 @@
                         </div>
                     </div>
                     <div
-                        class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-black-100 pt-[10px] mt-[10px]"
+                        class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-black-100 dark:border-white-100 pt-[10px] mt-[10px]"
                     >
-                        <Button on:click={postJob} disabled={!allowPostJob || posting}>
-                            {#if !allowPostJob}
-                                Log in To Post
-                            {:else if posting}
-                                <span>
+                        {#if !allowPostJob}
+                            <Button on:click={handleLogin}>Log in To Post</Button>
+                        {:else}
+                            <Button on:click={postJob} disabled={posting}>
+                                {#if posting}
                                     <ProgressRadial
                                         value={undefined}
                                         stroke={60}
-                                        meter="stroke-primary-500"
-                                        track="stroke-primary-500/3"
+                                        meter="stroke-white-500"
+                                        track="stroke-white-500/3"
                                         width="w-8"
                                         strokeLinecap="round"
                                     />
-                                </span>
-                            {:else}
-                                <span>Publish Job Post</span>
-                            {/if}
-                        </Button>
+                                {:else}
+                                    <span>Publish Job Post</span>
+                                {/if}
+                            </Button>
+                        {/if}
                     </div>
                 </Card>
             </div>
