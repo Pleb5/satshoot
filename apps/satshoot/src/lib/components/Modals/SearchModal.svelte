@@ -116,7 +116,7 @@
                             >
                             <div
                                 id="added-tags"
-                                class="w-full flex flex-row flex-wrap gap-[5px] p-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] min-h-[40px]"
+                                class="w-full flex flex-row flex-wrap gap-[5px] p-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] min-h-[40px] overflow-x-auto"
                             >
                                 {#each $searchTerms as term}
                                     <div class={termWrapperClasses}>
