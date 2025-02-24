@@ -16,7 +16,9 @@
     import { navigating } from '$app/stores';
     import { onMount } from 'svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
+    import Button from './UI/Buttons/Button.svelte';
 
+    export let searchTerms: string[] = [];
     export let user: NDKUser;
     export let ticket: TicketEvent;
     const naddr = ticket.encode();
@@ -90,9 +92,24 @@
             }
         }
     }
+
+    let display = true;
+    $: if (searchTerms.length > 0) {
+        display = searchTerms.some((term) => {
+            if (term.startsWith('npub1')) {
+                return term === user.npub;
+            }
+            const name = userProfile?.name ?? userProfile?.displayName ?? '';
+            return name.toLowerCase().includes(term.toLowerCase());
+        });
+    }
 </script>
 
-<a href={'/messages/' + naddr}>
+<Button
+    variant="outlined"
+    classes="justify-start {display ? '' : 'hidden'}"
+    href={'/messages/' + naddr}
+>
     <div class="flex gap-x-2">
         <div>
             <Avatar class="rounded-full border-white" src={avatarImage} />
@@ -114,4 +131,4 @@
             {/if}
         </div>
     </div>
-</a>
+</Button>

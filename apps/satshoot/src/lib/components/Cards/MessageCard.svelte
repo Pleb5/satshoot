@@ -19,7 +19,7 @@
 
     export let avatarRight = true;
     export let message: NDKEvent;
-    export let searchText = '';
+    export let searchTerms: string[] = [];
     export let isFirstOfDay = false;
 
     let decryptedDM: string;
@@ -106,7 +106,11 @@
 
     let showMyself = false;
     $: if (decryptedDM) {
-        showMyself = decryptedDM.includes(searchText);
+        if (searchTerms.length > 0) {
+            showMyself = searchTerms.some((term) => decryptedDM.includes(term));
+        } else {
+            showMyself = true;
+        }
     }
 </script>
 
