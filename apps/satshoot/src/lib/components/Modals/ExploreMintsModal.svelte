@@ -9,6 +9,8 @@
     import CashuMintListItem from '$lib/components/Mints/Item.svelte';
     import { wot } from '$lib/stores/wot';
     import { getCashuMintRecommendations } from '$lib/utils/cashu';
+    import Popup from '../UI/Popup.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -55,57 +57,48 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-4 flex flex-col gap-y-4 min-w-[90vw] sm:min-w-[60vw] md:min-w-[30vw]">
-        <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Choose Mint</h4>
-        <div class="h-[50vh] w-full flex flex-col overflow-y-auto">
-            <div class="divide-y flex flex-col">
-                {#if recommendations}
-                    {#each Object.entries(recommendations) as [mintUrl, mintUsage] (mintUrl)}
-                        <CashuMintListItem
-                            {mintUrl}
-                            {mintUsage}
-                            isSelected={selectedMints.includes(mintUrl)}
-                            on:selectMint={(e) =>
-                                toggleMintSelection(e.detail.mintUrl, e.detail.isSelected)}
-                        />
-                    {/each}
-                {:else}
-                    <div class="flex w-full justify-center justify-self-center">
-                        <div class="p-4 space-y-4 w-full">
-                            {#each { length: 4 } as _}
-                                <div class="placeholder animate-pulse" />
-                                <div class="grid grid-cols-3 gap-8">
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                </div>
-                                <div class="grid grid-cols-4 gap-4">
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                </div>
-                            {/each}
-                        </div>
+    <Popup title="Choose Mint">
+        <div class="w-full pt-[10px] px-[5px]">
+            {#if recommendations}
+                <div class="w-full max-h-[50vh] flex flex-col gap-[10px] overflow-auto">
+                    <div class="w-full flex flex-col gap-[10px]">
+                        {#each Object.entries(recommendations) as [mintUrl, mintUsage] (mintUrl)}
+                            <CashuMintListItem
+                                {mintUrl}
+                                {mintUsage}
+                                isSelected={selectedMints.includes(mintUrl)}
+                                on:selectMint={(e) =>
+                                    toggleMintSelection(e.detail.mintUrl, e.detail.isSelected)}
+                            />
+                        {/each}
                     </div>
-                {/if}
-            </div>
+                </div>
+
+                <div
+                    class="w-full flex items-center justify-center pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
+                >
+                    <Button on:click={handleSelect} grow>Save</Button>
+                </div>
+            {:else}
+                <div class="flex w-full justify-center justify-self-center">
+                    <div class="p-4 space-y-4 w-full">
+                        {#each { length: 4 } as _}
+                            <div class="placeholder animate-pulse" />
+                            <div class="grid grid-cols-3 gap-8">
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                            </div>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
         </div>
-        <div class="flex justify-between">
-            <button
-                type="button"
-                class="btn btn-sm sm:btn-md bg-error-300-600-token"
-                on:click={() => modalStore.close()}
-            >
-                Cancel
-            </button>
-            <button
-                type="button"
-                on:click={handleSelect}
-                class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-            >
-                Apply
-            </button>
-        </div>
-    </div>
+    </Popup>
 {/if}
