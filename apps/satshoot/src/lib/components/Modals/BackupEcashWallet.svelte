@@ -2,6 +2,10 @@
     import { backupWallet } from '$lib/utils/cashu';
     import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import Popup from '../UI/Popup.svelte';
+    import Checkbox from '../UI/Inputs/Checkbox.svelte';
+    import Input from '../UI/Inputs/input.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -11,6 +15,7 @@
     let processing = false;
     let passphrase = '';
     let encrypted = false;
+    let showPassphrase = false;
     let errorMessage = '';
 
     async function handleWalletBackup() {
@@ -31,48 +36,57 @@
             });
         }
     }
+
+    const inputWrapperClasses =
+        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 dark:border-white-100 border-t-[0px] overflow-hidden rounded-[6px]';
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-4 flex flex-col gap-y-4">
-        <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Backup Ecash Wallet</h4>
-
-        <div class="flex items-center space-x-2">
-            <input type="checkbox" id="additionalAction" bind:checked={encrypted} />
-            <label for="additionalAction"> Encrypt backup with passphrase </label>
-        </div>
-
-        {#if encrypted}
-            <input
-                type="text"
-                class="input rounded-md p-2 w-full"
-                aria-label="passphrase"
-                placeholder="Enter passphrase for encryption (min. 14 chars)"
-                bind:value={passphrase}
+    <Popup title="Backup Ecash Wallet">
+        <div class="flex flex-col gap-[10px] mt-4">
+            <Checkbox
+                id="additionalAction"
+                label="Encrypt backup with passphrase"
+                bind:checked={encrypted}
             />
-        {/if}
 
-        <button
-            type="button"
-            on:click={handleWalletBackup}
-            class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-            disabled={processing}
-        >
-            Backup
-            {#if processing}
-                <span>
-                    <ProgressRadial
-                        value={undefined}
-                        stroke={60}
-                        meter="stroke-error-500"
-                        track="stroke-error-500/30"
-                        strokeLinecap="round"
-                        width="w-8"
+            {#if encrypted}
+                <div class={inputWrapperClasses}>
+                    <Input
+                        bind:value={passphrase}
+                        type={showPassphrase ? 'text' : 'password'}
+                        placeholder="Enter passphrase for encryption (min. 14 chars)"
+                        grow
+                        noBorder
+                        notRounded
                     />
-                </span>
+                    <Button
+                        variant="outlined"
+                        classes="border-l-[1px] border-l-black-100 rounded-[0px]"
+                        on:click={() => (showPassphrase = !showPassphrase)}
+                    >
+                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
+                    </Button>
+                </div>
             {/if}
-        </button>
 
-        <div class="text-error-500 text-center">{errorMessage}</div>
-    </div>
+            <Button on:click={handleWalletBackup} disabled={processing}>
+                Backup
+                {#if processing}
+                    <span>
+                        <ProgressRadial
+                            value={undefined}
+                            stroke={60}
+                            meter="stroke-error-500"
+                            track="stroke-error-500/30"
+                            strokeLinecap="round"
+                            width="w-8"
+                        />
+                    </span>
+                {/if}
+            </Button>
+
+            <div class="text-error-500 text-center">{errorMessage}</div>
+        </div>
+    </Popup>
 {/if}

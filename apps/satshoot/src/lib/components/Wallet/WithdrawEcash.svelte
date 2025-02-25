@@ -1,16 +1,23 @@
 <script lang="ts">
     import type { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { Invoice } from '@getalby/lightning-tools';
     import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
     import { onMount } from 'svelte';
-    import { Invoice } from '@getalby/lightning-tools';
+    import { getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
 
-    const modalStore = getModalStore();
+    import Button from '../UI/Buttons/Button.svelte';
+    import Input from '../UI/Inputs/input.svelte';
+
     const toastStore = getToastStore();
 
     export let cashuWallet: NDKCashuWallet;
+
     let html5QrCode: Html5Qrcode;
     let fileInput: HTMLInputElement | null = null;
+
+    let pr = '';
+    let withdrawing = false;
+    let isScanning = false;
 
     onMount(() => {
         html5QrCode = new Html5Qrcode('qr-reader', {
@@ -22,10 +29,6 @@
             if (html5QrCode.isScanning) html5QrCode.stop();
         };
     });
-
-    let pr = '';
-    let withdrawing = false;
-    let isScanning = false;
 
     async function withdraw() {
         if (!pr) return;
@@ -54,7 +57,7 @@
                     autohide: true,
                     background: `bg-success-300-600-token`,
                 });
-                modalStore.close();
+                pr = '';
             })
             .catch((err) => {
                 console.error('An error occurred in withdraw', err);
@@ -159,21 +162,17 @@
     }
 </script>
 
-{#if $modalStore[0]}
-    <div class="card p-4 flex flex-col gap-y-4">
-        <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Withdraw Ecash</h4>
-
-        <!-- Payment request input -->
-        <input
+<div
+    class="w-full flex flex-col rounded-[6px] overflow-hidden border-[1px] border-[rgb(0,0,0,0.15)] dark:border-[rgb(255,255,255,0.15)]"
+>
+    <div class="w-full flex flex-row">
+        <Input
             type="text"
+            placeholder="Lightning invoice"
             bind:value={pr}
-            class="input"
-            aria-label="payment request"
-            placeholder="Enter lightning invoice"
+            classes="w-full"
+            notRounded
         />
-
-        <!-- Camera-based QR scanning area -->
-        <div id="qr-reader"></div>
 
         <!-- Hidden file input element -->
         <input
@@ -181,50 +180,49 @@
             accept="image/*"
             bind:this={fileInput}
             on:change={handleFileInput}
-            style="display: none;"
+            class="hidden"
         />
 
-        <!-- Button to open file dialog -->
-        <button
-            on:click={openFileDialog}
-            class="input btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-        >
-            Import QR
-        </button>
+        <!-- import qr -->
+        <Button variant="text" classes="rounded-[0]" on:click={openFileDialog}>
+            <i class="bx bx-upload"></i>
+        </Button>
 
-        <!-- Scan QR Code with camera button -->
-        <button
-            type="button"
+        <!-- scan qr -->
+        <Button
+            variant="text"
+            classes="border-l-[1px] border-black-100 dark:border-white-100 rounded-[0]"
             on:click={isScanning ? stopScanningQR : scanQRCode}
-            class="input btn btn-sm sm:btn-md bg-tertiary-300-600-token"
         >
             {#if isScanning}
-                Stop Scanning QR
+                <i class="bx bx-x" /> <!-- Cancel icon when scanning -->
             {:else}
-                Scan QR
+                <i class="bx bx-qr" /> <!-- QR icon when idle -->
             {/if}
-        </button>
-
-        <!-- Withdraw button -->
-        <button
-            type="button"
-            on:click={withdraw}
-            class="input btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-            disabled={withdrawing || !pr}
-        >
-            Withdraw
-            {#if withdrawing}
-                <span>
-                    <ProgressRadial
-                        value={undefined}
-                        stroke={60}
-                        meter="stroke-error-500"
-                        track="stroke-error-500/30"
-                        strokeLinecap="round"
-                        width="w-8"
-                    />
-                </span>
-            {/if}
-        </button>
+        </Button>
     </div>
-{/if}
+
+    <!-- Camera-based QR scanning area -->
+    <div id="qr-reader"></div>
+
+    <Button
+        variant="text"
+        classes="bg-black-100 text-black-50 dark:text-white-300 border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
+        on:click={withdraw}
+        disabled={withdrawing || !pr}
+    >
+        Withdraw
+        {#if withdrawing}
+            <span>
+                <ProgressRadial
+                    value={undefined}
+                    stroke={60}
+                    meter="stroke-error-500"
+                    track="stroke-error-500/30"
+                    strokeLinecap="round"
+                    width="w-8"
+                />
+            </span>
+        {/if}
+    </Button>
+</div>
