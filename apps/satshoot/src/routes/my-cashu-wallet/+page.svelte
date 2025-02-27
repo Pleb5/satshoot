@@ -37,11 +37,11 @@
     import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
-    import Input from '$lib/components/UI/Inputs/input.svelte';
     import WithdrawEcash from '$lib/components/Wallet/WithdrawEcash.svelte';
     import DepositEcash from '$lib/components/Wallet/DepositEcash.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import AddRelayModal from '$lib/components/Modals/AddRelayModal.svelte';
+    import PieChart from '$lib/components/UI/Display/PieChart.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -52,11 +52,14 @@
         cashuWallet = $wallet;
     }
 
+    let mintBalances: Record<string, number> = {};
     let walletBalance = 0;
     let walletUnit = 'sats';
     let cleaningWallet = false;
 
     $: if (cashuWallet) {
+        mintBalances = cashuWallet.mintBalances;
+
         cashuWallet.balance().then((res) => {
             if (res) {
                 walletBalance = res[0].amount;
@@ -64,9 +67,11 @@
             }
         });
 
-        console.log('cashuWallet.tokens :>> ', cashuWallet.tokens);
+        console.log('cashuWallet.mintBalances :>> ', cashuWallet.mintBalances);
 
         cashuWallet.on('balance_updated', (balance) => {
+            mintBalances = cashuWallet!.mintBalances;
+
             cashuWallet!.balance().then((res) => {
                 if (res) {
                     walletBalance = res[0].amount;
@@ -464,8 +469,6 @@
         },
     ];
 
-    const popupClasses = 'card w-60 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto';
-
     const listItemWrapperClasses =
         'transition ease duration-[0.3s] w-full flex flex-row gap-[10px] justify-between rounded-[6px] ' +
         'bg-black-100 items-center overflow-hidden max-[576px]:gap-[0px] max-[576px]:flex-col hover:bg-blue-500 group';
@@ -556,16 +559,18 @@
                                         </div>
                                         <p class="text-[24px] font-[500] text-white">
                                             {walletBalance}
+                                            <span
+                                                class="text-[16px] opacity-[0.5] font-[500] text-white-800 mt-[-5px]"
+                                            >
+                                                sats
+                                            </span>
                                         </p>
-                                        <span
-                                            class="text-[16px] opacity-[0.5] font-[500] text-white-800 mt-[-5px]"
-                                        >
-                                            sats
-                                        </span>
+
                                         <i
                                             class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]"
                                         />
                                     </div>
+                                    <PieChart dataset={mintBalances} />
                                     <WithdrawEcash {cashuWallet} />
                                     <DepositEcash {cashuWallet} />
                                     <div
