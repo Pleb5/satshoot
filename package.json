@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "build": "./ndk_compile.sh && turbo run build",
-    "dev": "turbo run dev"
+    "dev": "turbo run dev",
+    "preview": "turbo run preview"
   },
   "packageManager": "pnpm@9.7.0"
 }

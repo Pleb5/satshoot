@@ -12,3 +12,5 @@ export enum OnboardingStep {
 }
 
 export const onboardingStep = writable<OnboardingStep | null>(null);
+
+export const scrollToMyJobsAndMyOffers = writable(false)
