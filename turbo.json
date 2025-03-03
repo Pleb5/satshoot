@@ -12,6 +12,11 @@
         },
         "clean": {
             "cache": false
+        },
+        "preview": {
+            "dependsOn": ["build"],
+            "cache": false,
+            "persistent": true
         }
     }
 }
