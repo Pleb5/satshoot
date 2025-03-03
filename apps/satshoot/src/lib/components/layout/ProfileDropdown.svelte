@@ -13,6 +13,7 @@
     import { browser } from '$app/environment';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import Button from '../UI/Buttons/Button.svelte';
+    import {scrollToMyJobsAndMyOffers} from "$lib/stores/gui"
 
     export let classes = '';
 
@@ -98,24 +99,26 @@
             },
         },
         {
-            href: `${profileHref}#jobs`,
+            href: `${profileHref}`,
             label: 'My Jobs',
             icon: {
                 component: TicketIcon,
                 props: { sizeClass: '' },
             },
             callback: () => {
+                $scrollToMyJobsAndMyOffers = true;
                 $profileTabStore = ProfilePageTabs.Jobs;
             },
         },
         {
-            href: `${profileHref}#offers`,
+            href: `${profileHref}`,
             label: 'My Offers',
             icon: {
                 component: BitcoinIcon,
                 props: { extraClasses: 'text-lg' },
             },
             callback: () => {
+                $scrollToMyJobsAndMyOffers = true;
                 $profileTabStore = ProfilePageTabs.Offers;
             },
         },
