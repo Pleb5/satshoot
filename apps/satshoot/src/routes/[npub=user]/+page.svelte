@@ -8,6 +8,7 @@
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { scrollToMyJobsAndMyOffers } from '$lib/stores/gui';
     import ndk from '$lib/stores/ndk';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import currentUser from '$lib/stores/user';
@@ -142,25 +143,14 @@
         filterOffers();
     }
 
-    $: {
-        // Read the hash fragment
-        const hash = $page.url.hash;
 
-        // Add a small delay to ensure the DOM is fully rendered
-        setTimeout(() => {
-            if (hash === '#jobs' || hash === '#offers') {
-                const section = document.getElementById('job-and-offers');
-                if (section) {
-                    // Scroll to the section with alignment options
-                    section.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start', // Aligns the top of the section with the top of the viewport
-                        inline: 'nearest',
-                    });
-                }
-            }
-        }, 500); // Adjust the delay as needed (100ms is usually sufficient)
-    }
+    let myJobsAndMyOffersElement: HTMLDivElement
+    onMount(() => {
+        if (myJobsAndMyOffersElement && $scrollToMyJobsAndMyOffers) {
+            $scrollToMyJobsAndMyOffers = false;
+            myJobsAndMyOffersElement.scrollIntoView(true);
+        }
+    })
 
     onDestroy(() => {
         if (allJobsOfUser) allJobsOfUser.empty();
@@ -231,7 +221,7 @@
             <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <UserCard {user} />
-                    <div id="job-and-offers" class="w-full flex flex-col gap-[15px] relative">
+                    <div id="job-and-offers" class="w-full flex flex-col gap-[15px] relative" bind:this={myJobsAndMyOffersElement}>
                         <div class="w-full flex flex-col gap-[10px]">
                             <TabSelector {tabs} bind:selectedTab={$profileTabStore} />
                             <div class="w-full flex flex-col">
