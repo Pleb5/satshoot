@@ -1,18 +1,25 @@
 <script lang="ts">
-    import ChatHead from "$lib/components/ChatHead.svelte";
-    import { OfferEvent } from "$lib/events/OfferEvent";
-    import { TicketEvent } from "$lib/events/TicketEvent";
-    import ndk from "$lib/stores/ndk";
-    import { checkRelayConnections } from "$lib/utils/helpers";
-    import currentUser, { loggedIn } from "$lib/stores/user";
-    import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from "@nostr-dev-kit/ndk";
-    import { Tab, TabGroup } from "@skeletonlabs/skeleton";
-    import { onMount } from "svelte";
+    import ChatHead from '$lib/components/ChatHead.svelte';
+    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { TicketEvent } from '$lib/events/TicketEvent';
+    import ndk from '$lib/stores/ndk';
+    import { checkRelayConnections } from '$lib/utils/helpers';
+    import currentUser, { loggedIn } from '$lib/stores/user';
+    import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from '@nostr-dev-kit/ndk';
+    import { onMount } from 'svelte';
+    import Input from '$lib/components/UI/Inputs/input.svelte';
+    import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
+    import Card from '$lib/components/UI/Card.svelte';
+    import Button from '$lib/components/UI/Buttons/Button.svelte';
+    import { page } from '$app/stores';
 
     enum ConversationType {
         Freelancer = 0,
-        Client = 1
+        Client = 1,
     }
+
+    $: searchQuery = $page.url.searchParams.get('searchTerms');
+    $: searchTerms = searchQuery ? searchQuery.split(',') : [];
 
     let freelancers: NDKUser[] = [];
     let ticketsWithFreelancers: TicketEvent[] = [];
@@ -28,7 +35,7 @@
     }
 
     async function init() {
-        console.log('init')
+        console.log('init');
         const tickets = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceTicket],
@@ -37,11 +44,11 @@
             {
                 groupable: true,
                 groupableDelay: 500,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-            },
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            }
         );
 
-        console.log('my tickets in messages page:', tickets)
+        console.log('my tickets in messages page:', tickets);
 
         if (tickets.size === 0) noTicketsWithFreelancers = true;
 
@@ -50,7 +57,7 @@
             if (ticket.acceptedOfferAddress) {
                 const pubkey = ticket.acceptedOfferAddress.split(':')[1];
                 if (pubkey) {
-                    const user = $ndk.getUser({pubkey: pubkey});
+                    const user = $ndk.getUser({ pubkey: pubkey });
                     freelancers.push(user);
                     ticketsWithFreelancers.push(ticket);
                 }
@@ -68,13 +75,13 @@
             {
                 groupable: true,
                 groupableDelay: 500,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-            },
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            }
         );
 
         if (offers.size === 0) noTicketsWithClients = true;
 
-        console.log('my offers in messages page:', offers)
+        console.log('my offers in messages page:', offers);
 
         // Batching tickets to fetch
         const ticketsToFetch: string[] = [];
@@ -93,16 +100,16 @@
             {
                 groupable: true,
                 groupableDelay: 800,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             }
         );
-        console.log('tickets of offers in message page', ticketEvents)
+        console.log('tickets of offers in message page', ticketEvents);
         ticketEvents.forEach((t: NDKEvent) => {
             const ticket = TicketEvent.from(t);
             offers.forEach((o: NDKEvent) => {
                 const offer = OfferEvent.from(o);
                 if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                    const user = $ndk.getUser({pubkey: ticket.pubkey});
+                    const user = $ndk.getUser({ pubkey: ticket.pubkey });
                     clients.push(user);
                     ticketsWithClients.push(ticket);
                 }
@@ -115,104 +122,120 @@
 
     onMount(() => {
         // Scroll to top as soon as ticket arrives
-        const elemPage:HTMLElement = document.querySelector('#page') as HTMLElement;
-        elemPage.scrollTo({ top: elemPage.scrollHeight*(-1), behavior:'instant' });
-        
+        const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
+        elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
+
         mounted = true;
 
-        checkRelayConnections()
+        checkRelayConnections();
     });
 
+    const tabs = [
+        {
+            id: ConversationType.Freelancer,
+            label: 'Freelancer',
+        },
+        { id: ConversationType.Client, label: 'Client' },
+    ];
 </script>
 
 {#if $currentUser}
-    <TabGroup justify='justify-evenly' flex='flex-grow'>
-        <Tab bind:group={conversationType} name="tab1" value={ConversationType.Freelancer}>
-            Conversations with Freelancers
-        </Tab>
-        <Tab bind:group={conversationType} name="tab2" value={ConversationType.Client}>
-            Conversations with Clients
-        </Tab>
-        <!-- Tab Panels --->
-        <svelte:fragment slot="panel">
-            <div class="grid grid-cols-[10%_1fr_10%] sm:grid-cols-[30%_1fr_30%] gap-y-4">
-                {#if conversationType === ConversationType.Freelancer}
-                    {#if freelancers?.length > 0}
-                        {#each freelancers as freelancer, i}
-                            <div class="col-start-2">
-                                <ChatHead 
-                                    user={freelancer}
-                                    ticket={ticketsWithFreelancers[i]}
-                                >
-                                </ChatHead>
+    <div class="w-full flex flex-col gap-0 flex-grow">
+        <div class="w-full h-full flex flex-col justify-center items-center py-[25px]">
+            <div
+                class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"
+            >
+                <div class="w-full h-full flex flex-col gap-[15px]">
+                    <div
+                        class="w-full h-full flex gap-[15px] max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-250px)]"
+                    >
+                        <Card classes="gap-[10px]">
+                            <TabSelector {tabs} bind:selectedTab={conversationType} />
+
+                            <!-- Tab Content -->
+                            <div class="w-full flex flex-col gap-[10px] p-[5px] overflow-y-auto">
+                                {#if conversationType === ConversationType.Freelancer}
+                                    {#if freelancers?.length > 0}
+                                        {#each freelancers as freelancer, i}
+                                            <ChatHead
+                                                {searchTerms}
+                                                user={freelancer}
+                                                ticket={ticketsWithFreelancers[i]}
+                                            />
+                                        {/each}
+                                    {:else if noTicketsWithFreelancers}
+                                        <div class="h4 text-center col-start-2">
+                                            No Conversations!
+                                        </div>
+                                    {:else}
+                                        {#each { length: 4 } as _}
+                                            <section class="w-[300px] md:w-[400px] col-start-2">
+                                                <div class="p-4 space-y-4">
+                                                    <div
+                                                        class="grid grid-cols-[20%_1fr] gap-8 items-center"
+                                                    >
+                                                        <div
+                                                            class="placeholder-circle animate-pulse"
+                                                        />
+                                                        <div class="placeholder animate-pulse" />
+                                                    </div>
+                                                    <div class="grid grid-cols-3 gap-8">
+                                                        <div class="placeholder animate-pulse" />
+                                                        <div class="placeholder animate-pulse" />
+                                                        <div class="placeholder animate-pulse" />
+                                                    </div>
+                                                    <div class="grid grid-cols-4 gap-4">
+                                                        <div class="placeholder animate-pulse" />
+                                                        <div class="placeholder animate-pulse" />
+                                                        <div class="placeholder animate-pulse" />
+                                                        <div class="placeholder animate-pulse" />
+                                                    </div>
+                                                </div>
+                                            </section>
+                                        {/each}
+                                    {/if}
+                                {:else if clients.length > 0}
+                                    {#each clients as client, i}
+                                        <ChatHead
+                                            {searchTerms}
+                                            user={client}
+                                            ticket={ticketsWithClients[i]}
+                                        />
+                                    {/each}
+                                {:else if noTicketsWithClients}
+                                    <div class="h4 text-center col-start-2">No Conversations!</div>
+                                {:else}
+                                    {#each { length: 4 } as _}
+                                        <section class="w-[300px] md:w-[400px] col-start-2">
+                                            <div class="p-4 space-y-4">
+                                                <div
+                                                    class="grid grid-cols-[20%_1fr] gap-8 items-center"
+                                                >
+                                                    <div class="placeholder-circle animate-pulse" />
+                                                    <div class="placeholder animate-pulse" />
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-8">
+                                                    <div class="placeholder animate-pulse" />
+                                                    <div class="placeholder animate-pulse" />
+                                                    <div class="placeholder animate-pulse" />
+                                                </div>
+                                                <div class="grid grid-cols-4 gap-4">
+                                                    <div class="placeholder animate-pulse" />
+                                                    <div class="placeholder animate-pulse" />
+                                                    <div class="placeholder animate-pulse" />
+                                                    <div class="placeholder animate-pulse" />
+                                                </div>
+                                            </div>
+                                        </section>
+                                    {/each}
+                                {/if}
                             </div>
-                        {/each}
-                    {:else if noTicketsWithFreelancers}
-                        <div class="h4 text-center col-start-2">No Conversations!</div>
-                    {:else}
-                        {#each {length: 4} as _ }
-                            <section class="w-[300px] md:w-[400px] col-start-2">
-                                <div class="p-4 space-y-4">
-                                    <div class="grid grid-cols-[20%_1fr] gap-8 items-center">
-                                        <div class="placeholder-circle animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                    </div>
-                                    <div class="grid grid-cols-3 gap-8">
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                    </div>
-                                    <div class="grid grid-cols-4 gap-4">
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                    </div>
-                                </div>
-                            </section>
-                        {/each}
-                    {/if}
-                {:else if conversationType === ConversationType.Client}
-                    {#if clients.length > 0}
-                        {#each clients as client, i}
-                            <div class="col-start-2">
-                                <ChatHead 
-                                    user={client}
-                                    ticket={ticketsWithClients[i]}
-                                >
-                                </ChatHead>
-                            </div>
-                        {/each}
-                    {:else if noTicketsWithClients}
-                        <div class="h4 text-center col-start-2">No Conversations!</div>
-                    {:else}
-                        {#each {length: 4} as _ }
-                            <section class="w-[300px] md:w-[400px] col-start-2">
-                                <div class="p-4 space-y-4">
-                                    <div class="grid grid-cols-[20%_1fr] gap-8 items-center">
-                                        <div class="placeholder-circle animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                    </div>
-                                    <div class="grid grid-cols-3 gap-8">
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                    </div>
-                                    <div class="grid grid-cols-4 gap-4">
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                        <div class="placeholder animate-pulse" />
-                                    </div>
-                                </div>
-                            </section>
-                        {/each}
-                    {/if}
-                {/if}
-        </svelte:fragment>
-    </TabGroup>
-{:else}
-    <div class="h3 sm:h2 text-center mt-8">
-        Log in to View your Conversations!
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+{:else}
+    <div class="h3 sm:h2 text-center mt-8">Log in to View your Conversations!</div>
 {/if}

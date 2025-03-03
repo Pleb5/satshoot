@@ -1,10 +1,6 @@
 <script lang="ts">
-    import TrashIcon from '$lib/components/Icons/TrashIcon.svelte';
-    import DepositEcashModal from '$lib/components/Modals/DepositEcashModal.svelte';
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
     import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
-    import WithdrawEcashModal from '$lib/components/Modals/WithdrawEcashModal.svelte';
-    import Warning from '$lib/components/Warning.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
     import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
@@ -39,6 +35,13 @@
     import EditProfileModal from '../../lib/components/Modals/EditProfileModal.svelte';
     import ImportEcashWallet from '$lib/components/Modals/ImportEcashWallet.svelte';
     import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
+    import Card from '$lib/components/UI/Card.svelte';
+    import Button from '$lib/components/UI/Buttons/Button.svelte';
+    import WithdrawEcash from '$lib/components/Wallet/WithdrawEcash.svelte';
+    import DepositEcash from '$lib/components/Wallet/DepositEcash.svelte';
+    import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
+    import AddRelayModal from '$lib/components/Modals/AddRelayModal.svelte';
+    import PieChart from '$lib/components/UI/Display/PieChart.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -49,11 +52,14 @@
         cashuWallet = $wallet;
     }
 
+    let mintBalances: Record<string, number> = {};
     let walletBalance = 0;
     let walletUnit = 'sats';
     let cleaningWallet = false;
 
     $: if (cashuWallet) {
+        mintBalances = cashuWallet.mintBalances;
+
         cashuWallet.balance().then((res) => {
             if (res) {
                 walletBalance = res[0].amount;
@@ -61,9 +67,11 @@
             }
         });
 
-        console.log('cashuWallet.tokens :>> ', cashuWallet.tokens);
+        console.log('cashuWallet.mintBalances :>> ', cashuWallet.mintBalances);
 
         cashuWallet.on('balance_updated', (balance) => {
+            mintBalances = cashuWallet!.mintBalances;
+
             cashuWallet!.balance().then((res) => {
                 if (res) {
                     walletBalance = res[0].amount;
@@ -284,34 +292,6 @@
         });
     }
 
-    function deposit() {
-        const modalComponent: ModalComponent = {
-            ref: DepositEcashModal,
-            props: { cashuWallet },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-
-        modalStore.trigger(modal);
-    }
-
-    function withdraw() {
-        const modalComponent: ModalComponent = {
-            ref: WithdrawEcashModal,
-            props: { cashuWallet },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-
-        modalStore.trigger(modal);
-    }
-
     function exploreMints() {
         // If user confirms modal do the editing
         new Promise<string[] | undefined>((resolve) => {
@@ -351,12 +331,7 @@
         // If user confirms modal do the editing
         new Promise<string | undefined>((resolve) => {
             const modalComponent: ModalComponent = {
-                ref: EditProfileModal,
-                props: {
-                    dataToEdit: 'wss://',
-                    fieldName: 'Relay',
-                    confirmButtonText: 'Add',
-                },
+                ref: AddRelayModal,
             };
 
             const modal: ModalSettings = {
@@ -476,200 +451,246 @@
         placement: 'top-end',
     };
 
-    const popupClasses = 'card w-60 p-4 bg-primary-300-600-token max-h-60 overflow-y-auto';
+    enum Tab {
+        Mints,
+        Relays,
+    }
+
+    let selectedTab = Tab.Mints;
+
+    const tabs = [
+        {
+            id: Tab.Mints,
+            label: 'Mints',
+        },
+        {
+            id: Tab.Relays,
+            label: 'Relays',
+        },
+    ];
+
+    const listItemWrapperClasses =
+        'transition ease duration-[0.3s] w-full flex flex-row gap-[10px] justify-between rounded-[6px] ' +
+        'bg-black-100 items-center overflow-hidden max-[576px]:gap-[0px] max-[576px]:flex-col hover:bg-blue-500 group';
+
+    const listItemClasses =
+        'transition ease duration-[0.3s] grow-[1] group-hover:text-white pl-[10px] break-all max-[576px]:py-[5px]';
+
+    const deleteButtonClasses =
+        'min-w-[50px] min-h-[35px] h-full justify-center items-center bg-white-0 text-black-500 max-[576px]:w-full ' +
+        'group-hover:bg-white-200 group-hover:text-white-800 dark:text-white-500';
+
+    const deleteIconClasses =
+        'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex h-full justify-center items-center hover:bg-red-400';
 </script>
 
-<div class="flex flex-col gap-y-4 items-center p-4">
-    <!-- Warning Banner -->
-    {#if $displayEcashWarning}
-        <Warning
-            on:close={() => ($displayEcashWarning = false)}
-            text="Attention: This is an experimental feature, use it at your own risk."
-        />
-    {/if}
-
-    <div class="w-[90vw] sm:w-[70vw] lg:w-[60vw]">
-        <div class="card p-4 bg-surface-200-700-token flex flex-col flex-grow gap-y-4">
-            {#if $walletStatus === WalletStatus.Loading}
-                <div class="flex justify-center">
-                    <ProgressRadial
-                        value={undefined}
-                        stroke={60}
-                        meter="stroke-primary-500"
-                        track="stroke-primary-500/30"
-                        strokeLinecap="round"
-                        width="w-8"
-                    />
-                </div>
-            {:else if $walletStatus === WalletStatus.Failed}
-                <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                    <button
-                        on:click={setupWallet}
-                        type="button"
-                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
-                    >
-                        Initialize Cashu Wallet
-                    </button>
-                    <button
-                        on:click={importWallet}
-                        type="button"
-                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
-                    >
-                        Import Wallet
-                    </button>
-                </div>
-            {:else if cashuWallet}
-                <div class="flex items-center justify-center gap-x-4">
-                    <h2 class="h2 text-center font-bold text-lg sm:text-2xl">
-                        {cashuWallet.name || '??'}
-                    </h2>
-
-                    <button class="justify-self-end" on:click={editName}>
-                        <i class="text-primary-300-600-token fa-solid fa-pen-to-square text-xl" />
-                    </button>
-                </div>
-
-                <div class="flex flex-col items-center">
-                    <div class="flex items-baseline">
-                        <div class="text-7xl font-black text-center focus:outline-none w-full">
-                            {walletBalance}
-                        </div>
-                    </div>
-                    <div class="text-3xl text-muted-foreground font-light">
-                        {walletUnit}
-                    </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                    <button
-                        on:click={deposit}
-                        type="button"
-                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-                    >
-                        Deposit
-                    </button>
-                    <button
-                        on:click={withdraw}
-                        type="button"
-                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-                    >
-                        Withdraw
-                    </button>
-                    <button
-                        on:click={handleWalletBackup}
-                        type="button"
-                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-                    >
-                        Backup
-                    </button>
-                    <button
-                        on:click={recoverWallet}
-                        type="button"
-                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-                    >
-                        Recover
-                    </button>
-                    <button
-                        on:click={handleCleanWallet}
-                        disabled={cleaningWallet}
-                        type="button"
-                        class="btn btn-sm sm:btn-md bg-tertiary-300-600-token flex justify-center"
-                    >
-                        {#if cleaningWallet}
-                            <span>
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-primary-500"
-                                    track="stroke-primary-500/30"
-                                    strokeLinecap="round"
-                                    width="w-8"
-                                />
-                            </span>
-                        {:else}
-                            <i class="fa-solid fa-rotate-right text-muted-foreground font-light"
-                            ></i>
-                        {/if}
-                        <span> Clean Wallet</span>
-                    </button>
-                </div>
-
-                <div class="flex flex-col items-center gap-y-2">
-                    <div class="h3 font-bold text-lg">Mints</div>
-
-                    {#if cashuWallet.mints.length > 0}
-                        <!-- Scrollable Mint List -->
-                        <div
-                            class="max-h-24 w-full overflow-y-auto border border-gray-300 p-2 rounded"
+<div class="w-full flex flex-col gap-0 flex-grow">
+    <div class="w-full flex flex-col justify-center items-center py-[50px]">
+        <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
+            <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
+                <!-- Wallet card end -->
+                {#if $displayEcashWarning}
+                    <Card classes="bg-warning-500 dark:bg-warning-700 hidden max-[768px]:flex">
+                        <p class="font-[600] text-black-400">
+                            Attention: This is an experimental feature, use it at your own risk.
+                        </p>
+                        <Button
+                            variant="text"
+                            classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
+                            on:click={() => ($displayEcashWarning = false)}
                         >
-                            {#each cashuWallet.mints as mint (mint)}
-                                <div
-                                    class="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded"
-                                >
-                                    <span>{mint}</span>
-                                    <button
-                                        on:click={() => removeMint(mint)}
-                                        use:popup={tooltipRemoveMint}
-                                        aria-label="Remove Mint"
-                                    >
-                                        <TrashIcon extraClasses="text-red-700" />
-                                    </button>
-                                    <div data-popup="tooltipRemoveMint">
-                                        <div class={popupClasses}>
-                                            <p>Remove Mint</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            {/each}
-                        </div>
-                    {:else}
-                        <div>No mint found</div>
-                    {/if}
-
-                    <button
-                        type="button"
-                        on:click={exploreMints}
-                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
-                    >
-                        Explore Mints
-                    </button>
-                </div>
-
-                <div class="flex flex-col items-center gap-y-2">
-                    <div class="h3 font-bold text-lg">Relays</div>
-
-                    <!-- Scrollable Mint List -->
-                    <div class="max-h-36 w-full overflow-y-auto border border-gray-300 p-2 rounded">
-                        {#each cashuWallet.relays as relay (relay)}
-                            <div
-                                class="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded"
-                            >
-                                <span>{relay}</span>
-                                <button
-                                    on:click={() => removeRelay(relay)}
-                                    use:popup={tooltipRemoveRelay}
-                                    aria-label="Remove Relay"
-                                >
-                                    <TrashIcon extraClasses="text-red-700" />
-                                </button>
-                                <div data-popup="tooltipRemoveRelay">
-                                    <div class={popupClasses}>
-                                        <p>Remove Relay</p>
-                                    </div>
-                                </div>
-                            </div>
-                        {/each}
+                            <i class="bx bx-x" />
+                        </Button>
+                    </Card>
+                {/if}
+                {#if $walletStatus === WalletStatus.Loading}
+                    <div class="flex justify-center">
+                        <ProgressRadial
+                            value={undefined}
+                            stroke={60}
+                            meter="stroke-primary-500"
+                            track="stroke-primary-500/30"
+                            strokeLinecap="round"
+                            width="w-8"
+                        />
                     </div>
+                {:else if $walletStatus === WalletStatus.Failed}
+                    <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
+                        <button
+                            on:click={setupWallet}
+                            type="button"
+                            class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                        >
+                            Initialize Cashu Wallet
+                        </button>
+                        <button
+                            on:click={importWallet}
+                            type="button"
+                            class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
+                        >
+                            Import Wallet
+                        </button>
+                    </div>
+                {:else if cashuWallet}
+                    <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
+                        <!-- wallet side -->
+                        <div
+                            class="w-full max-w-[350px] relative flex flex-col gap-[25px] max-[768px]:max-w-full"
+                        >
+                            <div
+                                class="w-full flex flex-col gap-[15px] relative max-[768px]:mt-[15px]"
+                            >
+                                <!-- Wallet card start -->
+                                <Card classes="gap-[15px]">
+                                    <div
+                                        class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-gradient-to-tl from-blue-500 to-blue-400 shadow-deep"
+                                    >
+                                        <div
+                                            class="flex flex-row gap-[10px] font-[500] text-white-500 justify-between"
+                                        >
+                                            <p>{cashuWallet.name || '??'}</p>
+                                            <Button
+                                                variant="text"
+                                                classes="bg-white-0 hover:bg-white-300 hover:text-black-400"
+                                                on:click={editName}
+                                            >
+                                                <i class="bx bxs-edit" />
+                                            </Button>
+                                        </div>
+                                        <p class="text-[24px] font-[500] text-white">
+                                            {walletBalance}
+                                            <span
+                                                class="text-[16px] opacity-[0.5] font-[500] text-white-800 mt-[-5px]"
+                                            >
+                                                sats
+                                            </span>
+                                        </p>
 
-                    <button
-                        on:click={addRelay}
-                        type="button"
-                        class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
-                    >
-                        Add Relay
-                    </button>
-                </div>
-            {/if}
+                                        <i
+                                            class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]"
+                                        />
+                                    </div>
+                                    <PieChart dataset={mintBalances} />
+                                    <WithdrawEcash {cashuWallet} />
+                                    <DepositEcash {cashuWallet} />
+                                    <div
+                                        class="w-full flex flex-row justify-end overflow-hidden rounded-[6px] bg-black-100 dark:bg-white-100 border-[1px] border-black-200 dark:border-white-200"
+                                    >
+                                        <Button
+                                            variant="text"
+                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white-500"
+                                            grow
+                                            on:click={handleWalletBackup}
+                                        >
+                                            <i class="bx bx-download" />
+                                            Backup
+                                        </Button>
+                                        <Button
+                                            variant="text"
+                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white-500"
+                                            grow
+                                            on:click={recoverWallet}
+                                        >
+                                            <i class="bx bx-upload" />
+                                            Recover
+                                        </Button>
+                                        <Button
+                                            variant="text"
+                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white-500"
+                                            grow
+                                            on:click={handleCleanWallet}
+                                        >
+                                            <i class="bx bx-rotate-left" />
+                                            Clear Wallet
+                                        </Button>
+                                    </div>
+                                </Card>
+                                <!-- Wallet card end -->
+                                {#if $displayEcashWarning}
+                                    <Card
+                                        classes="bg-warning-500 dark:bg-warning-700 relative max-[768px]:hidden"
+                                    >
+                                        <p class="font-[600] text-black-400">
+                                            Attention: This is an experimental feature, use it at
+                                            your own risk.
+                                        </p>
+                                        <Button
+                                            variant="text"
+                                            classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
+                                            on:click={() => ($displayEcashWarning = false)}
+                                        >
+                                            <i class="bx bx-x" />
+                                        </Button>
+                                    </Card>
+                                {/if}
+                            </div>
+                        </div>
+                        <!-- wallet side -->
+                        <div class="w-full flex flex-col gap-[15px] relative">
+                            <TabSelector {tabs} bind:selectedTab />
+                            <div class="w-full flex flex-col">
+                                {#if selectedTab === Tab.Mints}
+                                    <div class="w-full flex flex-col gap-[10px]">
+                                        <Card>
+                                            <div class="w-full flex flex-row justify-end">
+                                                <Button on:click={exploreMints}>
+                                                    Explore Mints
+                                                </Button>
+                                            </div>
+                                            <div
+                                                class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
+                                            >
+                                                {#each cashuWallet.mints as mint (mint)}
+                                                    <div class={listItemWrapperClasses}>
+                                                        <p class={listItemClasses}>
+                                                            {mint}
+                                                        </p>
+                                                        <button
+                                                            class={deleteButtonClasses}
+                                                            on:click={() => removeMint(mint)}
+                                                            use:popup={tooltipRemoveMint}
+                                                            aria-label="Remove Mint"
+                                                        >
+                                                            <i class={deleteIconClasses} />
+                                                        </button>
+                                                    </div>
+                                                {/each}
+                                            </div>
+                                        </Card>
+                                    </div>
+                                {:else}
+                                    <div class="w-full flex flex-col gap-[10px]">
+                                        <Card>
+                                            <div class="w-full flex flex-row justify-end">
+                                                <Button on:click={addRelay}>Add Relay</Button>
+                                            </div>
+                                            <div
+                                                class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
+                                            >
+                                                {#each cashuWallet.relays as relay (relay)}
+                                                    <div class={listItemWrapperClasses}>
+                                                        <p class={listItemClasses}>
+                                                            {relay}
+                                                        </p>
+                                                        <button
+                                                            class={deleteButtonClasses}
+                                                            on:click={() => removeRelay(relay)}
+                                                            use:popup={tooltipRemoveRelay}
+                                                            aria-label="Remove Relay"
+                                                        >
+                                                            <i class={deleteIconClasses} />
+                                                        </button>
+                                                    </div>
+                                                {/each}
+                                            </div>
+                                        </Card>
+                                    </div>
+                                {/if}
+                            </div>
+                        </div>
+                    </div>
+                {/if}
+            </div>
         </div>
     </div>
 </div>

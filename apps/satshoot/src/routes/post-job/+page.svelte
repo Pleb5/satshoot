@@ -24,6 +24,7 @@
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
+    import { redirectAfterLogin } from '$lib/stores/gui';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -244,6 +245,8 @@
     }
 
     function handleLogin() {
+        $redirectAfterLogin = false;
+
         modalStore.trigger({
             type: 'component',
             component: {

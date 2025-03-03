@@ -12,6 +12,8 @@
     import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
     import { getFileExtension } from '$lib/utils/misc';
     import { decryptSecret } from '$lib/utils/crypto';
+    import Popup from '../UI/Popup.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -220,45 +222,41 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-4 flex flex-col gap-y-4">
-        <h4 class="h4 text-lg sm:text-2xl text-center mb-2">Recover Ecash Wallet</h4>
-        <input
-            type="file"
-            accept=".json,.enc"
-            class="input text-center bg-transparent border-none rounded-md"
-            aria-label="choose file"
-            on:change={handleFileChange}
-        />
-
-        {#if showPassphraseInput}
+    <Popup title="Recover Ecash Wallet">
+        <div class="flex flex-col gap-[10px] mt-4">
             <input
-                type="text"
-                class="input rounded-md"
-                aria-label="passphrase"
-                placeholder="Enter passphrase for encryption (min. 14 chars)"
-                bind:value={passphrase}
+                type="file"
+                accept=".json,.enc"
+                class="input text-center bg-transparent rounded-md"
+                aria-label="choose file"
+                on:change={handleFileChange}
             />
-        {/if}
 
-        <button
-            type="button"
-            on:click={recover}
-            class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
-            disabled={recovering}
-        >
-            Recover
-            {#if recovering}
-                <span>
-                    <ProgressRadial
-                        value={undefined}
-                        stroke={60}
-                        meter="stroke-error-500"
-                        track="stroke-error-500/30"
-                        strokeLinecap="round"
-                        width="w-8"
-                    />
-                </span>
+            {#if showPassphraseInput}
+                <input
+                    type="text"
+                    class="input rounded-md"
+                    aria-label="passphrase"
+                    placeholder="Enter passphrase for encryption (min. 14 chars)"
+                    bind:value={passphrase}
+                />
             {/if}
-        </button>
-    </div>
+
+            <Button on:click={recover} disabled={recovering}>
+                Recover
+                {#if recovering}
+                    <span>
+                        <ProgressRadial
+                            value={undefined}
+                            stroke={60}
+                            meter="stroke-white-500"
+                            track="stroke-white-500/30"
+                            strokeLinecap="round"
+                            width="w-8"
+                        />
+                    </span>
+                {/if}
+            </Button>
+        </div>
+    </Popup>
 {/if}

@@ -43,6 +43,15 @@
             event.preventDefault(); // Prevents the default scrolling behavior when pressing the space bar
         }
     }
+
+    $: wrapperClasses =
+        'transition ease duration-[0.3s] w-full flex flex-col rounded-[6px] gap-[3px] px-[10px] py-[10px] relative ' +
+        `${isSelected ? 'bg-blue-500 text-white' : 'bg-black-100 dark:bg-white-100'} hover:bg-black-200`;
+
+    const avatarWrapperClasses =
+        'transition-all ease-in-out duration-[0.3s] min-w-[30px] min-h-[30px] w-[30px] h-[30px] ' +
+        'rounded-full border-[2px] border-white shadow-deep flex flex-col justify-center items-center ' +
+        'relative overflow-hidden bg-white-200 backdrop-blur-[10px] text-[12px] leading-[1] hover:border-[2px]';
 </script>
 
 {#if gettingMintInfo}
@@ -62,45 +71,46 @@
     </div>
 {:else if mintInfo}
     <div
-        class="flex justify-between p-2 pr-4 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+        class={wrapperClasses}
         role="button"
         on:click={toggleSelection}
         on:keydown={handleKeydown}
         tabindex="0"
     >
-        <div class="flex flex-col gap-2 w-full">
-            <div class="flex justify-between">
-                <h3 class="text-foreground font-bold">
-                    <span>
-                        {mintInfo.name.length < 26
-                            ? mintInfo.name
-                            : mintInfo.name.substring(0, 25) + '...'}
-                    </span>
-                </h3>
-                <input type="checkbox" class="checkbox" bind:checked={isSelected} />
-            </div>
-            <div class="text-muted-foreground">
-                {mintInfo.description || ''}
+        <input
+            type="checkbox"
+            name="mintsWalletCheckbox"
+            checked={isSelected}
+            class="w-full absolute top-[0] bottom-[0] right-[0] left-[0] opacity-[0] cursor-pointer peer"
+        />
+
+        <span class="font-[500]">
+            {mintInfo.name.length < 26 ? mintInfo.name : mintInfo.name.substring(0, 25) + '...'}
+        </span>
+        <span class="font-[300] text-[14px]">{mintInfo.description || ''}</span>
+        <div class="w-full flex flex-row gap-[10px] mt-[5px] items-center">
+            <div class="flex flex-row flex-wrap">
+                {#if mintUsage.pubkeys.size > 0}
+                    <div class="flex flex-row items-center gap-2">
+                        <div class="flex flex-row -space-x-2">
+                            {#each Array.from(mintUsage.pubkeys).slice(0, 4) as pubkey}
+                                <div
+                                    class="transition-all ease-in-out duration-[0.3s] flex flex-col justify-center items-center ml-0"
+                                >
+                                    <div class={avatarWrapperClasses}>
+                                        <Avatar {pubkey} size="tiny" />
+                                    </div>
+                                </div>
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
             </div>
 
-            {#if mintUsage.pubkeys.size > 0}
-                <div class="flex flex-row items-center gap-2">
-                    <div class="flex flex-row -space-x-2">
-                        {#each Array.from(mintUsage.pubkeys).slice(0, 4) as pubkey}
-                            <Avatar {pubkey} size="tiny" />
-                        {/each}
-                    </div>
-                    <div class="flex justify-between items-center gap-x-1">
-                        {#if mintUsage.pubkeys.size > 4}
-                            <span
-                                class="bg-secondary text-foreground flex h-6 w-6 items-center justify-center rounded-full text-xs"
-                            >
-                                +{mintUsage.pubkeys.size - 4}
-                            </span>
-                        {/if}
-                        <span class="text-muted-foreground text-xs"> recommendations </span>
-                    </div>
-                </div>
+            {#if mintUsage?.pubkeys.size > 4}
+                <p class="font-[300] text-[14px]">
+                    +{mintUsage.pubkeys.size - 4} recommendations
+                </p>
             {/if}
         </div>
     </div>

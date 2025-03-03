@@ -25,7 +25,6 @@ export const currentUserFollows: Writable<Set<Hexpubkey> | null> = persisted(
     { serializer: getSetSerializer() }
 );
 
-export const userRelaysUpdated = writable(false);
 export const followsUpdated: Writable<number> = persisted('followsUpdated', 0);
 
 const currentUser = writable<NDKUser | null>(null);
