@@ -13,13 +13,7 @@
     import { Dexie } from 'dexie';
 
     import { online, retryConnection } from '$lib/stores/network';
-    import currentUser, {
-        loggedIn,
-        loggingIn,
-        loginMethod,
-        mounted,
-        userRelaysUpdated,
-    } from '$lib/stores/user';
+    import currentUser, { loggedIn, loggingIn, loginMethod, mounted } from '$lib/stores/user';
 
     import {
         allOffers,
@@ -71,7 +65,7 @@
     import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
     import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
-    import { beforeNavigate } from '$app/navigation';
+    import { beforeNavigate, goto } from '$app/navigation';
     import BottomNav from '$lib/components/layout/BottomNav.svelte';
     import Footer from '$lib/components/layout/Footer.svelte';
     import Header from '$lib/components/layout/Header.svelte';
@@ -79,7 +73,6 @@
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import type { TicketEvent } from '$lib/events/TicketEvent';
 
-    import { hideAppBarsStore } from '$lib/stores/gui';
     import { searchTerms } from '$lib/stores/search';
     import {
         cashuPaymentInfoMap,
@@ -97,10 +90,15 @@
     // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
-    beforeNavigate(({ to }) => {
+    beforeNavigate(async ({ to, cancel }) => {
         if (to?.url.pathname !== '/jobs') {
             // clear search terms by initializing a new set
             searchTerms.set(new Set());
+        }
+
+        if (to?.route.id === '/' && $loggedIn) {
+            cancel(); // Cancel the current navigation
+            goto('/jobs'); // Redirect
         }
     });
 
@@ -118,27 +116,15 @@
         target: 'popupWoT',
         placement: 'right',
     };
-    const trustColor = 'text-tertiary-500';
-    const bgTrustColor = 'bg-tertiary-500';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    let hideTopbar = false;
-    let hideAppMenu = false;
+    $: displayBottomNav = $page.route.id !== '/' && $loggedIn;
 
     let followSubscription: NDKSubscription | undefined = undefined;
 
-    $: if ($hideAppBarsStore) {
-        hideTopbar = true;
-        hideAppMenu = true;
-    } else {
-        hideTopbar = false;
-        hideAppMenu = false;
-    }
-
     $: if ($retryConnection === 0) {
-        toastStore.clear();
         const t: ToastSettings = {
             message: 'Could not reconnect to Relays!',
             autohide: false,
@@ -151,12 +137,9 @@
             classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
         };
         toastStore.trigger(t);
-    } else {
-        toastStore.clear();
     }
 
     $: if ($wotUpdateFailed) {
-        toastStore.clear();
         const t: ToastSettings = {
             message: 'Could not load Web of Trust!',
             autohide: false,
@@ -172,7 +155,6 @@
     }
 
     $: if ($wotUpdateNoResults) {
-        toastStore.clear();
         const t: ToastSettings = {
             message: 'Could not load Your Web of Trust!',
             autohide: false,
@@ -356,7 +338,7 @@
         }
         // If signer is defined we can init user
         if ($ndk.signer) {
-            initializeUser($ndk);
+            initializeUser($ndk, toastStore);
         }
 
         console.log('setting loggingIn to false');
@@ -377,7 +359,6 @@
 
         window.addEventListener('offline', () => {
             console.log('offline');
-            toastStore.clear();
             const t: ToastSettings = {
                 message: 'Offline',
                 autohide: false,
@@ -494,16 +475,6 @@
             },
         };
         toastId = toastStore.trigger(t);
-    }
-
-    // Relays updated
-    $: if ($userRelaysUpdated) {
-        const t: ToastSettings = {
-            message: 'Did not find Outbox Relays, setting default values...',
-            timeout: 8000,
-            background: 'bg-warning-300-600-token',
-        };
-        toastStore.trigger(t);
     }
 
     // ----- Notifications ------ //
@@ -650,7 +621,9 @@
     <slot />
 
     <svelte:fragment slot="footer">
-        <Footer />
+        {#if displayBottomNav}
+            <Footer />
+        {/if}
     </svelte:fragment>
 </AppShell>
 <!-- <BottomNav /> -->

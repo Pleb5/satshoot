@@ -4,6 +4,7 @@
     import ChartDataLabels from 'chartjs-plugin-datalabels';
     import { onMount, tick } from 'svelte';
     import { modeCurrent } from '@skeletonlabs/skeleton';
+    import { abbreviateNumber } from '$lib/utils/misc';
 
     export let dataset: Record<string, number> = {}; // Dynamic dataset
 
@@ -41,6 +42,7 @@
         plugins: {
             legend: {
                 position: 'bottom',
+                align: 'start',
                 labels: {
                     font: {
                         size: 14,
@@ -57,9 +59,10 @@
                 color: isDark ? '#fff' : '#333', // Adjust text color based on theme
                 font: { weight: 'bold', size: 14 },
                 formatter: (value: any, context: any) => {
-                    let total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                    let percentage = ((value / total) * 100).toFixed(1);
-                    return `${value} (${percentage}%)`; // Show absolute value + percentage
+                    const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    const absoluteValue = `${abbreviateNumber(value)} sat${value > 1 ? 's' : ''}`;
+                    return absoluteValue + '\n' + percentage + '%'; // Show absolute value + percentage
                 },
                 anchor: 'center',
                 align: 'center',

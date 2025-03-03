@@ -21,13 +21,7 @@ import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 
 import currentUser, { fetchFreelanceFollowEvent } from '../stores/user';
-import {
-    loggedIn,
-    loggingIn,
-    loginMethod,
-    followsUpdated,
-    userRelaysUpdated,
-} from '../stores/user';
+import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
 
 import { updateFollowsAndWotScore, networkWoTScores } from '../stores/wot';
 
@@ -56,8 +50,10 @@ import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit } from '$lib/stores/wallet';
 import { nip19 } from 'nostr-tools';
+import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
+import { type ToastStore } from '@skeletonlabs/skeleton';
 
-export async function initializeUser(ndk: NDKSvelte) {
+export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
     console.log('begin user init');
     try {
         loggingIn.set(false);
@@ -87,30 +83,48 @@ export async function initializeUser(ndk: NDKSvelte) {
         // initialize user wallet for ecash payments
         walletInit(ndk, user);
 
-        // fetch users relays. If there are no outbox relays, set default ones
-        const relays = await fetchUserOutboxRelays(ndk);
-        if (!relays) {
-            broadcastRelayList(ndk, DEFAULTRELAYURLS, DEFAULTRELAYURLS);
-            userRelaysUpdated.set(true);
+        const $onboardingStep = get(onboardingStep);
+
+        // no need to fetch relays, update follows and wot when user just created the account
+        if ($onboardingStep !== OnboardingStep.Account_Created) {
+            // fetch users relays. If there are no outbox relays,
+            // prompt the user in a Toast to setup his relays
+            const relays = await fetchUserOutboxRelays(ndk);
+            if (!relays) {
+                toastStore.trigger({
+                    message: 'Could not find Your personal Relays',
+                    background: 'bg-warning-300-600-token',
+                    autohide: false,
+                    action: {
+                        label: 'Configure',
+                        response: () => {
+                            goto('/settings/relays');
+                        },
+                    },
+                });
+            }
+
+            const $followsUpdated = get(followsUpdated) as number;
+            // Update wot every 5 hours: Newbies can get followers and after 5 hours
+            // their actions will be visible to a decent amount of people
+            const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
+
+            const $networkWoTScores = get(networkWoTScores);
+
+            if (
+                $followsUpdated < updateDelay ||
+                !$networkWoTScores ||
+                $networkWoTScores.size === 0
+            ) {
+                // console.log('wot outdated, updating...')
+                await updateFollowsAndWotScore(ndk);
+                // console.log('wot updated')
+                // wotArray = Array.from(get(wot));
+            }
+
+            // fetch the freelance follow event of current user
+            await fetchFreelanceFollowEvent(user.pubkey);
         }
-
-        const $followsUpdated = get(followsUpdated) as number;
-        // Update wot every 5 hours: Newbies can get followers and after 5 hours
-        // their actions will be visible to a decent amount of people
-        const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
-
-        // let wotArray: string[] = Array.from(get(wot));
-        const $networkWoTScores = get(networkWoTScores);
-
-        if ($followsUpdated < updateDelay || !$networkWoTScores || $networkWoTScores.size === 0) {
-            // console.log('wot outdated, updating...')
-            await updateFollowsAndWotScore(ndk);
-            // console.log('wot updated')
-            // wotArray = Array.from(get(wot));
-        }
-
-        // fetch the freelance follow event of current user
-        await fetchFreelanceFollowEvent(user.pubkey);
 
         // Start all tickets/offers sub
         allTickets.startSubscription();
@@ -305,49 +319,10 @@ export async function broadcastEvent(
 
 export async function checkRelayConnections() {
     const $ndk = get(ndk);
-    const $currentUser = get(currentUser);
 
     const anyConnectedRelays = $ndk.pool.stats().connected !== 0;
-    let readAndWriteRelaysExist = false;
 
-    // Only bother to check stronger condition if weaker is met
-    if (anyConnectedRelays && $currentUser) {
-        const relays = await $ndk.fetchEvent(
-            { kinds: [NDKKind.RelayList], authors: [$currentUser!.pubkey] },
-            {
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-                groupable: false,
-            }
-        );
-
-        if (relays) {
-            const relayList = NDKRelayList.from(relays);
-            let readRelayExists = false;
-            let writeRelayExists = false;
-
-            // Check if user has at least 1 read and 1 write relay connected
-            for (const connectedPoolRelay of $ndk.pool.connectedRelays()) {
-                relayList.readRelayUrls.forEach((url: string) => {
-                    if (connectedPoolRelay.url === url) {
-                        readRelayExists = true;
-                    }
-                });
-
-                relayList.writeRelayUrls.forEach((url: string) => {
-                    if (connectedPoolRelay.url === url) {
-                        writeRelayExists = true;
-                    }
-                });
-
-                if (readRelayExists && writeRelayExists) {
-                    readAndWriteRelaysExist = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    if (!anyConnectedRelays || ($currentUser && !readAndWriteRelaysExist)) {
+    if (!anyConnectedRelays) {
         connected.set(false);
         let retriesLeft = get(retryConnection);
         if (retriesLeft > 0) {

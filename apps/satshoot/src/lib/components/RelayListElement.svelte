@@ -7,6 +7,7 @@
     const dispatch = createEventDispatcher();
 
     export let relay: NDKRelay;
+    export let isSuggestedRelay = false;
     let relayStatusColor: string;
     let relayStatusText: string;
 
@@ -52,11 +53,21 @@
         {relay.url}
     </p>
 
-    <Button
-        on:click={() => dispatch('remove')}
-        variant="text"
-        classes="min-h-[35px] rounded-[0px] hover:bg-red-500 hover:text-white"
-    >
-        <i class="bx bxs-trash" />
-    </Button>
+    {#if isSuggestedRelay}
+        <Button
+            on:click={() => dispatch('add')}
+            variant="text"
+            classes="min-h-[35px] rounded-[0px] hover:bg-green-600 hover:text-white"
+        >
+            <i class="bx bx-plus" />
+        </Button>
+    {:else}
+        <Button
+            on:click={() => dispatch('remove')}
+            variant="text"
+            classes="min-h-[35px] rounded-[0px] hover:bg-red-500 hover:text-white"
+        >
+            <i class="bx bxs-trash" />
+        </Button>
+    {/if}
 </div>

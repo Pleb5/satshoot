@@ -3,6 +3,7 @@
     import { page } from '$app/stores';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
+    import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { broadcastUserProfile, fetchEventFromRelaysFirst } from '$lib/utils/helpers';
@@ -74,6 +75,11 @@
 
                 if (redirectPath) {
                     goto(redirectPath);
+                }
+
+                if ($onboardingStep === OnboardingStep.Account_Created) {
+                    $onboardingStep = OnboardingStep.Profile_Updated;
+                    goto('/settings/relays');
                 }
             } catch (e) {
                 const t: ToastSettings = {
