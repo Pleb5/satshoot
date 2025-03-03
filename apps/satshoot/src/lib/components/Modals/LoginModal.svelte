@@ -23,7 +23,6 @@
         ProgressRadial,
         type ModalSettings,
         type PopupSettings,
-        type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import { nip19 } from 'nostr-tools';
     import { generateSeedWords, privateKeyFromSeedWords, validateWords } from 'nostr-tools/nip06';
@@ -39,6 +38,8 @@
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
     import TabSelector from '../UI/Buttons/TabSelector.svelte';
+    import { OnboardingStep, onboardingStep, redirectAfterLogin } from '$lib/stores/gui';
+    import { goto } from '$app/navigation';
 
     enum LocalKeyLoginTabs {
         SecretKey,
@@ -96,6 +97,17 @@
 
     function toggleLocalKey() {
         displayLocalKeyLogin = !displayLocalKeyLogin;
+    }
+
+    function handleRedirection(isNewAccount = false) {
+        // redirect to jobs page
+        if ($redirectAfterLogin) {
+            if (isNewAccount) {
+                goto('/settings/profile');
+            } else goto('/jobs');
+        } else {
+            $redirectAfterLogin = true;
+        }
     }
 
     async function connectBunker() {
@@ -188,27 +200,26 @@
                 localStorage.setItem('bunkerTargetNpub', remoteUserNpub);
                 localStorage.setItem('bunkerRelayURLs', relayURLs.join(','));
 
-                const t: ToastSettings = {
+                toastStore.trigger({
                     message: 'Bunker Connection Successful!',
                     timeout: 7000,
                     background: 'bg-success-300-600-token',
-                };
-                toastStore.trigger(t);
+                });
 
-                initializeUser($ndk);
+                initializeUser($ndk, toastStore);
+                handleRedirection();
 
                 modalStore.close();
             } else {
-                const t: ToastSettings = {
+                toastStore.trigger({
                     message: 'Could not connect to Bunker!',
                     timeout: 7000,
                     background: 'bg-error-300-600-token',
-                };
-                toastStore.trigger(t);
+                });
                 modalStore.close();
             }
         } catch (error) {
-            const t: ToastSettings = {
+            toastStore.trigger({
                 message: `
                         <p>Could not connect to Bunker!</p>
                         <p>
@@ -219,8 +230,7 @@
                 autohide: false,
                 background: 'bg-error-300-600-token',
                 classes: 'font-bold',
-            };
-            toastStore.trigger(t);
+            });
             console.error(error);
             modalStore.close();
         }
@@ -241,18 +251,18 @@
                     $loginMethod = LoginMethod.Nip07;
                     $ndk.signer = nip07Signer;
                     localStorage.setItem('login-method', $loginMethod);
-                    initializeUser($ndk);
+                    initializeUser($ndk, toastStore);
+                    handleRedirection();
                     askingForNip07Permission = false;
                     modalStore.close();
                 }
             } catch (e) {
                 askingForNip07Permission = false;
-                const t: ToastSettings = {
+                toastStore.trigger({
                     message: 'Browser extension rejected access!',
                     autohide: false,
                     background: 'bg-error-300-600-token',
-                };
-                toastStore.trigger(t);
+                });
             }
         } else if (!window.nostr) {
             const modal: ModalSettings = {
@@ -368,16 +378,16 @@
             $ndk.signer = signer;
 
             // Initialize user
-            initializeUser($ndk);
+            initializeUser($ndk, toastStore);
 
             // Display success toast
-            const toastSettings: ToastSettings = {
+            toastStore.trigger({
                 message: 'Encrypted Secret saved in local storage!',
                 timeout: 7000,
                 background: 'bg-success-300-600-token',
-            };
-            toastStore.trigger(toastSettings);
+            });
 
+            handleRedirection();
             // Close login modal
             modalStore.close();
         } catch (e) {
@@ -453,15 +463,18 @@
             };
             broadcastUserProfile($ndk, user.profile);
 
-            // initialize user
-            initializeUser($ndk);
+            $onboardingStep = OnboardingStep.Account_Created;
 
-            const t: ToastSettings = {
+            // initialize user
+            initializeUser($ndk, toastStore);
+
+            toastStore.trigger({
                 message: '<strong>Nostr Keypair Created!</strong>',
                 timeout: 7000,
                 background: 'bg-success-300-600-token',
-            };
-            toastStore.trigger(t);
+            });
+
+            handleRedirection(true);
 
             modalStore.close();
         }
