@@ -26,15 +26,15 @@
 
 {#if href}
     <a class={`${baseClasses} ${activeClass}`} {href}>
-        <i class={`bx ${icon}`} />
-
-        {#if href === '/notifications/' && $unReadNotifications.length > 0}
-            <span
-                class="absolute top-0 right-0 max-[576px]:right-[20px] bg-[red] text-white rounded-full text-[12px] min-w-[20px] h-[20px] flex items-center justify-center p-[2px]"
-            >
-                {$unReadNotifications.length > 9 ? '9+' : $unReadNotifications.length}
-            </span>
-        {/if}
+        <i class={`bx ${icon} relative`} >
+            {#if href === '/notifications/' && $unReadNotifications.length > 0}
+                <span
+                    class="absolute -top-3 -right-3 bg-[red] text-white rounded-full text-[12px] min-w-[20px] h-[20px] flex items-center justify-center p-[2px]"
+                >
+                    {$unReadNotifications.length > 9 ? '9+' : $unReadNotifications.length}
+                </span>
+            {/if}
+        <i/>
     </a>
 {:else}
     <button class={`${baseClasses} ${activeClass}`} on:click={handleClick}>
