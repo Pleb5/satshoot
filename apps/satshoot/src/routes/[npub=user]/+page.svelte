@@ -8,7 +8,7 @@
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import { scrollToMyJobsAndMyOffers } from '$lib/stores/gui';
+    import { jobFilter, offerFilter, scrollToMyJobsAndMyOffers } from '$lib/stores/gui';
     import ndk from '$lib/stores/ndk';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import currentUser from '$lib/stores/user';
@@ -23,18 +23,6 @@
         Won,
         Lost,
     }
-
-    let jobFilter = {
-        new: true,
-        inProgress: false,
-        closed: false,
-    };
-
-    let offerFilter = {
-        pending: true,
-        success: false,
-        lost: false,
-    };
 
     $: searchQuery = $page.url.searchParams.get('searchTerms');
     $: filterList = searchQuery ? searchQuery.split(',') : [];
@@ -101,7 +89,7 @@
 
         // filter based on status
         filteredJobs = $allJobsOfUser.filter((job) => {
-            const { new: isNew, inProgress, closed } = jobFilter;
+            const { new: isNew, inProgress, closed } = $jobFilter;
             const { status } = job;
 
             return (
@@ -130,7 +118,7 @@
                     : OfferStatus.Pending
                 : OfferStatus.Unknown;
 
-            const { pending, success, lost } = offerFilter;
+            const { pending, success, lost } = $offerFilter;
 
             return (
                 (pending && offerStatus === OfferStatus.Pending) ||
@@ -143,14 +131,13 @@
         filterOffers();
     }
 
-
-    let myJobsAndMyOffersElement: HTMLDivElement
+    let myJobsAndMyOffersElement: HTMLDivElement;
     onMount(() => {
         if (myJobsAndMyOffersElement && $scrollToMyJobsAndMyOffers) {
             $scrollToMyJobsAndMyOffers = false;
             myJobsAndMyOffersElement.scrollIntoView(true);
         }
-    })
+    });
 
     onDestroy(() => {
         if (allJobsOfUser) allJobsOfUser.empty();
@@ -221,7 +208,11 @@
             <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <UserCard {user} />
-                    <div id="job-and-offers" class="w-full flex flex-col gap-[15px] relative" bind:this={myJobsAndMyOffersElement}>
+                    <div
+                        id="job-and-offers"
+                        class="w-full flex flex-col gap-[15px] relative"
+                        bind:this={myJobsAndMyOffersElement}
+                    >
                         <div class="w-full flex flex-col gap-[10px]">
                             <TabSelector {tabs} bind:selectedTab={$profileTabStore} />
                             <div class="w-full flex flex-col">
@@ -231,17 +222,17 @@
                                             <Checkbox
                                                 id="new-jobs"
                                                 label="New"
-                                                bind:checked={jobFilter.new}
+                                                bind:checked={$jobFilter.new}
                                             />
                                             <Checkbox
                                                 id="inProgress-jobs"
                                                 label="In Progress"
-                                                bind:checked={jobFilter.inProgress}
+                                                bind:checked={$jobFilter.inProgress}
                                             />
                                             <Checkbox
                                                 id="closed-jobs"
                                                 label="Closed"
-                                                bind:checked={jobFilter.closed}
+                                                bind:checked={$jobFilter.closed}
                                             />
                                         </Card>
                                         <div class="w-full flex flex-col gap-[15px]">
@@ -261,17 +252,17 @@
                                             <Checkbox
                                                 id="pending-offers"
                                                 label="Pending"
-                                                bind:checked={offerFilter.pending}
+                                                bind:checked={$offerFilter.pending}
                                             />
                                             <Checkbox
                                                 id="success-offers"
                                                 label="Success"
-                                                bind:checked={offerFilter.success}
+                                                bind:checked={$offerFilter.success}
                                             />
                                             <Checkbox
                                                 id="lost-offers"
                                                 label="Lost"
-                                                bind:checked={offerFilter.lost}
+                                                bind:checked={$offerFilter.lost}
                                             />
                                         </Card>
                                         <div class="w-full flex flex-col gap-[15px]">

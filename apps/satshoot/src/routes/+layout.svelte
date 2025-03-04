@@ -67,7 +67,6 @@
     import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
     import { beforeNavigate, goto } from '$app/navigation';
-    import BottomNav from '$lib/components/layout/BottomNav.svelte';
     import Footer from '$lib/components/layout/Footer.svelte';
     import Header from '$lib/components/layout/Header.svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
@@ -624,6 +623,5 @@
         <Footer hideFooter={!displayBottomNav}/>
     </svelte:fragment>
 </AppShell>
-<!-- <BottomNav /> -->
 
 <!-- <AppHeader /> -->

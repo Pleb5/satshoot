@@ -3,11 +3,12 @@
     export let rating: string;
     export let iconClass: string = 'bx bxs-star';
     export let hoverEffect: boolean = false;
+    export let color: string = '';
 </script>
 
 <p class="w-full text-start font-[600] pl-[5px]">{label}</p>
 <div
-    class="w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] bg-black-100 border-[1px] border-black-100 dark:border-white-100 text-black-500 dark:text-white-500 {hoverEffect
+    class="w-full flex flex-row justify-center items-center gap-[5px] p-[5px] rounded-[4px] bg-black-100 border-[1px] border-black-100 dark:border-white-100 text-black-500 dark:text-white {color} {hoverEffect
         ? 'group-hover:text-white'
         : ''}"
 >

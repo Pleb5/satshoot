@@ -8,8 +8,59 @@
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
+    import { nip19 } from 'nostr-tools';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
+    import ndk from '$lib/stores/ndk';
+    import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { onMount } from 'svelte';
+    import ProfileImage from '../UI/Display/ProfileImage.svelte';
+    import { OfferEvent } from '$lib/events/OfferEvent';
 
     export let review: ReviewEvent;
+
+    let user = $ndk.getUser({ pubkey: review.pubkey });
+    let userName = user.npub.substring(0, 8);
+    let userImage = getRoboHashPicture(user.pubkey);
+
+    let userProfile: NDKUserProfile | null;
+    let job: TicketEvent | null;
+
+    onMount(async () => {
+        userProfile = await user.fetchProfile();
+        if (userProfile) {
+            if (userProfile.name) {
+                userName = userProfile.name;
+            }
+            if (userProfile.image) {
+                userImage = userProfile.image;
+            }
+        }
+
+        if (review.reviewedEventAddress) {
+            const reviewedEvent = await $ndk.fetchEvent(review.reviewedEventAddress, {
+                groupable: true,
+                groupableDelay: 1000,
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            });
+
+            if (reviewedEvent) {
+                if (review.type === ReviewType.Client) {
+                    job = TicketEvent.from(reviewedEvent);
+                } else {
+                    const offer = OfferEvent.from(reviewedEvent);
+                    const jobEvent = await $ndk.fetchEvent(offer.referencedTicketAddress, {
+                        groupable: true,
+                        groupableDelay: 1000,
+                        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                    });
+                    if (jobEvent) {
+                        job = TicketEvent.from(jobEvent);
+                    }
+                }
+            }
+        }
+    });
 
     // Determine if the review is for a freelancer or client
     const isFreelancerReview = review.type === ReviewType.Freelancer;
@@ -35,7 +86,27 @@
 <div
     class="w-full flex flex-col gap-[10px] border-[1px] border-black-100 dark:border-white-100 rounded-[6px] bg-white-100 p-[10px]"
 >
-    <UserProfile pubkey={review.pubkey} />
+    <div class="w-full flex flex-row gap-[15px]">
+        <a href={'/' + user.npub}>
+            <ProfileImage src={userImage} />
+        </a>
+        <div class="flex flex-col grow-[1] items-start">
+            <a href={'/' + user.npub}>
+                <p>{userName}</p>
+            </a>
+            <div class="flex flex-row gap-[5px] flex-wrap">
+                <p>wrote a review for job:</p>
+                {#if job}
+                    <a
+                        href={'/' + job.encode() + '/'}
+                        class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                        "{job.title}"
+                    </a>
+                {/if}
+            </div>
+        </div>
+    </div>
 
     {#if review.reviewText}
         <div

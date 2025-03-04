@@ -24,7 +24,7 @@
         'font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row ' +
         'justify-center items-center gap-[10px] bg-white-0 text-black-500 ' +
         'border-[1px] border-solid border-black-100 dark:border-white-100 w-full max-w-[200px] hover:bg-blue-500 ' +
-        'hover:text-white hover:border-[1px_solid_transparent] hover:max-w-[225px] dark:text-white-500 dark:border-white-100';
+        'hover:text-white hover:border-[1px_solid_transparent] hover:max-w-[225px] dark:text-white dark:border-white-100';
 </script>
 
 <div class="w-full flex flex-col justify-center items-center py-[50px]">

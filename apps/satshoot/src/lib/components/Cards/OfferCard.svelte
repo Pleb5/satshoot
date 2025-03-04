@@ -231,7 +231,7 @@
     >
         <ExpandableText text={offer.description} maxCharacters={200} renderAsMarkdown />
         <div
-            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-black-100"
+            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100"
         >
             <div class="grow-[1]">
                 <p class="font-[500]">
@@ -268,7 +268,7 @@
         </div>
     </div>
     <div
-        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 pl-[5px] pr-[5px] pt-[10px]"
+        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
     >
         {#if offer.created_at}
             <p class="font-[500] grow-[1] flex flex-row flex-wrap">
@@ -288,7 +288,7 @@
     </div>
     {#if showJobDetail && job}
         <div
-            class="w-full flex flex-row flex-wrap items-center gap-[10px] border-t-[1px] border-t-black-100 pl-[5px] pr-[5px] pt-[10px]"
+            class="w-full flex flex-row flex-wrap items-center gap-[10px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
         >
             <div class="font-[500] grow-[1] flex flex-row items-center flex-wrap gap-[10px]">
                 <p>Job Title:</p>
@@ -318,7 +318,7 @@
     {/if}
 
     <div
-        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
+        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
     >
         {#if myJob && job && job.status === TicketStatus.New}
             <Button on:click={takeOffer}>Take offer</Button>
