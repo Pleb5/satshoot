@@ -54,7 +54,7 @@
     });
 
     const viewMoreBtnClasses =
-        'transform scale-100 w-full max-w-[200px] hover:max-w-[225px] dark:text-white-500 dark:border-white-100 ';
+        'transform scale-100 w-full max-w-[200px] hover:max-w-[225px] dark:text-white dark:border-white-100 ';
 </script>
 
 <div class="w-full flex flex-col justify-center items-center py-[50px]">

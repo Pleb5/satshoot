@@ -49,13 +49,13 @@
                     <div
                         class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                     >
-                        <p class="font-[600] text-[16px] text-white-700">
+                        <p class="font-[600] text-[16px] text-white">
                             This can solve some data loading problems but will slow down App until
                             cache is filled again
                         </p>
                     </div>
 
-                    <div class="flex flex-row gap-[5px]">
+                    <div class="flex flex-row gap-[10px] p-[5px]">
                         <Button grow variant="outlined" on:click={() => modalStore.close()}>
                             Abort
                         </Button>

@@ -197,11 +197,11 @@
     }
 
     const selectInputClasses =
-        'transition ease duration-[0.3s] w-full outline outline-[1px] outline-black-100 py-[6px] px-[12px] rounded-[6px] ' +
-        'transform scale-100 whitespace-nowrap flex flex-row justify-between items-center gap-[8px] hover:bg-[#3b82f6] hover:text-white';
+        'w-full px-[10px] py-[5px] bg-black-50 focus:bg-black-100 rounded-[6px] ' +
+        'border-[2px] border-black-100 dark:border-white-100 focus:border-blue-500 focus:outline-[0px]';
 
     const selectOptionClasses =
-        'transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
+        'bg-white dark:bg-brightGray transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
 </script>
 
 {#if $modalStore[0]}

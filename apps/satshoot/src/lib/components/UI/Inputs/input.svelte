@@ -24,8 +24,8 @@
     export let onKeyPress: (event: KeyboardEvent) => void = () => {}; // Default is a no-op
 
     const baseClasses =
-        'transition ease duration-[0.3s] px-[10px] py-[5px] bg-black-50 focus:bg-black-100' +
-        'outline outline-[0px] outline-blue-0 focus:outline focus:outline-[0px] focus:outline-blue-0';
+        'transition ease duration-[0.3s] px-[10px] py-[5px] bg-black-50 focus:bg-black-100 ' +
+        'outline-[0px] focus:outline-[0px] ';
 
     // Conditional classes for border and rounded corners
     $: borderClasses = noBorder

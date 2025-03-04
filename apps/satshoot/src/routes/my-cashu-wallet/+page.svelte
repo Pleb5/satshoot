@@ -478,7 +478,7 @@
 
     const deleteButtonClasses =
         'min-w-[50px] min-h-[35px] h-full justify-center items-center bg-white-0 text-black-500 max-[576px]:w-full ' +
-        'group-hover:bg-white-200 group-hover:text-white-800 dark:text-white-500';
+        'group-hover:bg-white-200 group-hover:text-white dark:text-white';
 
     const deleteIconClasses =
         'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex h-full justify-center items-center hover:bg-red-400';
@@ -546,7 +546,7 @@
                                         class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-gradient-to-tl from-blue-500 to-blue-400 shadow-deep"
                                     >
                                         <div
-                                            class="flex flex-row gap-[10px] font-[500] text-white-500 justify-between"
+                                            class="flex flex-row gap-[10px] font-[500] text-white justify-between"
                                         >
                                             <p>{cashuWallet.name || '??'}</p>
                                             <Button
@@ -560,7 +560,7 @@
                                         <p class="text-[24px] font-[500] text-white">
                                             {walletBalance}
                                             <span
-                                                class="text-[16px] opacity-[0.5] font-[500] text-white-800 mt-[-5px]"
+                                                class="text-[16px] opacity-[0.5] font-[500] text-white mt-[-5px]"
                                             >
                                                 sats
                                             </span>
@@ -578,7 +578,7 @@
                                     >
                                         <Button
                                             variant="text"
-                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white-500"
+                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                             grow
                                             on:click={handleWalletBackup}
                                         >
@@ -587,7 +587,7 @@
                                         </Button>
                                         <Button
                                             variant="text"
-                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white-500"
+                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                             grow
                                             on:click={recoverWallet}
                                         >
@@ -596,12 +596,12 @@
                                         </Button>
                                         <Button
                                             variant="text"
-                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white-500"
+                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                             grow
                                             on:click={handleCleanWallet}
                                         >
-                                            <i class="bx bx-rotate-left" />
-                                            Clear Wallet
+                                            <i class="fa-solid fa-broom"></i>
+                                            Clean Wallet
                                         </Button>
                                     </div>
                                 </Card>

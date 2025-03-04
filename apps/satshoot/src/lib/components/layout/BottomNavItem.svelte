@@ -13,7 +13,7 @@
     // Use a computed class for active state
     $: activeClass = isActive
         ? 'bg-blue-500 text-white'
-        : 'bg-blue-0 text-black-300 dark:text-white-400';
+        : 'bg-blue-0 text-black-300 dark:text-white';
 
     // Base classes for the nav item
     const baseClasses =
