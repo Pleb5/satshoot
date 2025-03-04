@@ -61,7 +61,7 @@
     {/if}
 
     <div
-        class="hidden w-full max-[576px]:flex flex-row justify-between items-center gap-[5px] p-[5px] border-t border-gray-300 bg-white dark:bg-brightGray dark:border-t-white-100 relative"
+        class="hidden w-full min-h-[7dvh] max-[576px]:flex flex-row justify-between items-center gap-[5px] p-[5px] border-t border-gray-300 bg-white dark:bg-brightGray dark:border-t-white-100 relative"
     >
         <div class="flex justify-center flex-grow">
             {#each items as { href, icon }}
@@ -80,7 +80,7 @@
     </div>
 
     <div
-        class="max-[576px]:hidden flex flex-grow justify-center min-h-[55px] py-[5px] bg-black-50 dark:bg-brightGray-700 relative"
+        class="max-[576px]:hidden min-h-[7dvh]  flex flex-grow justify-center py-[5px] bg-black-50 dark:bg-brightGray-700 relative"
     >
         <div class="flex justify-center">
             <div class={wrapperClasses}>
