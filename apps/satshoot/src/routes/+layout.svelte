@@ -91,15 +91,10 @@
     // Skeleton popup init
     storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
-    beforeNavigate(async ({ to, cancel }) => {
+    beforeNavigate(async ({ to }) => {
         if (to?.url.pathname !== '/jobs') {
             // clear search terms by initializing a new set
             searchTerms.set(new Set());
-        }
-
-        if (to?.route.id === '/' && $loggedIn) {
-            cancel(); // Cancel the current navigation
-            goto('/jobs'); // Redirect
         }
     });
 
@@ -121,7 +116,7 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    $: displayBottomNav = $page.route.id !== '/' && $loggedIn;
+    $: displayBottomNav = $loggedIn
 
     let followSubscription: NDKSubscription | undefined = undefined;
 
