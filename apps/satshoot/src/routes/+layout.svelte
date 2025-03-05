@@ -616,9 +616,7 @@
     <slot />
 
     <svelte:fragment slot="footer">
-        {#if displayBottomNav}
-            <Footer />
-        {/if}
+        <Footer hideFooter={!displayBottomNav}/>
     </svelte:fragment>
 </AppShell>
 <!-- <BottomNav /> -->
