@@ -314,7 +314,7 @@
                                 >
                                     {#each displayOptions as { label, value }}
                                         <Button
-                                            classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white-500 hover:text-white p-[5px] font-400"
+                                            classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white hover:text-white p-[5px] font-400"
                                             on:click={() => addTag(value)}
                                         >
                                             <span class="pl-[10px]"> {label} </span>

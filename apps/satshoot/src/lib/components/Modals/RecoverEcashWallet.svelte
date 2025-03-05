@@ -14,6 +14,7 @@
     import { decryptSecret } from '$lib/utils/crypto';
     import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -24,6 +25,7 @@
     let file: File | null = null;
     let passphrase = '';
     let showPassphraseInput = false;
+    let showPassphrase = false;
 
     // Handle file selection
     function handleFileChange(event: Event) {
@@ -219,6 +221,9 @@
             recovering = false;
         }
     }
+
+    const inputWrapperClasses =
+        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 dark:border-white-100 border-t-[0px] overflow-hidden rounded-[6px]';
 </script>
 
 {#if $modalStore[0]}
@@ -233,13 +238,23 @@
             />
 
             {#if showPassphraseInput}
-                <input
-                    type="text"
-                    class="input rounded-md"
-                    aria-label="passphrase"
-                    placeholder="Enter passphrase for encryption (min. 14 chars)"
-                    bind:value={passphrase}
-                />
+                <div class={inputWrapperClasses}>
+                    <Input
+                        bind:value={passphrase}
+                        type={showPassphrase ? 'text' : 'password'}
+                        placeholder="Enter passphrase for encryption (min. 14 chars)"
+                        grow
+                        noBorder
+                        notRounded
+                    />
+                    <Button
+                        variant="outlined"
+                        classes="border-l-[1px] border-l-black-100 rounded-[0px]"
+                        on:click={() => (showPassphrase = !showPassphrase)}
+                    >
+                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
+                    </Button>
+                </div>
             {/if}
 
             <Button on:click={recover} disabled={recovering}>

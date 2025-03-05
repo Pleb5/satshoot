@@ -1,6 +1,6 @@
 <script lang="ts">
     import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
-    import { type TicketEvent } from '$lib/events/TicketEvent';
+    import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
     import ndk, { connected } from '$lib/stores/ndk';
     import {
         createPaymentFilters,
@@ -107,7 +107,7 @@
 
     const boxWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] flex flex-row gap-[5px] p-[5px_10px] ' +
-        'rounded-[6px] bg-black-100 text-black-500 dark:bg-white-100 dark:text-white-500 items-center ' +
+        'rounded-[6px] bg-black-100 text-black-500 dark:bg-white-100 dark:text-white items-center ' +
         'outline outline-[2px] outline-[rgba(0,0,0,0.15)] text-[14px] flex-grow w-full';
 </script>
 
@@ -118,7 +118,7 @@
             <p class="line-clamp-1 overflow-hidden {statusColor}">{statusString}</p>
         </div>
         <div class={boxWrapperClasses}>
-            <p class="font-[600]">Offers:</p>
+            <p class="font-[600]">{job.status === TicketStatus.New ? 'Pending ' : ''} Offers:</p>
             <p class="line-clamp-1 overflow-hidden">
                 {insertThousandSeparator(offers.length)}
             </p>

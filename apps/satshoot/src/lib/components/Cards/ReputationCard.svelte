@@ -13,7 +13,7 @@
     import currentUser from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';
     import { averageToRatingText, type RatingConsensus } from '$lib/utils/helpers';
-    import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
+    import { abbreviateNumber, insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import {
         NDKKind,
         NDKNutzap,
@@ -70,6 +70,8 @@
     let asClientRatingConsensus = '?';
     let asFreelancerRatingConsensus = '?';
     let ratingColor = '';
+    let asClientRatingColor = '';
+    let asFreelancerRatingColor = '';
 
     // Get all winner offer a-tags OF this user as a freelancer
     // We take only those that were on tickets from a client in wot
@@ -102,8 +104,13 @@
         ratingConsensus = ratingText.ratingConsensus;
         ratingColor = ratingText.ratingColor;
 
-        asClientRatingConsensus = averageToRatingText(clientAverage).ratingConsensus;
-        asFreelancerRatingConsensus = averageToRatingText(freelancerAverage).ratingConsensus;
+        const asClientRating = averageToRatingText(clientAverage);
+        const asFreelancerRating = averageToRatingText(freelancerAverage);
+
+        asClientRatingConsensus = asClientRating.ratingConsensus;
+        asFreelancerRatingConsensus = asFreelancerRating.ratingConsensus;
+        asClientRatingColor = asClientRating.ratingColor;
+        asFreelancerRatingColor = asFreelancerRating.ratingColor;
     }
 
     function calculateOverallAverage(clientAverage: number, freelancerAverage: number): number {
@@ -419,6 +426,7 @@
                             rating={asFreelancerRatingConsensus}
                             iconClass="bx bxs-star transition ease duration-[0.3s]"
                             hoverEffect={true}
+                            color={asFreelancerRatingColor}
                         />
                     </button>
                     <button
@@ -430,6 +438,7 @@
                             rating={asClientRatingConsensus}
                             iconClass="bx bxs-star transition ease duration-[0.3s]"
                             hoverEffect={true}
+                            color={asClientRatingColor}
                         />
                     </button>
                 </div>
@@ -446,7 +455,7 @@
                             {label}
                         </p>
                         <p class="group-hover:text-white">
-                            {insertThousandSeparator(amount) + ' sats'}
+                            {abbreviateNumber(amount) + ' sats'}
                         </p>
                     </div>
                 {/each}

@@ -67,7 +67,7 @@
                         <div
                             class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                         >
-                            <p class="font-[600] text-[16px] text-white-700">
+                            <p class="font-[600] text-[16px] text-white">
                                 Local Keypair will be deleted, make sure you have a backup!
                             </p>
                         </div>

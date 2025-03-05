@@ -52,7 +52,7 @@
             <div
                 class="p-[4px] bg-white dark:bg-brightGray rounded-[4px] shadow-subtle flex flex-row"
             >
-                <p class="w-full text-[14px] font-[500] text-center text-black-500 dark:text-white-500">
+                <p class="w-full text-[14px] font-[500] text-center text-black-500 dark:text-white">
                     There's currently an active search on this page
                 </p>
             </div>

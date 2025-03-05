@@ -6,21 +6,38 @@
 
     const modalStore = getModalStore();
 
-    let copied = false;
-    function onCopyURL(): void {
-        copied = true;
+    $: copyUrlLabel = `Copy ${$page.route.id === '/[jobId=event]' ? 'Job' : 'Profile'} URL`;
+
+    $: nostrAddress = $page.route.id === '/[jobId=event]' ? $page.params.jobId : $page.params.npub;
+
+    let copiedURL = false;
+    function onCopyURL() {
+        copiedURL = true;
         setTimeout(() => {
-            copied = false;
+            copiedURL = false;
+        }, 1000);
+    }
+
+    let copiedNostrAddress = false;
+    function onCopyNostrAddress() {
+        copiedNostrAddress = true;
+        setTimeout(() => {
+            copiedNostrAddress = false;
         }, 1000);
     }
 </script>
 
 {#if $modalStore[0]}
     <Popup title="Share">
-        <div class="w-full flex flex-row justify-center py-[10px] px-[5px]">
+        <div class="w-full flex flex-col justify-center py-[10px] px-[5px] gap-[10px]">
             <Button grow on:click={onCopyURL}>
                 <span use:clipboard={$page.url.href}>
-                    {copied ? 'Copied!' : 'Copy Page URL'}
+                    {copiedURL ? 'Copied!' : copyUrlLabel}
+                </span>
+            </Button>
+            <Button grow on:click={onCopyNostrAddress}>
+                <span use:clipboard={nostrAddress}>
+                    {copiedNostrAddress ? 'Copied!' : 'Copy Nostr Address'}
                 </span>
             </Button>
         </div>

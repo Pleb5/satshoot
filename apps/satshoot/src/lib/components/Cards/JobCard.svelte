@@ -31,7 +31,7 @@
 
     const statusRowWrapperClasses =
         'w-full flex flex-row gap-[5px] flex-wrap justify-around rounded-[4px] ' +
-        'border-[1px] border-black-100 dark:border-white-100 text-black-500 dark:text-white-500 font-[600] p-[5px]';
+        'border-[1px] border-black-100 dark:border-white-100 text-black-500 dark:text-white font-[600] p-[5px]';
 
     const statusRowItemClasses =
         'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center grow-[1] items-center ' +
@@ -39,7 +39,7 @@
 
     const tagItemClasses =
         'transition ease duration-[0.3s] flex flex-row px-[10px] py-[5px] border-[1px] border-black-200 dark:border-white-200 ' +
-        'rounded-[4px] font-[500] text-black-500 dark:text-white-500 hover:bg-blue-500 hover:text-white hover:border-transparent';
+        'rounded-[4px] font-[500] text-black-500 dark:text-white hover:bg-blue-500 hover:text-white hover:border-transparent';
 </script>
 
 <Card classes="gap-[15px]">

@@ -136,8 +136,7 @@
     });
 
     const paginationBtnClasses =
-        'font-[18px] py-[10px] px-[20px] bg-white dark:bg-brightGray text-black-500 dark:text-white-500' +
-        'max-[576px]:grow-[1] shadow-subtle';
+        'font-[18px] py-[10px] px-[20px] ' + 'max-[576px]:grow-[1] shadow-subtle';
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">

@@ -35,7 +35,7 @@
             class="w-full h-[40px] flex flex-row bg-black-50 border-b-[1px] border-b-black-100 overflow-hidden dark:border-white-100"
         >
             <p
-                class="h-full flex flex-row justify-center items-center min-w-[45px] bg-white font-[500] text-black-500 dark:bg-white-50 dark:text-white-500"
+                class="h-full flex flex-row justify-center items-center min-w-[45px] bg-white font-[500] text-black-500 dark:bg-white-50 dark:text-white"
             >
                 {index + 1 < 10 ? `0${index + 1}` : index + 1}
             </p>
