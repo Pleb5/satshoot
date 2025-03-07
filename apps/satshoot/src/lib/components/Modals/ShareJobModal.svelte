@@ -104,7 +104,7 @@
                         />
                     {/if}
                 </div>
-                <div class="w-full flex flex-row gap-[5px]">
+                <div class="w-full flex flex-wrap gap-[5px]">
                     {#if job.pubkey === $currentUser?.pubkey}
                         <Button grow on:click={postJob} disabled={posting}>
                             {#if posting}
