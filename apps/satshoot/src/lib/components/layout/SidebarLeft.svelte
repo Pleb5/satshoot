@@ -44,7 +44,7 @@
 </script>
 
 <AppRail
-    class="{hideMyself} max-sm:hidden min-sm:block w-24"
+    class="{hideMyself} max-sm:hidden min-sm:block w-24 pt-2"
     background="bg-surface-100-800-token"
 >
     <div class="flex flex-col items-center gap-y-4">

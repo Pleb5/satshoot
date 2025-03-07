@@ -147,7 +147,7 @@
             >
                 <div class="w-full h-full flex flex-col gap-[15px]">
                     <div
-                        class="w-full h-full flex gap-[15px] max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-250px)]"
+                        class="w-full h-full flex gap-[15px] max-h-[calc(100vh-160px)]"
                     >
                         <Card classes="gap-[10px]">
                             <TabSelector {tabs} bind:selectedTab={conversationType} />

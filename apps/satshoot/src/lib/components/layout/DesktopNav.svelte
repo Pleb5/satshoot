@@ -17,7 +17,7 @@
         'text-[#3b82f6] font-[800] hover:text-blue-500 hover:no-underline max-[576px]:justify-center';
 </script>
 
-<div class="w-full flex flex-col justify-center items-center max-[576px]:hidden">
+<div class="hidden sm:flex flex-col justify-center items-center w-full">
     <!-- first nav part start -->
     <div
         class="w-full flex flex-col items-center border-b border-b-black-100 py-[10px] dark:border-b-white-100"
