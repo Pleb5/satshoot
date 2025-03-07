@@ -2,16 +2,45 @@
     import type { NDKRelay } from '@nostr-dev-kit/ndk';
     import { NDKRelayStatus } from '@nostr-dev-kit/ndk';
     import Button from './UI/Buttons/Button.svelte';
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+    import ndk from '$lib/stores/ndk';
+    import { normalizeRelayUrl } from '$lib/utils/misc';
 
     const dispatch = createEventDispatcher();
 
-    export let relay: NDKRelay;
+    export let relayUrl: string;
     export let isSuggestedRelay = false;
+
     let relayStatusColor: string;
     let relayStatusText: string;
+    let relayElement: HTMLDivElement | null = null;
 
-    $: if (relay && relay.status) {
+    function handleClick(event: MouseEvent) {
+        if (isSuggestedRelay && !(event.target as HTMLElement).closest('button')) {
+            dispatch('add');
+        }
+    }
+
+    function handleKeydown(event: KeyboardEvent) {
+        if (isSuggestedRelay && (event.key === 'Enter' || event.key === ' ')) {
+            dispatch('add');
+        }
+    }
+
+    onMount(() => {
+        if (relayElement) {
+            relayElement.addEventListener('click', handleClick);
+            relayElement.addEventListener('keydown', handleKeydown);
+        }
+
+        const ndkPool = $ndk.pool;
+
+        const relay = ndkPool.getRelay(relayUrl, true);
+
+        relay.on('connect', () => {
+            console.log('relay connected:>> ', relay);
+        });
+
         if (
             relay.status == NDKRelayStatus.CONNECTING ||
             relay.status === NDKRelayStatus.RECONNECTING
@@ -31,26 +60,75 @@
             relayStatusColor = 'bg-primary-500';
             relayStatusText = 'Authenticating';
         }
-    }
+
+        ndkPool.on('relay:connecting', (relay) => {
+            if (normalizeRelayUrl(relay.url) === normalizeRelayUrl(relayUrl)) {
+                relayStatusColor = 'bg-warning-500';
+                relayStatusText = 'Connecting';
+            }
+        });
+
+        ndkPool.on('relay:disconnect', (relay) => {
+            if (normalizeRelayUrl(relay.url) === normalizeRelayUrl(relayUrl)) {
+                relayStatusColor = 'bg-error-500';
+                relayStatusText = 'Disconnected';
+            }
+        });
+
+        ndkPool.on('relay:connect', (relay) => {
+            if (normalizeRelayUrl(relay.url) === normalizeRelayUrl(relayUrl)) {
+                relayStatusColor = 'bg-success-600';
+                relayStatusText = 'Connected';
+            }
+        });
+
+        ndkPool.on('flapping', (relay) => {
+            if (normalizeRelayUrl(relay.url) === normalizeRelayUrl(relayUrl)) {
+                relayStatusColor = 'bg-warning-500';
+                relayStatusText = 'Flapping';
+            }
+        });
+
+        ndkPool.on('relay:auth', (relay) => {
+            if (normalizeRelayUrl(relay.url) === normalizeRelayUrl(relayUrl)) {
+                relayStatusColor = 'bg-primary-500';
+                relayStatusText = 'Authenticating';
+            }
+        });
+    });
+
+    onDestroy(() => {
+        if (relayElement) {
+            relayElement.removeEventListener('click', handleClick);
+            relayElement.removeEventListener('keydown', handleKeydown);
+        }
+    });
 
     const itemWrapperClasses =
         'transition ease duration-[0.3s] w-full flex flex-row gap-[10px] justify-between items-center rounded-[6px] ' +
-        'bg-black-100 overflow-hidden max-[576px]:gap-[0px] max-[576px]:flex-col hover:bg-blue-500 group';
+        'bg-black-100 overflow-hidden max-[576px]:gap-[0px] max-[576px]:flex-col hover:bg-blue-500 group ' +
+        (isSuggestedRelay ? 'cursor-pointer' : '');
 </script>
 
-<div class={itemWrapperClasses}>
+<!-- Clickable & Keyboard-accessible Wrapper -->
+<div
+    bind:this={relayElement}
+    class={itemWrapperClasses}
+    role={isSuggestedRelay ? 'button' : undefined}
+    aria-label={isSuggestedRelay ? 'Add relay' : undefined}
+>
     <div
         class="flex flex-row justify-center items-center p-[10px] bg-black-200 border-r-[1px] border-black-100 dark:border-white-100 max-[576px]:w-full"
     >
         <div
             title={relayStatusText}
-            class="h-[15px] w-[15px] rounded-[4px] max-[576px]:w-full {relayStatusColor}"
+            class="h-[15px] w-[15px] rounded-[4px] {relayStatusColor}"
         ></div>
     </div>
     <p
         class="transition ease duration-[0.3s] grow-[1] group-hover:text-white break-all max-[576px]:py-[5px]"
     >
-        {relay.url}
+        {relayUrl}
     </p>
 
     {#if isSuggestedRelay}
@@ -60,6 +138,7 @@
             classes="min-h-[35px] rounded-[0px] hover:bg-green-600 hover:text-white"
         >
             <i class="bx bx-plus" />
+            Add
         </Button>
     {:else}
         <Button
