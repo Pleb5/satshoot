@@ -8,7 +8,7 @@
     import WalletIcon from '../Icons/WalletIcon.svelte';
     import ReadyToWorkModal from '../Modals/ReadyToWorkModal.svelte';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
-    import BullhornIcon from '../Icons/BullhornIcon.svelte';
+    import TowerBroadcastIcon from '../Icons/TowerBroadcastIcon.svelte';
     import { createEventDispatcher, onDestroy, onMount } from 'svelte';
     import { browser } from '$app/environment';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
@@ -195,7 +195,7 @@
 
                 <Button variant="text" classes={profileMenuItemClass} on:click={readyToWork}>
                     <span class="w-6 text-center">
-                        <BullhornIcon extraClasses={''} />
+                        <TowerBroadcastIcon extraClasses={''} />
                     </span>
                     <span>Announcement</span>
                 </Button>
