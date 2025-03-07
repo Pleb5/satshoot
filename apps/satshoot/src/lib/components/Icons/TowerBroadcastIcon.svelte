@@ -3,6 +3,6 @@
 </script>
 
 <span class="">
-    <i class="fa-solid fa-bullhorn {extraClasses}"></i>
+    <i class="fa-solid fa-tower-broadcast {extraClasses}"></i>
 </span>
 

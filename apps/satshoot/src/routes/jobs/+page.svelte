@@ -9,7 +9,7 @@
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from '@nostr-dev-kit/ndk';
 
     import { page } from '$app/stores';
-    import BullhornIcon from '$lib/components/Icons/BullhornIcon.svelte';
+    import TowerBroadcastIcon from '$lib/components/Icons/TowerBroadcastIcon.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import ReadyToWorkModal from '$lib/components/Modals/ReadyToWorkModal.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
@@ -219,7 +219,7 @@
                 readyToWork();
             }}
         >
-            <BullhornIcon extraClasses={'text-3xl text-white'} />
+            <TowerBroadcastIcon extraClasses={'text-3xl text-white'} />
         </button>
     </div>
 {/if}
