@@ -21,6 +21,7 @@
     export let job: TicketEvent;
 
     let shareURL = '';
+    let shareNaddr = '';
 
     let message: string = '';
     let posting = false;
@@ -58,17 +59,26 @@
         }
     }
 
-    let copied = false;
+    let urlCopied = false;
     function onCopyURL(): void {
-        copied = true;
+        urlCopied = true;
         setTimeout(() => {
-            copied = false;
+            urlCopied = false;
+        }, 1000);
+    }
+
+    let naddrCopied = false;
+    function onCopyNaddr(): void {
+        naddrCopied = true;
+        setTimeout(() => {
+            naddrCopied = false;
         }, 1000);
     }
 
     onMount(() => {
         if (job) {
-            shareURL = `https://satshoot.com/${job.encode()}`;
+            shareNaddr = job.encode()
+            shareURL = `https://satshoot.com/${shareNaddr}`;
             // Set default text
             message = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
             message += `## ${job.title}\n\n`;
@@ -125,7 +135,12 @@
                     {/if}
                     <Button grow on:click={onCopyURL}>
                         <span use:clipboard={shareURL}>
-                            {copied ? 'Copied!' : 'Copy Job URL'}
+                            {urlCopied ? 'Copied!' : 'Copy Job URL'}
+                        </span>
+                    </Button>
+                    <Button grow on:click={onCopyNaddr}>
+                        <span use:clipboard={shareNaddr}>
+                            {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
                         </span>
                     </Button>
                 </div>
