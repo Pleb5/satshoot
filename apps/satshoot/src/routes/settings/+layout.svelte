@@ -48,6 +48,65 @@
                         </Card>
                         <!-- This will be replaced by the nested routes -->
                     </div>
+
+                    <div
+                        class="w-full max-w-[300px] max-[576px]:max-w-full flex flex-col gap-[10px] text-[16px] text-center"
+                    >
+                        {#if $page.route.id === '/settings/general'}
+                            <Card>
+                                <p>Store Your Secret key (nsec) securely.</p>
+                                <p>
+                                    Dedicated Signer apps are more secure than pasting your nsec
+                                    into a nostr app.
+                                </p>
+                                <p>
+                                    Learn about Signer apps
+                                    <a
+                                        href="https://nostrapps.com/#signers"
+                                        class="anchor"
+                                        target="_blank"
+                                    >
+                                        here
+                                    </a>
+                                </p>
+                            </Card>
+                        {:else if $page.route.id === '/settings/profile'}
+                            <Card>
+                                <p>
+                                    For sending and receiving payments, setup your
+                                    <a href="https://npub.cash/" class="anchor" target="_blank">
+                                        LN address
+                                    </a>
+                                    or your
+                                    <a href="/my-cashu-wallet/" class="anchor"> Cashu wallet </a>
+                                    .
+                                </p>
+                                <br />
+                                <p>
+                                    A personal website can build trust. Start yours on
+                                    <a href="https://npub.pro" class="anchor" target="_blank">
+                                        npub.pro
+                                    </a>
+                                    with customizable themes and built-in nostr features
+                                </p>
+                            </Card>
+                        {:else}
+                            <Card>
+                                <p>Selecting reliable relays matters to your experience.</p>
+                                <p>
+                                    Check out
+                                    <a
+                                        href="https://next.nostr.watch/"
+                                        class="anchor"
+                                        target="_blank"
+                                    >
+                                        nostr watch
+                                    </a>
+                                    to learn more
+                                </p>
+                            </Card>
+                        {/if}
+                    </div>
                 </div>
             </div>
         </div>
