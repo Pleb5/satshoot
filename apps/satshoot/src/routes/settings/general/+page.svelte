@@ -55,7 +55,7 @@
 <div class="w-full flex flex-col gap-[15px] overflow-y-auto">
     <div class="w-full flex flex-col gap-[15px]">
         <div class="w-full flex flex-row gap-[10px] items-center pt-[5px] pr-[5px]">
-            <label class="grow-[1] font-[500]" for="toggle-dark-mode"> Dark Mode </label>
+            <label class="grow-[1] font-[500]" for="toggle-dark-mode"> Theme </label>
             <LightSwitch
                 bgLight="bg-black-100"
                 bgDark="bg-white-100"

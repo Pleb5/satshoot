@@ -13,7 +13,7 @@
 
     const satShootLogoClass =
         'transition ease-in-out duration-[0.3s] w-full ' +
-        'flex flex-row justify-start items-center relative gap-4 text-[24px] ' +
+        'flex flex-row justify-start items-center relative gap-4 text-[20px] ' +
         'text-[#3b82f6] font-[800] hover:text-blue-500 hover:no-underline max-[576px]:justify-center';
 </script>
 
@@ -29,7 +29,7 @@
                         <img
                             src="/img/satshoot.svg"
                             alt="Satshoot logo"
-                            class="w-full max-w-[65px]"
+                            class="w-full max-w-[45px]"
                         />
                         <p>SatShoot</p>
                     </a>

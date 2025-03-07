@@ -6,8 +6,6 @@
     const modalStore = getModalStore();
 
     export let title: string = ''; // Title for the modal header
-    export let zIndex: number = 90; // Allows customizing the z-index if needed
-    export let maxWidth: string = '500px'; // Allows customizing modal width
 
     function handleClose() {
         modalStore.close();
@@ -15,11 +13,11 @@
 </script>
 
 <div
-    class="fixed inset-[0] z-[{zIndex}] bg-black-500 backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
+    class="fixed inset-[0] z-[90] bg-black-500 backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
 >
     <div class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative">
         <div class="w-full flex flex-col justify-start items-center">
-            <div class="w-full max-w-[{maxWidth}] justify-start items-center">
+            <div class="w-full max-w-[500px] justify-start items-center">
                 <Card>
                     <div
                         class="flex flex-row justify-between items-center gap-[10px] pb-[5px] border-b-[1px] border-b-black-100 dark:border-b-white-100"

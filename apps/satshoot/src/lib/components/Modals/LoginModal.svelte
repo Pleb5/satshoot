@@ -854,7 +854,7 @@
                             grow
                             on:click={() => (displayGeneratedAccount = !displayGeneratedAccount)}
                         >
-                            Account Generation
+                            Generate Account
                         </Button>
                     </div>
                 </div>
