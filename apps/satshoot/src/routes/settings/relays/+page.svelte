@@ -13,7 +13,12 @@
     } from '$lib/utils/helpers';
     import { normalizeRelayUrl } from '$lib/utils/misc';
     import { NDKRelayList, type NDKRelay } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+    import {
+        getModalStore,
+        getToastStore,
+        ProgressRadial,
+        type ToastSettings,
+    } from '@skeletonlabs/skeleton';
     import { onMount, tick } from 'svelte';
 
     const modalStore = getModalStore();
@@ -22,10 +27,8 @@
     let needRelays = true;
     let posting = false;
 
-    let readRelayUrls: Set<string> = new Set();
-    let writeRelayUrls: Set<string> = new Set();
-    let readRelays: Set<NDKRelay> = new Set();
-    let writeRelays: Set<NDKRelay> = new Set();
+    let readRelayUrls: string[] = [];
+    let writeRelayUrls: string[] = [];
 
     let readRelayInputValue = '';
     let writeRelayInputValue = '';
@@ -35,52 +38,23 @@
     $: if ($currentUser && $connected && needRelays) {
         needRelays = false;
         relaysLoaded = false;
+
         fetchOutboxRelays();
-    }
-
-    function updateRelayValues() {
-        readRelays.clear();
-        writeRelays.clear();
-        const poolArray = Array.from($ndk.pool.relays.values());
-        poolArray.forEach((poolRelay: NDKRelay) => {
-            readRelayUrls.forEach((url: string) => {
-                if (poolRelay.url === url) {
-                    readRelays.add(poolRelay);
-                }
-            });
-
-            writeRelayUrls.forEach((url: string) => {
-                if (poolRelay.url === url) {
-                    writeRelays.add(poolRelay);
-                }
-            });
-        });
-
-        readRelays = readRelays;
-        writeRelays = writeRelays;
-        console.log('ndk pool in network', $ndk.pool);
-        console.log('ndk outbox pool in network', $ndk.outboxPool);
-        console.log('read relays', readRelays);
-        console.log('write relays', writeRelays);
     }
 
     async function fetchOutboxRelays() {
         const relays = await fetchUserOutboxRelays($ndk);
 
         if (relays) {
-            const relayList = NDKRelayList.from(relays);
+            const ndkRelayList = NDKRelayList.from(relays);
 
-            relayList.readRelayUrls.forEach((url: string) => {
-                readRelayUrls = readRelayUrls.add(url);
-            });
-            relayList.writeRelayUrls.forEach((url: string) => {
-                writeRelayUrls = writeRelayUrls.add(url);
-            });
+            readRelayUrls = ndkRelayList.readRelayUrls;
+            writeRelayUrls = ndkRelayList.writeRelayUrls;
         }
 
-        updateRelayValues();
         relaysLoaded = true;
     }
+
     async function addRelay(read: boolean, url?: string) {
         if (!url) {
             url = read
@@ -91,80 +65,25 @@
         if (!url) return;
 
         if (read) {
-            readRelayUrls = readRelayUrls.add(url);
+            if (!readRelayUrls.includes(url)) {
+                readRelayUrls = [...readRelayUrls, url];
+            }
+
+            readRelayInputValue = '';
         } else {
-            writeRelayUrls = writeRelayUrls.add(url);
-        }
-
-        posting = true;
-        await tick();
-
-        try {
-            await broadcastRelayList($ndk, Array.from(readRelayUrls), Array.from(writeRelayUrls));
-
-            posting = false;
-
-            toastStore.trigger({
-                message: 'New Relay Config Broadcasted!',
-                timeout: 7000,
-                background: 'bg-success-300-600-token',
-            });
-
-            if (read) {
-                readRelayInputValue = '';
-            } else {
-                writeRelayInputValue = '';
+            if (!writeRelayUrls.includes(url)) {
+                writeRelayUrls = [...writeRelayUrls, url];
             }
 
-            if ($onboardingStep === OnboardingStep.Profile_Updated) {
-                $onboardingStep = OnboardingStep.Relays_Configured;
-            }
-
-            fetchOutboxRelays();
-        } catch (e) {
-            posting = false;
-
-            toastStore.trigger({
-                message: 'Could not post Relays: ' + e,
-                timeout: 7000,
-                background: 'bg-error-300-600-token',
-            });
-
-            fetchOutboxRelays();
+            writeRelayInputValue = '';
         }
     }
 
     async function handleRelayRemoval(url: string, read: boolean) {
         if (read) {
-            readRelayUrls.delete(url);
-            readRelayUrls = readRelayUrls;
+            readRelayUrls = readRelayUrls.filter((relayUrl) => relayUrl !== url);
         } else {
-            writeRelayUrls.delete(url);
-            writeRelayUrls = writeRelayUrls;
-        }
-
-        posting = true;
-        await tick();
-
-        try {
-            await broadcastRelayList($ndk, Array.from(readRelayUrls), Array.from(writeRelayUrls));
-
-            const t: ToastSettings = {
-                message: 'New Relay Config Broadcasted!',
-                timeout: 7000,
-                background: 'bg-success-300-600-token',
-            };
-            toastStore.trigger(t);
-
-            fetchOutboxRelays();
-        } catch (e) {
-            const t: ToastSettings = {
-                message: 'Could not post Relays: ' + e,
-                timeout: 7000,
-                background: 'bg-error-300-600-token',
-            };
-            toastStore.trigger(t);
-            fetchOutboxRelays();
+            writeRelayUrls = writeRelayUrls.filter((relayUrl) => relayUrl !== url);
         }
     }
 
@@ -184,31 +103,52 @@
         });
     }
 
+    async function updateRelays() {
+        posting = true;
+
+        try {
+            await broadcastRelayList($ndk, Array.from(readRelayUrls), Array.from(writeRelayUrls));
+
+            posting = false;
+
+            toastStore.trigger({
+                message: 'New Relay Config Broadcasted!',
+                timeout: 7000,
+                background: 'bg-success-300-600-token',
+            });
+
+            if ($onboardingStep === OnboardingStep.Profile_Updated) {
+                $onboardingStep = OnboardingStep.Relays_Configured;
+            }
+        } catch (e) {
+            toastStore.trigger({
+                message: 'Could not post Relays: ' + e,
+                timeout: 7000,
+                background: 'bg-error-300-600-token',
+            });
+
+            fetchOutboxRelays();
+        } finally {
+            posting = false;
+        }
+    }
+
     onMount(() => {
         checkRelayConnections();
-        $ndk.pool.on('connect', () => {
-            updateRelayValues();
-        });
-        $ndk.pool.on('relay:connect', () => {
-            updateRelayValues();
-        });
-        $ndk.pool.on('relay:disconnect', () => {
-            updateRelayValues();
-        });
     });
 
-    const suggestedRelays = [
+    const suggestedRelayUrls = [
         'wss://nos.lol/',
         'wss://relay.damus.io/',
         'wss://relay.primal.net/',
-    ].map((relayUrl) => $ndk.pool.getRelay(relayUrl, true));
+    ];
 
-    $: filteredSuggestedInboxRelays = suggestedRelays.filter(
-        (relay) => !readRelayUrls.has(relay.url)
+    $: filteredSuggestedInboxRelays = suggestedRelayUrls.filter(
+        (relay) => !readRelayUrls.includes(relay)
     );
 
-    $: filteredSuggestedOutboxRelays = suggestedRelays.filter(
-        (relay) => !writeRelayUrls.has(relay.url)
+    $: filteredSuggestedOutboxRelays = suggestedRelayUrls.filter(
+        (relay) => !writeRelayUrls.includes(relay)
     );
 </script>
 
@@ -238,9 +178,7 @@
         <div class="w-full flex flex-col gap-[10px]">
             <p class="font-[600]">Inbox Relays</p>
             <div class="flex flex-col gap-[5px]">
-                <label class="m-[0px] text-[14px]" for="add-inbox-relay">
-                    Add a custom relay server
-                </label>
+                <label class="m-[0px] text-[14px]" for="add-inbox-relay"> Add Relay </label>
                 <div
                     class="flex flex-row rounded-[6px] overflow-hidden bg-white dark:bg-brightGray border-[2px] border-black-100 dark:border-white-100 gap-[2px]"
                 >
@@ -264,20 +202,36 @@
             <div
                 class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
             >
-                {#each readRelays as relay (relay.url)}
-                    <RelayListElement {relay} on:remove={() => removeRelay(relay.url, true)} />
-                {/each}
+                {#if readRelayUrls.length > 0}
+                    {#each readRelayUrls as relayUrl (relayUrl)}
+                        <RelayListElement
+                            {relayUrl}
+                            on:remove={() => removeRelay(relayUrl, true)}
+                        />
+                    {/each}
+                {:else}
+                    <div
+                        class="w-full min-h-[50px] rounded-[8px] bg-black-100 dark:bg-white-100 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
+                    >
+                        <p class="font-[600] text-[18px] text-black-300 dark:text-white-300">
+                            No Inbox Relays Selected!
+                        </p>
+                    </div>
+                {/if}
             </div>
 
             {#if filteredSuggestedInboxRelays.length}
-                <p class="font-[500]">Suggested Inbox Relays</p>
+                <p class="font-[500]">
+                    <span class="font-[900]">Suggested</span>
+                    Inbox Relays
+                </p>
                 <div
                     class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                 >
-                    {#each filteredSuggestedInboxRelays as relay (relay.url)}
+                    {#each filteredSuggestedInboxRelays as relayUrl (relayUrl)}
                         <RelayListElement
-                            {relay}
-                            on:add={() => addRelay(true, relay.url)}
+                            {relayUrl}
+                            on:add={() => addRelay(true, relayUrl)}
                             isSuggestedRelay
                         />
                     {/each}
@@ -291,9 +245,7 @@
         >
             <p class="font-[600]">Outbox Relays</p>
             <div class="flex flex-col gap-[5px]">
-                <label class="m-[0px] text-[14px]" for="add-inbox-relay">
-                    Add a custom relay server
-                </label>
+                <label class="m-[0px] text-[14px]" for="add-inbox-relay"> Add Relay </label>
                 <div
                     class="flex flex-row rounded-[6px] overflow-hidden bg-white dark:bg-brightGray border-[2px] border-black-100 dark:border-white-100 gap-[2px]"
                 >
@@ -317,24 +269,56 @@
             <div
                 class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
             >
-                {#each writeRelays as relay (relay.url)}
-                    <RelayListElement {relay} on:remove={() => removeRelay(relay.url, false)} />
-                {/each}
+                {#if writeRelayUrls.length > 0}
+                    {#each writeRelayUrls as relayUrl (relayUrl)}
+                        <RelayListElement
+                            {relayUrl}
+                            on:remove={() => removeRelay(relayUrl, true)}
+                        />
+                    {/each}
+                {:else}
+                    <div
+                        class="w-full min-h-[50px] rounded-[8px] bg-black-100 dark:bg-white-100 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
+                    >
+                        <p class="font-[600] text-[18px] text-black-300 dark:text-white-300">
+                            No Outbox Relays Selected!
+                        </p>
+                    </div>
+                {/if}
             </div>
             {#if filteredSuggestedOutboxRelays.length}
-                <p class="font-[500]">Suggested Outbox Relays</p>
+                <p class="font-[500]">
+                    <span class="font-[900]">Suggested</span>
+                    Outbox Relays
+                </p>
                 <div
                     class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                 >
-                    {#each filteredSuggestedOutboxRelays as relay (relay.url)}
+                    {#each filteredSuggestedOutboxRelays as relayUrl (relayUrl)}
                         <RelayListElement
-                            {relay}
-                            on:add={() => addRelay(false, relay.url)}
+                            {relayUrl}
+                            on:add={() => addRelay(false, relayUrl)}
                             isSuggestedRelay
                         />
                     {/each}
                 </div>
             {/if}
         </div>
+        <Button
+            on:click={updateRelays}
+            disabled={posting || (readRelayUrls.length === 0 && writeRelayUrls.length === 0)}
+        >
+            Save
+            {#if posting}
+                <ProgressRadial
+                    value={undefined}
+                    stroke={60}
+                    meter="stroke-white-500"
+                    track="stroke-white-500/30"
+                    strokeLinecap="round"
+                    width="w-8"
+                />
+            {/if}</Button
+        >
     {/if}
 </div>
