@@ -556,20 +556,16 @@
                     {/each}
                 {:else if $walletStatus === WalletStatus.Failed}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <button
+                        <Button
                             on:click={setupWallet}
-                            type="button"
-                            class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
                         >
                             Initialize Cashu Wallet
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             on:click={importWallet}
-                            type="button"
-                            class="btn btn-sm sm:btn-md min-w-40 bg-tertiary-300-600-token"
                         >
                             Import Wallet
-                        </button>
+                        </Button>
                     </div>
                 {:else if cashuWallet}
                     <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
