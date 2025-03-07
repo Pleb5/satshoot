@@ -16,7 +16,7 @@
 
     // Base classes for the nav item
     const baseClasses =
-        'transition ease-in-out duration-[0.3s] text-[18px] border-0 outline-none py-[15px] px-[20px] rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row flex-grow justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
+        'text-[16pt] sm:text-[20pt] border-0 outline-none py-[15px] px-[20px] rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row flex-grow justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
 
     function handleClick() {
         dispatch('click');
