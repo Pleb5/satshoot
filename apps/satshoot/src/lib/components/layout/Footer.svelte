@@ -1,6 +1,5 @@
 <script lang="ts">
     import { page } from '$app/stores';
-    import { unReadNotifications } from '$lib/stores/notifications';
     import { getModalStore, TabGroup } from '@skeletonlabs/skeleton';
     import SearchModal from '../Modals/SearchModal.svelte';
     import BottomNavItem from './BottomNavItem.svelte';
@@ -40,14 +39,11 @@
     ];
 
 </script>
+
 <TabGroup
-    justify="justify-center"
-    flex="flex-1"
-    border="border-t border-gray-300 dark:border-t-white-100"
-    background="bg-white dark:bg-brightGray"
-    class="{hideFooter ? 'hidden' : ''}"
+    class="sm:hidden {hideFooter ? 'hidden' : ''}"
 >
-    <div class="flex flex-col items-center w-full">
+    <div class="flex flex-col items-center max-sm:w-full">
         {#if filterList.length > 0}
             <div
                 class="p-[4px] bg-white dark:bg-brightGray rounded-[4px] shadow-subtle flex flex-row"
@@ -58,7 +54,7 @@
             </div>
         {/if}
         <div
-            class="w-full flex justify-center items-center gap-[5px] p-[5px] border-t border-gray-300 bg-white dark:bg-brightGray dark:border-t-white-100 relative rounded-[10px]"
+            class="max-sm:w-full flex justify-center items-center gap-[5px] p-[5px] border-t border-gray-300 bg-white dark:bg-brightGray dark:border-t-white-100 relative rounded-tr-[10px] rounded-tl-[10px]"
         >
             <div class="flex justify-center gap-x-2">
                 {#each items as { href, icon }}
@@ -77,4 +73,3 @@
         </div>
     </div>
 </TabGroup>
-

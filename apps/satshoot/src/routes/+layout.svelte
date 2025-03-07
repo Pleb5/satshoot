@@ -65,7 +65,7 @@
     import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
     import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
-    import { beforeNavigate, goto } from '$app/navigation';
+    import { beforeNavigate } from '$app/navigation';
     import Footer from '$lib/components/layout/Footer.svelte';
     import Header from '$lib/components/layout/Header.svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
@@ -83,6 +83,7 @@
     import { debounce } from '$lib/utils/misc';
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount, tick } from 'svelte';
+    import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
 
     initializeStores();
 
@@ -114,7 +115,7 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    $: displayBottomNav = $loggedIn
+    $: displayNav = $loggedIn
 
     let followSubscription: NDKSubscription | undefined = undefined;
 
@@ -614,8 +615,12 @@
     <!-- Router Slot -->
     <slot />
 
+    <svelte:fragment slot="sidebarLeft">
+        <SidebarLeft hideSidebarLeft={!displayNav}/>
+    </svelte:fragment>
+
     <svelte:fragment slot="footer">
-        <Footer hideFooter={!displayBottomNav}/>
+        <Footer hideFooter={!displayNav}/>
     </svelte:fragment>
 </AppShell>
 
