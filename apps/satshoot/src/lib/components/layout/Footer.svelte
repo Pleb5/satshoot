@@ -54,7 +54,7 @@
             </div>
         {/if}
         <div
-            class="max-sm:w-full flex justify-center items-center gap-[5px] p-[5px] border-t border-gray-300 bg-white dark:bg-brightGray dark:border-t-white-100 relative rounded-tr-[10px] rounded-tl-[10px]"
+            class="w-full flex justify-center items-center gap-[5px] p-1 border-t border-gray-300 bg-white dark:bg-brightGray dark:border-t-white-100 relative rounded-tr-[10px] rounded-tl-[10px]"
         >
             <div class="flex justify-center gap-x-2">
                 {#each items as { href, icon }}
