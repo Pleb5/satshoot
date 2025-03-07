@@ -212,14 +212,14 @@
     </div>
 </div>
 {#if $connected && $online}
-    <div class="fixed bottom-20 right-8">
+    <div class="fixed bottom-20 sm:bottom-5 right-4 sm:right-8">
         <button
-            class="btn btn-icon-xl bg-primary-300-600-token"
+            class="btn btn-icon-lg sm:btn-icon-xl bg-blue-500"
             on:click={() => {
                 readyToWork();
             }}
         >
-            <BullhornIcon extraClasses={'text-3xl '} />
+            <BullhornIcon extraClasses={'text-3xl text-white'} />
         </button>
     </div>
 {/if}
