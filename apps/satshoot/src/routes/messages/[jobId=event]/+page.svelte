@@ -373,9 +373,11 @@
             { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
         );
         if (jobEvent) {
-            console.log('got job');
             job = TicketEvent.from(jobEvent);
-            jobTitle = 'Job: ' + job.title.substring(0, 20) + '...';
+            jobTitle = job.title.length < 21
+                ? job.title
+                : job.title.substring(0, 20) + '...'
+
             offerStore = $ndk.storeSubscribe<OfferEvent>(
                 offersFilter,
                 { closeOnEose: false, cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST },
@@ -394,19 +396,19 @@
 
 {#if $currentUser && job}
     <div class="w-full flex flex-col gap-0 flex-grow h-full">
-        <div class="w-full h-full flex flex-col justify-center items-center py-[15px]">
+        <div class="w-full h-full flex flex-col justify-center items-center pt-[15px]">
             <div
                 class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"
             >
-                <div class="w-full h-full flex flex-col gap-[10px]">
+                <div class="w-full h-full flex flex-col gap-[10px] pb-1">
                     <!-- Title Card -->
                     <div bind:this={elemHeader}>
                         <Card classes="items-center">
                             <a
-                                class="anchor font-[700] text-[24px] justify-center"
+                                class="anchor font-[700] sm:text-[24px] justify-center"
                                 href={titleLink}
                             >
-                                {jobTitle ?? '?'}
+                                {'Job: ' + (jobTitle ?? '?')}
                             </a>
                         </Card>
                     </div>
