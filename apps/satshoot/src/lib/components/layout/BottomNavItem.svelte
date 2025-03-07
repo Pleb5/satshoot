@@ -1,8 +1,6 @@
 <script lang="ts">
-    import { page } from '$app/stores';
     import { unReadNotifications } from '$lib/stores/notifications';
     import { createEventDispatcher } from 'svelte';
-    import Button from '../UI/Buttons/Button.svelte';
     import { TabAnchor } from '@skeletonlabs/skeleton';
 
     const dispatch = createEventDispatcher();
@@ -36,7 +34,7 @@
             <i class={`bx ${icon} relative`} >
                 {#if href === '/notifications/' && $unReadNotifications.length > 0}
                     <span
-                        class="absolute -top-3 -right-3 bg-[red] text-white font-bold rounded-full text-[11pt] min-w-[20px] h-[20px] flex items-center justify-center p-[2px]"
+                        class="absolute -top-3 -right-3 bg-[red] text-white font-bold rounded-full text-[11pt] min-w-[20px] h-[20px] p-[2px]"
                     >
                         {$unReadNotifications.length > 9 ? '9+' : $unReadNotifications.length}
                     </span>
