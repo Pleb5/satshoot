@@ -18,22 +18,17 @@
 
     // Base classes for the nav item
     const baseClasses =
-        'transition ease-in-out duration-[0.3s] text-[22px] border-0 outline-none py-[15px] px-[20px] rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row flex-grow justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
+        'transition ease-in-out duration-[0.3s] text-[18px] border-0 outline-none py-[15px] px-[20px] rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row flex-grow justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
 
     function handleClick() {
         dispatch('click');
     }
 </script>
 
-<TabAnchor
-    href={href}
-    padding=""
-    rounded="rounded-[5px]"
-
->
+<TabAnchor {href} padding="" rounded="rounded-[5px]">
     <button class={`${baseClasses} ${activeClass}`} on:click={handleClick}>
         {#if href}
-            <i class={`bx ${icon} relative`} >
+            <i class={`bx ${icon} relative`}>
                 {#if href === '/notifications/' && $unReadNotifications.length > 0}
                     <span
                         class="absolute -top-3 -right-3 bg-[red] text-white font-bold rounded-full text-[11pt] min-w-[20px] h-[20px] flex items-center justify-center p-[2px]"

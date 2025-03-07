@@ -13,7 +13,7 @@
     }
 
     const satshootMobileLogoClass =
-        'w-[100%] flex flex-row grow-1 gap-[10px] text-[24px] text-[#3b82f6] font-[800] justify-start items-center';
+        'w-[100%] flex flex-row grow-1 gap-[10px] text-[20px] text-[#3b82f6] font-[800] justify-start items-center';
 </script>
 
 <div
@@ -21,11 +21,11 @@
 >
     <div class="w-[100%] flex flex-row grow-1 gap-[10px] p-[10px] justify-center items-center">
         <div class={satshootMobileLogoClass}>
-            <img src="/img/satshoot.svg" alt="satshoot logo" class="w-full max-w-[65px]" />
+            <img src="/img/satshoot.svg" alt="satshoot logo" class="w-full max-w-[45px]" />
             <p>SatShoot</p>
         </div>
         <Button variant="outlined" classes="flex-col" on:click={toggleMobileNav}>
-            <i class="bx bx-menu text-[32px]" />
+            <i class="bx bx-menu text-[24px]" />
         </Button>
     </div>
     {#if mobileNavOpen}
