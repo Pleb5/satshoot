@@ -11,7 +11,7 @@
         WalletStatus,
         walletStatus,
     } from '$lib/stores/wallet';
-    import { backupWallet, cleanWallet } from '$lib/utils/cashu';
+    import { cleanWallet } from '$lib/utils/cashu';
     import { arraysAreEqual, fetchUserOutboxRelays, getCashuPaymentInfo } from '$lib/utils/helpers';
     import {
         NDKCashuMintList,
@@ -26,13 +26,11 @@
         getModalStore,
         getToastStore,
         popup,
-        ProgressRadial,
         type ModalComponent,
         type ModalSettings,
         type PopupSettings,
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
-    import EditProfileModal from '../../lib/components/Modals/EditProfileModal.svelte';
     import ImportEcashWallet from '$lib/components/Modals/ImportEcashWallet.svelte';
     import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
     import Card from '$lib/components/UI/Card.svelte';
@@ -42,6 +40,7 @@
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import AddRelayModal from '$lib/components/Modals/AddRelayModal.svelte';
     import PieChart from '$lib/components/UI/Display/PieChart.svelte';
+    import UpdateEcashWalletName from '$lib/components/Modals/UpdateEcashWalletName.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -66,8 +65,6 @@
                 walletUnit = res[0].unit;
             }
         });
-
-        console.log('cashuWallet.mintBalances :>> ', cashuWallet.mintBalances);
 
         cashuWallet.on('balance_updated', (balance) => {
             mintBalances = cashuWallet!.mintBalances;
@@ -270,14 +267,13 @@
         // If user confirms modal do the editing
         new Promise<string | undefined>((resolve) => {
             const data = cashuWallet!.name ?? '';
-            const modalComponent: ModalComponent = {
-                ref: EditProfileModal,
-                props: { dataToEdit: data, fieldName: 'Name' },
-            };
 
             const modal: ModalSettings = {
                 type: 'component',
-                component: modalComponent,
+                component: {
+                    ref: UpdateEcashWalletName,
+                    props: { dataToEdit: data },
+                },
                 response: (editedData: string | undefined) => {
                     resolve(editedData);
                 },
@@ -490,7 +486,9 @@
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
                 <!-- Wallet card end -->
                 {#if $displayEcashWarning}
-                    <Card classes="bg-warning-500 dark:bg-warning-700 hidden max-[768px]:flex">
+                    <Card
+                        classes="bg-warning-500 dark:bg-warning-700 hidden max-[768px]:flex relative"
+                    >
                         <p class="font-[600] text-black-400">
                             Attention: This is an experimental feature, use it at your own risk.
                         </p>
@@ -504,16 +502,58 @@
                     </Card>
                 {/if}
                 {#if $walletStatus === WalletStatus.Loading}
-                    <div class="flex justify-center">
-                        <ProgressRadial
-                            value={undefined}
-                            stroke={60}
-                            meter="stroke-primary-500"
-                            track="stroke-primary-500/30"
-                            strokeLinecap="round"
-                            width="w-8"
-                        />
-                    </div>
+                    <!-- Placeholder Section for desktop view -->
+
+                    <section class="w-full max-[768px]:hidden grid grid-cols-3">
+                        <div class="p-4 space-y-4">
+                            <div class="placeholder animate-pulse" />
+                            <div class="grid grid-cols-3 gap-8">
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                            </div>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                            </div>
+                        </div>
+                        <div class="col-span-2 p-4 space-y-4">
+                            <div class="placeholder animate-pulse" />
+                            <div class="grid grid-cols-3 gap-8">
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                            </div>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse" />
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Placeholder Section for mobile view -->
+                    {#each { length: 2 } as _}
+                        <section class="w-full hidden max-[768px]:block">
+                            <div class="p-4 space-y-4">
+                                <div class="placeholder animate-pulse" />
+                                <div class="grid grid-cols-3 gap-8">
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                </div>
+                                <div class="grid grid-cols-4 gap-4">
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse" />
+                                </div>
+                            </div>
+                        </section>
+                    {/each}
                 {:else if $walletStatus === WalletStatus.Failed}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
                         <button
@@ -601,7 +641,7 @@
                                             on:click={handleCleanWallet}
                                         >
                                             <i class="fa-solid fa-broom"></i>
-                                            Clean Wallet
+                                            Clean
                                         </Button>
                                     </div>
                                 </Card>

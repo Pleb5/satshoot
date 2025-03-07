@@ -75,8 +75,11 @@
                 </div>
 
                 <div
-                    class="w-full flex items-center justify-center pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
+                    class="w-full flex items-center justify-center gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                 >
+                    <Button variant="outlined" on:click={() => modalStore.close()} grow
+                        >Cancel</Button
+                    >
                     <Button on:click={handleSelect} grow>Save</Button>
                 </div>
             {:else}

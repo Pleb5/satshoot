@@ -2,7 +2,8 @@
     import type { MintUrl, MintUsage } from '@nostr-dev-kit/ndk-wallet';
     import { CashuMint, type GetInfoResponse } from '@cashu/cashu-ts';
     import Avatar from '../Users/Avatar.svelte';
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const dispatcher = createEventDispatcher();
 
@@ -13,21 +14,21 @@
     let mintInfo: GetInfoResponse | null = null;
     let gettingMintInfo = true;
 
-    $: {
-        const mint = new CashuMint(mintUrl);
-        mint.getInfo()
-            .then((info) => {
-                if (info.nuts[4].methods.some((method) => method.unit === 'sat')) {
-                    mintInfo = info;
-                }
-            })
-            .catch((err) => {
-                console.error('An error occurred in getting mint info', mintUrl, err);
-            })
-            .finally(() => {
-                gettingMintInfo = false;
-            });
-    }
+    // Fetch mint info on mount
+    onMount(async () => {
+        try {
+            const mint = new CashuMint(mintUrl);
+            const info = await mint.getInfo();
+
+            if (info.nuts[4]?.methods.some((method) => method.unit === 'sat')) {
+                mintInfo = info;
+            }
+        } catch (err) {
+            console.error('Error fetching mint info:', mintUrl, err);
+        } finally {
+            gettingMintInfo = false;
+        }
+    });
 
     function toggleSelection() {
         isSelected = !isSelected;
@@ -37,16 +38,9 @@
         });
     }
 
-    function handleKeydown(event: KeyboardEvent) {
-        if (event.key === 'Enter' || event.key === ' ') {
-            toggleSelection();
-            event.preventDefault(); // Prevents the default scrolling behavior when pressing the space bar
-        }
-    }
-
     $: wrapperClasses =
-        'transition ease duration-[0.3s] w-full flex flex-col rounded-[6px] gap-[3px] px-[10px] py-[10px] relative ' +
-        `${isSelected ? 'bg-blue-500 text-white' : 'bg-black-100 dark:bg-white-100'} hover:bg-black-200`;
+        'w-full flex flex-col items-start gap-[3px] px-[10px] py-[10px] text-left relative ' +
+        `${isSelected ? 'bg-blue-500 text-white' : 'bg-black-100 dark:bg-white-100'} outline-[0px]`;
 
     const avatarWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] min-w-[30px] min-h-[30px] w-[30px] h-[30px] ' +
@@ -54,6 +48,7 @@
         'relative overflow-hidden bg-white-200 backdrop-blur-[10px] text-[12px] leading-[1] hover:border-[2px]';
 </script>
 
+<!-- Loading State -->
 {#if gettingMintInfo}
     <div class="p-4 space-y-4 w-full">
         <div class="placeholder animate-pulse" />
@@ -70,20 +65,11 @@
         </div>
     </div>
 {:else if mintInfo}
-    <div
-        class={wrapperClasses}
-        role="button"
+    <Button
+        classes={wrapperClasses}
         on:click={toggleSelection}
-        on:keydown={handleKeydown}
-        tabindex="0"
+        variant={isSelected ? 'contained' : 'text'}
     >
-        <input
-            type="checkbox"
-            name="mintsWalletCheckbox"
-            checked={isSelected}
-            class="w-full absolute top-[0] bottom-[0] right-[0] left-[0] opacity-[0] cursor-pointer peer"
-        />
-
         <span class="font-[500]">
             {mintInfo.name.length < 26 ? mintInfo.name : mintInfo.name.substring(0, 25) + '...'}
         </span>
@@ -113,5 +99,5 @@
                 </p>
             {/if}
         </div>
-    </div>
+    </Button>
 {/if}
