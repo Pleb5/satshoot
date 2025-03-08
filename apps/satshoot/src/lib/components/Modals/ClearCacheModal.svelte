@@ -57,7 +57,7 @@
 
                     <div class="flex flex-row gap-[10px] p-[5px]">
                         <Button grow variant="outlined" on:click={() => modalStore.close()}>
-                            Abort
+                            Cancel
                         </Button>
                         <Button grow on:click={handleConfirm}>
                             <i class="bx bx-trash" />
