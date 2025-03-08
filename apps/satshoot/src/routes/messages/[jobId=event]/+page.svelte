@@ -415,7 +415,7 @@
 
                     <!-- Contact List & Conversation Wrapper -->
                     <div
-                        class="w-full h-full flex flex-col md:flex-row gap-[15px] flex-grow overflow-hidden"
+                        class="w-full h-full flex flex-col md:flex-row gap-[6px] flex-grow overflow-hidden"
                     >
                         <!-- Contact List (Desktop) -->
                         <Card classes="hidden md:flex flex-col flex-1 h-full overflow-hidden">
@@ -491,13 +491,13 @@
                                         <svelte:fragment slot="content">
                                             <!-- Absolutely positioned content -->
                                             <div
-                                                class="absolute -bottom-[130px] left-0 right-0 overflow-hidden z-[100]"
+                                                class="absolute top-[70px] left-0 right-0 overflow-hidden z-[100]"
                                             >
                                                 <div
                                                     class="flex flex-col items-center p-2 pb-0 space-x-2"
                                                 >
                                                     <Card
-                                                        classes="overflow-y-auto shadow-deep border-[2px] border-black-100 dark:border-white-100 max-h-[200px]"
+                                                        classes="overflow-y-auto border-[2px] border-black-100 dark:border-white-100 h-[200px]"
                                                     >
                                                         {#each people as contact, i}
                                                             <button
@@ -582,9 +582,9 @@
 
                     <!-- Input Wrapper -->
                     <div bind:this={elemInput}>
-                        <Card classes="flex flex-row">
+                        <Card classes="p-1">
                             <div
-                                class="input-group input-group-divider grid-cols-[1fr_auto] rounded-container-token"
+                                class="w-full h-full input-group input-group-divider grid-cols-[1fr_auto] rounded-container-token"
                             >
                                 <textarea
                                     bind:value={currentMessage}
