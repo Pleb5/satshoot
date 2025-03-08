@@ -12,14 +12,14 @@
         fetchUserOutboxRelays,
     } from '$lib/utils/helpers';
     import { normalizeRelayUrl } from '$lib/utils/misc';
-    import { NDKRelayList, type NDKRelay } from '@nostr-dev-kit/ndk';
+    import { NDKRelayList } from '@nostr-dev-kit/ndk';
     import {
         getModalStore,
         getToastStore,
         ProgressRadial,
-        type ToastSettings,
     } from '@skeletonlabs/skeleton';
-    import { onMount, tick } from 'svelte';
+    import { onMount } from 'svelte';
+    import {RelayType} from "$lib/stores/network";
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -55,16 +55,16 @@
         relaysLoaded = true;
     }
 
-    async function addRelay(read: boolean, url?: string) {
+    async function addRelay(relayType: RelayType, url?: string) {
         if (!url) {
-            url = read
+            url = relayType === RelayType.READ
                 ? normalizeRelayUrl(readRelayInputValue)
                 : normalizeRelayUrl(writeRelayInputValue);
         }
 
         if (!url) return;
 
-        if (read) {
+        if (relayType === RelayType.READ) {
             if (!readRelayUrls.includes(url)) {
                 readRelayUrls = [...readRelayUrls, url];
             }
@@ -79,24 +79,23 @@
         }
     }
 
-    async function handleRelayRemoval(url: string, read: boolean) {
-        if (read) {
+    async function handleRelayRemoval(url: string, relayType: RelayType) {
+        if (relayType === RelayType.READ) {
             readRelayUrls = readRelayUrls.filter((relayUrl) => relayUrl !== url);
         } else {
             writeRelayUrls = writeRelayUrls.filter((relayUrl) => relayUrl !== url);
         }
     }
 
-    function removeRelay(url: string, read: boolean) {
+    function removeRelay(url: string, relayType: RelayType) {
         modalStore.trigger({
             type: 'component',
             component: {
                 ref: RelayRemovalConfirmation,
                 props: {
                     url,
-                    read,
                     onConfirm: async () => {
-                        await handleRelayRemoval(url, read);
+                        await handleRelayRemoval(url, relayType);
                     },
                 },
             },
@@ -191,7 +190,7 @@
                         notRounded
                     />
                     <Button
-                        on:click={() => addRelay(true)}
+                        on:click={() => addRelay(RelayType.READ)}
                         disabled={posting}
                         classes="bg-black-100 text-gray-500 rounded-[0px] hover:text-white"
                     >
@@ -206,7 +205,7 @@
                     {#each readRelayUrls as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:remove={() => removeRelay(relayUrl, true)}
+                            on:remove={() => removeRelay(relayUrl, RelayType.READ)}
                         />
                     {/each}
                 {:else}
@@ -231,7 +230,7 @@
                     {#each filteredSuggestedInboxRelays as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:add={() => addRelay(true, relayUrl)}
+                            on:add={() => addRelay(RelayType.READ, relayUrl)}
                             isSuggestedRelay
                         />
                     {/each}
@@ -258,7 +257,7 @@
                         notRounded
                     />
                     <Button
-                        on:click={() => addRelay(false)}
+                        on:click={() => addRelay(RelayType.WRITE)}
                         disabled={posting}
                         classes="bg-black-100 text-gray-500 rounded-[0px] hover:text-white"
                     >
@@ -273,7 +272,7 @@
                     {#each writeRelayUrls as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:remove={() => removeRelay(relayUrl, true)}
+                            on:remove={() => removeRelay(relayUrl, RelayType.WRITE)}
                         />
                     {/each}
                 {:else}
@@ -297,7 +296,7 @@
                     {#each filteredSuggestedOutboxRelays as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:add={() => addRelay(false, relayUrl)}
+                            on:add={() => addRelay(RelayType.WRITE, relayUrl)}
                             isSuggestedRelay
                         />
                     {/each}
