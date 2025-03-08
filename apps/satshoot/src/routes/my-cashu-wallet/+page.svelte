@@ -41,6 +41,9 @@
     import AddRelayModal from '$lib/components/Modals/AddRelayModal.svelte';
     import PieChart from '$lib/components/UI/Display/PieChart.svelte';
     import UpdateEcashWalletName from '$lib/components/Modals/UpdateEcashWalletName.svelte';
+    import { onDestroy, onMount } from 'svelte';
+    import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+    import ChartDataLabels from 'chartjs-plugin-datalabels';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -478,6 +481,14 @@
 
     const deleteIconClasses =
         'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex h-full justify-center items-center hover:bg-red-400';
+
+    onMount(() => {
+        Chart.register(ArcElement, Tooltip, Legend, ChartDataLabels);
+    })
+    onDestroy(() => {
+        Chart.unregister([ArcElement, Tooltip, Legend, ChartDataLabels]);
+    })
+
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
