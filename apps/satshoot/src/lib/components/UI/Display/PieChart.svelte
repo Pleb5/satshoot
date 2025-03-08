@@ -1,7 +1,5 @@
 <script lang="ts">
     import { Pie } from 'svelte-chartjs';
-    import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
-    import ChartDataLabels from 'chartjs-plugin-datalabels';
     import { onMount, tick } from 'svelte';
     import { modeCurrent } from '@skeletonlabs/skeleton';
     import { abbreviateNumber } from '$lib/utils/misc';
@@ -9,7 +7,6 @@
     export let dataset: Record<string, number> = {}; // Dynamic dataset
 
     onMount(async () => {
-        Chart.register(ArcElement, Tooltip, Legend, ChartDataLabels);
         await tick(); // Ensure DOM updates before checking theme
     });
 
