@@ -7,8 +7,6 @@
     } from '$lib/events/ReviewEvent';
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
-    import UserProfile from '../UI/Display/UserProfile.svelte';
-    import { nip19 } from 'nostr-tools';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import ndk from '$lib/stores/ndk';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
@@ -16,8 +14,12 @@
     import { onMount } from 'svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
+    import { beforeNavigate } from '$app/navigation';
+    import { getModalStore } from '@skeletonlabs/skeleton';
 
     export let review: ReviewEvent;
+
+    const modalStore = getModalStore();
 
     let user = $ndk.getUser({ pubkey: review.pubkey });
     let userName = user.npub.substring(0, 8);
@@ -26,7 +28,10 @@
     let userProfile: NDKUserProfile | null;
     let job: TicketEvent | null;
 
+    let elemPage: HTMLElement;
     onMount(async () => {
+        elemPage = document.querySelector('#page') as HTMLElement;
+
         userProfile = await user.fetchProfile();
         if (userProfile) {
             if (userProfile.name) {
@@ -81,6 +86,13 @@
             ? `${reviewBadgeClasses} text-white bg-blue-500`
             : `${reviewBadgeClasses} text-black-500 dark:text-white-500 bg-black-100`;
     }
+
+    beforeNavigate(() => {
+        if (elemPage) {
+            elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
+        }
+        modalStore.close()
+    })
 </script>
 
 <div
