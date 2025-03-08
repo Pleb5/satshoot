@@ -1,5 +1,4 @@
 <script lang="ts">
-    import type { NDKRelay } from '@nostr-dev-kit/ndk';
     import { NDKRelayStatus } from '@nostr-dev-kit/ndk';
     import Button from './UI/Buttons/Button.svelte';
     import { createEventDispatcher, onMount, onDestroy } from 'svelte';
