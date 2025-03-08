@@ -23,7 +23,7 @@
                 background: 'bg-primary-300-600-token',
             };
             setTimeout(() => {
-                window.location.reload();
+                location.href = location.pathname + '?v=' + new Date().getTime();
             }, 4000);
 
             $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
