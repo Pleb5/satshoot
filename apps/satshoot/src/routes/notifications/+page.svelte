@@ -10,7 +10,7 @@
     import {
         followNotifications,
         messageNotifications,
-        notificationsEnabled,
+        browserNotificationsEnabled,
         offerNotifications,
         readNotifications,
         receivedZapsNotifications,
@@ -94,15 +94,6 @@
                 });
                 break;
         }
-    }
-
-    $: if (!$notificationsEnabled) {
-        const t: ToastSettings = {
-            message: 'Notifications are Disabled!',
-            timeout: 7000,
-            background: 'bg-error-300-600-token',
-        };
-        toastStore.trigger(t);
     }
 
     onMount(() => checkRelayConnections());

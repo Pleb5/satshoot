@@ -1,4 +1,3 @@
-// import ndk from "./ndk";
 import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
@@ -13,7 +12,7 @@ import currentUser from './user';
 import { getActiveServiceWorker, orderEventsChronologically } from '$lib/utils/helpers';
 import { goto } from '$app/navigation';
 
-export const notificationsEnabled: Writable<boolean> = persisted('notificationsEnabled', true);
+export const browserNotificationsEnabled: Writable<boolean> = persisted('browserNotificationsEnabled', true);
 
 export const seenIDs = writable<Set<string>>(new Set());
 
@@ -117,16 +116,15 @@ export const followNotifications = derived([notifications], ([$notifications]) =
 export async function sendNotification(event: NDKEvent) {
     const $seenIDs = get(seenIDs);
     const $notifications = get(notifications);
-    if (get(notificationsEnabled) && !$seenIDs.has(event.id)) {
+    if (!$seenIDs.has(event.id)) {
         $seenIDs.add(event.id);
         seenIDs.set($seenIDs);
         $notifications.push(event);
         notifications.set($notifications);
 
         const $readNotifications = get(readNotifications);
-        if($readNotifications.has(event.id)) {
-            // this event is already in read notifications set
-            // so, no need to generate the notification
+        // Browser notifications are disabled or the notification is already read
+        if(!get(browserNotificationsEnabled) || $readNotifications.has(event.id)) {
             return
         }
 
@@ -187,4 +185,4 @@ export async function sendNotification(event: NDKEvent) {
     }
 }
 
-export default notificationsEnabled;
+export default browserNotificationsEnabled;

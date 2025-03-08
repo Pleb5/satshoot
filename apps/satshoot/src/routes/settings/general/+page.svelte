@@ -1,20 +1,25 @@
 <script lang="ts">
+    import { browser } from '$app/environment';
     import EyeIcon from '$lib/components/Icons/EyeIcon.svelte';
     import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
     import ClearCacheModal from '$lib/components/Modals/ClearCacheModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { sessionPK } from '$lib/stores/ndk';
+    import browserNotificationsEnabled from '$lib/stores/notifications';
     import { useSatShootWoT } from '$lib/stores/wot';
     import { hexToBytes } from '@noble/ciphers/utils';
     import {
         clipboard,
         getModalStore,
+        getToastStore,
         LightSwitch,
         type ModalSettings,
+        type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import { nsecEncode } from 'nostr-tools/nip19';
 
     const modalStore = getModalStore();
+    const toastStore = getToastStore();
 
     let nsec = '';
     let showing = false;
@@ -26,6 +31,34 @@
             component: { ref: ClearCacheModal },
         };
         modalStore.trigger(modal);
+    }
+
+    $: if (browser && Number($browserNotificationsEnabled) >= 0) {
+        console.log('set notifications permission');
+        // If there is no permission for notifications yet, ask for it
+        // If it is denied then return and turn notifications off
+        if (Notification.permission !== 'granted') {
+            Notification.requestPermission().then((permission: NotificationPermission) => {
+                if (permission !== 'granted') {
+                    browserNotificationsEnabled.set(false);
+                    const t: ToastSettings = {
+                        message: `
+                        <p>Notifications Settings are Disabled in the Browser!</p>
+                        <p>
+                        <span>Click small icon </span>
+                        <span> left of browser search bar to enable this setting!</span>
+                        </p>
+                        `,
+                        autohide: false,
+                    };
+                    toastStore.clear();
+                    toastStore.trigger(t);
+                    console.log('User did not grant permission for notifications');
+                }
+                // User enabled notification settings, set user choice in local storage too
+                browserNotificationsEnabled.set($browserNotificationsEnabled);
+            });
+        }
     }
 
     function showPrivateKey() {
@@ -92,6 +125,21 @@
                 />
                 <i
                     class="bx bx-check hidden peer-checked:block absolute pointer-events-none text-white"
+                />
+            </div>
+        </div>
+        <div class="w-full flex flex-row gap-[10px] items-center">
+            <div class="flex flex-row gap-[5px] grow-[1]">
+                <label class="font-[500]" for="attach-satshoot-wot">
+                    Browser Notifications
+                </label>
+            </div>
+            <div class="flex flex-row justify-center items-center relative">
+                <input
+                    id="browser-notifications-enabled"
+                    type="checkbox"
+                    class="appearance-none h-[20px] w-[20px] border-[1px] border-black-200 dark:border-white-200 rounded-[4px] checked:bg-blue-500 checked:border-white peer"
+                    bind:checked={$browserNotificationsEnabled}
                 />
             </div>
         </div>
