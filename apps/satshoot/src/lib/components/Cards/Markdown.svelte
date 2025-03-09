@@ -2,10 +2,11 @@
     import { marked, type Token, type Tokens, type TokenizerAndRendererExtension } from 'marked';
     import DOMPurify from 'dompurify';
     import ndk from '$lib/stores/ndk';
-    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import hljs from 'highlight.js';
     import 'highlight.js/styles/github-dark.css'; // Choose your preferred style
+    import type { AddressPointer } from 'nostr-tools/nip19';
 
     export let content = '';
 
@@ -15,18 +16,18 @@
         if (token.type === 'nostr') {
             const id = `${token.tagType}${token.content}`;
             const { type, data } = nip19.decode(id);
-            let npub = '';
+            let pubkey = '';
             switch (type) {
                 case 'nprofile':
-                    npub = data.pubkey;
+                    pubkey = data.pubkey;
                     break;
                 case 'npub':
-                    npub = data;
+                    pubkey = data;
                     break;
                 default:
                     return;
             }
-            let user = $ndk.getUser({ hexpubkey: npub });
+            let user = $ndk.getUser({ hexpubkey: pubkey });
             token.npub = user.npub;
 
             try {
@@ -94,8 +95,9 @@
             }
         },
         renderer(token: Tokens.Generic) {
-            const { tagType, content, userName, npub } = token;
+            const { tagType, content, userName } = token;
             let url = `/${tagType}${content}`;
+            let external = false;
             let linkText = userName
                 ? `@${userName}`
                 : `${(tagType + content).slice(0, 10)}:${(tagType + content).slice(-10)}`;
@@ -103,15 +105,34 @@
                 case 'nevent':
                 case 'note':
                     url = `https://coracle.social/notes/${tagType}${content}`;
+                    external = true;
                     break;
                 case 'nprofile':
-                    url = npub ? `/${npub}` : `https://coracle.social/people/${tagType}${content}`;
+                    external = true;
+                    url = `https://coracle.social/people/${tagType}${content}`;
                     break;
                 case 'npub':
+                    break;
                 case 'naddr':
+                    try {
+                        const data = nip19.decode(content).data as AddressPointer
+                        if (data.kind === NDKKind.FreelanceTicket) {
+                            url = `/${tagType}${content}`;
+                        } else {
+                            external = true;
+                            url = `https://coracle.social/${tagType}${content}`;
+                        }
+                    } catch (err) {
+                        break;
+                    }
                     break;
             }
-            return `<a href="${url}" class="text-blue-600 hover:text-blue-800 hover:underline">${linkText}</a>`;
+            const externalAttributes = external
+                ? 'target="_blank" rel="noopener noreferrer"'
+                : ""
+            return `<a href="${url}" ${externalAttributes} 
+                    class="text-blue-600 hover:text-blue-800 hover:underline">${linkText}
+                    </a>`;
         },
     };
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+/;
@@ -159,15 +180,15 @@
                 return '';
             },
             link(token) {
-                console.log('token link :>> ', token);
                 const { href, text } = token;
 
                 return `<a href="${href}" class="text-blue-600 hover:text-blue-800 hover:underline">${text}</a>`;
             },
             list(token) {
                 const listItems = token.items
-                    .map((listItem) => {
-                        return `<li>${listItem.text}</li>`;
+                    .map((item) => {
+                        const itemContent = this.parser.parseInline(item.tokens);
+                        return `<li>${itemContent}</li>`;
                     })
                     .join('\n');
 
@@ -195,7 +216,7 @@
     $: if (content) {
         (async () => {
             const parsed = await marked(content);
-            sanitizedContent = DOMPurify.sanitize(parsed);
+            sanitizedContent = DOMPurify.sanitize(parsed, {ADD_ATTR: ['target']});
         })();
     }
 </script>
