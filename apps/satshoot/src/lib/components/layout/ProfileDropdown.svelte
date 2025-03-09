@@ -158,7 +158,7 @@
                 alt="user profile"
                 class="w-[25px] h-[25px] rounded-[100%]"
             />
-            <span class="overflow-hidden whitespace-nowrap overflow-ellipsis max-w-[200px]"
+            <span class="overflow-hidden whitespace-nowrap max-w-[200px]"
                 >{$currentUser.profile?.name ??
                     $currentUser.profile?.displayName ??
                     shortenTextWithEllipsesInMiddle($currentUser.npub, 15)}</span
