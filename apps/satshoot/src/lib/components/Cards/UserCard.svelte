@@ -326,18 +326,18 @@
                             class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100 dark:border-white-100"
                         >
                             <div class="w-full flex flex-row">
-                                <div class="w-full flex flex-row bg-black-50">
+                                <div class="w-full flex flex-row bg-black-50 overflow-auto">
                                     {#if href}
                                         <a
                                             {href}
                                             target={isExternal ? '_blank' : '_self'}
-                                            class="grow-[1] px-[10px] py-[5px] overflow-hidden whitespace-nowrap overflow-ellipsis"
+                                            class="anchor grow-[1] px-[10px] py-[5px] whitespace-nowrap"
                                         >
                                             {text}
                                         </a>
                                     {:else}
                                         <p
-                                            class="grow-[1] px-[10px] py-[5px] text-start overflow-hidden whitespace-nowrap overflow-ellipsis"
+                                            class="grow-[1] px-[10px] py-[5px] text-start whitespace-nowrap"
                                         >
                                             {text}
                                         </p>
@@ -397,7 +397,7 @@
             </div>
             <div class="w-full flex flex-col gap-[5px]">
                 <div
-                    class="w-full flex flex-row overflow-hidden rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
+                    class="w-full flex flex-row overflow-auto rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
                 >
                     <Input value={user.npub} placeholder="npub..." fullWidth disabled noBorder />
                     <Button
