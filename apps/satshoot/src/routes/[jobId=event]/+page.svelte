@@ -113,8 +113,6 @@
             const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
             elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
 
-            // TODO: Some effect to show the ticket changed
-
             if (jobPost.status === TicketStatus.New) {
                 allowCreateOffer = true;
                 disallowCreateOfferReason = '';
