@@ -18,6 +18,6 @@
     }
 </script>
 
-<Button variant="outlined" classes="relative {classes}" on:click={handleCopy}>
-    <i class="bx bxs-copy" use:clipboard={text} />
+<Button variant="outlined" classes="relative {classes}">
+    <i class="bx bxs-copy" use:clipboard={text} on:click={handleCopy}/>
 </Button>
