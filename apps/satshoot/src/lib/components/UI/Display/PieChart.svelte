@@ -1,13 +1,21 @@
 <script lang="ts">
     import { Pie } from 'svelte-chartjs';
-    import { onMount, tick } from 'svelte';
+    import { onDestroy, onMount, tick } from 'svelte';
     import { modeCurrent } from '@skeletonlabs/skeleton';
     import { abbreviateNumber } from '$lib/utils/misc';
+    import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+    import ChartDataLabels from 'chartjs-plugin-datalabels';
+
+    Chart.register(ArcElement, Tooltip, Legend, ChartDataLabels);
 
     export let dataset: Record<string, number> = {}; // Dynamic dataset
 
     onMount(async () => {
         await tick(); // Ensure DOM updates before checking theme
+    });
+
+    onDestroy(() => {
+        Chart.unregister([ArcElement, Tooltip, Legend, ChartDataLabels]);
     });
 
     $: isDark = !$modeCurrent;
