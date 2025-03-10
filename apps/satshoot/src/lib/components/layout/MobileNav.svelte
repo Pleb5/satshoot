@@ -1,7 +1,6 @@
 <script lang="ts">
     import { loggedIn } from '$lib/stores/user';
     import { createEventDispatcher } from 'svelte';
-    import NavLinks from './NavLinks.svelte';
     import ProfileDropdown from './ProfileDropdown.svelte';
     import Button from '../UI/Buttons/Button.svelte';
 
@@ -50,11 +49,6 @@
                         <ProfileDropdown classes="w-[100%]" on:click={toggleMobileNav} />
                     </div>
                 {/if}
-            </div>
-            <div
-                class="w-[100%] border-t-[1px] border-t-black-100 px-[10px] py-[10px] flex flex-col gap-[10px] overflow-auto"
-            >
-                <NavLinks on:click={toggleMobileNav} />
             </div>
         </div>
     {/if}
