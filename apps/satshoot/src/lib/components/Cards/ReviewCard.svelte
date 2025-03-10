@@ -111,10 +111,12 @@
                 {#if job}
                     <a
                         href={'/' + job.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
+                        class="anchor transition ease duration-[0.3s] font-[600]"
                     >
-                        "{job.title}"
+                        {job.title}
                     </a>
+                {:else}
+                    <div class="w-full h-4 placeholder animate-pulse"></div>
                 {/if}
             </div>
         </div>

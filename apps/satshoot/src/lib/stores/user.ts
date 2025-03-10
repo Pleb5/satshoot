@@ -9,7 +9,7 @@ import { derived, get, writable } from 'svelte/store';
 import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
 
-import { filterValidPTags, getSetSerializer } from '../utils/misc';
+import { filterValidPTags } from '../utils/misc';
 import ndk, { LoginMethod } from '$lib/stores/ndk';
 
 export const loginAlert = writable(true);
@@ -18,12 +18,6 @@ export const mounted = writable(false);
 export const loggingIn = writable(false);
 export const loggedIn = writable(false);
 export const loginMethod = writable<LoginMethod | null>(null);
-
-export const currentUserFollows: Writable<Set<Hexpubkey> | null> = persisted(
-    'currentUserFollows',
-    null,
-    { serializer: getSetSerializer() }
-);
 
 export const followsUpdated: Writable<number> = persisted('followsUpdated', 0);
 
