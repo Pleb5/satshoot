@@ -203,7 +203,7 @@
 
 <div class="w-full flex flex-col gap-0 flex-grow">
     <!-- Section start -->
-    <div class="w-full flex flex-col justify-center items-center py-[50px]">
+    <div class="w-full flex flex-col justify-center items-center pb-[50px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
