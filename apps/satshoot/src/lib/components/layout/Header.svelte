@@ -55,7 +55,7 @@
 <div class="w-full flex flex-col justify-center items-center gap-0 bg-white dark:bg-brightGray">
     <div class="flex flex-col justify-center items-center w-full">
         <div
-            class="w-full flex flex-col items-center border-b border-b-black-100 py-[10px] dark:border-b-white-100"
+            class="w-full flex flex-col items-center border-b border-b-black-100 py-1 dark:border-b-white-100"
         >
             <div
                 class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative"
@@ -80,7 +80,7 @@
                                     class="rounded-full border-white placeholder-white"
                                     border="border-4 border-surface-300-600-token hover:!border-primary-500"
                                     cursor="cursor-pointer"
-                                    width="w-11"
+                                    width="w-14"
                                     src={$currentUser?.profile?.image ??
                                         getRoboHashPicture($currentUser?.pubkey ?? '')}
                                 />
