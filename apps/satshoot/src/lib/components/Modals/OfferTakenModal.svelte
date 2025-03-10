@@ -2,6 +2,8 @@
 	import { type SvelteComponent } from 'svelte';
     
 	import { getModalStore } from '@skeletonlabs/skeleton';
+    import Popup from '../UI/Popup.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
 
@@ -12,8 +14,7 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-4 w-80">
-        <h4 class="h4 text-center mb-2 underline">You accepted the Offer!</h4>
+    <Popup title="You accepted the Offer!">
         <strong class='text-error-500'>
             It is strongly recommended you use specialized E2EE(e.g. SimpleX chat)
             messaging software for highly sensitive information!
@@ -31,11 +32,11 @@
         </p>
 
         <div class="flex justify-center">
-            <button class="btn btn-md mt-4 bg-primary-300-600-token"
+            <Button 
                 on:click={()=> modalStore.close()}
             >
                 Great!
-            </button>
+            </Button>
         </div>
-    </div>
+    </Popup>
 {/if}
