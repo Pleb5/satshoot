@@ -7,7 +7,7 @@
     }
 </script>
 
-<div class="w-full flex flex-col justify-center items-center py-[50px] bg-black-100 mb-[50px]">
+<div class="w-full flex flex-col justify-center items-center py-4 bg-black-100 mb-[50px]">
     <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
         <div class="w-full flex flex-col gap-[50px]">
             <div class="w-full flex flex-col gap-[0px] items-center">
