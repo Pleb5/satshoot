@@ -1,7 +1,6 @@
 <script lang="ts">
     import { loggedIn } from '$lib/stores/user';
     import { createEventDispatcher } from 'svelte';
-    import NavLinks from './NavLinks.svelte';
     import ProfileDropdown from './ProfileDropdown.svelte';
     import Button from '../UI/Buttons/Button.svelte';
 
@@ -18,7 +17,6 @@
 </script>
 
 <div class="hidden sm:flex flex-col justify-center items-center w-full">
-    <!-- first nav part start -->
     <div
         class="w-full flex flex-col items-center border-b border-b-black-100 py-[10px] dark:border-b-white-100"
     >
@@ -50,17 +48,4 @@
             </div>
         </div>
     </div>
-    <!-- first nav part end -->
-
-    <!-- second nav part start -->
-    <div
-        class="w-full flex flex-col items-center border-b border-b-black-100 py-[5px] dark:border-b-white-100"
-    >
-        <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
-            <div class="w-full flex flex-row gap-[10px] flex-wrap justify-center items-center">
-                <NavLinks />
-            </div>
-        </div>
-    </div>
-    <!-- second nav part end -->
 </div>
