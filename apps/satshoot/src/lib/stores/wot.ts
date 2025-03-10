@@ -91,7 +91,7 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             wotUpdateFailed.set(true);
             throw new Error('Updating Wot score took too long!');
         }
-    }, 20_000);
+    }, 30_000);
     const user = get(currentUser);
     try {
         wotUpdating.set(true);
