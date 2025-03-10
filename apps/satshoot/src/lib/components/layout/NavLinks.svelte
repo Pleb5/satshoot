@@ -13,10 +13,6 @@
             href: '/jobs/',
             label: 'Jobs',
         },
-        {
-            href: '/about/',
-            label: 'About',
-        },
     ];
 </script>
 
