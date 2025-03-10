@@ -8,6 +8,8 @@
     import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
+    import Popup from '../UI/Popup.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -69,23 +71,19 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-4 bg-primary-300-600-token">
-        <h4 class="h4 text-center mb-2">Post Public Feedback</h4>
+    <Popup title="Post Public Feedback">
         <div class="flex flex-col justify-center gap-y-4">
             <textarea rows="8" class="textarea" bind:this={textArea} />
             <div class="grid grid-cols-[30%_1fr] gap-x-2">
-                <button
-                    type="button"
-                    class="btn btn-sm sm:btn-md bg-error-300-600-token"
+                <Button
+                    variant="outlined"
                     on:click={() => modalStore.close()}
                 >
                     Cancel
-                </button>
+                </Button>
 
-                <button
-                    type="submit"
+                <Button
                     on:click={postFeedback}
-                    class="btn btn-sm sm:btn-md bg-success-300-600-token"
                     disabled={posting}
                 >
                     {#if posting}
@@ -102,8 +100,8 @@
                     {:else}
                         <span>Post</span>
                     {/if}
-                </button>
+                </Button>
             </div>
         </div>
-    </div>
+    </Popup>
 {/if}
