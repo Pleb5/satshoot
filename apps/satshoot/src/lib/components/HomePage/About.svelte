@@ -8,8 +8,8 @@
             <div class="w-full flex flex-col gap-[15px]">
                 <h2 class="text-[40px] font-[500] text-center">Why SatShoot?</h2>
             </div>
-            <Card classes="justify-center items-center text-center text-[18px] p-[25px]">
-                <p>
+            <Card classes="justify-center items-center text-[18px] p-[25px]">
+                <p class="text-justify">
                     SatShoot creates a job market worthy of the values bitcoin represents: A place
                     for Clients and Freelancers to connect without restrictions.
                     <br />

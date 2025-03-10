@@ -11,7 +11,7 @@
                 <div class="w-full flex flex-col gap-[15px]">
                     <div class="w-full flex flex-col gap-[15px]">
                         <h1 class="text-[32px] font-[600]">Powered by Nostr</h1>
-                        <p>
+                        <p class="text-justify">
                             Leverage the Nostr protocol and create the business network only you can
                             control.
                             <br />
