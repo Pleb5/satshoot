@@ -6,7 +6,7 @@
     import TicketIcon from '../Icons/TicketIcon.svelte';
     import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import WalletIcon from '../Icons/WalletIcon.svelte';
-    import ReadyToWorkModal from '../Modals/ReadyToWorkModal.svelte';
+    import Announcement from '../Modals/Announcement.svelte';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
     import TowerBroadcastIcon from '../Icons/TowerBroadcastIcon.svelte';
     import { createEventDispatcher, onDestroy, onMount } from 'svelte';
@@ -45,7 +45,7 @@
 
     function readyToWork() {
         const modalComponent: ModalComponent = {
-            ref: ReadyToWorkModal,
+            ref: Announcement,
         };
 
         const modal: ModalSettings = {
