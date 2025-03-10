@@ -21,7 +21,7 @@
         <p class="mt-4">
             <span> You will be redirected to </span>
             <span class="badge bg-primary-300-600-token">
-                <span class="mr-2">Ticket Messages</span>
+                <span class="mr-2">Chat</span>
                 <i class="fa-solid fa-comment text-lg md:text-xl"></i>
 
             </span>
