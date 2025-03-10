@@ -48,7 +48,7 @@
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
     import { page, updated } from '$app/stores';
-    import { AppShell, getModeAutoPrefers } from '@skeletonlabs/skeleton';
+    import { AppShell, getDrawerStore, getModeAutoPrefers } from '@skeletonlabs/skeleton';
     // Popups
     import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
@@ -62,7 +62,12 @@
 
     // Skeleton Modals
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
-    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
+    import {
+        Drawer,
+        type DrawerSettings,
+        type ModalComponent,
+        type ModalSettings,
+    } from '@skeletonlabs/skeleton';
     import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
     import { beforeNavigate } from '$app/navigation';
@@ -84,6 +89,8 @@
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
+    import drawerID, { DrawerIDs } from '$lib/stores/drawer';
+    import AppMenu from '$lib/components/layout/AppMenu.svelte';
 
     initializeStores();
 
@@ -114,8 +121,9 @@
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
+    const drawerStore = getDrawerStore();
 
-    $: displayNav = $loggedIn
+    $: displayNav = $loggedIn;
 
     let followSubscription: NDKSubscription | undefined = undefined;
 
@@ -603,24 +611,40 @@
      * Therefore, we are just referencing cashuPaymentInfoMap to subscribe it and use in payment modal
      */
     console.log('cashuPaymentInfoMap :>> ', $cashuPaymentInfoMap);
+
+    function openAppMenu() {
+        $drawerID = DrawerIDs.AppMenu;
+        const drawerSettings: DrawerSettings = {
+            id: $drawerID.toString(),
+            width: 'w-[50vw] sm:w-[40vw] md:w-[30vw]',
+            position: 'right',
+            bgDrawer: 'bg-surface-300-600-token',
+        };
+        drawerStore.open(drawerSettings);
+    }
 </script>
 
 <Toast zIndex="z-[1100]" />
 <Modal />
+<Drawer regionDrawer={'flex justify-center'} zIndex={'z-50'}>
+    {#if $drawerID === DrawerIDs.AppMenu}
+        <AppMenu />
+    {/if}
+</Drawer>
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
     <svelte:fragment slot="header">
-        <Header />
+        <Header on:restoreLogin={restoreLogin} on:openAppMenu={openAppMenu} />
     </svelte:fragment>
 
     <!-- Router Slot -->
     <slot />
 
     <svelte:fragment slot="sidebarLeft">
-        <SidebarLeft hideSidebarLeft={!displayNav}/>
+        <SidebarLeft hideSidebarLeft={!displayNav} />
     </svelte:fragment>
 
     <svelte:fragment slot="footer">
-        <Footer hideFooter={!displayNav}/>
+        <Footer hideFooter={!displayNav} />
     </svelte:fragment>
 </AppShell>
 
