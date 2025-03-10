@@ -11,7 +11,7 @@
     import { page } from '$app/stores';
     import TowerBroadcastIcon from '$lib/components/Icons/TowerBroadcastIcon.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
-    import ReadyToWorkModal from '$lib/components/Modals/ReadyToWorkModal.svelte';
+    import Announcement from '$lib/components/Modals/Announcement.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
@@ -75,7 +75,7 @@
 
     function readyToWork() {
         const modalComponent: ModalComponent = {
-            ref: ReadyToWorkModal,
+            ref: Announcement,
         };
 
         const modal: ModalSettings = {
