@@ -41,9 +41,6 @@
     import AddRelayModal from '$lib/components/Modals/AddRelayModal.svelte';
     import PieChart from '$lib/components/UI/Display/PieChart.svelte';
     import UpdateEcashWalletName from '$lib/components/Modals/UpdateEcashWalletName.svelte';
-    import { onDestroy, onMount } from 'svelte';
-    import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
-    import ChartDataLabels from 'chartjs-plugin-datalabels';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -481,14 +478,6 @@
 
     const deleteIconClasses =
         'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex h-full justify-center items-center hover:bg-red-400';
-
-    onMount(() => {
-        Chart.register(ArcElement, Tooltip, Legend, ChartDataLabels);
-    })
-    onDestroy(() => {
-        Chart.unregister([ArcElement, Tooltip, Legend, ChartDataLabels]);
-    })
-
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">
@@ -567,16 +556,8 @@
                     {/each}
                 {:else if $walletStatus === WalletStatus.Failed}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <Button
-                            on:click={setupWallet}
-                        >
-                            Initialize Cashu Wallet
-                        </Button>
-                        <Button
-                            on:click={importWallet}
-                        >
-                            Import Wallet
-                        </Button>
+                        <Button on:click={setupWallet}>Initialize Cashu Wallet</Button>
+                        <Button on:click={importWallet}>Import Wallet</Button>
                     </div>
                 {:else if cashuWallet}
                     <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
