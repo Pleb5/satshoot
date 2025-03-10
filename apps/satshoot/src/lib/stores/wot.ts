@@ -12,7 +12,7 @@ import { type NDKSvelte } from '@nostr-dev-kit/ndk-svelte';
 import { tick } from 'svelte';
 
 import currentUser, { currentUserFreelanceFollows } from '../stores/user';
-import { currentUserFollows, followsUpdated } from '../stores/user';
+import {followsUpdated } from '../stores/user';
 
 import satShootWoT from './satshoot-wot';
 
@@ -170,8 +170,6 @@ function updateWotScores(
     if (!user || !networkWoTScores) {
         throw new Error('Could not get data to update wot scores');
     }
-    const $currentUserFollows = get(currentUserFollows) ?? new Set<Hexpubkey>();
-
     const followWot = firstOrderFollows ? firstOrderFollowWot : secondOrderFollowWot;
     const muteWot = firstOrderFollows ? firstOrderMuteWot : secondOrderMuteWot;
     const reportWot = firstOrderFollows ? firstOrderReportWot : secondOrderReportWot;
@@ -183,8 +181,6 @@ function updateWotScores(
             const follows = filterValidPTags(event.tags);
             const userFollow: boolean = event.pubkey === user.pubkey;
             follows.forEach((f: Hexpubkey) => {
-                if (userFollow) $currentUserFollows.add(f);
-
                 // Add first order follow score
                 const currentScore: number =
                     (networkWoTScores as Map<Hexpubkey, number>).get(f) ?? 0;
@@ -223,10 +219,6 @@ function updateWotScores(
             }
         }
     });
-
-    if (firstOrderFollows) {
-        currentUserFollows.set($currentUserFollows);
-    }
 
     return authors;
 }
