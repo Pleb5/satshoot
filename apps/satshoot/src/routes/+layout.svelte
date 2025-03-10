@@ -63,12 +63,7 @@
 
     // Skeleton Modals
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
-    import {
-        Drawer,
-        type DrawerSettings,
-        type ModalComponent,
-        type ModalSettings,
-    } from '@skeletonlabs/skeleton';
+    import { Drawer, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
     import { beforeNavigate } from '$app/navigation';
@@ -122,7 +117,6 @@
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
-    const drawerStore = getDrawerStore();
 
     $: displayNav = $loggedIn;
 
@@ -616,17 +610,6 @@
      * Therefore, we are just referencing cashuPaymentInfoMap to subscribe it and use in payment modal
      */
     console.log('cashuPaymentInfoMap :>> ', $cashuPaymentInfoMap);
-
-    function openAppMenu() {
-        $drawerID = DrawerIDs.AppMenu;
-        const drawerSettings: DrawerSettings = {
-            id: $drawerID.toString(),
-            width: 'w-[50vw] sm:w-[40vw] md:w-[30vw]',
-            position: 'right',
-            bgDrawer: 'bg-surface-300-600-token',
-        };
-        drawerStore.open(drawerSettings);
-    }
 </script>
 
 <Toast zIndex="z-[1100]" />
@@ -638,7 +621,7 @@
 </Drawer>
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
     <svelte:fragment slot="header">
-        <Header on:restoreLogin={restoreLogin} on:openAppMenu={openAppMenu} />
+        <Header on:restoreLogin={restoreLogin} />
     </svelte:fragment>
 
     <!-- Router Slot -->
