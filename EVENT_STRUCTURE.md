@@ -1,7 +1,7 @@
 # Structure of app-specific events used in SatShoot
 
 
-## Ticket event
+## Job event
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
