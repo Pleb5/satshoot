@@ -1,8 +1,10 @@
 <script lang="ts">
     import {
         Avatar,
+        getDrawerStore,
         getModalStore,
         ProgressRadial,
+        type DrawerSettings,
         type ModalComponent,
         type ModalSettings,
     } from '@skeletonlabs/skeleton';
@@ -11,9 +13,11 @@
     import Button from '../UI/Buttons/Button.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { createEventDispatcher } from 'svelte';
+    import drawerID, { DrawerIDs } from '$lib/stores/drawer';
 
     const dispatch = createEventDispatcher();
 
+    const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
 
     function handleLogin() {
@@ -27,6 +31,17 @@
         };
 
         modalStore.trigger(modal);
+    }
+
+    function openAppMenu() {
+        $drawerID = DrawerIDs.AppMenu;
+        const drawerSettings: DrawerSettings = {
+            id: $drawerID.toString(),
+            width: 'w-[50vw] sm:w-[40vw] md:w-[30vw]',
+            position: 'right',
+            bgDrawer: 'bg-surface-300-600-token',
+        };
+        drawerStore.open(drawerSettings);
     }
 
     const satShootLogoWrapperClass = 'flex flex-row items-center gap-4 ' + '';
@@ -59,7 +74,7 @@
                     <div class="flex flex-row flex-grow gap-4 justify-end items-center">
                         {#if $loggedIn}
                             <Button href="/post-job/">Submit Job</Button>
-                            <button on:click={() => dispatch('openAppMenu')}>
+                            <button on:click={openAppMenu}>
                                 <!-- Avatar image -->
                                 <Avatar
                                     class="rounded-full border-white placeholder-white"
