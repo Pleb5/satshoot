@@ -47,7 +47,7 @@
                 <div class="w-full flex flex-col gap-[15px]">
                     <div class="w-full flex flex-col gap-[15px]">
                         <h1 class="text-[32px] font-[600]">Bitcoin-based Payments</h1>
-                        <p>
+                        <p class="text-justify">
                             Pay and earn satoshis with built-in Lightning and Cashu support. These
                             fantastic protocols allow for instant and final payments. No more weeks
                             of waiting or problematic cancellations
