@@ -13,18 +13,18 @@
         try {
             await Dexie.delete('satshoot-db');
             // Must reload to open a brand new DB
+            location.href = location.pathname + '?v=' + new Date().getTime();
             const t: ToastSettings = {
                 message:
                     '\
                     <p class="text-center">Cache cleared!</p>\
-                    <p>Refreshing page in 4 seconds...</p>\
+                    <p>Refreshing page in 3 seconds...</p>\
                     ',
-                timeout: 4000,
+                timeout: 3000,
                 background: 'bg-primary-300-600-token',
             };
             setTimeout(() => {
-                location.href = location.pathname + '?v=' + new Date().getTime();
-            }, 4000);
+            }, 3000);
 
             $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
 
