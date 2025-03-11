@@ -38,9 +38,13 @@
         });
     }
 
-    $: wrapperClasses =
-        'w-full flex flex-col items-start gap-[3px] px-[10px] py-[10px] text-left relative ' +
-        `${isSelected ? 'bg-blue-500 text-white' : 'bg-black-100 dark:bg-white-100'} outline-[0px]`;
+    $: selectedClass = isSelected 
+        ? 'bg-blue-500 hover:bg-blue-500 text-white' 
+        : 'bg-black-100 hover:bg-black-100 dark:bg-white-100 hover:dark:bg-white-100'
+
+    $: wrapperClasses = selectedClass +
+        ' w-full flex flex-col items-start gap-[3px] '+ 
+        'px-[10px] py-[10px] text-left relative outline-[0px]';
 
     const avatarWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] min-w-[30px] min-h-[30px] w-[30px] h-[30px] ' +
