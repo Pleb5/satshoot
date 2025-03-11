@@ -34,7 +34,6 @@
     }
 
     $: if (browser && Number($browserNotificationsEnabled) >= 0) {
-        console.log('set notifications permission');
         // If there is no permission for notifications yet, ask for it
         // If it is denied then return and turn notifications off
         if (Notification.permission !== 'granted') {
@@ -53,7 +52,6 @@
                     };
                     toastStore.clear();
                     toastStore.trigger(t);
-                    console.log('User did not grant permission for notifications');
                 }
                 // User enabled notification settings, set user choice in local storage too
                 browserNotificationsEnabled.set($browserNotificationsEnabled);
@@ -104,12 +102,12 @@
             <Button on:click={clearCache}>Clear Cache</Button>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
-            <div class="flex flex-row gap-[5px] grow-[1]">
+            <div class="flex flex-row gap-2 grow-[1]">
                 <label class="font-[500]" for="attach-satshoot-wot">
                     Attach SatShoot Web of Trust
                 </label>
                 <QuestionIcon
-                    extraClasses="text-2xl [&>*]:pointer-events-none"
+                    extraClasses="w-6 h-6 text-lg [&>*]:pointer-events-none text-center"
                     triggerEvent="click"
                     placement="top"
                     popUpText={wotTooltip}
