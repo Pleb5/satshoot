@@ -8,6 +8,8 @@
     import { DataLoadError } from '$lib/utils/errors';
     import { RestoreMethod } from "$lib/stores/ndk";
     import { logout } from '$lib/utils/helpers';
+    import Popup from '../UI/Popup.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
 
 	// Props
 	/** Exposes parent props to this component. */
@@ -120,8 +122,7 @@
 </script>
 
 {#if $modalStore[0]}
-	<div class="card p-8 grid grid-cols-1 justify-center bg-surface-400-500-token">
-        <h3 class="h3 text-center font-bold">Decrypt Local Seed</h3>
+    <Popup title='Decrypt Local Seed'>
         <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
         <div class="flex justify-between items-center m-4">
             <input 
@@ -142,45 +143,41 @@
             </button>
         </div>
         <div class="flex justify-between h-10 mt-4">
-            <button 
-                type="button"
-                class="btn btn-sm px-4 sm:btn-md bg-error-300-600-token"
+            <Button
+                variant='outlined'
                 on:click={
-                    ()=> {
-                        if ($modalStore[0].response) {
-                            $modalStore[0].response(
-                                {
-                                    decryptedSecret: undefined,
-                                    restoreMethod: undefined
-                                }
-                            );
-                        };
-                        modalStore.close();
-                        logout();
-                    }
+                ()=> {
+                    if ($modalStore[0].response) {
+                        $modalStore[0].response(
+                            {
+                                decryptedSecret: undefined,
+                                restoreMethod: undefined
+                            }
+                        );
+                    };
+                    modalStore.close();
+                    logout();
+                }
                 }
             >
                 Logout
-            </button>
-            <button 
-                type="button"
+            </Button>
+            <Button 
                 on:click={loadSecret}
-                class="btn btn-lg font-bold bg-success-400-500-token"
                 disabled={!passphrase || decrypting}
             >
                 {#if decrypting}
                     <span>
                         <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500"
-                        track="stroke-primary-500/30" strokeLinecap="round" width="w-8" />
+                            track="stroke-primary-500/30" strokeLinecap="round" width="w-8" />
                     </span>
                 {:else}
                     <span>Decrypt</span>
                 {/if}
-            </button>
+            </Button>
         </div>
         {#if statusMessage}
             <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
         {/if}
-    </div>
-
+    </Popup>
 {/if}
