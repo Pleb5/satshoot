@@ -33,6 +33,7 @@ export enum LoginMethod {
     Bunker = 'bunker',
     Nip07 = 'nip07',
     Local = 'local',
+    Register = 'Register',
 }
 
 // save this in session storage when logging in or restoring cipher pk

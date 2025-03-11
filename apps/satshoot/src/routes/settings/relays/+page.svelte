@@ -13,13 +13,9 @@
     } from '$lib/utils/helpers';
     import { normalizeRelayUrl } from '$lib/utils/misc';
     import { NDKRelayList } from '@nostr-dev-kit/ndk';
-    import {
-        getModalStore,
-        getToastStore,
-        ProgressRadial,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
-    import {RelayType} from "$lib/stores/network";
+    import { RelayType } from '$lib/stores/network';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -48,8 +44,8 @@
         if (relays) {
             const ndkRelayList = NDKRelayList.from(relays);
 
-            readRelayUrls = ndkRelayList.readRelayUrls;
-            writeRelayUrls = ndkRelayList.writeRelayUrls;
+            readRelayUrls = [...new Set(ndkRelayList.readRelayUrls)];
+            writeRelayUrls = [...new Set(ndkRelayList.writeRelayUrls)];
         }
 
         relaysLoaded = true;
@@ -57,9 +53,10 @@
 
     async function addRelay(relayType: RelayType, url?: string) {
         if (!url) {
-            url = relayType === RelayType.READ
-                ? normalizeRelayUrl(readRelayInputValue)
-                : normalizeRelayUrl(writeRelayInputValue);
+            url =
+                relayType === RelayType.READ
+                    ? normalizeRelayUrl(readRelayInputValue)
+                    : normalizeRelayUrl(writeRelayInputValue);
         }
 
         if (!url) return;

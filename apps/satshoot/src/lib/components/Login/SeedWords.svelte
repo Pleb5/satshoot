@@ -1,8 +1,8 @@
 <script lang="ts">
     import { validateSingleSeedWord } from '$lib/utils/login';
     import { clipboard } from '@skeletonlabs/skeleton';
-    import Button from './UI/Buttons/Button.svelte';
-    import Input from './UI/Inputs/input.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import Input from '../UI/Inputs/input.svelte';
 
     export let words: string[];
     export let inputsDisabled = false;
