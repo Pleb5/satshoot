@@ -2,10 +2,12 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import Card from './Card.svelte';
     import Button from './Buttons/Button.svelte';
+    import QuestionIcon from '../Icons/QuestionIcon.svelte';
 
     const modalStore = getModalStore();
 
     export let title: string = ''; // Title for the modal header
+    export let popUpText: string | undefined = undefined;
 
     function handleClose() {
         modalStore.close();
@@ -22,7 +24,21 @@
                     <div
                         class="flex flex-row justify-between items-center gap-[10px] pb-[5px] border-b-[1px] border-b-black-100 dark:border-b-white-100"
                     >
-                        <p class="font-[500] text-[18px]">{title}</p>
+                        <!-- slot for header action -->
+                        <slot name="headerAction" />
+
+                        <div class="flex flex-row items-center gap-[5px]">
+                            <p class="font-[500] text-[18px]">{title}</p>
+                            {#if popUpText}
+                                <QuestionIcon
+                                    extraClasses="text-[14px] p-[3px]"
+                                    triggerEvent="click"
+                                    placement="bottom-start"
+                                    {popUpText}
+                                />
+                            {/if}
+                        </div>
+
                         <Button variant="outlined" on:click={handleClose}>
                             <i class="bx bx-x text-[20px]" />
                         </Button>
