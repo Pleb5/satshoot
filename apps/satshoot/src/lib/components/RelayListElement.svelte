@@ -117,12 +117,13 @@
     aria-label={isSuggestedRelay ? 'Add relay' : undefined}
 >
     <div
-        class="flex flex-row justify-center items-center p-[10px] bg-black-200 border-r-[1px] border-black-100 dark:border-white-100 max-[576px]:w-full"
+        class="flex flex-row gap-[5px] justify-center items-center p-[10px] bg-black-200 border-r-[1px] border-black-100 dark:border-white-100 max-[576px]:w-full"
     >
         <div
             title={relayStatusText}
             class="h-[15px] w-[15px] rounded-[4px] {relayStatusColor}"
         ></div>
+        <p class="max-[576px]:block hidden">{relayStatusText}</p>
     </div>
     <p
         class="transition ease duration-[0.3s] grow-[1] group-hover:text-white break-all max-[576px]:py-[5px]"
