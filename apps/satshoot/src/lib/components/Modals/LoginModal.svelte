@@ -88,7 +88,13 @@
                             on:click={() => (selectedLoginMethod = LoginMethod.Register)}
                             >Generate Account</Button
                         >
+                        <div class="flex justify-center">
+                            <a class="anchor" href="https://github.com/Pleb5/satshoot" target="_blank">
+                                <span>Running v0.3.0</span> 
+                            </a>
+                        </div>
                     </div>
+
                 {:else if selectedLoginMethod === LoginMethod.Nip07}
                     <Nip07Login />
                 {:else if selectedLoginMethod === LoginMethod.Bunker}
