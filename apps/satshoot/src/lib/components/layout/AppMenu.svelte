@@ -5,7 +5,7 @@
         type ModalComponent,
         type ModalSettings,
     } from '@skeletonlabs/skeleton';
-    import ReadyToWorkModal from '../Modals/ReadyToWorkModal.svelte';
+    import Announcement from '../Modals/Announcement.svelte';
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
     import LogoutModal from '../Modals/LogoutModal.svelte';
     import currentUser, { loggedIn } from '$lib/stores/user';
@@ -24,7 +24,7 @@
 
     function readyToWork() {
         const modalComponent: ModalComponent = {
-            ref: ReadyToWorkModal,
+            ref: Announcement,
         };
 
         const modal: ModalSettings = {
