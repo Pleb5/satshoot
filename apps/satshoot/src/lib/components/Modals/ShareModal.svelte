@@ -37,7 +37,7 @@
             </Button>
             <Button grow on:click={onCopyNostrAddress}>
                 <span use:clipboard={nostrAddress}>
-                    {copiedNostrAddress ? 'Copied!' : 'Copy Nostr Address'}
+                    {copiedNostrAddress ? 'Copied!' : 'Copy Npub'}
                 </span>
             </Button>
         </div>
