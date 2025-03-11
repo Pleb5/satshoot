@@ -21,7 +21,7 @@
         'w-full flex flex-row bg-black-50 border-[1px] border-black-100 dark:border-white-100 border-t-[0px] overflow-hidden';
 
     const btnWrapperClasses =
-        'w-full flex flex-row flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 dark:border-white-200 border-t-[0px]';
+        'w-full flex flex-row flex-wrap p-[5px] overflow-hidden rounded-b-[6px] border-[1px] border-black-100 dark:border-white-100 border-t-[0px]';
 </script>
 
 <!-- Passphrase Input -->
@@ -65,12 +65,7 @@
 </div>
 
 <div class={btnWrapperClasses}>
-    <Button
-        variant="outlined"
-        classes="font-[500] rounded-[0]"
-        grow
-        on:click={() => dispatch('submit')}
-    >
+    <Button grow on:click={() => dispatch('submit')}>
         <i class="bx bx-log-in-circle" />
         {btnLabel}
     </Button>

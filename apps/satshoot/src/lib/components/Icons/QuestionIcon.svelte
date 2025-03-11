@@ -24,15 +24,16 @@
     });
 </script>
 
-<span class="">
-    {#if popupSettings}
-        <i class="fa-solid fa-circle-question {extraClasses}" use:popup={popupSettings} />
-        <div data-popup="popupTarget">
-            <Card classes="w-80 p-4 max-h-60 overflow-y-auto">
-                {@html popUpText}
-            </Card>
-        </div>
-    {:else}
-        <i class="fa-solid fa-circle-question {extraClasses}"></i>
-    {/if}
-</span>
+{#if popupSettings}
+    <i
+        class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"
+        use:popup={popupSettings}
+    />
+    <div data-popup="popupTarget">
+        <Card classes="w-80 p-4 max-h-60 overflow-y-auto shadow-deep">
+            {@html popUpText}
+        </Card>
+    </div>
+{:else}
+    <i class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"></i>
+{/if}
