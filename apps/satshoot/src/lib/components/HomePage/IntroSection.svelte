@@ -22,7 +22,7 @@
                             Unstoppable Freelancing
                         </h1>
                         <p class="max-w-[1000px] text-center text-[24px] max-[576px]:text-[18px]">
-                            Join the Freedom Economy. Take full control. No third-parties. No
+                            Join the Freedom Economy. Take full control. No
                             middle-men.
                         </p>
                         <div class="w-full flex flex-row justify-center items-center gap-[10px]">
