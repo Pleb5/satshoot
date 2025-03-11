@@ -158,11 +158,10 @@
     <div class={btnWrapperClasses}>
         <Button
             variant="outlined"
-            on:click={onCopyNsec}
             classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
             grow
         >
-            <span use:clipboard={generatedNsec}>
+            <span use:clipboard={generatedNsec} on:click={onCopyNsec}>
                 {copiedNsec ? 'Copied' : 'Dangerously Copy'}
             </span>
         </Button>
@@ -177,8 +176,8 @@
         <Input value={generatedNpub} disabled grow noBorder notRounded />
     </div>
     <div class={btnWrapperClasses}>
-        <Button variant="outlined" on:click={onCopyNpub} classes="rounded-[0]" grow>
-            <span use:clipboard={generatedNpub}>
+        <Button variant="outlined" classes="rounded-[0]" grow>
+            <span use:clipboard={generatedNpub} on:click={onCopyNpub}>
                 {copiedNpub ? 'Copied' : 'Copy'}
             </span>
         </Button>
@@ -189,7 +188,7 @@
     <Passphrase
         bind:passphrase={passphraseForGeneratedAccount}
         bind:confirmPassphrase={confirmPassphraseForGeneratedAccount}
-        btnLabel="Generate"
+        btnLabel="Login"
         on:submit={finalizeAccountGeneration}
         roundedTop
     />
