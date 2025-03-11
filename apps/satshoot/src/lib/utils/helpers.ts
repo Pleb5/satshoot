@@ -164,15 +164,19 @@ export function logout() {
     localStorage.removeItem('offerTabStore');
     localStorage.removeItem('notificationsEnabled');
     localStorage.removeItem('useSatShootWoT');
+    localStorage.removeItem('networkWoTScores');
     localStorage.removeItem('seenIDs');
     localStorage.removeItem('nostr-seedwords');
-    localStorage.removeItem('nostr-npub');
     localStorage.removeItem('login-method');
     localStorage.removeItem('nostr-npub');
     localStorage.removeItem('nostr-nsec');
+    localStorage.removeItem('pk');
     localStorage.removeItem('bunkerLocalSignerPK');
     localStorage.removeItem('bunkerTargetNpub');
     localStorage.removeItem('bunkerRelayURLs');
+    localStorage.removeItem('readNotifications');
+    localStorage.removeItem('jobFilter');
+    localStorage.removeItem('offerFilter');
 
     sessionStorage.clear();
 
