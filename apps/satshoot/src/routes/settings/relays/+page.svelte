@@ -209,7 +209,7 @@
                     <div
                         class="w-full min-h-[50px] rounded-[8px] bg-black-100 dark:bg-white-100 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                     >
-                        <p class="font-[600] text-[18px] text-black-300 dark:text-white-300">
+                        <p class="font-[600] text-[18px] text-red-500">
                             No Inbox Relays Selected!
                         </p>
                     </div>
@@ -276,7 +276,7 @@
                     <div
                         class="w-full min-h-[50px] rounded-[8px] bg-black-100 dark:bg-white-100 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                     >
-                        <p class="font-[600] text-[18px] text-black-300 dark:text-white-300">
+                        <p class="font-[600] text-[18px] text-red-500">
                             No Outbox Relays Selected!
                         </p>
                     </div>
