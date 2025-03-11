@@ -80,7 +80,7 @@
                                     class="rounded-full border-white placeholder-white"
                                     border="border-4 border-surface-300-600-token hover:!border-primary-500"
                                     cursor="cursor-pointer"
-                                    width="w-14"
+                                    width="w-12 sm:w-14"
                                     src={$currentUser?.profile?.image ??
                                         getRoboHashPicture($currentUser?.pubkey ?? '')}
                                 />
