@@ -127,7 +127,7 @@
                     {latestMessage}
                 </div>
             {:else}
-                <div class="placeholder animate-pulse w-40" />
+                <div class="placeholder bg-blue-600 animate-pulse w-40" />
             {/if}
         </div>
     </div>

@@ -116,7 +116,7 @@
                         {job.title}
                     </a>
                 {:else}
-                    <div class="w-full h-4 placeholder animate-pulse"></div>
+                    <div class="w-full h-4 placeholder animate-pulse bg-blue-600"></div>
                 {/if}
             </div>
         </div>

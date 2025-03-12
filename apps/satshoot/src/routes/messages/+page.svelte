@@ -168,30 +168,17 @@
                                             No Conversations!
                                         </div>
                                     {:else}
-                                        {#each { length: 4 } as _}
-                                            <section class="w-[300px] md:w-[400px] col-start-2">
-                                                <div class="p-4 space-y-4">
-                                                    <div
-                                                        class="grid grid-cols-[20%_1fr] gap-8 items-center"
-                                                    >
-                                                        <div
-                                                            class="placeholder-circle animate-pulse"
-                                                        />
-                                                        <div class="placeholder animate-pulse" />
-                                                    </div>
-                                                    <div class="grid grid-cols-3 gap-8">
-                                                        <div class="placeholder animate-pulse" />
-                                                        <div class="placeholder animate-pulse" />
-                                                        <div class="placeholder animate-pulse" />
-                                                    </div>
-                                                    <div class="grid grid-cols-4 gap-4">
-                                                        <div class="placeholder animate-pulse" />
-                                                        <div class="placeholder animate-pulse" />
-                                                        <div class="placeholder animate-pulse" />
-                                                        <div class="placeholder animate-pulse" />
-                                                    </div>
+                                        {#each { length: 6 } as _}
+                                            <div class="w-full card flex gap-2 h-28 p-4">
+                                                <div
+                                                    class="w-20 placeholder-circle animate-pulse"
+                                                />
+                                                <div class="w-28 grid grid-rows-3 gap-2">
+                                                    <div class="placeholder animate-pulse" />
+                                                    <div class="placeholder animate-pulse" />
+                                                    <div class="placeholder animate-pulse" />
                                                 </div>
-                                            </section>
+                                            </div>
                                         {/each}
                                     {/if}
                                 {:else if clients.length > 0}
@@ -205,28 +192,17 @@
                                 {:else if noTicketsWithClients}
                                     <div class="h4 text-center col-start-2">No Conversations!</div>
                                 {:else}
-                                    {#each { length: 4 } as _}
-                                        <section class="w-[300px] md:w-[400px] col-start-2">
-                                            <div class="p-4 space-y-4">
-                                                <div
-                                                    class="grid grid-cols-[20%_1fr] gap-8 items-center"
-                                                >
-                                                    <div class="placeholder-circle animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                </div>
-                                                <div class="grid grid-cols-3 gap-8">
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                </div>
-                                                <div class="grid grid-cols-4 gap-4">
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                </div>
+                                    {#each { length: 6 } as _}
+                                        <div class="w-full card flex gap-2 h-28 p-4">
+                                            <div
+                                                class="w-20 placeholder-circle animate-pulse"
+                                            />
+                                            <div class="w-28 grid grid-rows-3 gap-2">
+                                                <div class="placeholder animate-pulse" />
+                                                <div class="placeholder animate-pulse" />
+                                                <div class="placeholder animate-pulse" />
                                             </div>
-                                        </section>
+                                        </div>
                                     {/each}
                                 {/if}
                             </div>

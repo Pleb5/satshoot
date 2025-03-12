@@ -137,6 +137,8 @@
                     >
                         for the job: "{job.title}"
                     </a>
+                {:else}
+                    <div class="w-32 placeholder animate-pulse bg-blue-600 "></div>
                 {/if}
             </div>
         </div>

@@ -158,24 +158,16 @@
                             {:else if noResults}
                                 <h2 class="h2 font-bold text-center">No search results!</h2>
                             {:else}
-                                <div class="flex flex-col items-center gap-y-8">
-                                    {#each { length: 4 } as _}
-                                        <section class="w-[300px] md:w-[400px]">
-                                            <div class="p-4 space-y-4">
+                                <div class="w-[90vw] flex flex-wrap items-center gap-x-4 gap-y-8">
+                                    {#each { length: 8 } as _}
+                                        <div class="card w-[80vw] sm:w-[40vw] flex flex-col items-center flex-grow flex-wrap h-48 p-4 space-y-4">
+                                            <div class="w-full placeholder animate-pulse" />
+                                            <div class="w-[60%] grid grid-rows-3 gap-8">
                                                 <div class="placeholder animate-pulse" />
-                                                <div class="grid grid-cols-3 gap-8">
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                </div>
-                                                <div class="grid grid-cols-4 gap-4">
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                </div>
+                                                <div class="placeholder animate-pulse" />
+                                                <div class="placeholder animate-pulse" />
                                             </div>
-                                        </section>
+                                        </div>
                                     {/each}
                                 </div>
                             {/if}
