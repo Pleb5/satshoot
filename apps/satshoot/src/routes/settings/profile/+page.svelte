@@ -48,13 +48,22 @@
 
         const profile = await fetchEventFromRelaysFirst(
             metadataFilter,
-            3000,
+            4000,
             fallBackToCache,
             metadataRelays
         );
 
         if (profile) {
             userProfile = profileFromEvent(profile);
+        } else {
+            const t: ToastSettings = {
+                message: `<p class='text-center font-bold'>Could NOT load Profile!</p>
+                          <p class='text-center font-bold'>Try to refresh page!</p>
+                         `,
+                background: 'bg-error-300-600-token',
+                autohide: false
+            };
+            toastStore.trigger(t);
         }
     }
 
