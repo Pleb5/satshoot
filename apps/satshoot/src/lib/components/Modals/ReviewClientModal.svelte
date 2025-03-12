@@ -57,19 +57,17 @@
 
                 modalStore.close();
 
-                // Ticket posted Modal
-                const modal: ModalSettings = {
-                    type: 'alert',
-                    title: 'Review Posted!',
-                    body: `
-                        <p class='mb-4'>Thank You for posting a Review!</p>
-                        <p>
+                const t: ToastSettings = {
+                    message: `
+                        <p class='text-center font-bold mb-4'>Thank You for posting a Review!</p>
+                        <p class='text-center'>
                         Freelancing just got better for everyone!
                         </p>
                         `,
-                    buttonTextCancel: 'Ok',
+                    timeout: 7000,
+                    background: 'bg-success-300-600-token',
                 };
-                modalStore.trigger(modal);
+                toastStore.trigger(t);
             } catch (e) {
                 console.log(e);
                 const t: ToastSettings = {
