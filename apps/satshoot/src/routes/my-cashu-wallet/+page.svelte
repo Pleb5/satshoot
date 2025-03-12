@@ -41,6 +41,8 @@
     import AddRelayModal from '$lib/components/Modals/AddRelayModal.svelte';
     import PieChart from '$lib/components/UI/Display/PieChart.svelte';
     import UpdateEcashWalletName from '$lib/components/Modals/UpdateEcashWalletName.svelte';
+    import RelayRemovalConfirmation from '$lib/components/Modals/RelayRemovalConfirmation.svelte';
+    import RemoveMintModal from '$lib/components/Modals/RemoveMintModal.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -318,6 +320,23 @@
     function removeMint(mint: string) {
         if (!cashuWallet) return;
 
+        modalStore.trigger({
+            type: 'component',
+            component: {
+                ref: RemoveMintModal,
+                props: {
+                    mint,
+                    onConfirm: () => {
+                        handleRemoveMint(mint);
+                    },
+                },
+            },
+        });
+    }
+
+    function handleRemoveMint(mint: string) {
+        if (!cashuWallet) return
+
         cashuWallet.mints = cashuWallet.mints.filter((m) => m !== mint);
 
         updateWallet();
@@ -355,6 +374,24 @@
 
     function removeRelay(relay: string) {
         if (!cashuWallet) return;
+
+        modalStore.trigger({
+            type: 'component',
+            component: {
+                ref: RelayRemovalConfirmation,
+                props: {
+                    url: relay,
+                    onConfirm: () => {
+                        handleRemoveRelay(relay);
+                    },
+                },
+            },
+        });
+
+    }
+
+    function handleRemoveRelay(relay: string) {
+        if (!cashuWallet) return
 
         cashuWallet.relays = cashuWallet.relays.filter((r) => r !== relay);
 
@@ -457,11 +494,11 @@
     const tabs = [
         {
             id: Tab.Mints,
-            label: 'Mints',
+            label: 'My Mints',
         },
         {
             id: Tab.Relays,
-            label: 'Relays',
+            label: 'Wallet Relays',
         },
     ];
 
@@ -660,7 +697,7 @@
                                 {#if selectedTab === Tab.Mints}
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card>
-                                            <div class="w-full flex flex-row justify-end">
+                                            <div class="flex justify-center">
                                                 <Button on:click={exploreMints}>
                                                     Explore Mints
                                                 </Button>
