@@ -526,8 +526,8 @@
                     <Card
                         classes="bg-warning-500 dark:bg-warning-700 hidden max-[768px]:flex relative"
                     >
-                        <p class="font-[600] text-black-400">
-                            Attention: This is an experimental feature, use it at your own risk.
+                        <p class="font-[600] text-white">
+                            Warning: Experimental feature, use at your own risk! LN payments will only appear in your LN wallet balance. This wallet only handles Cashu ecash!
                         </p>
                         <Button
                             variant="text"
