@@ -52,30 +52,29 @@
     }
 
     let mintBalances: Record<string, number> = {};
-    let walletBalance = 0;
-    let walletUnit = 'sats';
+    let walletBalance = '0';
     let cleaningWallet = false;
 
     $: if (cashuWallet) {
         mintBalances = cashuWallet.mintBalances;
 
-        cashuWallet.balance().then((res) => {
-            if (res) {
-                walletBalance = res[0].amount;
-                walletUnit = res[0].unit;
-            }
-        });
+        walletBalance = getBalanceStr(cashuWallet)
 
-        cashuWallet.on('balance_updated', (balance) => {
+        cashuWallet.on('balance_updated', () => {
             mintBalances = cashuWallet!.mintBalances;
-
-            cashuWallet!.balance().then((res) => {
-                if (res) {
-                    walletBalance = res[0].amount;
-                    walletUnit = res[0].unit;
-                }
-            });
+            walletBalance = getBalanceStr(cashuWallet!);
         });
+    }
+
+    function getBalanceStr(cashuWallet: NDKCashuWallet): string {
+        let balanceStr: string = ''
+        const totalBalance = cashuWallet.balance();
+        if (totalBalance) {
+            balanceStr = totalBalance.amount.toString();
+        } else {
+            balanceStr = '?';
+        }
+        return balanceStr;
     }
 
     $: if (!cashuWallet && $currentUser && $ndkWalletService) {
@@ -207,8 +206,10 @@
     }
 
     async function updateWallet() {
+        if (!cashuWallet || !$currentUser) return;
+
         try {
-            await cashuWallet!.publish();
+            await cashuWallet.publish();
 
             wallet.set(cashuWallet);
 
@@ -217,17 +218,22 @@
             });
 
             // after wallet has been updated we should update cashu payment info
-            const ndkCashuMintList = await getCashuPaymentInfo($currentUser!.pubkey, true);
+            const ndkCashuMintList = await getCashuPaymentInfo($currentUser.pubkey, true);
 
+            if (!ndkCashuMintList) {
+                throw new Error('Could not load Cashu Mint list, only Wallet was updated!');
+            }
             // only update cashu payment info if relays or mints are mismatching
+            const walletRelays = cashuWallet.relaySet!.relayUrls
+            const mintListRelays = ndkCashuMintList.relays!
             if (
                 ndkCashuMintList instanceof NDKCashuMintList &&
-                (!arraysAreEqual(cashuWallet!.mints, ndkCashuMintList.mints) ||
-                    !arraysAreEqual(cashuWallet!.relays, ndkCashuMintList.relays))
+                (!arraysAreEqual(cashuWallet.mints, ndkCashuMintList.mints) ||
+                    !arraysAreEqual(walletRelays, mintListRelays))
             ) {
                 // NOTE: This logic may not work in case of multiple wallet, will be refactored later
-                ndkCashuMintList.mints = cashuWallet!.mints;
-                ndkCashuMintList.relays = cashuWallet!.relays;
+                ndkCashuMintList.mints = cashuWallet.mints;
+                ndkCashuMintList.relays = walletRelays;
 
                 publishCashuMintList(ndkCashuMintList);
             }
@@ -325,6 +331,8 @@
     }
 
     function addRelay() {
+        if (!cashuWallet) return;
+
         // If user confirms modal do the editing
         new Promise<string | undefined>((resolve) => {
             const modalComponent: ModalComponent = {
@@ -341,13 +349,11 @@
             modalStore.trigger(modal);
             // We got some kind of response from modal
         }).then((editedData: string | undefined) => {
-            if (editedData) {
-                if (!cashuWallet) return;
-
-                const relays = [...cashuWallet.relays];
+            if (editedData && editedData.replace('wss://', '').length > 1) {
+                const relays = cashuWallet!.relaySet?.relayUrls ?? DEFAULTRELAYURLS;
                 relays.push(editedData);
 
-                cashuWallet.relays = relays;
+                cashuWallet!.relaySet = NDKRelaySet.fromRelayUrls(relays, $ndk);
 
                 updateWallet();
             }
@@ -373,9 +379,14 @@
     }
 
     function handleRemoveRelay(relay: string) {
-        if (!cashuWallet) return
+        if (!cashuWallet?.relaySet?.relayUrls) return
 
-        cashuWallet.relays = cashuWallet.relays.filter((r) => r !== relay);
+        const relays = cashuWallet.relaySet.relayUrls;
+        const newRelaySet = NDKRelaySet.fromRelayUrls(
+            relays.filter((url:string) => url !== relay),
+            $ndk
+        )
+        cashuWallet.relaySet = newRelaySet;
 
         updateWallet();
     }

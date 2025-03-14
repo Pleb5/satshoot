@@ -3,6 +3,7 @@
     import Popup from '../UI/Popup.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import { normalizeRelayUrl } from '@nostr-dev-kit/ndk';
 
     const modalStore = getModalStore();
 
@@ -10,7 +11,7 @@
 
     function finish() {
         if ($modalStore[0].response) {
-            $modalStore[0].response(value);
+            $modalStore[0].response(normalizeRelayUrl(value));
             modalStore.close();
         }
     }
