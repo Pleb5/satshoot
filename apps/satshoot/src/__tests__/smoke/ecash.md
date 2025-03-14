@@ -14,7 +14,7 @@ Initialize Ecash Wallet
 ### Test Steps:
 
 -   Navigate to wallet Page
--   Click `Initialize Cashu Wallet` button
+-   Click `Initialize Nostr Wallet` button
 -   Select mints
 
 ### Expected Result:

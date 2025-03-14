@@ -564,7 +564,7 @@
     }
 
     $: if ($currentUser && $wallet) {
-        // The Cashu wallet may have just been created,
+        // The Nostr Wallet may have just been created,
         // and the Cashu mint list event might still be in progress.
         // To allow for this delay, call isCashuMintListSynced
         // within a setTimeout to provide a margin.
@@ -574,7 +574,7 @@
 
         $wallet.on('found_spent_token', () => {
             toastStore.trigger({
-                message: `Cashu Wallet contains some tokens which have been spent. Do you want to clean the wallet?`,
+                message: `Nostr Wallet contains some tokens which have been spent. Do you want to clean the wallet?`,
                 background: 'bg-warning-300-600-token',
                 autohide: false,
                 action: {

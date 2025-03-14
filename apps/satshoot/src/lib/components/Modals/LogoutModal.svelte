@@ -75,7 +75,7 @@
                     {#if showBackupCheckbox}
                         <Checkbox
                             id="backup-wallet"
-                            label="Backup Cashu wallet before logging out"
+                            label="Backup Nostr Wallet before logging out"
                             bind:checked={backupBeforeLogout}
                         />
 

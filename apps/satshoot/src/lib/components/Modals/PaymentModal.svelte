@@ -135,7 +135,7 @@
 
             if (!hasSenderEcashSetup) {
                 canPayWithEcash = false;
-                ecashTooltipText = 'Setup Cashu wallet to pay with ecash!';
+                ecashTooltipText = 'Setup Nostr Wallet to pay with ecash!';
             } else if (!hasFreelancerEcashSetup) {
                 canPayWithEcash = false;
                 ecashTooltipText = 'Freelancer does not have ecash wallet';
@@ -782,7 +782,7 @@
                                                 />
                                             </span>
                                         {/if}
-                                        <span> Setup Cashu Wallet </span>
+                                        <span> Setup Nostr Wallet </span>
                                     </Button>
                                 {/if}
 

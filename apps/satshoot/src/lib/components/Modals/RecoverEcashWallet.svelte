@@ -116,7 +116,7 @@
 
             if (!recoveringWallet) {
                 toastStore.trigger({
-                    message: 'Failed to get Cashu Wallet from nostr event',
+                    message: 'Failed to get Nostr Wallet from nostr event',
                     background: `bg-error-300-600-token`,
                 });
 

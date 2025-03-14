@@ -160,7 +160,7 @@
             .publish()
             .then(() => {
                 const t: ToastSettings = {
-                    message: `Cashu Wallet created!`,
+                    message: `Nostr Wallet created!`,
                 };
                 toastStore.trigger(t);
                 walletPublished = true;
@@ -168,7 +168,7 @@
             .catch((err) => {
                 console.error(err);
                 const t: ToastSettings = {
-                    message: `Failed to create Cashu Wallet: ${err}`,
+                    message: `Failed to create Nostr Wallet: ${err}`,
                 };
                 toastStore.trigger(t);
             });
@@ -593,7 +593,7 @@
                     {/each}
                 {:else if $walletStatus === WalletStatus.Failed}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <Button on:click={setupWallet}>Initialize Cashu Wallet</Button>
+                        <Button on:click={setupWallet}>Initialize Nostr Wallet</Button>
                         <Button on:click={importWallet}>Import Wallet</Button>
                     </div>
                 {:else if cashuWallet}

@@ -137,7 +137,7 @@
 
             if ($currentUser && !$wallet) {
                 const t: ToastSettings = {
-                    message: 'Set up a cashu wallet to receive payments in ecash tokens!',
+                    message: 'Set up a Nostr Wallet to receive payments in ecash tokens!',
                     background: 'bg-warning-300-600-token',
                     autohide: false,
                     action: {
