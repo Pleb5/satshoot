@@ -11,7 +11,7 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let mint: string; // Relay URL to remove
+    export let mint: string = ''; // Relay URL to remove
     export let onConfirm: () => Promise<void>; // Callback function to invoke on confirmation
 
     let posting = false;
@@ -41,7 +41,7 @@
                 class="w-full py-[5px] px-[10px] rounded-[6px] border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
             >
                 <p class="font-[600] text-xl text-white">
-                    <span>Do you really want to remove <span/>
+                    <span>Do you really want to remove </span>
                     <span class="text-xl text-red-500">{mint.replace('https://', '')}</span>
                     <span>?<span/>
                 </p>
