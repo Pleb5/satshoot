@@ -78,7 +78,7 @@
                                         LN address
                                     </a>
                                     or your
-                                    <a href="/my-cashu-wallet/" class="anchor"> Cashu wallet </a>
+                                    <a href="/my-cashu-wallet/" class="anchor"> Nostr Wallet </a>
                                     .
                                 </p>
                                 <br />

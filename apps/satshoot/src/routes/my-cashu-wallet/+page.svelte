@@ -16,7 +16,6 @@
     import {
         NDKCashuMintList,
         NDKKind,
-        NDKPrivateKeySigner,
         NDKRelayList,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
@@ -40,7 +39,6 @@
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import AddRelayModal from '$lib/components/Modals/AddRelayModal.svelte';
     import PieChart from '$lib/components/UI/Display/PieChart.svelte';
-    import UpdateEcashWalletName from '$lib/components/Modals/UpdateEcashWalletName.svelte';
     import RelayRemovalConfirmation from '$lib/components/Modals/RelayRemovalConfirmation.svelte';
     import RemoveMintModal from '$lib/components/Modals/RemoveMintModal.svelte';
 
@@ -148,11 +146,21 @@
             return;
         }
 
-        const signer = NDKPrivateKeySigner.generate();
+        await newWallet.getP2pk();
 
-        newWallet.privkey = signer.privateKey;
-        newWallet.relays = DEFAULTRELAYURLS;
-        newWallet.name = 'My Cashu Wallet';
+        let mintRelays = DEFAULTRELAYURLS;
+        const userRelays = await fetchUserOutboxRelays($ndk);
+        if (userRelays) {
+            const userRelayList = NDKRelayList.from(userRelays);
+            const writeRelayUrls = [...new Set(userRelayList.writeRelayUrls)];
+            if (writeRelayUrls.length > 0) {
+                mintRelays = writeRelayUrls
+            }
+        }
+
+        newWallet.relaySet = NDKRelaySet.fromRelayUrls(
+            mintRelays, $ndk
+        );
 
         let walletPublished = false;
 
@@ -177,9 +185,8 @@
             wallet.set(newWallet);
             const cashuMintList = new NDKCashuMintList($ndk);
 
-            const user = await signer.user();
-            cashuMintList.p2pk = user.pubkey;
-            cashuMintList.relays = DEFAULTRELAYURLS;
+            cashuMintList.p2pk = await newWallet.getP2pk();
+            cashuMintList.relays = mintRelays;
             cashuMintList.mints = newWallet.mints;
 
             publishCashuMintList(cashuMintList);
@@ -263,31 +270,6 @@
                 };
                 toastStore.trigger(t);
             });
-    }
-
-    function editName() {
-        // If user confirms modal do the editing
-        new Promise<string | undefined>((resolve) => {
-            const data = cashuWallet!.name ?? '';
-
-            const modal: ModalSettings = {
-                type: 'component',
-                component: {
-                    ref: UpdateEcashWalletName,
-                    props: { dataToEdit: data },
-                },
-                response: (editedData: string | undefined) => {
-                    resolve(editedData);
-                },
-            };
-            modalStore.trigger(modal);
-            // We got some kind of response from modal
-        }).then((editedData: string | undefined) => {
-            if (editedData) {
-                cashuWallet!.name = editedData;
-                updateWallet();
-            }
-        });
     }
 
     function exploreMints() {
@@ -611,16 +593,10 @@
                                         class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-gradient-to-tl from-blue-500 to-blue-400 shadow-deep"
                                     >
                                         <div
-                                            class="flex flex-row gap-[10px] font-[500] text-white justify-between"
+                                            class="font-[500] text-white"
                                         >
-                                            <p>{cashuWallet.name || '??'}</p>
-                                            <Button
-                                                variant="text"
-                                                classes="bg-white-0 hover:bg-white-300 hover:text-black-400"
-                                                on:click={editName}
-                                            >
-                                                <i class="bx bxs-edit" />
-                                            </Button>
+                                            <p>'My Nostr Wallet'</p>
+                                            
                                         </div>
                                         <p class="text-[24px] font-[500] text-white">
                                             {walletBalance}
