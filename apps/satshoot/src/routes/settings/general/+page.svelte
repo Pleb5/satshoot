@@ -159,10 +159,10 @@
                                 nsec.substring(nsec.length - 11, nsec.length - 1)}
                         </div>
                         <Button
-                            on:click={onCopyNsec}
+                            
                             classes="bg-red-500 hover:bg-red-600 transition-colors"
                         >
-                            <span use:clipboard={nsec}>
+                            <span use:clipboard={nsec} on:click={onCopyNsec}>
                                 {copiedNsec ? 'Copied!' : 'Dangerously Copy'}
                             </span>
                         </Button>

@@ -30,13 +30,13 @@
 {#if $modalStore[0]}
     <Popup title="Share">
         <div class="w-full flex flex-col justify-center py-[10px] px-[5px] gap-[10px]">
-            <Button grow on:click={onCopyURL}>
-                <span use:clipboard={$page.url.href}>
+            <Button grow>
+                <span use:clipboard={$page.url.href} on:click={onCopyURL}>
                     {copiedURL ? 'Copied!' : copyUrlLabel}
                 </span>
             </Button>
-            <Button grow on:click={onCopyNostrAddress}>
-                <span use:clipboard={nostrAddress}>
+            <Button grow>
+                <span use:clipboard={nostrAddress} on:click={onCopyNostrAddress}>
                     {copiedNostrAddress ? 'Copied!' : 'Copy Npub'}
                 </span>
             </Button>
