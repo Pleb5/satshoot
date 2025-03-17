@@ -161,7 +161,7 @@
             classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
             grow
         >
-            <span use:clipboard={generatedNsec} on:click={onCopyNsec}>
+            <span class="w-full h-full" use:clipboard={generatedNsec} on:click={onCopyNsec}>
                 {copiedNsec ? 'Copied' : 'Dangerously Copy'}
             </span>
         </Button>
@@ -177,7 +177,7 @@
     </div>
     <div class={btnWrapperClasses}>
         <Button variant="outlined" classes="rounded-[0]" grow>
-            <span use:clipboard={generatedNpub} on:click={onCopyNpub}>
+            <span class="w-full h-full" use:clipboard={generatedNpub} on:click={onCopyNpub}>
                 {copiedNpub ? 'Copied' : 'Copy'}
             </span>
         </Button>

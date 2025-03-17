@@ -162,7 +162,7 @@
                             
                             classes="bg-red-500 hover:bg-red-600 transition-colors"
                         >
-                            <span use:clipboard={nsec} on:click={onCopyNsec}>
+                            <span class="w-full h-full" use:clipboard={nsec} on:click={onCopyNsec}>
                                 {copiedNsec ? 'Copied!' : 'Dangerously Copy'}
                             </span>
                         </Button>

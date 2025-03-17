@@ -31,12 +31,12 @@
     <Popup title="Share">
         <div class="w-full flex flex-col justify-center py-[10px] px-[5px] gap-[10px]">
             <Button grow>
-                <span use:clipboard={$page.url.href} on:click={onCopyURL}>
+                <span class="w-full h-full" use:clipboard={$page.url.href} on:click={onCopyURL}>
                     {copiedURL ? 'Copied!' : copyUrlLabel}
                 </span>
             </Button>
             <Button grow>
-                <span use:clipboard={nostrAddress} on:click={onCopyNostrAddress}>
+                <span class="w-full h-full" use:clipboard={nostrAddress} on:click={onCopyNostrAddress}>
                     {copiedNostrAddress ? 'Copied!' : 'Copy Npub'}
                 </span>
             </Button>

@@ -135,12 +135,12 @@
                         </Button>
                     {/if}
                     <Button grow>
-                        <span use:clipboard={shareURL} on:click={onCopyURL}>
+                        <span class="w-full h-full" use:clipboard={shareURL} on:click={onCopyURL}>
                             {urlCopied ? 'Copied!' : 'Copy Job URL'}
                         </span>
                     </Button>
                     <Button grow >
-                        <span use:clipboard={shareNaddr} on:click={onCopyNaddr}>
+                        <span class="w-full h-full" use:clipboard={shareNaddr} on:click={onCopyNaddr}>
                             {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
                         </span>
                     </Button>
