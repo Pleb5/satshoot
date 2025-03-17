@@ -77,8 +77,9 @@
 
     onMount(() => {
         if (job) {
-            shareNaddr = 'nostr:' + job.encode()
-            shareURL = `https://satshoot.com/${shareNaddr}`;
+            const naddr = job.encode();
+            shareNaddr = 'nostr:' + naddr
+            shareURL = `https://satshoot.com/${naddr}`;
             // Set default text
             message = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
             message += `## ${job.title}\n\n`;
