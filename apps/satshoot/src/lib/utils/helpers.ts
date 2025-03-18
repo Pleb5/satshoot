@@ -293,7 +293,7 @@ export async function broadcastRelayList(
     userRelayList.readRelayUrls = Array.from(readRelayUrls);
     userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
 
-    const relaysPosted = await broadcastEvent(ndk, userRelayList, [...writeRelayUrls]);
+    const relaysPosted = await broadcastEvent(ndk, userRelayList, {explicitRelays: [...writeRelayUrls]});
     console.log('relays posted to:', relaysPosted);
 }
 
@@ -310,33 +310,49 @@ export async function broadcastUserProfile(ndk: NDKSvelte, userProfile: NDKUserP
         explicitRelays.push(...relayList.writeRelayUrls);
     }
 
-    const relaysPosted = await broadcastEvent(ndk, ndkEvent, explicitRelays);
+    const relaysPosted = await broadcastEvent(ndk, ndkEvent, {explicitRelays});
     console.log('userProfile posted to:', relaysPosted);
 }
 
+export type BroadCastOpts = {
+    explicitRelays: string[],
+    includePoolRelays: boolean,
+    includeOutboxPoolRelays: boolean,
+    includeBlastUrl: boolean,
+    replaceable: boolean,
+}
 export async function broadcastEvent(
     ndk: NDKSvelte,
     ndkEvent: NDKEvent,
-    explicitRelayUrls: string[],
-    includePoolRelays: boolean = true,
-    includeOutboxPoolRelays: boolean = true,
-    includeBlastUrl: boolean = true
+    broadCastOpts: BroadCastOpts = {
+        explicitRelays: [],
+        includePoolRelays: true,
+        includeOutboxPoolRelays: true,
+        includeBlastUrl: true,
+        replaceable: false,
+    }
 ) {
-    const relayUrls = [...explicitRelayUrls];
+    const relayUrls = [...broadCastOpts.explicitRelays];
 
-    if (includePoolRelays) {
+    if (broadCastOpts.includePoolRelays) {
         relayUrls.push(...ndk.pool.urls());
     }
 
-    if (includeOutboxPoolRelays && ndk.outboxPool) {
+    if (broadCastOpts.includeOutboxPoolRelays && ndk.outboxPool) {
         relayUrls.push(...ndk.outboxPool.urls());
     }
 
-    if (includeBlastUrl) {
+    if (broadCastOpts.includeBlastUrl) {
         relayUrls.push(blastrUrl);
     }
 
-    return await ndkEvent.publish(NDKRelaySet.fromRelayUrls(relayUrls, ndk));
+    if (!broadCastOpts.replaceable) {
+        return await ndkEvent.publish(NDKRelaySet.fromRelayUrls(relayUrls, ndk));
+    } else {
+        return await ndkEvent.publishReplaceable(
+            NDKRelaySet.fromRelayUrls(relayUrls, ndk)
+        );
+    }
 }
 
 export async function checkRelayConnections() {
