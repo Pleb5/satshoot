@@ -315,11 +315,11 @@ export async function broadcastUserProfile(ndk: NDKSvelte, userProfile: NDKUserP
 }
 
 export type BroadCastOpts = {
-    explicitRelays: string[],
-    includePoolRelays: boolean,
-    includeOutboxPoolRelays: boolean,
-    includeBlastUrl: boolean,
-    replaceable: boolean,
+    explicitRelays?: string[],
+    includePoolRelays?: boolean,
+    includeOutboxPoolRelays?: boolean,
+    includeBlastUrl?: boolean,
+    replaceable?: boolean,
 }
 export async function broadcastEvent(
     ndk: NDKSvelte,
@@ -332,7 +332,7 @@ export async function broadcastEvent(
         replaceable: false,
     }
 ) {
-    const relayUrls = [...broadCastOpts.explicitRelays];
+    const relayUrls = [...broadCastOpts.explicitRelays ?? []];
 
     if (broadCastOpts.includePoolRelays) {
         relayUrls.push(...ndk.pool.urls());
