@@ -400,15 +400,17 @@
                         const relayList = NDKRelayList.from(relayListEvent);
                         explicitRelays.push(...relayList.readRelayUrls);
                     }
-                    explicitRelays.push(...cashuPaymentInfo.relays);
+                    explicitRelays.push(...cashuPaymentInfo.relays ?? []);
 
                     const publishedRelaySet = await broadcastEvent(
                         $ndk,
                         nutzapEvent,
-                        explicitRelays,
-                        false,
-                        false,
-                        false
+                        {
+                            explicitRelays,
+                            includePoolRelays: false,
+                            includeOutboxPoolRelays: false,
+                            includeBlastUrl: false
+                        }
                     );
 
                     console.log('publishedRelaySet :>> ', publishedRelaySet);

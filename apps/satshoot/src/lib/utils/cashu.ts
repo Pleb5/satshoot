@@ -15,7 +15,7 @@ import {
 } from '@nostr-dev-kit/ndk-wallet';
 import type { ToastSettings, ToastStore } from '@skeletonlabs/skeleton';
 import { get } from 'svelte/store';
-import { getCashuPaymentInfo } from './helpers';
+import { broadcastEvent, getCashuPaymentInfo } from './helpers';
 import { isNostrEvent } from './misc';
 import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
 import { cashuTokensBackup, unsavedProofsBackup } from '$lib/stores/wallet';
@@ -37,7 +37,7 @@ export async function isCashuMintListSynced(
     if (!info) {
         const t: ToastSettings = {
             message:
-                'Could not found CashuMintList Event. Would you like to publish based on CashuWallet?',
+                'Could not find List of preferred Mints. Would you like to publish preferred List based on CashuWallet?',
             background: 'bg-warning-300-600-token',
             autohide: false,
             action: {
@@ -47,7 +47,7 @@ export async function isCashuMintListSynced(
                     publishCashuMintList(ndkCashuWallet)
                         .then(() => {
                             toastStore.trigger({
-                                message: `Successfully published cashu mint list`,
+                                message: `Successfully published Cashu Mint List`,
                                 timeout: 5000,
                                 autohide: true,
                                 background: `bg-success-300-600-token`,
@@ -55,7 +55,7 @@ export async function isCashuMintListSynced(
                         })
                         .catch((err) => {
                             toastStore.trigger({
-                                message: `Failed to publish cashu mint list!`,
+                                message: `Failed to publish Cashu Mint List!`,
                                 autohide: false,
                                 background: `bg-error-300-600-token`,
                             });
@@ -83,7 +83,7 @@ export async function isCashuMintListSynced(
     if (info.p2pk !== p2pk) {
         const t: ToastSettings = {
             message:
-                'p2pk in cashu mint list does not match with p2pk in cashu wallet. Would you like to sync them?',
+                'Nutzap-Pubkey from Cashu payment info event does not match with Pubkey in wallet. It is recommended to sync them.',
             background: 'bg-warning-300-600-token',
             autohide: false,
             action: {
@@ -93,7 +93,7 @@ export async function isCashuMintListSynced(
                     syncP2pk(ndkCashuWallet, info)
                         .then(() => {
                             toastStore.trigger({
-                                message: `Successfully updated cashu mint list`,
+                                message: `Successfully updated Pubkey  mint list`,
                                 timeout: 5000,
                                 autohide: true,
                                 background: `bg-success-300-600-token`,
@@ -129,11 +129,11 @@ export async function publishCashuMintList(ndkCashuWallet: NDKCashuWallet) {
     const p2pk = await ndkCashuWallet.getP2pk();
 
     const ndkMintList = new NDKCashuMintList($ndk);
-    ndkMintList.relays = ndkCashuWallet.relays;
+    ndkMintList.relays = ndkCashuWallet.relaySet?.relayUrls ?? ;
     ndkMintList.mints = ndkCashuWallet.mints;
     ndkMintList.p2pk = p2pk;
 
-    return ndkMintList.publishReplaceable();
+    return broadcastEvent($ndk, ndkMintList, {replaceable: true});
 }
 
 export async function syncP2pk(ndkCashuWallet: NDKCashuWallet, cashuPaymentInfo: CashuPaymentInfo) {
@@ -145,7 +145,7 @@ export async function syncP2pk(ndkCashuWallet: NDKCashuWallet, cashuPaymentInfo:
     ndkMintList.mints = cashuPaymentInfo.mints;
     ndkMintList.p2pk = p2pk;
 
-    return ndkMintList.publishReplaceable();
+    return broadcastEvent($ndk, ndkMintList, {replaceable: true});
 }
 
 export function isValidBackup(value: any): value is { wallet: NostrEvent; tokens: NostrEvent[] } {

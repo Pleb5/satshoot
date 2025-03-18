@@ -1,7 +1,7 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
-    import { ndkWalletService } from '$lib/stores/wallet';
+    import { wallet } from '$lib/stores/wallet';
     import {
         extractUnspentProofsForMint,
         getUniqueProofs,
@@ -126,10 +126,7 @@
                 return;
             }
 
-            if (!$ndkWalletService.defaultWallet) {
-                $ndkWalletService.defaultWallet = importingWallet;
-                $ndkWalletService.emit('wallet:default', importingWallet);
-            }
+            wallet.set(importingWallet);
 
             // convert raw token events to NDKCashuTokens
             const ndkCashuTokens = backupJson.tokens
@@ -189,6 +186,7 @@
                 background: `bg-error-300-600-token`,
             });
         } finally {
+            $wallet?.start()
             importing = false;
         }
     }

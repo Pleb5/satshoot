@@ -1,21 +1,20 @@
 import { getCashuPaymentInfo } from '$lib/utils/helpers';
-import { NDKUser, type CashuPaymentInfo, type NostrEvent } from '@nostr-dev-kit/ndk';
+import { NDKCashuMintList, NDKUser, type CashuPaymentInfo, type NostrEvent } from '@nostr-dev-kit/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import NDKWalletService, {
+import {
     NDKCashuToken,
     NDKCashuWallet,
+    NDKNutzapMonitor,
     NutzapMonitor,
 } from '@nostr-dev-kit/ndk-wallet';
-import { derived, get, writable, type Readable } from 'svelte/store';
+import { derived, writable, type Readable } from 'svelte/store';
 import { myTickets } from './freelance-eventstores';
 import currentUser from './user';
 import { getMapSerializer, SatShootPubkey } from '$lib/utils/misc';
 import type { Proof } from '@cashu/cashu-ts';
 import { persisted } from 'svelte-persisted-store';
-import ndk from './ndk';
 import { getUniqueProofs } from '$lib/utils/cashu';
 
-export const ndkWalletService = writable<NDKWalletService | null>(null);
 export const wallet = writable<NDKCashuWallet | null>(null);
 export const ndkNutzapMonitor = writable<NutzapMonitor | null>(null);
 
@@ -38,38 +37,39 @@ export const cashuTokensBackup = persisted('cashuTokensBackup', new Map<string, 
 });
 
 export function walletInit(
+    cashuWallet: NDKCashuWallet,
+    mintList:NDKCashuMintList,
     ndk: NDKSvelte,
     user: NDKUser,
     customSubscribeForNutZaps = subscribeForNutZaps // Allow injection for testing
 ) {
-    const service = new NDKWalletService(ndk);
-    ndkWalletService.set(service);
-
     let hasSubscribedForNutZaps = false;
+    wallet.set(cashuWallet);
 
-    service.on('wallet:default', (w) => {
-        if (!hasSubscribedForNutZaps) {
-            hasSubscribedForNutZaps = true;
-            walletStatus.set(WalletStatus.Loaded);
+    cashuWallet.on("ready", () => {
+        hasSubscribedForNutZaps = true;
+        walletStatus.set(WalletStatus.Loaded);
 
-            const ndkCashuWallet = w as NDKCashuWallet;
-            wallet.set(ndkCashuWallet);
-            handleEventsEmittedFromWallet(ndkCashuWallet);
-            customSubscribeForNutZaps(ndk, user, ndkCashuWallet);
-        }
+        handleEventsEmittedFromWallet(cashuWallet);
+        customSubscribeForNutZaps(ndk, user, cashuWallet, mintList);
     });
 
-    service.start(user);
+    cashuWallet.start({subId: 'wallet', pubkey: user.pubkey});
 }
 
-export const subscribeForNutZaps = (ndk: NDKSvelte, user: NDKUser, wallet: NDKCashuWallet) => {
-    const nutzapMonitor = new NutzapMonitor(ndk, user, wallet.relaySet);
-    nutzapMonitor.addWallet(wallet);
+export const subscribeForNutZaps = (
+    ndk: NDKSvelte,
+    user: NDKUser,
+    wallet: NDKCashuWallet,
+    mintList: NDKCashuMintList
+) => {
+    const nutzapMonitor = new NDKNutzapMonitor(ndk, user, mintList);
+    nutzapMonitor.wallet = wallet;
     nutzapMonitor.on('seen', (nutzapEvent) => {
         console.log('nutzapEvent :>> ', nutzapEvent);
     });
-    nutzapMonitor.start();
     ndkNutzapMonitor.set(nutzapMonitor);
+    nutzapMonitor.start();
 };
 
 const handleEventsEmittedFromWallet = (cashuWallet: NDKCashuWallet) => {
