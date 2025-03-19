@@ -5,17 +5,16 @@ import {
     NDKKind,
     NDKPrivateKeySigner,
     NDKRelay,
-    NDKRelaySet,
     type NostrEvent,
 } from '@nostr-dev-kit/ndk';
 import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import { NDKCashuToken, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+import { NDKCashuToken } from '@nostr-dev-kit/ndk';
 import { CashuWallet, type Proof } from '@cashu/cashu-ts';
 import {
     cleanWallet,
     extractUnspentProofsForMint,
     findTokensWithDuplicateProofs,
-    getUniqueProofs,
     parseAndValidateBackup,
     publishCashuMintList,
     removeDuplicateProofs,

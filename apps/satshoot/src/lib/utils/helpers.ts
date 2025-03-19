@@ -199,10 +199,8 @@ export function logout() {
 
     wallet.set(null);
 
-    const nutzapMonitor = get(ndkNutzapMonitor);
-    if (nutzapMonitor) {
-        nutzapMonitor.stop();
-        ndkNutzapMonitor.set(null);
+    if (ndkNutzapMonitor) {
+        ndkNutzapMonitor.stop();
     }
 
     get(ndk).signer = undefined;
