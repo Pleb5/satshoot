@@ -8,11 +8,10 @@
         cashuPaymentInfoMap,
         wallet,
         walletInit,
-        WalletStatus,
         walletStatus,
-    } from '$lib/stores/wallet';
-    import { cleanWallet } from '$lib/utils/cashu';
-    import { arraysAreEqual, broadcastEvent, fetchUserOutboxRelays, getCashuPaymentInfo } from '$lib/utils/helpers';
+    } from '$lib/wallet/wallet';
+    // import { cleanWallet } from '$lib/utils/cashu';
+    import { arraysAreEqual, broadcastEvent, fetchAndInitWallet, fetchUserOutboxRelays, getCashuPaymentInfo } from '$lib/utils/helpers';
     import {
         NDKCashuMintList,
         NDKKind,
@@ -119,35 +118,7 @@
     }
 
     $: if (!cashuWallet && $currentUser) {
-        (async () => {
-            const relayUrls = [...$ndk.pool.urls()];
-
-            const relayListEvent = await fetchUserOutboxRelays($ndk);
-            if (relayListEvent) {
-                const relayList = NDKRelayList.from(relayListEvent);
-                relayUrls.push(...relayList.writeRelayUrls);
-            }
-
-            const walletEvent = await $ndk.fetchEvent(
-                { kinds: [NDKKind.CashuWallet], authors: [$currentUser.pubkey] },
-                { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL },
-                NDKRelaySet.fromRelayUrls(relayUrls, $ndk)
-            );
-
-            if (!walletEvent) {
-                walletStatus.set(WalletStatus.Failed);
-                return;
-            }
-
-            const wallet = await NDKCashuWallet.from(walletEvent);
-
-            if (!wallet) {
-                walletStatus.set(WalletStatus.Failed);
-                return;
-            }
-
-            walletInit(wallet, $ndk, $currentUser);
-        })();
+        fetchAndInitWallet($currentUser, $ndk);
     }
 
     async function setupWallet() {
@@ -186,12 +157,11 @@
         await newWallet.getP2pk();
 
         let mintRelays = DEFAULTRELAYURLS;
-        const userRelays = await fetchUserOutboxRelays($ndk);
+        const userRelays = await fetchUserOutboxRelays($ndk, $currentUser!.pubkey);
         if (userRelays) {
-            const userRelayList = NDKRelayList.from(userRelays);
-            const writeRelayUrls = [...new Set(userRelayList.writeRelayUrls)];
-            if (writeRelayUrls.length > 0) {
-                mintRelays = writeRelayUrls
+            const writeRelayList = NDKRelayList.from(userRelays).writeRelayUrls;
+            if (writeRelayList.length > 0) {
+                mintRelays = writeRelayList
             }
         }
 

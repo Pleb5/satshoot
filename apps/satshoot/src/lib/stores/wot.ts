@@ -101,8 +101,6 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
 
         const $networkWoTScores = new Map<Hexpubkey, number>();
 
-        await ndk.outboxTracker!.trackUsers([user.pubkey]);
-
         const primaryWoTEventsFilter: NDKFilter = {
             kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
             authors: [user.pubkey],

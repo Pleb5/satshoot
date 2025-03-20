@@ -13,24 +13,20 @@ import {
     type CashuPaymentInfo,
     type NDKUserProfile,
     serializeProfile,
-    type NostrEvent,
+    NDKUser,
 } from '@nostr-dev-kit/ndk';
-
-import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
-
+import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-
 import currentUser, { fetchFreelanceFollowEvent } from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
-
 import { updateFollowsAndWotScore, networkWoTScores } from '../stores/wot';
-
 import { allReviews } from '$lib/stores/reviews';
-
 import { allReceivedZapsFilter, allReceivedZaps } from '$lib/stores/zaps';
-
-import { messageStore, sentMessageFilter, receivedMessageFilter } from '$lib/stores/messages';
-
+import {
+    messageStore,
+    sentMessageFilter,
+    receivedMessageFilter 
+} from '$lib/stores/messages';
 import {
     allTickets,
     allOffers,
@@ -39,19 +35,16 @@ import {
     myTickets,
     myOffers,
 } from '$lib/stores/freelance-eventstores';
-
-import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
 import { notifications, seenIDs } from '../stores/notifications';
-
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { dev } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
-import { ndkNutzapMonitor, wallet, walletInit } from '$lib/stores/wallet';
-import { nip19 } from 'nostr-tools';
+import { ndkNutzapMonitor, wallet, walletInit } from '$lib/wallet/wallet';
 import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
 import { type ToastStore } from '@skeletonlabs/skeleton';
+import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
 
 export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
     console.log('begin user init');
@@ -71,26 +64,31 @@ export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
         myTickets.startSubscription();
         myOffers.startSubscription();
 
-        // --------- User Profile --------------- //
-        const profile = await user.fetchProfile({ cacheUsage: NDKSubscriptionCacheUsage.PARALLEL });
-        // for now loading profile from cache disabled but if reenabled, this bug
-        // that profile returned is a strangely nested object should be handled
-        if (profile) {
-            user.profile = profile;
-        }
         currentUser.set(user);
 
-        // initialize user wallet for ecash payments
-        walletInit(ndk, user);
-
         const $onboardingStep = get(onboardingStep);
-
-        // no need to fetch relays, update follows and wot when user just created the account
         if ($onboardingStep !== OnboardingStep.Account_Created) {
-            // fetch users relays. If there are no outbox relays,
-            // prompt the user in a Toast to setup his relays
-            const relays = await fetchUserOutboxRelays(ndk);
-            if (!relays) {
+
+            // initialize user wallet for ecash payments
+            const userRelays = await fetchUserOutboxRelays(
+                ndk,
+                user.pubkey,
+                2000
+            )
+
+            // --------- User Profile --------------- //
+            const profile = await user.fetchProfile(
+                { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
+            );
+
+            if (profile) {
+                user.profile = profile;
+            }
+
+            if (userRelays) {
+                const writeRelayUrls = NDKRelayList.from(userRelays).writeRelayUrls;
+                fetchAndInitWallet(user, ndk, writeRelayUrls);
+            } else {
                 toastStore.trigger({
                     message: 'Could not find Your personal Relays',
                     background: 'bg-warning-300-600-token',
@@ -141,6 +139,53 @@ export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
     } catch (e) {
         console.log('Could not initialize User. Reason: ', e);
     }
+}
+
+export async function fetchAndInitWallet(
+    user:NDKUser,
+    ndk:NDKSvelte,
+    relaysToFetchFrom?: string[],
+) {
+    let relays = DEFAULTRELAYURLS;
+    if (!relaysToFetchFrom || relaysToFetchFrom.length === 0) {
+        const userRelays = await fetchUserOutboxRelays(
+            ndk,
+            user.pubkey,
+            2000
+        )
+        if (userRelays) {
+            relays = NDKRelayList.from(userRelays).writeRelayUrls;
+        }
+    }
+
+    const cashuPromise = ndk.fetchEvents(
+        {
+            kinds: [
+                NDKKind.CashuWallet,
+                NDKKind.LegacyCashuWallet,
+                NDKKind.CashuMintList,
+            ],
+            authors: [user.pubkey] 
+        },
+        { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY },
+        NDKRelaySet.fromRelayUrls(relays, ndk)
+    );
+    cashuPromise.then(async(cashuEvents: Set<NDKEvent>)=>{
+        let nostrWallet: NDKCashuWallet | undefined;
+        let cashuMintList: NDKCashuMintList | undefined;
+        for (const event of cashuEvents) {
+            if (event.kind === NDKKind.LegacyCashuWallet) {
+                nostrWallet = await NDKCashuWallet.from(event)
+            } else if (event.kind === NDKKind.CashuWallet) {
+                nostrWallet = await NDKCashuWallet.from(event)
+            } else if (event.kind === NDKKind.CashuMintList) {
+                cashuMintList = NDKCashuMintList.from(event)
+            }
+        }
+        if (nostrWallet && cashuMintList) {
+            walletInit(nostrWallet, cashuMintList, ndk, user);
+        }
+    });
 }
 
 export function logout() {
@@ -257,9 +302,13 @@ export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
 
 export async function fetchUserOutboxRelays(
     ndk: NDKSvelte,
-    pubkey?: string
+    pubkey: string,
+    timeout: number = 4000
 ): Promise<NDKEvent | null> {
-    const queryRelaysUrls = [...ndk.pool.urls(), ...ndk.outboxPool!.urls()];
+    const queryRelaysUrls = [
+        ...ndk.pool.urls(),
+        ...ndk.outboxPool?.urls() ?? []
+    ];
 
     const queryRelays: Array<NDKRelay> = [];
 
@@ -267,17 +316,17 @@ export async function fetchUserOutboxRelays(
         queryRelays.push(new NDKRelay(url, undefined, ndk));
     });
 
-    if (!pubkey) {
-        const $currentUser = get(currentUser);
-        pubkey = $currentUser!.pubkey;
-    }
-
     const relayFilter = {
         kinds: [NDKKind.RelayList],
         authors: [pubkey],
     };
 
-    let relays = await fetchEventFromRelaysFirst(relayFilter, 4000, true, queryRelays);
+    let relays = await fetchEventFromRelaysFirst(
+        relayFilter,
+        timeout,
+        true,
+        queryRelays
+    );
 
     return relays;
 }
