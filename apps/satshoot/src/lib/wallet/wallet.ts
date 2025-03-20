@@ -29,23 +29,23 @@ export const cashuTokensBackup = persisted('cashuTokensBackup', new Map<string, 
 });
 
 export function walletInit(
-    cashuWallet: NDKCashuWallet,
+    nostrWallet: NDKCashuWallet,
     mintList:NDKCashuMintList,
     ndk: NDKSvelte,
     user: NDKUser,
     customSubscribeForNutZaps = subscribeForNutZaps // Allow injection for testing
 ) {
     let hasSubscribedForNutZaps = false;
-    wallet.set(cashuWallet);
+    wallet.set(nostrWallet);
 
-    cashuWallet.on("ready", () => {
+    nostrWallet.on("ready", () => {
         hasSubscribedForNutZaps = true;
-        walletStatus.set(WalletStatus.Loaded);
+        // walletStatus.set(WalletStatus.Loaded);
 
-        customSubscribeForNutZaps(ndk, user, cashuWallet, mintList);
+        customSubscribeForNutZaps(ndk, user, nostrWallet, mintList);
     });
 
-    cashuWallet.start({subId: 'wallet', pubkey: user.pubkey});
+    nostrWallet.start({subId: 'wallet', pubkey: user.pubkey});
 }
 
 export const subscribeForNutZaps = (
