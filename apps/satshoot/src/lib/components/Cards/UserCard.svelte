@@ -220,7 +220,7 @@
         // Logged in user's metadata MUST be fetched from relays
         // to avoid metadata edit from stale state
         // Otherwise we can fall back to cache
-        const fallBackToCache = user.pubkey !== $currentUser?.pubkey;
+        const fallbackToCache = user.pubkey !== $currentUser?.pubkey;
 
         const metadataFilter = {
             kinds: [NDKKind.Metadata],
@@ -234,9 +234,11 @@
 
         const profile = await fetchEventFromRelaysFirst(
             metadataFilter,
-            3000,
-            fallBackToCache,
-            metadataRelays
+            {
+                relayTimeoutMS: 3000,
+                fallbackToCache,
+                explicitRelays:metadataRelays
+            }
         );
 
         if (profile) {

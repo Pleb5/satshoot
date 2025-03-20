@@ -15,7 +15,7 @@ import {
     serializeProfile,
     NDKUser,
 } from '@nostr-dev-kit/ndk';
-import ndk, { blastrUrl, DEFAULTRELAYURLS } from '$lib/stores/ndk';
+import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import currentUser, { fetchFreelanceFollowEvent } from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
@@ -307,7 +307,7 @@ export async function fetchUserOutboxRelays(
 ): Promise<NDKEvent | null> {
     const queryRelaysUrls = [
         ...ndk.pool.urls(),
-        ...ndk.outboxPool?.urls() ?? []
+        ...BOOTSTRAPOUTBOXRELAYS
     ];
 
     const queryRelays: Array<NDKRelay> = [];
@@ -323,9 +323,11 @@ export async function fetchUserOutboxRelays(
 
     let relays = await fetchEventFromRelaysFirst(
         relayFilter,
-        timeout,
-        true,
-        queryRelays
+        {
+            relayTimeoutMS: timeout,
+            fallbackToCache: true,
+            explicitRelays: queryRelays
+        }
     );
 
     return relays;
@@ -349,9 +351,9 @@ export async function broadcastUserProfile(ndk: NDKSvelte, userProfile: NDKUserP
     ndkEvent.content = serializeProfile(userProfile);
     ndkEvent.kind = NDKKind.Metadata;
 
-    const explicitRelays: string[] = [];
+    const explicitRelays: string[] = [...BOOTSTRAPOUTBOXRELAYS];
 
-    const relayListEvent = await fetchUserOutboxRelays(ndk);
+    const relayListEvent = await fetchUserOutboxRelays(ndk, get(currentUser)!.pubkey);
     if (relayListEvent) {
         const relayList = NDKRelayList.from(relayListEvent);
         explicitRelays.push(...relayList.writeRelayUrls);
@@ -429,21 +431,29 @@ export async function checkRelayConnections() {
     }
 }
 
+export type RelayFirstFetchOpts = {
+    relayTimeoutMS: number,
+    fallbackToCache: boolean,
+    explicitRelays?: NDKRelay[]
+}
 export async function fetchEventFromRelaysFirst(
     filter: NDKFilter,
-    relayTimeoutMS: number = 6000,
-    fallbackToCache: boolean = false,
-    relays?: NDKRelay[]
+    fetchOpts: RelayFirstFetchOpts = {
+        relayTimeoutMS: 6000,
+        fallbackToCache:false,
+    }
 ): Promise<NDKEvent | null> {
     const $ndk = get(ndk);
 
     // If relays are provided construct a set and pass over to sub
-    const relaySet = relays ? new NDKRelaySet(new Set(relays), $ndk) : undefined;
+    const relaySet = fetchOpts.explicitRelays
+        ? new NDKRelaySet(new Set(fetchOpts.explicitRelays), $ndk) 
+        : undefined
 
     const timeoutPromise = new Promise((resolve) => {
         setTimeout(() => {
             resolve(null);
-        }, relayTimeoutMS);
+        }, fetchOpts.relayTimeoutMS);
     });
 
     const relayPromise = $ndk.fetchEvent(
@@ -462,7 +472,7 @@ export async function fetchEventFromRelaysFirst(
 
     if (fetchedEvent) {
         return fetchedEvent;
-    } else if (!fetchedEvent && !fallbackToCache) {
+    } else if (!fetchedEvent && !fetchOpts.fallbackToCache) {
         return null;
     }
 
@@ -486,9 +496,11 @@ export async function getZapConfiguration(pubkey: string) {
 
     const metadataEvent = await fetchEventFromRelaysFirst(
         metadataFilter,
-        5000,
-        false,
-        metadataRelays
+        {
+            relayTimeoutMS: 5000,
+            fallbackToCache: false,
+            explicitRelays: metadataRelays
+        }
     );
 
     if (!metadataEvent) return null;
@@ -549,7 +561,14 @@ export async function getCashuPaymentInfo(
 
     const relays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    const cashuMintlistEvent = await fetchEventFromRelaysFirst(filter, 5000, false, relays);
+    const cashuMintlistEvent = await fetchEventFromRelaysFirst(
+        filter,
+        {
+            relayTimeoutMS: 5000,
+            fallbackToCache: false,
+            explicitRelays: relays
+        }
+    );
 
     if (!cashuMintlistEvent) {
         console.warn(`Could not fetch Cashu Mint list for ${pubkey}`);
