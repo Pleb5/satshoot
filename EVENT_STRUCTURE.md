@@ -1,7 +1,82 @@
-# Structure of app-specific events used in SatShoot
+# Freealance-related events used in SatShoot
+## Freelance Events: Orders on a Service (Many-to-One) and Bids on a Job (Many-to-One)
+### Freelance Service event (Posted by Freelancers)
+```json
+{
+    "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
+    "pubkey": <hex public key of the Freelancer>,
+    "created_at": <unix timestamp in seconds>,
+    "kind": 32765,
+    "tags": [
+        // Update/Replacement is based on this. Allows for multiple Services with simple edits. Mandatory
+        ["d", "<Service ID>"],
 
+        // A title for the Service. Mandatory
+        ["title", "<title>"]
 
-## Job event
+        // Category Labels. Optional
+        ["t", <tag1>],
+        ["t", <tag2>],
+                ...
+        ["t", <tagN>],
+
+        // Pricing Strategy: Absolute or Time-based. Mandatory
+        ["pricing", <'0'(sats) | '1'(sats/minute)>],
+
+        // Amount of the price. Refers to the absolute price OR sats/minute. Mandatory
+        ["amount", <'0' | '1'>]
+
+        // Status. Deactivation indicates that this Service is not offered anymore
+        // while preserves its history. Mandatory
+        [ "s", <'0' (InActive) OR '1' (Active)> ],
+
+        // If a Freelancer is ready to fullfill a Freelance Order he SHOULD set this.
+        // Multiple a-tags mean that this Service has been sold multiple times
+        ["a", "32766:<hex pubkey of Client1>:<Freelance Order d-tag>"],
+        ["a", "32766:<hex pubkey of Client2>:<Freelance Order d-tag>"],
+        
+        // Tag if Freelancer wants to share public payments (zaps) on this Service
+        // These can be percentage ratios adding up to 100%. Optional
+        ["zap", "<Freelancer pubkey>", "<relay hint>", "95"]
+        ["zap", "<Supported pubkey (e.g. app dev)>", "<relay hint>", "5"]
+    ],
+    "content": {
+        <detailed description of the Service. Mandatory>
+    },
+    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the
+    serialized event data, which is the same as the "id" field>
+}
+```
+
+### Freelance Order (Posted by Client)
+```json
+
+{
+    "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
+    "pubkey": <hex public key of the Client>,
+    "created_at": <unix timestamp in seconds>,
+    "kind": 32766,
+    "tags": [
+        // Update/Replacement is based on this. Allows for multiple Orders with simple edits. Mandatory
+        ["d", "<Order id>"],
+
+        // Clients can change their mind about a Service while its not being fulfilled. Mandatory
+        [ "s", <'0' (InActive) OR '1' (Active)> ],
+
+        // This tag MUST be set on creation of this event. Points to the 
+        // Freelance Service that the Client wants to order. Mandatory
+        ["a", "32768:<hex pubkey of Freelancer>:<Freelance Service d-tag>"],
+    ],
+    "content": {
+        <A Note for the Freelancer selling the Service. Optional>
+    },
+    "sig": <64-bytes lowercase hex of the signature of the sha256 hash
+    of the serialized event data, which is the same as the "id" field>
+}
+
+```
+
+### Freelance Job event (Posted by Client)
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
@@ -9,43 +84,34 @@
     "created_at": <unix timestamp in seconds>,
     "kind": 32767,
     "tags": [
-        // A title for the ticket | string, mandatory
-        ["title", <title string>]
+        // A title for the Job. Mandatory
+        ["title", "<title>"]
 
-        // Update/Replacement is based on this. Allows for multiple replaceable tickets
-        ["d", <ticket ID | integer, mandatory>],
+        // Update/Replacement is based on this. Allows for multiple Jobs with simple edits. Mandatory
+        ["d", "<Job id>"],
 
-        // Allows for indexing/filtering | string, optional
-        ["t", <tag1>],
-        ["t", <tag2>],
+        // Category Labels, max 5 recommended. Optional
+        ["t", "<tag1>"],
+        ["t", "<tag2>"],
                 ...
-        ["t", <tagN>],
+        ["t", "<tagN>"],
 
-        // Public key of preferred Freelancers. Allows for more fine-tuned discovery | optional
-        ["p", <hex public key1>],
-        ["p", <hex public key2>],
-                ...
-        ["p", <hex public keyN>],
+        // Job status. "New" while Job is taking Bids, "In-Progress" as soon as a Bid
+        is taken, and "Resolved/Failed" when the Job is concluded
+        [ "s", <'0' (New) OR '1' (In Progress) OR '2' (Resolved) OR '3' (Failed)> ],
 
-        // Preferred languages of the Client | string, optional
-        ["languages",<language1>, <language2>, ..., <languageN>],
-
-        // Milestones if the Client wants to define multiple steps for the ticket | string, optional
-        ["milestones", <milestone1>, <milestone2>, ...,<milestoneN> ],
-
-        ["s", <0(new) OR 1(in progress) OR 2(Resolved) or 3(Failed)>],
-
-        // If Clien accepts an offer she SHOULD set this tag
-        ["a", 32768:<hex pubkey of Freelancer>:<Offer ID from a d-tag of an offer>],
+        // If Client accepts a Freelance Bid he SHOULD set this tag
+        ["a", "32768:<hex pubkey of Freelancer>:<Freelance Bid d-tag>"],
     ],
     "content": {
-        <detailed description of the ticket | string, mandatory>
+        <detailed description of the Job, mandatory>
     },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the serialized event data, which is the same as the "id" field>
+    "sig": <64-bytes lowercase hex of the signature of the sha256 hash
+    of the serialized event data, which is the same as the "id" field>
 }
 ```
 
-## Offer event
+### Freelance Bid (Posted by the Freelancer on a specific Job)
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
@@ -53,56 +119,44 @@
     "created_at": <unix timestamp in seconds>,
     "kind": 32768,
     "tags": [
-        // Replacement is based on this. Allows for multiple updatable/replaceable offers
-        ["d", <offer ID, integer, mandatory>],
-        ["a", 32767:<hex pubkey of Client>:<ticket ID from a d-tag of a ticket>, mandatory>],
-        ["pricing", <pricing strategy, MUST be either 0(absolute price), 1(sats/minute) or 2(sats/milestone), integer, mandatory>],
-        // Amount of the price. If more than 1 amount, then it refers to the milestones of the ticket respectively. Else refers to the sats/minute or absolute price | mandatory
-        ["amount", [<amount1>, <amount2>, ..., amountN>]]
+        // Replacement is based on this. Allows for multiple Bids with simple edits. Mandatory
+        ["d", "<Bid ID>"],
+
+        // Pricing Strategy: Absolute or Time-based. Mandatory
+        ["pricing", <'0'(sats) | '1'(sats/minute)>],
+
+        // Amount of the price. Refers to the absolute price OR sats/minute. Mandatory
+        ["amount", <'0' | '1'>]
+
+        Freelancer MUST set this tag when bidding on a Job. Mandatory
+        ["a", "32767:<hex pubkey of Client>:<Job d-tag of a Job>">],
+
+        // Tag if Freelancer wants to share public payments (zaps) on this Service
+        // These can be percentage ratios adding up to 100%. Optional
+        ["zap", "<Freelancer pubkey>", "<relay hint>", "95"]
+        ["zap", "<Supported pubkey (e.g. app dev)>", "<relay hint>", "5"]
     ],
     "content": {
-        <Cover letter for the offer, string, optional>, 
+        <Pitch explaining why Freelancer is the right fit for the Job. Optional>, 
     },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the serialized event data, which is the same as the "id" field>
+    "sig": <64-bytes lowercase hex of the signature of the sha256 hash
+    of the serialized event data, which is the same as the "id" field>
 }
 ```
 
 ## Review events
-### Rationale: Web of Trust and Reviews
-In addition to the Web of Trust(WoT) weeding out untrusted people and spam, SatShoot
-uses Review events similar to NIP32 in order to bootstrap a reputation network of Freelancers
-and Clients. After a Freelancing experience both parties rate each other so everyone has more
-confidence in the future that the counterparty is trustworthy enough.
-
-Filtering is based on the user's local perspective (follows, mutes and reports of himself and
-his follows, bootstrapped with the SatShoot nostr acccount).
-Filtered pubkeys don't show up on the Ticket feed nor are his Offers listed,
-and his direct messages are not shown either.
-
-There is no filtering based on the Review events though. These are just to signal
-reputation in the specific domain of Freelancing. However, Review events themselves
-ARE filtered by the user's Web of Trust so it is hard to game these scores.
-This also means that reputation is local to the User of the app and is heavily
-dependent on the User's ability to build a trustworthy follow list.
-
 ### QTS: Qualitative Thumb System
-The rating system used in SatShoot is based on [QTS](https://habla.news/u/arkinox@arkinox.tech/DLAfzJJpQDS4vj3wSleum).
+The rating system used in SatShoot is based on NIP32 labels and the [QTS](https://habla.news/u/arkinox@arkinox.tech/DLAfzJJpQDS4vj3wSleum) review-system.
 This hopefully captures users' sentiments better than 'five-star' systems and 
 allows for better overall UX around this feature.
 
 Total score in either the Freelancer's or the Client's case is between [0, 1].
-The outcome of the Ticket (state = Resolved/Failed) determines half the score
-for the Freelancer. The other half is determined by qualities of excellence,
-- Expertise
-- Availability
-- Communication
-The overall score is skewed slightly towards Expertise.
+One half is determined by the overall outcome / experience with the counterparty,
+and excellence labels make up the other half of the score. This allows for labels
+to contribute to the overall rating consensus while this also allows for distinguishing 
+Clients and Freelancers by their outstanding attributes.
 
-For the Clients it is harder to capture specific qualities, so an overall thumbs up/down
-from the Freelancer determines half the score and the Client can also receive extra
-points for excellence in communication and availability.
-
-### Freelancer Review event
+### Freelancer Review event (posted by Client)
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
@@ -110,39 +164,43 @@ points for excellence in communication and availability.
     "created_at": <unix timestamp in seconds>,
     "kind": 1986,
     "tags": [
+        // ALL tags are mandatory
         ["L", qts/freelancing]
         ["l", “freelancer”, “qts/freelancing”],
         ["rating", “<0 | 0.5>”, “success”], 
         ["rating", “<0 | 0.2>”, “expertise”], 
         ["rating", “<0 | 0.15>”, “availability”], 
         ["rating", “<0 | 0.15>”, “communication”], 
-        ["a", 32768:<hex pubkey of Freelancer>:<Offer d-tag>],
+        ["a", 32768:<hex pubkey of Freelancer>:<Bid/Service d-tag>],
     ],
     "content": {
-        <Short summary of the experience>
+        <Short summary of the experience. Optional>
     },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the serialized event data, which is the same as the "id" field>
+    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the
+    serialized event data, which is the same as the "id" field>
 }
 ```
 
-### Client Review event
+### Client Review event (posted by Freelancer)
 ```json
 {
     "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Client>,
+    "pubkey": <hex public key of the Freelancer>,
     "created_at": <unix timestamp in seconds>,
     "kind": 1986,
     "tags": [
+        // ALL tags are mandatory
         ["L", qts/freelancing]
         ["l", “client”, “qts/freelancing”],
         ["rating", “<0 | 0.5>”, “thumb”], 
         ["rating", “<0 | 0.25>”, “availability”], 
         ["rating", “<0 | 0.25>”, “communication”], 
-        ["a", 32767:<hex pubkey of the Client>:<Ticket d-tag>],
+        ["a", 32767:<hex pubkey of the Client>:<Job/Order d-tag>],
     ],
     "content": {
-        <Short summary of the experience>
+        <Short summary of the experience. Optional>
     },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the serialized event data, which is the same as the "id" field>
+    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the
+    serialized event data, which is the same as the "id" field>
 }
 ```
