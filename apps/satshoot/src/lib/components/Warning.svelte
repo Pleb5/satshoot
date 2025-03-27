@@ -1,8 +1,12 @@
 <script lang="ts">
     import { createEventDispatcher, onMount } from 'svelte';
 
-    export let text: string;
-    let shouldWarningTextScroll = false;
+    interface Props {
+        text: string;
+    }
+
+    let { text }: Props = $props();
+    let shouldWarningTextScroll = $state(false);
 
     const dispatch = createEventDispatcher();
 
@@ -41,7 +45,7 @@
         </div>
     </div>
     <!-- Close Icon -->
-    <button on:click={() => dispatch('close')}>
+    <button onclick={() => dispatch('close')}>
         <i class="fa-solid fa-xmark text-xl"></i>
     </button>
 </div>

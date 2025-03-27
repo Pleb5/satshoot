@@ -17,10 +17,10 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    let importing = false;
-    let file: File | null = null;
-    let passphrase = '';
-    let showPassphraseInput = false;
+    let importing = $state(false);
+    let file = $state<File | null>(null);
+    let passphrase = $state('');
+    let showPassphraseInput = $state(false);
 
     // Handle file selection
     function handleFileChange(event: Event) {
@@ -202,7 +202,7 @@
             accept=".json,.enc"
             class="input text-center bg-transparent border-none rounded-md"
             aria-label="choose file"
-            on:change={handleFileChange}
+            onchange={handleFileChange}
         />
 
         {#if showPassphraseInput}
@@ -217,7 +217,7 @@
 
         <button
             type="button"
-            on:click={importWallet}
+            onclick={importWallet}
             class="btn btn-sm sm:btn-md bg-tertiary-300-600-token"
             disabled={importing}
         >

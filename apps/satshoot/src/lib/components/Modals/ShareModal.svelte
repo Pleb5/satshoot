@@ -1,16 +1,20 @@
 <script lang="ts">
     import { clipboard, getModalStore } from '@skeletonlabs/skeleton';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import Button from '../UI/Buttons/Button.svelte';
     import Popup from '../UI/Popup.svelte';
 
     const modalStore = getModalStore();
 
-    $: copyUrlLabel = `Copy ${$page.route.id === '/[jobId=event]' ? 'Job' : 'Profile'} URL`;
+    let copyUrlLabel = $derived(
+        `Copy ${page.route.id === '/[jobId=event]' ? 'Job' : 'Profile'} URL`
+    );
 
-    $: nostrAddress = $page.route.id === '/[jobId=event]' ? $page.params.jobId : $page.params.npub;
+    let nostrAddress = $derived(
+        page.route.id === '/[jobId=event]' ? page.params.jobId : page.params.npub
+    );
 
-    let copiedURL = false;
+    let copiedURL = $state(false);
     function onCopyURL() {
         copiedURL = true;
         setTimeout(() => {
@@ -18,7 +22,7 @@
         }, 1000);
     }
 
-    let copiedNostrAddress = false;
+    let copiedNostrAddress = $state(false);
     function onCopyNostrAddress() {
         copiedNostrAddress = true;
         setTimeout(() => {
@@ -31,12 +35,16 @@
     <Popup title="Share">
         <div class="w-full flex flex-col justify-center py-[10px] px-[5px] gap-[10px]">
             <Button grow>
-                <span class="w-full h-full" use:clipboard={$page.url.href} on:click={onCopyURL}>
+                <span class="w-full h-full" use:clipboard={page.url.href} onclick={onCopyURL}>
                     {copiedURL ? 'Copied!' : copyUrlLabel}
                 </span>
             </Button>
             <Button grow>
-                <span class="w-full h-full" use:clipboard={nostrAddress} on:click={onCopyNostrAddress}>
+                <span
+                    class="w-full h-full"
+                    use:clipboard={nostrAddress}
+                    onclick={onCopyNostrAddress}
+                >
                     {copiedNostrAddress ? 'Copied!' : 'Copy Npub'}
                 </span>
             </Button>

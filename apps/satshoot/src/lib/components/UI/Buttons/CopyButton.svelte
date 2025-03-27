@@ -4,9 +4,13 @@
 
     const toastStore = getToastStore();
 
-    export let text: string;
-    export let feedbackMessage = 'Copied!'; // Customizable feedback message
-    export let classes = '';
+    interface Props {
+        text: string;
+        feedbackMessage?: string; // Customizable feedback message
+        classes?: string;
+    }
+
+    let { text, feedbackMessage = 'Copied!', classes = '' }: Props = $props();
 
     function handleCopy() {
         toastStore.trigger({
@@ -19,5 +23,5 @@
 </script>
 
 <Button variant="outlined" classes="relative {classes}">
-    <i class="bx bxs-copy" use:clipboard={text} on:click={handleCopy}/>
+    <i class="bx bxs-copy" use:clipboard={text} onclick={handleCopy}></i>
 </Button>

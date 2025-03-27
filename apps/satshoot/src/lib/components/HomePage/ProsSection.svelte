@@ -51,7 +51,7 @@
                     <div class={itemWrapperClasses}>
                         <i
                             class={`bx ${item.icon} transition-all ease duration-[0.4s] text-[48px] text-center text-blue-500 group-hover:text-white`}
-                        />
+                        ></i>
                         <p class="text-center font-bold">{item.title}</p>
                         <p class="text-center mt-[-10px]">
                             {item.description}

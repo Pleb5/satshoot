@@ -16,14 +16,18 @@
 
     const modalStore = getModalStore();
 
-    export let notification: ReviewEvent;
+    interface Props {
+        notification: ReviewEvent;
+    }
+
+    let { notification }: Props = $props();
 
     let user = $ndk.getUser({ pubkey: notification.pubkey });
-    let userName = user.npub.substring(0, 8);
-    let userImage = getRoboHashPicture(user.pubkey);
+    let userName = $state(user.npub.substring(0, 8));
+    let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let job: TicketEvent | null;
+    let job = $state<TicketEvent | null>();
 
     onMount(async () => {
         userProfile = await user.fetchProfile();
@@ -103,7 +107,7 @@
                         "{job.title}"
                     </a>
                 {:else}
-                    <div class="w-32 placeholder animate-pulse bg-blue-600 "></div>
+                    <div class="w-32 placeholder animate-pulse bg-blue-600"></div>
                 {/if}
             </div>
         </div>

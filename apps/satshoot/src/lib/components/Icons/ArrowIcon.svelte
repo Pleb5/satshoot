@@ -1,8 +1,17 @@
 <script lang="ts">
-    export let arrowType = 'chevron'
-    export let fill = 'solid'
-    export let direction = 'right'
-    export let sizeClass = 'text-lg';
+    interface Props {
+        arrowType?: string;
+        fill?: string;
+        direction?: string;
+        sizeClass?: string;
+    }
+
+    let {
+        arrowType = 'chevron',
+        fill = 'solid',
+        direction = 'right',
+        sizeClass = 'text-lg'
+    }: Props = $props();
 </script>
 
 <span class="">

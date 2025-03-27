@@ -1,18 +1,30 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import type { NDKUser, NDKUserProfile } from '@nostr-dev-kit/ndk';
     import ndk from '$lib/stores/ndk';
     import { onMount } from 'svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
-    export let pubkey: string;
-    export let userProfile: NDKUserProfile | undefined = undefined;
-    export let size: 'tiny' | 'small' | 'medium' | 'large' | undefined = undefined;
-    export let type: 'square' | 'circle' = 'circle';
-    export let ring = false;
+    interface Props {
+        pubkey: string;
+        userProfile?: NDKUserProfile | undefined;
+        size?: 'tiny' | 'small' | 'medium' | 'large' | undefined;
+        type?: 'square' | 'circle';
+        ring?: boolean;
+    }
 
-    let user: NDKUser;
-    let sizeClass = '';
-    let shapeClass = '';
+    let {
+        pubkey,
+        userProfile = $bindable(undefined),
+        size = undefined,
+        type = 'circle',
+        ring = false,
+    }: Props = $props();
+
+    let user = $state<NDKUser>();
+    let sizeClass = $state('');
+    let shapeClass = $state('');
 
     switch (size) {
         case 'tiny':
@@ -39,19 +51,21 @@
     }
 
     // Fetch user profile reactively
-    $: if (!userProfile && user) {
-        user.fetchProfile({
-            closeOnEose: true,
-            groupable: true,
-            groupableDelay: 200,
-        })
-            .then((profile) => {
-                if (profile) {
-                    userProfile = profile;
-                }
+    $effect(() => {
+        if (!userProfile && user) {
+            user.fetchProfile({
+                closeOnEose: true,
+                groupable: true,
+                groupableDelay: 200,
             })
-            .catch(() => {});
-    }
+                .then((profile) => {
+                    if (profile) {
+                        userProfile = profile;
+                    }
+                })
+                .catch(() => {});
+        }
+    });
 
     onMount(() => {
         if (pubkey) {

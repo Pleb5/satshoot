@@ -7,12 +7,16 @@
 
     const dispatch = createEventDispatcher();
 
-    export let relayUrl: string;
-    export let isSuggestedRelay = false;
+    interface Props {
+        relayUrl: string;
+        isSuggestedRelay?: boolean;
+    }
 
-    let relayStatusColor: string;
-    let relayStatusText: string;
-    let relayElement: HTMLDivElement | null = null;
+    let { relayUrl, isSuggestedRelay = false }: Props = $props();
+
+    let relayStatusColor = $state('');
+    let relayStatusText = $state('');
+    let relayElement: HTMLDivElement | null = $state(null);
 
     function handleClick(event: MouseEvent) {
         if (isSuggestedRelay && !(event.target as HTMLElement).closest('button')) {
@@ -137,7 +141,7 @@
             variant="text"
             classes="min-h-[35px] rounded-[0px] hover:bg-green-600 hover:text-white"
         >
-            <i class="bx bx-plus" />
+            <i class="bx bx-plus"></i>
             Add
         </Button>
     {:else}
@@ -146,7 +150,7 @@
             variant="text"
             classes="min-h-[35px] rounded-[0px] hover:bg-red-500 hover:text-white"
         >
-            <i class="bx bxs-trash" />
+            <i class="bx bxs-trash"></i>
         </Button>
     {/if}
 </div>

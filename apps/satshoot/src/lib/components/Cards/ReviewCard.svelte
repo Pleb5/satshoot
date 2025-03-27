@@ -17,16 +17,20 @@
     import { beforeNavigate } from '$app/navigation';
     import { getModalStore } from '@skeletonlabs/skeleton';
 
-    export let review: ReviewEvent;
+    interface Props {
+        review: ReviewEvent;
+    }
+
+    let { review }: Props = $props();
 
     const modalStore = getModalStore();
 
     let user = $ndk.getUser({ pubkey: review.pubkey });
-    let userName = user.npub.substring(0, 8);
-    let userImage = getRoboHashPicture(user.pubkey);
+    let userName = $state(user.npub.substring(0, 8));
+    let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let job: TicketEvent | null;
+    let job = $state<TicketEvent | null>(null);
 
     let elemPage: HTMLElement;
     onMount(async () => {
@@ -91,8 +95,8 @@
         if (elemPage) {
             elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
         }
-        modalStore.close()
-    })
+        modalStore.close();
+    });
 </script>
 
 <div
@@ -136,12 +140,12 @@
                 <!-- Freelancer-specific badges -->
                 {#if freelancerRatings.success}
                     <div class={`${reviewBadgeClasses} text-gray-500 bg-green-600`}>
-                        <i class="bx bxs-check-circle" />
+                        <i class="bx bxs-check-circle"></i>
                         <p>Job Fulfilled</p>
                     </div>
                 {:else}
                     <div class={`${reviewBadgeClasses} text-white bg-red-600`}>
-                        <i class="bx bxs-x-circle" />
+                        <i class="bx bxs-x-circle"></i>
                         <p>Job Unfulfilled</p>
                     </div>
                 {/if}
@@ -149,12 +153,12 @@
                 <!-- Client-specific badges -->
                 {#if clientRatings.thumb}
                     <div class={`${reviewBadgeClasses} text-gray-500 bg-green-600`}>
-                        <i class="bx bxs-check-circle" />
+                        <i class="bx bxs-check-circle"></i>
                         <p>Satisfied</p>
                     </div>
                 {:else}
                     <div class={`${reviewBadgeClasses} text-white bg-red-600`}>
-                        <i class="bx bxs-x-circle" />
+                        <i class="bx bxs-x-circle"></i>
                         <p>Dissatisfied</p>
                     </div>
                 {/if}
@@ -162,17 +166,17 @@
 
             <!-- Shared badges -->
             <div class={getBadgeClasses(ratings.availability)}>
-                <i class="bx bxs-star" />
+                <i class="bx bxs-star"></i>
                 <p>{isFreelancerReview ? 'Availability' : 'Attentive & Responsive'}</p>
             </div>
             <div class={getBadgeClasses(ratings.communication)}>
-                <i class="bx bxs-star" />
+                <i class="bx bxs-star"></i>
                 <p>{isFreelancerReview ? 'Communication' : 'Clear Communication'}</p>
             </div>
 
             {#if isFreelancerReview && freelancerRatings?.expertise !== undefined}
                 <div class={getBadgeClasses(freelancerRatings.expertise)}>
-                    <i class="bx bxs-star" />
+                    <i class="bx bxs-star"></i>
                     <p>Expertise</p>
                 </div>
             {/if}

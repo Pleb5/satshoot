@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import { OfferEvent } from '$lib/events/OfferEvent';
     import ndk from '$lib/stores/ndk';
     import {
@@ -21,7 +23,11 @@
     import { readNotifications } from '$lib/stores/notifications';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
-    export let notification: NDKEvent;
+    interface Props {
+        notification: NDKEvent;
+    }
+
+    let { notification }: Props = $props();
 
     const zapInvoice: NDKZapInvoice | null = zapInvoiceFromEvent(notification);
 
@@ -30,37 +36,38 @@
             ? $ndk.getUser({ pubkey: notification.tagValue('P') })
             : $ndk.getUser({ pubkey: notification.pubkey });
 
-    let zapperName = zapper.npub.substring(0, 8);
-    let zapperImage = getRoboHashPicture(zapper.pubkey);
-    let zapperProfile: NDKUserProfile | null;
+    let zapperName = $state(zapper.npub.substring(0, 8));
+    let zapperImage = $state(getRoboHashPicture(zapper.pubkey));
 
-    let amount: number | null = null;
+    let amount: number | null = $state(null);
 
-    let zappedOffer: OfferEvent | null = null;
-    let job: TicketEvent | null = null;
+    let zappedOffer: OfferEvent | null = $state(null);
+    let job: TicketEvent | null = $state(null);
 
-    $: if (zappedOffer) {
-        const dTagOfJob = zappedOffer.referencedTicketAddress.split(':')[2];
-        const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
-            kinds: [NDKKind.FreelanceTicket],
-            '#d': [dTagOfJob],
-        };
+    $effect(() => {
+        if (zappedOffer) {
+            const dTagOfJob = zappedOffer.referencedTicketAddress.split(':')[2];
+            const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
+                kinds: [NDKKind.FreelanceTicket],
+                '#d': [dTagOfJob],
+            };
 
-        $ndk.fetchEvent(jobFilter, {
-            groupable: true,
-            groupableDelay: 400,
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-        })
-            .then((jobEvent) => {
-                if (jobEvent) {
-                    job = TicketEvent.from(jobEvent);
-                }
+            $ndk.fetchEvent(jobFilter, {
+                groupable: true,
+                groupableDelay: 400,
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             })
-            .catch(() => {});
-    }
+                .then((jobEvent) => {
+                    if (jobEvent) {
+                        job = TicketEvent.from(jobEvent);
+                    }
+                })
+                .catch(() => {});
+        }
+    });
 
     onMount(async () => {
-        zapperProfile = await zapper.fetchProfile();
+        const zapperProfile = await zapper.fetchProfile();
         if (zapperProfile) {
             if (zapperProfile.name) {
                 zapperName = zapperProfile.name;
@@ -138,7 +145,7 @@
                         for the job: "{job.title}"
                     </a>
                 {:else}
-                    <div class="w-32 placeholder animate-pulse bg-blue-600 "></div>
+                    <div class="w-32 placeholder animate-pulse bg-blue-600"></div>
                 {/if}
             </div>
         </div>

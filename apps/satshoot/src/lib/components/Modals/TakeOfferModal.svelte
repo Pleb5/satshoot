@@ -19,10 +19,14 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    export let job: TicketEvent;
-    export let offer: OfferEvent;
+    interface Props {
+        job: TicketEvent;
+        offer: OfferEvent;
+    }
 
-    let takingOffer = false;
+    let { job, offer }: Props = $props();
+
+    let takingOffer = $state(false);
 
     async function takeOffer() {
         if (job && offer) {

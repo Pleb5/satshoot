@@ -1,15 +1,19 @@
 <script lang="ts">
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { getModalStore, TabGroup } from '@skeletonlabs/skeleton';
     import SearchModal from '../Modals/SearchModal.svelte';
     import BottomNavItem from './BottomNavItem.svelte';
 
-    export let hideFooter = false
+    interface Props {
+        hideFooter?: boolean;
+    }
+
+    let { hideFooter = false }: Props = $props();
 
     const modalStore = getModalStore();
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: filterList = searchQuery ? searchQuery.split(',') : [];
+    let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
+    let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
 
     function handleSearch() {
         modalStore.trigger({
@@ -37,12 +41,9 @@
             icon: 'bxs-bell',
         },
     ];
-
 </script>
 
-<TabGroup
-    class="sm:hidden {hideFooter ? 'hidden' : ''}"
->
+<TabGroup class="sm:hidden {hideFooter ? 'hidden' : ''}">
     <div class="flex flex-col items-center max-sm:w-full">
         {#if filterList.length > 0}
             <div
@@ -66,7 +67,7 @@
                             on:click={handleSearch}
                         />
                     {:else}
-                        <BottomNavItem {href} {icon} isActive={href === $page.url.pathname} />
+                        <BottomNavItem {href} {icon} isActive={href === page.url.pathname} />
                     {/if}
                 {/each}
             </div>

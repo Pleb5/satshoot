@@ -1,18 +1,21 @@
 <script lang="ts">
-    import { page } from "$app/stores";
-    import { AppRail, getModalStore } from "@skeletonlabs/skeleton";
-    import SearchModal from "../Modals/SearchModal.svelte";
-    import BottomNavItem from "./BottomNavItem.svelte";
+    import { page } from '$app/state';
+    import { AppRail, getModalStore } from '@skeletonlabs/skeleton';
+    import SearchModal from '../Modals/SearchModal.svelte';
+    import BottomNavItem from './BottomNavItem.svelte';
 
+    interface Props {
+        hideSidebarLeft?: boolean;
+    }
 
-    export let hideSidebarLeft = true
+    let { hideSidebarLeft = true }: Props = $props();
 
-    $: hideMyself = hideSidebarLeft ? 'hidden' : ''
+    let hideMyself = $derived(hideSidebarLeft ? 'hidden' : '');
 
     const modalStore = getModalStore();
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: filterList = searchQuery ? searchQuery.split(',') : [];
+    let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
+    let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
 
     function handleSearch() {
         modalStore.trigger({
@@ -40,7 +43,6 @@
             icon: 'bxs-bell',
         },
     ];
-
 </script>
 
 <AppRail
@@ -57,7 +59,7 @@
                     on:click={handleSearch}
                 />
             {:else}
-                <BottomNavItem {href} {icon} isActive={href === $page.url.pathname} />
+                <BottomNavItem {href} {icon} isActive={href === page.url.pathname} />
             {/if}
         {/each}
     </div>

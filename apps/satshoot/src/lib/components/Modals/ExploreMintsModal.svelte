@@ -15,14 +15,36 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let cashuWallet: NDKCashuWallet;
-
-    let recommendations: NDKCashuMintRecommendation;
-    let selectedMints: MintUrl[] = [];
-
-    $: if (cashuWallet) {
-        selectedMints = [...cashuWallet.mints];
+    interface Props {
+        cashuWallet: NDKCashuWallet;
     }
+
+    let { cashuWallet }: Props = $props();
+
+    let recommendations = $state<NDKCashuMintRecommendation>();
+    let selectedMints = $state<MintUrl[]>([]);
+
+    $effect(() => {
+        if (cashuWallet) {
+            selectedMints = [...cashuWallet.mints];
+        }
+    });
+
+    $effect(() => {
+        getCashuMintRecommendations($ndk, $wot)
+            .then((res) => {
+                recommendations = res;
+            })
+            .catch((err) => {
+                console.error(`An error occurred in getting cashu mint recommendations`, err);
+                toastStore.trigger({
+                    message: 'An error occurred in getting cashu mint recommendations',
+                    autohide: false,
+                    background: `bg-error-300-600-token`,
+                });
+                modalStore.close();
+            });
+    });
 
     function toggleMintSelection(mintUrl: MintUrl, isSelected: boolean) {
         if (isSelected) {
@@ -37,22 +59,6 @@
             $modalStore[0].response(selectedMints);
             modalStore.close();
         }
-    }
-
-    $: {
-        getCashuMintRecommendations($ndk, $wot)
-            .then((res) => {
-                recommendations = res;
-            })
-            .catch((err) => {
-                console.error(`An error occurred in getting cashu mint recommendations`, err);
-                toastStore.trigger({
-                    message: 'An error occurred in getting cashu mint recommendations',
-                    autohide: false,
-                    background: `bg-error-300-600-token`,
-                });
-                modalStore.close();
-            });
     }
 </script>
 
@@ -86,17 +92,17 @@
                 <div class="flex w-full justify-center justify-self-center">
                     <div class="p-4 space-y-4 w-full">
                         {#each { length: 4 } as _}
-                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse"></div>
                             <div class="grid grid-cols-3 gap-8">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                             <div class="grid grid-cols-4 gap-4">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                         {/each}
                     </div>

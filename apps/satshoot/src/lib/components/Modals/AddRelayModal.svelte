@@ -6,7 +6,7 @@
 
     const modalStore = getModalStore();
 
-    let value = 'wss://';
+    let value = $state('wss://');
 
     function finish() {
         if ($modalStore[0].response) {

@@ -20,11 +20,11 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    let statusMessage = '';
+    let statusMessage = $state('');
     let statusColor = 'text-tertiary-200-700-token';
 
-    let bunkerUrl = '';
-    let attemptingBunkerConnection = false;
+    let bunkerUrl = $state('');
+    let attemptingBunkerConnection = $state(false);
 
     async function connectBunker() {
         if (!bunkerUrl || !bunkerUrl.startsWith('bunker://')) {
@@ -208,7 +208,7 @@
                     width="w-8"
                 />
             {:else}
-                <i class="bx bx-log-in-circle" />
+                <i class="bx bx-log-in-circle"></i>
                 Connect
             {/if}
         </Button>

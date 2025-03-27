@@ -8,9 +8,13 @@
     import 'highlight.js/styles/github-dark.css'; // Choose your preferred style
     import type { AddressPointer } from 'nostr-tools/nip19';
 
-    export let content = '';
+    interface Props {
+        content?: string;
+    }
 
-    let sanitizedContent = '';
+    let { content = '' }: Props = $props();
+
+    let sanitizedContent = $state('');
 
     const getPub = async (token: Token) => {
         if (token.type === 'nostr') {
@@ -115,7 +119,7 @@
                     break;
                 case 'naddr':
                     try {
-                        const data = nip19.decode(content).data as AddressPointer
+                        const data = nip19.decode(content).data as AddressPointer;
                         if (data.kind === NDKKind.FreelanceTicket) {
                             url = `/${tagType}${content}`;
                         } else {
@@ -127,9 +131,7 @@
                     }
                     break;
             }
-            const externalAttributes = external
-                ? 'target="_blank" rel="noopener noreferrer"'
-                : ""
+            const externalAttributes = external ? 'target="_blank" rel="noopener noreferrer"' : '';
             return `<a href="${url}" ${externalAttributes} 
                     class="text-blue-600 hover:text-blue-800 hover:underline">${linkText}
                     </a>`;
@@ -213,12 +215,14 @@
         },
     });
 
-    $: if (content) {
-        (async () => {
-            const parsed = await marked(content);
-            sanitizedContent = DOMPurify.sanitize(parsed, {ADD_ATTR: ['target']});
-        })();
-    }
+    $effect(() => {
+        if (content) {
+            (async () => {
+                const parsed = await marked(content);
+                sanitizedContent = DOMPurify.sanitize(parsed, { ADD_ATTR: ['target'] });
+            })();
+        }
+    });
 </script>
 
 <div class="markdown">{@html sanitizedContent}</div>

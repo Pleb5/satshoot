@@ -11,10 +11,14 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let mint: string; // Relay URL to remove
-    export let onConfirm: () => Promise<void>; // Callback function to invoke on confirmation
+    interface Props {
+        mint: string; // Relay URL to remove
+        onConfirm: () => Promise<void>; // Callback function to invoke on confirmation
+    }
 
-    let posting = false;
+    let { mint, onConfirm }: Props = $props();
+
+    let posting = $state(false);
 
     async function handleConfirm() {
         try {
@@ -41,9 +45,9 @@
                 class="w-full py-[5px] px-[10px] rounded-[6px] border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
             >
                 <p class="font-[600] text-xl text-white">
-                    <span>Do you really want to remove <span/>
+                    <span>Do you really want to remove <span></span>
                     <span class="text-xl text-red-500">{mint.replace('https://', '')}</span>
-                    <span>?<span/>
+                    <span>?<span></span>
                 </p>
             </div>
         </div>
@@ -55,7 +59,7 @@
                 on:click={handleConfirm}
                 disabled={posting}
             >
-                <i class="bx bx-trash" />
+                <i class="bx bx-trash"></i>
                 <span>Remove</span>
                 {#if posting}
                     <ProgressRadial

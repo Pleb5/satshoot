@@ -14,14 +14,13 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    // Props
-    /** Exposes parent props to this component. */
-    export let parent: SvelteComponent;
-    let textArea: HTMLTextAreaElement;
+    let textArea = $state<HTMLTextAreaElement>();
 
-    let posting = false;
+    let posting = $state(false);
 
     async function postFeedback() {
+        if (!textArea) return;
+
         const kind1Event = new NDKEvent($ndk);
         kind1Event.kind = NDKKind.Text;
 
@@ -63,29 +62,23 @@
         }
     }
 
-    onMount(() => {
-        textArea.value = `\n\n#satshoot-feedback`;
-        textArea.setSelectionRange(0, 0);
-        textArea.focus();
+    $effect(() => {
+        if (textArea) {
+            textArea.value = `\n\n#satshoot-feedback`;
+            textArea.setSelectionRange(0, 0);
+            textArea.focus();
+        }
     });
 </script>
 
 {#if $modalStore[0]}
     <Popup title="Post Public Feedback">
         <div class="flex flex-col justify-center gap-y-4">
-            <textarea rows="8" class="textarea" bind:this={textArea} />
+            <textarea rows="8" class="textarea" bind:this={textArea}></textarea>
             <div class="grid grid-cols-[30%_1fr] gap-x-2">
-                <Button
-                    variant="outlined"
-                    on:click={() => modalStore.close()}
-                >
-                    Cancel
-                </Button>
+                <Button variant="outlined" on:click={() => modalStore.close()}>Cancel</Button>
 
-                <Button
-                    on:click={postFeedback}
-                    disabled={posting}
-                >
+                <Button on:click={postFeedback} disabled={posting}>
                     {#if posting}
                         <span>
                             <ProgressRadial

@@ -4,7 +4,11 @@
     import ReviewCard from '../Cards/ReviewCard.svelte';
     import Popup from '../UI/Popup.svelte';
 
-    export let review: ReviewEvent;
+    interface Props {
+        review: ReviewEvent;
+    }
+
+    let { review }: Props = $props();
 
     const modalStore = getModalStore();
 </script>

@@ -7,12 +7,16 @@
 
     const dispatcher = createEventDispatcher();
 
-    export let mintUrl: MintUrl;
-    export let mintUsage: MintUsage;
-    export let isSelected = false;
+    interface Props {
+        mintUrl: MintUrl;
+        mintUsage: MintUsage;
+        isSelected?: boolean;
+    }
 
-    let mintInfo: GetInfoResponse | null = null;
-    let gettingMintInfo = true;
+    let { mintUrl, mintUsage, isSelected = $bindable(false) }: Props = $props();
+
+    let mintInfo: GetInfoResponse | null = $state(null);
+    let gettingMintInfo = $state(true);
 
     // Fetch mint info on mount
     onMount(async () => {
@@ -38,13 +42,13 @@
         });
     }
 
-    $: selectedClass = isSelected 
+    let selectedClass = $derived(isSelected 
         ? 'bg-blue-500 hover:bg-blue-500 text-white' 
-        : 'bg-black-100 hover:bg-black-100 dark:bg-white-100 hover:dark:bg-white-100'
+        : 'bg-black-100 hover:bg-black-100 dark:bg-white-100 hover:dark:bg-white-100')
 
-    $: wrapperClasses = selectedClass +
+    let wrapperClasses = $derived(selectedClass +
         ' w-full flex flex-col items-start gap-[3px] '+ 
-        'px-[10px] py-[10px] text-left relative outline-[0px]';
+        'px-[10px] py-[10px] text-left relative outline-[0px]');
 
     const avatarWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] min-w-[30px] min-h-[30px] w-[30px] h-[30px] ' +
@@ -55,17 +59,17 @@
 <!-- Loading State -->
 {#if gettingMintInfo}
     <div class="p-4 space-y-4 w-full">
-        <div class="placeholder animate-pulse" />
+        <div class="placeholder animate-pulse"></div>
         <div class="grid grid-cols-3 gap-8">
-            <div class="placeholder animate-pulse" />
-            <div class="placeholder animate-pulse" />
-            <div class="placeholder animate-pulse" />
+            <div class="placeholder animate-pulse"></div>
+            <div class="placeholder animate-pulse"></div>
+            <div class="placeholder animate-pulse"></div>
         </div>
         <div class="grid grid-cols-4 gap-4">
-            <div class="placeholder animate-pulse" />
-            <div class="placeholder animate-pulse" />
-            <div class="placeholder animate-pulse" />
-            <div class="placeholder animate-pulse" />
+            <div class="placeholder animate-pulse"></div>
+            <div class="placeholder animate-pulse"></div>
+            <div class="placeholder animate-pulse"></div>
+            <div class="placeholder animate-pulse"></div>
         </div>
     </div>
 {:else if mintInfo}

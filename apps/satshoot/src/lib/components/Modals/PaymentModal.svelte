@@ -67,70 +67,89 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    let ticket: TicketEvent;
-    let offer: OfferEvent;
+    let freelancerPaid = $state(0);
+    let satshootPaid = $state(0);
 
-    $: if ($paymentDetail) {
-        ticket = $paymentDetail.ticket;
-        offer = $paymentDetail.offer;
-    }
+    const { ticket, offer } = $derived.by(() => ({
+        ticket: $paymentDetail?.ticket,
+        offer: $paymentDetail?.offer,
+    }));
 
-    let freelancerPaid = 0;
-    let satshootPaid = 0;
-    let freelancerPaymentStore: PaymentStore;
-    let satshootPaymentStore: PaymentStore;
-
-    let pricing = '';
-
-    $: if (offer) {
-        switch (offer.pricing) {
-            case Pricing.Absolute:
-                pricing = 'sats';
-                break;
-            case Pricing.SatsPerMin:
-                pricing = 'sats/min';
-                break;
+    const pricing = $derived.by(() => {
+        if (offer) {
+            switch (offer.pricing) {
+                case Pricing.Absolute:
+                    return 'sats';
+                case Pricing.SatsPerMin:
+                    return 'sats/min';
+            }
         }
+        return '';
+    });
 
+    const freelancerPaymentStore = $derived.by(() => {
+        if (!offer) return;
         const freelancerFilters = createPaymentFilters(offer, 'freelancer');
+        return createPaymentStore(freelancerFilters);
+    });
+
+    const satshootPaymentStore = $derived.by(() => {
+        if (!offer) return;
+
         const satshootFilters = createPaymentFilters(offer, 'satshoot');
+        return createPaymentStore(satshootFilters);
+    });
 
-        freelancerPaymentStore = createPaymentStore(freelancerFilters);
-        satshootPaymentStore = createPaymentStore(satshootFilters);
-
-        freelancerPaymentStore.totalPaid.subscribe((value) => {
+    $effect(() => {
+        const unSubscribe = freelancerPaymentStore?.totalPaid.subscribe((value) => {
             freelancerPaid = value;
         });
 
-        satshootPaymentStore.totalPaid.subscribe((value) => {
+        return () => {
+            if (unSubscribe) unSubscribe();
+        };
+    });
+
+    $effect(() => {
+        const unSubscribe = satshootPaymentStore?.totalPaid.subscribe((value) => {
             satshootPaid = value;
         });
-    }
 
-    let paying = false;
-    let amount = 0;
-    let pledgedAmount = 0;
-    let satshootShare = 0;
-    let freelancerShare = 0;
-    let canPayWithEcash = false;
-    let ecashTooltipText = '';
-    let hasSenderEcashSetup = false;
+        return () => {
+            if (unSubscribe) unSubscribe();
+        };
+    });
 
-    $: if (offer) {
-        satshootShare = Math.floor((amount * offer.pledgeSplit) / 100);
-        freelancerShare = amount - satshootShare;
-    }
+    let paying = $state(false);
+    let amount = $state(0);
+    let pledgedAmount = $state(0);
+    let canPayWithEcash = $state(false);
+    let ecashTooltipText = $state('');
 
-    // All checks passed, user can pay with ecash
-    $: if (canPayWithEcash) {
-        ecashTooltipText = '';
-    }
+    const hasSenderEcashSetup = $derived(
+        !!$currentUser && $cashuPaymentInfoMap.has($currentUser.pubkey)
+    );
+    const hasFreelancerEcashSetup = $derived(!!offer && $cashuPaymentInfoMap.has(offer.pubkey));
 
-    $: {
+    const { satshootShare, freelancerShare } = $derived.by(() => {
+        if (offer) {
+            const satshootShare = Math.floor((amount * offer.pledgeSplit) / 100);
+            const freelancerShare = amount - satshootShare;
+
+            return { satshootShare, freelancerShare };
+        }
+
+        return { satshootShare: 0, freelancerShare: 0 };
+    });
+
+    $effect(() => {
+        if (canPayWithEcash) {
+            ecashTooltipText = '';
+        }
+    });
+
+    $effect(() => {
         if (offer && $currentUser) {
-            hasSenderEcashSetup = $cashuPaymentInfoMap.has($currentUser.pubkey);
-            const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
-
             canPayWithEcash = true;
 
             if (!hasSenderEcashSetup) {
@@ -163,11 +182,14 @@
                     });
             }
         }
-    }
+    });
 
-    onDestroy(() => {
-        if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.empty();
-        if (satshootPaymentStore) satshootPaymentStore.paymentStore.empty();
+    // Cleanup effect
+    $effect(() => {
+        return () => {
+            if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.empty();
+            if (satshootPaymentStore) satshootPaymentStore.paymentStore.empty();
+        };
     });
 
     async function payWithLN() {
@@ -362,7 +384,7 @@
                         .cashuPay({
                             ...cashuPaymentInfo,
                             mints,
-                            target: userEnum === UserEnum.Freelancer ? offer! : ticket,
+                            target: userEnum === UserEnum.Freelancer ? offer! : ticket!,
                             recipientPubkey: pubkey,
                             amount: amountMillisats,
                             unit: 'msat',
@@ -382,11 +404,11 @@
                         'a',
                         userEnum === UserEnum.Freelancer
                             ? offer!.offerAddress
-                            : ticket.ticketAddress,
+                            : ticket!.ticketAddress,
                     ]);
                     nutzapEvent.tags.push([
                         'e',
-                        userEnum === UserEnum.Freelancer ? offer!.id : ticket.id,
+                        userEnum === UserEnum.Freelancer ? offer!.id : ticket!.id,
                     ]);
                     nutzapEvent.recipientPubkey = pubkey;
                     await nutzapEvent.sign();
@@ -518,7 +540,7 @@
             invoices.set(userEnum, {
                 paymentRequest: invoice,
                 receiver: pubkey,
-                eventId: key === 'ticket' ? ticket.id : offer!.id,
+                eventId: key === 'ticket' ? ticket!.id : offer!.id,
                 zapper: zapConfig.nostrPubkey,
             });
         } else {
@@ -790,7 +812,7 @@
                                     <i
                                         class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
                                         use:popup={cashuTooltip}
-                                    />
+                                    ></i>
                                     <div data-popup="cashuTooltip">
                                         <Card>
                                             <p>{ecashTooltipText}</p>

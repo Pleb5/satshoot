@@ -5,14 +5,18 @@
 
     const dispatch = createEventDispatcher();
 
-    export let href: string | undefined;
-    export let icon: string;
-    export let isActive = false;
+    interface Props {
+        href: string | undefined;
+        icon: string;
+        isActive?: boolean;
+    }
+
+    let { href, icon, isActive = false }: Props = $props();
 
     // Use a computed class for active state
-    $: activeClass = isActive
+    let activeClass = $derived(isActive
         ? 'bg-blue-500 text-white'
-        : 'bg-blue-0 text-black-300 dark:text-white';
+        : 'bg-blue-0 text-black-300 dark:text-white');
 
     // Base classes for the nav item
     const baseClasses =
@@ -24,7 +28,7 @@
 </script>
 
 <TabAnchor {href} padding="" rounded="rounded-[5px]">
-    <button class={`${baseClasses} ${activeClass}`} on:click={handleClick}>
+    <button class={`${baseClasses} ${activeClass}`} onclick={handleClick}>
         {#if href}
             <i class={`bx ${icon} relative`}>
                 {#if href === '/notifications/' && $unReadNotifications.length > 0}
@@ -36,7 +40,7 @@
                 {/if}
             </i>
         {:else}
-            <i class={`bx ${icon}`} />
+            <i class={`bx ${icon}`}></i>
         {/if}
     </button>
 </TabAnchor>

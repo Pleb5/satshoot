@@ -29,74 +29,71 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    let tagInput = '';
-    let tagList: string[] = [];
+    let tagInput = $state('');
+    let tagList = $state<string[]>([]);
 
     // For form validation
     const maxTags: number = 5;
     const minDescriptionLength = 20;
     const minTitleLength = 10;
 
-    // For form submission
-    let titleValid = false;
-    let descriptionValid = false;
-
     // reactive values bound to user input
-    let titleText: string = '';
-    let descriptionText: string = '';
-    // reactive classes based on validity of user input
-    let titleState = '';
-    let descriptionState = '';
+    let titleText = $state('');
+    let descriptionText = $state('');
+    let posting = $state(false);
 
-    let allowPostJob: boolean = true;
-    let posting = false;
+    const allowPostJob = $derived(!!$currentUser && $loggingIn);
 
-    // Checking Title and description values on user input
-    $: {
+    const { titleValid, titleState } = $derived.by(() => {
         if (titleText.length < minTitleLength) {
-            titleValid = false;
-            titleState = 'input-error';
-        } else {
-            titleValid = true;
-            titleState = 'input-success';
+            return {
+                titleValid: false,
+                titleState: 'input-error',
+            };
         }
 
-        if (descriptionText.length < minDescriptionLength) {
-            descriptionValid = false;
-            descriptionState = 'input-error';
-        } else {
-            descriptionValid = true;
-            descriptionState = 'input-success';
-        }
-    }
-
-    $: transformedTag = tagInput.length > 0 ? transFormTag(tagInput) : '';
-
-    $: sortedTagOptions = tagOptions.sort((a, b) => {
-        if (a.label < b.label) return -1;
-        if (a.label > b.label) return 1;
-        return 0;
+        return {
+            titleValid: true,
+            titleState: 'input-success',
+        };
     });
 
-    $: filteredTagOptions =
+    const { descriptionValid, descriptionState } = $derived.by(() => {
+        if (descriptionText.length < minTitleLength) {
+            return {
+                descriptionValid: false,
+                descriptionState: 'input-error',
+            };
+        }
+
+        return {
+            descriptionValid: true,
+            descriptionState: 'input-success',
+        };
+    });
+
+    const transformedTag = $derived(tagInput.length > 0 ? transFormTag(tagInput) : '');
+    const sortedTagOptions = $derived(
+        tagOptions.sort((a, b) => {
+            if (a.label < b.label) return -1;
+            if (a.label > b.label) return 1;
+            return 0;
+        })
+    );
+    const filteredTagOptions = $derived(
         tagInput.length > 0
             ? sortedTagOptions.filter((option) => option.value.includes(transformedTag))
-            : [];
-
+            : []
+    );
     // Always include the input tag as the first item, even if it's an exact match
-    $: displayOptions =
+    const displayOptions = $derived(
         transformedTag.length > 0
             ? [
                   { label: tagInput, value: transformedTag },
                   ...filteredTagOptions.filter((option) => option.value !== transformedTag),
               ]
-            : filteredTagOptions;
-
-    $: if (!$currentUser || $loggingIn) {
-        allowPostJob = false;
-    } else {
-        allowPostJob = true;
-    }
+            : filteredTagOptions
+    );
 
     onMount(() => {
         if ($jobToEdit) {
@@ -321,7 +318,7 @@
                                             <span
                                                 class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100 dark:border-white-100"
                                             >
-                                                <i class="bx bx-plus" />
+                                                <i class="bx bx-plus"></i>
                                             </span>
                                         </Button>
                                     {/each}
@@ -343,7 +340,7 @@
                                             <span class="pl-[10px] py-[5px]">{tag}</span>
                                             <button
                                                 class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-white-100 hover:bg-blue-500"
-                                                on:click={() => removeTag(tag)}
+                                                onclick={() => removeTag(tag)}
                                             >
                                                 <i class="bx bx-x"></i>
                                             </button>
