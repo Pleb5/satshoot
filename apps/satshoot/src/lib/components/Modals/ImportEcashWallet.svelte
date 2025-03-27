@@ -1,12 +1,10 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
-    import { wallet } from '$lib/stores/wallet';
+    import { wallet } from '$lib/wallet/wallet';
     import {
-        extractUnspentProofsForMint,
-        getUniqueProofs,
         parseAndValidateBackup,
-    } from '$lib/utils/cashu';
+    } from '$lib/wallet/cashu';
     import { decryptSecret } from '$lib/utils/crypto';
     import { getFileExtension } from '$lib/utils/misc';
     import { CashuMint, CashuWallet } from '@cashu/cashu-ts';
@@ -36,14 +34,6 @@
 
     // Import function to read and parse the JSON file
     async function importWallet() {
-        if (!$ndkWalletService) {
-            toastStore.trigger({
-                message: 'NDK Wallet service is not initialized yet!',
-                background: `bg-error-300-600-token`,
-            });
-            return;
-        }
-
         if (!file) {
             toastStore.trigger({
                 message: 'Please select a JSON file.',
@@ -80,7 +70,11 @@
 
             if (fileExtension === 'enc') {
                 try {
-                    fileContent = decryptSecret(fileContent, passphrase, $currentUser!.pubkey);
+                    fileContent = decryptSecret(
+                        fileContent,
+                        passphrase,
+                        $currentUser!.pubkey
+                    );
                 } catch (error) {
                     toastStore.trigger({
                         message: 'Failed to decrypt backup file',
@@ -119,7 +113,7 @@
 
             if (!importingWallet) {
                 toastStore.trigger({
-                    message: 'Failed to get Nostr Wallet from nostr event',
+                    message: 'Failed to import Nostr Wallet!',
                     background: `bg-error-300-600-token`,
                 });
 

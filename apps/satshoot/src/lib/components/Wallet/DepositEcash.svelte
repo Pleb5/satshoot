@@ -3,7 +3,7 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import { getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
-    import { cashuTokensBackup } from '$lib/stores/wallet';
+    import { walletBackup } from '$lib/stores/wallet';
 
     const toastStore = getToastStore();
 
@@ -36,7 +36,7 @@
             if (newToken) {
                 console.log('ndkCashuDeposit successful', newToken.rawEvent());
 
-                cashuTokensBackup.update((map) => {
+                walletBackup.update((map) => {
                     // add newToken to backup
                     map.set(newToken.id, newToken.rawEvent());
 

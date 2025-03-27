@@ -1,37 +1,41 @@
 import type { Proof } from '@cashu/cashu-ts';
-import { NDKPrivateKeySigner, type NostrEvent } from '@nostr-dev-kit/ndk';
+import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import NDKWalletService, { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { get } from 'svelte/store';
 
-import { ndkWalletService, wallet, walletInit, WalletStatus, walletStatus } from './wallet';
+import {
+    wallet,
+    walletInit,
+    walletStatus 
+} from './wallet';
 
 describe('walletStatus', () => {
-    test('should be `loading` by default', () => {
-        expect(get(walletStatus)).toBe(WalletStatus.Loading);
+    test('should be `INITIAL` by default', () => {
+        expect(get(walletStatus)).toBe(NDKWalletStatus.INITIAL);
     });
 
     test('should be able to update wallet status', () => {
-        walletStatus.set(WalletStatus.Loaded);
-        expect(get(walletStatus)).toBe(WalletStatus.Loaded);
+        walletStatus.set(NDKWalletStatus.READY);
+        expect(get(walletStatus)).toBe(NDKWalletStatus.READY);
     });
 });
 
-describe('unsavedProofsBackup', () => {
+describe('walletBackup', () => {
     beforeEach(() => {
         localStorage.clear();
     });
 
     test('should be of size 0 by default', async () => {
         // Dynamically import the store after clearing localStorage
-        const { unsavedProofsBackup } = await import('./wallet');
+        const { walletBackup } = await import('./wallet');
 
-        expect(get(unsavedProofsBackup).size).toBe(0);
+        expect(get(walletBackup).size).toBe(0);
     });
 
     test('should also update local storage on updating store', async () => {
         // Dynamically import the store after clearing localStorage
-        const { unsavedProofsBackup } = await import('./wallet');
+        const { walletBackup } = await import('./wallet');
 
         const mockProofs: Proof[] = [
             {
@@ -54,18 +58,18 @@ describe('unsavedProofsBackup', () => {
             [mockMint2, mockProofs],
         ]);
 
-        unsavedProofsBackup.update((map) => {
+        walletBackup.update((map) => {
             map.set(mockMint1, mockProofs);
             map.set(mockMint2, mockProofs);
             return map;
         });
 
-        const $unsavedProofsBackup = get(unsavedProofsBackup);
+        const $walletBackup = get(walletBackup);
 
-        expect($unsavedProofsBackup.size).toEqual(2);
-        expect($unsavedProofsBackup.get(mockMint1)).toEqual(mockProofs);
-        expect($unsavedProofsBackup.get(mockMint2)).toEqual(mockProofs);
-        expect(localStorage.getItem('unsavedProofsBackup')).toEqual(stringified);
+        expect($walletBackup.size).toEqual(2);
+        expect($walletBackup.get(mockMint1)).toEqual(mockProofs);
+        expect($walletBackup.get(mockMint2)).toEqual(mockProofs);
+        expect(localStorage.getItem('walletBackup')).toEqual(stringified);
     });
 
     test('should load with existing value in local storage', async () => {
@@ -89,122 +93,17 @@ describe('unsavedProofsBackup', () => {
             [mockMint1, mockProofs],
             [mockMint2, mockProofs],
         ]);
-        localStorage.setItem('unsavedProofsBackup', stringified);
+        localStorage.setItem('walletBackup', stringified);
 
         // Dynamically import the store after setting localStorage
-        const { unsavedProofsBackup } = await import('./wallet');
+        const { walletBackup } = await import('./wallet');
 
-        const $unsavedProofsBackup = get(unsavedProofsBackup);
+        const $walletBackup = get(walletBackup);
 
-        expect(localStorage.getItem('unsavedProofsBackup')).toEqual(stringified);
-        expect($unsavedProofsBackup.size).toEqual(2);
-        expect($unsavedProofsBackup.get(mockMint1)).toEqual(mockProofs);
-        expect($unsavedProofsBackup.get(mockMint2)).toEqual(mockProofs);
-    });
-});
-
-describe('cashuTokensBackup', () => {
-    beforeEach(() => {
-        localStorage.clear();
-    });
-
-    test('should be of size 0 by default', async () => {
-        // Dynamically import the store after clearing localStorage
-        const { cashuTokensBackup } = await import('./wallet');
-
-        expect(get(cashuTokensBackup).size).toBe(0);
-    });
-
-    test('should also update local storage on updating store', async () => {
-        // Dynamically import the store after clearing localStorage
-        const { cashuTokensBackup } = await import('./wallet');
-
-        const mockEvents: NostrEvent[] = [
-            {
-                created_at: Math.floor(Date.now() / 1000),
-                content: 'string',
-                tags: [],
-                kind: 0,
-                pubkey: 'dummy pubkey',
-            },
-            {
-                created_at: Math.floor(Date.now() / 1000),
-                content: 'string',
-                tags: [],
-                kind: 0,
-                pubkey: 'dummy pubkey',
-            },
-            {
-                created_at: Math.floor(Date.now() / 1000),
-                content: 'string',
-                tags: [],
-                kind: 0,
-                pubkey: 'dummy pubkey',
-            },
-        ];
-        const mockEventId1 = 'mock-event-id-1';
-        const mockEventId2 = 'mock-event-id-2';
-        const stringified = JSON.stringify([
-            [mockEventId1, mockEvents[0]],
-            [mockEventId2, mockEvents[1]],
-        ]);
-
-        cashuTokensBackup.update((map) => {
-            map.set(mockEventId1, mockEvents[0]);
-            map.set(mockEventId2, mockEvents[1]);
-            return map;
-        });
-
-        const $cashuTokensBackup = get(cashuTokensBackup);
-
-        expect($cashuTokensBackup.size).toEqual(2);
-        expect($cashuTokensBackup.get(mockEventId1)).toEqual(mockEvents[0]);
-        expect($cashuTokensBackup.get(mockEventId2)).toEqual(mockEvents[1]);
-        expect(localStorage.getItem('cashuTokensBackup')).toEqual(stringified);
-    });
-
-    test('should load with existing value in local storage', async () => {
-        const mockEvents: NostrEvent[] = [
-            {
-                created_at: Math.floor(Date.now() / 1000),
-                content: 'string',
-                tags: [],
-                kind: 0,
-                pubkey: 'dummy pubkey',
-            },
-            {
-                created_at: Math.floor(Date.now() / 1000),
-                content: 'string',
-                tags: [],
-                kind: 0,
-                pubkey: 'dummy pubkey',
-            },
-            {
-                created_at: Math.floor(Date.now() / 1000),
-                content: 'string',
-                tags: [],
-                kind: 0,
-                pubkey: 'dummy pubkey',
-            },
-        ];
-        const mockEventId1 = 'mock-event-id-1';
-        const mockEventId2 = 'mock-event-id-2';
-        const stringified = JSON.stringify([
-            [mockEventId1, mockEvents[0]],
-            [mockEventId2, mockEvents[1]],
-        ]);
-
-        localStorage.setItem('cashuTokensBackup', stringified);
-
-        // Dynamically import the store after setting localStorage
-        const { cashuTokensBackup } = await import('./wallet');
-
-        const $cashuTokensBackup = get(cashuTokensBackup);
-
-        expect(localStorage.getItem('cashuTokensBackup')).toEqual(stringified);
-        expect($cashuTokensBackup.size).toEqual(2);
-        expect($cashuTokensBackup.get(mockEventId1)).toEqual(mockEvents[0]);
-        expect($cashuTokensBackup.get(mockEventId2)).toEqual(mockEvents[1]);
+        expect(localStorage.getItem('walletBackup')).toEqual(stringified);
+        expect($walletBackup.size).toEqual(2);
+        expect($walletBackup.get(mockMint1)).toEqual(mockProofs);
+        expect($walletBackup.get(mockMint2)).toEqual(mockProofs);
     });
 });
 

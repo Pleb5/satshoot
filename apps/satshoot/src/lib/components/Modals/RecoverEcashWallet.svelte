@@ -1,20 +1,17 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import {
-        extractUnspentProofsForMint,
-        getUniqueProofs,
         parseAndValidateBackup,
-    } from '$lib/utils/cashu';
-    import { NDKEvent } from '@nostr-dev-kit/ndk';
-    import { NDKCashuToken, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+    } from '$lib/wallet/cashu';
+    import { consolidateMintTokens, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
-    import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
     import { getFileExtension } from '$lib/utils/misc';
     import { decryptSecret } from '$lib/utils/crypto';
     import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
+    import type { WalletStorage } from '$lib/wallet/cashu';
+    import { wallet } from '$lib/wallet/wallet';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -70,6 +67,15 @@
         }
 
         try {
+            if (!$wallet) {
+                toastStore.trigger({
+                    message: 'Nostr wallet NOT found! Can only recover into an existing wallet',
+                    background: `bg-error-300-600-token`,
+                });
+
+                return;
+            } 
+
             recovering = true;
 
             // Read the file content
@@ -102,7 +108,7 @@
             }
 
             // check if wallet backup is related to current user
-            if ($currentUser!.pubkey !== backupJson.wallet.pubkey) {
+            if ($currentUser!.pubkey !== (backupJson as WalletStorage).user) {
                 toastStore.trigger({
                     message: 'Pubkey in wallet object does not match the pubkey of current user!',
                     background: `bg-error-300-600-token`,
@@ -111,102 +117,13 @@
                 return;
             }
 
-            const walletNDKEvent = new NDKEvent($ndk, backupJson.wallet);
-            const recoveringWallet = await NDKCashuWallet.from(walletNDKEvent);
+            const proofsMap = new Map(Object.entries((backupJson as WalletStorage).wallet));
 
-            if (!recoveringWallet) {
-                toastStore.trigger({
-                    message: 'Failed to get Nostr Wallet from nostr event',
-                    background: `bg-error-300-600-token`,
-                });
-
-                return;
+            for (const [mint, proofs] of proofsMap.entries()) {
+                await consolidateMintTokens(mint, $wallet, proofs);
             }
 
-            // check if recovering wallet id matches the current wallet id
-            if (recoveringWallet.tagId() !== cashuWallet.tagId()) {
-                toastStore.trigger({
-                    message: 'Recovering wallet id does not match already loaded wallet id!',
-                    background: `bg-error-300-600-token`,
-                });
-
-                return;
-            }
-
-            // get ids of existing tokens in current wallet
-            const existingTokenIds = cashuWallet.tokens.map((token) => token.id);
-
-            // get existing proofs in current wallet
-            const existingProofs = cashuWallet.tokens.map((t) => t.proofs).flat();
-
-            // filter tokens from backup that don't exists in loaded wallet
-            const missingTokens = backupJson.tokens.filter(
-                (token) => !existingTokenIds.includes(token.id!)
-            );
-
-            if (missingTokens.length > 0) {
-                // convert raw token events to NDKCashuTokens
-                const ndkCashuTokens = missingTokens
-                    .map((token) => {
-                        const ndkCashuToken = new NDKCashuToken($ndk, token);
-                        try {
-                            const content = JSON.parse(ndkCashuToken.content);
-                            ndkCashuToken.proofs = content.proofs;
-                            if (!Array.isArray(ndkCashuToken.proofs)) return;
-                        } catch (e) {
-                            return;
-                        }
-
-                        return ndkCashuToken;
-                    })
-                    .filter((token) => token instanceof NDKCashuToken);
-
-                // get all the unique mints from tokens
-                const mints = new Set<string>();
-                ndkCashuTokens.forEach((t) => {
-                    if (t.mint) mints.add(t.mint);
-                });
-
-                const mintsArray = Array.from(mints);
-                const tokenPromises = mintsArray.map(async (mint) => {
-                    // get all the proofs tied to tokens with a specific mint
-                    const allProofs = ndkCashuTokens
-                        .filter((t) => t.mint === mint)
-                        .map((token) => token.proofs)
-                        .flat();
-
-                    const _wallet = new CashuWallet(new CashuMint(mint));
-                    const spentProofs = await _wallet.checkProofsSpent(allProofs);
-
-                    ndkCashuTokens
-                        .filter((t) => t.mint === mint)
-                        .map((token) => {
-                            // for a token to be valid, it should not have any spent proof
-                            // and no proof should be a duplicate of any existing proof in the wallet tokens
-
-                            const proofsCountBeforeFilter = token.proofs.length;
-
-                            // check if there's any proof that has been spent then this is not a valid token
-                            const unspentProofs = getUniqueProofs(token.proofs, spentProofs);
-                            if (proofsCountBeforeFilter !== unspentProofs.length) {
-                                return;
-                            }
-
-                            // if there's any proof in existing proofs that matches any of the proof
-                            // from this token, then its not a valid token
-                            const uniqueProofs = getUniqueProofs(token.proofs, existingProofs);
-                            if (proofsCountBeforeFilter !== uniqueProofs.length) {
-                                return;
-                            }
-
-                            cashuWallet.addToken(token);
-                        });
-                });
-
-                await Promise.all(tokenPromises);
-            }
-
-            toastStore.trigger({
+        toastStore.trigger({
                 message: 'Wallet recovery successful!',
                 background: `bg-success-300-600-token`,
             });

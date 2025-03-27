@@ -12,16 +12,11 @@ import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
 import { NDKCashuToken } from '@nostr-dev-kit/ndk';
 import { CashuWallet, type Proof } from '@cashu/cashu-ts';
 import {
-    cleanWallet,
-    extractUnspentProofsForMint,
-    findTokensWithDuplicateProofs,
     parseAndValidateBackup,
     publishCashuMintList,
-    removeDuplicateProofs,
-    resyncWalletAndBackup,
 } from './cashu';
 import currentUser from '$lib/stores/user';
-import { cashuTokensBackup, unsavedProofsBackup } from '$lib/stores/wallet';
+import { walletBackup, unsavedProofsBackup } from '$lib/stores/wallet';
 import { get } from 'svelte/store';
 
 describe('publishCashuMintList', () => {
@@ -376,7 +371,7 @@ describe('resyncWalletAndBackup', () => {
             return Promise.resolve([]);
         });
 
-        cashuTokensBackup.set(new Map());
+        walletBackup.set(new Map());
         unsavedProofsBackup.set(new Map());
     });
 
@@ -419,18 +414,18 @@ describe('resyncWalletAndBackup', () => {
                 return token;
             });
 
-        cashuTokensBackup.update((map) => {
+        walletBackup.update((map) => {
             tokens.forEach((token) => map.set(token.id, token.rawEvent()));
             return map;
         });
 
-        const $cashuTokensBackup = get(cashuTokensBackup);
+        const $walletBackup = get(walletBackup);
         const $unsavedProofsBackup = get(unsavedProofsBackup);
 
         // before resyncing wallet should have no token
         expect(mockCashuWallet.tokens.length).toEqual(0);
 
-        await resyncWalletAndBackup(mockCashuWallet, $cashuTokensBackup, $unsavedProofsBackup);
+        await resyncWalletAndBackup(mockCashuWallet, $walletBackup, $unsavedProofsBackup);
 
         expect(mockCashuWallet.tokens.length).toEqual(5);
     });
@@ -474,15 +469,15 @@ describe('resyncWalletAndBackup', () => {
                 mockCashuWallet.addToken(token);
             });
 
-        const $cashuTokensBackup = get(cashuTokensBackup);
+        const $walletBackup = get(walletBackup);
         const $unsavedProofsBackup = get(unsavedProofsBackup);
 
         // before resyncing backup should have no token
-        expect($cashuTokensBackup.size).toEqual(0);
+        expect($walletBackup.size).toEqual(0);
 
-        await resyncWalletAndBackup(mockCashuWallet, $cashuTokensBackup, $unsavedProofsBackup);
+        await resyncWalletAndBackup(mockCashuWallet, $walletBackup, $unsavedProofsBackup);
 
-        expect($cashuTokensBackup.size).toEqual(5);
+        expect($walletBackup.size).toEqual(5);
     });
 
     test('should create a token from unsavedProofsBackup and add it to both tokens backup and wallet', async () => {
@@ -513,16 +508,16 @@ describe('resyncWalletAndBackup', () => {
             return map;
         });
 
-        const $cashuTokensBackup = get(cashuTokensBackup);
+        const $walletBackup = get(walletBackup);
         const $unsavedProofsBackup = get(unsavedProofsBackup);
 
         // before resyncing backup should have no token
-        expect($cashuTokensBackup.size).toEqual(0);
+        expect($walletBackup.size).toEqual(0);
         expect(mockCashuWallet.tokens.length).toEqual(0);
 
-        await resyncWalletAndBackup(mockCashuWallet, $cashuTokensBackup, $unsavedProofsBackup);
+        await resyncWalletAndBackup(mockCashuWallet, $walletBackup, $unsavedProofsBackup);
 
-        expect($cashuTokensBackup.size).toEqual(1);
+        expect($walletBackup.size).toEqual(1);
         expect(mockCashuWallet.tokens.length).toEqual(1);
     });
 });

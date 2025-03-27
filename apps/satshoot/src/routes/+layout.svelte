@@ -74,14 +74,6 @@
     import type { TicketEvent } from '$lib/events/TicketEvent';
 
     import { searchTerms } from '$lib/stores/search';
-    import {
-        cashuPaymentInfoMap,
-        cashuTokensBackup,
-        unsavedProofsBackup,
-        wallet,
-    } from '$lib/stores/wallet';
-    import { cleanWallet, isCashuMintListSynced, resyncWalletAndBackup } from '$lib/utils/cashu';
-    import { debounce } from '$lib/utils/misc';
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
@@ -165,13 +157,6 @@
             classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
         };
         toastStore.trigger(t);
-    }
-
-    // Use the debounced function with resyncWalletAndBackup, setting a delay of 10 seconds
-    const debouncedResync = debounce(resyncWalletAndBackup, 10000);
-
-    $: if ($wallet && $cashuTokensBackup && $unsavedProofsBackup) {
-        debouncedResync($wallet, $cashuTokensBackup, $unsavedProofsBackup);
     }
 
     async function restoreLogin() {
@@ -426,8 +411,6 @@
         if (messageStore) messageStore.empty();
         if (allReceivedZaps) allReceivedZaps.empty();
         if (allReviews) allReviews.empty();
-
-        debouncedResync.clear();
     });
 
     // Check for app updates and offer reload option to user in a Toast
@@ -563,53 +546,6 @@
         }
     }
 
-    $: if ($currentUser && $wallet) {
-        // The Nostr Wallet may have just been created,
-        // and the Cashu mint list event might still be in progress.
-        // To allow for this delay, call isCashuMintListSynced
-        // within a setTimeout to provide a margin.
-        setTimeout(() => {
-            isCashuMintListSynced($wallet, $currentUser, toastStore);
-        }, 15 * 1000);
-
-        $wallet.on('found_spent_token', () => {
-            toastStore.trigger({
-                message: `Nostr Wallet contains some tokens which have been spent. Do you want to clean the wallet?`,
-                background: 'bg-warning-300-600-token',
-                autohide: false,
-                action: {
-                    label: 'Clean Wallet',
-                    response: () => {
-                        cleanWallet($wallet)
-                            .then((cleanedAmount) => {
-                                toastStore.trigger({
-                                    message: `${cleanedAmount} spent/duplicate sats cleaned from wallet`,
-                                    autohide: false,
-                                    background: `bg-success-300-600-token`,
-                                });
-                            })
-                            .catch((err) => {
-                                console.trace(err);
-                                toastStore.trigger({
-                                    message: `Failed to clean wallet!`,
-                                    autohide: false,
-                                    background: `bg-error-300-600-token`,
-                                });
-                            });
-                    },
-                },
-            });
-        });
-    }
-
-    /**
-     * When a derived store like cashuPaymentInfoMap is not referenced or used directly in a component, 
-     * Svelte might not trigger the store’s subscription, leading to unexpected behaviors like the store 
-     * appearing as undefined in modal components.
-
-     * Therefore, we are just referencing cashuPaymentInfoMap to subscribe it and use in payment modal
-     */
-    console.log('cashuPaymentInfoMap :>> ', $cashuPaymentInfoMap);
 </script>
 
 <Toast zIndex="z-[1100]" />

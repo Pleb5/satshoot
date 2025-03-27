@@ -41,10 +41,10 @@ import { get } from 'svelte/store';
 import { dev } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
-import { ndkNutzapMonitor, wallet, walletInit } from '$lib/wallet/wallet';
+import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
 import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
 import { type ToastStore } from '@skeletonlabs/skeleton';
-import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 
 export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
     console.log('begin user init');
@@ -146,6 +146,8 @@ export async function fetchAndInitWallet(
     ndk:NDKSvelte,
     relaysToFetchFrom?: string[],
 ) {
+    walletStatus.set(NDKWalletStatus.LOADING)
+
     let relays = DEFAULTRELAYURLS;
     if (!relaysToFetchFrom || relaysToFetchFrom.length === 0) {
         const userRelays = await fetchUserOutboxRelays(
@@ -184,6 +186,8 @@ export async function fetchAndInitWallet(
         }
         if (nostrWallet && cashuMintList) {
             walletInit(nostrWallet, cashuMintList, ndk, user);
+        } else {
+            walletStatus.set(NDKWalletStatus.FAILED)
         }
     });
 }
@@ -201,8 +205,7 @@ export function logout() {
     currentUser.set(null);
 
     // We dont remove modeCurrent(dark/light theme), debug and app_updated_at entries
-    localStorage.removeItem('unsavedProofsBackup');
-    localStorage.removeItem('cashuTokensBackup');
+    localStorage.removeItem('walletBackup');
     localStorage.removeItem('followsUpdated');
     localStorage.removeItem('tabStore');
     localStorage.removeItem('ticketTabStore');

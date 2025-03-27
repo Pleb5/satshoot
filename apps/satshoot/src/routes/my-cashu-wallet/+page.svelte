@@ -10,16 +10,14 @@
         walletInit,
         walletStatus,
     } from '$lib/wallet/wallet';
-    // import { cleanWallet } from '$lib/utils/cashu';
     import { arraysAreEqual, broadcastEvent, fetchAndInitWallet, fetchUserOutboxRelays, getCashuPaymentInfo } from '$lib/utils/helpers';
     import {
         NDKCashuMintList,
         NDKKind,
         NDKRelayList,
         NDKRelaySet,
-        NDKSubscriptionCacheUsage,
     } from '@nostr-dev-kit/ndk';
-    import { migrateCashuWallet, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+    import { consolidateMintTokens, migrateCashuWallet, NDKCashuWallet, NDKWalletStatus, type WalletProofChange } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
         getToastStore,
@@ -108,7 +106,7 @@
 
     function getBalanceStr(cashuWallet: NDKCashuWallet): string {
         let balanceStr: string = ''
-        const totalBalance = cashuWallet.balance();
+        const totalBalance = cashuWallet.balance;
         if (totalBalance) {
             balanceStr = totalBalance.amount.toString();
         } else {
@@ -239,7 +237,6 @@
                 (!arraysAreEqual(cashuWallet.mints, ndkCashuMintList.mints) ||
                     !arraysAreEqual(walletRelays, mintListRelays))
             ) {
-                // NOTE: This logic may not work in case of multiple wallet, will be refactored later
                 ndkCashuMintList.mints = cashuWallet.mints;
                 ndkCashuMintList.relays = walletRelays;
 
@@ -387,6 +384,14 @@
     }
 
     function handleCleanWallet() {
+        if (!cashuWallet) {
+            toastStore.trigger({
+                message: `Error! Wallet not found!`,
+                autohide: false,
+                background: `bg-error-300-600-token`,
+            });
+            return;
+        }
         const modalBody = `
                 <strong class="text-primary-400-500-token">
                     If a wallet contains used tokens, they will be removed
@@ -398,24 +403,31 @@
             if (r) {
                 modalStore.close();
                 cleaningWallet = true;
-                await cleanWallet(cashuWallet!)
-                    .then((cleanedAmount) => {
+                const onCleaningResult = (walletChange:WalletProofChange) => {
                         toastStore.trigger({
-                            message: `${cleanedAmount} spent/duplicate sats cleaned from wallet`,
+                            message: `${walletChange.destroy} spent sats cleaned from wallet`,
                             background: `bg-success-300-600-token`,
                             autohide: false,
                         });
-                    })
-                    .catch((err) => {
+                    }
+                for (const mint of cashuWallet!.mints) {
+                    try {
+                        await consolidateMintTokens(
+                            mint,
+                            cashuWallet!,
+                            undefined, // allProofs = wallet proofs implicitly
+                            onCleaningResult
+                        );
+                    } catch(err) {
                         console.error('An error occurred in cleaning wallet', err);
                         toastStore.trigger({
                             message: `Failed to clean used tokens!`,
                             background: `bg-info-300-600-token`,
                         });
-                    })
-                    .finally(() => {
+                    } finally {
                         cleaningWallet = false;
-                    });
+                    };
+                }
             }
         };
 
@@ -526,7 +538,9 @@
                         </Button>
                     </Card>
                 {/if}
-                {#if $walletStatus === WalletStatus.Loading}
+                {#if $walletStatus === NDKWalletStatus.INITIAL
+                    || $walletStatus === NDKWalletStatus.LOADING
+                }
                     <!-- Placeholder Section for desktop view -->
 
                     <section class="w-full max-[768px]:hidden grid grid-cols-3">
@@ -579,7 +593,7 @@
                             </div>
                         </section>
                     {/each}
-                {:else if $walletStatus === WalletStatus.Failed}
+                {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
                         <Button on:click={setupWallet}>Initialize Nostr Wallet</Button>
                         <Button on:click={importWallet}>Import Wallet</Button>

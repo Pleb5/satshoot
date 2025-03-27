@@ -1,26 +1,25 @@
 import ndk from '$lib/stores/ndk';
 import NDK, {
     NDKCashuMintList,
-    NDKEvent,
     NDKKind,
     NDKUser,
     type CashuPaymentInfo,
+    type Hexpubkey,
     type NDKFilter,
     type NostrEvent,
 } from '@nostr-dev-kit/ndk';
 import {
-    NDKCashuToken,
+    type MintUrl,
     type NDKCashuMintRecommendation,
     type NDKCashuWallet,
 } from '@nostr-dev-kit/ndk-wallet';
 import type { ToastSettings, ToastStore } from '@skeletonlabs/skeleton';
 import { get } from 'svelte/store';
-import { broadcastEvent, getCashuPaymentInfo } from './helpers';
-import { isNostrEvent } from './misc';
-import { CashuMint, CashuWallet, type Proof } from '@cashu/cashu-ts';
-import { cashuTokensBackup, unsavedProofsBackup } from '$lib/stores/wallet';
+import { broadcastEvent, getCashuPaymentInfo } from '$lib/utils/helpers';
+import { wallet } from '$lib/wallet/wallet';
 import currentUser from '$lib/stores/user';
-import { encryptSecret } from './crypto';
+import { encryptSecret } from '$lib/utils/crypto';
+import type { Proof } from '@cashu/cashu-ts';
 
 // This method checks if user's cashu mint list event (kind: 10019) is synced with user's selected cashu wallet
 export async function isCashuMintListSynced(
@@ -148,25 +147,21 @@ export async function syncP2pk(ndkCashuWallet: NDKCashuWallet, cashuPaymentInfo:
     return broadcastEvent($ndk, ndkMintList, {replaceable: true});
 }
 
-export function isValidBackup(value: any): value is { wallet: NostrEvent; tokens: NostrEvent[] } {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        isNostrEvent(value.wallet) &&
-        Array.isArray(value.tokens) &&
-        value.tokens.every(isNostrEvent)
-    );
+export interface WalletStorage {
+  version: string;
+  user: string;
+  wallet: Record<string, Proof[]>;
 }
 
 export function parseAndValidateBackup(
     jsonString: string
-): { wallet: NostrEvent; tokens: NostrEvent[] } | null {
+): WalletStorage | null {
     try {
-        const parsed = JSON.parse(jsonString);
+        const parsed = JSON.parse(jsonString) as WalletStorage;
 
         if (isValidBackup(parsed)) {
             console.log('Validation successful:', parsed);
-            return parsed; // Return the validated object if successful
+            return parsed;
         } else {
             console.error('Validation failed: Object structure does not match the schema.');
             return null;
@@ -177,88 +172,62 @@ export function parseAndValidateBackup(
     }
 }
 
+export function isValidBackup(value: WalletStorage): boolean {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        typeof value.version === 'string' &&
+        typeof value.user === 'string' &&
+        isProofMap(value.wallet)
+    );
+}
+
+function isProofMap(candidate: Record<string, Proof[]>): boolean {
+    try {
+        for (const [key, value] of Object.entries(candidate)) {
+            if (typeof key !== 'string') return false;
+            if (!isProofArray(value)) return false;
+        }
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
+function isProofArray(arr: unknown): arr is Proof[] {
+  if (!Array.isArray(arr)) return false;
+  
+  return arr.every(item => isProof(item));
+}
+
+function isProof(obj: unknown): obj is Proof {
+  if (!obj || typeof obj !== 'object') return false;
+  
+  const candidate = obj as Partial<Proof>;
+  
+  if (typeof candidate.id !== 'string') return false;
+  if (typeof candidate.amount !== 'number') return false;
+  if (typeof candidate.secret !== 'string') return false;
+  if (typeof candidate.C !== 'string') return false;
+  
+  return true;
+}
+
 export async function backupWallet(
-    cashuWallet: NDKCashuWallet,
     encrypted?: boolean,
     passphrase?: string
 ) {
-    const $ndk = get(ndk);
     const $currentUser = get(currentUser);
-    const $cashuTokensBackup = get(cashuTokensBackup);
-    const $unsavedProofsBackup = get(unsavedProofsBackup);
+    const $wallet = get(wallet);
+    
+    if (!$currentUser || !$wallet) return;
 
-    const tokensToBackup: NostrEvent[] = [];
+    const mintsWithProofs = $wallet.state.getMintsProofs();
 
-    const existingTokenIds = cashuWallet.tokens.map((t) => t.id);
-    const existingProofs = cashuWallet.tokens.map((t) => t.proofs).flat();
-
-    // When user triggers manual backup its possible that
-    // there are some tokens in svelte persisted store that are not in wallet
-    // include those proofs too
-    $cashuTokensBackup.forEach((token) => {
-        const ndkCashuToken = new NDKCashuToken($ndk, token);
-        try {
-            const content = JSON.parse(ndkCashuToken.content);
-            ndkCashuToken.proofs = content.proofs;
-            if (!Array.isArray(ndkCashuToken.proofs)) return;
-
-            const proofsCountBeforeFilter = ndkCashuToken.proofs.length;
-
-            // check if token not exists Wallet state and
-            // none of the proof is the duplicate of existing proofs in wallet
-            if (
-                !existingTokenIds.includes(token.id!) &&
-                proofsCountBeforeFilter === uniqueProofs.length
-            ) {
-                tokensToBackup.push(token);
-            }
-        } catch (e) {}
-    });
-
-    cashuWallet.tokens.forEach((token) => {
-        tokensToBackup.push(token.rawEvent());
-    });
-
-    // Its also possible that there are some unsaved proofs in svelte persisted store
-    // We need to include these proofs in backup too
-    const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
-    unsavedProofsArray.forEach(([mint, proofs]) => {
-        if (proofs.length > 0) {
-            // Creating new cashu token for backing up unsaved proofs related to a specific mint
-            const newCashuToken = new NDKCashuToken($ndk);
-            newCashuToken.proofs = proofs;
-            newCashuToken.mint = mint;
-            newCashuToken.wallet = cashuWallet!;
-            newCashuToken.created_at = Math.floor(Date.now() / 1000);
-            newCashuToken.pubkey = $currentUser!.pubkey;
-            newCashuToken.content = JSON.stringify({
-                proofs: newCashuToken.proofs,
-            });
-            newCashuToken.id = newCashuToken.getEventHash();
-
-            tokensToBackup.push(newCashuToken.rawEvent());
-            // also include token to svelte-persisted-store backup
-            cashuTokensBackup.update((map) => {
-                map.set(newCashuToken.id, newCashuToken.rawEvent());
-                return map;
-            });
-        }
-        // now that we have created a token from these proofs.
-        // so  we can remove these proofs from unsaved proofs backup
-        unsavedProofsBackup.update((map) => {
-            map.delete(mint);
-
-            return map;
-        });
-    });
-
-    cashuWallet.event.tags = cashuWallet.publicTags;
-    cashuWallet.event.content = JSON.stringify(cashuWallet.privateTags);
-    await cashuWallet.event.encrypt($currentUser!, undefined, 'nip44');
-
-    const json = {
-        wallet: cashuWallet.event.rawEvent(),
-        tokens: tokensToBackup,
+    const json:WalletStorage = {
+        version: '2.0',
+        user: $currentUser.pubkey,
+        wallet: Object.fromEntries(mintsWithProofs.entries()),
     };
 
     const stringified = JSON.stringify(json, null, 2);
@@ -275,169 +244,6 @@ export async function backupWallet(
         saveToFile(cipherData, true);
     } else {
         saveToFile(stringified);
-    }
-}
-
-export async function resyncWalletAndBackup(
-    $wallet: NDKCashuWallet,
-    $cashuTokensBackup: Map<string, NostrEvent>,
-    $unsavedProofsBackup: Map<string, Proof[]>
-) {
-    const $currentUser = get(currentUser);
-
-    console.log('syncing wallet and backup ', $cashuTokensBackup);
-    try {
-        const $ndk = get(ndk);
-
-        // remove used tokens from wallet
-        $wallet.usedTokenIds.forEach((id) => {
-            $wallet.removeTokenId(id);
-        });
-
-        // get ids of existing tokens in wallet
-        const existingTokenIds = $wallet.tokens.map((token) => token.id);
-        const existingProofs = $wallet.tokens.map((t) => t.proofs).flat();
-
-        // filter tokens from backup that don't exists in wallet
-        const missingTokensInWallet = Array.from($cashuTokensBackup.values()).filter(
-            (token) => !existingTokenIds.includes(token.id!)
-        );
-
-        if (missingTokensInWallet.length > 0) {
-            // convert raw token events to NDKCashuTokens
-            const ndkCashuTokens = missingTokensInWallet
-                .map((token) => {
-                    const ndkCashuToken = new NDKCashuToken($ndk, token);
-                    try {
-                        const content = JSON.parse(ndkCashuToken.content);
-                        ndkCashuToken.proofs = content.proofs;
-                        if (!Array.isArray(ndkCashuToken.proofs)) return;
-                    } catch (e) {
-                        return;
-                    }
-
-                    return ndkCashuToken;
-                })
-                .filter((token) => token instanceof NDKCashuToken);
-
-            const invalidTokens: NDKCashuToken[] = [];
-
-            // get all the unique mints from tokens
-            const mints = new Set<string>();
-            ndkCashuTokens.forEach((t) => {
-                if (t.mint) mints.add(t.mint);
-            });
-
-            const mintsArray = Array.from(mints);
-            const tokenPromises = mintsArray.map(async (mint) => {
-                // get all the proofs tied to tokens with a specific mint
-                const allProofs = ndkCashuTokens
-                    .filter((t) => t.mint === mint)
-                    .map((token) => token.proofs)
-                    .flat();
-
-                const _wallet = new CashuWallet(new CashuMint(mint));
-                const spentProofs = await _wallet.checkProofsSpent(allProofs);
-
-                ndkCashuTokens
-                    .filter((t) => t.mint === mint)
-                    .map(async (token) => {
-                        // for a token to be valid, it should not have any spent proof
-                        // and no proof should be a duplicate of any existing proof in the wallet tokens
-                        const proofsCountBeforeFilter = token.proofs.length;
-
-                        // check if there's any proof that has been spent then this is not a valid token
-                        const unspentProofs = getUniqueProofs(token.proofs, spentProofs);
-                        if (proofsCountBeforeFilter !== unspentProofs.length) {
-                            invalidTokens.push(token);
-                            return;
-                        }
-
-                        // if there's any proof in existing proofs that matches any of the proof
-                        // from this token, then its not a valid token
-                        const uniqueProofs = getUniqueProofs(token.proofs, existingProofs);
-                        if (proofsCountBeforeFilter !== uniqueProofs.length) {
-                            invalidTokens.push(token);
-                            return;
-                        }
-
-                        $wallet.addToken(token);
-                        existingProofs.push(...token.proofs);
-                    });
-            });
-
-            await Promise.all(tokenPromises);
-
-            if (invalidTokens.length > 0) {
-                cashuTokensBackup.update((map) => {
-                    // remove invalid tokens from the backup
-                    invalidTokens.forEach((t) => map.delete(t.id));
-
-                    return map;
-                });
-            }
-        }
-
-        const tokenIdsInBackup = Array.from($cashuTokensBackup.keys());
-        const missingTokensInBackup = $wallet.tokens.filter(
-            (token) => !tokenIdsInBackup.includes(token.id)
-        );
-
-        if (missingTokensInBackup.length > 0) {
-            const tokensToBackup: NostrEvent[] = [];
-            missingTokensInBackup.map((token) => {
-                tokensToBackup.push(token.rawEvent());
-            });
-
-            cashuTokensBackup.update((map) => {
-                tokensToBackup.forEach((token) => {
-                    if (token.id) map.set(token.id, token);
-                });
-
-                return map;
-            });
-        }
-
-        const unsavedProofsArray = Array.from($unsavedProofsBackup.entries());
-        unsavedProofsArray.map(async ([mint, proofs]) => {
-            if (proofs.length > 0) {
-                const _wallet = new CashuWallet(new CashuMint(mint));
-                const spentProofs = await _wallet.checkProofsSpent(proofs);
-                const unspentProofs = getUniqueProofs(proofs, spentProofs);
-
-                const newProofs = getUniqueProofs(unspentProofs, existingProofs);
-
-                if (newProofs.length > 0) {
-                    // Creating new cashu token for backing up unsaved proofs related to a specific mint
-                    const newCashuToken = new NDKCashuToken($ndk);
-                    newCashuToken.proofs = newProofs;
-                    newCashuToken.mint = mint;
-                    newCashuToken.wallet = $wallet;
-                    newCashuToken.created_at = Math.floor(Date.now() / 1000);
-                    newCashuToken.pubkey = $currentUser!.pubkey;
-                    newCashuToken.content = JSON.stringify({
-                        proofs: newCashuToken.proofs,
-                    });
-                    newCashuToken.id = newCashuToken.getEventHash();
-
-                    // now that new token has been created
-                    // we can add it to wallet and cashuTokensBackup
-                    // and remove these proofs from unsaved proofs backup
-                    $wallet.addToken(newCashuToken);
-                    cashuTokensBackup.update((map) => {
-                        map.set(newCashuToken.id, newCashuToken.rawEvent());
-                        return map;
-                    });
-                }
-            }
-            unsavedProofsBackup.update((map) => {
-                map.delete(mint);
-
-                return map;
-            });
-        });
-    } catch (error) {
-        console.error('An error occurred in syncing wallet and backup', error);
     }
 }
 

@@ -1,31 +1,33 @@
 import { getCashuPaymentInfo } from '$lib/utils/helpers';
-import { NDKCashuMintList, NDKUser, type CashuPaymentInfo, type NostrEvent } from '@nostr-dev-kit/ndk';
+import { NDKCashuMintList, NDKUser, type CashuPaymentInfo } from '@nostr-dev-kit/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import {
+    consolidateMintTokens,
     NDKCashuWallet,
     NDKNutzapMonitor,
     NDKWalletStatus,
+    type MintUrl,
 } from '@nostr-dev-kit/ndk-wallet';
 import { derived, writable, type Readable } from 'svelte/store';
-import { myTickets } from './freelance-eventstores';
-import currentUser from './user';
+import { myTickets } from '$lib/stores/freelance-eventstores';
+import currentUser from '$lib/stores/user';
 import { getMapSerializer, SatShootPubkey } from '$lib/utils/misc';
 import type { Proof } from '@cashu/cashu-ts';
 import { persisted } from 'svelte-persisted-store';
+import { get } from 'svelte/store';
 
 export const wallet = writable<NDKCashuWallet | null>(null);
 export let ndkNutzapMonitor:NDKNutzapMonitor | null = null;
 
 export const walletStatus = writable<NDKWalletStatus>(NDKWalletStatus.INITIAL);
 
-export const unsavedProofsBackup = persisted('unsavedProofsBackup', new Map<string, Proof[]>(), {
+// Used for backing up ALL Proofs of ALL Mints in the wallet, using NDKCashuWallet internal state
+// The backup writes a map into local storage, and state consolidation(internal and external)
+// is carried out on each wallet initialization (runs after import, session restart etc)
+// Does NOT need any async calls before saving state (No signing of an event etc)
+export const walletBackup = persisted('walletBackup', new Map<MintUrl, Proof[]>(), {
     storage: 'local',
-    serializer: getMapSerializer<string, Proof[]>(),
-});
-
-export const cashuTokensBackup = persisted('cashuTokensBackup', new Map<string, NostrEvent>(), {
-    storage: 'local',
-    serializer: getMapSerializer<string, NostrEvent>(),
+    serializer: getMapSerializer<MintUrl, Proof[]>(),
 });
 
 export function walletInit(
@@ -40,9 +42,34 @@ export function walletInit(
 
     nostrWallet.on("ready", () => {
         hasSubscribedForNutZaps = true;
-        // walletStatus.set(WalletStatus.Loaded);
+        walletStatus.set(NDKWalletStatus.READY);
+
+        console.log(
+            'Start collecting Cashu info of Freelancers',
+            get(cashuPaymentInfoMap)
+        );
 
         customSubscribeForNutZaps(ndk, user, nostrWallet, mintList);
+
+        // If we already have a backup in local storage, try to 
+        // load Proofs and sync up in the background
+        const $walletBackup = get(walletBackup);
+        if ($walletBackup) {
+            for (const [mint, proofs] of $walletBackup.entries()) {
+                consolidateMintTokens(mint, nostrWallet, proofs);
+            }
+        }
+    });
+
+    nostrWallet.on("balance_updated", () => {
+        const $wallet = get(wallet); 
+        if ($wallet) {
+            // Save entire wallet state on the following operations:
+            // Deposit, Create token in own/other mint, Melting
+            // This saves immediately after inner wallet state changed
+            // Nutzaps however are NOT saved (only after redemption)
+            walletBackup.set($wallet.state.getMintsProofs());
+        }
     });
 
     nostrWallet.start({subId: 'wallet', pubkey: user.pubkey});
@@ -121,5 +148,7 @@ export const cashuPaymentInfoMap: Readable<Map<string, CashuPaymentInfo>> = deri
         }
 
         update();
-    }
+    },
+    // Initial value
+    previousMap
 );

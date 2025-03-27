@@ -18,29 +18,23 @@
     import currentUser from '$lib/stores/user';
     import {
         cashuPaymentInfoMap,
-        cashuTokensBackup,
-        unsavedProofsBackup,
+        walletBackup,
         wallet,
-    } from '$lib/stores/wallet';
+    } from '$lib/wallet/wallet';
     import { goto } from '$app/navigation';
     import ndk from '$lib/stores/ndk';
     import {
         generateZapRequest,
-        NDKEvent,
         NDKKind,
         NDKNutzap,
         NDKRelayList,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
-        zapInvoiceFromEvent,
     } from '@nostr-dev-kit/ndk';
     import { broadcastEvent, fetchUserOutboxRelays, getZapConfiguration } from '$lib/utils/helpers';
     import { onDestroy, tick } from 'svelte';
     import { CashuMint } from '@cashu/cashu-ts';
-    import { resyncWalletAndBackup } from '$lib/utils/cashu';
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { wot } from '$lib/stores/wot';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
@@ -126,42 +120,40 @@
         ecashTooltipText = '';
     }
 
-    $: {
-        if (offer && $currentUser) {
-            hasSenderEcashSetup = $cashuPaymentInfoMap.has($currentUser.pubkey);
-            const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
+    $: if (offer && $currentUser) {
+        hasSenderEcashSetup = $cashuPaymentInfoMap.has($currentUser.pubkey);
+        const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
 
-            canPayWithEcash = true;
+        canPayWithEcash = true;
 
-            if (!hasSenderEcashSetup) {
-                canPayWithEcash = false;
-                ecashTooltipText = 'Setup Nostr Wallet to pay with ecash!';
-            } else if (!hasFreelancerEcashSetup) {
-                canPayWithEcash = false;
-                ecashTooltipText = 'Freelancer does not have ecash wallet';
-            } else if (!$wallet) {
-                canPayWithEcash = false;
-                ecashTooltipText = 'Wallet is not initialized yet';
-            } else {
-                $wallet
-                    .balance()
-                    .then((balance) => {
-                        const totalAmount = satshootShare + pledgedAmount + freelancerShare;
-                        if (!balance) {
-                            canPayWithEcash = false;
-                            ecashTooltipText = `Don't have enough balance in ecash wallet`;
-                        } else if (balance[0].amount < totalAmount) {
-                            canPayWithEcash = false;
-                            ecashTooltipText = `Don't have enough balance in 
-                                            ecash wallet(${balance[0].amount} sats)`;
-                        }
-                    })
-                    .catch((err) => {
-                        console.error('An error occurred in fetching wallet balance', err);
+        if (!hasSenderEcashSetup) {
+            canPayWithEcash = false;
+            ecashTooltipText = 'Setup Nostr Wallet to pay with ecash!';
+        } else if (!hasFreelancerEcashSetup) {
+            canPayWithEcash = false;
+            ecashTooltipText = 'Freelancer does not have ecash wallet';
+        } else if (!$wallet) {
+            canPayWithEcash = false;
+            ecashTooltipText = 'Wallet is not initialized yet';
+        } else {
+            $wallet
+                .balance()
+                .then((balance) => {
+                    const totalAmount = satshootShare + pledgedAmount + freelancerShare;
+                    if (!balance) {
                         canPayWithEcash = false;
                         ecashTooltipText = `Don't have enough balance in ecash wallet`;
-                    });
-            }
+                    } else if (balance[0].amount < totalAmount) {
+                        canPayWithEcash = false;
+                        ecashTooltipText = `Don't have enough balance in 
+ecash wallet(${balance[0].amount} sats)`;
+                    }
+                })
+                .catch((err) => {
+                    console.error('An error occurred in fetching wallet balance', err);
+                    canPayWithEcash = false;
+                    ecashTooltipText = `Don't have enough balance in ecash wallet`;
+                });
         }
     }
 
@@ -434,7 +426,7 @@
             // so, resync wallet and backup before making other payment
             // this will remove any used tokens in the wallet
             if ($wallet) {
-                await resyncWalletAndBackup($wallet!, $cashuTokensBackup, $unsavedProofsBackup);
+                await resyncWalletAndBackup($wallet!, $walletBackup, $unsavedProofsBackup);
             }
 
             await processPayment(UserEnum.Satshoot, SatShootPubkey, satshootSumMillisats).catch(
