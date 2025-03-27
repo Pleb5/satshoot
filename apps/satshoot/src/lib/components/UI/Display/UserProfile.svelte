@@ -10,37 +10,34 @@
     import { onMount } from 'svelte';
     import ProfileImage from './ProfileImage.svelte';
 
-    export let pubkey: Hexpubkey;
-
-    $: npub = nip19.npubEncode(pubkey);
-    $: avatarImage = getRoboHashPicture(pubkey);
-    $: profileLink = '/' + npub;
-
-    let userProfile: NDKUserProfile | undefined = undefined;
-
-    $: if (userProfile?.image) {
-        avatarImage = userProfile.image;
+    interface Props {
+        pubkey: Hexpubkey;
     }
+
+    let { pubkey }: Props = $props();
+
+    let npub = $derived(nip19.npubEncode(pubkey));
+    let avatarImage = $derived(getRoboHashPicture(pubkey));
+    let profileLink = $derived('/' + npub);
+
+    let userProfile = $state<NDKUserProfile | null>(null);
 
     onMount(async () => {
         const user = $ndk.getUser({ pubkey });
 
-        const profile = await user.fetchProfile({
+        userProfile = await user.fetchProfile({
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             closeOnEose: true,
             groupable: true,
             groupableDelay: 1000,
         });
-        if (profile) {
-            userProfile = profile;
-        }
     });
 </script>
 
 <div class="w-full flex flex-row gap-[20px] p-[5px]">
     <div class="flex flex-col">
         <a href={profileLink}>
-            <ProfileImage src={avatarImage} />
+            <ProfileImage src={userProfile?.image || avatarImage} />
         </a>
     </div>
     <div class="flex flex-col">

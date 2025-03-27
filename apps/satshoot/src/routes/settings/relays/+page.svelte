@@ -20,23 +20,25 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    let needRelays = true;
-    let posting = false;
+    let needRelays = $state(true);
+    let posting = $state(false);
 
-    let readRelayUrls: string[] = [];
-    let writeRelayUrls: string[] = [];
+    let readRelayUrls = $state<string[]>([]);
+    let writeRelayUrls = $state<string[]>([]);
 
-    let readRelayInputValue = '';
-    let writeRelayInputValue = '';
+    let readRelayInputValue = $state('');
+    let writeRelayInputValue = $state('');
 
-    let relaysLoaded = false;
+    let relaysLoaded = $state(false);
 
-    $: if ($currentUser && $connected && needRelays) {
-        needRelays = false;
-        relaysLoaded = false;
+    $effect(() => {
+        if ($currentUser && $connected && needRelays) {
+            needRelays = false;
+            relaysLoaded = false;
 
-        fetchOutboxRelays();
-    }
+            fetchOutboxRelays();
+        }
+    });
 
     async function fetchOutboxRelays() {
         const relays = await fetchUserOutboxRelays($ndk);
@@ -139,12 +141,11 @@
         'wss://relay.primal.net/',
     ];
 
-    $: filteredSuggestedInboxRelays = suggestedRelayUrls.filter(
-        (relay) => !readRelayUrls.includes(relay)
+    const filteredSuggestedInboxRelays = $derived(
+        suggestedRelayUrls.filter((relay) => !readRelayUrls.includes(relay))
     );
-
-    $: filteredSuggestedOutboxRelays = suggestedRelayUrls.filter(
-        (relay) => !writeRelayUrls.includes(relay)
+    const filteredSuggestedOutboxRelays = $derived(
+        suggestedRelayUrls.filter((relay) => !writeRelayUrls.includes(relay))
     );
 </script>
 
@@ -154,17 +155,17 @@
         {#each { length: 4 } as _}
             <section class="w-full">
                 <div class="p-4 space-y-4">
-                    <div class="placeholder animate-pulse" />
+                    <div class="placeholder animate-pulse"></div>
                     <div class="grid grid-cols-3 gap-8">
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
                     </div>
                     <div class="grid grid-cols-4 gap-4">
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
                     </div>
                 </div>
             </section>
@@ -191,7 +192,7 @@
                         disabled={posting}
                         classes="bg-black-100 text-gray-500 rounded-[0px] hover:text-white"
                     >
-                        <i class="bx bx-plus" />
+                        <i class="bx bx-plus"></i>
                     </Button>
                 </div>
             </div>
@@ -209,9 +210,7 @@
                     <div
                         class="w-full min-h-[50px] rounded-[8px] bg-black-100 dark:bg-white-100 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                     >
-                        <p class="font-[600] text-[18px] text-red-500">
-                            No Inbox Relays Selected!
-                        </p>
+                        <p class="font-[600] text-[18px] text-red-500">No Inbox Relays Selected!</p>
                     </div>
                 {/if}
             </div>
@@ -258,7 +257,7 @@
                         disabled={posting}
                         classes="bg-black-100 text-gray-500 rounded-[0px] hover:text-white"
                     >
-                        <i class="bx bx-plus" />
+                        <i class="bx bx-plus"></i>
                     </Button>
                 </div>
             </div>

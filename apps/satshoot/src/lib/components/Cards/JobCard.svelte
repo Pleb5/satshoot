@@ -10,11 +10,15 @@
 
     const modalStore = getModalStore();
 
-    export let job: TicketEvent;
-    export let tagCallback: ((tag: string) => void) | null = null;
+    interface Props {
+        job: TicketEvent;
+        tagCallback?: ((tag: string) => void) | null;
+    }
 
-    $: statusString = getJobStatusString(job.status);
-    $: statusColor = getJobStatusColor(job.status);
+    let { job, tagCallback = null }: Props = $props();
+
+    let statusString = $derived(getJobStatusString(job.status));
+    let statusColor = $derived(getJobStatusColor(job.status));
 
     function handleOptionClick() {
         const modalComponent: ModalComponent = {
@@ -48,12 +52,12 @@
     </div>
     <div class={statusRowWrapperClasses}>
         <p title="Job Status" class="{statusRowItemClasses} {statusColor}">
-            <i class="bx bx-info-circle" />
+            <i class="bx bx-info-circle"></i>
             Job Status: {statusString}
         </p>
         {#if job.created_at}
             <p title="Edit Date/Time" class={statusRowItemClasses}>
-                <i class="bx bx-edit-alt" />
+                <i class="bx bx-edit-alt"></i>
                 {formatDate(job.created_at * 1000, 'dd-MMM-yyyy, h:m:ss a')}
             </p>
         {/if}
@@ -63,11 +67,11 @@
             target="_blank"
             class={statusRowItemClasses}
         >
-            <i class="bx bx-globe" />
+            <i class="bx bx-globe"></i>
             satshoot.com
         </a>
         <Button title="Options" on:click={handleOptionClick}>
-            <i class="bx bx-dots-vertical-rounded" />
+            <i class="bx bx-dots-vertical-rounded"></i>
         </Button>
     </div>
     <div class="w-full flex flex-col gap-[10px]">
@@ -80,7 +84,7 @@
         {#each job.tTags as tag}
             <button
                 class={tagItemClasses}
-                on:click={() => {
+                onclick={() => {
                     if (tagCallback) tagCallback(tag[1]);
                 }}
             >

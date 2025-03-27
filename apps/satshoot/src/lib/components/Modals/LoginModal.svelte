@@ -11,7 +11,7 @@
 
     const modalStore = getModalStore();
 
-    let selectedLoginMethod: LoginMethod | null = null;
+    let selectedLoginMethod: LoginMethod | null = $state(null);
 
     const popUpText = `
 <p>
@@ -56,14 +56,15 @@
 
 {#if $modalStore[0]}
     <Popup title="Login" {popUpText}>
-        <Button
-            classes={!selectedLoginMethod ? 'hidden' : ''}
-            slot="headerAction"
-            variant="outlined"
-            on:click={() => (selectedLoginMethod = null)}
-        >
-            <i class="bx bx-chevron-left" />
-        </Button>
+        {#snippet headerAction()}
+            <Button
+                classes={!selectedLoginMethod ? 'hidden' : ''}
+                variant="outlined"
+                on:click={() => (selectedLoginMethod = null)}
+            >
+                <i class="bx bx-chevron-left"></i>
+            </Button>
+        {/snippet}
 
         <div class="w-full flex flex-col">
             <div class="w-full flex flex-col gap-[10px] pt-[10px]">
@@ -89,12 +90,15 @@
                             >Generate Account</Button
                         >
                         <div class="flex justify-center">
-                            <a class="anchor" href="https://github.com/Pleb5/satshoot" target="_blank">
-                                <span>Running v0.3.0</span> 
+                            <a
+                                class="anchor"
+                                href="https://github.com/Pleb5/satshoot"
+                                target="_blank"
+                            >
+                                <span>Running v0.3.0</span>
                             </a>
                         </div>
                     </div>
-
                 {:else if selectedLoginMethod === LoginMethod.Nip07}
                     <Nip07Login />
                 {:else if selectedLoginMethod === LoginMethod.Bunker}

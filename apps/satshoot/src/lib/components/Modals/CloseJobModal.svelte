@@ -23,21 +23,27 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let job: TicketEvent;
-    export let offer: OfferEvent | null = null;
+    interface Props {
+        job: TicketEvent;
+        offer?: OfferEvent | null;
+    }
 
-    let expertise = false;
-    let availability = false;
-    let communication = false;
+    let { job, offer = null }: Props = $props();
 
-    let isIssueResolved = true;
-    let reviewText = '';
-    let closing = false;
+    let expertise = $state(false);
+    let availability = $state(false);
+    let communication = $state(false);
+
+    let isIssueResolved = $state(true);
+    let reviewText = $state('');
+    let closing = $state(false);
     let errorMessage = '';
 
-    $: if (!isIssueResolved) {
-        expertise = availability = communication = false;
-    }
+    $effect(() => {
+        if (!isIssueResolved) {
+            expertise = availability = communication = false;
+        }
+    });
 
     async function closeJob() {
         if (job) {

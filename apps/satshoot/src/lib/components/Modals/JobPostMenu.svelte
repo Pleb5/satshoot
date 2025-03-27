@@ -18,58 +18,49 @@
     import Popup from '../UI/Popup.svelte';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
+    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 
     const modalStore = getModalStore();
 
-    export let job: TicketEvent;
-
-    let bech32ID = '';
-    $: if (job) {
-        bech32ID = job.encode();
+    interface Props {
+        job: TicketEvent;
     }
 
-    let myJob = false;
-    $: if ($currentUser && job && $currentUser.pubkey === job.pubkey) {
-        myJob = true;
-    } else {
-        myJob = false;
-    }
+    let { job }: Props = $props();
 
-    let isWinner = false;
-    $: if ($currentUser && job.winnerFreelancer === $currentUser.pubkey) {
-        isWinner = true;
-    } else {
-        isWinner = false;
-    }
+    const bech32ID = $derived(job.encode());
 
-    let review: ReviewEvent | undefined = undefined;
-    let canReviewClient = false;
-    $: if ($clientReviews) {
-        review = $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress);
+    const myJob = $derived($currentUser?.pubkey === job.pubkey);
+    const isWinner = $derived($currentUser?.pubkey === job.winnerFreelancer);
+    const showMessageButton = $derived(
+        !!$currentUser && (myJob || job.winnerFreelancer === $currentUser.pubkey)
+    );
 
-        if (review) {
-            canReviewClient = false;
-        } else if (isWinner) {
-            canReviewClient = true;
+    const review = $derived(
+        $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress)
+    );
+
+    const canReviewClient = $derived.by(() => {
+        if (!review && $currentUser && job.winnerFreelancer === $currentUser.pubkey) {
+            return true;
         }
-    }
+        return false;
+    });
 
-    let showMessageButton = false;
-    $: if ($currentUser && (myJob || job.winnerFreelancer === $currentUser.pubkey)) {
-        showMessageButton = true;
-    } else {
-        showMessageButton = false;
-    }
+    // Reactive states
+    let winnerOffer = $state<OfferEvent | null>(null);
 
-    let winnerOffer: OfferEvent | null = null;
+    // Effect to fetch winner offer
+    $effect(() => {
+        if (!job.acceptedOfferAddress) return;
 
-    onMount(async () => {
-        if (job.acceptedOfferAddress) {
-            const winnerOfferEvent = await $ndk.fetchEvent(job.acceptedOfferAddress);
-            if (winnerOfferEvent) {
-                winnerOffer = OfferEvent.from(winnerOfferEvent);
+        $ndk.fetchEvent(job.acceptedOfferAddress, {
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        }).then((event) => {
+            if (event) {
+                winnerOffer = OfferEvent.from(event);
             }
-        }
+        });
     });
 
     function handleShare() {
@@ -222,7 +213,7 @@
                         classes="justify-start"
                         fullWidth
                     >
-                        <i class="bx bxs-conversation" />
+                        <i class="bx bxs-conversation"></i>
                         <p class="">Message</p>
                     </Button>
                 {/if}

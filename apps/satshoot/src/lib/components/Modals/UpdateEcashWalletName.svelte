@@ -6,9 +6,13 @@
 
     const modalStore = getModalStore();
 
-    export let dataToEdit: string;
+    interface Props {
+        dataToEdit: string;
+    }
 
-    $: value = dataToEdit;
+    let { dataToEdit }: Props = $props();
+
+    let value = $state(dataToEdit);
 
     function update() {
         if ($modalStore[0].response) {

@@ -44,76 +44,82 @@
     import RelayRemovalConfirmation from '$lib/components/Modals/RelayRemovalConfirmation.svelte';
     import RemoveMintModal from '$lib/components/Modals/RemoveMintModal.svelte';
 
+    enum Tab {
+        Mints,
+        Relays,
+    }
+
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    let cashuWallet: NDKCashuWallet | null = null;
+    let selectedTab = $state(Tab.Mints);
+    const cashuWallet = $derived($wallet);
 
-    $: if ($wallet) {
-        cashuWallet = $wallet;
-    }
-
-    let mintBalances: Record<string, number> = {};
-    let walletBalance = 0;
-    let walletUnit = 'sats';
+    let mintBalances: Record<string, number> = $state({});
+    let walletBalance = $state(0);
+    let walletUnit = $state('sats');
     let cleaningWallet = false;
 
-    $: if (cashuWallet) {
-        mintBalances = cashuWallet.mintBalances;
+    $effect(() => {
+        if (cashuWallet) {
+            mintBalances = cashuWallet.mintBalances;
 
-        cashuWallet.balance().then((res) => {
-            if (res) {
-                walletBalance = res[0].amount;
-                walletUnit = res[0].unit;
-            }
-        });
-
-        cashuWallet.on('balance_updated', (balance) => {
-            mintBalances = cashuWallet!.mintBalances;
-
-            cashuWallet!.balance().then((res) => {
+            cashuWallet.balance().then((res) => {
                 if (res) {
                     walletBalance = res[0].amount;
                     walletUnit = res[0].unit;
                 }
             });
-        });
-    }
 
-    $: if (!cashuWallet && $currentUser && $ndkWalletService) {
-        (async () => {
-            const relayUrls = [...$ndk.pool.urls()];
+            cashuWallet.on('balance_updated', (balance) => {
+                mintBalances = cashuWallet!.mintBalances;
 
-            const relayListEvent = await fetchUserOutboxRelays($ndk);
-            if (relayListEvent) {
-                const relayList = NDKRelayList.from(relayListEvent);
-                relayUrls.push(...relayList.writeRelayUrls);
-            }
+                cashuWallet!.balance().then((res) => {
+                    if (res) {
+                        walletBalance = res[0].amount;
+                        walletUnit = res[0].unit;
+                    }
+                });
+            });
+        }
+    });
 
-            const walletEvent = await $ndk.fetchEvent(
-                { kinds: [NDKKind.CashuWallet], authors: [$currentUser.pubkey] },
-                { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL },
-                NDKRelaySet.fromRelayUrls(relayUrls, $ndk)
-            );
+    $effect(() => {
+        if (!cashuWallet && $currentUser && $ndkWalletService) {
+            (async () => {
+                const relayUrls = [...$ndk.pool.urls()];
 
-            if (!walletEvent) {
-                walletStatus.set(WalletStatus.Failed);
-                return;
-            }
+                const relayListEvent = await fetchUserOutboxRelays($ndk);
+                if (relayListEvent) {
+                    const relayList = NDKRelayList.from(relayListEvent);
+                    relayUrls.push(...relayList.writeRelayUrls);
+                }
 
-            const wallet = await NDKCashuWallet.from(walletEvent);
+                const walletEvent = await $ndk.fetchEvent(
+                    { kinds: [NDKKind.CashuWallet], authors: [$currentUser.pubkey] },
+                    { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL },
+                    NDKRelaySet.fromRelayUrls(relayUrls, $ndk)
+                );
 
-            if (!wallet) {
-                walletStatus.set(WalletStatus.Failed);
-                return;
-            }
+                if (!walletEvent) {
+                    walletStatus.set(WalletStatus.Failed);
+                    return;
+                }
 
-            if (!$ndkWalletService.defaultWallet) {
-                $ndkWalletService.defaultWallet = wallet;
-                $ndkWalletService.emit('wallet:default', wallet);
-            }
-        })();
-    }
+                const wallet = await NDKCashuWallet.from(walletEvent);
+
+                if (!wallet) {
+                    walletStatus.set(WalletStatus.Failed);
+                    return;
+                }
+
+                if (!$ndkWalletService.defaultWallet) {
+                    $ndkWalletService.defaultWallet = wallet;
+                    $ndkWalletService.emit('wallet:default', wallet);
+                }
+            })();
+        }
+    });
 
     async function setupWallet() {
         const newWallet = new NDKCashuWallet($ndk);
@@ -335,7 +341,7 @@
     }
 
     function handleRemoveMint(mint: string) {
-        if (!cashuWallet) return
+        if (!cashuWallet) return;
 
         cashuWallet.mints = cashuWallet.mints.filter((m) => m !== mint);
 
@@ -387,11 +393,10 @@
                 },
             },
         });
-
     }
 
     function handleRemoveRelay(relay: string) {
-        if (!cashuWallet) return
+        if (!cashuWallet) return;
 
         cashuWallet.relays = cashuWallet.relays.filter((r) => r !== relay);
 
@@ -484,13 +489,6 @@
         placement: 'top-end',
     };
 
-    enum Tab {
-        Mints,
-        Relays,
-    }
-
-    let selectedTab = Tab.Mints;
-
     const tabs = [
         {
             id: Tab.Mints,
@@ -527,14 +525,16 @@
                         classes="bg-warning-500 dark:bg-warning-700 hidden max-[768px]:flex relative"
                     >
                         <p class="font-[600] text-white">
-                            Warning: Experimental feature, use at your own risk! LN payments will only appear in your LN wallet balance. This wallet only handles Cashu ecash!
+                            Warning: Experimental feature, use at your own risk! LN payments will
+                            only appear in your LN wallet balance. This wallet only handles Cashu
+                            ecash!
                         </p>
                         <Button
                             variant="text"
                             classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
                             on:click={() => ($displayEcashWarning = false)}
                         >
-                            <i class="bx bx-x" />
+                            <i class="bx bx-x"></i>
                         </Button>
                     </Card>
                 {/if}
@@ -543,31 +543,31 @@
 
                     <section class="w-full max-[768px]:hidden grid grid-cols-3">
                         <div class="p-4 space-y-4">
-                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse"></div>
                             <div class="grid grid-cols-3 gap-8">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                             <div class="grid grid-cols-4 gap-4">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                         </div>
                         <div class="col-span-2 p-4 space-y-4">
-                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse"></div>
                             <div class="grid grid-cols-3 gap-8">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                             <div class="grid grid-cols-4 gap-4">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                         </div>
                     </section>
@@ -576,17 +576,17 @@
                     {#each { length: 2 } as _}
                         <section class="w-full hidden max-[768px]:block">
                             <div class="p-4 space-y-4">
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"></div>
                                 <div class="grid grid-cols-3 gap-8">
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
                                 </div>
                                 <div class="grid grid-cols-4 gap-4">
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
                                 </div>
                             </div>
                         </section>
@@ -619,7 +619,7 @@
                                                 classes="bg-white-0 hover:bg-white-300 hover:text-black-400"
                                                 on:click={editName}
                                             >
-                                                <i class="bx bxs-edit" />
+                                                <i class="bx bxs-edit"></i>
                                             </Button>
                                         </div>
                                         <p class="text-[24px] font-[500] text-white">
@@ -633,7 +633,7 @@
 
                                         <i
                                             class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]"
-                                        />
+                                        ></i>
                                     </div>
                                     <PieChart dataset={mintBalances} />
                                     <WithdrawEcash {cashuWallet} />
@@ -647,7 +647,7 @@
                                             grow
                                             on:click={handleWalletBackup}
                                         >
-                                            <i class="bx bx-download" />
+                                            <i class="bx bx-download"></i>
                                             Backup
                                         </Button>
                                         <Button
@@ -656,7 +656,7 @@
                                             grow
                                             on:click={recoverWallet}
                                         >
-                                            <i class="bx bx-upload" />
+                                            <i class="bx bx-upload"></i>
                                             Recover
                                         </Button>
                                         <Button
@@ -684,7 +684,7 @@
                                             classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
                                             on:click={() => ($displayEcashWarning = false)}
                                         >
-                                            <i class="bx bx-x" />
+                                            <i class="bx bx-x"></i>
                                         </Button>
                                     </Card>
                                 {/if}
@@ -712,11 +712,11 @@
                                                         </p>
                                                         <button
                                                             class={deleteButtonClasses}
-                                                            on:click={() => removeMint(mint)}
+                                                            onclick={() => removeMint(mint)}
                                                             use:popup={tooltipRemoveMint}
                                                             aria-label="Remove Mint"
                                                         >
-                                                            <i class={deleteIconClasses} />
+                                                            <i class={deleteIconClasses}></i>
                                                         </button>
                                                     </div>
                                                 {/each}
@@ -739,11 +739,11 @@
                                                         </p>
                                                         <button
                                                             class={deleteButtonClasses}
-                                                            on:click={() => removeRelay(relay)}
+                                                            onclick={() => removeRelay(relay)}
                                                             use:popup={tooltipRemoveRelay}
                                                             aria-label="Remove Relay"
                                                         >
-                                                            <i class={deleteIconClasses} />
+                                                            <i class={deleteIconClasses}></i>
                                                         </button>
                                                     </div>
                                                 {/each}

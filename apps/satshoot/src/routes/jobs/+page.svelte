@@ -8,7 +8,7 @@
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from '@nostr-dev-kit/ndk';
 
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import TowerBroadcastIcon from '$lib/components/Icons/TowerBroadcastIcon.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import Announcement from '$lib/components/Modals/Announcement.svelte';
@@ -21,15 +21,36 @@
 
     const modalStore = getModalStore();
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: filterList = searchQuery ? searchQuery.split(',') : [];
+    let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
+    let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
 
-    let newJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let jobList: Set<TicketEvent> = new Set();
+    let newJobs = $state<NDKEventStore<ExtendedBaseType<TicketEvent>>>();
+    let jobList = $state<Set<TicketEvent>>(new Set());
     // tracks if user-defined filtering returned anything
-    let noResults = false;
+    let noResults = $state(false);
+    let currentPage = $state(1);
 
-    let currentPage = 1;
+    $effect(() => {
+        if ($newJobs && filterList) {
+            // We just received a job
+            orderEventsChronologically($newJobs);
+            jobList = new Set(
+                $newJobs.filter((t: TicketEvent) => {
+                    // New job check: if a job status is changed this removes not new jobs
+                    const newJob = t.status === TicketStatus.New;
+                    // wot is always at least 3 if there is a user logged in
+                    // only update filter if other users are also present
+                    const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
+
+                    return newJob && partOfWot;
+                })
+            );
+
+            if (filterList.length > 0) {
+                filterJobs();
+            }
+        }
+    });
 
     function filterJobs() {
         // We need to check all jobs against all filters
@@ -65,14 +86,6 @@
         }
     }
 
-    function addTagAndFilter(tag: string) {
-        if (!filterList.includes(tag)) {
-            filterList.push(tag);
-            filterList = filterList;
-            filterJobs();
-        }
-    }
-
     function readyToWork() {
         const modalComponent: ModalComponent = {
             ref: Announcement,
@@ -83,26 +96,6 @@
             component: modalComponent,
         };
         modalStore.trigger(modal);
-    }
-
-    $: if ($newJobs && filterList) {
-        // We just received a job
-        orderEventsChronologically($newJobs);
-        jobList = new Set(
-            $newJobs.filter((t: TicketEvent) => {
-                // New job check: if a job status is changed this removes not new jobs
-                const newJob = t.status === TicketStatus.New;
-                // wot is always at least 3 if there is a user logged in
-                // only update filter if other users are also present
-                const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
-
-                return newJob && partOfWot;
-            })
-        );
-
-        if (filterList.length > 0) {
-            filterJobs();
-        }
     }
 
     function handlePrev() {
@@ -160,12 +153,14 @@
                             {:else}
                                 <div class="w-[90vw] flex flex-wrap items-center gap-x-4 gap-y-8">
                                     {#each { length: 8 } as _}
-                                        <div class="card w-[80vw] sm:w-[40vw] flex flex-col items-center flex-grow flex-wrap h-48 p-4 space-y-4">
-                                            <div class="w-full placeholder animate-pulse" />
+                                        <div
+                                            class="card w-[80vw] sm:w-[40vw] flex flex-col items-center flex-grow flex-wrap h-48 p-4 space-y-4"
+                                        >
+                                            <div class="w-full placeholder animate-pulse"></div>
                                             <div class="w-[60%] grid grid-rows-3 gap-8">
-                                                <div class="placeholder animate-pulse" />
-                                                <div class="placeholder animate-pulse" />
-                                                <div class="placeholder animate-pulse" />
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
                                             </div>
                                         </div>
                                     {/each}
@@ -207,7 +202,7 @@
     <div class="fixed bottom-20 sm:bottom-5 right-4 sm:right-8">
         <button
             class="btn btn-icon-lg sm:btn-icon-xl bg-blue-500"
-            on:click={() => {
+            onclick={() => {
                 readyToWork();
             }}
         >

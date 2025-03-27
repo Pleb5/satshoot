@@ -14,39 +14,36 @@
 
     const modalStore = getModalStore();
 
-    export let userHex: Hexpubkey;
-
-    let onlyShowMyReviews = false;
-
-    let aggregatedFreelancerRatings: AggregatedFreelancerRatings;
-    let numberOfPositiveOutcome = 0;
-    let numberOfNegativeOutcome = 0;
-    let rateOfPositiveOutcome = NaN;
-
-    let reviews: ReviewEvent[] = [];
-    let myReviews: ReviewEvent[] = [];
-
-    $: if ($freelancerReviews) {
-        aggregatedFreelancerRatings = aggregateFreelancerRatings(userHex);
-        reviews = $freelancerReviews.filter((review) => review.reviewedPerson === userHex);
+    interface Props {
+        userHex: Hexpubkey;
     }
 
-    $: if ($currentUser && reviews) {
-        myReviews = reviews.filter((review) => review.pubkey === $currentUser.pubkey);
-    } else {
-        myReviews = [];
-    }
+    let { userHex }: Props = $props();
 
-    $: if (aggregatedFreelancerRatings) {
-        numberOfPositiveOutcome = aggregatedFreelancerRatings.success;
-        numberOfNegativeOutcome = aggregatedFreelancerRatings.failure;
-    }
+    let onlyShowMyReviews = $state(false);
 
-    $: if (numberOfPositiveOutcome || numberOfNegativeOutcome) {
-        rateOfPositiveOutcome = Math.round(
-            (numberOfPositiveOutcome / (numberOfPositiveOutcome + numberOfNegativeOutcome)) * 100
-        );
-    }
+    const aggregatedFreelancerRatings = $derived(aggregateFreelancerRatings(userHex));
+    const { numberOfPositiveOutcome, numberOfNegativeOutcome } = $derived({
+        numberOfPositiveOutcome: aggregatedFreelancerRatings.success,
+        numberOfNegativeOutcome: aggregatedFreelancerRatings.failure,
+    });
+    const rateOfPositiveOutcome = $derived.by(() => {
+        if (numberOfPositiveOutcome || numberOfNegativeOutcome) {
+            return Math.round(
+                (numberOfPositiveOutcome / (numberOfPositiveOutcome + numberOfNegativeOutcome)) *
+                    100
+            );
+        }
+
+        return NaN;
+    });
+
+    const reviews = $derived(
+        $freelancerReviews.filter((review) => review.reviewedPerson === userHex)
+    );
+    const myReviews = $derived(
+        reviews.filter((review) => $currentUser && review.pubkey === $currentUser.pubkey)
+    );
 
     const jobFulfilledStatusClasses =
         'transition ease duration-[0.3s] flex flex-row gap-[5px] grow-[1] pl-[10px] font-[600] rounded-[4px] ' +
@@ -75,14 +72,14 @@
                         </p>
                         <div class="w-full flex flex-row flex-wrap gap-[10px]">
                             <div class="{jobFulfilledStatusClasses} text-gray-500 bg-green-600">
-                                <i class="bx bxs-check-circle" />
+                                <i class="bx bxs-check-circle"></i>
                                 <p class="grow-[1]">Fulfilled Jobs</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {numberOfPositiveOutcome}
                                 </p>
                             </div>
                             <div class="{jobFulfilledStatusClasses} text-white bg-red-600">
-                                <i class="bx bxs-x-circle" />
+                                <i class="bx bxs-x-circle"></i>
                                 <p class="grow-[1]">Unfulfilled Jobs</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {numberOfNegativeOutcome}
@@ -109,21 +106,21 @@
                         </p>
                         <div class="w-full flex flex-row flex-wrap gap-[10px]">
                             <div class={qualitiesBadgeClasses}>
-                                <i class="bx bxs-star" />
+                                <i class="bx bxs-star"></i>
                                 <p class="grow-[1]">Availability</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {aggregatedFreelancerRatings.availability}
                                 </p>
                             </div>
                             <div class={qualitiesBadgeClasses}>
-                                <i class="bx bxs-star" />
+                                <i class="bx bxs-star"></i>
                                 <p class="grow-[1]">Communication</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {aggregatedFreelancerRatings.communication}
                                 </p>
                             </div>
                             <div class={qualitiesBadgeClasses}>
-                                <i class="bx bxs-star" />
+                                <i class="bx bxs-star"></i>
                                 <p class="grow-[1]">Expertise</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {aggregatedFreelancerRatings.expertise}

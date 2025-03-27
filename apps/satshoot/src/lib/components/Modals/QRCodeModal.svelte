@@ -1,24 +1,34 @@
 <!-- src/lib/QRCode.svelte -->
 <script lang="ts">
-    import { onMount } from 'svelte';
     import QRCode from 'qrcode';
     import Popup from '../UI/Popup.svelte';
     import { getModalStore } from '@skeletonlabs/skeleton';
 
     const modalStore = getModalStore();
 
-    export let title: string;
-    export let data: string; // The data to encode in the QR code
-    export let size = 200; // Size of the QR code (width and height)
-    export let margin = 1; // Margin around the QR code
-    export let darkColor = '#000000'; // Dark color of the QR code
-    export let lightColor = '#ffffff'; // Light color of the QR code
+    interface Props {
+        title: string;
+        data: string; // The data to encode in the QR code
+        size?: number; // Size of the QR code (width and height)
+        margin?: number; // Margin around the QR code
+        darkColor?: string; // Dark color of the QR code
+        lightColor?: string; // Light color of the QR code
+    }
 
-    let canvas: HTMLCanvasElement;
+    let {
+        title,
+        data,
+        size = 200,
+        margin = 1,
+        darkColor = '#000000',
+        lightColor = '#ffffff',
+    }: Props = $props();
 
-    onMount(async () => {
+    let canvas = $state<HTMLCanvasElement>();
+
+    $effect(() => {
         if (canvas) {
-            await QRCode.toCanvas(canvas, data, {
+            QRCode.toCanvas(canvas, data, {
                 width: size,
                 margin,
                 color: {
@@ -33,7 +43,7 @@
 {#if $modalStore[0]}
     <Popup {title}>
         <div class="flex flex-col justify-center items-center">
-            <canvas bind:this={canvas} width={size} height={size} />
+            <canvas bind:this={canvas} width={size} height={size}></canvas>
         </div>
     </Popup>
 {/if}

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import OfferCard from '$lib/components/Cards/OfferCard.svelte';
     import UserCard from '$lib/components/Cards/UserCard.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
@@ -24,114 +24,122 @@
         Lost,
     }
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: filterList = searchQuery ? searchQuery.split(',') : [];
-    $: npub = $page.params.npub;
-    $: user = $ndk.getUser({ npub: npub });
+    let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
+    let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
+    let npub = $derived(page.params.npub);
+    let user = $derived($ndk.getUser({ npub: npub }));
 
     const subOptions = {
         autoStart: true,
     };
 
-    let allJobsOfUser: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let allOffersOfUser: NDKEventStore<ExtendedBaseType<OfferEvent>>;
-    let filteredJobs: ExtendedBaseType<ExtendedBaseType<TicketEvent>>[] = [];
-    let filteredOffers: ExtendedBaseType<ExtendedBaseType<OfferEvent>>[] = [];
+    let allJobsOfUser = $state<NDKEventStore<ExtendedBaseType<TicketEvent>>>();
+    let allOffersOfUser = $state<NDKEventStore<ExtendedBaseType<OfferEvent>>>();
+    let filteredJobs = $state<ExtendedBaseType<ExtendedBaseType<TicketEvent>>[]>([]);
+    let filteredOffers = $state<ExtendedBaseType<ExtendedBaseType<OfferEvent>>[]>([]);
 
     // jobs on which use has made offers
-    let appliedJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-
-    $: if (user) {
-        if (allJobsOfUser) allJobsOfUser.empty();
-        if (allOffersOfUser) allOffersOfUser.empty();
-
-        allJobsOfUser = $ndk.storeSubscribe<TicketEvent>(
-            {
-                kinds: [NDKKind.FreelanceTicket],
-                authors: [user.pubkey],
-            },
-            subOptions,
-            TicketEvent
-        );
-
-        allOffersOfUser = $ndk.storeSubscribe<OfferEvent>(
-            {
-                kinds: [NDKKind.FreelanceOffer],
-                authors: [user.pubkey],
-            },
-            subOptions,
-            OfferEvent
-        );
-    }
-
-    $: if ($allOffersOfUser.length > 0) {
-        const dTagOfJobs = $allOffersOfUser.map(
-            (offer) => offer.referencedTicketAddress.split(':')[2]
-        );
-
-        appliedJobs = $ndk.storeSubscribe<TicketEvent>(
-            {
-                kinds: [NDKKind.FreelanceTicket],
-                '#d': dTagOfJobs,
-            },
-            {
-                autoStart: true,
-                closeOnEose: false,
-                groupable: true,
-                groupableDelay: 1000,
-            },
-            TicketEvent
-        );
-    }
-
-    $: if ($allJobsOfUser && filterList) {
-        orderEventsChronologically($allJobsOfUser);
-
-        // filter based on status
-        filteredJobs = $allJobsOfUser.filter((job) => {
-            const { new: isNew, inProgress, closed } = $jobFilter;
-            const { status } = job;
-
-            return (
-                (isNew && status === TicketStatus.New) ||
-                (inProgress && status === TicketStatus.InProgress) ||
-                (closed && (status === TicketStatus.Resolved || status === TicketStatus.Failed))
-            );
-        });
-
-        filterJobs();
-    }
-
-    $: if ($allOffersOfUser && filterList) {
-        orderEventsChronologically($allOffersOfUser);
-
-        filteredOffers = $allOffersOfUser.filter((offer) => {
-            const job = $appliedJobs.find(
-                (job) => job.ticketAddress === offer.referencedTicketAddress
+    const appliedJobs = $derived.by(() => {
+        if ($allOffersOfUser && $allOffersOfUser.length > 0) {
+            const dTagOfJobs = $allOffersOfUser.map(
+                (offer) => offer.referencedTicketAddress.split(':')[2]
             );
 
-            const offerStatus = job
-                ? job.acceptedOfferAddress
-                    ? job.acceptedOfferAddress === offer.offerAddress
-                        ? OfferStatus.Won
-                        : OfferStatus.Lost
-                    : OfferStatus.Pending
-                : OfferStatus.Unknown;
-
-            const { pending, success, lost } = $offerFilter;
-
-            return (
-                (pending && offerStatus === OfferStatus.Pending) ||
-                (success && offerStatus === OfferStatus.Won) ||
-                (lost && offerStatus === OfferStatus.Lost) ||
-                offerStatus === OfferStatus.Unknown
+            return $ndk.storeSubscribe<TicketEvent>(
+                {
+                    kinds: [NDKKind.FreelanceTicket],
+                    '#d': dTagOfJobs,
+                },
+                {
+                    autoStart: true,
+                    closeOnEose: false,
+                    groupable: true,
+                    groupableDelay: 1000,
+                },
+                TicketEvent
             );
-        });
+        }
+    });
 
-        filterOffers();
-    }
+    $effect(() => {
+        if (user) {
+            allJobsOfUser = $ndk.storeSubscribe<TicketEvent>(
+                {
+                    kinds: [NDKKind.FreelanceTicket],
+                    authors: [user.pubkey],
+                },
+                subOptions,
+                TicketEvent
+            );
 
-    let myJobsAndMyOffersElement: HTMLDivElement;
+            allOffersOfUser = $ndk.storeSubscribe<OfferEvent>(
+                {
+                    kinds: [NDKKind.FreelanceOffer],
+                    authors: [user.pubkey],
+                },
+                subOptions,
+                OfferEvent
+            );
+        }
+
+        return () => {
+            if (allJobsOfUser) allJobsOfUser.empty();
+            if (allOffersOfUser) allOffersOfUser.empty();
+        };
+    });
+
+    $effect(() => {
+        if ($allJobsOfUser && filterList) {
+            orderEventsChronologically($allJobsOfUser);
+
+            // filter based on status
+            filteredJobs = $allJobsOfUser.filter((job) => {
+                const { new: isNew, inProgress, closed } = $jobFilter;
+                const { status } = job;
+
+                return (
+                    (isNew && status === TicketStatus.New) ||
+                    (inProgress && status === TicketStatus.InProgress) ||
+                    (closed && (status === TicketStatus.Resolved || status === TicketStatus.Failed))
+                );
+            });
+
+            filterJobs();
+        }
+    });
+
+    $effect(() => {
+        if ($allOffersOfUser && filterList) {
+            orderEventsChronologically($allOffersOfUser);
+
+            filteredOffers = $allOffersOfUser.filter((offer) => {
+                const job = $appliedJobs?.find(
+                    (job) => job.ticketAddress === offer.referencedTicketAddress
+                );
+
+                const offerStatus = job
+                    ? job.acceptedOfferAddress
+                        ? job.acceptedOfferAddress === offer.offerAddress
+                            ? OfferStatus.Won
+                            : OfferStatus.Lost
+                        : OfferStatus.Pending
+                    : OfferStatus.Unknown;
+
+                const { pending, success, lost } = $offerFilter;
+
+                return (
+                    (pending && offerStatus === OfferStatus.Pending) ||
+                    (success && offerStatus === OfferStatus.Won) ||
+                    (lost && offerStatus === OfferStatus.Lost) ||
+                    offerStatus === OfferStatus.Unknown
+                );
+            });
+
+            filterOffers();
+        }
+    });
+
+    let myJobsAndMyOffersElement = $state<HTMLDivElement>();
     onMount(() => {
         if (myJobsAndMyOffersElement && $scrollToMyJobsAndMyOffers) {
             $scrollToMyJobsAndMyOffers = false;
@@ -193,12 +201,12 @@
         }
     }
 
-    $: isOwnProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
+    let isOwnProfile = $derived($currentUser && $currentUser?.pubkey === user.pubkey);
 
-    $: tabs = [
+    let tabs = $derived([
         { id: ProfilePageTabs.Jobs, label: `${isOwnProfile ? 'My' : ''} Jobs` },
         { id: ProfilePageTabs.Offers, label: `${isOwnProfile ? 'My' : ''} Offers` },
-    ];
+    ]);
 </script>
 
 <div class="w-full flex flex-col gap-0 flex-grow">

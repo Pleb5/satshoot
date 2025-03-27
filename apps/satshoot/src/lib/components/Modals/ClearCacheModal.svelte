@@ -60,7 +60,7 @@
                             Cancel
                         </Button>
                         <Button grow on:click={handleConfirm}>
-                            <i class="bx bx-trash" />
+                            <i class="bx bx-trash"></i>
                             <span>Clear</span>
                         </Button>
                     </div>

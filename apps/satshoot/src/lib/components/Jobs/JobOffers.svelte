@@ -12,41 +12,59 @@
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
     import { popup, type PopupSettings } from '@skeletonlabs/skeleton';
     import { nip19 } from 'nostr-tools';
-    import { onDestroy, onMount } from 'svelte';
     import Card from '../UI/Card.svelte';
 
-    export let job: TicketEvent;
-
-    $: statusString = getJobStatusString(job.status);
-    $: statusColor = getJobStatusColor(job.status);
-
-    let offers: OfferEvent[] = [];
-    let winningOffer: OfferEvent | undefined = undefined;
-
-    let freelancerName = '?';
-    let freelancerPaid = 0;
-    let freelancerPaymentStore: PaymentStore;
-    let pricing: string = '';
-
-    let needSetup = true;
-    // Wait for ndk to connect then setup subscription on ticket from URL params
-    // Also check for existing ndk because we try to add relays from the naddr here
-    $: if ($ndk && $connected && needSetup && job) {
-        needSetup = false;
+    interface Props {
+        job: TicketEvent;
     }
 
-    $: if (job.winnerFreelancer) {
+    let { job }: Props = $props();
+
+    const statusString = $derived(getJobStatusString(job.status));
+    const statusColor = $derived(getJobStatusColor(job.status));
+
+    let offers = $state<OfferEvent[]>([]);
+    let winningOffer = $state<OfferEvent | undefined>();
+
+    let freelancerName = $state('?');
+    let freelancerPaid = $state(0);
+
+    const pricing = $derived.by(() => {
+        if (winningOffer) {
+            switch (winningOffer.pricing) {
+                case Pricing.Absolute:
+                    return 'sats';
+                case Pricing.SatsPerMin:
+                    return 'sats/min';
+            }
+        }
+        return '';
+    });
+
+    const freelancerPaymentStore = $derived.by(() => {
+        if (!winningOffer) return undefined;
+        const freelancerFilters = createPaymentFilters(winningOffer, 'freelancer');
+        return createPaymentStore(freelancerFilters);
+    });
+
+    // Effect to fetch freelancer profile
+    $effect(() => {
+        if (!job.winnerFreelancer) return;
+
         const jobWinner = $ndk.getUser({ pubkey: job.winnerFreelancer });
         freelancerName = jobWinner.npub.substring(0, 8);
 
         jobWinner.fetchProfile().then((profile) => {
-            if (profile) {
-                if (profile.name) freelancerName = profile.name;
+            if (profile?.name) {
+                freelancerName = profile.name;
             }
         });
-    }
+    });
 
-    $: if (job.acceptedOfferAddress) {
+    // Effect to fetch winning offer
+    $effect(() => {
+        if (!job.acceptedOfferAddress) return;
+
         $ndk.fetchEvent(job.acceptedOfferAddress, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         }).then((event) => {
@@ -54,48 +72,41 @@
                 winningOffer = OfferEvent.from(event);
             }
         });
-    }
-
-    $: if (winningOffer) {
-        switch (winningOffer.pricing) {
-            case Pricing.Absolute:
-                pricing = 'sats';
-                break;
-            case Pricing.SatsPerMin:
-                pricing = 'sats/min';
-                break;
-        }
-
-        const freelancerFilters = createPaymentFilters(winningOffer, 'freelancer');
-
-        freelancerPaymentStore = createPaymentStore(freelancerFilters);
-
-        freelancerPaymentStore.totalPaid.subscribe((value) => {
-            freelancerPaid = value;
-        });
-    }
-
-    onMount(async () => {
-        let offersFilter: NDKFilter = {
-            kinds: [NDKKind.FreelanceOffer],
-            '#a': [job.ticketAddress],
-        };
-
-        const events = await $ndk.fetchEvents(offersFilter, {
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-        });
-
-        const offerEvents: OfferEvent[] = [];
-
-        events.forEach((event) => {
-            offerEvents.push(OfferEvent.from(event));
-        });
-
-        offers = offerEvents;
     });
 
-    onDestroy(() => {
-        if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.empty();
+    $effect(() => {
+        const unSubscribe = freelancerPaymentStore?.totalPaid.subscribe((value) => {
+            freelancerPaid = value;
+        });
+
+        return () => {
+            if (unSubscribe) unSubscribe();
+        };
+    });
+
+    // Effect to fetch offers on mount
+    $effect(() => {
+        const fetchOffers = async () => {
+            const offersFilter: NDKFilter = {
+                kinds: [NDKKind.FreelanceOffer],
+                '#a': [job.ticketAddress],
+            };
+
+            const events = await $ndk.fetchEvents(offersFilter, {
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            });
+
+            offers = Array.from(events).map((event) => OfferEvent.from(event));
+        };
+
+        fetchOffers();
+    });
+
+    // Cleanup effect
+    $effect(() => {
+        return () => {
+            freelancerPaymentStore?.paymentStore.empty();
+        };
     });
 
     // For tooltip
@@ -143,7 +154,7 @@
                         <i
                             class="bx bx-question-mark bg-blue-500 text-white p-[3px] rounded-[50%]"
                             use:popup={paymentTooltip}
-                        />
+                        ></i>
                     </span>
                     :
                 </p>

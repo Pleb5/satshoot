@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk from '$lib/stores/ndk';
@@ -13,34 +15,30 @@
 
     import { Avatar } from '@skeletonlabs/skeleton';
 
-    import { navigating } from '$app/stores';
+    import { navigating } from '$app/state';
     import { onMount } from 'svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import Button from './UI/Buttons/Button.svelte';
 
-    export let searchTerms: string[] = [];
-    export let user: NDKUser;
-    export let ticket: TicketEvent;
+    interface Props {
+        searchTerms?: string[];
+        user: NDKUser;
+        ticket: TicketEvent;
+    }
+
+    let { searchTerms = [], user, ticket }: Props = $props();
     const naddr = ticket.encode();
 
-    let userProfile: NDKUserProfile;
-    let latestMessage = '';
-    $: avatarImage = getRoboHashPicture(user.pubkey);
-
-    onMount(async () => {});
+    let userProfile = $state<NDKUserProfile | null>(null);
+    let latestMessage = $state('');
+    let avatarImage = $derived(getRoboHashPicture(user.pubkey));
 
     async function fetchProfile() {
-        const profile = await user.fetchProfile({
+        userProfile = await user.fetchProfile({
             groupable: true,
             groupableDelay: 800,
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         });
-        if (profile) {
-            userProfile = profile;
-            if (userProfile.image) {
-                avatarImage = userProfile.image;
-            }
-        }
     }
 
     async function fetchLatestMessage() {
@@ -80,29 +78,36 @@
         }
     }
 
-    $: if ($loggedIn) {
-        fetchProfile();
-        fetchLatestMessage();
-    }
+    $effect(() => {
+        if ($loggedIn) {
+            fetchProfile();
+            fetchLatestMessage();
+        }
+    });
 
-    $: if ($navigating) {
-        if ($navigating.to?.url.pathname === '/messages/' + naddr) {
-            if (ticket.acceptedOfferAddress) {
-                $offerMakerToSelect = ticket.winnerFreelancer as string;
+    $effect(() => {
+        if (navigating) {
+            if (navigating.to?.url.pathname === '/messages/' + naddr) {
+                if (ticket.acceptedOfferAddress) {
+                    $offerMakerToSelect = ticket.winnerFreelancer as string;
+                }
             }
         }
-    }
+    });
 
-    let display = true;
-    $: if (searchTerms.length > 0) {
-        display = searchTerms.some((term) => {
-            if (term.startsWith('npub1')) {
-                return term === user.npub;
-            }
-            const name = userProfile?.name ?? userProfile?.displayName ?? '';
-            return name.toLowerCase().includes(term.toLowerCase());
-        });
-    }
+    const display = $derived.by(() => {
+        if (searchTerms.length > 0) {
+            return searchTerms.some((term) => {
+                if (term.startsWith('npub1')) {
+                    return term === user.npub;
+                }
+                const name = userProfile?.name ?? userProfile?.displayName ?? '';
+                return name.toLowerCase().includes(term.toLowerCase());
+            });
+        }
+
+        return true;
+    });
 </script>
 
 <Button
@@ -112,7 +117,7 @@
 >
     <div class="flex gap-x-2">
         <div>
-            <Avatar class="rounded-full border-white" src={avatarImage} />
+            <Avatar class="rounded-full border-white" src={userProfile?.image || avatarImage} />
         </div>
         <div class="flex flex-col items-start">
             <div class="h5 sm:h4 text-center font-bold text-lg sm:text-2xl">
@@ -127,7 +132,7 @@
                     {latestMessage}
                 </div>
             {:else}
-                <div class="placeholder bg-blue-600 animate-pulse w-40" />
+                <div class="placeholder bg-blue-600 animate-pulse w-40"></div>
             {/if}
         </div>
     </div>

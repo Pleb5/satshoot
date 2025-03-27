@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import { type ClientRating, ReviewEvent } from '$lib/events/ReviewEvent';
     import ndk from '$lib/stores/ndk';
 
@@ -14,19 +16,25 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    export let jobAddress: string;
-
-    let thumb = true;
-    let availability = false;
-    let communication = false;
-
-    $: if (!thumb) {
-        availability = communication = false;
+    interface Props {
+        jobAddress: string;
     }
 
-    let reviewText = '';
+    let { jobAddress }: Props = $props();
 
-    let posting = false;
+    let thumb = $state(true);
+    let availability = $state(false);
+    let communication = $state(false);
+
+    $effect(() => {
+        if (!thumb) {
+            availability = communication = false;
+        }
+    });
+
+    let reviewText = $state('');
+
+    let posting = $state(false);
 
     async function postClientReview() {
         if (jobAddress) {

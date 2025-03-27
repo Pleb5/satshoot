@@ -20,7 +20,7 @@
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
 
-    $: profileHref = $currentUser ? '/' + $currentUser.npub || '' + '/' : '/';
+    let profileHref = $derived($currentUser ? '/' + $currentUser.npub || '' + '/' : '/');
 
     function readyToWork() {
         const modalComponent: ModalComponent = {
@@ -63,7 +63,7 @@
         drawerStore.close();
     }
 
-    $: profileMenuItems = [
+    let profileMenuItems = $derived([
         {
             href: profileHref,
             label: 'Profile',
@@ -112,7 +112,7 @@
                 props: { class: 'fa-solid fa-gear' },
             },
         },
-    ];
+    ]);
 
     const profileMenuItemClass = 'px-[4px] py-[4px] gap-2  justify-start';
 
@@ -137,7 +137,7 @@
                 {#if !icon.component}
                     <i {...icon.props}></i>
                 {:else}
-                    <svelte:component this={icon.component} {...icon.props} />
+                    <icon.component {...icon.props} />
                 {/if}
             </span>
             <span>{label}</span>
@@ -153,7 +153,7 @@
 
     <Button variant="text" classes={profileMenuItemClass} on:click={feedback}>
         <span class="w-6 text-center">
-            <i class="fa-regular fa-comment" />
+            <i class="fa-regular fa-comment"></i>
         </span>
         <span>Feedback</span>
     </Button>

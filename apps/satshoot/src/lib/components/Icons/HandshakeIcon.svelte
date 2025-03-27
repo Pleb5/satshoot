@@ -1,6 +1,10 @@
 <script lang="ts">
-    export let sizeClass = 'text-lg';
-    export let iconType = 'solid'
+    interface Props {
+        sizeClass?: string;
+        iconType?: string;
+    }
+
+    let { sizeClass = 'text-lg', iconType = 'solid' }: Props = $props();
 </script>
 
 <span class="">

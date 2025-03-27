@@ -5,7 +5,11 @@
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import ShareJobModal from './ShareJobModal.svelte';
 
-    export let job: TicketEvent;
+    interface Props {
+        job: TicketEvent;
+    }
+
+    let { job }: Props = $props();
 
     const modalStore = getModalStore();
 

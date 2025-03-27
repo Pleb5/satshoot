@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import { wallet } from '$lib/stores/wallet';
     import { backupWallet } from '$lib/utils/cashu';
     import { logout } from '$lib/utils/helpers';
@@ -13,19 +15,14 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    let backupBeforeLogout = true;
-    let showBackupCheckbox = false;
-    let encryptWalletBackup = false;
-    let passphrase = '';
+    let backupBeforeLogout = $state(true);
+    let encryptWalletBackup = $state(false);
+    let passphrase = $state('');
     let errorMessage = '';
-    let showPassphrase = false;
+    let showPassphrase = $state(false);
 
-    // Reactive declarations to handle validation
-    $: passphraseValid = passphrase.length > 13;
-
-    $: if ($wallet) {
-        showBackupCheckbox = true;
-    }
+    const passphraseValid = $derived(passphrase.length > 13);
+    const showBackupCheckbox = $derived(!!$wallet);
 
     async function confirmLogout() {
         errorMessage = '';
@@ -102,7 +99,8 @@
                                         classes="border-l-[1px] border-l-black-100 rounded-[0px]"
                                         on:click={() => (showPassphrase = !showPassphrase)}
                                     >
-                                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
+                                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}
+                                        ></i>
                                     </Button>
                                 </div>
                             {/if}

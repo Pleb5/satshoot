@@ -10,14 +10,18 @@
 
     const toastStore = getToastStore();
 
-    export let cashuWallet: NDKCashuWallet;
+    interface Props {
+        cashuWallet: NDKCashuWallet;
+    }
+
+    let { cashuWallet }: Props = $props();
 
     let html5QrCode: Html5Qrcode;
-    let fileInput: HTMLInputElement | null = null;
+    let fileInput: HTMLInputElement | null = $state(null);
 
-    let pr = '';
-    let withdrawing = false;
-    let isScanning = false;
+    let pr = $state('');
+    let withdrawing = $state(false);
+    let isScanning = $state(false);
 
     onMount(() => {
         html5QrCode = new Html5Qrcode('qr-reader', {
@@ -179,7 +183,7 @@
             type="file"
             accept="image/*"
             bind:this={fileInput}
-            on:change={handleFileInput}
+            onchange={handleFileInput}
             class="hidden"
         />
 
@@ -195,9 +199,9 @@
             on:click={isScanning ? stopScanningQR : scanQRCode}
         >
             {#if isScanning}
-                <i class="bx bx-x" /> <!-- Cancel icon when scanning -->
+                <i class="bx bx-x"></i> <!-- Cancel icon when scanning -->
             {:else}
-                <i class="bx bx-qr" /> <!-- QR icon when idle -->
+                <i class="bx bx-qr"></i> <!-- QR icon when idle -->
             {/if}
         </Button>
     </div>

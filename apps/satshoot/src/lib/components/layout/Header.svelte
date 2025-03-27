@@ -74,7 +74,7 @@
                     <div class="flex flex-row flex-grow gap-4 justify-end items-center">
                         {#if $loggedIn}
                             <Button href="/post-job/">Submit Job</Button>
-                            <button on:click={openAppMenu}>
+                            <button onclick={openAppMenu}>
                                 <!-- Avatar image -->
                                 <Avatar
                                     class="rounded-full border-white placeholder-white"

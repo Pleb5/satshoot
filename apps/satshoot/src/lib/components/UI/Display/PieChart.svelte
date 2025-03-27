@@ -1,24 +1,20 @@
 <script lang="ts">
-    import { Pie } from 'svelte-chartjs';
-    import { onDestroy, onMount, tick } from 'svelte';
+    import { onDestroy } from 'svelte';
     import { modeCurrent } from '@skeletonlabs/skeleton';
     import { abbreviateNumber } from '$lib/utils/misc';
-    import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+    import { Chart, ArcElement, Tooltip, Legend, PieController } from 'chart.js';
     import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-    Chart.register(ArcElement, Tooltip, Legend, ChartDataLabels);
+    Chart.register(ArcElement, Tooltip, Legend, ChartDataLabels, PieController);
 
-    export let dataset: Record<string, number> = {}; // Dynamic dataset
+    interface Props {
+        dataset?: Record<string, number>;
+    }
 
-    onMount(async () => {
-        await tick(); // Ensure DOM updates before checking theme
-    });
-
-    onDestroy(() => {
-        Chart.unregister([ArcElement, Tooltip, Legend, ChartDataLabels]);
-    });
-
-    $: isDark = !$modeCurrent;
+    let { dataset = {} }: Props = $props();
+    let canvas = $state<HTMLCanvasElement>();
+    let chartInstance = $state<Chart>();
+    let isDark = $derived(!$modeCurrent);
 
     // Generate random HSL colors for each dataset entry
     function generateColors(count: number, darkMode: boolean) {
@@ -34,15 +30,13 @@
         return hslColor.replace(/(\d+)%\)$/, (_, l) => `${Math.max(0, l - factor * 100)}%)`);
     }
 
-    // Prepare the chart data dynamically
-    $: labels = Object.keys(dataset);
-    $: values = Object.values(dataset);
-    $: colors = generateColors(labels.length, isDark);
-    $: hoverColors = colors.map((color) => darkenColor(color));
+    // Derived values
+    const labels = $derived.by(() => Object.keys(dataset));
+    const values = $derived.by(() => Object.values(dataset));
+    const colors = $derived.by(() => generateColors(labels.length, isDark));
+    const hoverColors = $derived.by(() => colors.map((color) => darkenColor(color)));
 
-    let options = {};
-
-    $: options = {
+    const options = $derived({
         responsive: true,
         plugins: {
             legend: {
@@ -74,9 +68,9 @@
                 clip: false, // Ensure text is fully visible
             },
         },
-    };
+    });
 
-    $: chartData = {
+    const chartData = $derived.by(() => ({
         labels,
         datasets: [
             {
@@ -85,18 +79,50 @@
                 hoverBackgroundColor: hoverColors,
             },
         ],
-    };
+    }));
+
+    $effect(() => {
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Initialize or update chart
+        if (!chartInstance) {
+            // Initial creation
+            chartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: chartData,
+                options: options as any,
+                plugins: [ChartDataLabels],
+            });
+        } else {
+            // Only update if data actually changed
+            if (JSON.stringify(chartInstance.data) !== JSON.stringify(chartData)) {
+                chartInstance.data = chartData;
+                chartInstance.update();
+            }
+
+            // Only update options if theme changed
+            if (
+                chartInstance.options.plugins?.legend?.labels?.color !==
+                options.plugins.legend.labels.color
+            ) {
+                chartInstance.options = options as any;
+                chartInstance.update();
+            }
+        }
+    });
+
+    onDestroy(() => {
+        chartInstance?.destroy();
+    });
 </script>
 
 {#if labels.length}
     <div
         class="w-full max-w-sm p-4 rounded-xl shadow-md transition-colors duration-300 bg-black-100"
     >
-        <Pie
-            data={chartData}
-            options={{
-                ...options,
-            }}
-        />
+        <canvas bind:this={canvas} aria-label="Pie chart visualization"></canvas>
     </div>
 {/if}

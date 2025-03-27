@@ -5,17 +5,26 @@
 
     const dispatch = createEventDispatcher();
 
-    export let passphrase: string;
-    export let confirmPassphrase: string;
-    export let btnLabel: string;
-    export let roundedTop = false;
+    interface Props {
+        passphrase: string;
+        confirmPassphrase: string;
+        btnLabel: string;
+        roundedTop?: boolean;
+    }
 
-    let showPassphrase = false;
-    let showConfirmPassphrase = false;
+    let {
+        passphrase = $bindable(),
+        confirmPassphrase = $bindable(),
+        btnLabel,
+        roundedTop = false
+    }: Props = $props();
+
+    let showPassphrase = $state(false);
+    let showConfirmPassphrase = $state(false);
 
     // Reactive declarations to handle validation
-    $: passphraseValid = passphrase.length > 13;
-    $: confirmPassphraseValid = passphraseValid && passphrase === confirmPassphrase;
+    let passphraseValid = $derived(passphrase.length > 13);
+    let confirmPassphraseValid = $derived(passphraseValid && passphrase === confirmPassphrase);
 
     const inputWrapperClasses =
         'w-full flex flex-row bg-black-50 border-[1px] border-black-100 dark:border-white-100 border-t-[0px] overflow-hidden';
@@ -40,7 +49,7 @@
         classes="border-l-[1px] border-l-black-100 rounded-[0px]"
         on:click={() => (showPassphrase = !showPassphrase)}
     >
-        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
+        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
     </Button>
 </div>
 
@@ -60,13 +69,13 @@
         classes="border-l-[1px] border-l-black-100 rounded-[0px]"
         on:click={() => (showConfirmPassphrase = !showConfirmPassphrase)}
     >
-        <i class={showConfirmPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
+        <i class={showConfirmPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
     </Button>
 </div>
 
 <div class={btnWrapperClasses}>
     <Button grow on:click={() => dispatch('submit')}>
-        <i class="bx bx-log-in-circle" />
+        <i class="bx bx-log-in-circle"></i>
         {btnLabel}
     </Button>
 </div>

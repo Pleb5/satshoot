@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
@@ -17,18 +17,16 @@
 
     const toastStore = getToastStore();
 
-    let userProfile: NDKUserProfile = {};
-    let updating = false;
+    let userProfile = $state<NDKUserProfile>({});
+    let updating = $state(false);
 
-    $: if ($currentUser) {
-        setProfile($currentUser);
-    }
+    const redirectPath = $derived(page.url.searchParams.get('redirectPath'));
 
-    let redirectPath: string | null = null;
-
-    $: {
-        redirectPath = $page.url.searchParams.get('redirectPath');
-    }
+    $effect(() => {
+        if ($currentUser) {
+            setProfile($currentUser);
+        }
+    });
 
     async function setProfile(user: NDKUser) {
         // Logged in user's metadata MUST be fetched from relays
@@ -61,7 +59,7 @@
                           <p class='text-center font-bold'>Try to refresh page!</p>
                          `,
                 background: 'bg-error-300-600-token',
-                autohide: false
+                autohide: false,
             };
             toastStore.trigger(t);
         }

@@ -8,11 +8,15 @@
     import { readNotifications } from '$lib/stores/notifications';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
-    export let notification: NDKEvent;
+    interface Props {
+        notification: NDKEvent;
+    }
+
+    let { notification }: Props = $props();
 
     const follower = $ndk.getUser({ pubkey: notification.pubkey });
-    let followerName = follower.npub.substring(0, 8);
-    let followerImage = getRoboHashPicture(follower.pubkey);
+    let followerName = $state(follower.npub.substring(0, 8));
+    let followerImage = $state(getRoboHashPicture(follower.pubkey));
     let followerProfile: NDKUserProfile | null;
 
     onMount(async () => {

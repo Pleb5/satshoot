@@ -14,39 +14,34 @@
 
     const modalStore = getModalStore();
 
-    export let userHex: Hexpubkey;
-
-    let onlyShowMyReviews = false;
-
-    let aggregatedClientRatings: AggregatedClientRatings;
-    let numberOfPositiveOutcome = 0;
-    let numberOfNegativeOutcome = 0;
-    let rateOfPositiveOutcome = NaN;
-
-    let reviews: ReviewEvent[] = [];
-    let myReviews: ReviewEvent[] = [];
-
-    $: if ($clientReviews) {
-        aggregatedClientRatings = aggregateClientRatings(userHex);
-        reviews = $clientReviews.filter((review) => review.reviewedPerson === userHex);
+    interface Props {
+        userHex: Hexpubkey;
     }
 
-    $: if ($currentUser && reviews) {
-        myReviews = reviews.filter((review) => review.pubkey === $currentUser.pubkey);
-    } else {
-        myReviews = [];
-    }
+    let { userHex }: Props = $props();
 
-    $: if (aggregatedClientRatings) {
-        numberOfPositiveOutcome = aggregatedClientRatings.thumbsUp;
-        numberOfNegativeOutcome = aggregatedClientRatings.thumbsDown;
-    }
+    let onlyShowMyReviews = $state(false);
 
-    $: if (numberOfPositiveOutcome || numberOfNegativeOutcome) {
-        rateOfPositiveOutcome = Math.round(
-            (numberOfPositiveOutcome / (numberOfPositiveOutcome + numberOfNegativeOutcome)) * 100
-        );
-    }
+    const aggregatedClientRatings = $derived(aggregateClientRatings(userHex));
+    const { numberOfPositiveOutcome, numberOfNegativeOutcome } = $derived({
+        numberOfPositiveOutcome: aggregatedClientRatings.thumbsUp,
+        numberOfNegativeOutcome: aggregatedClientRatings.thumbsDown,
+    });
+    const rateOfPositiveOutcome = $derived.by(() => {
+        if (numberOfPositiveOutcome || numberOfNegativeOutcome) {
+            return Math.round(
+                (numberOfPositiveOutcome / (numberOfPositiveOutcome + numberOfNegativeOutcome)) *
+                    100
+            );
+        }
+
+        return NaN;
+    });
+
+    const reviews = $derived($clientReviews.filter((review) => review.reviewedPerson === userHex));
+    const myReviews = $derived(
+        reviews.filter((review) => $currentUser && review.pubkey === $currentUser.pubkey)
+    );
 
     const jobFulfilledStatusClasses =
         'transition ease duration-[0.3s] flex flex-row gap-[5px] grow-[1] pl-[10px] font-[600] rounded-[4px] ' +
@@ -75,14 +70,14 @@
                         </p>
                         <div class="w-full flex flex-row flex-wrap gap-[10px]">
                             <div class="{jobFulfilledStatusClasses} text-gray-500 bg-green-600">
-                                <i class="bx bxs-check-circle" />
+                                <i class="bx bxs-check-circle"></i>
                                 <p class="grow-[1]">Satisfied</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {numberOfPositiveOutcome}
                                 </p>
                             </div>
                             <div class="{jobFulfilledStatusClasses} text-white bg-red-600">
-                                <i class="bx bxs-x-circle" />
+                                <i class="bx bxs-x-circle"></i>
                                 <p class="grow-[1]">Dissatisfied</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {numberOfNegativeOutcome}
@@ -109,14 +104,14 @@
                         </p>
                         <div class="w-full flex flex-row flex-wrap gap-[10px]">
                             <div class={qualitiesBadgeClasses}>
-                                <i class="bx bxs-star" />
+                                <i class="bx bxs-star"></i>
                                 <p class="grow-[1]">Attentive & responsive</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {aggregatedClientRatings.availability}
                                 </p>
                             </div>
                             <div class={qualitiesBadgeClasses}>
-                                <i class="bx bxs-star" />
+                                <i class="bx bxs-star"></i>
                                 <p class="grow-[1]">Clear Communication</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {aggregatedClientRatings.communication}

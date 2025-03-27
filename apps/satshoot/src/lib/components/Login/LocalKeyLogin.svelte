@@ -33,17 +33,17 @@
         },
     ];
 
-    let activeTabForLocalKeyLogin = LocalKeyLoginTabs.SecretKey;
+    let activeTabForLocalKeyLogin = $state(LocalKeyLoginTabs.SecretKey);
 
-    let nsecForLocalKey = '';
-    let seedWordsForLocalKey = Array(12).fill('');
-    let passphraseForNsec = '';
-    let confirmPassphraseForNsec = '';
-    let passphraseForSeedWords = '';
-    let confirmPassphraseForSeedWords = '';
+    let nsecForLocalKey = $state('');
+    let seedWordsForLocalKey = $state(Array(12).fill(''));
+    let passphraseForNsec = $state('');
+    let confirmPassphraseForNsec = $state('');
+    let passphraseForSeedWords = $state('');
+    let confirmPassphraseForSeedWords = $state('');
 
-    let statusMessage = '';
-    let statusColor = 'text-tertiary-200-700-token';
+    let statusMessage = $state('');
+    let statusColor = $state('text-tertiary-200-700-token');
 
     async function loginWithNsec() {
         if (passphraseForNsec.length < 14) {

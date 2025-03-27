@@ -7,20 +7,27 @@
 
     const toastStore = getToastStore();
 
-    export let cashuWallet: NDKCashuWallet;
+    interface Props {
+        cashuWallet: NDKCashuWallet;
+    }
 
-    let depositing = false;
-    let amount = 0;
+    let { cashuWallet }: Props = $props();
+
+    let depositing = $state(false);
+    let amount = $state(0);
     let unit = 'sat';
-    let selectedMint = '';
+    let selectedMint = $state('');
 
-    $: {
+    $effect(() => {
         amount ??= 0;
-    }
+    });
 
-    $: if (cashuWallet.mints.length > 0 && !selectedMint) {
-        selectedMint = cashuWallet.mints[0];
-    }
+    // Initialize selected mint
+    $effect(() => {
+        if (cashuWallet.mints.length > 0 && !selectedMint) {
+            selectedMint = cashuWallet.mints[0];
+        }
+    });
 
     async function deposit() {
         depositing = true;

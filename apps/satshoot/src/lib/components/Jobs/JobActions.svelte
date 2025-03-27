@@ -20,39 +20,37 @@
 
     const modalStore = getModalStore();
 
-    export let job: TicketEvent;
-
-    let bech32ID = '';
-    let myJob = false;
-    let canReviewClient = false;
-    let review: ReviewEvent | undefined = undefined;
-    let winnerOffer: OfferEvent | null = null;
-    let showMessageButton = false;
-
-    $: if (job) {
-        bech32ID = job.encode();
+    interface Props {
+        job: TicketEvent;
     }
 
-    $: if ($currentUser && job && $currentUser.pubkey === job.pubkey) {
-        myJob = true;
-    } else {
-        myJob = false;
-    }
+    let { job }: Props = $props();
 
-    $: if ($clientReviews) {
-        review = $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress);
+    // Reactive states
+    let winnerOffer = $state<OfferEvent | null>(null);
 
-        // check if there's a review on job then it can't be reviewed again
-        if (review) {
-            canReviewClient = false;
+    // Derived states
+    const bech32ID = $derived(job.encode());
+    const myJob = $derived($currentUser?.pubkey === job.pubkey);
+    const showMessageButton = $derived(
+        !!$currentUser && (myJob || job.winnerFreelancer === $currentUser.pubkey)
+    );
+
+    const review = $derived(
+        $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress)
+    );
+
+    const canReviewClient = $derived.by(() => {
+        if (!review && $currentUser && job.winnerFreelancer === $currentUser.pubkey) {
+            return true;
         }
-        // check if the current user is the job winner then he can review the client
-        else if ($currentUser && job.winnerFreelancer === $currentUser.pubkey) {
-            canReviewClient = true;
-        }
-    }
+        return false;
+    });
 
-    $: if (job.acceptedOfferAddress) {
+    // Effect to fetch winner offer
+    $effect(() => {
+        if (!job.acceptedOfferAddress) return;
+
         $ndk.fetchEvent(job.acceptedOfferAddress, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         }).then((event) => {
@@ -60,13 +58,7 @@
                 winnerOffer = OfferEvent.from(event);
             }
         });
-    }
-
-    $: if ($currentUser && (myJob || job.winnerFreelancer === $currentUser.pubkey)) {
-        showMessageButton = true;
-    } else {
-        showMessageButton = false;
-    }
+    });
 
     function handleShare() {
         const modalComponent: ModalComponent = {
@@ -167,7 +159,7 @@
 <div class="flex flex-col grow-[1] gap-[10px] p-[0px]">
     <div class="w-full flex flex-row flex-wrap gap-[10px]">
         <Button classes={btnClasses} on:click={handleShare}>
-            <i class="bx bxs-share" />
+            <i class="bx bxs-share"></i>
             Share
         </Button>
 
@@ -200,7 +192,7 @@
                 classes={btnClasses}
                 fullWidth
             >
-                <i class="bx bxs-conversation" />
+                <i class="bx bxs-conversation"></i>
                 <p class="">Message</p>
             </Button>
         {/if}

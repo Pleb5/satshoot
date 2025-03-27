@@ -18,13 +18,17 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let job: TicketEvent;
+    interface Props {
+        job: TicketEvent;
+    }
 
-    let shareURL = '';
-    let shareNaddr = '';
+    let { job }: Props = $props();
 
-    let message: string = '';
-    let posting = false;
+    let shareURL = $state('');
+    let shareNaddr = $state('');
+
+    let message: string = $state('');
+    let posting = $state(false);
     async function postJob() {
         posting = true;
         await tick();
@@ -59,7 +63,7 @@
         }
     }
 
-    let urlCopied = false;
+    let urlCopied = $state(false);
     function onCopyURL(): void {
         urlCopied = true;
         setTimeout(() => {
@@ -67,7 +71,7 @@
         }, 1000);
     }
 
-    let naddrCopied = false;
+    let naddrCopied = $state(false);
     function onCopyNaddr(): void {
         naddrCopied = true;
         setTimeout(() => {
@@ -135,12 +139,12 @@
                         </Button>
                     {/if}
                     <Button grow>
-                        <span class="w-full h-full" use:clipboard={shareURL} on:click={onCopyURL}>
+                        <span class="w-full h-full" use:clipboard={shareURL} onclick={onCopyURL}>
                             {urlCopied ? 'Copied!' : 'Copy Job URL'}
                         </span>
                     </Button>
                     <Button grow >
-                        <span class="w-full h-full" use:clipboard={shareNaddr} on:click={onCopyNaddr}>
+                        <span class="w-full h-full" use:clipboard={shareNaddr} onclick={onCopyNaddr}>
                             {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
                         </span>
                     </Button>

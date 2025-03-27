@@ -1,10 +1,19 @@
 <script lang="ts">
     import Button from './Button.svelte';
 
-    export let question: string;
-    export let value: boolean;
-    export let trueLabel: string;
-    export let falseLabel: string;
+    interface Props {
+        question: string;
+        value: boolean;
+        trueLabel: string;
+        falseLabel: string;
+    }
+
+    let {
+        question,
+        value = $bindable(),
+        trueLabel,
+        falseLabel
+    }: Props = $props();
 
     const handleOptionTrueClick = () => {
         value = true;

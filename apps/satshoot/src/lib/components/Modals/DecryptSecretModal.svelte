@@ -6,22 +6,18 @@
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 
     import { DataLoadError } from '$lib/utils/errors';
-    import { RestoreMethod } from "$lib/stores/ndk";
+    import { RestoreMethod } from '$lib/stores/ndk';
     import { logout } from '$lib/utils/helpers';
     import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
 
-	// Props
-	/** Exposes parent props to this component. */
-	export let parent: SvelteComponent;
+    const modalStore = getModalStore();
 
-	const modalStore = getModalStore();
+    let passphrase: string = $state('');
+    let statusMessage: string = $state('');
+    let statusColor = $state('text-tertiary-200-700-token');
 
-    let passphrase:string;
-    let statusMessage: string;
-    let statusColor = 'text-tertiary-200-700-token';
-
-    let decrypting = false;
+    let decrypting = $state(false);
 
     async function loadSecret() {
         decrypting = true;
@@ -30,10 +26,10 @@
         statusColor = 'text-tertiary-200-700-token';
         statusMessage = 'Decrypting...';
         try {
-            let restoreMethod: RestoreMethod|undefined = undefined;
-            const encryptedSeed: string|null = localStorage.getItem("nostr-seedwords");
-            const encryptedNsec: string|null = localStorage.getItem("nostr-nsec");
-            const salt :string|null = localStorage.getItem("nostr-npub");
+            let restoreMethod: RestoreMethod | undefined = undefined;
+            const encryptedSeed: string | null = localStorage.getItem('nostr-seedwords');
+            const encryptedNsec: string | null = localStorage.getItem('nostr-nsec');
+            const salt: string | null = localStorage.getItem('nostr-npub');
 
             // Restore method depends on the local storage key(nostr-seedwords/nsec)
             if (encryptedSeed) {
@@ -43,45 +39,51 @@
             }
 
             if (!encryptedSeed && !encryptedNsec) {
-                throw new DataLoadError('Could not fetch encrypted secret from local storage!', 'tried: nostr-seedwords, nostr-nsec');
+                throw new DataLoadError(
+                    'Could not fetch encrypted secret from local storage!',
+                    'tried: nostr-seedwords, nostr-nsec'
+                );
             }
             if (!salt) {
-                throw new DataLoadError('Could not fetch npub from local storage! Npub necessary for decryption!', 'nostr-npub');
+                throw new DataLoadError(
+                    'Could not fetch npub from local storage! Npub necessary for decryption!',
+                    'nostr-npub'
+                );
             }
 
-            const cryptWorker = new Worker(new URL("$lib/utils/crypto.worker.ts", import.meta.url),{
-                type: 'module'
-            });
+            const cryptWorker = new Worker(
+                new URL('$lib/utils/crypto.worker.ts', import.meta.url),
+                {
+                    type: 'module',
+                }
+            );
 
             cryptWorker.onmessage = (m) => {
                 const decryptedSecret = m.data['decryptedSecret'];
                 decrypting = false;
                 if (decryptedSecret) {
                     if ($modalStore[0].response) {
-                        $modalStore[0].response(
-                            {
-                                decryptedSecret: decryptedSecret,
-                                restoreMethod: restoreMethod
-                            }
-                        );
+                        $modalStore[0].response({
+                            decryptedSecret: decryptedSecret,
+                            restoreMethod: restoreMethod,
+                        });
                         modalStore.close();
-                    };
+                    }
                 } else {
                     statusMessage = 'Unexpected response from decryption process:' + m.data;
-                    setTimeout(()=>{
+                    setTimeout(() => {
                         statusColor = 'text-red-500';
-                    }, 800);            
+                    }, 800);
                 }
             };
 
             cryptWorker.onerror = (e) => {
                 decrypting = false;
-                console.log("Error happened in cryptWorker:", e.message)
+                console.log('Error happened in cryptWorker:', e.message);
                 statusMessage = `Error while decrypting secret! Incorrect Passphrase!`;
-                setTimeout(()=>{
+                setTimeout(() => {
                     statusColor = 'text-red-500';
-                }, 800);            
-
+                }, 800);
             };
 
             cryptWorker.onmessageerror = (me) => {
@@ -89,87 +91,83 @@
                 console.log('Message error:', me);
                 statusMessage = 'Received malformed message: ' + me.data;
 
-                setTimeout(()=>{
+                setTimeout(() => {
                     statusColor = 'text-red-500';
-                }, 800);            
-            }
-            
+                }, 800);
+            };
+
             // Start worker in background and wait for decryption result in onmessage
             cryptWorker.postMessage({
                 encrpytedSecret: encryptedSeed ?? encryptedNsec,
                 passphrase: passphrase,
-                salt: salt
+                salt: salt,
             });
-
-
-        } catch(e) {
+        } catch (e) {
             decrypting = false;
             if (e instanceof DataLoadError) {
                 const error = e as DataLoadError;
-               statusMessage = error.message; 
+                statusMessage = error.message;
             } else {
                 statusMessage = 'Unkown Error happened:' + e;
             }
-            setTimeout(()=>{
+            setTimeout(() => {
                 statusColor = 'text-red-500';
-            }, 800);            
- 
+            }, 800);
         }
     }
 
-    let showPassword: boolean = false;
-
+    let showPassword: boolean = $state(false);
 </script>
 
 {#if $modalStore[0]}
-    <Popup title='Decrypt Local Seed'>
+    <Popup title="Decrypt Local Seed">
         <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
         <div class="flex justify-between items-center m-4">
-            <input 
-                class="input" 
-                title="Passphrase:" 
+            <input
+                class="input"
+                title="Passphrase:"
                 required
-                type={ showPassword ? 'text' : 'password' }
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Enter Passphrase..."
-                on:input={(event) => passphrase = event.currentTarget.value}
+                oninput={(event) => (passphrase = event.currentTarget.value)}
             />
             <button
-                type="button" 
+                type="button"
                 class="btn btn-icon-sm"
-                on:click={ () => showPassword = !showPassword }>
+                onclick={() => (showPassword = !showPassword)}
+            >
                 <span>
-                    <i class="fa-solid { showPassword ? 'fa-eye' : 'fa-eye-slash' }"></i>
+                    <i class="fa-solid {showPassword ? 'fa-eye' : 'fa-eye-slash'}"></i>
                 </span>
             </button>
         </div>
         <div class="flex justify-between h-10 mt-4">
             <Button
-                variant='outlined'
-                on:click={
-                ()=> {
+                variant="outlined"
+                on:click={() => {
                     if ($modalStore[0].response) {
-                        $modalStore[0].response(
-                            {
-                                decryptedSecret: undefined,
-                                restoreMethod: undefined
-                            }
-                        );
-                    };
+                        $modalStore[0].response({
+                            decryptedSecret: undefined,
+                            restoreMethod: undefined,
+                        });
+                    }
                     modalStore.close();
                     logout();
-                }
-                }
+                }}
             >
                 Logout
             </Button>
-            <Button 
-                on:click={loadSecret}
-                disabled={!passphrase || decrypting}
-            >
+            <Button on:click={loadSecret} disabled={!passphrase || decrypting}>
                 {#if decrypting}
                     <span>
-                        <ProgressRadial value={undefined} stroke={60} meter="stroke-primary-500"
-                            track="stroke-primary-500/30" strokeLinecap="round" width="w-8" />
+                        <ProgressRadial
+                            value={undefined}
+                            stroke={60}
+                            meter="stroke-primary-500"
+                            track="stroke-primary-500/30"
+                            strokeLinecap="round"
+                            width="w-8"
+                        />
                     </span>
                 {:else}
                     <span>Decrypt</span>
@@ -177,7 +175,7 @@
             </Button>
         </div>
         {#if statusMessage}
-            <h5 class="h5 font-bold text-center {statusColor} mt-2" >{statusMessage}</h5>
+            <h5 class="h5 font-bold text-center {statusColor} mt-2">{statusMessage}</h5>
         {/if}
     </Popup>
 {/if}

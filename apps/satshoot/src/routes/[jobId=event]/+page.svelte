@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import JobCard from '$lib/components/Cards/JobCard.svelte';
     import OfferCard from '$lib/components/Cards/OfferCard.svelte';
     import UserCard from '$lib/components/Cards/UserCard.svelte';
@@ -23,6 +23,7 @@
         type NDKSubscriptionOptions,
         NDKUser,
         NDKSubscriptionCacheUsage,
+        NDKEvent,
     } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import {
@@ -46,97 +47,47 @@
     const subOptions: NDKSubscriptionOptions = {
         closeOnEose: false,
     };
-    let jobSubscription: NDKSubscription | undefined = undefined;
-    let jobPost: TicketEvent | undefined = undefined;
-    let user: NDKUser | undefined = undefined;
 
-    let offersFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceOffer],
-        '#a': [],
-    };
-    let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
-    let alreadySubscribedToOffers = false;
+    // Component state
+    let jobSubscription = $state<NDKSubscription>();
+    let jobPost = $state<TicketEvent>();
+    let offerStore = $state<NDKEventStore<ExtendedBaseType<OfferEvent>>>();
+    let alreadySubscribedToOffers = $state(false);
+    let needSetup = $state(true);
+    let winningOffer = $state<OfferEvent>();
+    let selectedOffersTab = $state<OfferTab>(OfferTab.Pending);
 
-    let offerToEdit: OfferEvent | undefined = undefined;
-    let btnActionText = 'Create Offer';
+    // Derived State
+    const myJob = $derived(!!$currentUser && !!jobPost && $currentUser.pubkey === jobPost.pubkey);
 
-    let allowCreateOffer: boolean = false;
-    let disallowCreateOfferReason = '';
+    const { allowCreateOffer, disallowCreateOfferReason } = $derived.by(() => {
+        if (!jobPost) return { allowCreateOffer: false, disallowCreateOfferReason: '' };
 
-    let selectedOffersTab = OfferTab.Pending;
-
-    let myJob = false;
-    $: if ($currentUser && jobPost) {
-        if ($currentUser && $currentUser.pubkey === jobPost.pubkey) {
-            myJob = true;
-        }
-    }
-
-    let needSetup = true;
-    // Wait for ndk to connect then setup subscription on ticket from URL params
-    // Also check for existing ndk because we try to add relays from the naddr here
-    $: if ($ndk && $connected && needSetup) {
-        needSetup = false;
-        const naddr = $page.params.jobId;
-        const relaysFromURL = relaysFromNaddr(naddr).split(',');
-        // console.log('ticket relays', relaysFromURL)
-        if (relaysFromURL.length > 0) {
-            relaysFromURL.forEach((relayURL: string) => {
-                if (relayURL) {
-                    // url, authopolicy and ndk. authopolicy is not important yet
-                    $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
-                }
-            });
+        if (jobPost.status === TicketStatus.New) {
+            return { allowCreateOffer: true, disallowCreateOfferReason: '' };
         }
 
-        // Create new subscription on this ticket
-        const dTag = idFromNaddr(naddr).split(':')[2];
-        const ticketFilter: NDKFilter = {
-            kinds: [NDKKind.FreelanceTicket],
-            '#d': [dTag],
+        return {
+            allowCreateOffer: false,
+            disallowCreateOfferReason: "Job status not 'New' anymore! Cannot Create/Edit Offer!",
         };
+    });
 
-        jobSubscription = $ndk.subscribe(ticketFilter, subOptions);
-        jobSubscription.on('event', (event) => {
-            console.log('event :>> ', event);
-            // Dismiss with old tickets
-            if (jobPost) {
-                const arrivedTicket = TicketEvent.from(event);
-                if (arrivedTicket.created_at! < jobPost.created_at!) {
-                    return;
-                }
-            }
-            jobPost = TicketEvent.from(event);
-            user = $ndk.getUser({ pubkey: jobPost.pubkey });
+    const user = $derived.by(() => {
+        if (jobPost) {
+            return $ndk.getUser({ pubkey: jobPost.pubkey });
+        }
+    });
 
-            // Scroll to top as soon as ticket arrives
-            const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
-            elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
+    // Derived offer data
+    const filteredOffers = $derived.by(() => {
+        if (!$offerStore) return [];
 
-            if (jobPost.status === TicketStatus.New) {
-                allowCreateOffer = true;
-                disallowCreateOfferReason = '';
-            } else {
-                allowCreateOffer = false;
-                disallowCreateOfferReason =
-                    "Status of the Job not 'New' anymore! Cannot Create/Edit Offer!";
-            }
+        let offers: OfferEvent[] = [...$offerStore];
 
-            // Subscribe on Offers of this ticket. Do this only once
-            if (!alreadySubscribedToOffers) {
-                alreadySubscribedToOffers = true;
-                // Add a live sub on offers of this ticket if not already subbed
-                // Else already subbed, we can check if new offer arrived on ticket
-                offersFilter['#a']!.push(jobPost.ticketAddress);
-                offerStore = $ndk.storeSubscribe<OfferEvent>(offersFilter, subOptions, OfferEvent);
-            }
-        });
-    }
-
-    $: if ($offerStore) {
         // Filtering out offers not in the web of Trust
         if ($wot && $wot.size > 2) {
-            $offerStore = $offerStore.filter((offer: OfferEvent) => {
+            offers = offers.filter((offer: OfferEvent) => {
                 return (
                     $wot.has(offer.pubkey) ||
                     (jobPost?.acceptedOfferAddress &&
@@ -144,56 +95,115 @@
                 );
             });
         }
+        orderEventsChronologically(offers);
 
-        orderEventsChronologically($offerStore);
+        return offers;
+    });
 
-        $offerStore.forEach((offer: OfferEvent) => {
-            if (offer.pubkey === $currentUser?.pubkey) {
-                offerToEdit = offer;
-                btnActionText = 'Edit Your Offer';
+    const offerToEdit = $derived.by(() => {
+        if (!filteredOffers.length || !$currentUser) return undefined;
+
+        return filteredOffers.find((offer) => offer.pubkey === $currentUser.pubkey);
+    });
+
+    const btnActionText = $derived(offerToEdit ? 'Edit Your Offer' : 'Create Offer');
+
+    const pendingOffers = $derived.by(() => {
+        if (!filteredOffers.length || !jobPost || jobPost.status !== TicketStatus.New) return [];
+        return filteredOffers;
+    });
+
+    const lostOffers = $derived.by(() => {
+        if (!filteredOffers.length || !jobPost || jobPost.status === TicketStatus.New) return [];
+        return filteredOffers.filter(
+            (offer) => offer.offerAddress !== jobPost?.acceptedOfferAddress
+        );
+    });
+
+    // Wait for ndk to connect then setup subscription on ticket from URL params
+    // Also check for existing ndk because we try to add relays from the naddr here
+    $effect(() => {
+        if ($ndk && $connected && needSetup) {
+            needSetup = false;
+            const naddr = page.params.jobId;
+            const relaysFromURL = relaysFromNaddr(naddr).split(',');
+
+            // Add relays from URL
+            relaysFromURL.forEach((relayURL: string) => {
+                if (relayURL) {
+                    $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
+                }
+            });
+
+            // Subscribe to ticket events
+            const dTag = idFromNaddr(naddr).split(':')[2];
+            const ticketFilter: NDKFilter = {
+                kinds: [NDKKind.FreelanceTicket],
+                '#d': [dTag],
+            };
+
+            jobSubscription = $ndk.subscribe(ticketFilter, subOptions);
+            jobSubscription.on('event', handleTicketEvent);
+        }
+    });
+
+    // Effect to handle winning offer updates
+    $effect(() => {
+        if (!jobPost?.acceptedOfferAddress || !filteredOffers.length) {
+            winningOffer = undefined;
+            return;
+        }
+
+        // First check in filtered offers
+        const found = filteredOffers.find((o) => o.offerAddress === jobPost?.acceptedOfferAddress);
+        if (found) {
+            winningOffer = found;
+            return;
+        }
+
+        // If not found, fetch it
+        $ndk.fetchEvent(jobPost.acceptedOfferAddress, {
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        }).then((event) => {
+            if (event) {
+                winningOffer = OfferEvent.from(event);
             }
         });
-    }
+    });
 
-    let pendingOffers: OfferEvent[] = [];
-    let winningOffer: OfferEvent | undefined = undefined;
-    let lostOffers: OfferEvent[] = [];
-
-    $: if (jobPost && $offerStore) {
-        if (jobPost.status !== TicketStatus.New) {
-            winningOffer = undefined;
-            pendingOffers = [];
-
-            if (jobPost.acceptedOfferAddress) {
-                winningOffer = $offerStore.find(
-                    (offer) => offer.offerAddress === jobPost?.acceptedOfferAddress
-                );
-
-                // its possible that winning offer might have been filtered out due to wot
-                // so, we'll fetch it directly instead of finding it in offerStore
-                if (!winningOffer) {
-                    // fetch winning offer
-                    $ndk.fetchEvent(jobPost.acceptedOfferAddress, {
-                        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-                    }).then((event) => {
-                        if (event) {
-                            winningOffer = OfferEvent.from(event);
-                        }
-                    });
-                }
-
-                selectedOffersTab = OfferTab.Won;
-            }
-
-            lostOffers = $offerStore.filter(
-                (offer) => offer.offerAddress !== jobPost?.acceptedOfferAddress
-            );
-        } else {
-            pendingOffers = $offerStore;
-            winningOffer = undefined;
-            lostOffers = [];
+    // Effect to set default tab based on winning offer
+    $effect(() => {
+        if (winningOffer) {
+            selectedOffersTab = OfferTab.Won;
         }
+    });
+
+    function handleTicketEvent(event: NDKEvent) {
+        const arrivedTicket = TicketEvent.from(event);
+
+        // Skip older tickets
+        if (jobPost && arrivedTicket.created_at! < jobPost.created_at!) {
+            return;
+        }
+
+        jobPost = arrivedTicket;
+
+        // Scroll to top as soon as ticket arrives
+        const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
+        elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
     }
+
+    // Subscribe to offers if not already done
+    $effect(() => {
+        if (jobPost && !alreadySubscribedToOffers) {
+            alreadySubscribedToOffers = true;
+            const offersFilter = {
+                kinds: [NDKKind.FreelanceOffer],
+                '#a': [jobPost.ticketAddress],
+            };
+            offerStore = $ndk.storeSubscribe<OfferEvent>(offersFilter, subOptions, OfferEvent);
+        }
+    });
 
     onMount(() => checkRelayConnections());
 
@@ -321,7 +331,9 @@
                                     >
                                         Offers
                                         <span class="font-[400] text-[16px]"
-                                            >({insertThousandSeparator($offerStore.length)})</span
+                                            >({insertThousandSeparator(
+                                                filteredOffers.length
+                                            )})</span
                                         >
                                     </p>
                                 </div>
@@ -382,18 +394,18 @@
                         <div class="sm:grid sm:grid-cols-[70%_1fr] sm:gap-x-4">
                             <div class="space-y-6">
                                 <div class="w-full h-[50vh] card p-8 flex justify-center">
-                                    <div class="w-[50%] card placeholder animate-pulse" />
+                                    <div class="w-[50%] card placeholder animate-pulse"></div>
                                 </div>
                                 <div class="w-full h-[20vh] card p-8 flex justify-center">
-                                    <div class="w-[50%] card placeholder animate-pulse" />
+                                    <div class="w-[50%] card placeholder animate-pulse"></div>
                                 </div>
                             </div>
                             <div class="hidden sm:block sm:space-y-6">
                                 <div class="w-full h-[70vh] card p-8 flex justify-center">
-                                    <div class="w-[50%] card placeholder animate-pulse" />
+                                    <div class="w-[50%] card placeholder animate-pulse"></div>
                                 </div>
                                 <div class="w-full h-[30vh] card p-8 flex justify-center">
-                                    <div class="w-[50%] card placeholder animate-pulse" />
+                                    <div class="w-[50%] card placeholder animate-pulse"></div>
                                 </div>
                             </div>
                         </div>

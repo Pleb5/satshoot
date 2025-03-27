@@ -6,16 +6,33 @@
 
     type Variant = 'contained' | 'outlined' | 'text';
 
-    export let variant: Variant = 'contained';
-    export let classes = '';
-    export let href: string | null = null;
-    export let target: HTMLAttributeAnchorTarget | null = null;
-    export let disabled = false;
-    export let isToggle = false;
-    export let selected = false;
-    export let grow = false;
-    export let fullWidth = false;
-    export let title: string | null = null;
+    interface Props {
+        variant?: Variant;
+        classes?: string;
+        href?: string | null;
+        target?: HTMLAttributeAnchorTarget | null;
+        disabled?: boolean;
+        isToggle?: boolean;
+        selected?: boolean;
+        grow?: boolean;
+        fullWidth?: boolean;
+        title?: string | null;
+        children?: import('svelte').Snippet;
+    }
+
+    let {
+        variant = 'contained',
+        classes = '',
+        href = null,
+        target = null,
+        disabled = false,
+        isToggle = false,
+        selected = false,
+        grow = false,
+        fullWidth = false,
+        title = null,
+        children
+    }: Props = $props();
 
     const dispatch = createEventDispatcher();
 
@@ -38,23 +55,23 @@
         'border-[0px] text-black-500 dark:text-white hover:text-white hover:bg-blue-500 ' +
         'disabled:bg-transparent disabled:text-gray-400'; // Disabled state styles
 
-    $: variantClasses =
-        variant === 'contained'
+    let variantClasses =
+        $derived(variant === 'contained'
             ? containedClasses
             : variant === 'outlined'
               ? outlinedClasses
-              : textClasses;
+              : textClasses);
 
-    $: growClasses = grow ? 'grow-[1]' : ''; // Add grow-[1] if grow is true
+    let growClasses = $derived(grow ? 'grow-[1]' : ''); // Add grow-[1] if grow is true
 
-    $: fullWidthClasses = fullWidth ? 'w-full' : ''; // Add w-full if fullWidth is true
+    let fullWidthClasses = $derived(fullWidth ? 'w-full' : ''); // Add w-full if fullWidth is true
 
-    $: combinedClasses = `${baseClasses} ${variantClasses} ${growClasses} ${fullWidthClasses} ${isToggle && selected ? 'bg-blue-500 text-white' : ''}`;
+    let combinedClasses = $derived(`${baseClasses} ${variantClasses} ${growClasses} ${fullWidthClasses} ${isToggle && selected ? 'bg-blue-500 text-white' : ''}`);
 
-    $: finalClasses = mergeClasses(combinedClasses, classes);
+    let finalClasses = $derived(mergeClasses(combinedClasses, classes));
 
     // Determine if the link is external
-    $: isExternal = href && /^https?:\/\//.test(href);
+    let isExternal = $derived(href && /^https?:\/\//.test(href));
 
     // Handle click for internal links
     function handleClick(event: MouseEvent) {
@@ -68,12 +85,12 @@
 
 {#if href}
     <!-- Render anchor tag if href is provided -->
-    <a {href} {title} class={finalClasses} {target} on:click={handleClick}>
-        <slot />
+    <a {href} {title} class={finalClasses} {target} onclick={handleClick}>
+        {@render children?.()}
     </a>
 {:else}
     <!-- Render button tag otherwise -->
-    <button {title} {disabled} class={finalClasses} on:click={handleClick}>
-        <slot />
+    <button {title} {disabled} class={finalClasses} onclick={handleClick}>
+        {@render children?.()}
     </button>
 {/if}

@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import FollowNotification from '$lib/components/Notifications/FollowNotification.svelte';
     import JobNotification from '$lib/components/Notifications/JobNotification.svelte';
     import MessageNotification from '$lib/components/Notifications/MessageNotification.svelte';
@@ -33,15 +35,15 @@
 
     const toastStore = getToastStore();
 
-    let selectedTab = Tab.Follows;
-    let previousTab: Tab | null = null;
+    let selectedTab = $state(Tab.Follows);
+    let previousTab = $state<Tab | null>(null);
 
-    $: {
+    $effect(() => {
         if (previousTab !== null && previousTab !== selectedTab) {
             markNotificationsAsRead(previousTab);
         }
         previousTab = selectedTab;
-    }
+    });
 
     function markNotificationsAsRead(tab: Tab) {
         switch (tab) {
@@ -98,7 +100,7 @@
 
     onMount(() => checkRelayConnections());
 
-    $: tabs = [
+    let tabs = $derived([
         {
             id: Tab.Follows,
             label: 'Follows',
@@ -147,7 +149,7 @@
                 (notification) => !$readNotifications.has(notification.id)
             ).length,
         },
-    ];
+    ]);
 </script>
 
 {#if $currentUser}

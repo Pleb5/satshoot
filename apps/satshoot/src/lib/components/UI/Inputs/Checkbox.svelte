@@ -1,7 +1,11 @@
 <script lang="ts">
-    export let id: string; // ID for the checkbox
-    export let label: string; // Label text
-    export let checked: boolean; // Bound value
+    interface Props {
+        id: string; // ID for the checkbox
+        label: string; // Label text
+        checked: boolean; // Bound value
+    }
+
+    let { id, label, checked = $bindable() }: Props = $props();
 
     const checkboxInputClasses =
         'appearance-none h-[20px] w-[20px] border-[1px] border-black-300 ' +

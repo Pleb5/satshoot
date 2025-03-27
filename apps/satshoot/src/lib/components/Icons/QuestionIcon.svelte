@@ -5,13 +5,21 @@
     import type { Placement } from '@floating-ui/dom';
     import Card from '../UI/Card.svelte';
 
-    export let extraClasses = 'text-lg';
-    export let triggerEvent: 'click' | 'hover' | 'focus-click' | 'focus-blur' | null = null;
+    interface Props {
+        extraClasses?: string;
+        triggerEvent?: 'click' | 'hover' | 'focus-click' | 'focus-blur' | null;
+        placement?: Placement | null;
+        popUpText?: string | null;
+    }
 
-    export let placement: Placement | null = null;
-    export let popUpText: string | null = null;
+    let {
+        extraClasses = 'text-lg',
+        triggerEvent = null,
+        placement = null,
+        popUpText = null,
+    }: Props = $props();
 
-    let popupSettings: PopupSettings | null = null;
+    let popupSettings: PopupSettings | null = $state(null);
 
     onMount(() => {
         if (triggerEvent && placement && popUpText) {
@@ -28,7 +36,7 @@
     <i
         class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"
         use:popup={popupSettings}
-    />
+    ></i>
     <div data-popup="popupTarget">
         <Card classes="w-80 p-4 max-h-60 overflow-y-auto shadow-deep">
             {@html popUpText}

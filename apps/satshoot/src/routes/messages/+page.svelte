@@ -18,21 +18,23 @@
         Client = 1,
     }
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: searchTerms = searchQuery ? searchQuery.split(',') : [];
+    let searchQuery = $derived($page.url.searchParams.get('searchTerms'));
+    let searchTerms = $derived(searchQuery ? searchQuery.split(',') : []);
 
-    let freelancers: NDKUser[] = [];
-    let ticketsWithFreelancers: TicketEvent[] = [];
-    let clients: NDKUser[] = [];
-    let ticketsWithClients: TicketEvent[] = [];
-    let conversationType: ConversationType = ConversationType.Freelancer;
-    let mounted = false;
-    let noTicketsWithFreelancers = false;
-    let noTicketsWithClients = false;
+    let freelancers = $state<NDKUser[]>([]);
+    let ticketsWithFreelancers = $state<TicketEvent[]>([]);
+    let clients = $state<NDKUser[]>([]);
+    let ticketsWithClients = $state<TicketEvent[]>([]);
+    let conversationType = $state(ConversationType.Freelancer);
+    let mounted = $state(false);
+    let noTicketsWithFreelancers = $state(false);
+    let noTicketsWithClients = $state(false);
 
-    $: if ($loggedIn && mounted) {
-        init();
-    }
+    $effect(() => {
+        if ($loggedIn && mounted) {
+            init();
+        }
+    });
 
     async function init() {
         console.log('init');
@@ -146,9 +148,7 @@
                 class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"
             >
                 <div class="w-full h-full flex flex-col gap-[15px]">
-                    <div
-                        class="w-full h-full flex gap-[15px] max-h-[calc(100vh-160px)]"
-                    >
+                    <div class="w-full h-full flex gap-[15px] max-h-[calc(100vh-160px)]">
                         <Card classes="gap-[10px]">
                             <TabSelector {tabs} bind:selectedTab={conversationType} />
 
@@ -172,11 +172,11 @@
                                             <div class="w-full card flex gap-2 h-28 p-4">
                                                 <div
                                                     class="w-20 placeholder-circle animate-pulse"
-                                                />
+                                                ></div>
                                                 <div class="w-28 grid grid-rows-3 gap-2">
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
+                                                    <div class="placeholder animate-pulse"></div>
+                                                    <div class="placeholder animate-pulse"></div>
+                                                    <div class="placeholder animate-pulse"></div>
                                                 </div>
                                             </div>
                                         {/each}
@@ -196,11 +196,11 @@
                                         <div class="w-full card flex gap-2 h-28 p-4">
                                             <div
                                                 class="w-20 placeholder-circle animate-pulse"
-                                            />
+                                            ></div>
                                             <div class="w-28 grid grid-rows-3 gap-2">
-                                                <div class="placeholder animate-pulse" />
-                                                <div class="placeholder animate-pulse" />
-                                                <div class="placeholder animate-pulse" />
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
                                             </div>
                                         </div>
                                     {/each}
