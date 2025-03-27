@@ -2,7 +2,6 @@ import { join } from 'path';
 import type { Config } from 'tailwindcss';
 import forms from '@tailwindcss/forms';
 
-import { skeleton } from '@skeletonlabs/tw-plugin';
 import { colors } from './colors';
 
 const config = {
@@ -27,12 +26,7 @@ const config = {
             ],
         },
     },
-    plugins: [
-        forms,
-        skeleton({
-            themes: { preset: ['wintry'] },
-        }),
-    ],
+    plugins: [forms],
 } satisfies Config;
 
 export default config;
