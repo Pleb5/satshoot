@@ -62,7 +62,7 @@
               ? outlinedClasses
               : textClasses);
 
-    let growClasses = $derived(grow ? 'grow-[1]' : ''); // Add grow-[1] if grow is true
+    let growClasses = $derived(grow ? 'grow-1' : ''); // Add grow-1 if grow is true
 
     let fullWidthClasses = $derived(fullWidth ? 'w-full' : ''); // Add w-full if fullWidth is true
 

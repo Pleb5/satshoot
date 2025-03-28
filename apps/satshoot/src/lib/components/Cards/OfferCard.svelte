@@ -243,7 +243,7 @@
         <div
             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100"
         >
-            <div class="grow-[1]">
+            <div class="grow-1">
                 <p class="font-[500]">
                     Offer cost:
                     <span class="font-[300]">
@@ -251,14 +251,14 @@
                     </span>
                 </p>
             </div>
-            <div class="grow-[1]">
+            <div class="grow-1">
                 <p class="font-[500]">
                     Pledge split:
                     <span class="font-[300]"> {offer.pledgeSplit + ' %'} </span>
                 </p>
             </div>
             {#if showPayments}
-                <div class="grow-[1]">
+                <div class="grow-1">
                     <p class="font-[500]">
                         Freelancer Paid:
                         <span class="font-[300]">
@@ -266,7 +266,7 @@
                         </span>
                     </p>
                 </div>
-                <div class="grow-[1]">
+                <div class="grow-1">
                     <p class="font-[500]">
                         SatShoot Paid:
                         <span class="font-[300]">
@@ -281,7 +281,7 @@
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
     >
         {#if offer.created_at}
-            <p class="font-[500] grow-[1] flex flex-row flex-wrap">
+            <p class="font-[500] grow-1 flex flex-row flex-wrap">
                 Offer published on:
                 <span class="font-[300]">
                     {formatDate(offer.created_at * 1000, 'dd-MMM-yyyy, h:m a') +
@@ -291,7 +291,7 @@
                 </span>
             </p>
         {/if}
-        <p class="font-[500] grow-[1] flex flex-row flex-wrap">
+        <p class="font-[500] grow-1 flex flex-row flex-wrap">
             Offer Status:
             <span class="ml-[5px] font-[300] {statusColor}"> {status} </span>
         </p>
@@ -300,7 +300,7 @@
         <div
             class="w-full flex flex-row flex-wrap items-center gap-[10px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
         >
-            <div class="font-[500] grow-[1] flex flex-row items-center flex-wrap gap-[10px]">
+            <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
                 <p>Job Title:</p>
                 <a
                     href={'/' + job.encode() + '/'}
@@ -312,11 +312,11 @@
                 </a>
             </div>
 
-            <div class="font-[500] grow-[1] flex flex-row items-center flex-wrap gap-[10px]">
+            <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
                 <p>Job Posted By:</p>
                 <a
                     href={'/' + nip19.npubEncode(job.pubkey)}
-                    class="flex flex-row items-center grow-[1] gap-[10px]"
+                    class="flex flex-row items-center grow-1 gap-[10px]"
                 >
                     {#if jobPosterImage}
                         <ProfileImage src={jobPosterImage} size="xs" />

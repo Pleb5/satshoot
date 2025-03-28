@@ -25,11 +25,7 @@
     import { onDestroy } from 'svelte';
     import ReviewSummaryAsFreelancer from '../Modals/ReviewSummaryAsFreelancer.svelte';
     import ReviewSummaryAsClient from '../Modals/ReviewSummaryAsClient.svelte';
-    import {
-        getModalStore,
-        type ModalComponent,
-        type ModalSettings 
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import RatingBlock from '../UI/Display/RatingBlock.svelte';
@@ -48,16 +44,16 @@
     let allPaymentsEvents: Set<NDKEvent> = new Set();
     let allPledgesEvents: Set<NDKEvent> = new Set();
 
-    let allEarnings = $state(0)
-    let allPayments = $state(0)
-    let allPledges = $state(0)
+    let allEarnings = $state(0);
+    let allPayments = $state(0);
+    let allPledges = $state(0);
 
     let initInProgress = $state(true);
 
     // Init
     $effect(() => {
         if ($wotLoaded) {
-            console.log('INIT Reputation')
+            console.log('INIT Reputation');
             init();
         }
     });
@@ -69,8 +65,8 @@
             // groupableDelay: 300,
             // The info we need here is most likely already in the cache
             // since this info is important to the notifications as well
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-        }
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        };
 
         const winningOffersOfUser: string[] = [];
         const winningOffersForUser: string[] = [];
@@ -82,17 +78,17 @@
         const userOffers = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceOffer],
-                authors: [user]
+                authors: [user],
             },
             subOptions
         );
 
-        console.log('userOffers', userOffers)
+        console.log('userOffers', userOffers);
 
         const allTicketsUserWon = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceTicket],
-                '#a': Array.from(userOffers).map(o => o.tagAddress())
+                '#a': Array.from(userOffers).map((o) => o.tagAddress()),
             },
             subOptions
         );
@@ -101,38 +97,37 @@
             const ticketEvent = TicketEvent.from(wonTicket);
             if ($wot.has(ticketEvent.pubkey)) {
                 const offerOfTicket = Array.from(userOffers).find(
-                    o => o.tagAddress() === ticketEvent.acceptedOfferAddress
+                    (o) => o.tagAddress() === ticketEvent.acceptedOfferAddress
                 );
                 if (offerOfTicket) {
-                    involvedTickets.push(ticketEvent.ticketAddress)
-                    winningOffersOfUser.push(offerOfTicket.id)
+                    involvedTickets.push(ticketEvent.ticketAddress);
+                    winningOffersOfUser.push(offerOfTicket.id);
 
                     involvedTicketEvents.push(ticketEvent);
-                    involvedOffers.push(OfferEvent.from(offerOfTicket))
+                    involvedOffers.push(OfferEvent.from(offerOfTicket));
                 } else {
-                    console.error("BUG: Offer for this ticket SHOULD be found")
+                    console.error('BUG: Offer for this ticket SHOULD be found');
                 }
             }
         }
 
-        console.log('winningOffersOfUser', winningOffersOfUser)
+        console.log('winningOffersOfUser', winningOffersOfUser);
 
         allEarningsEvents = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.Zap, NDKKind.Nutzap], 
-                '#p': [user], 
-                '#e': winningOffersOfUser 
+                kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                '#p': [user],
+                '#e': winningOffersOfUser,
             },
             subOptions
-        )
+        );
         allEarnings = calculateTotalAmount(Array.from(allEarningsEvents));
-
 
         // Payments of target user, Freelancers filtered by CURRENT users wot
         const userTickets = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceTicket],
-                authors: [user]
+                authors: [user],
             },
             subOptions
         );
@@ -140,7 +135,7 @@
         const allWinningOffersOnUserTickets = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceOffer],
-                '#a': Array.from(userTickets).map(t => t.tagAddress())
+                '#a': Array.from(userTickets).map((t) => t.tagAddress()),
             },
             subOptions
         );
@@ -149,16 +144,16 @@
             const offerEvent = OfferEvent.from(offer);
             if ($wot.has(offerEvent.pubkey)) {
                 const ticketOfOffer = Array.from(userTickets).find(
-                    t => t.tagAddress() === offerEvent.referencedTicketAddress
+                    (t) => t.tagAddress() === offerEvent.referencedTicketAddress
                 );
                 if (ticketOfOffer) {
                     involvedTickets.push(ticketOfOffer.tagAddress());
                     winningOffersForUser.push(offerEvent.id);
 
                     involvedTicketEvents.push(TicketEvent.from(ticketOfOffer));
-                    involvedOffers.push(offerEvent)
+                    involvedOffers.push(offerEvent);
                 } else {
-                    console.error("BUG: Ticket for this offer SHOULD be found")
+                    console.error('BUG: Ticket for this offer SHOULD be found');
                 }
             }
         }
@@ -166,10 +161,10 @@
         allPaymentsEvents = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                '#e': winningOffersForUser 
+                '#e': winningOffersForUser,
             },
             subOptions
-        )
+        );
         allPayments = calculateTotalAmount(Array.from(allPaymentsEvents));
 
         // Pledges of target user, both as a Freelancer and as a Client,
@@ -178,10 +173,10 @@
             {
                 kinds: [NDKKind.Zap, NDKKind.Nutzap],
                 '#a': involvedTickets,
-                '#p': [SatShootPubkey]
+                '#p': [SatShootPubkey],
             },
             subOptions
-        )
+        );
         allPledges = calculatePledges(
             Array.from(allPledgesEvents),
             involvedTicketEvents,
@@ -189,7 +184,7 @@
             user
         );
         initInProgress = false;
-    }
+    };
 
     // Derived review data
     const clientAverage = $derived(aggregateClientRatings(user).average);
@@ -212,27 +207,16 @@
               : calculateOverallAverage(clientAverage, freelancerAverage)
     );
 
-    const {
-        ratingConsensus, 
-        ratingColor 
-    } = $derived(averageToRatingText(overallAverage));
+    const { ratingConsensus, ratingColor } = $derived(averageToRatingText(overallAverage));
 
-    const {
-        ratingConsensus: asClientRatingConsensus,
-        ratingColor: asClientRatingColor 
-    } = $derived(
+    const { ratingConsensus: asClientRatingConsensus, ratingColor: asClientRatingColor } = $derived(
         averageToRatingText(clientAverage)
     );
 
-    const {
-        ratingConsensus: asFreelancerRatingConsensus,
-        ratingColor: asFreelancerRatingColor 
-    } =
+    const { ratingConsensus: asFreelancerRatingConsensus, ratingColor: asFreelancerRatingColor } =
         $derived(averageToRatingText(freelancerAverage));
 
-    function calculateOverallAverage(
-        clientAverage: number, freelancerAverage: number
-    ): number {
+    function calculateOverallAverage(clientAverage: number, freelancerAverage: number): number {
         if (!isNaN(clientAverage) && !isNaN(freelancerAverage)) {
             return (clientAverage + freelancerAverage) / 2;
         } else if (isNaN(clientAverage) && !isNaN(freelancerAverage)) {
@@ -351,9 +335,7 @@
         const absolutePledgeSplit = Math.round((offer.pledgeSplit / 100) * pledgeSum);
         // If the user is the client, they get the remaining amount after the freelancer's split
         // If the user is the freelancer, they get the pledge split
-        return ticket.pubkey === user ?
-            pledgeSum - absolutePledgeSplit :
-            absolutePledgeSplit;
+        return ticket.pubkey === user ? pledgeSum - absolutePledgeSplit : absolutePledgeSplit;
     }
 
     function showFreelancerReviewBreakdown() {
@@ -405,7 +387,7 @@
     const satsWrapperClasses =
         'transition ease duration-[0.3s] w-full flex flex-row flex-wrap gap-[10px] justify-between items-center rounded-[4px] px-[10px] py-[5px] hover:bg-blue-500 group';
     const boltIconWrapperClasses =
-        'flex flex-row gap-[5px] items-center flex-wrap grow-[1] group-hover:border-r-[1px] group-hover:border-r-white-200 group-hover:text-white';
+        'flex flex-row gap-[5px] items-center flex-wrap grow-1 group-hover:border-r-[1px] group-hover:border-r-white-200 group-hover:text-white';
 </script>
 
 {#if !forUserCard}
@@ -422,11 +404,11 @@
                     <span class="badge px-4 {ratingColor}">{asFreelancerRatingConsensus}</span>
                 </p>
             </Button>
-            <div class="flex flex-row grow-[1] px-[20px] gap-x-1">
+            <div class="flex flex-row grow-1 px-[20px] gap-x-1">
                 <div class="font-bold">Total Earnings:</div>
                 {#if initInProgress}
                     <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-                {:else} 
+                {:else}
                     <p class="font-[500]">
                         <span class="font-[300]">
                             {insertThousandSeparator(allEarnings) + ' sats'}
@@ -448,11 +430,11 @@
                     <span class="badge px-4 {ratingColor}">{asClientRatingConsensus}</span>
                 </p>
             </Button>
-            <div class="flex flex-row grow-[1] px-[20px] gap-x-1">
+            <div class="flex flex-row grow-1 px-[20px] gap-x-1">
                 <div class="font-bold">Total Payments:</div>
                 {#if initInProgress}
                     <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-                {:else} 
+                {:else}
                     <p class="font-[500]">
                         <span class="font-[300]">
                             {insertThousandSeparator(allPayments) + ' sats'}
@@ -462,11 +444,11 @@
             </div>
         {/if}
 
-        <div class="flex flex-row grow-[1] px-[20px] gap-x-1">
+        <div class="flex flex-row grow-1 px-[20px] gap-x-1">
             <div class="font-bold">Total Pledges:</div>
             {#if initInProgress}
                 <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-            {:else} 
+            {:else}
                 <p class="font-[500]">
                     <span class="font-[300]">
                         {insertThousandSeparator(allPledges) + ' sats'}
@@ -523,8 +505,10 @@
                             {label}
                         </p>
                         {#if initInProgress}
-                            <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-                        {:else} 
+                            <div
+                                class="placeholder bg-primary-300-600-token animate-pulse w-12"
+                            ></div>
+                        {:else}
                             <p class="group-hover:text-white">
                                 {abbreviateNumber(amount) + ' sats'}
                             </p>

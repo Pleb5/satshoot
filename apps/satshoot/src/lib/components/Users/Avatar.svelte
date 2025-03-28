@@ -46,7 +46,7 @@
             shapeClass = 'rounded-full';
             break;
         case 'square':
-            shapeClass = 'rounded';
+            shapeClass = 'rounded-sm';
             break;
     }
 

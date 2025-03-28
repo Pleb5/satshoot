@@ -66,7 +66,7 @@
         },
     ];
 
-    const jobCardBtnClasses = 'border-0 scale-100 ' + 'flex-grow ';
+    const jobCardBtnClasses = 'border-0 scale-100 ' + 'grow ';
 </script>
 
 <Card classes="border-[1px_solid_rgba(0,0,0,0.1)] gap-[0px]  overflow-hidden p-[0px]">

@@ -711,7 +711,7 @@
                         <div
                             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                         >
-                            <div class="grow-[1]">
+                            <div class="grow-1">
                                 <p class="font-[500]">
                                     Offer cost:
                                     <span class="font-[300]">
@@ -719,7 +719,7 @@
                                     </span>
                                 </p>
                             </div>
-                            <div class="grow-[1]">
+                            <div class="grow-1">
                                 <p class="font-[500]">
                                     Pledge split:
                                     <span class="font-[300]"> {offer.pledgeSplit} %</span>
@@ -729,14 +729,14 @@
                         <div
                             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                         >
-                            <div class="grow-[1]">
+                            <div class="grow-1">
                                 <p class="font-[500]">
                                     Freelancer Paid: <span class="font-[300]"
                                         >{insertThousandSeparator(freelancerPaid)} sats</span
                                     >
                                 </p>
                             </div>
-                            <div class="grow-[1]">
+                            <div class="grow-1">
                                 <p class="font-[500]">
                                     SatShoot Paid: <span class="font-[300]"
                                         >{insertThousandSeparator(satshootPaid)} sats</span
@@ -787,10 +787,10 @@
                         <div
                             class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                         >
-                            <p class="grow-[1] text-center">
+                            <p class="grow-1 text-center">
                                 Freelancer gets: {insertThousandSeparator(freelancerShare)} sats
                             </p>
-                            <p class="grow-[1] text-center">
+                            <p class="grow-1 text-center">
                                 SatShoot gets: {insertThousandSeparator(satshootShare) +
                                     ' + ' +
                                     insertThousandSeparator(pledgedAmount ?? 0) +

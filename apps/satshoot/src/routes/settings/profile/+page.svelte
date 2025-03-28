@@ -107,7 +107,7 @@
     <div class="w-full flex flex-col gap-[15px] overflow-y-auto">
         <div class="w-full flex flex-col gap-[15px]">
             <!-- Display Name -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="displaly_name">Display Name</label>
                 </div>
@@ -121,7 +121,7 @@
             </div>
 
             <!-- Bio -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="about">About</label>
                 </div>
@@ -135,7 +135,7 @@
             </div>
 
             <!-- Profile Picture -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="profile_picture_url">Profile Picture</label>
                 </div>
@@ -149,7 +149,7 @@
             </div>
 
             <!-- Profile Banner -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="profile_banner_url">Profile Banner</label>
                 </div>
@@ -164,7 +164,7 @@
             </div>
 
             <!-- NIP-05 Address -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="nip05">NIP-05 Address</label>
                 </div>
@@ -179,7 +179,7 @@
             </div>
 
             <!-- LN Address -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="ln_address">LN Address</label>
                 </div>
@@ -194,7 +194,7 @@
             </div>
 
             <!-- Website -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="website">Website</label>
                 </div>

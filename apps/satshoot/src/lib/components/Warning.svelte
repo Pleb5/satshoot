@@ -31,7 +31,7 @@
 </script>
 
 <div
-    class="w-full bg-warning-500 dark:bg-warning-700 text-warning-900 dark:text-warning-100 p-2 flex justify-between items-center gap-2 rounded"
+    class="w-full bg-warning-500 dark:bg-warning-700 text-warning-900 dark:text-warning-100 p-2 flex justify-between items-center gap-2 rounded-sm"
 >
     <div class="flex items-center gap-2 overflow-hidden whitespace-nowrap">
         <!-- Warning Icon -->

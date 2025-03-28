@@ -573,7 +573,7 @@
     });
 </script>
 
-<Toast zIndex="z-[1100]" />
+<Toast zIndex="z-1100" />
 <Modal />
 <Drawer regionDrawer={'flex justify-center'} zIndex={'z-50'}>
     {#if $drawerID === DrawerIDs.AppMenu}

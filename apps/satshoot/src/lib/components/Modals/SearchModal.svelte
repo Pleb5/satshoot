@@ -70,7 +70,7 @@
     }
 
     const inputWrapperClasses =
-        'flex flex-row flex-grow rounded-[6px] overflow-hidden bg-white dark:bg-brightGray outline ' +
+        'flex flex-row grow rounded-[6px] overflow-hidden bg-white dark:bg-brightGray outline ' +
         'outline-[5px] outline-white dark:outline-brightGray border-[1px] border-black-100 dark:border-white-100 gap-[2px]';
 
     const termWrapperClasses =

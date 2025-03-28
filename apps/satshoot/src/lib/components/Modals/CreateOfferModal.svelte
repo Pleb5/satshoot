@@ -219,7 +219,7 @@
                 class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
             >
                 <div class="w-full flex flex-col gap-[10px] p-[10px]">
-                    <div class="flex flex-col gap-[5px] grow-[1]">
+                    <div class="flex flex-col gap-[5px] grow-1">
                         <div class="">
                             <label class="font-[600]" for=""> Pricing method </label>
                         </div>
@@ -234,7 +234,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-[5px] grow-[1]">
+                    <div class="flex flex-col gap-[5px] grow-1">
                         <div class="">
                             <label class="font-[600]" for="">
                                 Price({pricingMethod ? 'sats/min' : 'sats'})
@@ -252,7 +252,7 @@
                             />
                         </div>
                     </div>
-                    <div class="flex flex-col gap-[5px] grow-[1]">
+                    <div class="flex flex-col gap-[5px] grow-1">
                         <div class="">
                             <label class="font-[600]" for=""> Pledge split </label>
                         </div>
@@ -277,7 +277,7 @@
                 <div
                     class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-black-200"
                 >
-                    <div class="grow-[1]">
+                    <div class="grow-1">
                         <p class="font-[500]">
                             You'd get:
                             <span class="font-[400]">
@@ -286,7 +286,7 @@
                             </span>
                         </p>
                     </div>
-                    <div class="grow-[1]">
+                    <div class="grow-1">
                         <p class="font-[500]">
                             Your pledge:
                             <span class="font-[400]">
@@ -297,7 +297,7 @@
                     </div>
                 </div>
             </div>
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div class="">
                     <label class="font-[600]" for="description"> Your Pitch </label>
                 </div>

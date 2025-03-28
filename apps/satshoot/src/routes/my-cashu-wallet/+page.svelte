@@ -657,7 +657,7 @@
         'bg-black-100 items-center overflow-hidden max-[576px]:gap-[0px] max-[576px]:flex-col hover:bg-blue-500 group';
 
     const listItemClasses =
-        'transition ease duration-[0.3s] grow-[1] group-hover:text-white pl-[10px] break-all max-[576px]:py-[5px]';
+        'transition ease duration-[0.3s] grow-1 group-hover:text-white pl-[10px] break-all max-[576px]:py-[5px]';
 
     const deleteButtonClasses =
         'min-w-[50px] min-h-[35px] h-full justify-center items-center bg-white-0 text-black-500 max-[576px]:w-full ' +
@@ -667,7 +667,7 @@
         'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex h-full justify-center items-center hover:bg-red-400';
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div class="w-full flex flex-col gap-0 grow">
     <div class="w-full flex flex-col justify-center items-center py-4">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
@@ -760,7 +760,7 @@
                                 <!-- Wallet card start -->
                                 <Card classes="gap-[15px]">
                                     <div
-                                        class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-gradient-to-tl from-blue-500 to-blue-400 shadow-deep"
+                                        class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-linear-to-tl from-blue-500 to-blue-400 shadow-deep"
                                     >
                                         <div
                                             class="font-[500] text-white"

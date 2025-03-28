@@ -87,7 +87,7 @@
 
         <select
             bind:value={selectedMint}
-            class="input bg-transparent border-[0] border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
+            class="input bg-transparent border-0 border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
         >
             <option value="" disabled>Select a mint</option>
             {#each cashuWallet.mints as mint (mint)}

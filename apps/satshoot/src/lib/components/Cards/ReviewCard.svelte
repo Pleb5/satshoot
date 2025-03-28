@@ -106,7 +106,7 @@
         <a href={'/' + user.npub}>
             <ProfileImage src={userImage} />
         </a>
-        <div class="flex flex-col grow-[1] items-start">
+        <div class="flex flex-col grow-1 items-start">
             <a href={'/' + user.npub}>
                 <p>{userName}</p>
             </a>
@@ -187,7 +187,7 @@
         <div
             class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 pl-[5px] pr-[5px] pt-[10px]"
         >
-            <p class="font-[500] grow-[1] flex flex-row flex-wrap">
+            <p class="font-[500] grow-1 flex flex-row flex-wrap">
                 Review published on:
                 <span class="font-[300]">
                     {formatDate(review.created_at * 1000, 'dd-MMM-yyyy, h:m a') +

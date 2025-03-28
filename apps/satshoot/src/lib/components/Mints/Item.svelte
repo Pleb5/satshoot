@@ -44,7 +44,7 @@
 
     let selectedClass = $derived(isSelected 
         ? 'bg-blue-500 hover:bg-blue-500 text-white' 
-        : 'bg-black-100 hover:bg-black-100 dark:bg-white-100 hover:dark:bg-white-100')
+        : 'bg-black-100 hover:bg-black-100 dark:bg-white-100 dark:hover:bg-white-100')
 
     let wrapperClasses = $derived(selectedClass +
         ' w-full flex flex-col items-start gap-[3px] '+ 
@@ -53,7 +53,7 @@
     const avatarWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] min-w-[30px] min-h-[30px] w-[30px] h-[30px] ' +
         'rounded-full border-[2px] border-white shadow-deep flex flex-col justify-center items-center ' +
-        'relative overflow-hidden bg-white-200 backdrop-blur-[10px] text-[12px] leading-[1] hover:border-[2px]';
+        'relative overflow-hidden bg-white-200 backdrop-blur-[10px] text-[12px] leading-none hover:border-[2px]';
 </script>
 
 <!-- Loading State -->

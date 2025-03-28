@@ -20,14 +20,14 @@
 
     // Base classes for the nav item
     const baseClasses =
-        'text-[16pt] sm:text-[20pt] border-0 outline-none py-[15px] px-[20px] rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row flex-grow justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
+        'text-[16pt] sm:text-[20pt] border-0 outline-hidden py-[15px] px-[20px] rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row grow justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
 
     function handleClick() {
         dispatch('click');
     }
 </script>
 
-<TabAnchor {href} padding="" rounded="rounded-[5px]">
+<TabAnchor {href} padding="" rounded-sm="rounded-[5px]">
     <button class={`${baseClasses} ${activeClass}`} onclick={handleClick}>
         {#if href}
             <i class={`bx ${icon} relative`}>

@@ -119,10 +119,10 @@
     const boxWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] flex flex-row gap-[5px] p-[5px_10px] ' +
         'rounded-[6px] bg-black-100 text-black-500 dark:bg-white-100 dark:text-white items-center ' +
-        'outline outline-[2px] outline-[rgba(0,0,0,0.15)] text-[14px] flex-grow w-full';
+        'outline outline-[2px] outline-[rgba(0,0,0,0.15)] text-[14px] grow w-full';
 </script>
 
-<div class="flex flex-col grow-[1] gap-[10px] p-[0px]">
+<div class="flex flex-col grow-1 gap-[10px] p-[0px]">
     <div class="w-full flex flex-row gap-[10px] flex-wrap">
         <div class={boxWrapperClasses}>
             <p class="font-[600]">Status:</p>

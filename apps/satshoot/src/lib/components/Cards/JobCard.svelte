@@ -38,7 +38,7 @@
         'border-[1px] border-black-100 dark:border-white-100 text-black-500 dark:text-white font-[600] p-[5px]';
 
     const statusRowItemClasses =
-        'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center grow-[1] items-center ' +
+        'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center grow-1 items-center ' +
         'px-[10px] py-[5px] rounded-[4px] hover:text-white hover:bg-blue-500 max-[768px]:justify-start';
 
     const tagItemClasses =

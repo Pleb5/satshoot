@@ -189,7 +189,7 @@
         margin: 1rem 0;
     }
     .date-separator hr {
-        flex-grow: 1;
+        grow: 1;
         border: none;
         border-top: 1px solid #ccc;
     }

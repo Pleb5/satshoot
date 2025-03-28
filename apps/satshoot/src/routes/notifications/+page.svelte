@@ -153,14 +153,14 @@
 </script>
 
 {#if $currentUser}
-    <div class="w-full flex flex-col gap-0 flex-grow">
+    <div class="w-full flex flex-col gap-0 grow">
         <div class="w-full h-full flex flex-col justify-center items-center py-4">
             <div
                 class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"
             >
                 <div class="w-full h-full flex flex-col gap-[15px]">
                     <TabSelector {tabs} bind:selectedTab />
-                    <div class="w-full flex flex-col flex-grow overflow-y-auto">
+                    <div class="w-full flex flex-col grow overflow-y-auto">
                         {#if selectedTab === Tab.Follows}
                             <NotificationsList
                                 notifications={$followNotifications}

@@ -120,7 +120,7 @@
         'bg-red-500 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-800 px-4 py-2 justify-center';
 </script>
 
-<div class="flex flex-col flex-grow gap-[20px] p-[20px] bg-white dark:bg-brightGray">
+<div class="flex flex-col grow gap-[20px] p-[20px] bg-white dark:bg-brightGray">
     {#each profileMenuItems as { href, label, icon, callback }}
         <Button
             {href}
@@ -158,7 +158,7 @@
         <span>Feedback</span>
     </Button>
 
-    <div class="flex flex-col justify-end flex-grow">
+    <div class="flex flex-col justify-end grow">
         {#if $loggedIn}
             <Button
                 classes="{profileMenuItemClass} {extraClassesForLogoutBtn} "

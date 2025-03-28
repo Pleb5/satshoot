@@ -88,7 +88,7 @@
 <div class="w-full flex flex-col gap-[15px] overflow-y-auto">
     <div class="w-full flex flex-col gap-[15px] p-2">
         <div class="w-full flex flex-row gap-[10px] items-center pt-[5px] pr-[5px]">
-            <label class="grow-[1] font-[500]" for="toggle-dark-mode"> Theme </label>
+            <label class="grow-1 font-[500]" for="toggle-dark-mode"> Theme </label>
             <LightSwitch
                 bgLight="bg-black-100"
                 bgDark="bg-white-100"
@@ -100,16 +100,16 @@
             />
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
-            <label class="grow-[1] font-[500]" for="clear-cache-btn">Cache</label>
+            <label class="grow-1 font-[500]" for="clear-cache-btn">Cache</label>
             <Button on:click={clearCache}>Clear Cache</Button>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
-            <div class="flex flex-row gap-2 grow-[1]">
+            <div class="flex flex-row gap-2 grow-1">
                 <label class="font-[500]" for="attach-satshoot-wot">
                     Attach SatShoot Web of Trust
                 </label>
                 <QuestionIcon
-                    extraClasses="w-6 h-6 text-lg [&>*]:pointer-events-none text-center"
+                    extraClasses="w-6 h-6 text-lg *:pointer-events-none text-center"
                     triggerEvent="click"
                     placement="top"
                     popUpText={wotTooltip}
@@ -129,7 +129,7 @@
             </div>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
-            <div class="flex flex-row gap-[5px] grow-[1]">
+            <div class="flex flex-row gap-[5px] grow-1">
                 <label class="font-[500]" for="attach-satshoot-wot"> Browser Notifications </label>
             </div>
             <div class="flex flex-row justify-center items-center relative">

@@ -46,11 +46,11 @@
     );
 
     const jobFulfilledStatusClasses =
-        'transition ease duration-[0.3s] flex flex-row gap-[5px] grow-[1] pl-[10px] font-[600] rounded-[4px] ' +
+        'transition ease duration-[0.3s] flex flex-row gap-[5px] grow-1 pl-[10px] font-[600] rounded-[4px] ' +
         'border-[1px] border-black-100 dark:border-white-100 overflow-hidden justify-center items-center group';
 
     const qualitiesBadgeClasses =
-        'transition ease duration-[0.3s] flex flex-row gap-[5px] grow-[1] pl-[10px] font-[600] rounded-[4px] border-[1px] ' +
+        'transition ease duration-[0.3s] flex flex-row gap-[5px] grow-1 pl-[10px] font-[600] rounded-[4px] border-[1px] ' +
         'border-transparent overflow-hidden justify-center items-center text-white bg-blue-500 group';
 </script>
 
@@ -73,14 +73,14 @@
                         <div class="w-full flex flex-row flex-wrap gap-[10px]">
                             <div class="{jobFulfilledStatusClasses} text-gray-500 bg-green-600">
                                 <i class="bx bxs-check-circle"></i>
-                                <p class="grow-[1]">Fulfilled Jobs</p>
+                                <p class="grow-1">Fulfilled Jobs</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {numberOfPositiveOutcome}
                                 </p>
                             </div>
                             <div class="{jobFulfilledStatusClasses} text-white bg-red-600">
                                 <i class="bx bxs-x-circle"></i>
-                                <p class="grow-[1]">Unfulfilled Jobs</p>
+                                <p class="grow-1">Unfulfilled Jobs</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {numberOfNegativeOutcome}
                                 </p>
@@ -89,7 +89,7 @@
                         {#if !isNaN(rateOfPositiveOutcome)}
                             <div class="w-full flex flex-row justify-center items-center mb-[5px]">
                                 <p
-                                    class="py-[5px] px-[15px] bg-black-100 rounded-[6px] border-[1px] border-black-100 dark:border-white-100 grow-[1] text-center"
+                                    class="py-[5px] px-[15px] bg-black-100 rounded-[6px] border-[1px] border-black-100 dark:border-white-100 grow-1 text-center"
                                 >
                                     Success rate: {rateOfPositiveOutcome}%
                                 </p>
@@ -107,21 +107,21 @@
                         <div class="w-full flex flex-row flex-wrap gap-[10px]">
                             <div class={qualitiesBadgeClasses}>
                                 <i class="bx bxs-star"></i>
-                                <p class="grow-[1]">Availability</p>
+                                <p class="grow-1">Availability</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {aggregatedFreelancerRatings.availability}
                                 </p>
                             </div>
                             <div class={qualitiesBadgeClasses}>
                                 <i class="bx bxs-star"></i>
-                                <p class="grow-[1]">Communication</p>
+                                <p class="grow-1">Communication</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {aggregatedFreelancerRatings.communication}
                                 </p>
                             </div>
                             <div class={qualitiesBadgeClasses}>
                                 <i class="bx bxs-star"></i>
-                                <p class="grow-[1]">Expertise</p>
+                                <p class="grow-1">Expertise</p>
                                 <p class="bg-black-100 py-[5px] px-[10px]">
                                     {aggregatedFreelancerRatings.expertise}
                                 </p>

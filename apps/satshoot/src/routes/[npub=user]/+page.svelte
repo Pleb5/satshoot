@@ -209,7 +209,7 @@
     ]);
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div class="w-full flex flex-col gap-0 grow">
     <!-- Section start -->
     <div class="w-full flex flex-col justify-center items-center pb-[50px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">

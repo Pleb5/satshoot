@@ -93,7 +93,7 @@
         <a href={'/' + user.npub}>
             <ProfileImage src={userImage} />
         </a>
-        <div class="flex flex-col grow-[1] items-start">
+        <div class="flex flex-col grow-1 items-start">
             <a href={'/' + user.npub}>
                 <p>{userName}</p>
             </a>

@@ -25,7 +25,7 @@
     ];
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div class="w-full flex flex-col gap-0 grow">
     <div class="w-full h-full flex flex-col justify-center items-center py-4">
         <div
             class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"

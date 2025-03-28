@@ -129,10 +129,10 @@
     });
 
     const paginationBtnClasses =
-        'font-[18px] py-[10px] px-[20px] ' + 'max-[576px]:grow-[1] shadow-subtle';
+        'font-[18px] py-[10px] px-[20px] ' + 'max-[576px]:grow-1 shadow-subtle';
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div class="w-full flex flex-col gap-0 grow">
     <div class="w-full flex flex-col justify-center items-center py-[50px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
@@ -154,7 +154,7 @@
                                 <div class="w-[90vw] flex flex-wrap items-center gap-x-4 gap-y-8">
                                     {#each { length: 8 } as _}
                                         <div
-                                            class="card w-[80vw] sm:w-[40vw] flex flex-col items-center flex-grow flex-wrap h-48 p-4 space-y-4"
+                                            class="card w-[80vw] sm:w-[40vw] flex flex-col items-center grow flex-wrap h-48 p-4 space-y-4"
                                         >
                                             <div class="w-full placeholder animate-pulse"></div>
                                             <div class="w-[60%] grid grid-rows-3 gap-8">
@@ -172,7 +172,7 @@
                                 class="w-full max-w-[300px] flex flex-row gap-[15px] justify-center items-center max-[576px]:flex-wrap"
                             >
                                 <Button
-                                    classes="{paginationBtnClasses} max-[576px]:order-[2]"
+                                    classes="{paginationBtnClasses} max-[576px]:order-2"
                                     on:click={handlePrev}
                                     disabled={currentPage === 1}
                                 >
@@ -184,7 +184,7 @@
                                     <p>Current page: {currentPage}</p>
                                 </div>
                                 <Button
-                                    classes="{paginationBtnClasses} max-[576px]:order-[3]"
+                                    classes="{paginationBtnClasses} max-[576px]:order-3"
                                     on:click={handleNext}
                                     disabled={jobList.size <= currentPage * JobsPerPage}
                                 >

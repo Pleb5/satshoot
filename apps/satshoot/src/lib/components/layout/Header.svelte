@@ -113,14 +113,14 @@
                             <p class="max-[576px]:hidden">SatShoot</p>
                         </a>
                     </div>
-                    <div class="flex flex-row flex-grow gap-4 justify-end items-center">
+                    <div class="flex flex-row grow gap-4 justify-end items-center">
                         {#if $loggedIn}
                             <Button href="/post-job/">Submit Job</Button>
                             <button onclick={openAppMenu}>
                                 <!-- Avatar image -->
                                 <Avatar
                                     class="rounded-full border-white placeholder-white"
-                                    border="border-4 border-surface-300-600-token hover:!border-primary-500"
+                                    border="border-4 border-surface-300-600-token hover:border-primary-500!"
                                     cursor="cursor-pointer"
                                     width="w-12 sm:w-14"
                                     src={profilePicture ??

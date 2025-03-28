@@ -416,7 +416,7 @@
 </script>
 
 {#if $currentUser && job}
-    <div class="w-full flex flex-col gap-0 flex-grow h-full">
+    <div class="w-full flex flex-col gap-0 grow h-full">
         <div class="w-full h-full flex flex-col justify-center items-center pt-[15px]">
             <div
                 class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"
@@ -436,7 +436,7 @@
 
                     <!-- Contact List & Conversation Wrapper -->
                     <div
-                        class="w-full h-full flex flex-col md:flex-row gap-[6px] flex-grow overflow-hidden"
+                        class="w-full h-full flex flex-col md:flex-row gap-[6px] grow overflow-hidden"
                     >
                         <!-- Contact List (Desktop) -->
                         <Card classes="hidden md:flex flex-col flex-1 h-full overflow-hidden">
@@ -447,7 +447,7 @@
                                     Contacts
                                 </p>
                             </div>
-                            <div class="flex flex-col gap-[10px] overflow-y-auto flex-grow">
+                            <div class="flex flex-col gap-[10px] overflow-y-auto grow">
                                 {#each people as contact, i (contact.person.pubkey)}
                                     <Button
                                         variant={contact.selected ? 'contained' : 'text'}
@@ -512,7 +512,7 @@
                                         {#snippet content()}
                                             <!-- Absolutely positioned content -->
                                             <div
-                                                class="absolute top-[70px] left-0 right-0 overflow-hidden z-[100]"
+                                                class="absolute top-[70px] left-0 right-0 overflow-hidden z-100"
                                             >
                                                 <div
                                                     class="flex flex-col items-center p-2 pb-0 space-x-2"
@@ -563,10 +563,10 @@
                         </div>
 
                         <!-- Conversation -->
-                        <Card classes="flex-[2] h-full overflow-hidden flex flex-col ">
+                        <Card classes="flex-2 h-full overflow-hidden flex flex-col ">
                             <div
                                 bind:this={elemChat}
-                                class="flex flex-col flex-grow gap-[5px] overflow-y-auto p-[5px]"
+                                class="flex flex-col grow gap-[5px] overflow-y-auto p-[5px]"
                                 style="height: {chatHeight}px;"
                             >
                                 {#if $currentUser}

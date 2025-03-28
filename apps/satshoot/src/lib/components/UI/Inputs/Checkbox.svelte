@@ -13,7 +13,7 @@
 </script>
 
 <div
-    class="grow-[1] rounded-[6px] overflow-hidden border-[1px] border-black-100 dark:border-white-100 px-[10px] py-[5px]"
+    class="grow-1 rounded-[6px] overflow-hidden border-[1px] border-black-100 dark:border-white-100 px-[10px] py-[5px]"
 >
     <div class="flex flex-row gap-[10px] items-center">
         <div class="flex flex-row justify-center items-center relative">

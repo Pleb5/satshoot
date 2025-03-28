@@ -130,7 +130,7 @@
         <p class="max-[576px]:block hidden">{relayStatusText}</p>
     </div>
     <p
-        class="transition ease duration-[0.3s] grow-[1] group-hover:text-white break-all max-[576px]:py-[5px]"
+        class="transition ease duration-[0.3s] grow-1 group-hover:text-white break-all max-[576px]:py-[5px]"
     >
         {relayUrl}
     </p>

@@ -343,13 +343,13 @@
                                         <a
                                             {href}
                                             target={isExternal ? '_blank' : '_self'}
-                                            class="anchor grow-[1] px-[10px] py-[5px] whitespace-nowrap"
+                                            class="anchor grow-1 px-[10px] py-[5px] whitespace-nowrap"
                                         >
                                             {text}
                                         </a>
                                     {:else}
                                         <p
-                                            class="grow-[1] px-[10px] py-[5px] text-start whitespace-nowrap"
+                                            class="grow-1 px-[10px] py-[5px] text-start whitespace-nowrap"
                                         >
                                             {text}
                                         </p>

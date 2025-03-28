@@ -26,7 +26,7 @@
 </script>
 
 <div
-    class="fixed inset-[0] z-[90] bg-black-500 backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
+    class="fixed inset-0 z-90 bg-black-500 backdrop-blur-[10px] flex flex-col justify-start items-center py-[25px] overflow-auto"
 >
     <div class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative">
         <div class="w-full flex flex-col justify-start items-center">

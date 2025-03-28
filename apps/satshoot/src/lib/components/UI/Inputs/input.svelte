@@ -55,7 +55,7 @@
             : 'border-[2px] border-black-100 dark:border-white-100 focus:border-blue-500'
     );
     let roundedClasses = $derived(notRounded ? 'rounded-[0px]' : 'rounded-[6px]');
-    let growClasses = $derived(grow ? 'grow-[1]' : '');
+    let growClasses = $derived(grow ? 'grow-1' : '');
     let fullWidthClasses = $derived(fullWidth ? 'w-full' : '');
 
     let combinedClasses = $derived(
