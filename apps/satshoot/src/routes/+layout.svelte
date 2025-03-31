@@ -49,7 +49,7 @@
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
     import { page } from '$app/stores';
-    import { AppShell, getDrawerStore, getModeAutoPrefers } from '@skeletonlabs/skeleton';
+    import { AppShell, getModeAutoPrefers } from '@skeletonlabs/skeleton';
     // Popups
     import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
@@ -99,13 +99,6 @@
     $: if (filterList.length > 0) {
         searchTerms.set(new Set(filterList));
     }
-
-    // For WoT tooltip
-    const popupWoT: PopupSettings = {
-        event: 'click',
-        target: 'popupWoT',
-        placement: 'right',
-    };
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
