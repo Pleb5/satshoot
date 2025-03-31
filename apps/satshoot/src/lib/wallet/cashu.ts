@@ -4,19 +4,18 @@ import NDK, {
     NDKKind,
     NDKUser,
     type CashuPaymentInfo,
-    type Hexpubkey,
     type NDKFilter,
-    type NostrEvent,
 } from '@nostr-dev-kit/ndk';
 import {
-    type MintUrl,
+    NDKNutzapMonitor,
     type NDKCashuMintRecommendation,
     type NDKCashuWallet,
 } from '@nostr-dev-kit/ndk-wallet';
+import { wallet } from '$lib/wallet/wallet';
+import { consolidateMintTokens } from '@nostr-dev-kit/ndk-wallet';
 import type { ToastSettings, ToastStore } from '@skeletonlabs/skeleton';
 import { get } from 'svelte/store';
 import { broadcastEvent, getCashuPaymentInfo } from '$lib/utils/helpers';
-import { wallet } from '$lib/wallet/wallet';
 import currentUser from '$lib/stores/user';
 import { encryptSecret } from '$lib/utils/crypto';
 import type { Proof } from '@cashu/cashu-ts';
@@ -147,10 +146,38 @@ export async function syncP2pk(ndkCashuWallet: NDKCashuWallet, cashuPaymentInfo:
     return broadcastEvent($ndk, ndkMintList, {replaceable: true});
 }
 
+export async function recoverWallet(
+    walletStorage: WalletStorage,
+    wallet: NDKCashuWallet,
+    nutzapMonitor: NDKNutzapMonitor
+) {
+    
+    const cashuKeys = walletStorage.cashuKeys;
+    for (const [p2pk, privkey] of Object.entries(cashuKeys)) {
+        if (privkey) {
+            await wallet.addPrivkey(privkey);
+        }
+    }
+
+    // This will add any missing privkeys to Nutzap Monitor
+    nutzapMonitor.wallet = wallet;
+
+    const proofsMap = new Map(
+        Object.entries(walletStorage.mintsWithProofs)
+    );
+
+    for (const [mint, proofs] of proofsMap.entries()) {
+        await consolidateMintTokens(mint, wallet, proofs);
+    }
+}
+
 export interface WalletStorage {
-  version: string;
-  user: string;
-  wallet: Record<string, Proof[]>;
+    version: string;
+    // Privkey is randomly generated and so not related to nostr key
+    // so we back that up too to be able to fully reconstruct the wallet if needed
+    // Multiple keys can be generated for unconventional NWC wallets
+    cashuKeys: Record<string, string|null>;
+    mintsWithProofs: Record<string, Proof[]>;
 }
 
 export function parseAndValidateBackup(
@@ -177,9 +204,21 @@ export function isValidBackup(value: WalletStorage): boolean {
         typeof value === 'object' &&
         value !== null &&
         typeof value.version === 'string' &&
-        typeof value.user === 'string' &&
-        isProofMap(value.wallet)
+        checkCashuKeys(value.cashuKeys) &&
+        isProofMap(value.mintsWithProofs)
     );
+}
+
+function checkCashuKeys(candidate: Record<string, string|null>): boolean {
+    for (const [key, value] of Object.entries(candidate)) {
+        if (typeof key !== 'string') return false;
+        if (
+            typeof value !== 'string' || 
+                value !== null
+        ) return false;
+    }
+
+    return true;
 }
 
 function isProofMap(candidate: Record<string, Proof[]>): boolean {
@@ -222,15 +261,7 @@ export async function backupWallet(
     
     if (!$currentUser || !$wallet) return;
 
-    const mintsWithProofs = $wallet.state.getMintsProofs();
-
-    const json:WalletStorage = {
-        version: '2.0',
-        user: $currentUser.pubkey,
-        wallet: Object.fromEntries(mintsWithProofs.entries()),
-    };
-
-    const stringified = JSON.stringify(json, null, 2);
+    const stringified = serializeWallet(toWalletStorage($wallet));
 
     if (encrypted) {
         if (!passphrase || passphrase.length < 14) {
@@ -245,6 +276,26 @@ export async function backupWallet(
     } else {
         saveToFile(stringified);
     }
+}
+
+export function toWalletStorage(wallet: NDKCashuWallet): WalletStorage {
+    const mintsWithProofs = wallet.state.getMintsProofs();
+    const cashuKeys: Record<string, string | null> = {};
+    for (const [p2pk, signer] of wallet.privkeys.entries()) {
+        cashuKeys[p2pk] = signer.privateKey || null;
+    }
+
+    const ws:WalletStorage = {
+        version: '2.0',
+        cashuKeys,
+        mintsWithProofs: Object.fromEntries(mintsWithProofs.entries()),
+    };
+
+    return ws;
+}
+
+export function serializeWallet(walletStorage: WalletStorage) {
+    return JSON.stringify(walletStorage, null, 2);
 }
 
 export async function getCashuMintRecommendations(ndk: NDK, $wot: Set<string>) {

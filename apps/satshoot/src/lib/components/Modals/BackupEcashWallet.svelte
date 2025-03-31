@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { backupWallet } from '$lib/utils/cashu';
-    import { NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+    import { backupWallet } from '$lib/wallet/cashu';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
     import Popup from '../UI/Popup.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
@@ -9,8 +8,6 @@
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
-
-    export let cashuWallet: NDKCashuWallet;
 
     let processing = false;
     let passphrase = '';
@@ -26,7 +23,7 @@
                 return;
             }
 
-            await backupWallet(cashuWallet, encrypted, passphrase);
+            await backupWallet(encrypted, passphrase);
             modalStore.close();
         } catch (error) {
             console.error('An error occurred in backup process', error);

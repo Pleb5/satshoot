@@ -1,22 +1,20 @@
 <script lang="ts">
     import currentUser from '$lib/stores/user';
     import {
-        parseAndValidateBackup,
-    } from '$lib/wallet/cashu';
-    import { consolidateMintTokens, NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+        getModalStore,
+        getToastStore,
+        ProgressRadial 
+    } from '@skeletonlabs/skeleton';
     import { getFileExtension } from '$lib/utils/misc';
     import { decryptSecret } from '$lib/utils/crypto';
     import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import type { WalletStorage } from '$lib/wallet/cashu';
-    import { wallet } from '$lib/wallet/wallet';
+    import { ndkNutzapMonitor, wallet } from '$lib/wallet/wallet';
+    import { parseAndValidateBackup, recoverWallet } from '$lib/wallet/cashu';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
-
-    export let cashuWallet: NDKCashuWallet;
 
     let recovering = false;
     let file: File | null = null;
@@ -83,7 +81,11 @@
 
             if (fileExtension === 'enc') {
                 try {
-                    fileContent = decryptSecret(fileContent, passphrase, $currentUser!.pubkey);
+                    fileContent = decryptSecret(
+                        fileContent,
+                        passphrase,
+                        $currentUser!.pubkey
+                    );
                 } catch (error) {
                     toastStore.trigger({
                         message: 'Failed to decrypt backup file',
@@ -93,45 +95,23 @@
                 }
             }
 
-            // parse the content of selected json file
-            // parseAndValidateBackup function will check if the file content matches the backup schema
-            // if file content is not in correct shape it will return null
-            const backupJson = parseAndValidateBackup(fileContent);
+            const walletStorage = parseAndValidateBackup(fileContent);
 
-            if (!backupJson) {
-                toastStore.trigger({
-                    message: 'File content does not match the backup schema!',
-                    background: `bg-error-300-600-token`,
-                });
+            if (!walletStorage) throw new Error(
+                'Wallet backup does not match the backup schema!'
+            );
 
-                return;
-            }
+            await recoverWallet(walletStorage, $wallet, ndkNutzapMonitor!);
 
-            // check if wallet backup is related to current user
-            if ($currentUser!.pubkey !== (backupJson as WalletStorage).user) {
-                toastStore.trigger({
-                    message: 'Pubkey in wallet object does not match the pubkey of current user!',
-                    background: `bg-error-300-600-token`,
-                });
-
-                return;
-            }
-
-            const proofsMap = new Map(Object.entries((backupJson as WalletStorage).wallet));
-
-            for (const [mint, proofs] of proofsMap.entries()) {
-                await consolidateMintTokens(mint, $wallet, proofs);
-            }
-
-        toastStore.trigger({
-                message: 'Wallet recovery successful!',
+            toastStore.trigger({
+                message: 'Wallet Loaded Successfully!',
                 background: `bg-success-300-600-token`,
             });
             modalStore.close();
         } catch (error) {
             console.error('Failed to recover wallet:', error);
             toastStore.trigger({
-                message: 'Failed to recover wallet.',
+                message: `Failed to recover wallet:\n${error}`,
                 background: `bg-error-300-600-token`,
             });
         } finally {
@@ -140,7 +120,8 @@
     }
 
     const inputWrapperClasses =
-        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 dark:border-white-100 border-t-[0px] overflow-hidden rounded-[6px]';
+        'w-full flex flex-row bg-black-50 border-[1px] border-black-100 ' +
+        'dark:border-white-100 border-t-[0px] overflow-hidden rounded-[6px]';
 </script>
 
 {#if $modalStore[0]}

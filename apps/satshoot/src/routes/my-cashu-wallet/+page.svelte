@@ -22,12 +22,12 @@
         getModalStore,
         getToastStore,
         popup,
+        ProgressRadial,
         type ModalComponent,
         type ModalSettings,
         type PopupSettings,
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
-    import ImportEcashWallet from '$lib/components/Modals/ImportEcashWallet.svelte';
     import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
@@ -196,19 +196,6 @@
 
             publishCashuMintList(cashuMintList);
         }
-    }
-
-    async function importWallet() {
-        const modalComponent: ModalComponent = {
-            ref: ImportEcashWallet,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-
-        modalStore.trigger(modal);
     }
 
     async function updateWallet() {
@@ -447,7 +434,6 @@
 
         const modalComponent: ModalComponent = {
             ref: BackupEcashWallet,
-            props: { cashuWallet },
         };
 
         const modal: ModalSettings = {
@@ -461,7 +447,6 @@
     async function recoverWallet() {
         const modalComponent: ModalComponent = {
             ref: RecoverEcashWallet,
-            props: { cashuWallet },
         };
 
         const modal: ModalSettings = {
@@ -595,8 +580,7 @@
                     {/each}
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <Button on:click={setupWallet}>Initialize Nostr Wallet</Button>
-                        <Button on:click={importWallet}>Import Wallet</Button>
+                        <Button on:click={setupWallet}>New Nostr Wallet</Button>
                     </div>
                 {:else if cashuWallet}
                     <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
@@ -661,8 +645,19 @@
                                             grow
                                             on:click={handleCleanWallet}
                                         >
-                                            <i class="fa-solid fa-broom"></i>
-                                            Clean
+                                            {#if cleaningWallet}
+                                                <ProgressRadial
+                                                    value={undefined}
+                                                    stroke={60}
+                                                    meter="stroke-white-500"
+                                                    track="stroke-white-500/3"
+                                                    width="w-8"
+                                                    strokeLinecap="round"
+                                                />
+                                            {:else}
+                                                <i class="fa-solid fa-broom"></i>
+                                                Clean
+                                            {/if}
                                         </Button>
                                     </div>
                                 </Card>
