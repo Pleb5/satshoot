@@ -10,13 +10,11 @@ export const DEFAULTRELAYURLS = [
     'wss://nos.lol/',
     'wss://bitcoiner.social/',
     'wss://relay.damus.io/',
-    'wss://relay.primal.net/',
 ];
 
 export const BOOTSTRAPOUTBOXRELAYS = [
     'wss://purplepag.es/',
     'wss://relay.damus.io/',
-    'wss://relay.primal.net/',
     // "wss://relay.nostr.band/",
     // "wss://nos.lol/",
     // "wss://bitcoiner.social/",
