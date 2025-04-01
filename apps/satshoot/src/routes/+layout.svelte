@@ -385,6 +385,7 @@
         configureBasics();
 
         await $ndk.connect();
+        console.info('NDK connected')
 
         if (!$loggedIn) {
             restoreLogin();

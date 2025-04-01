@@ -39,7 +39,7 @@
     }
 
     async function fetchOutboxRelays() {
-        const relays = await fetchUserOutboxRelays($ndk);
+        const relays = await fetchUserOutboxRelays($ndk, $currentUser!.pubkey);
 
         if (relays) {
             const ndkRelayList = NDKRelayList.from(relays);

@@ -38,25 +38,18 @@
     import PieChart from '$lib/components/UI/Display/PieChart.svelte';
     import RelayRemovalConfirmation from '$lib/components/Modals/RelayRemovalConfirmation.svelte';
     import RemoveMintModal from '$lib/components/Modals/RemoveMintModal.svelte';
-    import type { Proof } from '@cashu/cashu-ts';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
-
-    let cashuWallet: NDKCashuWallet | null = null;
-
-    $: if ($wallet) {
-        cashuWallet = $wallet;
-    }
 
     let mintBalances: Record<string, number> = {};
     let walletBalance = '0';
     let cleaningWallet = false;
     let toastTriggered = false;
-    $: if (cashuWallet) {
+    $: if ($wallet) {
         let respondedToAction = false;
 
-        if (cashuWallet.event?.kind === NDKKind.LegacyCashuWallet && !toastTriggered) {
+        if ($wallet.event?.kind === NDKKind.LegacyCashuWallet && !toastTriggered) {
             toastTriggered = true;
             const t: ToastSettings = {
                 message:
@@ -97,19 +90,19 @@
             };
             toastStore.trigger(t);
         }
-        mintBalances = cashuWallet.mintBalances;
+        mintBalances = $wallet.mintBalances;
 
-        walletBalance = getBalanceStr(cashuWallet)
+        walletBalance = getBalanceStr($wallet)
 
-        cashuWallet.on('balance_updated', () => {
-            mintBalances = cashuWallet!.mintBalances;
-            walletBalance = getBalanceStr(cashuWallet!);
+        $wallet.on('balance_updated', () => {
+            mintBalances = $wallet!.mintBalances;
+            walletBalance = getBalanceStr($wallet!);
         });
     }
 
-    function getBalanceStr(cashuWallet: NDKCashuWallet): string {
+    function getBalanceStr($wallet: NDKCashuWallet): string {
         let balanceStr: string = ''
-        const totalBalance = cashuWallet.balance;
+        const totalBalance = $wallet.balance;
         if (totalBalance) {
             balanceStr = totalBalance.amount.toString();
         } else {
@@ -118,16 +111,13 @@
         return balanceStr;
     }
 
-    $: if (!cashuWallet && $currentUser) {
-        fetchAndInitWallet($currentUser, $ndk);
-    }
 
     async function setupWallet() {
         const newWallet = new NDKCashuWallet($ndk);
         const mintPromise = new Promise<string[] | undefined>((resolve) => {
             const modalComponent: ModalComponent = {
                 ref: ExploreMintsModal,
-                props: { cashuWallet: newWallet },
+                props: { $wallet: newWallet },
             };
 
             const modal: ModalSettings = {
@@ -162,7 +152,7 @@
         if (userRelays) {
             const writeRelayList = NDKRelayList.from(userRelays).writeRelayUrls;
             if (writeRelayList.length > 0) {
-                mintRelays = writeRelayList
+                mintRelays = [ ...mintRelays, ...writeRelayList];
             }
         }
 
@@ -201,13 +191,34 @@
         }
     }
 
+    async function tryLoadWallet() {
+        if ($currentUser) {
+            await fetchAndInitWallet($currentUser, $ndk);
+            if ($wallet){
+                $wallet = $wallet;
+            } else {
+            toastStore.trigger({
+                message: `Could not load wallet!`,
+                autohide: false,
+                background: `bg-error-300-600-token`,
+            });
+            }
+        } else {
+            toastStore.trigger({
+                message: `Error: User not found!`,
+                autohide: false,
+                background: `bg-error-300-600-token`,
+            });
+        }
+    }
+
     async function updateWallet() {
-        if (!cashuWallet || !$currentUser) return;
+        if (!$wallet || !$currentUser) return;
 
         try {
-            await cashuWallet.publish();
+            await $wallet.publish();
 
-            wallet.set(cashuWallet);
+            wallet.set($wallet);
 
             toastStore.trigger({
                 message: `Walled updated!`,
@@ -220,14 +231,14 @@
                 throw new Error('Could not load Cashu Mint list, only Wallet was updated!');
             }
             // only update cashu payment info if relays or mints are mismatching
-            const walletRelays = cashuWallet.relaySet!.relayUrls
+            const walletRelays = $wallet.relaySet!.relayUrls
             const mintListRelays = ndkCashuMintList.relays!
             if (
                 ndkCashuMintList instanceof NDKCashuMintList &&
-                (!arraysAreEqual(cashuWallet.mints, ndkCashuMintList.mints) ||
+                (!arraysAreEqual($wallet.mints, ndkCashuMintList.mints) ||
                     !arraysAreEqual(walletRelays, mintListRelays))
             ) {
-                ndkCashuMintList.mints = cashuWallet.mints;
+                ndkCashuMintList.mints = $wallet.mints;
                 ndkCashuMintList.relays = walletRelays;
 
                 publishCashuMintList(ndkCashuMintList);
@@ -265,7 +276,7 @@
         new Promise<string[] | undefined>((resolve) => {
             const modalComponent: ModalComponent = {
                 ref: ExploreMintsModal,
-                props: { cashuWallet },
+                props: { $wallet },
             };
 
             const modal: ModalSettings = {
@@ -277,10 +288,10 @@
             };
             modalStore.trigger(modal);
         }).then((mints) => {
-            if (!cashuWallet || !mints || !mints.length) return;
+            if (!$wallet || !mints || !mints.length) return;
 
-            if (!arraysAreEqual(cashuWallet.mints, mints)) {
-                cashuWallet.mints = mints;
+            if (!arraysAreEqual($wallet.mints, mints)) {
+                $wallet.mints = mints;
             }
 
             updateWallet();
@@ -288,7 +299,7 @@
     }
 
     function removeMint(mint: string) {
-        if (!cashuWallet) return;
+        if (!$wallet) return;
 
         modalStore.trigger({
             type: 'component',
@@ -305,15 +316,15 @@
     }
 
     function handleRemoveMint(mint: string) {
-        if (!cashuWallet) return
+        if (!$wallet) return
 
-        cashuWallet.mints = cashuWallet.mints.filter((m) => m !== mint);
+        $wallet.mints = $wallet.mints.filter((m) => m !== mint);
 
         updateWallet();
     }
 
     function addRelay() {
-        if (!cashuWallet) return;
+        if (!$wallet) return;
 
         // If user confirms modal do the editing
         new Promise<string | undefined>((resolve) => {
@@ -332,10 +343,10 @@
             // We got some kind of response from modal
         }).then((editedData: string | undefined) => {
             if (editedData && editedData.replace('wss://', '').length > 1) {
-                const relays = cashuWallet!.relaySet?.relayUrls ?? DEFAULTRELAYURLS;
+                const relays = $wallet!.relaySet?.relayUrls ?? DEFAULTRELAYURLS;
                 relays.push(editedData);
 
-                cashuWallet!.relaySet = NDKRelaySet.fromRelayUrls(relays, $ndk);
+                $wallet!.relaySet = NDKRelaySet.fromRelayUrls(relays, $ndk);
 
                 updateWallet();
             }
@@ -343,7 +354,7 @@
     }
 
     function removeRelay(relay: string) {
-        if (!cashuWallet) return;
+        if (!$wallet) return;
 
         modalStore.trigger({
             type: 'component',
@@ -361,20 +372,20 @@
     }
 
     function handleRemoveRelay(relay: string) {
-        if (!cashuWallet?.relaySet?.relayUrls) return
+        if (!$wallet?.relaySet?.relayUrls) return
 
-        const relays = cashuWallet.relaySet.relayUrls;
+        const relays = $wallet.relaySet.relayUrls;
         const newRelaySet = NDKRelaySet.fromRelayUrls(
             relays.filter((url:string) => url !== relay),
             $ndk
         )
-        cashuWallet.relaySet = newRelaySet;
+        $wallet.relaySet = newRelaySet;
 
         updateWallet();
     }
 
     function handleCleanWallet() {
-        if (!cashuWallet) {
+        if (!$wallet) {
             toastStore.trigger({
                 message: `Error! Wallet not found!`,
                 autohide: false,
@@ -406,11 +417,11 @@
                         autohide: false,
                     });
                     }
-                for (const mint of cashuWallet!.mints) {
+                for (const mint of $wallet!.mints) {
                     try {
                         await consolidateMintTokens(
                             mint,
-                            cashuWallet!,
+                            $wallet!,
                             undefined, // allProofs = wallet proofs implicitly
                             onCleaningResult
                         );
@@ -439,7 +450,7 @@
     }
 
     async function handleWalletBackup() {
-        if (!cashuWallet) return;
+        if (!$wallet) return;
 
         const modalComponent: ModalComponent = {
             ref: BackupEcashWallet,
@@ -590,8 +601,9 @@
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
                         <Button on:click={setupWallet}>New Nostr Wallet</Button>
+                        <Button on:click={tryLoadWallet}>Try loading Wallet</Button>
                     </div>
-                {:else if cashuWallet}
+                {:else if $wallet}
                     <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                         <!-- wallet side -->
                         <div
@@ -625,8 +637,8 @@
                                         />
                                     </div>
                                     <PieChart dataset={mintBalances} />
-                                    <WithdrawEcash {cashuWallet} />
-                                    <DepositEcash {cashuWallet} />
+                                    <WithdrawEcash cashuWallet = {$wallet} />
+                                    <DepositEcash cashuWallet = {$wallet} />
                                     <div
                                         class="w-full flex flex-row justify-end overflow-hidden rounded-[6px] bg-black-100 dark:bg-white-100 border-[1px] border-black-200 dark:border-white-200"
                                     >
@@ -705,7 +717,7 @@
                                             <div
                                                 class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                                             >
-                                                {#each cashuWallet.mints as mint (mint)}
+                                                {#each $wallet.mints as mint (mint)}
                                                     <div class={listItemWrapperClasses}>
                                                         <p class={listItemClasses}>
                                                             {mint}
@@ -732,7 +744,7 @@
                                             <div
                                                 class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                                             >
-                                                {#each cashuWallet.relaySet?.relayUrls ?? [] as relay (relay)}
+                                                {#each $wallet.relaySet?.relayUrls ?? [] as relay (relay)}
                                                     <div class={listItemWrapperClasses}>
                                                         <p class={listItemClasses}>
                                                             {relay}
