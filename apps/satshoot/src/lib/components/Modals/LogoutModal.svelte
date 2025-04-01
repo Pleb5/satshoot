@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { wallet } from '$lib/stores/wallet';
-    import { backupWallet } from '$lib/utils/cashu';
+    import { wallet } from '$lib/wallet/wallet';
+    import { backupWallet } from '$lib/wallet/cashu';
     import { logout } from '$lib/utils/helpers';
     import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import Button from '../UI/Buttons/Button.svelte';
@@ -35,7 +35,7 @@
                     errorMessage = 'passphrase should have at least 14 chars';
                     return;
                 }
-                await backupWallet($wallet, encryptWalletBackup, passphrase);
+                await backupWallet(encryptWalletBackup, passphrase);
             }
         } catch (error) {
             console.error('An error occurred in backup process', error);

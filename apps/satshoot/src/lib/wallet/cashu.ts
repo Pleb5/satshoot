@@ -20,6 +20,8 @@ import currentUser from '$lib/stores/user';
 import { encryptSecret } from '$lib/utils/crypto';
 import type { Proof } from '@cashu/cashu-ts';
 
+export const WALLET_BACKUP_VERSION = '2.0';
+
 // This method checks if user's cashu mint list event (kind: 10019) is synced with user's selected cashu wallet
 export async function isCashuMintListSynced(
     ndkCashuWallet: NDKCashuWallet,
@@ -211,11 +213,22 @@ export function isValidBackup(value: WalletStorage): boolean {
 
 function checkCashuKeys(candidate: Record<string, string|null>): boolean {
     for (const [key, value] of Object.entries(candidate)) {
-        if (typeof key !== 'string') return false;
+        // console.warn(`cashuKey: [${key}]:[${value}]`)
+        if (typeof key !== 'string') {
+            console.error(`Error: Type of key is NOT string but ${typeof key}!`)
+            return false;
+        }
         if (
-            typeof value !== 'string' || 
+            typeof value !== 'string' && 
                 value !== null
-        ) return false;
+        ) {
+            console.error(
+                `Error: Value of cashu key NOT NULL and its type is NOT string` +
+                ` but ${typeof value}! (${typeof value !== 'string'})` +
+                `  || (${value !== null})`
+            );
+            return false;
+        }
     }
 
     return true;
@@ -286,7 +299,7 @@ export function toWalletStorage(wallet: NDKCashuWallet): WalletStorage {
     }
 
     const ws:WalletStorage = {
-        version: '2.0',
+        version: WALLET_BACKUP_VERSION,
         cashuKeys,
         mintsWithProofs: Object.fromEntries(mintsWithProofs.entries()),
     };

@@ -79,6 +79,7 @@ export function walletInit(
     nostrWallet.on("balance_updated", () => {
         const $wallet = get(wallet); 
         if ($wallet) {
+            console.info('Balance updated, saving backup...', $wallet.balance);
             // Save entire wallet state on the following operations:
             // Deposit, Create token in own/other mint, Melting
             // This saves immediately after inner wallet state changed

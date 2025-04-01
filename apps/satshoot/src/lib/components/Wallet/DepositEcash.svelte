@@ -1,9 +1,8 @@
 <script lang="ts">
-    import { NDKCashuToken, type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+    import { type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import { getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
-    import { walletBackup } from '$lib/stores/wallet';
 
     const toastStore = getToastStore();
 
@@ -11,7 +10,6 @@
 
     let depositing = false;
     let amount = 0;
-    let unit = 'sat';
     let selectedMint = '';
 
     $: {
@@ -24,29 +22,14 @@
 
     async function deposit() {
         depositing = true;
-        const ndkCashuDeposit = cashuWallet.deposit(amount, selectedMint, unit);
+        const ndkCashuDeposit = cashuWallet.deposit(amount, selectedMint);
 
-        ndkCashuDeposit.on('success', async (token) => {
-            // Token received has encrypted content
-            // but we want to store it in local storage as un-encrypted.
-            // Therefore, we'll have to make it un-encrypted
-
-            const newToken = await NDKCashuToken.from(token);
-
-            if (newToken) {
-                console.log('ndkCashuDeposit successful', newToken.rawEvent());
-
-                walletBackup.update((map) => {
-                    // add newToken to backup
-                    map.set(newToken.id, newToken.rawEvent());
-
-                    return map;
-                });
-            }
-
+        // The deposit process updates wallet state that is captured in
+        // 'balance_updated' event, on which a backup is triggered (see walletInit)
+        ndkCashuDeposit.on('success', () => {
             closeModal();
             toastStore.trigger({
-                message: `Successfully deposited ${amount} ${unit}!`,
+                message: `Successfully deposited ${amount} sats!`,
                 timeout: 5000,
                 autohide: true,
                 background: `bg-success-300-600-token`,
@@ -54,12 +37,13 @@
             depositing = false;
             amount = 0;
         });
+
         ndkCashuDeposit.on('error', (error) => {
             console.log('ndkCashuDeposit failed', error);
             depositing = false;
             closeModal();
             toastStore.trigger({
-                message: `Failed to deposit!`,
+                message: `Failed to deposit: \n${error}`,
                 autohide: false,
                 background: `bg-error-300-600-token`,
             });
@@ -67,7 +51,9 @@
 
         const pr = await ndkCashuDeposit.start();
 
-        const { init, launchPaymentModal, closeModal } = await import('@getalby/bitcoin-connect');
+        const { init, launchPaymentModal, closeModal } = await import(
+            '@getalby/bitcoin-connect'
+        );
         init({ appName: 'SatShoot' });
 
         launchPaymentModal({

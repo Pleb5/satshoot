@@ -38,6 +38,7 @@
     import PieChart from '$lib/components/UI/Display/PieChart.svelte';
     import RelayRemovalConfirmation from '$lib/components/Modals/RelayRemovalConfirmation.svelte';
     import RemoveMintModal from '$lib/components/Modals/RemoveMintModal.svelte';
+    import type { Proof } from '@cashu/cashu-ts';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -51,48 +52,50 @@
     let mintBalances: Record<string, number> = {};
     let walletBalance = '0';
     let cleaningWallet = false;
-
+    let toastTriggered = false;
     $: if (cashuWallet) {
         let respondedToAction = false;
-        if (cashuWallet.event?.kind === NDKKind.LegacyCashuWallet) {
-        const t: ToastSettings = {
-            message:
+
+        if (cashuWallet.event?.kind === NDKKind.LegacyCashuWallet && !toastTriggered) {
+            toastTriggered = true;
+            const t: ToastSettings = {
+                message:
                 'You are using a legacy Nostr Wallet. Migrate to new?',
-            background: 'bg-warning-300-600-token',
-            autohide: false,
-            action: {
-                label: 'Migrate',
-                response: () => {
-                    respondedToAction = true;
+                background: 'bg-warning-300-600-token',
+                autohide: false,
+                action: {
+                    label: 'Migrate',
+                    response: () => {
+                        respondedToAction = true;
                         migrateCashuWallet($ndk)
-                        .then(() => {
-                            toastStore.trigger({
-                                message: `Successfully migrated Wallet`,
-                                timeout: 5000,
-                                autohide: true,
-                                background: `bg-success-300-600-token`,
+                            .then(() => {
+                                toastStore.trigger({
+                                    message: `Successfully migrated Wallet`,
+                                    timeout: 5000,
+                                    autohide: true,
+                                    background: `bg-success-300-600-token`,
+                                });
+                            })
+                            .catch((err) => {
+                                toastStore.trigger({
+                                    message: `Failed to migrate Wallet!\n ${err}`,
+                                    autohide: false,
+                                    background: `bg-error-300-600-token`,
+                                });
                             });
-                        })
-                        .catch((err) => {
-                            toastStore.trigger({
-                                message: `Failed to migrate Wallet!\n ${err}`,
-                                autohide: false,
-                                background: `bg-error-300-600-token`,
-                            });
-                        });
+                    },
                 },
-            },
-            callback: (res) => {
-                if (res.status === 'closed' && !respondedToAction) {
-                    toastStore.trigger({
-                        message: `You'll continue using legacy Wallet!`,
-                        autohide: false,
-                        background: `bg-warning-300-600-token`,
-                    });
-                }
-            },
-        };
-        toastStore.trigger(t);
+                callback: (res) => {
+                    if (res.status === 'closed' && !respondedToAction) {
+                        toastStore.trigger({
+                            message: `You'll continue using legacy Wallet!`,
+                            autohide: false,
+                            background: `bg-warning-300-600-token`,
+                        });
+                    }
+                },
+            };
+            toastStore.trigger(t);
         }
         mintBalances = cashuWallet.mintBalances;
 
@@ -391,11 +394,17 @@
                 modalStore.close();
                 cleaningWallet = true;
                 const onCleaningResult = (walletChange:WalletProofChange) => {
-                        toastStore.trigger({
-                            message: `${walletChange.destroy} spent sats cleaned from wallet`,
-                            background: `bg-success-300-600-token`,
-                            autohide: false,
-                        });
+                    let amountDestroyed = 0;
+                    if (walletChange.destroy) {
+                        for (const proof of walletChange.destroy) {
+                            amountDestroyed += proof.amount;
+                        }
+                    }
+                    toastStore.trigger({
+                        message: `${amountDestroyed} spent sats cleaned from wallet`,
+                        background: `bg-success-300-600-token`,
+                        autohide: false,
+                    });
                     }
                 for (const mint of cashuWallet!.mints) {
                     try {

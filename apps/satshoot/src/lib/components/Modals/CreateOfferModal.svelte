@@ -14,7 +14,7 @@
     import { NDKEvent, NDKKind, type NDKSigner } from '@nostr-dev-kit/ndk';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import { goto } from '$app/navigation';
-    import { wallet } from '$lib/stores/wallet';
+    import { wallet } from '$lib/wallet/wallet';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';

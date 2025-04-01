@@ -8,7 +8,7 @@
     import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import CashuMintListItem from '$lib/components/Mints/Item.svelte';
     import { wot } from '$lib/stores/wot';
-    import { getCashuMintRecommendations } from '$lib/utils/cashu';
+    import { getCashuMintRecommendations } from '$lib/wallet/cashu';
     import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
 

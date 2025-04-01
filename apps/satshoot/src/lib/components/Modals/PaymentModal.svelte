@@ -143,6 +143,7 @@
 
     $: if (offer && $currentUser) {
         hasSenderEcashSetup = !!$wallet;
+        console.log('Cashu payment info map: ', $cashuPaymentInfoMap)
         const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
 
         canPayWithEcash = true;
