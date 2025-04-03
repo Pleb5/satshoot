@@ -8,13 +8,19 @@ import {
 } from '@nostr-dev-kit/ndk-wallet';
 import { derived, writable, type Readable } from 'svelte/store';
 import { myTickets } from '$lib/stores/freelance-eventstores';
-import currentUser from '$lib/stores/user';
 import { SatShootPubkey } from '$lib/utils/misc';
 import { persisted } from 'svelte-persisted-store';
 import { get } from 'svelte/store';
-import { parseAndValidateBackup, recoverWallet, serializeWallet, toWalletStorage, type WalletStorage } from './cashu';
+import {
+    parseAndValidateBackup,
+    recoverWallet,
+    serializeWallet,
+    toWalletStorage,
+    type WalletStorage 
+} from './cashu';
 
 export const wallet = writable<NDKCashuWallet | null>(null);
+export let userCashuInfo = writable<NDKCashuMintList | null>(null);
 export let ndkNutzapMonitor:NDKNutzapMonitor | null = null;
 
 export const walletStatus = writable<NDKWalletStatus>(NDKWalletStatus.INITIAL);
@@ -40,13 +46,18 @@ export const walletBackup = persisted<WalletStorage | null>(
     }
 );
 
-export function walletInit(
+export async function walletInit(
     nostrWallet: NDKCashuWallet,
     mintList:NDKCashuMintList,
     ndk: NDKSvelte,
     user: NDKUser,
 ) {
+    if (!nostrWallet._p2pk) {
+        await nostrWallet.getP2pk();
+    }
+
     wallet.set(nostrWallet);
+    userCashuInfo.set(mintList)
 
     nostrWallet.on("ready", async () => {
         walletStatus.set(NDKWalletStatus.READY);
@@ -96,8 +107,8 @@ let previousMap = new Map<string, CashuPaymentInfo>(); // Global to ensure persi
 
 // Derived store that processes items and caches results to avoid redundant async operations
 export const cashuPaymentInfoMap: Readable<Map<string, CashuPaymentInfo>> = derived(
-    [myTickets, currentUser],
-    ([$myTickets, $currentUser], set) => {
+    [myTickets],
+    ([$myTickets], set) => {
         // Async function to update the derived store
         async function update() {
             // Copy the current state of previousMap to start fresh but retain processed data
@@ -107,9 +118,7 @@ export const cashuPaymentInfoMap: Readable<Map<string, CashuPaymentInfo>> = deri
             const users = $myTickets
                 .map((myTicket) => myTicket.winnerFreelancer)
                 .filter((winner) => winner !== undefined);
-            if ($currentUser) {
-                users.push($currentUser.pubkey);
-            }
+
             users.push(SatShootPubkey);
 
             // Create an array of promises for each user to fetch payment info only if not already cached

@@ -5,7 +5,7 @@
     import ndk, { DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import {
-        cashuPaymentInfoMap,
+        userCashuInfo,
         wallet,
         walletInit,
         walletStatus,
@@ -16,6 +16,7 @@
         NDKKind,
         NDKRelayList,
         NDKRelaySet,
+        tryNormalizeRelayUrl,
     } from '@nostr-dev-kit/ndk';
     import { consolidateMintTokens, migrateCashuWallet, NDKCashuWallet, NDKWalletStatus, type WalletProofChange } from '@nostr-dev-kit/ndk-wallet';
     import {
@@ -46,7 +47,31 @@
     let walletBalance = '0';
     let cleaningWallet = false;
     let toastTriggered = false;
-    $: if ($wallet) {
+
+    $: walletRelays = $userCashuInfo?.relays || [];
+
+    $: if ($wallet && $userCashuInfo) {
+        walletRelays = $userCashuInfo.relays
+
+        checkLegacyWallet();
+
+        checkP2PK();
+
+        mintBalances = $wallet.mintBalances;
+
+        walletBalance = getBalanceStr($wallet)
+
+        $wallet.on('balance_updated', () => {
+            mintBalances = $wallet!.mintBalances;
+            walletBalance = getBalanceStr($wallet!);
+        });
+    } else if (!$userCashuInfo) {
+        reFetchCashuInfo();
+    }
+
+    const checkLegacyWallet = async () => {
+        if (!$wallet || !$userCashuInfo) return;
+
         let respondedToAction = false;
 
         if ($wallet.event?.kind === NDKKind.LegacyCashuWallet && !toastTriggered) {
@@ -90,14 +115,137 @@
             };
             toastStore.trigger(t);
         }
-        mintBalances = $wallet.mintBalances;
+    }
 
-        walletBalance = getBalanceStr($wallet)
+    const checkP2PK = async () => {
+        if (!$wallet || !$userCashuInfo) return;
+        if (!$wallet._p2pk) {
+            console.error('BUG: Wallet should have P2PK at this point!', $wallet)
+            await $wallet.getP2pk();
+        }
 
-        $wallet.on('balance_updated', () => {
-            mintBalances = $wallet!.mintBalances;
-            walletBalance = getBalanceStr($wallet!);
-        });
+        let respondedToAction = false;
+        if ($wallet._p2pk !== $userCashuInfo.p2pk && !respondedToAction) {
+            console.log(`wallet _p2pk: ${$wallet._p2pk}\ncashuInfo p2pk:${$userCashuInfo.p2pk}`)
+            const t: ToastSettings = {
+                message:
+                'Receiver Cashu info does not match with Nostr Wallet info.' +
+                ' It is recommended to sync them.',
+                background: 'bg-warning-300-600-token',
+                autohide: false,
+                action: {
+                    label: 'Sync',
+                    response: async () => {
+                        respondedToAction = true;
+                        try {
+                            await syncP2PK();
+                            toastStore.trigger({
+                                message: `Successfully updated Cashu Info!`,
+                                timeout: 5000,
+                                autohide: true,
+                                background: `bg-success-300-600-token`,
+                            });
+                        } catch (err) {
+                            toastStore.trigger({
+                                message: `Failed to update cashu mint list!`,
+                                autohide: false,
+                                background: `bg-error-300-600-token`,
+                            });
+                        }
+                    },
+                },
+                callback: (res) => {
+                    if (res.status === 'closed' && !respondedToAction) {
+                        respondedToAction = true;
+                        toastStore.trigger({
+                            message: `You'll not be able to receive ecash payments`,
+                            autohide: false,
+                            background: `bg-warning-300-600-token`,
+                        });
+                    }
+                },
+            };
+            toastStore.trigger(t);
+        }
+    }
+
+    const syncP2PK = async () => {
+        if (!$wallet || !$userCashuInfo) return;
+
+        $userCashuInfo.p2pk = $wallet._p2pk;
+        await broadcastEvent($ndk, $userCashuInfo, {replaceable: true})
+    }
+
+    const reFetchCashuInfo = async () => {
+        if (!$currentUser || !$wallet) return
+
+        const cashuInfo = await getCashuPaymentInfo($currentUser.pubkey, true);
+        if (cashuInfo) {
+            walletInit(
+                $wallet,
+                cashuInfo as NDKCashuMintList,
+                $ndk,
+                $currentUser
+            );
+            return;
+        } else {
+            tryCreateCashuInfo();
+        }
+    }
+
+    const tryCreateCashuInfo = async () => {
+        let respondedToAction = false;
+
+        const t: ToastSettings = {
+            message:
+            'Could not find Cashu Info to receive ecash payments. Would you like' +
+                ' to publish preferred receiver info based on your Nostr Wallet?',
+            background: 'bg-warning-300-600-token',
+            autohide: false,
+            action: {
+                label: 'Publish',
+                response: async () => {
+                    respondedToAction = true;
+
+                    const ndkMintList = new NDKCashuMintList($wallet!.ndk);
+                    let relays = DEFAULTRELAYURLS;
+                    if ($wallet?.relaySet?.relayUrls) {
+                        relays = $wallet.relaySet.relayUrls
+                    }
+
+                    ndkMintList.relays = relays;
+                    ndkMintList.mints = $wallet!.mints;
+                    ndkMintList.p2pk = $wallet!.p2pk;
+                    try {
+                        await broadcastEvent($ndk, ndkMintList, {replaceable: true})
+                        walletInit($wallet!, ndkMintList, $ndk, $currentUser!);
+
+                        toastStore.trigger({
+                            message: `Successfully published Cashu Info`,
+                            timeout: 5000,
+                            autohide: true,
+                            background: `bg-success-300-600-token`,
+                        });
+                    } catch (err) {
+                        toastStore.trigger({
+                            message: `Error happened while publishing Cashu Info:\n${err}`,
+                            autohide: false,
+                            background: `bg-error-300-600-token`,
+                        });
+                    }
+                },
+            },
+            callback: (res) => {
+                if (res.status === 'closed' && !respondedToAction) {
+                    toastStore.trigger({
+                        message: `You'll not be able to receive Cashu payments`,
+                        autohide: false,
+                        background: `bg-warning-300-600-token`,
+                    });
+                }
+            },
+        };
+        toastStore.trigger(t);
     }
 
     function getBalanceStr($wallet: NDKCashuWallet): string {
@@ -145,49 +293,42 @@
             return;
         }
 
-        await newWallet.getP2pk();
+        try {
+            await newWallet.getP2pk();
 
-        let mintRelays = DEFAULTRELAYURLS;
-        const userRelays = await fetchUserOutboxRelays($ndk, $currentUser!.pubkey);
-        if (userRelays) {
-            const writeRelayList = NDKRelayList.from(userRelays).writeRelayUrls;
-            if (writeRelayList.length > 0) {
-                mintRelays = [ ...mintRelays, ...writeRelayList];
+            let mintRelays = DEFAULTRELAYURLS;
+            const userRelays = await fetchUserOutboxRelays($ndk, $currentUser!.pubkey);
+            if (userRelays) {
+                const writeRelayList = NDKRelayList.from(userRelays).writeRelayUrls;
+                if (writeRelayList.length > 0) {
+                    mintRelays = [ ...mintRelays, ...writeRelayList];
+                }
             }
-        }
 
-        newWallet.relaySet = NDKRelaySet.fromRelayUrls(
-            mintRelays, $ndk
-        );
+            newWallet.relaySet = NDKRelaySet.fromRelayUrls(
+                mintRelays, $ndk
+            );
 
-        let walletPublished = false;
+            const cashuInfo = new NDKCashuMintList($ndk);
+            cashuInfo.p2pk = newWallet._p2pk;
+            cashuInfo.relays = mintRelays;
+            cashuInfo.mints = newWallet.mints;
 
-        await newWallet
-            .publish()
-            .then(() => {
-                const t: ToastSettings = {
-                    message: `Nostr Wallet created!`,
-                };
-                toastStore.trigger(t);
-                walletPublished = true;
-            })
-            .catch((err) => {
-                console.error(err);
-                const t: ToastSettings = {
-                    message: `Failed to create Nostr Wallet: ${err}`,
-                };
-                toastStore.trigger(t);
-            });
+            await broadcastEvent($ndk, cashuInfo, {replaceable: true})
+            await newWallet.publish();
 
-        if (newWallet && walletPublished) {
-            const cashuMintList = new NDKCashuMintList($ndk);
-            cashuMintList.p2pk = await newWallet.getP2pk();
-            cashuMintList.relays = mintRelays;
-            cashuMintList.mints = newWallet.mints;
+            const t: ToastSettings = {
+                message: `Nostr Wallet created!`,
+            };
+            toastStore.trigger(t);
 
-            walletInit(newWallet, cashuMintList, $ndk, $currentUser!);
-
-            publishCashuMintList(cashuMintList);
+            walletInit(newWallet, cashuInfo, $ndk, $currentUser!);
+        } catch (err) {
+            console.error(err);
+            const t: ToastSettings = {
+                message: `Failed to create Nostr Wallet: ${err}`,
+            };
+            toastStore.trigger(t);
         }
     }
 
@@ -212,64 +353,33 @@
         }
     }
 
-    async function updateWallet() {
-        if (!$wallet || !$currentUser) return;
-
+    async function updateMints(mints: string[]) {
         try {
-            await $wallet.publish();
+            if (!$wallet || !$userCashuInfo){
+                throw new Error('Wallet or user Cashu information missing!')
+            }
 
+            $wallet.mints = mints
+            await $wallet.publish();
             wallet.set($wallet);
 
+            $userCashuInfo.mints = $wallet.mints;
+
+            await broadcastEvent($ndk, $userCashuInfo, {replaceable: true})
+
+
             toastStore.trigger({
-                message: `Walled updated!`,
+                message: `Mints updated!`,
             });
-
-            // after wallet has been updated we should update cashu payment info
-            const ndkCashuMintList = await getCashuPaymentInfo($currentUser.pubkey, true);
-
-            if (!ndkCashuMintList) {
-                throw new Error('Could not load Cashu Mint list, only Wallet was updated!');
-            }
-            // only update cashu payment info if relays or mints are mismatching
-            const walletRelays = $wallet.relaySet!.relayUrls
-            const mintListRelays = ndkCashuMintList.relays!
-            if (
-                ndkCashuMintList instanceof NDKCashuMintList &&
-                (!arraysAreEqual($wallet.mints, ndkCashuMintList.mints) ||
-                    !arraysAreEqual(walletRelays, mintListRelays))
-            ) {
-                ndkCashuMintList.mints = $wallet.mints;
-                ndkCashuMintList.relays = walletRelays;
-
-                publishCashuMintList(ndkCashuMintList);
-            }
         } catch (e) {
             console.trace(e);
             toastStore.trigger({
                 message: `Wallet update failed! Reason: ${e}`,
+                background: 'bg-error-300-600-token'
             });
         }
     }
 
-    async function publishCashuMintList(cashuMintList: NDKCashuMintList) {
-        try {
-            await broadcastEvent($ndk, cashuMintList, {replaceable: true});
-
-            const t: ToastSettings = {
-                message: `Cashu Payment Info updated!`,
-            };
-            toastStore.trigger(t);
-
-            // Set user's payment info on successful wallet and info publish
-            $cashuPaymentInfoMap.set($currentUser!.pubkey, cashuMintList);
-        } catch(err) {
-            console.error(err);
-            const t: ToastSettings = {
-                message: `Failed to update Cashu Payment Info : ${err}`,
-            };
-            toastStore.trigger(t);
-        };
-    }
 
     function exploreMints() {
         // If user confirms modal do the editing
@@ -291,10 +401,9 @@
             if (!$wallet || !mints || !mints.length) return;
 
             if (!arraysAreEqual($wallet.mints, mints)) {
-                $wallet.mints = mints;
+                updateMints(mints);
             }
 
-            updateWallet();
         });
     }
 
@@ -318,13 +427,13 @@
     function handleRemoveMint(mint: string) {
         if (!$wallet) return
 
-        $wallet.mints = $wallet.mints.filter((m) => m !== mint);
-
-        updateWallet();
+        updateMints(
+            $wallet.mints.filter((m) => m !== mint)
+        );
     }
 
     function addRelay() {
-        if (!$wallet) return;
+        if (!$wallet || !$userCashuInfo) return;
 
         // If user confirms modal do the editing
         new Promise<string | undefined>((resolve) => {
@@ -341,21 +450,35 @@
             };
             modalStore.trigger(modal);
             // We got some kind of response from modal
-        }).then((editedData: string | undefined) => {
-            if (editedData && editedData.replace('wss://', '').length > 1) {
-                const relays = $wallet!.relaySet?.relayUrls ?? DEFAULTRELAYURLS;
-                relays.push(editedData);
+        }).then(async (editedData: string | undefined) => {
+                if (editedData && editedData.replace('wss://', '').length > 1) {
+                    const relayUrl = tryNormalizeRelayUrl(editedData);
+                    if (relayUrl) {
+                        $userCashuInfo.relays = [...$userCashuInfo.relays, editedData];
+                        if ($wallet!.relaySet) {
+                            $wallet!.relaySet = NDKRelaySet.fromRelayUrls(
+                                $userCashuInfo.relays, $ndk
+                            );
+                        }
 
-                $wallet!.relaySet = NDKRelaySet.fromRelayUrls(relays, $ndk);
-
-                updateWallet();
-            }
+                        await broadcastEvent($ndk, $userCashuInfo, {replaceable: true})
+                        const t: ToastSettings = {
+                            message: `Cashu Info updated!`,
+                        };
+                        toastStore.trigger(t);
+                    } else {
+                        const t: ToastSettings = {
+                            message: `Invalid Relay URL!`,
+                            autohide: false,
+                            background: 'bg-error-300-600-token'
+                        };
+                        toastStore.trigger(t);
+                    }
+                }
         });
     }
 
     function removeRelay(relay: string) {
-        if (!$wallet) return;
-
         modalStore.trigger({
             type: 'component',
             component: {
@@ -371,17 +494,36 @@
 
     }
 
-    function handleRemoveRelay(relay: string) {
-        if (!$wallet?.relaySet?.relayUrls) return
+    async function handleRemoveRelay(relay: string) {
+        try {
+            if (!$userCashuInfo?.relays) {
+                throw new Error('Could not find info to update')
+            }
 
-        const relays = $wallet.relaySet.relayUrls;
-        const newRelaySet = NDKRelaySet.fromRelayUrls(
-            relays.filter((url:string) => url !== relay),
-            $ndk
-        )
-        $wallet.relaySet = newRelaySet;
+            $userCashuInfo.relays = $userCashuInfo.relays.filter(
+                (url:string) => url !== relay
+            );
 
-        updateWallet();
+            if ($wallet?.relaySet?.relays) {
+                $wallet.relaySet = NDKRelaySet.fromRelayUrls(
+                    $userCashuInfo.relays, $ndk
+                );
+            }
+
+            await broadcastEvent($ndk, $userCashuInfo, {replaceable: true});
+
+            const t: ToastSettings = {
+                message: `Cashu Info updated!`,
+            };
+            toastStore.trigger(t);
+        } catch(err) {
+            console.error(err);
+            const t: ToastSettings = {
+                message: `Failed to update Cashu Info : ${err}`,
+            };
+            toastStore.trigger(t);
+            return;
+        }
     }
 
     function handleCleanWallet() {
@@ -735,7 +877,7 @@
                                             </div>
                                         </Card>
                                     </div>
-                                {:else}
+                                {:else if selectedTab === Tab.Relays}
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card>
                                             <div class="w-full flex flex-row justify-end">
@@ -744,21 +886,23 @@
                                             <div
                                                 class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                                             >
-                                                {#each $wallet.relaySet?.relayUrls ?? [] as relay (relay)}
-                                                    <div class={listItemWrapperClasses}>
-                                                        <p class={listItemClasses}>
-                                                            {relay}
-                                                        </p>
-                                                        <button
-                                                            class={deleteButtonClasses}
-                                                            on:click={() => removeRelay(relay)}
-                                                            use:popup={tooltipRemoveRelay}
-                                                            aria-label="Remove Relay"
-                                                        >
-                                                            <i class={deleteIconClasses} />
-                                                        </button>
-                                                    </div>
-                                                {/each}
+                                                {#if $walletStatus === NDKWalletStatus.READY}
+                                                    {#each walletRelays as relay (relay)}
+                                                        <div class={listItemWrapperClasses}>
+                                                            <p class={listItemClasses}>
+                                                                {relay}
+                                                            </p>
+                                                            <button
+                                                                class={deleteButtonClasses}
+                                                                on:click={() => removeRelay(relay)}
+                                                                use:popup={tooltipRemoveRelay}
+                                                                aria-label="Remove Relay"
+                                                            >
+                                                                <i class={deleteIconClasses} />
+                                                            </button>
+                                                        </div>
+                                                    {/each}
+                                                {/if}
                                             </div>
                                         </Card>
                                     </div>
