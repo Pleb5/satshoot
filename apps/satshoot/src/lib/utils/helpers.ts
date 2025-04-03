@@ -327,7 +327,10 @@ export async function fetchUserOutboxRelays(
     pubkey: string,
     timeout: number = 4000
 ): Promise<NDKEvent | null> {
-    const queryRelaysUrls = [...BOOTSTRAPOUTBOXRELAYS];
+    const queryRelaysUrls = [
+        ...BOOTSTRAPOUTBOXRELAYS,
+        ...DEFAULTRELAYURLS
+    ];
 
     const queryRelays: Array<NDKRelay> = [];
 
@@ -361,7 +364,11 @@ export async function broadcastRelayList(
     userRelayList.readRelayUrls = Array.from(readRelayUrls);
     userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
 
-    const relaysPosted = await broadcastEvent(ndk, userRelayList, {explicitRelays: [...writeRelayUrls]});
+    const relaysPosted = await broadcastEvent(
+        ndk,
+        userRelayList,
+        {explicitRelays: [...writeRelayUrls]}
+    );
     console.log('relays posted to:', relaysPosted);
 }
 
