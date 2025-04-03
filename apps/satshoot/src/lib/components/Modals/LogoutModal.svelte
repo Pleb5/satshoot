@@ -36,7 +36,7 @@
             console.error('An error occurred in backup process', error);
             toastStore.trigger({
                 message: `Failed to backup! An error occurred in backup process.`,
-                background: `bg-error-300-600-token`,
+                background: `bg-error-300-600`,
             });
 
             return;

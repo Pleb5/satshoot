@@ -40,7 +40,7 @@
     const ticketAddress = message.tagValue('t');
     let messageLink = $state('');
 
-    let extraClasses = $state('variant-soft-primary rounded-tr-none');
+    let extraClasses = $state('preset-soft-primary rounded-tr-none');
     let templateColumn = $state('grid-cols-[auto_1fr]');
 
     function formatDate(date: Date): string {
@@ -57,7 +57,7 @@
 
     onMount(async () => {
         if (avatarRight) {
-            extraClasses = 'variant-soft rounded-tl-none';
+            extraClasses = 'preset-soft rounded-tl-none';
             templateColumn = 'grid-cols-[1fr_auto]';
         }
 
@@ -147,7 +147,7 @@
                     <div class="flex justify-center mr-4">
                         <button
                             type="button"
-                            class="btn btn-icon-lg p-2 text-primary-400-500-token"
+                            class="btn btn-icon-lg p-2 text-primary-400-500"
                             onclick={() => {
                                 $selectedPerson = message.pubkey + '$' + ticketAddress;
                                 goto(messageLink);

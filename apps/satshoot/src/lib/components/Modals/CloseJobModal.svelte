@@ -85,14 +85,14 @@
                 // const closedToast: ToastSettings = {
                 //     message: 'Ticket Closed!',
                 //     timeout: 7000,
-                //     background: 'bg-success-300-600-token',
+                //     background: 'bg-success-300-600',
                 // };
                 // toastStore.trigger(closedToast);
                 //
                 // const checkWallet: ToastSettings = {
                 //     message: 'Check your Wallet to make sure the Payment is complete!',
                 //     autohide: false,
-                //     background: 'bg-warning-300-600-token',
+                //     background: 'bg-warning-300-600',
                 // };
                 // toastStore.trigger(checkWallet);
 
@@ -126,7 +126,7 @@
             const t: ToastSettings = {
                 message: 'Error: Could could not find job to close!',
                 timeout: 7000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
             modalStore.close();

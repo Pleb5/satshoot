@@ -74,7 +74,7 @@
                         </p>
                         `,
                     timeout: 7000,
-                    background: 'bg-success-300-600-token',
+                    background: 'bg-success-300-600',
                 };
                 toastStore.trigger(t);
             } catch (e) {
@@ -82,7 +82,7 @@
                 const t: ToastSettings = {
                     message: 'Error posting Review!',
                     timeout: 7000,
-                    background: 'bg-error-300-600-token',
+                    background: 'bg-error-300-600',
                 };
                 toastStore.trigger(t);
                 modalStore.close();
@@ -92,7 +92,7 @@
             const t: ToastSettings = {
                 message: 'Error: Could could not find ticket to close!',
                 timeout: 7000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
         }

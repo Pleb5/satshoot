@@ -113,7 +113,7 @@
             toastStore.trigger({
                 message: 'New Relay Config Broadcasted!',
                 timeout: 7000,
-                background: 'bg-success-300-600-token',
+                background: 'bg-success-300-600',
             });
 
             if ($onboardingStep === OnboardingStep.Profile_Updated) {
@@ -123,7 +123,7 @@
             toastStore.trigger({
                 message: 'Could not post Relays: ' + e,
                 timeout: 7000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             });
 
             fetchOutboxRelays();

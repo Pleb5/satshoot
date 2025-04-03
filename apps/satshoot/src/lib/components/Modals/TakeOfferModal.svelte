@@ -64,7 +64,7 @@
                     message:
                         'Error while accepting Offer! Fix connection with Relays and try again!',
                     timeout: 7000,
-                    background: 'bg-error-300-600-token',
+                    background: 'bg-error-300-600',
                 };
                 toastStore.trigger(t);
                 modalStore.close();
@@ -73,7 +73,7 @@
             const t: ToastSettings = {
                 message: 'Cannot accept Offer, Job not found!',
                 timeout: 7000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
             modalStore.close();

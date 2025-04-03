@@ -219,7 +219,7 @@
             const t: ToastSettings = {
                 message: 'Ticket is not loaded yet!',
                 autohide: false,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
             return;

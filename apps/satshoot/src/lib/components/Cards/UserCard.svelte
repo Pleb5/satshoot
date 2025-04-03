@@ -153,7 +153,7 @@
             .then(() => {
                 toastStore.trigger({
                     message: 'Followed!',
-                    background: `bg-success-300-600-token`,
+                    background: `bg-success-300-600`,
                     autohide: true,
                     timeout: 5000,
                 });
@@ -167,7 +167,7 @@
                 console.error(err);
                 toastStore.trigger({
                     message: 'Failed to publish follow event',
-                    background: `bg-error-300-600-token`,
+                    background: `bg-error-300-600`,
                     autohide: true,
                     timeout: 5000,
                 });
@@ -205,7 +205,7 @@
             .then(() => {
                 toastStore.trigger({
                     message: 'Un-followed!',
-                    background: `bg-success-300-600-token`,
+                    background: `bg-success-300-600`,
                     autohide: true,
                     timeout: 5000,
                 });
@@ -219,7 +219,7 @@
                 console.error(err);
                 toastStore.trigger({
                     message: 'Failed to publish follow event',
-                    background: `bg-error-300-600-token`,
+                    background: `bg-error-300-600`,
                     autohide: true,
                     timeout: 5000,
                 });

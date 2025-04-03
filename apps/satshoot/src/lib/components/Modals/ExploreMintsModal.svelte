@@ -40,7 +40,7 @@
                 toastStore.trigger({
                     message: 'An error occurred in getting cashu mint recommendations',
                     autohide: false,
-                    background: `bg-error-300-600-token`,
+                    background: `bg-error-300-600`,
                 });
                 modalStore.close();
             });

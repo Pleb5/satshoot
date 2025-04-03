@@ -43,13 +43,13 @@
     let confirmPassphraseForSeedWords = $state('');
 
     let statusMessage = $state('');
-    let statusColor = $state('text-tertiary-200-700-token');
+    let statusColor = $state('text-tertiary-200-700');
 
     async function loginWithNsec() {
         if (passphraseForNsec.length < 14) {
             toastStore.trigger({
                 message: 'Passphrase should be at least 14 characters long',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
 
@@ -59,7 +59,7 @@
         if (confirmPassphraseForNsec !== passphraseForNsec) {
             toastStore.trigger({
                 message: 'Confirm passphrase does not match passphrase',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
 
@@ -78,7 +78,7 @@
         if (passphraseForSeedWords.length < 14) {
             toastStore.trigger({
                 message: 'Passphrase should be at least 14 characters long',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
 
@@ -88,7 +88,7 @@
         if (confirmPassphraseForSeedWords !== passphraseForSeedWords) {
             toastStore.trigger({
                 message: 'Confirm passphrase does not match passphrase',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
 
@@ -98,7 +98,7 @@
         if (!validateSeedWordInputs(seedWordsForLocalKey)) {
             toastStore.trigger({
                 message: 'Invalid seed words input!',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
             return;
@@ -124,7 +124,7 @@
         if (!allFilledIn) {
             toastStore.trigger({
                 message: 'Fill in all seed words!',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
             return false;
@@ -134,7 +134,7 @@
         if (!validateWords(seedWords.join(' '))) {
             toastStore.trigger({
                 message: 'Check the seed words again! Not a valid bip39 wordlist!',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
             return false;
@@ -150,7 +150,7 @@
         failureMessage: string
     ) {
         statusMessage = 'Encrypting and saving Secret in browser storage...';
-        statusColor = 'text-tertiary-200-700-token';
+        statusColor = 'text-tertiary-200-700';
 
         try {
             const privateKey =
@@ -185,7 +185,7 @@
             toastStore.trigger({
                 message: 'Encrypted Secret saved in local storage!',
                 timeout: 7000,
-                background: 'bg-success-300-600-token',
+                background: 'bg-success-300-600',
             });
 
             handleRedirection();
@@ -194,7 +194,7 @@
         } catch (e) {
             toastStore.trigger({
                 message: `${failureMessage} ${e}`,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
         }

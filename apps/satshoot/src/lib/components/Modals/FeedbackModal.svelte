@@ -44,7 +44,7 @@
             const t: ToastSettings = {
                 message: 'Appreciate Your Feedback!',
                 timeout: 7000,
-                background: 'bg-success-300-600-token',
+                background: 'bg-success-300-600',
             };
             toastStore.trigger(t);
 
@@ -54,7 +54,7 @@
             const t: ToastSettings = {
                 message: 'Error happened while publishing Feedback! Try again later!',
                 timeout: 5000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
 

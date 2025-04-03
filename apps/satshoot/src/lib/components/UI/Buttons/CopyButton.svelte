@@ -15,7 +15,7 @@
     function handleCopy() {
         toastStore.trigger({
             message: feedbackMessage,
-            background: `bg-success-300-600-token`,
+            background: `bg-success-300-600`,
             autohide: true,
             timeout: 3000,
         });

@@ -41,7 +41,7 @@
                 toastStore.trigger({
                     message: 'Browser extension rejected access!',
                     autohide: false,
-                    background: 'bg-error-300-600-token',
+                    background: 'bg-error-300-600',
                 });
             }
         } else if (!window.nostr) {

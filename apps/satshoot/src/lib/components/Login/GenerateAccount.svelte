@@ -40,7 +40,7 @@
         if (passphraseForGeneratedAccount.length < 14) {
             toastStore.trigger({
                 message: 'Passphrase should be at least 14 characters long',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
 
@@ -50,7 +50,7 @@
         if (confirmPassphraseForGeneratedAccount !== passphraseForGeneratedAccount) {
             toastStore.trigger({
                 message: 'Confirm passphrase does not match passphrase',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
 
@@ -93,7 +93,7 @@
             toastStore.trigger({
                 message: '<strong>Nostr Keypair Created!</strong>',
                 timeout: 7000,
-                background: 'bg-success-300-600-token',
+                background: 'bg-success-300-600',
             });
 
             handleRedirection();

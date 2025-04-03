@@ -121,7 +121,7 @@
             const t: ToastSettings = {
                 message: `Cannot add more than ${maxTags} tags!`,
                 timeout: 4000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
 
@@ -159,7 +159,7 @@
             const t: ToastSettings = {
                 message: 'Invalid tag! Only letters and numbers, NO duplicates!',
                 timeout: 4000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
         }
@@ -217,7 +217,7 @@
                     const t: ToastSettings = {
                         message: 'Could not post Job: ' + e,
                         timeout: 7000,
-                        background: 'bg-error-300-600-token',
+                        background: 'bg-error-300-600',
                     };
                     toastStore.trigger(t);
                 }
@@ -225,7 +225,7 @@
                 const t: ToastSettings = {
                     message: 'Log in to post the Job!',
                     timeout: 7000,
-                    background: 'bg-error-300-600-token',
+                    background: 'bg-error-300-600',
                 };
                 toastStore.trigger(t);
             }
@@ -234,7 +234,7 @@
                 message:
                     '<p style="text-align:center;"><strong>Invalid Job!</strong></p><br/>Please fill in a <strong>valid Job Title</strong> and <strong>Description</strong> before posting!',
                 timeout: 7000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
         }

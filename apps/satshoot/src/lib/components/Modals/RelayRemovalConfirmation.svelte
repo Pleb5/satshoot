@@ -24,7 +24,7 @@
             const t: ToastSettings = {
                 message: 'Error: ' + e,
                 timeout: 7000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
         } finally {

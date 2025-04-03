@@ -15,9 +15,7 @@
         type PaymentStore,
     } from '$lib/stores/payment';
     import currentUser from '$lib/stores/user';
-    import {
-        wallet,
-    } from '$lib/wallet/wallet';
+    import { wallet } from '$lib/wallet/wallet';
     import { goto } from '$app/navigation';
     import ndk from '$lib/stores/ndk';
     import {
@@ -62,14 +60,14 @@
     }
 
     type NutZapErrorData = {
-        mint: string,
-        proofs: Proof[]
-    }
+        mint: string;
+        proofs: Proof[];
+    };
 
     class NutZapError extends Error {
         constructor(
             message: string,
-            public readonly data: NutZapErrorData,
+            public readonly data: NutZapErrorData
         ) {
             super(message);
             this.name = this.constructor.name;
@@ -88,45 +86,39 @@
 
     let paying = $state(false);
     let amount = $state(0);
-    let satshootShare = $derived(
-        Math.floor((amount * (offer?.pledgeSplit ?? 0)) / 100)
-    );
+    let satshootShare = $derived(Math.floor((amount * (offer?.pledgeSplit ?? 0)) / 100));
 
     let freelancerShare = $derived(amount - satshootShare);
     let pledgedAmount = $state(0);
 
     // 3 sats safety added when estimating balances for payments
-    const safety = 3; 
+    const safety = 3;
 
     let mintExistsWithSufficientBalance = $derived(
-        $wallet!.getMintsWithBalance(
-            satshootShare + pledgedAmount + freelancerShare + safety
-        ).length > 0
-    )
+        $wallet!.getMintsWithBalance(satshootShare + pledgedAmount + freelancerShare + safety)
+            .length > 0
+    );
 
     let freelancerCashuInfo: CashuPaymentInfo | null = $state(null);
 
     let hasSenderEcashSetup = $derived(!!$wallet);
 
     let canPayWithEcash = $derived.by(() => {
-        if (
-            hasSenderEcashSetup &&
-            freelancerCashuInfo &&
-            mintExistsWithSufficientBalance
-        ) return true;
+        if (hasSenderEcashSetup && freelancerCashuInfo && mintExistsWithSufficientBalance)
+            return true;
 
-        return false
+        return false;
     });
 
     let ecashTooltipText = $derived.by(() => {
         if (!hasSenderEcashSetup) {
-            return 'Setup Wallet to pay with Cashu!'
+            return 'Setup Wallet to pay with Cashu!';
         }
         if (!freelancerCashuInfo) {
-            return 'Could not find Freelancer Cashu Info'
+            return 'Could not find Freelancer Cashu Info';
         }
         if (!mintExistsWithSufficientBalance) {
-            return 'No Mint in Wallet has enough balance for this amount!'
+            return 'No Mint in Wallet has enough balance for this amount!';
         }
 
         return '';
@@ -139,11 +131,10 @@
 
     let pricing = $state('');
 
-
     $effect(() => {
         if (offer && $currentUser) {
             fetchFreelancerCashuInfo(offer.pubkey);
-            
+
             switch (offer.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';
@@ -166,15 +157,14 @@
             satshootPaymentStore.totalPaid.subscribe((value) => {
                 satshootPaid = value;
             });
-
         }
     });
 
     const fetchFreelancerCashuInfo = async (freelancerPubkey: Hexpubkey) => {
-         freelancerCashuInfo = await getCashuPaymentInfo(
+        freelancerCashuInfo = (await getCashuPaymentInfo(
             freelancerPubkey
-        ) as (CashuPaymentInfo | null)
-    }
+        )) as CashuPaymentInfo | null;
+    };
 
     onDestroy(() => {
         if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.empty();
@@ -312,37 +302,37 @@
                 [UserEnum.Satshoot, false],
             ]);
 
-
             const freelancerPaymentPromise = processCashuPayment(
                 UserEnum.Freelancer,
                 offer!.pubkey,
                 freelancerShareMillisats
-            )
+            );
 
             const satshootPaymentPromise = processCashuPayment(
                 UserEnum.Satshoot,
                 SatShootPubkey,
                 satshootSumMillisats
-            )
-
-            const results = await Promise.allSettled(
-                [freelancerPaymentPromise, satshootPaymentPromise]
             );
+
+            const results = await Promise.allSettled([
+                freelancerPaymentPromise,
+                satshootPaymentPromise,
+            ]);
 
             results.forEach((result, index) => {
                 // One of the payments failed
                 if (result.status !== 'fulfilled') {
                     if (index === 0) {
-                        handlePaymentError(result.reason, 'Freelancer')
+                        handlePaymentError(result.reason, 'Freelancer');
                     } else {
-                        handlePaymentError(result.reason, 'SatShoot')
+                        handlePaymentError(result.reason, 'SatShoot');
                     }
-                // One of the payments succeeded
+                    // One of the payments succeeded
                 } else {
                     if (index === 0) {
-                        paid.set(UserEnum.Freelancer, true)
+                        paid.set(UserEnum.Freelancer, true);
                     } else {
-                        paid.set(UserEnum.Satshoot, true)
+                        paid.set(UserEnum.Satshoot, true);
                     }
                 }
             });
@@ -365,10 +355,7 @@
             paying = false;
         } catch (error: any) {
             console.error(error);
-            handleToast(
-                `Error: ${error?.message || error}`,
-                ToastType.Error
-            );
+            handleToast(`Error: ${error?.message || error}`, ToastType.Error);
             paying = false;
         }
     }
@@ -381,9 +368,7 @@
         if (amount === 0) return;
 
         if (!freelancerCashuInfo || !freelancerCashuInfo.mints) {
-            throw new Error(
-                `Could not fetch cashu payment info for ${userEnum}!`
-            );
+            throw new Error(`Could not fetch cashu payment info for ${userEnum}!`);
         }
 
         if (!$wallet) {
@@ -391,7 +376,7 @@
         }
 
         const mintsWithBalance = $wallet.getMintsWithBalance(
-            Math.floor(amountMillisats/1000) + safety
+            Math.floor(amountMillisats / 1000) + safety
         );
 
         // Double-check balance
@@ -405,19 +390,13 @@
             return mint
                 .getInfo()
                 .then((info) => {
-                    if (info.nuts[4].methods.some(
-                        (method) => method.unit === 'sat')
-                    ) {
+                    if (info.nuts[4].methods.some((method) => method.unit === 'sat')) {
                         return mintUrl;
                     }
                     return null;
                 })
                 .catch((err) => {
-                    console.error(
-                        'Error while retrieving candidate Mint info',
-                        mintUrl,
-                        err
-                    );
+                    console.error('Error while retrieving candidate Mint info', mintUrl, err);
                     return null;
                 });
         });
@@ -428,15 +407,13 @@
 
         const mints: string[] = [];
         mintInfoResults.forEach((result) => {
-            if (result.status === 'fulfilled' && result.value){
+            if (result.status === 'fulfilled' && result.value) {
                 mints.push(result.value);
             }
         });
 
         if (mints.length === 0) {
-            throw new Error(
-                `Could not find a mint for ${userEnum} that support sats!`
-            );
+            throw new Error(`Could not find a mint for ${userEnum} that support sats!`);
         }
 
         // Always use freelancers Mint preference or fail
@@ -457,9 +434,7 @@
             });
 
         if (!cashuResult) {
-            throw new Error(
-                'Unknown error occurred while minting Proofs for NutZap!'
-            );
+            throw new Error('Unknown error occurred while minting Proofs for NutZap!');
         }
         const nutzapEvent = new NDKNutzap($ndk);
         nutzapEvent.mint = cashuResult.mint;
@@ -473,29 +448,24 @@
 
         nutzapEvent.tags.push([
             'a',
-            userEnum === UserEnum.Freelancer
-                ? offer!.offerAddress
-                : ticket!.ticketAddress,
+            userEnum === UserEnum.Freelancer ? offer!.offerAddress : ticket!.ticketAddress,
         ]);
 
-        nutzapEvent.tags.push([
-            'e',
-            userEnum === UserEnum.Freelancer ? offer!.id : ticket!.id,
-        ]);
+        nutzapEvent.tags.push(['e', userEnum === UserEnum.Freelancer ? offer!.id : ticket!.id]);
 
         nutzapEvent.recipientPubkey = pubkey;
 
-        const explicitRelays = [...freelancerCashuInfo.relays ?? []];
+        const explicitRelays = [...(freelancerCashuInfo.relays ?? [])];
 
         await trySignAndPublishNutZap(nutzapEvent, explicitRelays);
-    }
+    };
 
     const handlePaymentError = (err: Error, payee: string) => {
         // Save already minted p2pk NutZap proofs, when Nostr event creation fails
         if (err instanceof NutZapError) {
             toastStore.trigger({
                 message: err.message,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 autohide: false,
                 action: {
                     label: 'Copy Proofs',
@@ -509,55 +479,46 @@
                     },
                 },
             });
-
         } else {
             handleToast(
-                `An error occurred in processing payment for ${payee}:` +
-                    `${err.message || err}`,
+                `An error occurred in processing payment for ${payee}:` + `${err.message || err}`,
                 ToastType.Error
             );
         }
-    }
+    };
 
-    const trySignAndPublishNutZap = async(
-        nutzapEvent: NDKNutzap,
-        explicitRelays: string[]
-    ) => {
+    const trySignAndPublishNutZap = async (nutzapEvent: NDKNutzap, explicitRelays: string[]) => {
         try {
             await nutzapEvent.sign();
 
-            // According to spec NutZap should be published to relays 
+            // According to spec NutZap should be published to relays
             // indicated in Cashu Payment info event (10019), with a fallback to
             // inbox relays. We broadcast everywhere possible, including these
 
-            const publishedRelaySet = await broadcastEvent(
-                $ndk,
-                nutzapEvent,
-                {
-                    explicitRelays,
-                    includePoolRelays: true,
-                    includeOutboxPoolRelays: true,
-                    includeBlastUrl: true
-                }
-            );
+            const publishedRelaySet = await broadcastEvent($ndk, nutzapEvent, {
+                explicitRelays,
+                includePoolRelays: true,
+                includeOutboxPoolRelays: true,
+                includeBlastUrl: true,
+            });
 
             console.log('publishedRelaySet :>> ', publishedRelaySet);
         } catch (err) {
             handleToast(
-                `An error occurred while trying to create NutZap` +
-                    ` event from Proofs: ${err}`,
+                `An error occurred while trying to create NutZap` + ` event from Proofs: ${err}`,
                 ToastType.Error
             );
-            const rawNutzap: {mint: string, proofs: Proof[]} = {
+            const rawNutzap: { mint: string; proofs: Proof[] } = {
                 mint: nutzapEvent.mint,
-                proofs: nutzapEvent.proofs
-            }
-            const message = `Copy the minted NutZap Proofs and save ` +
+                proofs: nutzapEvent.proofs,
+            };
+            const message =
+                `Copy the minted NutZap Proofs and save ` +
                 `somewhere safe then try to send to recipient manually`;
 
-            throw new NutZapError(message, rawNutzap)
+            throw new NutZapError(message, rawNutzap);
         }
-    }
+    };
 
     async function initializePayment() {
         if (!ticket || !offer) {
@@ -626,10 +587,10 @@
         user: UserEnum,
         zapRequestRelays: Map<UserEnum, string[]>
     ) {
-        // Get NDKZapper object it is only used for figuring out relays for 
-        // LN zapping (for now). LN payments are NOT handled by NDK we just use it 
+        // Get NDKZapper object it is only used for figuring out relays for
+        // LN zapping (for now). LN payments are NOT handled by NDK we just use it
         // to fetch invoices and zap receipts
-        const zapper = new NDKZapper(target, amount, 'msat', opts)
+        const zapper = new NDKZapper(target, amount, 'msat', opts);
         // const zapper = $ndk.zap(offer!, amount, opts);
         const relays = await zapper.relays(receiver);
 
@@ -683,7 +644,7 @@
             message,
             timeout: 7000,
             autohide,
-            background: `bg-${type}-300-600-token`,
+            background: `bg-${type}-300-600`,
         });
     }
 
@@ -876,7 +837,7 @@
                 <!-- popups Share Job Post end -->
             </div>
         {:else}
-            <h2 class="h2 font-bold text-center text-error-300-600-token">
+            <h2 class="h2 font-bold text-center text-error-300-600">
                 Error: Ticket & Offer is missing!
             </h2>
         {/if}

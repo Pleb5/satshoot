@@ -22,7 +22,7 @@
     const toastStore = getToastStore();
 
     let statusMessage = $state('');
-    let statusColor = 'text-tertiary-200-700-token';
+    let statusColor = 'text-tertiary-200-700';
 
     let bunkerUrl = $state('');
     let attemptingBunkerConnection = $state(false);
@@ -33,7 +33,7 @@
             attemptingBunkerConnection = false;
             toastStore.trigger({
                 message: 'Invalid Bunker token! URL must start with "bunker://"',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
             return;
@@ -51,7 +51,7 @@
             attemptingBunkerConnection = false;
             toastStore.trigger({
                 message: 'Error: No Relay URLs specified in Bunker token!',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
             return;
@@ -59,7 +59,7 @@
             attemptingBunkerConnection = false;
             toastStore.trigger({
                 message: 'Error: No Remote Pubkey specified in Bunker token!',
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 timeout: 5000,
             });
             return;
@@ -120,7 +120,7 @@
                 toastStore.trigger({
                     message: 'Bunker Connection Successful!',
                     timeout: 7000,
-                    background: 'bg-success-300-600-token',
+                    background: 'bg-success-300-600',
                 });
 
                 initializeUser($ndk, toastStore);
@@ -131,7 +131,7 @@
                 toastStore.trigger({
                     message: 'Could not connect to Bunker!',
                     timeout: 7000,
-                    background: 'bg-error-300-600-token',
+                    background: 'bg-error-300-600',
                 });
                 modalStore.close();
             }
@@ -145,7 +145,7 @@
                         </p>
                     `,
                 autohide: false,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 classes: 'font-bold',
             });
             console.error(error);

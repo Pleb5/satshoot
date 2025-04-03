@@ -62,7 +62,7 @@
                 message: `<p class='text-center font-bold'>Could NOT load Profile!</p>
                           <p class='text-center font-bold'>Try to refresh page!</p>
                          `,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
                 autohide: false,
             };
             toastStore.trigger(t);

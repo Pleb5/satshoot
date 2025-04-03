@@ -40,7 +40,7 @@
                 message: `Successfully deposited ${amount} sats!`,
                 timeout: 5000,
                 autohide: true,
-                background: `bg-success-300-600-token`,
+                background: `bg-success-300-600`,
             });
             depositing = false;
             amount = 0;
@@ -53,7 +53,7 @@
             toastStore.trigger({
                 message: `Failed to deposit: \n${error}`,
                 autohide: false,
-                background: `bg-error-300-600-token`,
+                background: `bg-error-300-600`,
             });
         });
 

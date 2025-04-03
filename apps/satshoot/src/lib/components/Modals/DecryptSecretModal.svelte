@@ -15,7 +15,7 @@
 
     let passphrase: string = $state('');
     let statusMessage: string = $state('');
-    let statusColor = $state('text-tertiary-200-700-token');
+    let statusColor = $state('text-tertiary-200-700');
 
     let decrypting = $state(false);
 
@@ -23,7 +23,7 @@
         decrypting = true;
         await tick();
 
-        statusColor = 'text-tertiary-200-700-token';
+        statusColor = 'text-tertiary-200-700';
         statusMessage = 'Decrypting...';
         try {
             let restoreMethod: RestoreMethod | undefined = undefined;

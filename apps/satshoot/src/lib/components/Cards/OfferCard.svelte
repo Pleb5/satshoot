@@ -91,7 +91,7 @@
         if (!job)
             return {
                 status: '?',
-                statusColor: 'text-primary-400-500-token',
+                statusColor: 'text-primary-400-500',
             };
 
         const winnerId = job.acceptedOfferAddress;
@@ -100,7 +100,7 @@
         } else if (winnerId || job.isClosed()) {
             return { status: 'Lost', statusColor: 'text-error-500' };
         } else {
-            return { status: 'Pending', statusColor: 'text-primary-400-500-token' };
+            return { status: 'Pending', statusColor: 'text-primary-400-500' };
         }
     });
 

@@ -60,7 +60,7 @@
                     message: message,
                     timeout: 5000,
                     autohide: true,
-                    background: `bg-success-300-600-token`,
+                    background: `bg-success-300-600`,
                 });
                 pr = '';
             })
@@ -69,7 +69,7 @@
                 toastStore.trigger({
                     message: `Failed to withdraw: ${err?.message || err} `,
                     autohide: false,
-                    background: `bg-error-300-600-token`,
+                    background: `bg-error-300-600`,
                 });
             })
             .finally(() => {
@@ -96,7 +96,7 @@
             toastStore.trigger({
                 message: `Failed to get camera details!`,
                 autohide: false,
-                background: `bg-error-300-600-token`,
+                background: `bg-error-300-600`,
             });
             return;
         }
@@ -124,7 +124,7 @@
                 toastStore.trigger({
                     message: `Failed to start scanning!`,
                     autohide: false,
-                    background: `bg-error-300-600-token`,
+                    background: `bg-error-300-600`,
                 });
             });
     }
@@ -153,7 +153,7 @@
                     toastStore.trigger({
                         message: `Failed to get payment invoice!`,
                         autohide: false,
-                        background: `bg-error-300-600-token`,
+                        background: `bg-error-300-600`,
                     });
                 });
         }

@@ -271,7 +271,7 @@
                 const t: ToastSettings = {
                     message: 'No Person to message!',
                     timeout: 5000,
-                    background: 'bg-error-300-600-token',
+                    background: 'bg-error-300-600',
                 };
                 toastStore.trigger(t);
                 return;
@@ -525,8 +525,8 @@
                                                                 type="button"
                                                                 class="btn w-full flex items-center space-x-4
                                                                     {contact.selected
-                                                                    ? 'variant-filled-primary'
-                                                                    : 'bg-surface-hover-token'}"
+                                                                    ? 'preset-filled-primary'
+                                                                    : 'bg-surface-hover'}"
                                                                 onclick={() =>
                                                                     selectCurrentPerson(contact)}
                                                             >
@@ -605,7 +605,7 @@
                     <div bind:this={elemInput}>
                         <Card classes="p-1">
                             <div
-                                class="w-full h-full input-group input-group-divider grid-cols-[1fr_auto] rounded-container-token"
+                                class="w-full h-full input-group input-group-divider grid-cols-[1fr_auto] rounded-container"
                             >
                                 <textarea
                                     bind:value={currentMessage}
@@ -619,9 +619,10 @@
                                 ></textarea>
                                 <button
                                     class={currentMessage
-                                        ? 'variant-filled-primary'
+                                        ? 'preset-filled-primary'
                                         : 'input-group-shim'}
                                     onclick={sendMessage}
+                                    aria-label="send message"
                                 >
                                     <i class="fa-solid fa-paper-plane"></i>
                                 </button>

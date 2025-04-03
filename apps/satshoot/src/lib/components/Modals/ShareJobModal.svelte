@@ -45,7 +45,7 @@
             const t: ToastSettings = {
                 message: 'job Posted as Text Note!',
                 timeout: 7000,
-                background: 'bg-success-300-600-token',
+                background: 'bg-success-300-600',
             };
             toastStore.trigger(t);
 
@@ -55,7 +55,7 @@
             const t: ToastSettings = {
                 message: 'Error happened while publishing note!',
                 timeout: 5000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
 

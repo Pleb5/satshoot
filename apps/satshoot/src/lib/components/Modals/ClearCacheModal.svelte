@@ -21,10 +21,9 @@
                     <p>Refreshing page in 3 seconds...</p>\
                     ',
                 timeout: 3000,
-                background: 'bg-primary-300-600-token',
+                background: 'bg-primary-300-600',
             };
-            setTimeout(() => {
-            }, 3000);
+            setTimeout(() => {}, 3000);
 
             $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
 
@@ -34,7 +33,7 @@
             const t: ToastSettings = {
                 message: 'Could not clear cache: ' + e,
                 timeout: 7000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
         }

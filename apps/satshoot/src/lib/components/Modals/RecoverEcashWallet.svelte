@@ -36,7 +36,7 @@
         if (!file) {
             toastStore.trigger({
                 message: 'Please select a JSON file.',
-                background: `bg-error-300-600-token`,
+                background: `bg-error-300-600`,
             });
             return;
         }
@@ -46,7 +46,7 @@
         if (!fileExtension) {
             toastStore.trigger({
                 message: `Failed to recover wallet. Couldn't identify file type.`,
-                background: `bg-error-300-600-token`,
+                background: `bg-error-300-600`,
             });
 
             return;
@@ -55,7 +55,7 @@
         if (fileExtension !== 'json' && fileExtension !== 'enc') {
             toastStore.trigger({
                 message: `Failed to recover wallet. Invalid file type. Only .json or .enc is accepted.`,
-                background: `bg-error-300-600-token`,
+                background: `bg-error-300-600`,
             });
 
             return;
@@ -82,7 +82,7 @@
                 } catch (error) {
                     toastStore.trigger({
                         message: 'Failed to decrypt backup file',
-                        background: `bg-error-300-600-token`,
+                        background: `bg-error-300-600`,
                     });
                     return;
                 }
@@ -96,14 +96,14 @@
 
             toastStore.trigger({
                 message: 'Wallet Loaded Successfully!',
-                background: `bg-success-300-600-token`,
+                background: `bg-success-300-600`,
             });
             modalStore.close();
         } catch (error) {
             console.error('Failed to recover wallet:', error);
             toastStore.trigger({
                 message: `Failed to recover wallet:\n${error}`,
-                background: `bg-error-300-600-token`,
+                background: `bg-error-300-600`,
             });
         } finally {
             recovering = false;

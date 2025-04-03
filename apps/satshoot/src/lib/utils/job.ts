@@ -18,7 +18,7 @@ export function getJobStatusString(status: TicketStatus) {
 
 export function getJobStatusColor(status: TicketStatus) {
     if (status === TicketStatus.New) {
-        return 'text-primary-400-500-token';
+        return 'text-primary-400-500';
     }
 
     if (status === TicketStatus.InProgress) {

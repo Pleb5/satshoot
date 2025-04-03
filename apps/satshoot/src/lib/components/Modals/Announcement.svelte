@@ -48,7 +48,7 @@
             const t: ToastSettings = {
                 message: 'Broadcasted!',
                 timeout: 5000,
-                background: 'bg-success-300-600-token',
+                background: 'bg-success-300-600',
             };
             toastStore.trigger(t);
 
@@ -58,7 +58,7 @@
             const t: ToastSettings = {
                 message: 'Error happened while broadcasting! Try again later!',
                 timeout: 5000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
 

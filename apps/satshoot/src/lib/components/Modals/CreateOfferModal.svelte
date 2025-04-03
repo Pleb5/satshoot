@@ -117,7 +117,7 @@
             const t: ToastSettings = {
                 message: 'Offer Posted!',
                 timeout: 4000,
-                background: 'bg-success-300-600-token',
+                background: 'bg-success-300-600',
             };
             toastStore.trigger(t);
 
@@ -127,7 +127,7 @@
                 let toastId: string;
                 const t: ToastSettings = {
                     message: 'Set up an LN Address to receive payments!',
-                    background: 'bg-warning-300-600-token',
+                    background: 'bg-warning-300-600',
                     autohide: false,
                     action: {
                         label: 'Go to Profile',
@@ -142,7 +142,7 @@
             if ($currentUser && !$wallet) {
                 const t: ToastSettings = {
                     message: 'Set up a Nostr Wallet to receive payments in ecash tokens!',
-                    background: 'bg-warning-300-600-token',
+                    background: 'bg-warning-300-600',
                     autohide: false,
                     action: {
                         label: 'Go to Wallet',
@@ -170,7 +170,7 @@
             const t: ToastSettings = {
                 message: errorMessage,
                 timeout: 7000,
-                background: 'bg-error-300-600-token',
+                background: 'bg-error-300-600',
             };
             toastStore.trigger(t);
 

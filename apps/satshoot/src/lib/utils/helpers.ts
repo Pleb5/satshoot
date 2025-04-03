@@ -92,7 +92,7 @@ export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
             if (!userRelays) {
                 toastStore.trigger({
                     message: 'Could not find Your personal Relays',
-                    background: 'bg-warning-300-600-token',
+                    background: 'bg-warning-300-600',
                     autohide: false,
                     action: {
                         label: 'Configure',

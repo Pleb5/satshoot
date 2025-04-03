@@ -4,13 +4,14 @@
     import { displayEcashWarning } from '$lib/stores/gui';
     import ndk, { DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
+    import { userCashuInfo, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
     import {
-        userCashuInfo,
-        wallet,
-        walletInit,
-        walletStatus,
-    } from '$lib/wallet/wallet';
-    import { arraysAreEqual, broadcastEvent, fetchAndInitWallet, fetchUserOutboxRelays, getCashuPaymentInfo } from '$lib/utils/helpers';
+        arraysAreEqual,
+        broadcastEvent,
+        fetchAndInitWallet,
+        fetchUserOutboxRelays,
+        getCashuPaymentInfo,
+    } from '$lib/utils/helpers';
     import {
         NDKCashuMintList,
         NDKKind,
@@ -18,7 +19,13 @@
         NDKRelaySet,
         tryNormalizeRelayUrl,
     } from '@nostr-dev-kit/ndk';
-    import { consolidateMintTokens, migrateCashuWallet, NDKCashuWallet, NDKWalletStatus, type WalletProofChange } from '@nostr-dev-kit/ndk-wallet';
+    import {
+        consolidateMintTokens,
+        migrateCashuWallet,
+        NDKCashuWallet,
+        NDKWalletStatus,
+        type WalletProofChange,
+    } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
         getToastStore,
@@ -42,7 +49,6 @@
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
-
 
     let mintBalances: Record<string, number> = $state({});
     let walletBalance = $state('0');
@@ -69,17 +75,15 @@
 
     const walletRelays = $derived($userCashuInfo?.relays ?? []);
 
-
     $effect(() => {
         if ($wallet && $userCashuInfo) {
-
             checkLegacyWallet();
 
             checkP2PK();
 
             mintBalances = $wallet.mintBalances;
 
-            walletBalance = getBalanceStr($wallet)
+            walletBalance = getBalanceStr($wallet);
 
             $wallet.on('balance_updated', () => {
                 mintBalances = $wallet!.mintBalances;
@@ -98,8 +102,7 @@
         if ($wallet.event?.kind === NDKKind.LegacyCashuWallet && !toastTriggered) {
             toastTriggered = true;
             const t: ToastSettings = {
-                message:
-                'You are using a legacy Nostr Wallet. Migrate to new?',
+                message: 'You are using a legacy Nostr Wallet. Migrate to new?',
                 background: 'bg-warning-300-600-token',
                 autohide: false,
                 action: {
@@ -136,22 +139,22 @@
             };
             toastStore.trigger(t);
         }
-    }
+    };
 
     const checkP2PK = async () => {
         if (!$wallet || !$userCashuInfo) return;
         if (!$wallet._p2pk) {
-            console.error('BUG: Wallet should have P2PK at this point!', $wallet)
+            console.error('BUG: Wallet should have P2PK at this point!', $wallet);
             await $wallet.getP2pk();
         }
 
         let respondedToAction = false;
         if ($wallet._p2pk !== $userCashuInfo.p2pk && !respondedToAction) {
-            console.log(`wallet _p2pk: ${$wallet._p2pk}\ncashuInfo p2pk:${$userCashuInfo.p2pk}`)
+            console.log(`wallet _p2pk: ${$wallet._p2pk}\ncashuInfo p2pk:${$userCashuInfo.p2pk}`);
             const t: ToastSettings = {
                 message:
-                'Receiver Cashu info does not match with Nostr Wallet info.' +
-                ' It is recommended to sync them.',
+                    'Receiver Cashu info does not match with Nostr Wallet info.' +
+                    ' It is recommended to sync them.',
                 background: 'bg-warning-300-600-token',
                 autohide: false,
                 action: {
@@ -188,38 +191,33 @@
             };
             toastStore.trigger(t);
         }
-    }
+    };
 
     const syncP2PK = async () => {
         if (!$wallet || !$userCashuInfo) return;
 
         $userCashuInfo.p2pk = $wallet._p2pk;
-        await broadcastEvent($ndk, $userCashuInfo, {replaceable: true})
-    }
+        await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
+    };
 
     const reFetchCashuInfo = async () => {
-        if (!$currentUser || !$wallet) return
+        if (!$currentUser || !$wallet) return;
 
         const cashuInfo = await getCashuPaymentInfo($currentUser.pubkey, true);
         if (cashuInfo) {
-            walletInit(
-                $wallet,
-                cashuInfo as NDKCashuMintList,
-                $ndk,
-                $currentUser
-            );
+            walletInit($wallet, cashuInfo as NDKCashuMintList, $ndk, $currentUser);
             return;
         } else {
             tryCreateCashuInfo();
         }
-    }
+    };
 
     const tryCreateCashuInfo = async () => {
         let respondedToAction = false;
 
         const t: ToastSettings = {
             message:
-            'Could not find Cashu Info to receive ecash payments. Would you like' +
+                'Could not find Cashu Info to receive ecash payments. Would you like' +
                 ' to publish preferred receiver info based on your Nostr Wallet?',
             background: 'bg-warning-300-600-token',
             autohide: false,
@@ -231,14 +229,14 @@
                     const ndkMintList = new NDKCashuMintList($wallet!.ndk);
                     let relays = DEFAULTRELAYURLS;
                     if ($wallet?.relaySet?.relayUrls) {
-                        relays = $wallet.relaySet.relayUrls
+                        relays = $wallet.relaySet.relayUrls;
                     }
 
                     ndkMintList.relays = relays;
                     ndkMintList.mints = $wallet!.mints;
                     ndkMintList.p2pk = $wallet!.p2pk;
                     try {
-                        await broadcastEvent($ndk, ndkMintList, {replaceable: true})
+                        await broadcastEvent($ndk, ndkMintList, { replaceable: true });
                         walletInit($wallet!, ndkMintList, $ndk, $currentUser!);
 
                         toastStore.trigger({
@@ -267,10 +265,10 @@
             },
         };
         toastStore.trigger(t);
-    }
+    };
 
     function getBalanceStr($wallet: NDKCashuWallet): string {
-        let balanceStr: string = ''
+        let balanceStr: string = '';
         const totalBalance = $wallet.balance;
         if (totalBalance) {
             balanceStr = totalBalance.amount.toString();
@@ -279,7 +277,6 @@
         }
         return balanceStr;
     }
-
 
     async function setupWallet() {
         const newWallet = new NDKCashuWallet($ndk);
@@ -322,20 +319,18 @@
             if (userRelays) {
                 const writeRelayList = NDKRelayList.from(userRelays).writeRelayUrls;
                 if (writeRelayList.length > 0) {
-                    mintRelays = [ ...mintRelays, ...writeRelayList];
+                    mintRelays = [...mintRelays, ...writeRelayList];
                 }
             }
 
-            newWallet.relaySet = NDKRelaySet.fromRelayUrls(
-                mintRelays, $ndk
-            );
+            newWallet.relaySet = NDKRelaySet.fromRelayUrls(mintRelays, $ndk);
 
             const cashuInfo = new NDKCashuMintList($ndk);
             cashuInfo.p2pk = newWallet._p2pk;
             cashuInfo.relays = mintRelays;
             cashuInfo.mints = newWallet.mints;
 
-            await broadcastEvent($ndk, cashuInfo, {replaceable: true})
+            await broadcastEvent($ndk, cashuInfo, { replaceable: true });
             await newWallet.publish();
 
             const t: ToastSettings = {
@@ -356,14 +351,14 @@
     async function tryLoadWallet() {
         if ($currentUser) {
             await fetchAndInitWallet($currentUser, $ndk);
-            if ($wallet){
+            if ($wallet) {
                 $wallet = $wallet;
             } else {
-            toastStore.trigger({
-                message: `Could not load wallet!`,
-                autohide: false,
-                background: `bg-error-300-600-token`,
-            });
+                toastStore.trigger({
+                    message: `Could not load wallet!`,
+                    autohide: false,
+                    background: `bg-error-300-600-token`,
+                });
             }
         } else {
             toastStore.trigger({
@@ -376,18 +371,17 @@
 
     async function updateMints(mints: string[]) {
         try {
-            if (!$wallet || !$userCashuInfo){
-                throw new Error('Wallet or user Cashu information missing!')
+            if (!$wallet || !$userCashuInfo) {
+                throw new Error('Wallet or user Cashu information missing!');
             }
 
-            $wallet.mints = mints
+            $wallet.mints = mints;
             await $wallet.publish();
             wallet.set($wallet);
 
             $userCashuInfo.mints = $wallet.mints;
 
-            await broadcastEvent($ndk, $userCashuInfo, {replaceable: true})
-
+            await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
 
             toastStore.trigger({
                 message: `Mints updated!`,
@@ -396,11 +390,10 @@
             console.trace(e);
             toastStore.trigger({
                 message: `Wallet update failed! Reason: ${e}`,
-                background: 'bg-error-300-600-token'
+                background: 'bg-error-300-600-token',
             });
         }
     }
-
 
     function exploreMints() {
         // If user confirms modal do the editing
@@ -424,7 +417,6 @@
             if (!arraysAreEqual($wallet.mints, mints)) {
                 updateMints(mints);
             }
-
         });
     }
 
@@ -446,11 +438,9 @@
     }
 
     function handleRemoveMint(mint: string) {
-        if (!$wallet) return
+        if (!$wallet) return;
 
-        updateMints(
-            $wallet.mints.filter((m) => m !== mint)
-        );
+        updateMints($wallet.mints.filter((m) => m !== mint));
     }
 
     function addRelay() {
@@ -472,30 +462,28 @@
             modalStore.trigger(modal);
             // We got some kind of response from modal
         }).then(async (editedData: string | undefined) => {
-                if (editedData && editedData.replace('wss://', '').length > 1) {
-                    const relayUrl = tryNormalizeRelayUrl(editedData);
-                    if (relayUrl) {
-                        $userCashuInfo.relays = [...$userCashuInfo.relays, editedData];
-                        if ($wallet!.relaySet) {
-                            $wallet!.relaySet = NDKRelaySet.fromRelayUrls(
-                                $userCashuInfo.relays, $ndk
-                            );
-                        }
-
-                        await broadcastEvent($ndk, $userCashuInfo, {replaceable: true})
-                        const t: ToastSettings = {
-                            message: `Cashu Info updated!`,
-                        };
-                        toastStore.trigger(t);
-                    } else {
-                        const t: ToastSettings = {
-                            message: `Invalid Relay URL!`,
-                            autohide: false,
-                            background: 'bg-error-300-600-token'
-                        };
-                        toastStore.trigger(t);
+            if (editedData && editedData.replace('wss://', '').length > 1) {
+                const relayUrl = tryNormalizeRelayUrl(editedData);
+                if (relayUrl) {
+                    $userCashuInfo.relays = [...$userCashuInfo.relays, editedData];
+                    if ($wallet!.relaySet) {
+                        $wallet!.relaySet = NDKRelaySet.fromRelayUrls($userCashuInfo.relays, $ndk);
                     }
+
+                    await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
+                    const t: ToastSettings = {
+                        message: `Cashu Info updated!`,
+                    };
+                    toastStore.trigger(t);
+                } else {
+                    const t: ToastSettings = {
+                        message: `Invalid Relay URL!`,
+                        autohide: false,
+                        background: 'bg-error-300-600-token',
+                    };
+                    toastStore.trigger(t);
                 }
+            }
         });
     }
 
@@ -512,32 +500,27 @@
                 },
             },
         });
-
     }
 
     async function handleRemoveRelay(relay: string) {
         try {
             if (!$userCashuInfo?.relays) {
-                throw new Error('Could not find info to update')
+                throw new Error('Could not find info to update');
             }
 
-            $userCashuInfo.relays = $userCashuInfo.relays.filter(
-                (url:string) => url !== relay
-            );
+            $userCashuInfo.relays = $userCashuInfo.relays.filter((url: string) => url !== relay);
 
             if ($wallet?.relaySet?.relays) {
-                $wallet.relaySet = NDKRelaySet.fromRelayUrls(
-                    $userCashuInfo.relays, $ndk
-                );
+                $wallet.relaySet = NDKRelaySet.fromRelayUrls($userCashuInfo.relays, $ndk);
             }
 
-            await broadcastEvent($ndk, $userCashuInfo, {replaceable: true});
+            await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
 
             const t: ToastSettings = {
                 message: `Cashu Info updated!`,
             };
             toastStore.trigger(t);
-        } catch(err) {
+        } catch (err) {
             console.error(err);
             const t: ToastSettings = {
                 message: `Failed to update Cashu Info : ${err}`,
@@ -557,7 +540,7 @@
             return;
         }
         const modalBody = `
-                <strong class="text-primary-400-500-token">
+                <strong class="text-primary-400-500">
                     If a wallet contains used tokens, they will be removed
                     and you may see a decrease in wallet balance.
                     Do you really wish to clean wallet?
@@ -567,7 +550,7 @@
             if (r) {
                 modalStore.close();
                 cleaningWallet = true;
-                const onCleaningResult = (walletChange:WalletProofChange) => {
+                const onCleaningResult = (walletChange: WalletProofChange) => {
                     let amountDestroyed = 0;
                     if (walletChange.destroy) {
                         for (const proof of walletChange.destroy) {
@@ -576,10 +559,10 @@
                     }
                     toastStore.trigger({
                         message: `${amountDestroyed} spent sats cleaned from wallet`,
-                        background: `bg-success-300-600-token`,
+                        background: `bg-success-300-600`,
                         autohide: false,
                     });
-                    }
+                };
                 for (const mint of $wallet!.mints) {
                     try {
                         await consolidateMintTokens(
@@ -588,15 +571,15 @@
                             undefined, // allProofs = wallet proofs implicitly
                             onCleaningResult
                         );
-                    } catch(err) {
+                    } catch (err) {
                         console.error('An error occurred in cleaning wallet', err);
                         toastStore.trigger({
                             message: `Failed to clean used tokens!`,
-                            background: `bg-info-300-600-token`,
+                            background: `bg-info-300-600`,
                         });
                     } finally {
                         cleaningWallet = false;
-                    };
+                    }
                 }
             }
         };
@@ -677,7 +660,9 @@
                         classes="bg-warning-500 dark:bg-warning-700 hidden max-[768px]:flex relative"
                     >
                         <p class="font-[600] text-white">
-                            Warning: Experimental feature, use at your own risk! LN payments will only appear in your LN wallet balance. This wallet only handles Cashu ecash!
+                            Warning: Experimental feature, use at your own risk! LN payments will
+                            only appear in your LN wallet balance. This wallet only handles Cashu
+                            ecash!
                         </p>
                         <Button
                             variant="text"
@@ -688,38 +673,36 @@
                         </Button>
                     </Card>
                 {/if}
-                {#if $walletStatus === NDKWalletStatus.INITIAL
-                    || $walletStatus === NDKWalletStatus.LOADING
-                }
+                {#if $walletStatus === NDKWalletStatus.INITIAL || $walletStatus === NDKWalletStatus.LOADING}
                     <!-- Placeholder Section for desktop view -->
 
                     <section class="w-full max-[768px]:hidden grid grid-cols-3">
                         <div class="p-4 space-y-4">
-                            <div class="placeholder animate-pulse"> </div>
+                            <div class="placeholder animate-pulse"></div>
                             <div class="grid grid-cols-3 gap-8">
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                             <div class="grid grid-cols-4 gap-4">
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                         </div>
                         <div class="col-span-2 p-4 space-y-4">
-                            <div class="placeholder animate-pulse"> </div>
+                            <div class="placeholder animate-pulse"></div>
                             <div class="grid grid-cols-3 gap-8">
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                             <div class="grid grid-cols-4 gap-4">
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
-                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
+                                <div class="placeholder animate-pulse"></div>
                             </div>
                         </div>
                     </section>
@@ -728,17 +711,17 @@
                     {#each { length: 2 } as _}
                         <section class="w-full hidden max-[768px]:block">
                             <div class="p-4 space-y-4">
-                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"></div>
                                 <div class="grid grid-cols-3 gap-8">
-                                    <div class="placeholder animate-pulse"> </div>
-                                    <div class="placeholder animate-pulse"> </div>
-                                    <div class="placeholder animate-pulse"> </div>
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
                                 </div>
                                 <div class="grid grid-cols-4 gap-4">
-                                    <div class="placeholder animate-pulse"> </div>
-                                    <div class="placeholder animate-pulse"> </div>
-                                    <div class="placeholder animate-pulse"> </div>
-                                    <div class="placeholder animate-pulse"> </div>
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
+                                    <div class="placeholder animate-pulse"></div>
                                 </div>
                             </div>
                         </section>
@@ -762,11 +745,8 @@
                                     <div
                                         class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-linear-to-tl from-blue-500 to-blue-400 shadow-deep"
                                     >
-                                        <div
-                                            class="font-[500] text-white"
-                                        >
+                                        <div class="font-[500] text-white">
                                             <p>Wallet</p>
-                                            
                                         </div>
                                         <p class="text-[24px] font-[500] text-white">
                                             {walletBalance}
@@ -778,12 +758,13 @@
                                         </p>
 
                                         <i
-                                            class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]">
+                                            class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]"
+                                        >
                                         </i>
                                     </div>
                                     <PieChart dataset={mintBalances} />
-                                    <WithdrawEcash cashuWallet = {$wallet} />
-                                    <DepositEcash cashuWallet = {$wallet} />
+                                    <WithdrawEcash cashuWallet={$wallet} />
+                                    <DepositEcash cashuWallet={$wallet} />
                                     <div
                                         class="w-full flex flex-row justify-end overflow-hidden rounded-[6px] bg-black-100 dark:bg-white-100 border-[1px] border-black-200 dark:border-white-200"
                                     >
