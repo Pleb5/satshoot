@@ -15,7 +15,11 @@ import {
     serializeProfile,
     NDKUser,
 } from '@nostr-dev-kit/ndk';
-import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/ndk';
+import ndk, {
+    blastrUrl,
+    BOOTSTRAPOUTBOXRELAYS,
+    DEFAULTRELAYURLS 
+} from '$lib/stores/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import currentUser, { fetchFreelanceFollowEvent } from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
@@ -35,7 +39,11 @@ import {
     myTickets,
     myOffers,
 } from '$lib/stores/freelance-eventstores';
-import { notifications, seenIDs } from '../stores/notifications';
+import { 
+    notifications,
+    seenIDs,
+    serviceWorkerRegistrationFailed 
+} from '../stores/notifications';
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { dev } from '$app/environment';
@@ -61,8 +69,6 @@ export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
         myTicketFilter.authors! = [user.pubkey];
         myOfferFilter.authors! = [user.pubkey];
 
-        currentUser.set(user);
-
         const $onboardingStep = get(onboardingStep);
         if ($onboardingStep !== OnboardingStep.Account_Created) {
 
@@ -74,13 +80,33 @@ export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
             );
             console.warn('User relays in init', userRelays);
 
-            // --------- User Profile --------------- //
-            const profile = await user.fetchProfile(
-                { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
+            const metadataFilter = {
+                kinds: [NDKKind.Metadata],
+                authors: [user.pubkey],
+            };
+
+            const metadataRelays = [
+                ...BOOTSTRAPOUTBOXRELAYS,
+                ...DEFAULTRELAYURLS
+            ];
+
+            const profile = await fetchEventFromRelaysFirst(
+                metadataFilter,
+                {
+                    relayTimeoutMS: 2000,
+                    fallbackToCache: true,
+                    explicitRelays: Array.from(
+                        NDKRelaySet.fromRelayUrls(metadataRelays, ndk).relays
+                    )
+                }
             );
 
             if (profile) {
-                user.profile = profile;
+                const $currentUser = get(currentUser);
+                $currentUser!.profile = profileFromEvent(profile);
+                console.warn('profile:', profileFromEvent(profile))
+            } else {
+                console.log('Profile could not be loaded')
             }
  
             let explicitRelays = DEFAULTRELAYURLS;
@@ -230,6 +256,7 @@ export function logout() {
     localStorage.removeItem('ticketTabStore');
     localStorage.removeItem('offerTabStore');
     localStorage.removeItem('notificationsEnabled');
+    localStorage.removeItem('serviceWorkerRegFailed');
     localStorage.removeItem('useSatShootWoT');
     localStorage.removeItem('networkWoTScores');
     localStorage.removeItem('seenIDs');
@@ -276,50 +303,56 @@ export function logout() {
 }
 
 export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
-    if ('serviceWorker' in navigator) {
-        let registeredSW = await (
-            navigator.serviceWorker as ServiceWorkerContainer
-        ).getRegistration();
-        if (!registeredSW) {
-            console.log('No registered Service Worker for this page!');
-            console.log('Trying to register one...');
-            // Try to register new service worker here
-            registeredSW = await (navigator.serviceWorker as ServiceWorkerContainer).register(
-                '/service-worker.js',
-                { type: dev ? 'module' : 'classic' }
-            );
-
-            if (!registeredSW) return null;
-        }
-
-        const activeSW = registeredSW.active;
-        if (activeSW) {
-            return activeSW;
-        } else {
-            console.log('No active Service Worker. Must wait for it...');
-            console.log((navigator.serviceWorker as ServiceWorkerContainer).getRegistrations());
-
-            let pendingSW;
-            if (registeredSW.installing) {
-                pendingSW = registeredSW.installing;
-            } else if (registeredSW.waiting) {
-                pendingSW = registeredSW.waiting;
-            }
-
-            if (pendingSW) {
-                pendingSW.onstatechange = (event: Event) => {
-                    if (registeredSW!.active) {
-                        console.log('Regsitered Service worker activated!');
-                    }
-                };
-            }
-        }
-    } else {
-        console.log('service worker not supported');
+    // Early return if we've already determined that registration has failed
+    if (get(serviceWorkerRegistrationFailed)) {
         return null;
     }
 
-    return null;
+    // Check if service workers are supported
+    if (!('serviceWorker' in navigator)) {
+        console.log('Service workers are not supported in this browser');
+        serviceWorkerRegistrationFailed.set(true);
+        return null;
+    }
+
+    try {
+        // Get existing registration
+        let registeredSW = await navigator.serviceWorker.getRegistration();
+        
+        // If no registration exists, try to register
+        if (!registeredSW) {
+            console.log('No registered Service Worker, attempting to register...');
+            try {
+                registeredSW = await navigator.serviceWorker.register(
+                    '/service-worker.js',
+                    { type: dev ? 'module' : 'classic' }
+                );
+            } catch (error) {
+                console.error('Service worker registration failed:', error);
+                serviceWorkerRegistrationFailed.set(true);
+                return null;
+            }
+        }
+
+        // Check if there's an active service worker
+        if (registeredSW.active) {
+            console.log('Found active service worker');
+            return registeredSW.active;
+        }
+        
+        // At this point we have a registration but no active service worker yet
+        console.log('Service worker is registered but not yet active');
+        
+        // Instead of waiting, we'll mark this as "not failed" but return null
+        // This avoids repeated registration attempts and correctly handles the
+        // case where the service worker is still installing/waiting
+        return null;
+        
+    } catch (error) {
+        console.error('Error while handling service worker:', error);
+        serviceWorkerRegistrationFailed.set(true);
+        return null;
+    }
 }
 
 export async function fetchUserOutboxRelays(
