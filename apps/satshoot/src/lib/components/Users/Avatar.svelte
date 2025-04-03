@@ -69,7 +69,7 @@
     >
         <img
             alt="user avatar"
-            src={userProfile?.image || getRoboHashPicture(user.pubkey)}
+            src={userProfile?.picture || getRoboHashPicture(user.pubkey)}
             class="object-cover {sizeClass} {shapeClass}"
         />
     </div>

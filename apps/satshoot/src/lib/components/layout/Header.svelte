@@ -20,6 +20,12 @@
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
 
+    $: profilePicture = $currentUser?.profile?.picture;
+    $: if ($currentUser?.profile) {
+        console.warn('profile arrived in header', $currentUser.profile)
+        profilePicture = $currentUser?.profile?.picture;
+    }
+
     function handleLogin() {
         const modalComponent: ModalComponent = {
             ref: LoginModal,
@@ -81,7 +87,7 @@
                                     border="border-4 border-surface-300-600-token hover:!border-primary-500"
                                     cursor="cursor-pointer"
                                     width="w-12 sm:w-14"
-                                    src={$currentUser?.profile?.image ??
+                                    src={profilePicture ??
                                         getRoboHashPicture($currentUser?.pubkey ?? '')}
                                 />
                             </button>

@@ -85,7 +85,7 @@
             console.log('pubkey', senderUser.pubkey);
             if (senderUser.profile.displayName) name = senderUser.profile.displayName;
             if (senderUser.profile.name) name = senderUser.profile.name;
-            if (senderUser.profile.image) avatarImage = senderUser.profile.image;
+            if (senderUser.profile.picture) avatarImage = senderUser.profile.picture;
         } else {
             console.log('no profile');
         }

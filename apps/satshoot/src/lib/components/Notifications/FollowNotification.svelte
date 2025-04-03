@@ -21,8 +21,8 @@
             if (followerProfile.name) {
                 followerName = followerProfile.name;
             }
-            if (followerProfile.image) {
-                followerImage = followerProfile.image;
+            if (followerProfile.picture) {
+                followerImage = followerProfile.picture;
             }
         }
     });

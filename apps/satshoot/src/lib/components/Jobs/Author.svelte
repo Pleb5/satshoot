@@ -23,8 +23,8 @@
 
     let userProfile: NDKUserProfile | undefined = undefined;
 
-    $: if (userProfile?.image) {
-        avatarImage = userProfile.image;
+    $: if (userProfile?.picture) {
+        avatarImage = userProfile.picture;
     }
 
     onMount(async () => {

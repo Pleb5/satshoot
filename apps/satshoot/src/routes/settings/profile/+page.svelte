@@ -138,13 +138,13 @@
             <!-- Profile Picture -->
             <div class="flex flex-col gap-[5px] grow-[1]">
                 <div>
-                    <label class="font-[600]" for="pofile_picture_url">Profile Picture</label>
+                    <label class="font-[600]" for="profile_picture_url">Profile Picture</label>
                 </div>
                 <Input
                     id="profile_picture_url"
                     type="url"
                     placeholder="Profile Picture URL"
-                    bind:value={userProfile.image}
+                    bind:value={userProfile.picture}
                     fullWidth
                 />
             </div>

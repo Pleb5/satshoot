@@ -37,8 +37,8 @@
             if (userProfile.name) {
                 userName = userProfile.name;
             }
-            if (userProfile.image) {
-                userImage = userProfile.image;
+            if (userProfile.picture) {
+                userImage = userProfile.picture;
             }
         }
 

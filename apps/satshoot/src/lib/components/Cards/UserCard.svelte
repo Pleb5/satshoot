@@ -19,7 +19,6 @@
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
     import {
-        clipboard,
         getModalStore,
         getToastStore,
         ProgressRadial,
@@ -243,8 +242,8 @@
 
         if (profile) {
             userProfile = profileFromEvent(profile);
-            if (userProfile.image) {
-                avatarImage = userProfile.image;
+            if (userProfile.picture) {
+                avatarImage = userProfile.picture;
             }
         }
     }
@@ -311,7 +310,7 @@
                 </div>
                 <div class="w-full mt-[-35px] flex flex-col justify-center items-center">
                     <a href={profileHref}>
-                        <ProfileImage src={userProfile?.image || avatarImage} size="md" />
+                        <ProfileImage src={userProfile?.picture || avatarImage} size="md" />
                     </a>
                 </div>
             </div>

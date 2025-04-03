@@ -433,7 +433,7 @@
                                         on:click={() => selectCurrentPerson(contact)}
                                     >
                                         <Avatar
-                                            src={contact.person.profile?.image ??
+                                            src={contact.person.profile?.picture ??
                                                 getRoboHashPicture(contact.person.pubkey)}
                                             width="w-8"
                                         />
@@ -462,7 +462,7 @@
                                             {#if currentPerson}
                                                 <a href={'/' + currentPerson.npub}>
                                                     <Avatar
-                                                        src={currentPerson.profile?.image ??
+                                                        src={currentPerson.profile?.picture ??
                                                             getRoboHashPicture(
                                                                 currentPerson.pubkey
                                                             )}

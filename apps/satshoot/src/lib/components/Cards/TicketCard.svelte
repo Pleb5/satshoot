@@ -260,7 +260,7 @@
         });
         if (profile) {
             if (profile.name) name = profile.name;
-            if (profile.image) avatarImage = profile.image;
+            if (profile.picture) avatarImage = profile.picture;
         }
     });
 

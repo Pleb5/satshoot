@@ -37,8 +37,8 @@
         });
         if (profile) {
             userProfile = profile;
-            if (userProfile.image) {
-                avatarImage = userProfile.image;
+            if (userProfile.picture) {
+                avatarImage = userProfile.picture;
             }
         }
     }

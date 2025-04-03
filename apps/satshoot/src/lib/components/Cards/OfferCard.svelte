@@ -135,7 +135,7 @@
         jobPoster.fetchProfile().then((profile) => {
             if (profile) {
                 if (profile.name) jobPosterName = profile.name;
-                if (profile.image) jobPosterImage = profile.image;
+                if (profile.picture) jobPosterImage = profile.picture;
             }
         });
     }

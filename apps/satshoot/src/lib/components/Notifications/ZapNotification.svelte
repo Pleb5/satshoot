@@ -65,8 +65,8 @@
             if (zapperProfile.name) {
                 zapperName = zapperProfile.name;
             }
-            if (zapperProfile.image) {
-                zapperImage = zapperProfile.image;
+            if (zapperProfile.picture) {
+                zapperImage = zapperProfile.picture;
             }
         }
 
