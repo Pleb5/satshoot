@@ -2,6 +2,7 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
+    import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
     import ndk from '$lib/stores/ndk';
@@ -14,7 +15,7 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { getToastStore, ProgressRadial, type ToastSettings } from '@skeletonlabs/skeleton';
+    import { getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
 
     const toastStore = getToastStore();
 
@@ -211,14 +212,7 @@
         <Button on:click={updateProfile} disabled={updating}>
             Save
             {#if updating}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-white-500"
-                    track="stroke-white-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="white" />
             {/if}
         </Button>
     </div>

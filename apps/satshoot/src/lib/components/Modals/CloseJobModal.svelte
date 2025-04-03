@@ -7,7 +7,6 @@
     import {
         getModalStore,
         getToastStore,
-        ProgressRadial,
         type ModalComponent,
         type ModalSettings,
         type ToastSettings,
@@ -19,6 +18,7 @@
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
     import PaymentModal from './PaymentModal.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -190,14 +190,7 @@
                     <Button grow on:click={closeJob} disabled={closing}>
                         {#if closing}
                             <span>
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-error-500"
-                                    track="stroke-error-500/30"
-                                    strokeLinecap="round"
-                                    width="w-8"
-                                />
+                                <ProgressRing color="error" />
                             </span>
                         {:else}
                             <span class="font-bold">

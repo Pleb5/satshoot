@@ -3,10 +3,11 @@
     import { Invoice } from '@getalby/lightning-tools';
     import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
     import { onMount } from 'svelte';
-    import { getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { getToastStore } from '@skeletonlabs/skeleton';
 
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const toastStore = getToastStore();
 
@@ -218,14 +219,7 @@
         Withdraw
         {#if withdrawing}
             <span>
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-error-500"
-                    track="stroke-error-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="error" />
             </span>
         {/if}
     </Button>

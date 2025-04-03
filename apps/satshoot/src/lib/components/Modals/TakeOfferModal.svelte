@@ -2,7 +2,6 @@
     import {
         getModalStore,
         getToastStore,
-        ProgressRadial,
         type ModalComponent,
         type ModalSettings,
         type ToastSettings,
@@ -15,6 +14,7 @@
     import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
     import Popup from '../UI/Popup.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -98,14 +98,7 @@
                     <Button grow on:click={takeOffer} disabled={takingOffer}>
                         {#if takingOffer}
                             <span>
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-tertiary-500"
-                                    track="stroke-tertiary-500/30"
-                                    strokeLinecap="round"
-                                    width="w-8"
-                                />
+                                <ProgressRing />
                             </span>
                         {:else}
                             Take Offer

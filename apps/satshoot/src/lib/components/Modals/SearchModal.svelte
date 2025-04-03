@@ -2,7 +2,7 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { searchTerms } from '$lib/stores/search';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';

@@ -3,7 +3,6 @@
         Avatar,
         getDrawerStore,
         getModalStore,
-        ProgressRadial,
         type DrawerSettings,
         type ModalComponent,
         type ModalSettings,
@@ -17,17 +16,18 @@
     import drawerID, { DrawerIDs } from '$lib/stores/drawer';
     import { NDKKind, NDKRelaySet, profileFromEvent } from '@nostr-dev-kit/ndk';
     import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/ndk';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const dispatch = createEventDispatcher();
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
 
-    let profilePicture = $state('')
+    let profilePicture = $state('');
 
     $effect(() => {
-        if ($currentUser)fetchUserProfile();
-    })
+        if ($currentUser) fetchUserProfile();
+    });
 
     const fetchUserProfile = async () => {
         const metadataFilter = {
@@ -35,32 +35,23 @@
             authors: [$currentUser!.pubkey],
         };
 
-        const metadataRelays = [
-            ...BOOTSTRAPOUTBOXRELAYS,
-            ...DEFAULTRELAYURLS
-        ];
+        const metadataRelays = [...BOOTSTRAPOUTBOXRELAYS, ...DEFAULTRELAYURLS];
 
-        const profileEvent = await fetchEventFromRelaysFirst(
-            metadataFilter,
-            {
-                relayTimeoutMS: 3000,
-                fallbackToCache: true,
-                explicitRelays: Array.from(
-                    NDKRelaySet.fromRelayUrls(metadataRelays, $ndk).relays
-                )
-            }
-        );
+        const profileEvent = await fetchEventFromRelaysFirst(metadataFilter, {
+            relayTimeoutMS: 3000,
+            fallbackToCache: true,
+            explicitRelays: Array.from(NDKRelaySet.fromRelayUrls(metadataRelays, $ndk).relays),
+        });
 
         if (profileEvent) {
-            const profile = profileFromEvent(profileEvent)
+            const profile = profileFromEvent(profileEvent);
             $currentUser!.profile = profile;
-            profilePicture = profile?.picture 
-                ?? profile?.image
-                ?? getRoboHashPicture($currentUser!.pubkey);
+            profilePicture =
+                profile?.picture ?? profile?.image ?? getRoboHashPicture($currentUser!.pubkey);
         } else {
             profilePicture = getRoboHashPicture($currentUser!.pubkey);
         }
-    }
+    };
 
     function handleLogin() {
         const modalComponent: ModalComponent = {
@@ -130,14 +121,7 @@
                         {:else if $loggingIn}
                             <div class="flex items-center gap-x-2">
                                 <h3 class="h6 md:h3 font-bold">Logging in...</h3>
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={80}
-                                    meter="stroke-primary-500"
-                                    track="stroke-primary-500/30"
-                                    strokeLinecap="round"
-                                    width="w-12"
-                                />
+                                <ProgressRing color="primary" size={12} />
                             </div>
                         {:else if $loginMethod === 'local'}
                             <Button on:click={() => dispatch('restoreLogin')}>Login</Button>

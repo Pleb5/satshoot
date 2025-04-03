@@ -1,10 +1,11 @@
 <script lang="ts">
     import { backupWallet } from '$lib/wallet/cashu';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import Popup from '../UI/Popup.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -71,14 +72,7 @@
                 Backup
                 {#if processing}
                     <span>
-                        <ProgressRadial
-                            value={undefined}
-                            stroke={60}
-                            meter="stroke-error-500"
-                            track="stroke-error-500/30"
-                            strokeLinecap="round"
-                            width="w-8"
-                        />
+                        <ProgressRing color="error" />
                     </span>
                 {/if}
             </Button>

@@ -8,7 +8,6 @@
         type NDKSigner,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
@@ -16,6 +15,7 @@
     import { readNotifications } from '$lib/stores/notifications';
     import { goto } from '$app/navigation';
     import { getRoboHashPicture } from '$lib/utils/helpers';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     interface Props {
         notification: NDKEvent;
@@ -96,14 +96,7 @@
                     </a>
                 </div>
             {:else}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-primary-500"
-                    track="stroke-primary-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="primary" />
             {/if}
         </div>
     </div>

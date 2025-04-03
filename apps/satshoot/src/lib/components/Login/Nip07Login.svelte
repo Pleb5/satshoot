@@ -6,14 +6,10 @@
     import { loginMethod } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
     import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
-    import {
-        getModalStore,
-        getToastStore,
-        ProgressRadial,
-        type ModalSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore, type ModalSettings } from '@skeletonlabs/skeleton';
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -92,14 +88,7 @@
     <div class={btnWrapperClasses}>
         <Button grow disabled={askingForNip07Permission} on:click={nip07Login}>
             {#if askingForNip07Permission}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-primary-500"
-                    track="stroke-primary-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="primary" />
             {:else}
                 <i class="bx bx-log-in-circle"></i>
                 Connect

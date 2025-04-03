@@ -5,11 +5,11 @@
 
     import { SatShootPubkey } from '$lib/utils/misc';
 
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import type { ToastSettings } from '@skeletonlabs/skeleton';
     import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -81,14 +81,7 @@
                 <Button on:click={postFeedback} disabled={posting}>
                     {#if posting}
                         <span>
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={60}
-                                meter="stroke-tertiary-500"
-                                track="stroke-tertiary-500/30"
-                                strokeLinecap="round"
-                                width="w-8"
-                            />
+                            <ProgressRing />
                         </span>
                     {:else}
                         <span>Post</span>

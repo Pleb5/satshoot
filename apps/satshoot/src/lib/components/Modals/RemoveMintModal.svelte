@@ -1,12 +1,8 @@
 <script lang="ts">
-    import {
-        getModalStore,
-        getToastStore,
-        ProgressRadial,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
     import Button from '../UI/Buttons/Button.svelte';
     import Popup from '../UI/Popup.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -47,7 +43,7 @@
                 <p class="font-[600] text-xl text-white">
                     <span>Do you really want to remove </span>
                     <span class="text-xl text-red-500">{mint.replace('https://', '')}</span>
-                    <span>?<span></span>
+                    <span>?<span></span> </span>
                 </p>
             </div>
         </div>
@@ -62,14 +58,7 @@
                 <i class="bx bx-trash"></i>
                 <span>Remove</span>
                 {#if posting}
-                    <ProgressRadial
-                        value={undefined}
-                        stroke={60}
-                        meter="stroke-white-500"
-                        track="stroke-white-500/30"
-                        strokeLinecap="round"
-                        width="w-8"
-                    />
+                    <ProgressRing color="white" />
                 {/if}
             </Button>
         </div>

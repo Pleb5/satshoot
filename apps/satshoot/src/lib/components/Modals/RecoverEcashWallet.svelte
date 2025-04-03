@@ -1,10 +1,6 @@
 <script lang="ts">
     import currentUser from '$lib/stores/user';
-    import {
-        getModalStore,
-        getToastStore,
-        ProgressRadial 
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import { getFileExtension } from '$lib/utils/misc';
     import { decryptSecret } from '$lib/utils/crypto';
     import Popup from '../UI/Popup.svelte';
@@ -12,6 +8,7 @@
     import Input from '../UI/Inputs/input.svelte';
     import { ndkNutzapMonitor, wallet } from '$lib/wallet/wallet';
     import { parseAndValidateBackup, recoverWallet } from '$lib/wallet/cashu';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -72,7 +69,7 @@
                 });
 
                 return;
-            } 
+            }
 
             recovering = true;
 
@@ -81,11 +78,7 @@
 
             if (fileExtension === 'enc') {
                 try {
-                    fileContent = decryptSecret(
-                        fileContent,
-                        passphrase,
-                        $currentUser!.pubkey
-                    );
+                    fileContent = decryptSecret(fileContent, passphrase, $currentUser!.pubkey);
                 } catch (error) {
                     toastStore.trigger({
                         message: 'Failed to decrypt backup file',
@@ -97,9 +90,7 @@
 
             const walletStorage = parseAndValidateBackup(fileContent);
 
-            if (!walletStorage) throw new Error(
-                'Wallet backup does not match the backup schema!'
-            );
+            if (!walletStorage) throw new Error('Wallet backup does not match the backup schema!');
 
             await recoverWallet(walletStorage, $wallet, ndkNutzapMonitor!);
 
@@ -159,14 +150,7 @@
                 Recover
                 {#if recovering}
                     <span>
-                        <ProgressRadial
-                            value={undefined}
-                            stroke={60}
-                            meter="stroke-white-500"
-                            track="stroke-white-500/30"
-                            strokeLinecap="round"
-                            width="w-8"
-                        />
+                        <ProgressRing color="white" />
                     </span>
                 {/if}
             </Button>

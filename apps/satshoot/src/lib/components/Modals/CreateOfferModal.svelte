@@ -1,12 +1,7 @@
 <script lang="ts">
     import { run } from 'svelte/legacy';
 
-    import {
-        getModalStore,
-        getToastStore,
-        ProgressRadial,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
@@ -21,6 +16,7 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -318,14 +314,7 @@
                 <Button on:click={postOffer} disabled={posting || !validPledgePercent}>
                     {#if posting}
                         <span>
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={60}
-                                meter="stroke-tertiary-500"
-                                track="stroke-tertiary-500/30"
-                                strokeLinecap="round"
-                                width="w-8"
-                            />
+                            <ProgressRing />
                         </span>
                     {:else}
                         Publish offer

@@ -7,13 +7,13 @@
         clipboard,
         getModalStore,
         getToastStore,
-        ProgressRadial,
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
     import { onMount, tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -82,7 +82,7 @@
     onMount(() => {
         if (job) {
             const naddr = job.encode();
-            shareNaddr = 'nostr:' + naddr
+            shareNaddr = 'nostr:' + naddr;
             shareURL = `https://satshoot.com/${naddr}`;
             // Set default text
             message = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
@@ -124,14 +124,7 @@
                         <Button grow on:click={postJob} disabled={posting}>
                             {#if posting}
                                 <span>
-                                    <ProgressRadial
-                                        value={undefined}
-                                        stroke={60}
-                                        meter="stroke-tertiary-500"
-                                        track="stroke-tertiary-500/30"
-                                        strokeLinecap="round"
-                                        width="w-8"
-                                    />
+                                    <ProgressRing />
                                 </span>
                             {:else}
                                 <span>Publish & Share on Nostr</span>
@@ -143,8 +136,12 @@
                             {urlCopied ? 'Copied!' : 'Copy Job URL'}
                         </span>
                     </Button>
-                    <Button grow >
-                        <span class="w-full h-full" use:clipboard={shareNaddr} onclick={onCopyNaddr}>
+                    <Button grow>
+                        <span
+                            class="w-full h-full"
+                            use:clipboard={shareNaddr}
+                            onclick={onCopyNaddr}
+                        >
                             {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
                         </span>
                     </Button>

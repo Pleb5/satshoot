@@ -2,7 +2,8 @@
     import { type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import { getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { getToastStore } from '@skeletonlabs/skeleton';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const toastStore = getToastStore();
 
@@ -58,9 +59,7 @@
 
         const pr = await ndkCashuDeposit.start();
 
-        const { init, launchPaymentModal, closeModal } = await import(
-            '@getalby/bitcoin-connect'
-        );
+        const { init, launchPaymentModal, closeModal } = await import('@getalby/bitcoin-connect');
         init({ appName: 'SatShoot' });
 
         launchPaymentModal({
@@ -103,14 +102,7 @@
     >
         Deposit
         {#if depositing}
-            <ProgressRadial
-                value={undefined}
-                stroke={60}
-                meter="stroke-error-500"
-                track="stroke-error-500/30"
-                strokeLinecap="round"
-                width="w-8"
-            />
+            <ProgressRing color="error" />
         {/if}
     </Button>
 </div>

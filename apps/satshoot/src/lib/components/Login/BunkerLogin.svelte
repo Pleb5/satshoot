@@ -11,11 +11,12 @@
     } from '$lib/utils/login';
     import { bunkerPerms } from '$lib/utils/misc';
     import { NDKNip46Signer, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import { nip19 } from 'nostr-tools';
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -199,14 +200,7 @@
         />
         <Button grow on:click={connectBunker} disabled={attemptingBunkerConnection}>
             {#if attemptingBunkerConnection}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-primary-500"
-                    track="stroke-primary-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="primary" />
             {:else}
                 <i class="bx bx-log-in-circle"></i>
                 Connect

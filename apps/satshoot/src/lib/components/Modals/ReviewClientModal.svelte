@@ -5,13 +5,14 @@
     import ndk from '$lib/stores/ndk';
 
     import type { ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import { tick } from 'svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -145,14 +146,7 @@
                     <Button grow on:click={postClientReview}>
                         {#if posting}
                             <span>
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={60}
-                                    meter="stroke-tertiary-500"
-                                    track="stroke-tertiary-500/30"
-                                    strokeLinecap="round"
-                                    width="w-8"
-                                />
+                                <ProgressRing />
                             </span>
                         {:else}
                             Publish review

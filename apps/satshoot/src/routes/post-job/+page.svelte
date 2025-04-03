@@ -15,8 +15,6 @@
     import type { ModalComponent, ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
     import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
 
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-
     import { beforeNavigate, goto } from '$app/navigation';
     import { onMount, tick } from 'svelte';
     import Card from '$lib/components/UI/Card.svelte';
@@ -25,6 +23,7 @@
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import { redirectAfterLogin } from '$lib/stores/gui';
+    import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
@@ -358,14 +357,7 @@
                         {:else}
                             <Button on:click={postJob} disabled={posting}>
                                 {#if posting}
-                                    <ProgressRadial
-                                        value={undefined}
-                                        stroke={60}
-                                        meter="stroke-white-500"
-                                        track="stroke-white-500/3"
-                                        width="w-8"
-                                        strokeLinecap="round"
-                                    />
+                                    <ProgressRing color="white" />
                                 {:else}
                                     <span>Publish Job Post</span>
                                 {/if}

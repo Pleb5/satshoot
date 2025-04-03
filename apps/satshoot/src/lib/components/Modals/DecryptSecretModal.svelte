@@ -3,13 +3,13 @@
     import { tick } from 'svelte';
 
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
 
     import { DataLoadError } from '$lib/utils/errors';
     import { RestoreMethod } from '$lib/stores/ndk';
     import { logout } from '$lib/utils/helpers';
     import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
 
@@ -160,14 +160,7 @@
             <Button on:click={loadSecret} disabled={!passphrase || decrypting}>
                 {#if decrypting}
                     <span>
-                        <ProgressRadial
-                            value={undefined}
-                            stroke={60}
-                            meter="stroke-primary-500"
-                            track="stroke-primary-500/30"
-                            strokeLinecap="round"
-                            width="w-8"
-                        />
+                        <ProgressRing color="primary" />
                     </span>
                 {:else}
                     <span>Decrypt</span>

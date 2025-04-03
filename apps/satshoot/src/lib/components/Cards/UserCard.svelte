@@ -21,7 +21,6 @@
     import {
         getModalStore,
         getToastStore,
-        ProgressRadial,
         type ModalComponent,
         type ModalSettings,
     } from '@skeletonlabs/skeleton';
@@ -39,6 +38,7 @@
     import QrCodeModal from '../Modals/QRCodeModal.svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -474,14 +474,7 @@
                         on:click={followStatus === FollowStatus.isFollowing ? unFollow : follow}
                     >
                         {#if processingFollowEvent}
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={60}
-                                meter="stroke-tertiary-500"
-                                track="stroke-tertiary-500/30"
-                                strokeLinecap="round"
-                                width="w-8"
-                            />
+                            <ProgressRing />
                         {:else}
                             {followBtnText}
                         {/if}

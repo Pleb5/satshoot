@@ -3,7 +3,6 @@
         getModalStore,
         getToastStore,
         popup,
-        ProgressRadial,
         type PopupSettings,
     } from '@skeletonlabs/skeleton';
     import UserProfile from '../UI/Display/UserProfile.svelte';
@@ -42,6 +41,7 @@
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
     import Card from '../UI/Card.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     enum ToastType {
         Success = 'success',
@@ -811,14 +811,7 @@
                                 >
                                     {#if paying}
                                         <span>
-                                            <ProgressRadial
-                                                value={undefined}
-                                                stroke={60}
-                                                meter="stroke-tertiary-500"
-                                                track="stroke-tertiary-500/30"
-                                                strokeLinecap="round"
-                                                width="w-8"
-                                            />
+                                            <ProgressRing />
                                         </span>
                                     {:else}
                                         <img
@@ -839,14 +832,7 @@
                                         disabled={paying || !canPayWithEcash}
                                     >
                                         {#if paying}
-                                            <ProgressRadial
-                                                value={undefined}
-                                                stroke={60}
-                                                meter="stroke-tertiary-500"
-                                                track="stroke-tertiary-500/30"
-                                                strokeLinecap="round"
-                                                width="w-8"
-                                            />
+                                            <ProgressRing />
                                         {:else}
                                             <img
                                                 class="h-[20px] w-auto"
@@ -864,14 +850,7 @@
                                     >
                                         {#if paying}
                                             <span>
-                                                <ProgressRadial
-                                                    value={undefined}
-                                                    stroke={60}
-                                                    meter="stroke-tertiary-500"
-                                                    track="stroke-tertiary-500/30"
-                                                    strokeLinecap="round"
-                                                    width="w-8"
-                                                />
+                                                <ProgressRing />
                                             </span>
                                         {/if}
                                         <span> Setup Nostr Wallet </span>

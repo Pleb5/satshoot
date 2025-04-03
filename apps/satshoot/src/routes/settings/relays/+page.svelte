@@ -13,9 +13,10 @@
     } from '$lib/utils/helpers';
     import { normalizeRelayUrl } from '$lib/utils/misc';
     import { NDKRelayList } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
     import { RelayType } from '$lib/stores/network';
+    import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
     const toastStore = getToastStore();
@@ -300,14 +301,7 @@
         >
             Save
             {#if posting}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-white-500"
-                    track="stroke-white-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="white" />
             {/if}</Button
         >
     {/if}
