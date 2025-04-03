@@ -174,6 +174,7 @@ export async function fetchAndInitWallet(
 
     const kindsArr = [
         NDKKind.CashuWallet,
+        NDKKind.LegacyCashuWallet,
         NDKKind.CashuMintList,
     ];
     if (walletFetchOpts.fetchLegacyWallet) kindsArr.push(NDKKind.LegacyCashuWallet)
@@ -186,25 +187,28 @@ export async function fetchAndInitWallet(
         { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY },
         NDKRelaySet.fromRelayUrls(relays, ndk)
     );
-    cashuPromise.then(async(cashuEvents: Set<NDKEvent>)=>{
-        console.info('cashuEvents loaded:', cashuEvents)
-        let nostrWallet: NDKCashuWallet | undefined;
-        let cashuMintList: NDKCashuMintList | undefined;
-        for (const event of cashuEvents) {
-            if (event.kind === NDKKind.LegacyCashuWallet) {
-                nostrWallet = await NDKCashuWallet.from(event)
-            } else if (event.kind === NDKKind.CashuWallet) {
-                nostrWallet = await NDKCashuWallet.from(event)
-            } else if (event.kind === NDKKind.CashuMintList) {
-                cashuMintList = NDKCashuMintList.from(event)
-            }
+
+    const cashuEvents: Set<NDKEvent> = await cashuPromise;
+
+    console.info('cashuEvents loaded:', cashuEvents)
+    let nostrWallet: NDKCashuWallet | undefined;
+    let cashuMintList: NDKCashuMintList | undefined;
+    let checkLegacy = true;
+    for (const event of cashuEvents) {
+        if (event.kind === NDKKind.LegacyCashuWallet && checkLegacy) {
+            nostrWallet = await NDKCashuWallet.from(event)
+        } else if (event.kind === NDKKind.CashuWallet) {
+            checkLegacy = false;
+            nostrWallet = await NDKCashuWallet.from(event)
+        } else if (event.kind === NDKKind.CashuMintList) {
+            cashuMintList = NDKCashuMintList.from(event)
         }
-        if (nostrWallet && cashuMintList) {
-            walletInit(nostrWallet, cashuMintList, ndk, user);
-        } else {
-            walletStatus.set(NDKWalletStatus.FAILED)
-        }
-    });
+    }
+    if (nostrWallet && cashuMintList) {
+        walletInit(nostrWallet, cashuMintList, ndk, user);
+    } else {
+        walletStatus.set(NDKWalletStatus.FAILED)
+    }
 }
 
 export function logout() {
