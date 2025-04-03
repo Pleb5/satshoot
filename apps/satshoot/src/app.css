@@ -2,64 +2,68 @@
 
 @import 'tailwindcss';
 
-@source '../../../node_modules/.pnpm/@skeletonlabs+skeleton@2.11.0_svelte@5.23.2/node_modules/@skeletonlabs/skeleton/dist/**/*.{html,js,svelte,ts}';
+@import '@skeletonlabs/skeleton';
+@import '@skeletonlabs/skeleton/optional/presets';
+@import '@skeletonlabs/skeleton/themes/wintry';
+
+@source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-*: initial;
-  --font-sans: ;
+    --font-*: initial;
+    --font-sans: ;
 
-  --color-transparent: rgba(0, 0, 0, 0);
+    --color-transparent: rgba(0, 0, 0, 0);
 
-  --color-black-50: rgba(0, 0, 0, 0.05);
-  --color-black-100: rgba(0, 0, 0, 0.1);
-  --color-black-200: rgba(0, 0, 0, 0.2);
-  --color-black-300: rgba(0, 0, 0, 0.3);
-  --color-black-400: rgba(0, 0, 0, 0.4);
-  --color-black-500: rgba(0, 0, 0, 0.5);
-  --color-black-600: rgba(0, 0, 0, 0.6);
-  --color-black-700: rgba(0, 0, 0, 0.75);
-  --color-black: rgba(0, 0, 0);
+    --color-black-50: rgba(0, 0, 0, 0.05);
+    --color-black-100: rgba(0, 0, 0, 0.1);
+    --color-black-200: rgba(0, 0, 0, 0.2);
+    --color-black-300: rgba(0, 0, 0, 0.3);
+    --color-black-400: rgba(0, 0, 0, 0.4);
+    --color-black-500: rgba(0, 0, 0, 0.5);
+    --color-black-600: rgba(0, 0, 0, 0.6);
+    --color-black-700: rgba(0, 0, 0, 0.75);
+    --color-black: rgba(0, 0, 0);
 
-  --color-blue-0: rgba(59, 115, 246, 0);
-  --color-blue-500: rgba(59, 115, 246, 1);
-  --color-blue-600: rgba(59, 130, 246, 1);
+    --color-blue-0: rgba(59, 115, 246, 0);
+    --color-blue-500: rgba(59, 115, 246, 1);
+    --color-blue-600: rgba(59, 130, 246, 1);
 
-  --color-purple-0: rgba(128, 0, 128, 0);
-  --color-purple-600: rgba(138, 71, 210, 1);
+    --color-purple-0: rgba(128, 0, 128, 0);
+    --color-purple-600: rgba(138, 71, 210, 1);
 
-  --color-white-0: rgba(255, 255, 255, 0);
-  --color-white-50: rgba(255, 255, 255, 0.05);
-  --color-white-100: rgba(255, 255, 255, 0.1);
-  --color-white-200: rgba(255, 255, 255, 0.2);
-  --color-white-300: rgba(255, 255, 255, 0.3);
-  --color-white-400: rgba(255, 255, 255, 0.4);
-  --color-white-500: rgba(255, 255, 255, 0.5);
-  --color-white-700: rgba(255, 255, 255, 0.7);
-  --color-white-800: rgba(255, 255, 255, 0.8);
-  --color-white: rgba(255, 255, 255, 1);
+    --color-white-0: rgba(255, 255, 255, 0);
+    --color-white-50: rgba(255, 255, 255, 0.05);
+    --color-white-100: rgba(255, 255, 255, 0.1);
+    --color-white-200: rgba(255, 255, 255, 0.2);
+    --color-white-300: rgba(255, 255, 255, 0.3);
+    --color-white-400: rgba(255, 255, 255, 0.4);
+    --color-white-500: rgba(255, 255, 255, 0.5);
+    --color-white-700: rgba(255, 255, 255, 0.7);
+    --color-white-800: rgba(255, 255, 255, 0.8);
+    --color-white: rgba(255, 255, 255, 1);
 
-  --color-green-100: rgba(225, 255, 225, 0.1);
-  --color-green-500: rgba(225, 255, 225, 0.75);
-  --color-green-600: rgba(95, 255, 95, 1);
+    --color-green-100: rgba(225, 255, 225, 0.1);
+    --color-green-500: rgba(225, 255, 225, 0.75);
+    --color-green-600: rgba(95, 255, 95, 1);
 
-  --color-orange-500: rgba(255, 99, 71, 0.75);
-  --color-orange-600: rgba(255, 99, 71, 1);
+    --color-orange-500: rgba(255, 99, 71, 0.75);
+    --color-orange-600: rgba(255, 99, 71, 1);
 
-  --color-yellow-500: rgba(250, 250, 0, 0.75);
-  --color-yellow-600: rgba(255, 184, 0, 1);
+    --color-yellow-500: rgba(250, 250, 0, 0.75);
+    --color-yellow-600: rgba(255, 184, 0, 1);
 
-  --color-gray-500: rgba(99, 99, 99, 1);
-  --color-gray-600: rgba(220, 220, 220, 1);
+    --color-gray-500: rgba(99, 99, 99, 1);
+    --color-gray-600: rgba(220, 220, 220, 1);
 
-  --color-bright-gray-700: rgba(55, 65, 81, 0.75);
-  --color-bright-gray: rgba(55, 65, 81, 1);
+    --color-bright-gray-700: rgba(55, 65, 81, 0.75);
+    --color-bright-gray: rgba(55, 65, 81, 1);
 
-  --shadow-soft: 0 0 8px rgba(0, 0, 0, 0.25);
-  --shadow-strong: 0 0 8px 4px rgba(0, 0, 0, 0.5);
-  --shadow-subtle: 0 0 4px rgba(0, 0, 0, 0.25);
-  --shadow-deep: 0 0 4px 2px rgba(0, 0, 0, 0.35);
+    --shadow-soft: 0 0 8px rgba(0, 0, 0, 0.25);
+    --shadow-strong: 0 0 8px 4px rgba(0, 0, 0, 0.5);
+    --shadow-subtle: 0 0 4px rgba(0, 0, 0, 0.25);
+    --shadow-deep: 0 0 4px 2px rgba(0, 0, 0, 0.35);
 }
 
 /*
@@ -71,20 +75,20 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
 }
 
 @font-face {
-	/* Reference name */
-	font-family: 'Inter';
-	/* For multiple files use commas, ex: url(), url(), ... */
-	src: url('/fonts/Inter-VariableFont_slnt,wght.ttf');
+    /* Reference name */
+    font-family: 'Inter';
+    /* For multiple files use commas, ex: url(), url(), ... */
+    src: url('/fonts/Inter-VariableFont_slnt,wght.ttf');
 }
 
 :root [data-theme='wintry'] {
@@ -93,4 +97,7 @@
     /* ... */
 }
 
-html, body { @apply h-full overflow-hidden; }
+html,
+body {
+    @apply h-full overflow-hidden;
+}
