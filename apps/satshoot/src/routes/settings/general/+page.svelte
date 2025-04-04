@@ -4,6 +4,7 @@
     import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
     import ClearCacheModal from '$lib/components/Modals/ClearCacheModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
+    import LightSwitch from '$lib/components/UI/Inputs/LightSwitch.svelte';
     import { sessionPK } from '$lib/stores/ndk';
     import browserNotificationsEnabled from '$lib/stores/notifications';
     import { useSatShootWoT } from '$lib/stores/wot';
@@ -11,7 +12,6 @@
     import {
         getModalStore,
         getToastStore,
-        LightSwitch,
         type ModalSettings,
         type ToastSettings,
     } from '@skeletonlabs/skeleton';
@@ -90,15 +90,8 @@
     <div class="w-full flex flex-col gap-[15px] p-2">
         <div class="w-full flex flex-row gap-[10px] items-center pt-[5px] pr-[5px]">
             <label class="grow-1 font-[500]" for="toggle-dark-mode"> Theme </label>
-            <LightSwitch
-                bgLight="bg-black-100"
-                bgDark="bg-white-100"
-                fillLight="fill-blue-500"
-                fillDark="fill-white"
-                ring="ring-[2px]"
-                width="w-16"
-                height="h-8"
-            />
+
+            <LightSwitch />
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
             <label class="grow-1 font-[500]" for="clear-cache-btn">Cache</label>
