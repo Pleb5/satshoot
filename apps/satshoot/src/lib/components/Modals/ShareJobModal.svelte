@@ -3,12 +3,7 @@
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
-    import {
-        clipboard,
-        getModalStore,
-        getToastStore,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
     import { onMount, tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -65,18 +60,22 @@
 
     let urlCopied = $state(false);
     function onCopyURL(): void {
-        urlCopied = true;
-        setTimeout(() => {
-            urlCopied = false;
-        }, 1000);
+        navigator.clipboard.writeText(shareURL).then(() => {
+            urlCopied = true;
+            setTimeout(() => {
+                urlCopied = false;
+            }, 1000);
+        });
     }
 
     let naddrCopied = $state(false);
     function onCopyNaddr(): void {
-        naddrCopied = true;
-        setTimeout(() => {
-            naddrCopied = false;
-        }, 1000);
+        navigator.clipboard.writeText(shareNaddr).then(() => {
+            naddrCopied = true;
+            setTimeout(() => {
+                naddrCopied = false;
+            }, 1000);
+        });
     }
 
     onMount(() => {
@@ -131,17 +130,13 @@
                             {/if}
                         </Button>
                     {/if}
-                    <Button grow>
-                        <span class="w-full h-full" use:clipboard={shareURL} onclick={onCopyURL}>
+                    <Button grow on:click={onCopyURL}>
+                        <span class="w-full h-full">
                             {urlCopied ? 'Copied!' : 'Copy Job URL'}
                         </span>
                     </Button>
-                    <Button grow>
-                        <span
-                            class="w-full h-full"
-                            use:clipboard={shareNaddr}
-                            onclick={onCopyNaddr}
-                        >
+                    <Button grow on:click={onCopyNaddr}>
+                        <span class="w-full h-full">
                             {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
                         </span>
                     </Button>

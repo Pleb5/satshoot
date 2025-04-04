@@ -1,6 +1,5 @@
 <script lang="ts">
     import { validateSingleSeedWord } from '$lib/utils/login';
-    import { clipboard } from '@skeletonlabs/skeleton';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
 
@@ -15,10 +14,12 @@
     let copiedSeed = $state(false);
 
     function onCopySeed(): void {
-        copiedSeed = true;
-        setTimeout(() => {
-            copiedSeed = false;
-        }, 1000);
+        navigator.clipboard.writeText(words.join(' ')).then(() => {
+            copiedSeed = true;
+            setTimeout(() => {
+                copiedSeed = false;
+            }, 1000);
+        });
     }
 
     const labelClasses =
@@ -59,10 +60,11 @@
     <div class={btnWrapperClasses}>
         <Button
             variant="outlined"
+            on:click={onCopySeed}
             classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
             grow
         >
-            <span class="w-full h-full" use:clipboard={words.join(' ')} onclick={onCopySeed}>
+            <span class="w-full h-full">
                 {copiedSeed ? 'Copied' : 'Dangerously Copy'}
             </span>
         </Button>

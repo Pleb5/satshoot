@@ -9,7 +9,6 @@
     import { useSatShootWoT } from '$lib/stores/wot';
     import { hexToBytes } from '@noble/ciphers/utils';
     import {
-        clipboard,
         getModalStore,
         getToastStore,
         LightSwitch,
@@ -69,10 +68,12 @@
     }
 
     function onCopyNsec(): void {
-        copiedNsec = true;
-        setTimeout(() => {
-            copiedNsec = false;
-        }, 1000);
+        navigator.clipboard.writeText(nsec).then(() => {
+            copiedNsec = true;
+            setTimeout(() => {
+                copiedNsec = false;
+            }, 1000);
+        });
     }
 
     let wotTooltip =
@@ -158,8 +159,11 @@
                                 '...' +
                                 nsec.substring(nsec.length - 11, nsec.length - 1)}
                         </div>
-                        <Button classes="bg-red-500 hover:bg-red-600 transition-colors">
-                            <span class="w-full h-full" use:clipboard={nsec} onclick={onCopyNsec}>
+                        <Button
+                            classes="bg-red-500 hover:bg-red-600 transition-colors"
+                            on:click={onCopyNsec}
+                        >
+                            <span class="w-full h-full">
                                 {copiedNsec ? 'Copied!' : 'Dangerously Copy'}
                             </span>
                         </Button>

@@ -7,7 +7,7 @@
     import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
     import { hexToBytes } from '@noble/hashes/utils';
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-    import { clipboard, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import { generateSeedWords, privateKeyFromSeedWords } from 'nostr-tools/nip06';
     import { nsecEncode } from 'nostr-tools/nip19';
     import { onMount } from 'svelte';
@@ -112,17 +112,21 @@
     }
 
     function onCopyNpub(): void {
-        copiedNpub = true;
-        setTimeout(() => {
-            copiedNpub = false;
-        }, 1000);
+        navigator.clipboard.writeText(generatedNpub).then(() => {
+            copiedNpub = true;
+            setTimeout(() => {
+                copiedNpub = false;
+            }, 1000);
+        });
     }
 
     function onCopyNsec(): void {
-        copiedNsec = true;
-        setTimeout(() => {
-            copiedNsec = false;
-        }, 1000);
+        navigator.clipboard.writeText(generatedNsec).then(() => {
+            copiedNsec = true;
+            setTimeout(() => {
+                copiedNsec = false;
+            }, 1000);
+        });
     }
 
     const labelClasses =
@@ -158,10 +162,11 @@
     <div class={btnWrapperClasses}>
         <Button
             variant="outlined"
+            on:click={onCopyNsec}
             classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
             grow
         >
-            <span class="w-full h-full" use:clipboard={generatedNsec} onclick={onCopyNsec}>
+            <span class="w-full h-full">
                 {copiedNsec ? 'Copied' : 'Dangerously Copy'}
             </span>
         </Button>
@@ -176,8 +181,8 @@
         <Input value={generatedNpub} disabled grow noBorder notRounded />
     </div>
     <div class={btnWrapperClasses}>
-        <Button variant="outlined" classes="rounded-[0]" grow>
-            <span class="w-full h-full" use:clipboard={generatedNpub} onclick={onCopyNpub}>
+        <Button variant="outlined" on:click={onCopyNpub} classes="rounded-[0]" grow>
+            <span class="w-full h-full">
                 {copiedNpub ? 'Copied' : 'Copy'}
             </span>
         </Button>
