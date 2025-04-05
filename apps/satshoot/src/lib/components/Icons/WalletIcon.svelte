@@ -1,5 +1,9 @@
 <script lang="ts">
-    export let sizeClass = 'text-lg';
+    interface Props {
+        sizeClass?: string;
+    }
+
+    let { sizeClass = 'text-lg' }: Props = $props();
 </script>
 
 <i class="fa-solid fa-wallet {sizeClass}"></i>

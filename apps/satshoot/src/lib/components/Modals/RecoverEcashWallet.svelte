@@ -16,11 +16,11 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    let recovering = false;
-    let file: File | null = null;
-    let passphrase = '';
-    let showPassphraseInput = false;
-    let showPassphrase = false;
+    let recovering = $state(false);
+    let file = $state<File | null>(null);
+    let passphrase = $state('');
+    let showPassphraseInput = $state(false);
+    let showPassphrase = $state(false);
 
     // Handle file selection
     function handleFileChange(event: Event) {
@@ -132,7 +132,7 @@
                 accept=".json,.enc"
                 class="input text-center bg-transparent rounded-md"
                 aria-label="choose file"
-                on:change={handleFileChange}
+                onchange={handleFileChange}
             />
 
             {#if showPassphraseInput}
@@ -150,7 +150,7 @@
                         classes="border-l-[1px] border-l-black-100 rounded-[0px]"
                         on:click={() => (showPassphrase = !showPassphrase)}
                     >
-                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
+                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
                     </Button>
                 </div>
             {/if}

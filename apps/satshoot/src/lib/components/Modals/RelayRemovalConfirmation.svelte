@@ -11,10 +11,14 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let url: string; // Relay URL to remove
-    export let onConfirm: () => Promise<void>; // Callback function to invoke on confirmation
+    interface Props {
+        url: string; // Relay URL to remove
+        onConfirm: () => Promise<void>; // Callback function to invoke on confirmation
+    }
 
-    let posting = false;
+    let { url, onConfirm }: Props = $props();
+
+    let posting = $state(false);
 
     async function handleConfirm() {
         try {
@@ -53,7 +57,7 @@
                 on:click={handleConfirm}
                 disabled={posting}
             >
-                <i class="bx bx-trash" />
+                <i class="bx bx-trash"></i>
                 <span>Remove</span>
                 {#if posting}
                     <ProgressRadial

@@ -12,14 +12,18 @@
     import { readNotifications } from '$lib/stores/notifications';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
-    export let notification: TicketEvent;
+    interface Props {
+        notification: TicketEvent;
+    }
 
-    $: statusString = getJobStatusString(notification.status);
-    $: statusColor = getJobStatusColor(notification.status);
+    let { notification }: Props = $props();
+
+    let statusString = $derived(getJobStatusString(notification.status));
+    let statusColor = $derived(getJobStatusColor(notification.status));
 
     let user = $ndk.getUser({ pubkey: notification.pubkey });
-    let userName = user.npub.substring(0, 8);
-    let userImage = getRoboHashPicture(user.pubkey);
+    let userName = $state(user.npub.substring(0, 8));
+    let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
 

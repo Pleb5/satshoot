@@ -18,13 +18,17 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let job: TicketEvent;
+    interface Props {
+        job: TicketEvent;
+    }
 
-    let shareURL = '';
-    let shareNaddr = '';
+    let { job }: Props = $props();
 
-    let message: string = '';
-    let posting = false;
+    let shareURL = $state('');
+    let shareNaddr = $state('');
+
+    let message: string = $state('');
+    let posting = $state(false);
     async function postJob() {
         posting = true;
         await tick();
@@ -59,7 +63,7 @@
         }
     }
 
-    let urlCopied = false;
+    let urlCopied = $state(false);
     function onCopyURL(): void {
         urlCopied = true;
         setTimeout(() => {
@@ -67,7 +71,7 @@
         }, 1000);
     }
 
-    let naddrCopied = false;
+    let naddrCopied = $state(false);
     function onCopyNaddr(): void {
         naddrCopied = true;
         setTimeout(() => {
@@ -77,8 +81,9 @@
 
     onMount(() => {
         if (job) {
-            shareNaddr = 'nostr:' + job.encode()
-            shareURL = `https://satshoot.com/${shareNaddr}`;
+            const naddr = job.encode();
+            shareNaddr = 'nostr:' + naddr
+            shareURL = `https://satshoot.com/${naddr}`;
             // Set default text
             message = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
             message += `## ${job.title}\n\n`;
@@ -133,13 +138,13 @@
                             {/if}
                         </Button>
                     {/if}
-                    <Button grow on:click={onCopyURL}>
-                        <span use:clipboard={shareURL}>
+                    <Button grow>
+                        <span class="w-full h-full" use:clipboard={shareURL} onclick={onCopyURL}>
                             {urlCopied ? 'Copied!' : 'Copy Job URL'}
                         </span>
                     </Button>
-                    <Button grow on:click={onCopyNaddr}>
-                        <span use:clipboard={shareNaddr}>
+                    <Button grow >
+                        <span class="w-full h-full" use:clipboard={shareNaddr} onclick={onCopyNaddr}>
                             {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
                         </span>
                     </Button>

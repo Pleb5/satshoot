@@ -8,17 +8,15 @@
         createPaymentFilters,
         createPaymentStore,
         paymentDetail,
-        type PaymentStore,
     } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { NDKKind, type NDKFilter } from '@nostr-dev-kit/ndk';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import { nip19 } from 'nostr-tools';
-    import { onDestroy, onMount } from 'svelte';
+    import { onDestroy } from 'svelte';
     import PaymentModal from '../Modals/PaymentModal.svelte';
     import TakeOfferModal from '../Modals/TakeOfferModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
@@ -32,138 +30,149 @@
 
     const modalStore = getModalStore();
 
-    export let offer: OfferEvent;
-    export let skipUserProfile = false;
-    export let skipReputation = false;
-    export let showJobDetail = false;
-    export let showPayments = false;
-
-    let freelancerPaid = 0;
-    let satshootPaid = 0;
-    let freelancerPaymentStore: PaymentStore;
-    let satshootPaymentStore: PaymentStore;
-
-    let jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
-        kinds: [NDKKind.FreelanceTicket],
-        '#d': [],
-    };
-    let dTagOfJob: string;
-    let jobStore: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let job: TicketEvent | undefined = undefined;
-    let pricing: string = '';
-
-    let jobPosterImage = '';
-    let jobPosterName = '?';
-
-    let winner = false;
-    let status = '?';
-    let statusColor = 'text-primary-400-500-token';
-
-    let myJob = false;
-    $: if ($currentUser && job && $currentUser.pubkey === job.pubkey) {
-        myJob = true;
-    } else {
-        myJob = false;
+    interface Props {
+        offer: OfferEvent;
+        skipUserProfile?: boolean;
+        skipReputation?: boolean;
+        showJobDetail?: boolean;
+        showPayments?: boolean;
     }
 
-    let showPaymentButton = false;
-    $: if (myJob && winner) {
-        showPaymentButton = true;
-    } else {
-        showPaymentButton = false;
-    }
+    let {
+        offer,
+        skipUserProfile = false,
+        skipReputation = false,
+        showJobDetail = false,
+        showPayments = false,
+    }: Props = $props();
 
-    let review: ReviewEvent | undefined = undefined;
-    $: if ($freelancerReviews) {
-        review = $freelancerReviews.find(
-            (review) => review.reviewedEventAddress === offer.offerAddress
+    let freelancerPaid = $state(0);
+    let satshootPaid = $state(0);
+
+    const freelancerPaymentStore = $derived.by(() => {
+        const freelancerFilters = createPaymentFilters(offer, 'freelancer');
+        return createPaymentStore(freelancerFilters);
+    });
+
+    const satshootPaymentStore = $derived.by(() => {
+        const satshootFilters = createPaymentFilters(offer, 'satshoot');
+        return createPaymentStore(satshootFilters);
+    });
+
+    const jobStore = $derived.by(() => {
+        const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
+            kinds: [NDKKind.FreelanceTicket],
+            '#d': [offer.referencedTicketAddress.split(':')[2]],
+        };
+
+        return $ndk.storeSubscribe<TicketEvent>(
+            jobFilter,
+            {
+                autoStart: true,
+                closeOnEose: false,
+                groupable: true,
+                groupableDelay: 1000,
+            },
+            TicketEvent
         );
-    }
+    });
 
-    $: if (offer) {
-        dTagOfJob = offer.referencedTicketAddress.split(':')[2];
-        jobFilter['#d'] = [dTagOfJob];
-
-        switch (offer.pricing) {
-            case Pricing.Absolute:
-                pricing = 'sats';
-                break;
-            case Pricing.SatsPerMin:
-                pricing = 'sats/min';
-                break;
+    const job = $derived.by(() => {
+        if ($jobStore.length > 0) {
+            return $jobStore[0];
         }
 
-        const freelancerFilters = createPaymentFilters(offer, 'freelancer');
-        const satshootFilters = createPaymentFilters(offer, 'satshoot');
+        return undefined;
+    });
 
-        freelancerPaymentStore = createPaymentStore(freelancerFilters);
-        satshootPaymentStore = createPaymentStore(satshootFilters);
+    const winner = $derived(!!job && job.acceptedOfferAddress === offer.offerAddress);
 
-        freelancerPaymentStore.totalPaid.subscribe((value) => {
+    const { status, statusColor } = $derived.by(() => {
+        if (!job)
+            return {
+                status: '?',
+                statusColor: 'text-primary-400-500-token',
+            };
+
+        const winnerId = job.acceptedOfferAddress;
+        if (winnerId === offer!.offerAddress) {
+            return { status: 'Won', statusColor: 'text-warning-500' };
+        } else if (winnerId || job.isClosed()) {
+            return { status: 'Lost', statusColor: 'text-error-500' };
+        } else {
+            return { status: 'Pending', statusColor: 'text-primary-400-500-token' };
+        }
+    });
+
+    const pricing = $derived.by(() => {
+        if (offer.pricing === Pricing.Absolute) return 'sats';
+        if (offer.pricing === Pricing.SatsPerMin) return 'sats/min';
+
+        return '';
+    });
+
+    const myJob = $derived(!!$currentUser && !!job && $currentUser.pubkey === job.pubkey);
+
+    const showPaymentButton = $derived(myJob && winner);
+
+    const review = $derived.by(() => {
+        if ($freelancerReviews) {
+            return $freelancerReviews.find(
+                (review) => review.reviewedEventAddress === offer.offerAddress
+            );
+        }
+        return undefined;
+    });
+
+    const jobPoster = $derived(job ? $ndk.getUser({ pubkey: job.pubkey }) : null);
+
+    let jobPosterImage = $state('');
+    let jobPosterName = $state('?');
+
+    // Reactive effect to handle profile fetching
+    $effect(() => {
+        if (jobPoster) {
+            // Set initial values
+            jobPosterImage = getRoboHashPicture(jobPoster.pubkey);
+            jobPosterName = jobPoster.npub.substring(0, 8);
+
+            // Fetch and update profile asynchronously
+            jobPoster.fetchProfile().then((profile) => {
+                if (profile) {
+                    jobPosterName = profile.name
+                        ?? jobPoster.npub.substring(0, 8);
+
+                    jobPosterImage = profile.picture
+                        ?? profile.image
+                        ?? getRoboHashPicture(jobPoster.pubkey);
+                }
+            });
+        }
+    });
+
+    $effect(() => {
+        const unSubscribe = freelancerPaymentStore.totalPaid.subscribe((value) => {
             freelancerPaid = value;
         });
 
-        satshootPaymentStore.totalPaid.subscribe((value) => {
+        return () => {
+            unSubscribe();
+        };
+    });
+
+    $effect(() => {
+        const unSubscribe = satshootPaymentStore.totalPaid.subscribe((value) => {
             satshootPaid = value;
         });
-    }
 
-    $: if ($jobStore?.length > 0) {
-        job = $jobStore[0];
-        const winnerId = job.acceptedOfferAddress;
-        if (winnerId === offer!.offerAddress) {
-            winner = true;
-            status = 'Won';
-            statusColor = 'text-warning-500';
-        } else if (winnerId || job.isClosed()) {
-            status = 'Lost';
-            statusColor = 'text-error-500';
-        } else {
-            // The winner is defined but it is not us so our offer lost
-            // OR the ticket does not have a winner but it is closed
-            status = 'Pending';
-            statusColor = 'text-primary-400-500-token';
-        }
-    }
-
-    $: if (job) {
-        const jobPoster = $ndk.getUser({ pubkey: job.pubkey });
-
-        jobPosterImage = getRoboHashPicture(jobPoster.pubkey);
-        jobPosterName = jobPoster.npub.substring(0, 8);
-
-        jobPoster.fetchProfile().then((profile) => {
-            if (profile) {
-                if (profile.name) jobPosterName = profile.name;
-                if (profile.picture) jobPosterImage = profile.picture;
-            }
-        });
-    }
-
-    function startJobSub() {
-        if (jobFilter['#d']!.length > 0) {
-            jobStore = $ndk.storeSubscribe<TicketEvent>(
-                jobFilter,
-                {
-                    autoStart: true,
-                    closeOnEose: false,
-                    groupable: true,
-                    groupableDelay: 1000,
-                },
-                TicketEvent
-            );
-        } else {
-            console.log('Cannot start job sub! Filter does not contain a job d-tag!');
-        }
-    }
+        return () => {
+            unSubscribe();
+        };
+    });
 
     function setChatPartner() {
         $offerMakerToSelect = offer.pubkey;
     }
-
-    onMount(async () => {
-        startJobSub();
-    });
 
     onDestroy(() => {
         if (jobStore) jobStore.empty();
@@ -187,6 +196,7 @@
     }
 
     function handlePay() {
+        // TODO: this should be a prop once skeleton is migrated
         $paymentDetail = {
             ticket: job!,
             offer,

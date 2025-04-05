@@ -17,15 +17,19 @@
     import { goto } from '$app/navigation';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
-    export let notification: NDKEvent;
+    interface Props {
+        notification: NDKEvent;
+    }
+
+    let { notification }: Props = $props();
 
     let user = $ndk.getUser({ pubkey: notification.pubkey });
-    let userName = user.npub.substring(0, 8);
-    let userImage = getRoboHashPicture(user.pubkey);
+    let userName = $state(user.npub.substring(0, 8));
+    let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let decryptedDM: string;
-    let messageLink = '';
+    let decryptedDM = $state<string>();
+    let messageLink = $state('');
     const ticketAddress = notification.tagValue('t');
 
     onMount(async () => {

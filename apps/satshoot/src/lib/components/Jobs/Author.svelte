@@ -4,43 +4,41 @@
         type Hexpubkey,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { onMount } from 'svelte';
     import ndk from '$lib/stores/ndk';
     import { nip19 } from 'nostr-tools';
-    import {
-        getRoboHashPicture,
-        shortenTextWithEllipsesInMiddle,
-    } from '$lib/utils/helpers';
+    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import ReputationCard from '../Cards/ReputationCard.svelte';
 
-    export let user: Hexpubkey;
-
-    $: npub = nip19.npubEncode(user);
-    $: avatarImage = getRoboHashPicture(user);
-    $: profileLink = '/' + npub;
-
-    let userProfile: NDKUserProfile | undefined = undefined;
-
-    $: if (userProfile?.picture) {
-        avatarImage = userProfile.picture;
+    interface Props {
+        user: Hexpubkey;
     }
 
-    onMount(async () => {
+    let { user }: Props = $props();
+
+    // Derived values
+    const npub = $derived(nip19.npubEncode(user));
+    const avatarImage = $derived(getRoboHashPicture(user));
+    const profileLink = $derived('/' + npub);
+
+    // Reactive state
+    let userProfile = $state<NDKUserProfile | null>(null);
+
+    // Effect to fetch user profile
+    $effect(() => {
         const ndkUser = $ndk.getUser({ pubkey: user });
-
-        const profile = await ndkUser.fetchProfile({
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            closeOnEose: true,
-            groupable: true,
-            groupableDelay: 1000,
-        });
-        if (profile) {
-            userProfile = profile;
-        }
+        ndkUser
+            .fetchProfile({
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                closeOnEose: true,
+                groupable: true,
+                groupableDelay: 1000,
+            })
+            .then((profile) => {
+                userProfile = profile;
+            });
     });
-
 </script>
 
 <div class="flex-grow-1 flex flex-col gap-[10px] p-[0px]">
@@ -52,7 +50,7 @@
                 class="transition ease-in-out duration-[0.3s] flex flex-col justify-center items-center"
                 href={profileLink}
             >
-                <ProfileImage src={avatarImage} />
+                <ProfileImage src={userProfile?.picture || avatarImage} />
             </a>
         </div>
         <div class="w-full flex flex-col gap-[5px]">

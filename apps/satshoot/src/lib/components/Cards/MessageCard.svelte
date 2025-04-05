@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import {
@@ -12,30 +14,34 @@
     import { TicketEvent } from '$lib/events/TicketEvent';
 
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { selectedPerson } from '$lib/stores/messages';
     import Markdown from './Markdown.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
-    export let avatarRight = true;
-    export let message: NDKEvent;
-    export let searchTerms: string[] = [];
-    export let isFirstOfDay = false;
+    interface Props {
+        avatarRight?: boolean;
+        message: NDKEvent;
+        searchTerms?: string[];
+        isFirstOfDay?: boolean;
+    }
 
-    let decryptedDM: string;
+    let { avatarRight = true, message, searchTerms = [], isFirstOfDay = false }: Props = $props();
+
+    let decryptedDM: string | undefined = $state();
     const senderUser = $ndk.getUser({ pubkey: message.pubkey });
-    let name = (senderUser as NDKUser).npub.substring(0, 10);
-    let avatarImage = getRoboHashPicture(message.pubkey);
+    let name = $state((senderUser as NDKUser).npub.substring(0, 10));
+    let avatarImage = $state(getRoboHashPicture(message.pubkey));
     const recipient = message.tagValue('p');
 
     const messageDate = new Date((message.created_at as number) * 1000);
     // Time is shown in local time zone
     const timestamp = messageDate.toLocaleString();
     const ticketAddress = message.tagValue('t');
-    let messageLink = '';
+    let messageLink = $state('');
 
-    let extraClasses = 'variant-soft-primary rounded-tr-none';
-    let templateColumn = 'grid-cols-[auto_1fr]';
+    let extraClasses = $state('variant-soft-primary rounded-tr-none');
+    let templateColumn = $state('grid-cols-[auto_1fr]');
 
     function formatDate(date: Date): string {
         const now = new Date();
@@ -104,14 +110,16 @@
         }
     });
 
-    let showMyself = false;
-    $: if (decryptedDM) {
-        if (searchTerms.length > 0) {
-            showMyself = searchTerms.some((term) => decryptedDM.includes(term));
-        } else {
-            showMyself = true;
+    const showMyself = $derived.by(() => {
+        if (decryptedDM) {
+            if (searchTerms.length > 0) {
+                return searchTerms.some((term) => decryptedDM!.includes(term));
+            } else {
+                return true;
+            }
         }
-    }
+        return false; // Default value if decryptedDM is falsy
+    });
 </script>
 
 <div class={showMyself ? '' : 'hidden'}>
@@ -135,12 +143,12 @@
                     <small class="opacity-50">{timestamp}</small>
                 </header>
                 <Markdown content={decryptedDM} />
-                {#if messageLink && !$page.url.pathname.includes('/messages')}
+                {#if messageLink && !page.url.pathname.includes('/messages')}
                     <div class="flex justify-center mr-4">
                         <button
                             type="button"
                             class="btn btn-icon-lg p-2 text-primary-400-500-token"
-                            on:click={() => {
+                            onclick={() => {
                                 $selectedPerson = message.pubkey + '$' + ticketAddress;
                                 goto(messageLink);
                             }}
@@ -162,13 +170,13 @@
     {:else}
         <div class="p-4 space-y-4 w-32">
             <div class="grid grid-cols-1">
-                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse"></div>
             </div>
             <div class="grid grid-cols-1">
-                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse"></div>
             </div>
             <div class="grid grid-cols-1">
-                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse"></div>
             </div>
         </div>
     {/if}

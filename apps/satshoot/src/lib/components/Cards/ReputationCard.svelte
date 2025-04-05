@@ -32,24 +32,48 @@
 
     const modalStore = getModalStore();
 
-    export let user: Hexpubkey;
-    export let type: ReviewType | undefined = undefined;
-    export let forUserCard: boolean = false;
-
-    let reviewType: ReviewType;
-
-    $: reviewArraysExist = $clientReviews && $freelancerReviews;
-    $: reviewsExist =
-        reviewArraysExist && ($clientReviews.length > 0 || $freelancerReviews.length > 0);
-
-    $: if (type) {
-        reviewType = type;
-    } else if (reviewArraysExist) {
-        reviewType =
-            $clientReviews.length > $freelancerReviews.length
-                ? ReviewType.Client
-                : ReviewType.Freelancer;
+    interface Props {
+        user: Hexpubkey;
+        type?: ReviewType;
+        forUserCard?: boolean;
     }
+
+    let { user, type = undefined, forUserCard = false }: Props = $props();
+
+    // Derived arrays for winning offers and involved tickets
+    const { winningOffersOfUser, winningOffersForUser, involvedTickets } = $derived.by(() => {
+        const userTickets = $wotFilteredTickets.filter(
+            (ticket: TicketEvent) => ticket.pubkey === user
+        );
+
+        const userOffers = $wotFilteredOffers.filter((offer: OfferEvent) => offer.pubkey === user);
+
+        const winningOffersOfUser: string[] = [];
+        const winningOffersForUser: string[] = [];
+        const involvedTickets: string[] = [];
+
+        // Find offers where user won as freelancer
+        $wotFilteredTickets.forEach((ticket: TicketEvent) => {
+            userOffers.forEach((offer: OfferEvent) => {
+                if (ticket.acceptedOfferAddress === offer.offerAddress) {
+                    winningOffersOfUser.push(offer.id);
+                    involvedTickets.push(ticket.ticketAddress);
+                }
+            });
+        });
+
+        // Find offers where user was client and someone else won
+        $wotFilteredOffers.forEach((offer: OfferEvent) => {
+            userTickets.forEach((ticket: TicketEvent) => {
+                if (ticket.acceptedOfferAddress === offer.offerAddress) {
+                    winningOffersForUser.push(offer.id);
+                    involvedTickets.push(ticket.ticketAddress);
+                }
+            });
+        });
+
+        return { winningOffersOfUser, winningOffersForUser, involvedTickets };
+    });
 
     const subOptions = {
         closeOnEose: false,
@@ -58,60 +82,62 @@
         autoStart: true,
     };
 
-    let allEarningsStore: NDKEventStore<NDKEvent>;
-    let allPaymentsStore: NDKEventStore<NDKEvent>;
-    let allPledgesStore: NDKEventStore<NDKEvent>;
+    // Derived subscriptions
+    const allEarningsStore = $derived(
+        $ndk.storeSubscribe(
+            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#p': [user], '#e': winningOffersOfUser },
+            subOptions
+        )
+    );
+    const allPaymentsStore = $derived(
+        $ndk.storeSubscribe(
+            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#e': winningOffersForUser },
+            subOptions
+        )
+    );
+    const allPledgesStore = $derived(
+        $ndk.storeSubscribe(
+            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#a': involvedTickets, '#p': [SatShootPubkey] },
+            subOptions
+        )
+    );
 
-    let allEarnings = 0;
-    let allPayments = 0;
-    let allPledges = 0;
+    // Derived financial metrics
+    const allEarnings = $derived(calculateTotalAmount($allEarningsStore));
+    const allPayments = $derived(calculateTotalAmount($allPaymentsStore));
+    const allPledges = $derived(
+        calculatePledges($allPledgesStore, $wotFilteredTickets, $wotFilteredOffers, user)
+    );
 
-    let ratingConsensus = '?';
-    let asClientRatingConsensus = '?';
-    let asFreelancerRatingConsensus = '?';
-    let ratingColor = '';
-    let asClientRatingColor = '';
-    let asFreelancerRatingColor = '';
+    // Derived review data
+    const clientAverage = $derived(aggregateClientRatings(user).average);
+    const freelancerAverage = $derived(aggregateFreelancerRatings(user).average);
 
-    // Get all winner offer a-tags OF this user as a freelancer
-    // We take only those that were on tickets from a client in wot
-    const allWinnerOffersOfUser: string[] = [];
+    const reviewType = $derived(
+        type ??
+            ($clientReviews && $freelancerReviews
+                ? $clientReviews.length > $freelancerReviews.length
+                    ? ReviewType.Client
+                    : ReviewType.Freelancer
+                : undefined)
+    );
 
-    // Get all winner offer a-tags FOR this user as a client
-    // We take only freelancers in wot
-    const allWinnerOffersForUser: string[] = [];
+    const overallAverage = $derived(
+        reviewType === ReviewType.Client
+            ? clientAverage
+            : reviewType === ReviewType.Freelancer
+              ? freelancerAverage
+              : calculateOverallAverage(clientAverage, freelancerAverage)
+    );
 
-    // Get all tickets where user won and client is in wot
-    // OR tickets where user is a client and winner freelancer is in wot
-    const allTicketsWhereUserInvolved: string[] = [];
+    const { ratingConsensus, ratingColor } = $derived(averageToRatingText(overallAverage));
 
-    let needSetup = true;
+    const { ratingConsensus: asClientRatingConsensus, ratingColor: asClientRatingColor } = $derived(
+        averageToRatingText(clientAverage)
+    );
 
-    $: if ($currentUser && user && $clientReviews && $freelancerReviews) {
-        const clientAverage = aggregateClientRatings(user).average;
-        const freelancerAverage = aggregateFreelancerRatings(user).average;
-        let overallAverage: number = NaN;
-
-        if (reviewType === ReviewType.Client) {
-            overallAverage = clientAverage;
-        } else if (reviewType === ReviewType.Freelancer) {
-            overallAverage = freelancerAverage;
-        } else if (type === undefined) {
-            overallAverage = calculateOverallAverage(clientAverage, freelancerAverage);
-        }
-
-        const ratingText: RatingConsensus = averageToRatingText(overallAverage);
-        ratingConsensus = ratingText.ratingConsensus;
-        ratingColor = ratingText.ratingColor;
-
-        const asClientRating = averageToRatingText(clientAverage);
-        const asFreelancerRating = averageToRatingText(freelancerAverage);
-
-        asClientRatingConsensus = asClientRating.ratingConsensus;
-        asFreelancerRatingConsensus = asFreelancerRating.ratingConsensus;
-        asClientRatingColor = asClientRating.ratingColor;
-        asFreelancerRatingColor = asFreelancerRating.ratingColor;
-    }
+    const { ratingConsensus: asFreelancerRatingConsensus, ratingColor: asFreelancerRatingColor } =
+        $derived(averageToRatingText(freelancerAverage));
 
     function calculateOverallAverage(clientAverage: number, freelancerAverage: number): number {
         if (!isNaN(clientAverage) && !isNaN(freelancerAverage)) {
@@ -123,71 +149,6 @@
         } else {
             return NaN;
         }
-    }
-
-    $: if ($currentUser && needSetup && user && $wot && $wotFilteredTickets && $wotFilteredOffers) {
-        needSetup = false;
-
-        const allTicketsOfUser = $wotFilteredTickets.filter(
-            (ticket: TicketEvent) => ticket.pubkey === user
-        );
-        const allOffersOfUser = $wotFilteredOffers.filter(
-            (offer: OfferEvent) => offer.pubkey === user
-        );
-
-        $wotFilteredTickets.forEach((t: TicketEvent) => {
-            allOffersOfUser.forEach((o: OfferEvent) => {
-                if (t.acceptedOfferAddress === o.offerAddress) {
-                    allWinnerOffersOfUser.push(o.id);
-                    allTicketsWhereUserInvolved.push(t.ticketAddress);
-                }
-            });
-        });
-
-        $wotFilteredOffers.forEach((o: OfferEvent) => {
-            allTicketsOfUser.forEach((t: TicketEvent) => {
-                if (t.acceptedOfferAddress === o.offerAddress) {
-                    allWinnerOffersForUser.push(o.id);
-                    allTicketsWhereUserInvolved.push(t.ticketAddress);
-                }
-            });
-        });
-
-        allEarningsStore = $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#p': [user], '#e': allWinnerOffersOfUser },
-            subOptions
-        );
-
-        allPaymentsStore = $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#e': allWinnerOffersForUser },
-            subOptions
-        );
-
-        allPledgesStore = $ndk.storeSubscribe(
-            {
-                kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                '#a': allTicketsWhereUserInvolved,
-                '#p': [SatShootPubkey],
-            },
-            subOptions
-        );
-    }
-
-    $: if ($allEarningsStore) {
-        allEarnings = calculateTotalAmount($allEarningsStore);
-    }
-
-    $: if ($allPaymentsStore) {
-        allPayments = calculateTotalAmount($allPaymentsStore);
-    }
-
-    $: if ($allPledgesStore) {
-        allPledges = calculatePledges(
-            $allPledgesStore,
-            $wotFilteredTickets,
-            $wotFilteredOffers,
-            user
-        );
     }
 
     function calculateTotalAmount(events: NDKEvent[]): number {
@@ -332,7 +293,7 @@
         modalStore.trigger(modal);
     }
 
-    $: financialItems = [
+    let financialItems = $derived([
         {
             title: 'The total amount of money this user has received for completing jobs',
             label: 'Earnings',
@@ -348,7 +309,7 @@
             label: 'Pledges',
             amount: allPledges,
         },
-    ];
+    ]);
 
     const reputationBlockWrapperClasses =
         'transition ease duration-[0.3s] flex flex-col cursor-pointer w-full gap-[5px] hover:text-white p-[10px] rounded-[4px] hover:bg-blue-500 hover:shadow-soft group';
@@ -419,7 +380,7 @@
                 >
                     <button
                         class={reputationBlockWrapperClasses}
-                        on:click={showFreelancerReviewBreakdown}
+                        onclick={showFreelancerReviewBreakdown}
                     >
                         <RatingBlock
                             label="As a freelancer"
@@ -431,7 +392,7 @@
                     </button>
                     <button
                         class={reputationBlockWrapperClasses}
-                        on:click={showClientReviewBreakdown}
+                        onclick={showClientReviewBreakdown}
                     >
                         <RatingBlock
                             label="As a client"
@@ -451,7 +412,7 @@
                         <p class={boltIconWrapperClasses}>
                             <i
                                 class="bx bxs-bolt text-black-500 dark:text-white-500 group-hover:text-yellow-200"
-                            />
+                            ></i>
                             {label}
                         </p>
                         <p class="group-hover:text-white">

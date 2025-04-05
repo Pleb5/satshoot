@@ -2,7 +2,11 @@
     import type { NDKEvent } from '@nostr-dev-kit/ndk';
     import { formatDate, formatDistanceToNow } from 'date-fns';
 
-    export let ndkEvent: NDKEvent;
+    interface Props {
+        ndkEvent: NDKEvent;
+    }
+
+    let { ndkEvent }: Props = $props();
 </script>
 
 <div

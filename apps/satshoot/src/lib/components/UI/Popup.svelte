@@ -6,8 +6,19 @@
 
     const modalStore = getModalStore();
 
-    export let title: string = ''; // Title for the modal header
-    export let popUpText: string | undefined = undefined;
+    interface Props {
+        title?: string; // Title for the modal header
+        popUpText?: string | undefined;
+        headerAction?: import('svelte').Snippet;
+        children?: import('svelte').Snippet;
+    }
+
+    let {
+        title = '',
+        popUpText = undefined,
+        headerAction,
+        children
+    }: Props = $props();
 
     function handleClose() {
         modalStore.close();
@@ -25,7 +36,7 @@
                         class="flex flex-row justify-between items-center gap-[10px] pb-[5px] border-b-[1px] border-b-black-100 dark:border-b-white-100"
                     >
                         <!-- slot for header action -->
-                        <slot name="headerAction" />
+                        {@render headerAction?.()}
 
                         <div class="flex flex-row items-center gap-[5px]">
                             <p class="font-[500] text-[18px]">{title}</p>
@@ -40,10 +51,10 @@
                         </div>
 
                         <Button variant="outlined" on:click={handleClose}>
-                            <i class="bx bx-x text-[20px]" />
+                            <i class="bx bx-x text-[20px]"></i>
                         </Button>
                     </div>
-                    <slot />
+                    {@render children?.()}
                 </Card>
             </div>
         </div>

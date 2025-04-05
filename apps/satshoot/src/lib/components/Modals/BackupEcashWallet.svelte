@@ -10,10 +10,10 @@
     const toastStore = getToastStore();
 
     let processing = false;
-    let passphrase = '';
-    let encrypted = false;
-    let showPassphrase = false;
-    let errorMessage = '';
+    let passphrase = $state('');
+    let encrypted = $state(false);
+    let showPassphrase = $state(false);
+    let errorMessage = $state('');
 
     async function handleWalletBackup() {
         try {
@@ -62,7 +62,7 @@
                         classes="border-l-[1px] border-l-black-100 rounded-[0px]"
                         on:click={() => (showPassphrase = !showPassphrase)}
                     >
-                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'} />
+                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
                     </Button>
                 </div>
             {/if}

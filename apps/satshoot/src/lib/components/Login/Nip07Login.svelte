@@ -18,7 +18,7 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    let askingForNip07Permission = false;
+    let askingForNip07Permission = $state(false);
 
     async function nip07Login() {
         if (browser && window.nostr) {
@@ -101,7 +101,7 @@
                     width="w-8"
                 />
             {:else}
-                <i class="bx bx-log-in-circle" />
+                <i class="bx bx-log-in-circle"></i>
                 Connect
             {/if}
         </Button>

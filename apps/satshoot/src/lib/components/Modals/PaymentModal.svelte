@@ -81,92 +81,92 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    let ticket: TicketEvent;
-    let offer: OfferEvent;
+    let ticket: TicketEvent | undefined = $state();
+    let offer: OfferEvent | undefined = $state();
 
-    $: if ($paymentDetail) {
-        ticket = $paymentDetail.ticket;
-        offer = $paymentDetail.offer;
-    }
+    let paying = $state(false);
+    let amount = $state(0);
+    const safety = 3; // 3 sats safety added when estimating balances for payments
+    let pledgedAmount = $state(0);
+    let satshootShare = $state(0);
+    let freelancerShare = $state(0);
+    let canPayWithEcash = $state(false);
+    let ecashTooltipText = $state('');
+    let hasSenderEcashSetup = $derived(!!$wallet);
 
-    let freelancerPaid = 0;
-    let satshootPaid = 0;
+
+    let freelancerPaid = $state(0);
+    let satshootPaid = $state(0);
     let freelancerPaymentStore: PaymentStore;
     let satshootPaymentStore: PaymentStore;
 
-    let pricing = '';
+    let pricing = $state('');
 
-    $: if (offer) {
-        switch (offer.pricing) {
-            case Pricing.Absolute:
-                pricing = 'sats';
-                break;
-            case Pricing.SatsPerMin:
-                pricing = 'sats/min';
-                break;
+    // TODO: As soon as Modals can take Props this needs to stop
+    $effect(() => {
+        if ($paymentDetail) {
+            ticket = $paymentDetail.ticket;
+            offer = $paymentDetail.offer;
         }
+    })
 
-        const freelancerFilters = createPaymentFilters(offer, 'freelancer');
-        const satshootFilters = createPaymentFilters(offer, 'satshoot');
+    $effect(() => {
+        if (offer && $currentUser) {
+            const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
 
-        freelancerPaymentStore = createPaymentStore(freelancerFilters);
-        satshootPaymentStore = createPaymentStore(satshootFilters);
+            canPayWithEcash = true;
 
-        freelancerPaymentStore.totalPaid.subscribe((value) => {
-            freelancerPaid = value;
-        });
-
-        satshootPaymentStore.totalPaid.subscribe((value) => {
-            satshootPaid = value;
-        });
-    }
-
-    let paying = false;
-    let amount = 0;
-    const safety = 3; // 3 sats safety added when estimating balances for payments
-    let pledgedAmount = 0;
-    let satshootShare = 0;
-    let freelancerShare = 0;
-    let canPayWithEcash = false;
-    let ecashTooltipText = '';
-    let hasSenderEcashSetup = false;
-
-    $: if (offer) {
-        satshootShare = Math.floor((amount * offer.pledgeSplit) / 100);
-        freelancerShare = amount - satshootShare;
-    }
-
-    // All checks passed, user can pay with ecash
-    $: if (canPayWithEcash) {
-        ecashTooltipText = '';
-    }
-
-    $: if (offer && $currentUser) {
-        hasSenderEcashSetup = !!$wallet;
-        console.log('Cashu payment info map: ', $cashuPaymentInfoMap)
-        const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
-
-        canPayWithEcash = true;
-
-        if (!hasSenderEcashSetup) {
-            canPayWithEcash = false;
-            ecashTooltipText = 'Setup Nostr Wallet to pay with ecash!';
-        } else if (!hasFreelancerEcashSetup) {
-            canPayWithEcash = false;
-            ecashTooltipText = 'Freelancer does not have ecash wallet';
-        } else if (!$wallet) {
-            canPayWithEcash = false;
-            ecashTooltipText = 'Wallet is not initialized yet';
-        } else {
-            let mintExistsWithSufficientBalance = $wallet!.getMintsWithBalance(
-                satshootShare + pledgedAmount + freelancerShare + safety
-            ).length > 0;
-            if (!mintExistsWithSufficientBalance) {
+            if (!hasSenderEcashSetup) {
                 canPayWithEcash = false;
-                ecashTooltipText = 'No Mint in Nostr Wallet has enough balance for this amount!';
+                ecashTooltipText = 'Setup Nostr Wallet to pay with ecash!';
+            } else if (!hasFreelancerEcashSetup) {
+                canPayWithEcash = false;
+                ecashTooltipText = 'Freelancer does not have ecash wallet';
+            } else if (!$wallet) {
+                canPayWithEcash = false;
+                ecashTooltipText = 'Wallet is not initialized yet';
+            } else {
+                let mintExistsWithSufficientBalance = $wallet!.getMintsWithBalance(
+                    satshootShare + pledgedAmount + freelancerShare + safety
+                ).length > 0;
+                if (!mintExistsWithSufficientBalance) {
+                    canPayWithEcash = false;
+                    ecashTooltipText = 'No Mint in Nostr Wallet has enough balance for this amount!';
+                }
             }
+
+            // If all checks passed, user can pay with ecash
+            if (canPayWithEcash) {
+                ecashTooltipText = '';
+            }
+
+            switch (offer.pricing) {
+                case Pricing.Absolute:
+                    pricing = 'sats';
+                    break;
+                case Pricing.SatsPerMin:
+                    pricing = 'sats/min';
+                    break;
+            }
+
+            const freelancerFilters = createPaymentFilters(offer, 'freelancer');
+            const satshootFilters = createPaymentFilters(offer, 'satshoot');
+
+            freelancerPaymentStore = createPaymentStore(freelancerFilters);
+            satshootPaymentStore = createPaymentStore(satshootFilters);
+
+            freelancerPaymentStore.totalPaid.subscribe((value) => {
+                freelancerPaid = value;
+            });
+
+            satshootPaymentStore.totalPaid.subscribe((value) => {
+                satshootPaid = value;
+            });
+
+            satshootShare = Math.floor((amount * offer.pledgeSplit) / 100);
+            freelancerShare = amount - satshootShare;
         }
-    }
+    });
 
     onDestroy(() => {
         if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.empty();
@@ -194,7 +194,7 @@
                     freelancerShareMillisats,
                     zapRequestRelays,
                     invoices,
-                    'offer'
+                    offer!
                 ).catch((err) => {
                     handleToast(
                         `An error occurred in fetching Freelancer's payment info: ${err.message || err}`,
@@ -210,7 +210,7 @@
                     satshootSumMillisats,
                     zapRequestRelays,
                     invoices,
-                    'ticket'
+                    ticket!
                 ).catch((err) => {
                     handleToast(
                         `An error occurred in fetching satshoot's payment info: ${err.message || err}`,
@@ -394,7 +394,7 @@
             throw new Error(`No Mint with enough balance to complete the payment!`);
         }
 
-        // TODO: Could offer payment with either Mint with enough balance here
+        // TODO: Could offer payment with multiple Mints with enough balance here
         const mintPromises = cashuPaymentInfo.mints.map(async (mintUrl) => {
             const mint = new CashuMint(mintUrl);
             return mint
@@ -441,7 +441,7 @@
             .cashuPay({
                 ...cashuPaymentInfo,
                 mints,
-                target: userEnum === UserEnum.Freelancer ? offer! : ticket,
+                target: userEnum === UserEnum.Freelancer ? offer! : ticket!,
                 recipientPubkey: pubkey,
                 amount: amountMillisats,
                 unit: 'msat',
@@ -470,12 +470,12 @@
             'a',
             userEnum === UserEnum.Freelancer
                 ? offer!.offerAddress
-                : ticket.ticketAddress,
+                : ticket!.ticketAddress,
         ]);
 
         nutzapEvent.tags.push([
             'e',
-            userEnum === UserEnum.Freelancer ? offer!.id : ticket.id,
+            userEnum === UserEnum.Freelancer ? offer!.id : ticket!.id,
         ]);
 
         nutzapEvent.recipientPubkey = pubkey;
@@ -582,13 +582,13 @@
         amountMillisats: number,
         zapRequestRelays: Map<UserEnum, string[]>,
         invoices: Map<UserEnum, InvoiceDetails>,
-        key: string
+        event: TicketEvent | OfferEvent
     ) {
         const zapConfig = await getZapConfiguration(pubkey);
         if (zapConfig) {
             // Pledges zap the Job rather than the Offer
             const invoice = await generateInvoice(
-                key === 'ticket' ? ticket : offer,
+                event,
                 amountMillisats,
                 zapConfig,
                 pubkey,
@@ -604,7 +604,7 @@
             invoices.set(userEnum, {
                 paymentRequest: invoice,
                 receiver: pubkey,
-                eventId: key === 'ticket' ? ticket.id : offer!.id,
+                eventId: event.id,
                 zapper: zapConfig.nostrPubkey,
             });
         } else {
@@ -877,7 +877,8 @@
                                     <i
                                         class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
                                         use:popup={cashuTooltip}
-                                    />
+                                    >
+                                    </i>
                                     <div data-popup="cashuTooltip">
                                         <Card>
                                             <p>{ecashTooltipText}</p>

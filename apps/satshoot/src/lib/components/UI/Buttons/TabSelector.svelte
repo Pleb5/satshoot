@@ -3,8 +3,12 @@
 
     type Tab = { id: any; label: string; icon?: string; notificationCount?: number };
 
-    export let tabs: Tab[];
-    export let selectedTab: number | null = null;
+    interface Props {
+        tabs: Tab[];
+        selectedTab?: number | null;
+    }
+
+    let { tabs, selectedTab = $bindable(null) }: Props = $props();
 
     const handleClick = (tab: Tab) => {
         if (tab.id !== selectedTab) {

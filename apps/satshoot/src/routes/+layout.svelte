@@ -79,6 +79,11 @@
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
     import drawerID, { DrawerIDs } from '$lib/stores/drawer';
     import AppMenu from '$lib/components/layout/AppMenu.svelte';
+    interface Props {
+        children?: import('svelte').Snippet;
+    }
+
+    let { children }: Props = $props();
 
     initializeStores();
 
@@ -92,65 +97,79 @@
         }
     });
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: filterList = searchQuery ? searchQuery.split(',') : [];
+    let searchQuery = $derived($page.url.searchParams.get('searchTerms'));
+    let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
 
     // on page reload if url contains searchTerms add them to svelte store
-    $: if (filterList.length > 0) {
-        searchTerms.set(new Set(filterList));
-    }
+    $effect(() => {
+        if (filterList.length > 0) {
+            searchTerms.set(new Set(filterList));
+        }
+    });
+
+    // For WoT tooltip
+    const popupWoT: PopupSettings = {
+        event: 'click',
+        target: 'popupWoT',
+        placement: 'right',
+    };
 
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    $: displayNav = $loggedIn;
+    let displayNav = $derived($loggedIn);
+    let followSubscription = $state<NDKSubscription>();
 
-    let followSubscription: NDKSubscription | undefined = undefined;
-
-    $: if ($retryConnection === 0) {
-        const t: ToastSettings = {
-            message: 'Could not reconnect to Relays!',
-            autohide: false,
-            action: {
-                label: 'Reload page',
-                response: () => {
-                    window.location.reload();
+    $effect(() => {
+        if ($retryConnection === 0) {
+            const t: ToastSettings = {
+                message: 'Could not reconnect to Relays!',
+                autohide: false,
+                action: {
+                    label: 'Reload page',
+                    response: () => {
+                        window.location.reload();
+                    },
                 },
-            },
-            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-        };
-        toastStore.trigger(t);
-    }
+                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
+            };
+            toastStore.trigger(t);
+        }
+    });
 
-    $: if ($wotUpdateFailed) {
-        const t: ToastSettings = {
-            message: 'Could not load Web of Trust!',
-            autohide: false,
-            action: {
-                label: 'Retry',
-                response: () => {
-                    window.location.reload();
+    $effect(() => {
+        if ($wotUpdateFailed) {
+            const t: ToastSettings = {
+                message: 'Could not load Web of Trust!',
+                autohide: false,
+                action: {
+                    label: 'Retry',
+                    response: () => {
+                        window.location.reload();
+                    },
                 },
-            },
-            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-        };
-        toastStore.trigger(t);
-    }
+                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
+            };
+            toastStore.trigger(t);
+        }
+    });
 
-    $: if ($wotUpdateNoResults) {
-        const t: ToastSettings = {
-            message: 'Could not load Your Web of Trust!',
-            autohide: false,
-            action: {
-                label: 'Retry',
-                response: () => {
-                    window.location.reload();
+    $effect(() => {
+        if ($wotUpdateNoResults) {
+            const t: ToastSettings = {
+                message: 'Could not load Your Web of Trust!',
+                autohide: false,
+                action: {
+                    label: 'Retry',
+                    response: () => {
+                        window.location.reload();
+                    },
                 },
-            },
-            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-        };
-        toastStore.trigger(t);
-    }
+                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
+            };
+            toastStore.trigger(t);
+        }
+    });
 
     async function restoreLogin() {
         // For UI feedback
@@ -385,7 +404,6 @@
         configureBasics();
 
         await $ndk.connect();
-        console.info('NDK connected')
 
         if (!$loggedIn) {
             restoreLogin();
@@ -408,138 +426,157 @@
     });
 
     // Check for app updates and offer reload option to user in a Toast
-    $: if ($updated) {
-        let toastId: string;
-        const t: ToastSettings = {
-            message: 'New version of the app is available!',
-            autohide: false,
-            action: {
-                label: 'Reload',
-                response: () => {
-                    // Reload new page circumventing browser cache
-                    location.href = location.pathname
-                        + '?v=' + new Date().getTime();
+    $effect(() => {
+        if ($updated) {
+            let toastId: string;
+            const t: ToastSettings = {
+                message: 'New version of the app is available!',
+                autohide: false,
+                action: {
+                    label: 'Reload',
+                    response: () => {
+                        // Reload new page circumventing browser cache
+                        location.href = location.pathname + '?v=' + new Date().getTime();
+                    },
                 },
-            },
-            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-        };
-        toastId = toastStore.trigger(t);
-    }
+                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
+            };
+            toastId = toastStore.trigger(t);
+        }
+    });
 
     // Install App promotion
-    let deferredInstallPrompt: BeforeInstallPromptEvent;
-    let showAppInstallPromotion = false;
-    $: if (showAppInstallPromotion) {
-        showAppInstallPromotion = false;
-        let toastId: string;
-        const t: ToastSettings = {
-            message: 'Install app for a better experience!',
-            autohide: false,
-            action: {
-                label: 'Install',
-                response: async () => {
-                    toastStore.close(toastId);
-                    deferredInstallPrompt.prompt();
-                    // Find out whether the user confirmed the installation or not
-                    const { outcome } = await deferredInstallPrompt.userChoice;
-                    // The deferredInstallPrompt can only be used once.
-                    deferredInstallPrompt = null;
-                    // Act on the user's choice
-                    if (outcome === 'accepted') {
-                        console.log('User accepted the install prompt.');
-                    } else if (outcome === 'dismissed') {
-                        console.log('User dismissed the install prompt');
-                    }
+    let deferredInstallPrompt = $state<BeforeInstallPromptEvent>();
+    let showAppInstallPromotion = $state(false);
+    $effect(() => {
+        if (showAppInstallPromotion) {
+            showAppInstallPromotion = false;
+            let toastId: string;
+            const t: ToastSettings = {
+                message: 'Install app for a better experience!',
+                autohide: false,
+                action: {
+                    label: 'Install',
+                    response: async () => {
+                        toastStore.close(toastId);
+                        deferredInstallPrompt.prompt();
+                        // Find out whether the user confirmed the installation or not
+                        const { outcome } = await deferredInstallPrompt.userChoice;
+                        // The deferredInstallPrompt can only be used once.
+                        deferredInstallPrompt = null;
+                        // Act on the user's choice
+                        if (outcome === 'accepted') {
+                            console.log('User accepted the install prompt.');
+                        } else if (outcome === 'dismissed') {
+                            console.log('User dismissed the install prompt');
+                        }
+                    },
                 },
-            },
-        };
-        toastId = toastStore.trigger(t);
-    }
+            };
+            toastId = toastStore.trigger(t);
+        }
+    });
 
     // ----- Notifications ------ //
-    $: if ($wotFilteredTickets && $myOffers) {
-        // console.log('all tickets change:', $wotFilteredTickets)
-        $wotFilteredTickets.forEach((t: TicketEvent) => {
-            $myOffers.forEach((o: OfferEvent) => {
-                if (o.referencedTicketDTag === t.dTag) {
-                    // If users offer won send that else just send relevant ticket
-                    if (t.acceptedOfferAddress === o.offerAddress) {
-                        sendNotification(o);
-                    } else {
-                        sendNotification(t);
+    $effect(() => {
+        if ($wotFilteredTickets && $myOffers) {
+            // console.log('all tickets change:', $wotFilteredTickets)
+            $wotFilteredTickets.forEach((t: TicketEvent) => {
+                $myOffers.forEach((o: OfferEvent) => {
+                    if (o.referencedTicketDTag === t.dTag) {
+                        // If users offer won send that else just send relevant ticket
+                        if (t.acceptedOfferAddress === o.offerAddress) {
+                            sendNotification(o);
+                        } else {
+                            sendNotification(t);
+                        }
                     }
-                }
-            });
-        });
-    }
-
-    $: if ($wotFilteredOffers && $myTickets) {
-        // console.log('all offers change:', $wotFilteredOffers)
-        $wotFilteredOffers.forEach((o: OfferEvent) => {
-            $myTickets.forEach((t: TicketEvent) => {
-                if (o.referencedTicketDTag === t.dTag) {
-                    sendNotification(o);
-                }
-            });
-        });
-    }
-
-    $: if ($wotFilteredMessageFeed && $currentUser) {
-        $wotFilteredMessageFeed.forEach((dm: NDKEvent) => {
-            // This is somewhat wasteful: If there was a nice way to attach
-            // a callback on uniquely new events in NDKEventStore-s
-            // We would not have to iterate over the whole array
-            if (dm.pubkey !== $currentUser.pubkey) {
-                sendNotification(dm);
-            }
-        });
-    }
-
-    $: if ($clientReviews) {
-        $clientReviews.forEach((r: ReviewEvent) => {
-            $myTickets.forEach((t: TicketEvent) => {
-                if (t.ticketAddress === r.reviewedEventAddress) {
-                    sendNotification(r);
-                }
-            });
-        });
-    }
-
-    $: if ($freelancerReviews) {
-        $freelancerReviews.forEach((r: ReviewEvent) => {
-            $myOffers.forEach((o: OfferEvent) => {
-                if (o.offerAddress === r.reviewedEventAddress) {
-                    sendNotification(r);
-                }
-            });
-        });
-    }
-
-    $: if ($filteredReceivedZaps && $currentUser) {
-        $filteredReceivedZaps.forEach((zap: NDKEvent) => {
-            sendNotification(zap);
-        });
-    }
-
-    $: if ($currentUser) {
-        if (!followSubscription) {
-            followSubscription = $ndk.subscribe(
-                {
-                    kinds: [NDKKind.KindScopedFollow],
-                    '#k': [NDKKind.FreelanceTicket.toString(), NDKKind.FreelanceOffer.toString()],
-                    '#p': [$currentUser.pubkey],
-                },
-                {
-                    closeOnEose: false,
-                }
-            );
-
-            followSubscription.on('event', (event) => {
-                sendNotification(event);
+                });
             });
         }
-    }
+    });
 
+    $effect(() => {
+        if ($wotFilteredOffers && $myTickets) {
+            // console.log('all offers change:', $wotFilteredOffers)
+            $wotFilteredOffers.forEach((o: OfferEvent) => {
+                $myTickets.forEach((t: TicketEvent) => {
+                    if (o.referencedTicketDTag === t.dTag) {
+                        sendNotification(o);
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($wotFilteredMessageFeed && $currentUser) {
+            $wotFilteredMessageFeed.forEach((dm: NDKEvent) => {
+                // This is somewhat wasteful: If there was a nice way to attach
+                // a callback on uniquely new events in NDKEventStore-s
+                // We would not have to iterate over the whole array
+                if (dm.pubkey !== $currentUser.pubkey) {
+                    sendNotification(dm);
+                }
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($clientReviews) {
+            $clientReviews.forEach((r: ReviewEvent) => {
+                $myTickets.forEach((t: TicketEvent) => {
+                    if (t.ticketAddress === r.reviewedEventAddress) {
+                        sendNotification(r);
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($freelancerReviews) {
+            $freelancerReviews.forEach((r: ReviewEvent) => {
+                $myOffers.forEach((o: OfferEvent) => {
+                    if (o.offerAddress === r.reviewedEventAddress) {
+                        sendNotification(r);
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($filteredReceivedZaps && $currentUser) {
+            $filteredReceivedZaps.forEach((zap: NDKEvent) => {
+                sendNotification(zap);
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($currentUser) {
+            if (!followSubscription) {
+                followSubscription = $ndk.subscribe(
+                    {
+                        kinds: [NDKKind.KindScopedFollow],
+                        '#k': [
+                            NDKKind.FreelanceTicket.toString(),
+                            NDKKind.FreelanceOffer.toString(),
+                        ],
+                        '#p': [$currentUser.pubkey],
+                    },
+                    {
+                        closeOnEose: false,
+                    }
+                );
+
+                followSubscription.on('event', (event) => {
+                    sendNotification(event);
+                });
+            }
+        }
+    });
 </script>
 
 <Toast zIndex="z-[1100]" />
@@ -550,20 +587,20 @@
     {/if}
 </Drawer>
 <AppShell slotSidebarLeft="bg-surface-100-800-token">
-    <svelte:fragment slot="header">
+    {#snippet header()}
         <Header on:restoreLogin={restoreLogin} />
-    </svelte:fragment>
+    {/snippet}
 
     <!-- Router Slot -->
-    <slot />
+    {@render children?.()}
 
-    <svelte:fragment slot="sidebarLeft">
+    {#snippet sidebarLeft()}
         <SidebarLeft hideSidebarLeft={!displayNav} />
-    </svelte:fragment>
+    {/snippet}
 
-    <svelte:fragment slot="footer">
+    {#snippet footer()}
         <Footer hideFooter={!displayNav} />
-    </svelte:fragment>
+    {/snippet}
 </AppShell>
 
 <!-- <AppHeader /> -->

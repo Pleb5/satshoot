@@ -5,36 +5,18 @@
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { onDestroy, onMount } from 'svelte';
     import JobCard from '../Jobs/JobCard.svelte';
-    import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
 
-    let newJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let jobList: Set<TicketEvent> = new Set();
+    // State
+    let newJobs = $state<NDKEventStore<ExtendedBaseType<TicketEvent>>>();
+    let jobList = $state<Set<TicketEvent>>(new Set());
 
-    $: if ($newJobs) {
-        // We just received a job
-        orderEventsChronologically($newJobs);
-        const newJobList = new Set(
-            $newJobs.filter((t: TicketEvent) => {
-                // New job check: if a job status is changed this removes not new jobs
-                const newJob = t.status === TicketStatus.New;
-                // wot is always at least 3 if there is a user logged in
-                // only update filter if other users are also present
-                const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
-
-                return newJob && partOfWot;
-            })
-        );
-
-        jobList = new Set(Array.from(newJobList).slice(0, 8));
-    }
-
-    onMount(() => {
+    // Initialize jobs subscription
+    $effect(() => {
         checkRelayConnections();
 
-        newJobs = $ndk.storeSubscribe(
+        const subscription = $ndk.storeSubscribe(
             {
                 kinds: [NDKKind.FreelanceTicket],
             },
@@ -46,11 +28,31 @@
             },
             TicketEvent
         );
-        $newJobs = $newJobs;
+
+        newJobs = subscription;
+
+        return () => {
+            subscription?.unsubscribe();
+        };
     });
 
-    onDestroy(() => {
-        if (newJobs) newJobs.unsubscribe();
+    // Update job list when new jobs arrive
+    $effect(() => {
+        if (!$newJobs) return;
+
+        orderEventsChronologically($newJobs);
+
+        const newJobList = $newJobs.filter((t: TicketEvent) => {
+            /// New job check: if a job status is changed this removes not new jobs
+            const newJob = t.status === TicketStatus.New;
+            // wot is always at least 3 if there is a user logged in
+            // only update filter if other users are also present
+            const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
+
+            return newJob && partOfWot;
+        });
+
+        jobList = new Set(newJobList.slice(0, 8));
     });
 
     const viewMoreBtnClasses =
@@ -72,17 +74,17 @@
                     {/each}
                 {:else}
                     <div class="p-4 space-y-4 w-full">
-                        <div class="placeholder animate-pulse" />
+                        <div class="placeholder animate-pulse"></div>
                         <div class="grid grid-cols-3 gap-8">
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
                         </div>
                         <div class="grid grid-cols-4 gap-4">
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
                         </div>
                     </div>
                 {/if}

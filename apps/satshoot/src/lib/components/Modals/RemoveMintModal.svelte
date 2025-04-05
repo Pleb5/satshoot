@@ -11,10 +11,14 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let mint: string = ''; // Relay URL to remove
-    export let onConfirm: () => Promise<void>; // Callback function to invoke on confirmation
+    interface Props {
+        mint: string; // URL of Mint to remove
+        onConfirm: () => Promise<void>; // Callback function to invoke on confirmation
+    }
 
-    let posting = false;
+    let { mint, onConfirm }: Props = $props();
+
+    let posting = $state(false);
 
     async function handleConfirm() {
         try {
@@ -34,7 +38,7 @@
     }
 </script>
 
-<Popup title="Confirm Removal of Relay">
+<Popup title="Confirm Removal of Mint">
     <div class="w-full flex flex-col gap-[15px]">
         <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px] mt-[10px]">
             <div
@@ -43,7 +47,7 @@
                 <p class="font-[600] text-xl text-white">
                     <span>Do you really want to remove </span>
                     <span class="text-xl text-red-500">{mint.replace('https://', '')}</span>
-                    <span>?<span/>
+                    <span>?<span></span>
                 </p>
             </div>
         </div>
@@ -55,7 +59,7 @@
                 on:click={handleConfirm}
                 disabled={posting}
             >
-                <i class="bx bx-trash" />
+                <i class="bx bx-trash"></i>
                 <span>Remove</span>
                 {#if posting}
                     <ProgressRadial

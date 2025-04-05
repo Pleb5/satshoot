@@ -1,8 +1,13 @@
 <script lang='ts'>
     import { goto } from '$app/navigation';
     
-    export let url = '';
-    export let external = false;
+    interface Props {
+        url?: string;
+        external?: boolean;
+        children?: import('svelte').Snippet;
+    }
+
+    let { url = '', external = false, children }: Props = $props();
     
     const handleClick = (e: Event) => {
         if (!external) {
@@ -15,9 +20,9 @@
 <a
     href={url}
     class="text-blue-600 hover:text-blue-800 hover:underline"
-    on:click={handleClick}
+    onclick={handleClick}
     rel={external ? 'noopener noreferrer' : ''}
     target={external ? '_blank' : ''}
 >
-    <slot></slot>
+    {@render children?.()}
 </a>

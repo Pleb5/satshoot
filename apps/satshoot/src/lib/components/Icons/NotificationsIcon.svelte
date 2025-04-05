@@ -1,7 +1,11 @@
 <script lang="ts">
 import { notifications } from '$lib/stores/notifications';
 
-    export let sizeClass = 'text-lg';
+    interface Props {
+        sizeClass?: string;
+    }
+
+    let { sizeClass = 'text-lg' }: Props = $props();
 
 </script>
 

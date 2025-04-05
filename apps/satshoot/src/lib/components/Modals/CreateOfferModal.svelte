@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import {
         getModalStore,
         getToastStore,
@@ -23,32 +25,38 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let ticket: TicketEvent;
-    export let offerToEdit: OfferEvent | undefined = undefined;
+    interface Props {
+        ticket: TicketEvent;
+        offerToEdit?: OfferEvent | undefined;
+    }
+
+    let { ticket, offerToEdit = undefined }: Props = $props();
 
     const ticketAddress = ticket.ticketAddress;
 
-    let validPledgePercent = true;
-    let pricingMethod: Pricing;
-    let amount = 0;
-    let pledgeSplit = 0;
+    let validPledgePercent = $state(true);
+    let pricingMethod: Pricing = $state(Pricing.Absolute);
+    let amount = $state(0);
+    let pledgeSplit = $state(0);
 
-    $: pledgedShare = Math.floor(amount * (pledgeSplit / 100));
-    $: freelancerShare = amount - pledgedShare;
+    let pledgedShare = $derived(Math.floor(amount * (pledgeSplit / 100)));
+    let freelancerShare = $derived(amount - pledgedShare);
 
-    let description = '';
-    let sendDm = true;
+    let description = $state('');
+    let sendDm = $state(true);
 
-    let errorText = '';
-    let posting = false;
+    let errorText = $state('');
+    let posting = $state(false);
 
-    $: if (pledgeSplit >= 0 && pledgeSplit <= 100) {
-        validPledgePercent = true;
-        errorText = '';
-    } else {
-        validPledgePercent = false;
-        errorText = 'Set a valid Pledge Split percent!';
-    }
+    run(() => {
+        if (pledgeSplit >= 0 && pledgeSplit <= 100) {
+            validPledgePercent = true;
+            errorText = '';
+        } else {
+            validPledgePercent = false;
+            errorText = 'Set a valid Pledge Split percent!';
+        }
+    });
 
     onMount(() => {
         if (offerToEdit) {

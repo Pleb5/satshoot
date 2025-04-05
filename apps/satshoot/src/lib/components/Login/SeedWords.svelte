@@ -4,11 +4,15 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
 
-    export let words: string[];
-    export let inputsDisabled = false;
-    export let showCopyButton = false;
+    interface Props {
+        words: string[];
+        inputsDisabled?: boolean;
+        showCopyButton?: boolean;
+    }
 
-    let copiedSeed = false;
+    let { words = $bindable(), inputsDisabled = false, showCopyButton = false }: Props = $props();
+
+    let copiedSeed = $state(false);
 
     function onCopySeed(): void {
         copiedSeed = true;
@@ -58,7 +62,7 @@
             classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
             grow
         >
-            <span use:clipboard={words.join(' ')} on:click={onCopySeed}>
+            <span class="w-full h-full" use:clipboard={words.join(' ')} onclick={onCopySeed}>
                 {copiedSeed ? 'Copied' : 'Dangerously Copy'}
             </span>
         </Button>

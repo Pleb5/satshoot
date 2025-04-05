@@ -38,7 +38,7 @@
     import CopyButton from '../UI/Buttons/CopyButton.svelte';
     import QrCodeModal from '../Modals/QRCodeModal.svelte';
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
 
     enum FollowStatus {
         isFollowing,
@@ -49,62 +49,79 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    export let user: NDKUser;
-    export let job: TicketEvent | undefined = undefined;
-
-    let userProfile: NDKUserProfile;
-    let followBtnText = 'Follow';
-    let followStatus = FollowStatus.none;
-
-    $: npub = user.npub;
-    $: profileHref = '/' + npub;
-    $: avatarImage = getRoboHashPicture(user.pubkey);
-
-    $: bech32ID = job ? job.encode() : '';
-    $: canEditProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
-
-    let showMessageButton = false;
-    $: if (job && job.pubkey !== $currentUser?.pubkey) {
-        showMessageButton = true;
-    } else {
-        showMessageButton = false;
+    interface Props {
+        user: NDKUser;
+        job?: TicketEvent | undefined;
     }
 
-    $: if (user) {
-        setProfile();
-    }
+    let { user, job = undefined }: Props = $props();
 
-    $: if (user.pubkey !== $currentUser?.pubkey) {
-        fetchFreelanceFollowEvent(user.pubkey);
-    }
+    // State
+    let userProfile = $state<NDKUserProfile | null>(null);
+    let processingFollowEvent = $state(false);
 
-    $: if ($currentUserFreelanceFollows) {
-        const isFollowing = $currentUserFreelanceFollows.has(user.pubkey);
-
-        if (isFollowing) {
-            followBtnText = 'Un-Follow';
-            followStatus = FollowStatus.isFollowing;
+    // Derived state
+    const npub = $derived(user.npub);
+    const profileHref = $derived('/' + npub);
+    const avatarImage = $derived.by(() => {
+        if (userProfile?.picture) {
+            return userProfile.picture;
         }
-    }
+        return getRoboHashPicture(user.pubkey)
+    });
+    const bech32ID = $derived(job ? job.encode() : '');
+    const canEditProfile = $derived($currentUser && $currentUser?.pubkey === user.pubkey);
+    const showMessageButton = $derived(!!job && job.pubkey !== $currentUser?.pubkey);
 
-    $: if ($freelanceFollowEvents.has(user.pubkey) && $currentUser) {
-        if (followStatus !== FollowStatus.isFollowing) {
-            const targetUserFollowEvent = $freelanceFollowEvents.get(user.pubkey)!;
+    const followStatus = $derived.by(() => {
+        if (!$currentUserFreelanceFollows || !$freelanceFollowEvents || !$currentUser) {
+            return FollowStatus.none;
+        }
 
+        // Check if current user is following this user
+        const isFollowing = $currentUserFreelanceFollows.has(user.pubkey);
+        if (isFollowing) {
+            return FollowStatus.isFollowing;
+        }
+
+        // Check if this user is following current user
+        const targetUserFollowEvent = $freelanceFollowEvents.get(user.pubkey);
+        if (targetUserFollowEvent) {
             // list of all users whom target user is following
             const follows = filterValidPTags(targetUserFollowEvent.tags);
-
-            const isFollowing = follows.includes($currentUser.pubkey);
             // Update the status if target user is following current user
             // but current user is not following target user
-            if (isFollowing) {
-                followBtnText = 'Follow Back';
-                followStatus = FollowStatus.beingFollowed;
+            if (follows.includes($currentUser.pubkey)) {
+                return FollowStatus.beingFollowed;
             }
         }
-    }
 
-    let processingFollowEvent = false;
+        return FollowStatus.none;
+    });
+
+    // Derived state for button text
+    const followBtnText = $derived.by(() => {
+        switch (followStatus) {
+            case FollowStatus.isFollowing:
+                return 'Un-Follow';
+            case FollowStatus.beingFollowed:
+                return 'Follow Back';
+            default:
+                return 'Follow';
+        }
+    });
+
+    $effect(() => {
+        if (user) {
+            setProfile();
+        }
+    });
+
+    $effect(() => {
+        if (user.pubkey !== $currentUser?.pubkey) {
+            fetchFreelanceFollowEvent(user.pubkey);
+        }
+    });
 
     async function follow() {
         if (!$currentUser) return;
@@ -197,9 +214,6 @@
                     map.set($currentUser.pubkey, newFollowEvent);
                     return map;
                 });
-
-                followBtnText = 'Follow';
-                followStatus = FollowStatus.none;
             })
             .catch((err) => {
                 console.error(err);
@@ -242,9 +256,6 @@
 
         if (profile) {
             userProfile = profileFromEvent(profile);
-            if (userProfile.picture) {
-                avatarImage = userProfile.picture;
-            }
         }
     }
 
@@ -265,13 +276,13 @@
     }
 
     function handleEditProfile() {
-        const currentPath = $page.url.pathname;
+        const currentPath = page.url.pathname;
         const profileSettingsUrl = new URL('/settings/profile', window.location.origin);
         profileSettingsUrl.searchParams.set('redirectPath', currentPath);
         goto(profileSettingsUrl);
     }
 
-    $: userInfoItems = [
+    let userInfoItems = $derived([
         {
             text: userProfile?.nip05,
             href: profileHref,
@@ -288,7 +299,7 @@
             isExternal: true,
             title: 'website address',
         },
-    ];
+    ]);
 
     const addressCopyBtnClasses =
         'bg-white dark:bg-brightGray rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
@@ -370,7 +381,7 @@
                         title="Edit Profile"
                         on:click={handleEditProfile}
                     >
-                        <i class="bx bxs-edit-alt" />
+                        <i class="bx bxs-edit-alt"></i>
                     </Button>
                 {/if}
 
@@ -383,7 +394,7 @@
                         title="Message (DM) user"
                         on:click={selectChatPartner}
                     >
-                        <i class="bx bxs-conversation" />
+                        <i class="bx bxs-conversation"></i>
                     </Button>
                 {/if}
                 <Button
@@ -393,7 +404,7 @@
                     title="Share (Copy profile page link)"
                     on:click={handleShare}
                 >
-                    <i class="bx bxs-share-alt" />
+                    <i class="bx bxs-share-alt"></i>
                 </Button>
             </div>
             <div class="w-full flex flex-col gap-[5px]">
@@ -414,7 +425,7 @@
                             });
                         }}
                     >
-                        <i class="bx bx-qr" />
+                        <i class="bx bx-qr"></i>
                     </Button>
                     <CopyButton
                         text={user.npub}
@@ -448,7 +459,7 @@
                             });
                         }}
                     >
-                        <i class="bx bx-qr" />
+                        <i class="bx bx-qr"></i>
                     </Button>
                     <CopyButton
                         text={nip19.nprofileEncode({ pubkey: user.pubkey })}

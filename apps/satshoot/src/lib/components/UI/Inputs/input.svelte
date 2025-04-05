@@ -2,48 +2,76 @@
     import { mergeClasses } from '$lib/utils/styles';
     import type { HTMLInputTypeAttribute } from 'svelte/elements';
 
-    export let id: string | null = null;
-    export let step: string | number | null | undefined = null;
-    export let min: string | number | null | undefined = null;
-    export let max: string | number | null | undefined = null;
-    export let type: HTMLInputTypeAttribute = 'text';
-    export let value: any;
-    export let placeholder = '';
-    export let classes = '';
-    export let grow = false;
-    export let fullWidth = false;
-    export let disabled = false;
-    export let readonly = false;
-    export let noBorder = false;
-    export let notRounded = false;
+    interface Props {
+        id?: string | null;
+        step?: string | number | null | undefined;
+        min?: string | number | null | undefined;
+        max?: string | number | null | undefined;
+        type?: HTMLInputTypeAttribute;
+        value: any;
+        placeholder?: string;
+        classes?: string;
+        grow?: boolean;
+        fullWidth?: boolean;
+        disabled?: boolean;
+        readonly?: boolean;
+        noBorder?: boolean;
+        notRounded?: boolean;
+        textarea?: boolean;
+        rows?: number | undefined | null;
+        minlength?: number | undefined | null;
+        onKeyPress?: (event: KeyboardEvent) => void; // Default is a no-op
+    }
 
-    export let textarea = false;
-    export let rows: number | undefined | null = null;
-    export let minlength: number | undefined | null = null;
-
-    export let onKeyPress: (event: KeyboardEvent) => void = () => {}; // Default is a no-op
+    let {
+        id = null,
+        step = null,
+        min = null,
+        max = null,
+        type = 'text',
+        value = $bindable(),
+        placeholder = '',
+        classes = '',
+        grow = false,
+        fullWidth = false,
+        disabled = false,
+        readonly = false,
+        noBorder = false,
+        notRounded = false,
+        textarea = false,
+        rows = null,
+        minlength = null,
+        onKeyPress = () => {},
+    }: Props = $props();
 
     const baseClasses =
         'transition ease duration-[0.3s] px-[10px] py-[5px] bg-black-50 focus:bg-black-100 ' +
         'outline-[0px] focus:outline-[0px] ';
 
     // Conditional classes for border and rounded corners
-    $: borderClasses = noBorder
-        ? 'border-[0px]'
-        : 'border-[2px] border-black-100 dark:border-white-100 focus:border-blue-500';
-    $: roundedClasses = notRounded ? 'rounded-[0px]' : 'rounded-[6px]';
-    $: growClasses = grow ? 'grow-[1]' : '';
-    $: fullWidthClasses = fullWidth ? 'w-full' : '';
+    let borderClasses = $derived(
+        noBorder
+            ? 'border-[0px]'
+            : 'border-[2px] border-black-100 dark:border-white-100 focus:border-blue-500'
+    );
+    let roundedClasses = $derived(notRounded ? 'rounded-[0px]' : 'rounded-[6px]');
+    let growClasses = $derived(grow ? 'grow-[1]' : '');
+    let fullWidthClasses = $derived(fullWidth ? 'w-full' : '');
 
-    $: combinedClasses = `${baseClasses} ${borderClasses} ${roundedClasses} ${growClasses} ${fullWidthClasses}`;
-    $: finalClasses = mergeClasses(combinedClasses, classes);
+    let combinedClasses = $derived(
+        `${baseClasses} ${borderClasses} ${roundedClasses} ${growClasses} ${fullWidthClasses}`
+    );
+    let finalClasses = $derived(mergeClasses(combinedClasses, classes));
 
-    let inputElement: HTMLInputElement;
+    // Element reference
+    let inputElement = $state<HTMLInputElement | HTMLTextAreaElement>();
 
-    // Dynamically set the type of the input
-    $: if (inputElement) {
-        inputElement.type = type;
-    }
+    // Effect to handle input type changes
+    $effect(() => {
+        if (inputElement && !textarea && inputElement instanceof HTMLInputElement) {
+            inputElement.type = type;
+        }
+    });
 </script>
 
 {#if textarea}
@@ -56,7 +84,8 @@
         {readonly}
         class={finalClasses}
         bind:value
-    />
+        bind:this={inputElement}
+    ></textarea>
 {:else if type === 'number'}
     <input
         {id}
@@ -70,7 +99,7 @@
         class={finalClasses}
         bind:value
         bind:this={inputElement}
-        on:keydown={onKeyPress}
+        onkeydown={onKeyPress}
     />
 {:else}
     <input
@@ -81,6 +110,6 @@
         class={finalClasses}
         bind:value
         bind:this={inputElement}
-        on:keydown={onKeyPress}
+        onkeydown={onKeyPress}
     />
 {/if}

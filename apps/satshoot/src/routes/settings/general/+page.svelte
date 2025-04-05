@@ -21,9 +21,9 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    let nsec = '';
-    let showing = false;
-    let copiedNsec = false;
+    let nsec = $state('');
+    let showing = $state(false);
+    let copiedNsec = $state(false);
 
     async function clearCache() {
         const modal: ModalSettings = {
@@ -33,31 +33,33 @@
         modalStore.trigger(modal);
     }
 
-    $: if (browser && Number($browserNotificationsEnabled) >= 0) {
-        // If there is no permission for notifications yet, ask for it
-        // If it is denied then return and turn notifications off
-        if (Notification.permission !== 'granted') {
-            Notification.requestPermission().then((permission: NotificationPermission) => {
-                if (permission !== 'granted') {
-                    browserNotificationsEnabled.set(false);
-                    const t: ToastSettings = {
-                        message: `
-                        <p>Notifications Settings are Disabled in the Browser!</p>
-                        <p>
-                        <span>Click small icon </span>
-                        <span> left of browser search bar to enable this setting!</span>
-                        </p>
-                        `,
-                        autohide: false,
-                    };
-                    toastStore.clear();
-                    toastStore.trigger(t);
-                }
-                // User enabled notification settings, set user choice in local storage too
-                browserNotificationsEnabled.set($browserNotificationsEnabled);
-            });
+    $effect(() => {
+        if (browser && Number($browserNotificationsEnabled) >= 0) {
+            // If there is no permission for notifications yet, ask for it
+            // If it is denied then return and turn notifications off
+            if (Notification.permission !== 'granted') {
+                Notification.requestPermission().then((permission: NotificationPermission) => {
+                    if (permission !== 'granted') {
+                        browserNotificationsEnabled.set(false);
+                        const t: ToastSettings = {
+                            message: `
+                            <p>Notifications Settings are Disabled in the Browser!</p>
+                            <p>
+                            <span>Click small icon </span>
+                            <span> left of browser search bar to enable this setting!</span>
+                            </p>
+                            `,
+                            autohide: false,
+                        };
+                        toastStore.clear();
+                        toastStore.trigger(t);
+                    }
+                    // User enabled notification settings, set user choice in local storage too
+                    browserNotificationsEnabled.set($browserNotificationsEnabled);
+                });
+            }
         }
-    }
+    });
 
     function showPrivateKey() {
         showing = !showing;
@@ -123,14 +125,12 @@
                 />
                 <i
                     class="bx bx-check hidden peer-checked:block absolute pointer-events-none text-white"
-                />
+                ></i>
             </div>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
             <div class="flex flex-row gap-[5px] grow-[1]">
-                <label class="font-[500]" for="attach-satshoot-wot">
-                    Browser Notifications
-                </label>
+                <label class="font-[500]" for="attach-satshoot-wot"> Browser Notifications </label>
             </div>
             <div class="flex flex-row justify-center items-center relative">
                 <input
@@ -146,7 +146,7 @@
                 <button
                     class="w-full flex justify-center items-center gap-[10px] bg-blue-500 text-white font-[500] py-[8px] px-[16px] rounded-[4px] hover:bg-blue-600 transition-colors"
                     type="button"
-                    on:click={showPrivateKey}
+                    onclick={showPrivateKey}
                 >
                     <EyeIcon show={showing} />
                     <span>Show Private Key (nsec)</span>
@@ -158,11 +158,8 @@
                                 '...' +
                                 nsec.substring(nsec.length - 11, nsec.length - 1)}
                         </div>
-                        <Button
-                            on:click={onCopyNsec}
-                            classes="bg-red-500 hover:bg-red-600 transition-colors"
-                        >
-                            <span use:clipboard={nsec}>
+                        <Button classes="bg-red-500 hover:bg-red-600 transition-colors">
+                            <span class="w-full h-full" use:clipboard={nsec} onclick={onCopyNsec}>
                                 {copiedNsec ? 'Copied!' : 'Dangerously Copy'}
                             </span>
                         </Button>

@@ -1,15 +1,23 @@
 <script lang="ts">
     import { mergeClasses } from '$lib/utils/styles';
+    import { createEventDispatcher } from 'svelte';
 
-    export let classes = '';
-    export let actAsButton = false;
+    interface Props {
+        classes?: string;
+        actAsButton?: boolean;
+        children?: import('svelte').Snippet;
+    }
+
+    const dispatch = createEventDispatcher();
+
+    let { classes = '', actAsButton = false, children }: Props = $props();
 
     const defaultClasses =
         'w-full flex flex-col gap-[5px] rounded-[8px] p-[15px] ' +
         'shadow-subtle bg-white dark:bg-brightGray';
 
     // Merge defaultClasses and classes, ensuring classes take precedence
-    $: finalClasses = mergeClasses(defaultClasses, classes);
+    let finalClasses = $derived(mergeClasses(defaultClasses, classes));
 
     function handleKeyDown(event: KeyboardEvent) {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -17,14 +25,24 @@
             event.currentTarget?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         }
     }
+
+    function forwardClick(event: MouseEvent) {
+        dispatch('click', { detail: event });
+    }
 </script>
 
 {#if actAsButton}
-    <div class={finalClasses} role="button" tabindex={0} on:click on:keydown={handleKeyDown}>
-        <slot></slot>
+    <div
+        class={finalClasses}
+        role="button"
+        tabindex={0}
+        onclick={forwardClick}
+        onkeydown={handleKeyDown}
+    >
+        {@render children?.()}
     </div>
 {:else}
     <div class={finalClasses}>
-        <slot></slot>
+        {@render children?.()}
     </div>
 {/if}

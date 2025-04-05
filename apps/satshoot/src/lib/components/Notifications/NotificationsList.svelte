@@ -3,15 +3,19 @@
     import type { NDKEvent } from '@nostr-dev-kit/ndk';
     import SectionSeparator from './SectionSeparator.svelte';
 
-    export let notifications: NDKEvent[];
-    export let NotificationComponent: any;
+    interface Props {
+        notifications: NDKEvent[];
+        NotificationComponent: any;
+    }
 
-    $: newNotifications = notifications.filter(
+    let { notifications, NotificationComponent }: Props = $props();
+
+    let newNotifications = $derived(notifications.filter(
         (notification) => !$readNotifications.has(notification.id)
-    );
-    $: oldNotifications = notifications.filter((notification) =>
+    ));
+    let oldNotifications = $derived(notifications.filter((notification) =>
         $readNotifications.has(notification.id)
-    );
+    ));
 </script>
 
 {#if notifications.length > 0}
@@ -20,7 +24,7 @@
 
         <div class="w-full flex flex-col gap-[10px]">
             {#each newNotifications as notification (notification.id)}
-                <svelte:component this={NotificationComponent} {notification} />
+                <NotificationComponent {notification} />
             {/each}
         </div>
     {/if}
@@ -30,7 +34,7 @@
 
         <div class="w-full flex flex-col gap-[10px]">
             {#each oldNotifications as notification (notification.id)}
-                <svelte:component this={NotificationComponent} {notification} />
+                <NotificationComponent {notification} />
             {/each}
         </div>
     {/if}

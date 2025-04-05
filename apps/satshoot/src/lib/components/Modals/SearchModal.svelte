@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { searchTerms } from '$lib/stores/search';
     import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
     import Button from '../UI/Buttons/Button.svelte';
@@ -10,14 +10,14 @@
     const modalStore = getModalStore();
     const toastStore = getToastStore();
 
-    let searchInput = '';
+    let searchInput = $state('');
 
     function handleRemoveTerm(term: string) {
         const newArray = Array.from($searchTerms).filter((t) => t !== term);
         searchTerms.set(new Set(newArray));
 
         // Get the current query parameters
-        const url = new URL($page.url);
+        const url = new URL(page.url);
 
         if (newArray.length === 0) {
             url.searchParams.delete('searchTerms');
@@ -59,7 +59,7 @@
         }
 
         // Get the current query parameters
-        const url = new URL($page.url);
+        const url = new URL(page.url);
         // Add or update the query parameter
         url.searchParams.set('searchTerms', Array.from($searchTerms).join(','));
         // Navigate to the updated
@@ -104,10 +104,10 @@
                                 />
                             </div>
                             <Button on:click={handleAdd}>
-                                <i class="bx bx-plus" />
+                                <i class="bx bx-plus"></i>
                             </Button>
                             <Button on:click={handleSearch}>
-                                <i class="bx bx-search" />
+                                <i class="bx bx-search"></i>
                             </Button>
                         </div>
                         <div class="w-full flex flex-col gap-[5px]">
@@ -125,9 +125,10 @@
                                         </p>
                                         <button
                                             class="transition ease duration-[0.2s] p-[5px] mr-[-5px] rounded-[4px] group-hover:text-white"
-                                            on:click={() => handleRemoveTerm(term)}
+                                            aria-label="remove-search-term"
+                                            onclick={() => handleRemoveTerm(term)}
                                         >
-                                            <i class="bx bx-x" />
+                                            <i class="bx bx-x"></i>
                                         </button>
                                     </div>
                                 {/each}

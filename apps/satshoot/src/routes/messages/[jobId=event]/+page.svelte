@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';
@@ -26,15 +26,95 @@
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
 
+    interface Contact {
+        person: NDKUser;
+        selected: boolean;
+    }
+
     const toastStore = getToastStore();
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: searchTerms = searchQuery ? searchQuery.split(',') : [];
+    // ======================
+    // 1. URL & Search Params
+    // ======================
+    const searchQuery = $derived(page.url.searchParams.get('searchTerms'));
+    const searchTerms = $derived(searchQuery ? searchQuery.split(',') : []);
+    const jobAddress = idFromNaddr(page.params.jobId);
+    const relaysFromURL = relaysFromNaddr(page.params.jobId).split(',');
+    let titleLink = '/' + page.params.jobId;
+    let jobTitle = $state('Job: ?');
 
-    const jobAddress = idFromNaddr($page.params.jobId);
-    const relaysFromURL = relaysFromNaddr($page.params.jobId).split(',');
-    let titleLink = '/' + $page.params.jobId;
-    let jobTitle: string = 'Job: ?';
+    // ======================
+    // 2. State Definitions
+    // ======================
+    let job = $state<TicketEvent | null>(null);
+    let myJob = $state(false);
+    let initialized = $state(false);
+    let currentMessage = $state('');
+    let winner = $state(''); // Pubkey of winning offer maker
+    let contactsOpen = $state(false);
+    let disablePrompt = $state<boolean>();
+    let hideChat = $state(false);
+    let hideSearchIcon = $state(false);
+
+    // DOM Elements
+    let elemPage = $state<HTMLElement>();
+    let elemChat = $state<HTMLElement>();
+    let elemHeader = $state<HTMLElement>();
+    let elemInput = $state<HTMLElement>();
+    let elemContactsMobileView = $state<HTMLElement>();
+
+    // Contact List
+    let people = $state<Contact[]>([]);
+    let currentPerson = $state<NDKUser>();
+
+    // Message Stores
+    let jobMessages = $state<NDKEventStore<NDKEvent>>(); // Messages related to the job
+    let offerStore = $state<NDKEventStore<ExtendedBaseType<OfferEvent>>>();
+
+    // ======================
+    // 3. Derived Values
+    // ======================
+    const chatHeight = $derived.by(() => {
+        if (elemPage && elemHeader && elemInput && elemContactsMobileView) {
+            const paddingsAndMargins = elemContactsMobileView.offsetHeight ? 95 : 80;
+            return (
+                elemPage.offsetHeight -
+                elemHeader.offsetHeight -
+                elemInput.offsetHeight -
+                elemContactsMobileView.offsetHeight -
+                paddingsAndMargins
+            );
+        }
+    });
+
+    const wotFilteredMessages = $derived.by(() => {
+        if (!$currentUser || !$jobMessages?.length) return [];
+        return $jobMessages.filter((message) => {
+            const peer = peerFromMessage(message);
+            return peer && $wot?.size > 2 && $wot.has(peer);
+        });
+    });
+
+    const currentPersonMessages = $derived.by(() => {
+        if (!currentPerson || !wotFilteredMessages.length) return [];
+        return wotFilteredMessages.filter((message) => {
+            return (
+                message.pubkey === currentPerson!.pubkey ||
+                message.tagValue('p') === currentPerson!.pubkey
+            );
+        });
+    });
+
+    const orderedMessages = $derived.by(() => {
+        const copy = [...currentPersonMessages];
+        orderEventsChronologically(copy, true);
+        return copy;
+    });
+
+    // ======================
+    // 4. Initial Setup
+    // ======================
+    // Add relays from URL
     if (relaysFromURL.length > 0) {
         relaysFromURL.forEach((relayURL: string) => {
             if (relayURL) {
@@ -43,66 +123,148 @@
         });
     }
 
+    // Define offers filter
     let offersFilter: NDKFilter<NDKKind.FreelanceOffer> = {
         kinds: [NDKKind.FreelanceOffer],
         '#a': [jobAddress],
     };
 
-    let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
+    // ======================
+    // 5. Effect Handlers
+    // ======================
+    // Handle adding people from offers
+    $effect(() => {
+        if (myJob && $offerStore) {
+            $offerStore.forEach((offer) => {
+                if ($wot?.size > 1 && $wot.has(offer.pubkey)) {
+                    addPerson(offer.pubkey);
+                }
+            });
+        }
+    });
 
-    let job: TicketEvent | null = null;
-    let myJob = false;
+    // Handle adding people from messages
+    $effect(() => {
+        if ($wot?.size > 2) {
+            wotFilteredMessages.forEach((message) => {
+                const peer = peerFromMessage(message);
+                if (peer && $wot.has(peer)) addPerson(peer);
+            });
+        }
+    });
 
-    let initialized = false;
+    // Handle scrolling when messages change
+    $effect(() => {
+        if (orderedMessages.length && elemChat) {
+            setTimeout(() => scrollChatBottom('smooth'), 0);
+        }
+    });
 
-    interface Contact {
-        person: NDKUser;
-        selected: boolean;
+    // Initial setup effect
+    $effect(() => {
+        if (!$currentUser || !job || initialized) return;
+
+        initialized = true;
+
+        // START MESSAGE STORE SUB
+        const messageFilters = createMessageFilters();
+        jobMessages = $ndk.storeSubscribe(messageFilters, getSubscriptionOptions());
+
+        if ($currentUser.pubkey !== job.pubkey) {
+            initializeAsNonOwner();
+        } else {
+            initializeAsOwner();
+        }
+    });
+
+    // UI state effects
+    $effect(() => {
+        if (browser) {
+            if (contactsOpen) {
+                onContactListExpanded();
+            } else {
+                onContactListCollapsed();
+            }
+        }
+    });
+
+    // ======================
+    // 6. Helper Functions
+    // ======================
+
+    function createMessageFilters(): NDKFilter<NDKKind.EncryptedDirectMessage>[] {
+        return [
+            {
+                kinds: [NDKKind.EncryptedDirectMessage],
+                '#p': [$currentUser!.pubkey],
+                '#t': [jobAddress],
+                limit: 50_000,
+            },
+            {
+                kinds: [NDKKind.EncryptedDirectMessage],
+                authors: [$currentUser!.pubkey],
+                '#t': [jobAddress],
+                limit: 50_000,
+            },
+        ];
     }
 
-    let elemPage: HTMLElement;
-    let elemChat: HTMLElement;
-    let elemHeader: HTMLElement;
-    let elemInput: HTMLElement;
-    let elemContactsMobileView: HTMLElement;
-
-    let chatHeight: number;
-
-    let contactsOpen = false;
-    let hideChat: boolean;
-    let disablePrompt: boolean;
-    let hideSearchIcon: boolean;
-
-    let currentMessage: string = '';
-
-    let searchInput = '';
-
-    // Contact List
-    let people: Contact[] = [];
-    let currentPerson: NDKUser;
-
-    // The pubkey of the person who made the winning Offer
-    let winner = '';
-
-    // Messages related to the job
-    let jobMessages: NDKEventStore<NDKEvent>;
-
-    // Filtered messages by person AND searchText
-    let filteredMessageFeed: NDKEvent[] = [];
-
-    // For some reason, eslint thinks ScrollBehavior is undefined...
-    // eslint-disable-next-line no-undef
-    function scrollChatBottom(behavior?: ScrollBehavior): void {
-        elemChat.scrollTo({ top: elemChat.scrollHeight, behavior });
+    function getSubscriptionOptions() {
+        return {
+            autoStart: true,
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            closeOnEose: false,
+            groupable: false,
+        };
     }
 
-    function isFirstMessageOfDay(messages: NDKEvent[], index: number): boolean {
-        if (index === 0) return true;
-        const currentDate = new Date(messages[index].created_at * 1000);
-        const previousDate = new Date(messages[index - 1].created_at * 1000);
-        return currentDate.toDateString() !== previousDate.toDateString();
+    // Invoke this function when it's not user's job
+    function initializeAsNonOwner() {
+        addPerson(job!.pubkey);
+        const contact = people.find((c) => c.person.pubkey === job!.pubkey);
+        if (contact) selectCurrentPerson(contact);
     }
 
+    function initializeAsOwner() {
+        myJob = true;
+        handleWinningOffer();
+        handlePreselectedContacts();
+    }
+
+    function handleWinningOffer() {
+        if (job!.acceptedOfferAddress) {
+            $ndk.fetchEvent(job!.acceptedOfferAddress).then((offer) => {
+                if (offer) winner = offer.pubkey;
+            });
+        }
+    }
+
+    function handlePreselectedContacts() {
+        if ($offerMakerToSelect) {
+            handleOfferMakerSelection();
+        } else if ($selectedPerson?.split('$')[1] === jobAddress) {
+            handleSavedSelection();
+        }
+    }
+
+    function handleOfferMakerSelection() {
+        addPerson($offerMakerToSelect);
+        const contact = people.find((c) => c.person.pubkey === $offerMakerToSelect);
+        if (contact) selectCurrentPerson(contact);
+        $offerMakerToSelect = '';
+    }
+
+    function handleSavedSelection() {
+        const pubkey = $selectedPerson.split('$')[0];
+        addPerson(pubkey);
+        const contact = people.find((c) => c.person.pubkey === pubkey);
+        if (contact) selectCurrentPerson(contact);
+    }
+
+    // ======================
+    // 7. Core Functions
+    // ======================
+    // Message Functions
     async function sendMessage() {
         if (currentMessage) {
             if (!currentPerson) {
@@ -140,12 +302,9 @@
         }
     }
 
+    // Contact Management
     async function addPerson(pubkey: string) {
-        for (const contact of people) {
-            if (contact.person.pubkey === pubkey) {
-                return;
-            }
-        }
+        if (people.some((c) => c.person.pubkey === pubkey)) return;
 
         // We havent added this person yet
         const person = $ndk.getUser({ pubkey: pubkey });
@@ -182,9 +341,29 @@
             contactsOpen = false;
             hideChat = false;
             disablePrompt = false;
-
-            filteredMessageFeed = [];
         }
+    }
+
+    // UI Helpers
+    function scrollChatBottom(behavior?: ScrollBehavior): void {
+        elemChat?.scrollTo({ top: elemChat.scrollHeight, behavior });
+    }
+
+    function isFirstMessageOfDay(messages: NDKEvent[], index: number): boolean {
+        if (index === 0) return true;
+
+        const currentMessage = messages[index];
+        const previousMessage = messages[index - 1];
+
+        // Check if messages exist and have created_at timestamps
+        if (!currentMessage?.created_at || !previousMessage?.created_at) {
+            return false;
+        }
+
+        const currentDate = new Date(currentMessage.created_at * 1000);
+        const previousDate = new Date(previousMessage.created_at * 1000);
+
+        return currentDate.toDateString() !== previousDate.toDateString();
     }
 
     function onContactListExpanded() {
@@ -194,28 +373,10 @@
         hideSearchIcon = true;
     }
 
-    async function onContactListCOllapsed() {
+    function onContactListCollapsed() {
         hideChat = false;
         disablePrompt = false;
         hideSearchIcon = false;
-    }
-
-    $: if (elemPage && elemHeader && elemInput) {
-    }
-
-    async function calculateHeights() {
-        //
-    }
-
-    $: if (elemPage && elemHeader && elemInput && elemContactsMobileView) {
-        const paddingsAndMargins = elemContactsMobileView.offsetHeight ? 95 : 80;
-
-        chatHeight =
-            elemPage.offsetHeight -
-            elemHeader.offsetHeight -
-            elemInput.offsetHeight -
-            elemContactsMobileView.offsetHeight -
-            paddingsAndMargins;
     }
 
     function peerFromMessage(message: NDKEvent): string | undefined {
@@ -225,166 +386,26 @@
         return peerPubkey;
     }
 
-    // New offer arrived: Add person if offer maker is part of WoT
-    $: if (myJob && $offerStore) {
-        $offerStore.forEach((offer: OfferEvent) => {
-            if ($wot?.size > 1 && $wot.has(offer.pubkey)) {
-                addPerson(offer.pubkey);
-            }
-        });
-    }
-
-    // New message arrived that is related to the job
-    // If part of wot add message peer to Contacts
-    // Render new message if there is a current chat partner selected
-    $: if ($currentUser && $jobMessages?.length > 0) {
-        $jobMessages = $jobMessages.filter((message: NDKEvent) => {
-            const peer = peerFromMessage(message);
-
-            // We always should have a peer defined
-            if (!peer) return false;
-
-            if ($wot?.size > 2 && $wot.has(peer)) {
-                // Only try to add person if part of wot
-                addPerson(peer);
-                // Message can be displayed: It is related to job
-                // AND it is related to user AND the peer is part of WoT
-                return true;
-            }
-
-            return false;
-        });
-
-        if (currentPerson) {
-            // Only render conversation with current person
-            filteredMessageFeed = $jobMessages.filter((message: NDKEvent) => {
-                const senderIsCurrentPerson = message.pubkey === currentPerson.pubkey;
-                const recipientIsCurrentPerson =
-                    (message.tagValue('p') as string) === currentPerson.pubkey;
-                const relatedToCurrentPerson = senderIsCurrentPerson || recipientIsCurrentPerson;
-
-                return relatedToCurrentPerson;
-            });
-
-            // We need messages in chronological order
-            orderEventsChronologically(filteredMessageFeed, true);
-
-            // Smooth scroll to bottom
-            // Timeout prevents race condition
-            if (elemChat) {
-                setTimeout(() => {
-                    scrollChatBottom('smooth');
-                }, 0);
-            }
-        }
-    }
-
-    let innerHeight = 0;
-    let innerWidth = 0;
-    $: if (innerHeight || innerWidth) {
-        calculateHeights();
-    }
-
-    $: if ($currentUser && job && !initialized) {
-        initialized = true;
-        // START MESSAGE STORE SUB
-        const receivedMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
-            kinds: [NDKKind.EncryptedDirectMessage],
-            '#p': [$currentUser.pubkey],
-            '#t': [jobAddress],
-            limit: 50_000,
-        };
-
-        const sentMessageFilter: NDKFilter<NDKKind.EncryptedDirectMessage> = {
-            kinds: [NDKKind.EncryptedDirectMessage],
-            // set to user as soon as login happens
-            authors: [$currentUser.pubkey],
-            '#t': [jobAddress],
-            limit: 50_000,
-        };
-        jobMessages = $ndk.storeSubscribe([receivedMessageFilter, sentMessageFilter], {
-            autoStart: true,
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            closeOnEose: false,
-            groupable: false,
-        });
-
-        // Add the right people to the contact list and select current chat partner
-        if (($currentUser as NDKUser).pubkey !== job.pubkey) {
-            // Not the users job
-            console.log('NOT my job, adding job holder to persons...');
-            addPerson(job.pubkey);
-            const contact: Contact | undefined = people.find(
-                (c: Contact) => c.person.pubkey === job!.pubkey
-            );
-
-            if (contact) selectCurrentPerson(contact);
-        } else {
-            // This is the users job
-            myJob = true;
-            console.log('this is my job');
-            if (job.acceptedOfferAddress) {
-                $ndk.fetchEvent(job.acceptedOfferAddress).then((offer) => {
-                    if (offer) {
-                        winner = offer.pubkey;
-                    }
-                });
-            }
-
-            if ($offerMakerToSelect) {
-                console.log('offerMakerToSelect');
-                addPerson($offerMakerToSelect);
-                const contact: Contact | undefined = people.find(
-                    (c: Contact) => c.person.pubkey == $offerMakerToSelect
-                );
-                // console.log('contact', contact)
-
-                if (contact) selectCurrentPerson(contact);
-
-                $offerMakerToSelect = '';
-            } else if ($selectedPerson && $selectedPerson.split('$')[1] == jobAddress) {
-                const pubkey = $selectedPerson.split('$')[0];
-                addPerson(pubkey);
-                const contact: Contact | undefined = people.find(
-                    (c: Contact) => c.person.pubkey == pubkey
-                );
-
-                if (contact) selectCurrentPerson(contact);
-            }
-        }
-    }
-
-    $: if (browser) {
-        if (contactsOpen) {
-            onContactListExpanded();
-        } else if (!contactsOpen) {
-            onContactListCOllapsed();
-        }
-    }
-
     onMount(async () => {
         elemPage = document.querySelector('#page') as HTMLElement;
         onContactListExpanded();
-        console.log('fetch job...');
+
         const jobEvent = await $ndk.fetchEvent(
             jobAddress,
             // Try to fetch latest state of the job
             // but fall back to cache
             { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
         );
+
         if (jobEvent) {
             job = TicketEvent.from(jobEvent);
-            jobTitle = job.title.length < 21
-                ? job.title
-                : job.title.substring(0, 20) + '...'
+            jobTitle = job.title.length < 21 ? job.title : job.title.substring(0, 20) + '...';
 
             offerStore = $ndk.storeSubscribe<OfferEvent>(
                 offersFilter,
                 { closeOnEose: false, cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST },
                 OfferEvent
             );
-            // Fix chatHeight, recalc only on window resize or search text on mobile
-            calculateHeights();
         }
     });
 
@@ -458,7 +479,7 @@
                                     class="flex flex-col items-center bg-transparent relative"
                                 >
                                     <AccordionItem bind:open={contactsOpen}>
-                                        <svelte:fragment slot="lead">
+                                        {#snippet lead()}
                                             {#if currentPerson}
                                                 <a href={'/' + currentPerson.npub}>
                                                     <Avatar
@@ -470,12 +491,12 @@
                                                     />
                                                 </a>
                                             {/if}
-                                        </svelte:fragment>
-                                        <svelte:fragment slot="summary">
+                                        {/snippet}
+                                        {#snippet summary()}
                                             {#if currentPerson}
                                                 <span
                                                     class="flex-1 text-start
-                                                    {currentPerson.pubkey === winner
+                                                        {currentPerson.pubkey === winner
                                                         ? 'text-warning-400 font-bold'
                                                         : ''}"
                                                 >
@@ -487,8 +508,8 @@
                                             {:else}
                                                 <div>No Contacts</div>
                                             {/if}
-                                        </svelte:fragment>
-                                        <svelte:fragment slot="content">
+                                        {/snippet}
+                                        {#snippet content()}
                                             <!-- Absolutely positioned content -->
                                             <div
                                                 class="absolute top-[70px] left-0 right-0 overflow-hidden z-[100]"
@@ -503,10 +524,10 @@
                                                             <button
                                                                 type="button"
                                                                 class="btn w-full flex items-center space-x-4
-                                                                {contact.selected
+                                                                    {contact.selected
                                                                     ? 'variant-filled-primary'
                                                                     : 'bg-surface-hover-token'}"
-                                                                on:click={() =>
+                                                                onclick={() =>
                                                                     selectCurrentPerson(contact)}
                                                             >
                                                                 <Avatar
@@ -519,7 +540,7 @@
                                                                 />
                                                                 <span
                                                                     class="flex-1 text-start
-                                                                    {contact.person.pubkey ===
+                                                                        {contact.person.pubkey ===
                                                                     winner
                                                                         ? 'text-warning-400 font-bold'
                                                                         : ''}"
@@ -535,7 +556,7 @@
                                                     </Card>
                                                 </div>
                                             </div>
-                                        </svelte:fragment>
+                                        {/snippet}
                                     </AccordionItem>
                                 </Accordion>
                             </Card>
@@ -549,30 +570,30 @@
                                 style="height: {chatHeight}px;"
                             >
                                 {#if $currentUser}
-                                    {#each filteredMessageFeed as message, index (message.id)}
+                                    {#each orderedMessages as message, index (message.id)}
                                         <MessageCard
                                             avatarRight={message.pubkey !== $currentUser.pubkey}
                                             {message}
                                             {searchTerms}
                                             isFirstOfDay={isFirstMessageOfDay(
-                                                filteredMessageFeed,
+                                                orderedMessages,
                                                 index
                                             )}
                                         />
                                     {/each}
                                 {:else}
                                     <div class="p-4 space-y-4">
-                                        <div class="placeholder animate-pulse" />
+                                        <div class="placeholder animate-pulse"></div>
                                         <div class="grid grid-cols-3 gap-8">
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
+                                            <div class="placeholder animate-pulse"></div>
+                                            <div class="placeholder animate-pulse"></div>
+                                            <div class="placeholder animate-pulse"></div>
                                         </div>
                                         <div class="grid grid-cols-4 gap-4">
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
-                                            <div class="placeholder animate-pulse" />
+                                            <div class="placeholder animate-pulse"></div>
+                                            <div class="placeholder animate-pulse"></div>
+                                            <div class="placeholder animate-pulse"></div>
+                                            <div class="placeholder animate-pulse"></div>
                                         </div>
                                     </div>
                                 {/if}
@@ -593,16 +614,16 @@
                                     id="prompt"
                                     placeholder="DON'T TYPE SECRETS HERE"
                                     rows="1"
-                                    on:keydown={onPromptKeyDown}
+                                    onkeydown={onPromptKeyDown}
                                     disabled={disablePrompt}
-                                />
+                                ></textarea>
                                 <button
                                     class={currentMessage
                                         ? 'variant-filled-primary'
                                         : 'input-group-shim'}
-                                    on:click={sendMessage}
+                                    onclick={sendMessage}
                                 >
-                                    <i class="fa-solid fa-paper-plane" />
+                                    <i class="fa-solid fa-paper-plane"></i>
                                 </button>
                             </div>
                         </Card>
@@ -614,13 +635,13 @@
 {:else}
     <div class="w-full h-[100vh] p-4 space-y-4 flex flex-col items-center">
         <div class="card w-full h-32 pt-4">
-            <div class="w-full placeholder animate-pulse" />
+            <div class="w-full placeholder animate-pulse"></div>
         </div>
         <div class="card w-full h-32 pt-4">
-            <div class="w-full placeholder animate-pulse" />
+            <div class="w-full placeholder animate-pulse"></div>
         </div>
         <div class="card w-full h-[70vh] pt-4">
-            <div class="w-full placeholder animate-pulse" />
+            <div class="w-full placeholder animate-pulse"></div>
         </div>
     </div>
 {/if}

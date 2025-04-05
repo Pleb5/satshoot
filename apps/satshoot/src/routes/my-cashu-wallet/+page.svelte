@@ -43,31 +43,52 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    let mintBalances: Record<string, number> = {};
-    let walletBalance = '0';
-    let cleaningWallet = false;
+
+    let mintBalances: Record<string, number> = $state({});
+    let walletBalance = $state('0');
+    let cleaningWallet = $state(false);
     let toastTriggered = false;
 
-    $: walletRelays = $userCashuInfo?.relays || [];
-
-    $: if ($wallet && $userCashuInfo) {
-        walletRelays = $userCashuInfo.relays
-
-        checkLegacyWallet();
-
-        checkP2PK();
-
-        mintBalances = $wallet.mintBalances;
-
-        walletBalance = getBalanceStr($wallet)
-
-        $wallet.on('balance_updated', () => {
-            mintBalances = $wallet!.mintBalances;
-            walletBalance = getBalanceStr($wallet!);
-        });
-    } else if (!$userCashuInfo) {
-        reFetchCashuInfo();
+    enum Tab {
+        Mints,
+        Relays,
     }
+
+    let selectedTab = $state(Tab.Mints);
+
+    const tabs = [
+        {
+            id: Tab.Mints,
+            label: 'My Mints',
+        },
+        {
+            id: Tab.Relays,
+            label: 'Wallet Relays',
+        },
+    ];
+
+    const walletRelays = $derived($userCashuInfo?.relays ?? []);
+
+
+    $effect(() => {
+        if ($wallet && $userCashuInfo) {
+
+            checkLegacyWallet();
+
+            checkP2PK();
+
+            mintBalances = $wallet.mintBalances;
+
+            walletBalance = getBalanceStr($wallet)
+
+            $wallet.on('balance_updated', () => {
+                mintBalances = $wallet!.mintBalances;
+                walletBalance = getBalanceStr($wallet!);
+            });
+        } else if (!$userCashuInfo) {
+            reFetchCashuInfo();
+        }
+    });
 
     const checkLegacyWallet = async () => {
         if (!$wallet || !$userCashuInfo) return;
@@ -631,24 +652,6 @@
         placement: 'top-end',
     };
 
-    enum Tab {
-        Mints,
-        Relays,
-    }
-
-    let selectedTab = Tab.Mints;
-
-    const tabs = [
-        {
-            id: Tab.Mints,
-            label: 'My Mints',
-        },
-        {
-            id: Tab.Relays,
-            label: 'Wallet Relays',
-        },
-    ];
-
     const listItemWrapperClasses =
         'transition ease duration-[0.3s] w-full flex flex-row gap-[10px] justify-between rounded-[6px] ' +
         'bg-black-100 items-center overflow-hidden max-[576px]:gap-[0px] max-[576px]:flex-col hover:bg-blue-500 group';
@@ -681,7 +684,7 @@
                             classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
                             on:click={() => ($displayEcashWarning = false)}
                         >
-                            <i class="bx bx-x" />
+                            <i class="bx bx-x"> </i>
                         </Button>
                     </Card>
                 {/if}
@@ -692,31 +695,31 @@
 
                     <section class="w-full max-[768px]:hidden grid grid-cols-3">
                         <div class="p-4 space-y-4">
-                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse"> </div>
                             <div class="grid grid-cols-3 gap-8">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
                             </div>
                             <div class="grid grid-cols-4 gap-4">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
                             </div>
                         </div>
                         <div class="col-span-2 p-4 space-y-4">
-                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse"> </div>
                             <div class="grid grid-cols-3 gap-8">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
                             </div>
                             <div class="grid grid-cols-4 gap-4">
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
+                                <div class="placeholder animate-pulse"> </div>
                             </div>
                         </div>
                     </section>
@@ -725,17 +728,17 @@
                     {#each { length: 2 } as _}
                         <section class="w-full hidden max-[768px]:block">
                             <div class="p-4 space-y-4">
-                                <div class="placeholder animate-pulse" />
+                                <div class="placeholder animate-pulse"> </div>
                                 <div class="grid grid-cols-3 gap-8">
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse"> </div>
+                                    <div class="placeholder animate-pulse"> </div>
+                                    <div class="placeholder animate-pulse"> </div>
                                 </div>
                                 <div class="grid grid-cols-4 gap-4">
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
-                                    <div class="placeholder animate-pulse" />
+                                    <div class="placeholder animate-pulse"> </div>
+                                    <div class="placeholder animate-pulse"> </div>
+                                    <div class="placeholder animate-pulse"> </div>
+                                    <div class="placeholder animate-pulse"> </div>
                                 </div>
                             </div>
                         </section>
@@ -775,8 +778,8 @@
                                         </p>
 
                                         <i
-                                            class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]"
-                                        />
+                                            class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]">
+                                        </i>
                                     </div>
                                     <PieChart dataset={mintBalances} />
                                     <WithdrawEcash cashuWallet = {$wallet} />
@@ -790,7 +793,7 @@
                                             grow
                                             on:click={handleWalletBackup}
                                         >
-                                            <i class="bx bx-download" />
+                                            <i class="bx bx-download"> </i>
                                             Backup
                                         </Button>
                                         <Button
@@ -799,7 +802,7 @@
                                             grow
                                             on:click={recoverWallet}
                                         >
-                                            <i class="bx bx-upload" />
+                                            <i class="bx bx-upload"> </i>
                                             Recover
                                         </Button>
                                         <Button
@@ -838,7 +841,7 @@
                                             classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
                                             on:click={() => ($displayEcashWarning = false)}
                                         >
-                                            <i class="bx bx-x" />
+                                            <i class="bx bx-x"> </i>
                                         </Button>
                                     </Card>
                                 {/if}
@@ -866,11 +869,11 @@
                                                         </p>
                                                         <button
                                                             class={deleteButtonClasses}
-                                                            on:click={() => removeMint(mint)}
+                                                            onclick={() => removeMint(mint)}
                                                             use:popup={tooltipRemoveMint}
                                                             aria-label="Remove Mint"
                                                         >
-                                                            <i class={deleteIconClasses} />
+                                                            <i class={deleteIconClasses}> </i>
                                                         </button>
                                                     </div>
                                                 {/each}
@@ -894,11 +897,11 @@
                                                             </p>
                                                             <button
                                                                 class={deleteButtonClasses}
-                                                                on:click={() => removeRelay(relay)}
+                                                                onclick={() => removeRelay(relay)}
                                                                 use:popup={tooltipRemoveRelay}
                                                                 aria-label="Remove Relay"
                                                             >
-                                                                <i class={deleteIconClasses} />
+                                                                <i class={deleteIconClasses}> </i>
                                                             </button>
                                                         </div>
                                                     {/each}

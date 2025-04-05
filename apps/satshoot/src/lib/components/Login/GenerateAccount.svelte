@@ -24,11 +24,11 @@
     const privateKey = privateKeyFromSeedWords(seedWords);
     const generatedNsec = nsecEncode(hexToBytes(privateKey));
 
-    let generatedNpub = '';
-    let passphraseForGeneratedAccount = '';
-    let confirmPassphraseForGeneratedAccount = '';
-    let copiedNpub = false;
-    let copiedNsec = false;
+    let generatedNpub = $state('');
+    let passphraseForGeneratedAccount = $state('');
+    let confirmPassphraseForGeneratedAccount = $state('');
+    let copiedNpub = $state(false);
+    let copiedNsec = $state(false);
 
     onMount(async () => {
         const signer = new NDKPrivateKeySigner(generatedNsec);
@@ -161,7 +161,7 @@
             classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
             grow
         >
-            <span use:clipboard={generatedNsec} on:click={onCopyNsec}>
+            <span class="w-full h-full" use:clipboard={generatedNsec} onclick={onCopyNsec}>
                 {copiedNsec ? 'Copied' : 'Dangerously Copy'}
             </span>
         </Button>
@@ -177,7 +177,7 @@
     </div>
     <div class={btnWrapperClasses}>
         <Button variant="outlined" classes="rounded-[0]" grow>
-            <span use:clipboard={generatedNpub} on:click={onCopyNpub}>
+            <span class="w-full h-full" use:clipboard={generatedNpub} onclick={onCopyNpub}>
                 {copiedNpub ? 'Copied' : 'Copy'}
             </span>
         </Button>

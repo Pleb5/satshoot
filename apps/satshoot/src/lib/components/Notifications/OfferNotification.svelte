@@ -19,14 +19,18 @@
     import { readNotifications } from '$lib/stores/notifications';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
-    export let notification: OfferEvent;
+    interface Props {
+        notification: OfferEvent;
+    }
+
+    let { notification }: Props = $props();
 
     let user = $ndk.getUser({ pubkey: notification.pubkey });
-    let userName = user.npub.substring(0, 8);
-    let userImage = getRoboHashPicture(user.pubkey);
+    let userName = $state(user.npub.substring(0, 8));
+    let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let job: TicketEvent | null;
+    let job = $state<TicketEvent | null>(null);
 
     onMount(async () => {
         userProfile = await user.fetchProfile();
