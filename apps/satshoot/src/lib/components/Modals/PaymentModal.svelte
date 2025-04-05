@@ -81,8 +81,9 @@
     const toastStore = getToastStore();
     const modalStore = getModalStore();
 
-    let ticket: TicketEvent | undefined = $state();
-    let offer: OfferEvent | undefined = $state();
+    // TODO: As soon as Modals can take Props this needs to stop
+    let ticket: TicketEvent | undefined = $derived($paymentDetail?.ticket);
+    let offer: OfferEvent | undefined = $derived($paymentDetail?.offer);
 
     let paying = $state(false);
     let amount = $state(0);
@@ -94,7 +95,6 @@
     let ecashTooltipText = $state('');
     let hasSenderEcashSetup = $derived(!!$wallet);
 
-
     let freelancerPaid = $state(0);
     let satshootPaid = $state(0);
     let freelancerPaymentStore: PaymentStore;
@@ -102,13 +102,6 @@
 
     let pricing = $state('');
 
-    // TODO: As soon as Modals can take Props this needs to stop
-    $effect(() => {
-        if ($paymentDetail) {
-            ticket = $paymentDetail.ticket;
-            offer = $paymentDetail.offer;
-        }
-    })
 
     $effect(() => {
         if (offer && $currentUser) {
@@ -370,9 +363,7 @@
         pubkey: string,
         amountMillisats: number
     ) => {
-        if (amountMillisats < 1) {
-            throw new Error('Cannot pay less than 1 sat!');
-        }
+        if (amount === 0) return;
 
         const cashuPaymentInfo = $cashuPaymentInfoMap.get(pubkey);
         if (!cashuPaymentInfo || !cashuPaymentInfo.mints) {

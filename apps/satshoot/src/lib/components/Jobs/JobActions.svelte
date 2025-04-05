@@ -4,6 +4,7 @@
     import ShareJobModal from '../Modals/ShareJobModal.svelte';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import currentUser from '$lib/stores/user';
+    import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import { clientReviews } from '$lib/stores/reviews';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import ndk from '$lib/stores/ndk';
@@ -11,6 +12,7 @@
     import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';
     import CloseJobModal from '../Modals/CloseJobModal.svelte';
+    import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from '../Modals/PaymentModal.svelte';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
@@ -97,12 +99,13 @@
     function handlePay() {
         if (!winnerOffer) return;
 
+        $paymentDetail = {
+            ticket: job,
+            offer: winnerOffer,
+        };
+
         const modalComponent: ModalComponent = {
             ref: PaymentModal,
-            props: {
-                ticket: job,
-                offer: winnerOffer,
-            }
         };
 
         const modal: ModalSettings = {
