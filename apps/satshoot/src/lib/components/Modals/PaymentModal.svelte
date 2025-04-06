@@ -17,7 +17,6 @@
     } from '$lib/stores/payment';
     import currentUser from '$lib/stores/user';
     import {
-        cashuPaymentInfoMap,
         wallet,
     } from '$lib/wallet/wallet';
     import { goto } from '$app/navigation';
@@ -30,10 +29,12 @@
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
         NDKZapper,
+        type CashuPaymentInfo,
+        type Hexpubkey,
         type NDKLnUrlData,
         type NDKZapperOptions,
     } from '@nostr-dev-kit/ndk';
-    import { broadcastEvent, getZapConfiguration } from '$lib/utils/helpers';
+    import { broadcastEvent, getCashuPaymentInfo, getZapConfiguration } from '$lib/utils/helpers';
     import { onDestroy, tick } from 'svelte';
     import { CashuMint, type Proof } from '@cashu/cashu-ts';
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
@@ -87,13 +88,49 @@
 
     let paying = $state(false);
     let amount = $state(0);
-    const safety = 3; // 3 sats safety added when estimating balances for payments
+    let satshootShare = $derived(
+        Math.floor((amount * (offer?.pledgeSplit ?? 0)) / 100)
+    );
+
+    let freelancerShare = $derived(amount - satshootShare);
     let pledgedAmount = $state(0);
-    let satshootShare = $state(0);
-    let freelancerShare = $state(0);
-    let canPayWithEcash = $state(false);
-    let ecashTooltipText = $state('');
+
+    // 3 sats safety added when estimating balances for payments
+    const safety = 3; 
+
+    let mintExistsWithSufficientBalance = $derived(
+        $wallet!.getMintsWithBalance(
+            satshootShare + pledgedAmount + freelancerShare + safety
+        ).length > 0
+    )
+
+    let freelancerCashuInfo: CashuPaymentInfo | null = $state(null);
+
     let hasSenderEcashSetup = $derived(!!$wallet);
+
+    let canPayWithEcash = $derived.by(() => {
+        if (
+            hasSenderEcashSetup &&
+            freelancerCashuInfo &&
+            mintExistsWithSufficientBalance
+        ) return true;
+
+        return false
+    });
+
+    let ecashTooltipText = $derived.by(() => {
+        if (!hasSenderEcashSetup) {
+            return 'Setup Wallet to pay with Cashu!'
+        }
+        if (!freelancerCashuInfo) {
+            return 'Could not find Freelancer Cashu Info'
+        }
+        if (!mintExistsWithSufficientBalance) {
+            return 'No Mint in Wallet has enough balance for this amount!'
+        }
+
+        return '';
+    });
 
     let freelancerPaid = $state(0);
     let satshootPaid = $state(0);
@@ -105,34 +142,8 @@
 
     $effect(() => {
         if (offer && $currentUser) {
-            const hasFreelancerEcashSetup = $cashuPaymentInfoMap.has(offer.pubkey);
-
-            canPayWithEcash = true;
-
-            if (!hasSenderEcashSetup) {
-                canPayWithEcash = false;
-                ecashTooltipText = 'Setup Nostr Wallet to pay with ecash!';
-            } else if (!hasFreelancerEcashSetup) {
-                canPayWithEcash = false;
-                ecashTooltipText = 'Freelancer does not have ecash wallet';
-            } else if (!$wallet) {
-                canPayWithEcash = false;
-                ecashTooltipText = 'Wallet is not initialized yet';
-            } else {
-                let mintExistsWithSufficientBalance = $wallet!.getMintsWithBalance(
-                    satshootShare + pledgedAmount + freelancerShare + safety
-                ).length > 0;
-                if (!mintExistsWithSufficientBalance) {
-                    canPayWithEcash = false;
-                    ecashTooltipText = 'No Mint in Nostr Wallet has enough balance for this amount!';
-                }
-            }
-
-            // If all checks passed, user can pay with ecash
-            if (canPayWithEcash) {
-                ecashTooltipText = '';
-            }
-
+            fetchFreelancerCashuInfo(offer.pubkey);
+            
             switch (offer.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';
@@ -156,10 +167,14 @@
                 satshootPaid = value;
             });
 
-            satshootShare = Math.floor((amount * offer.pledgeSplit) / 100);
-            freelancerShare = amount - satshootShare;
         }
     });
+
+    const fetchFreelancerCashuInfo = async (freelancerPubkey: Hexpubkey) => {
+         freelancerCashuInfo = await getCashuPaymentInfo(
+            freelancerPubkey
+        ) as (CashuPaymentInfo | null)
+    }
 
     onDestroy(() => {
         if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.empty();
@@ -365,8 +380,7 @@
     ) => {
         if (amount === 0) return;
 
-        const cashuPaymentInfo = $cashuPaymentInfoMap.get(pubkey);
-        if (!cashuPaymentInfo || !cashuPaymentInfo.mints) {
+        if (!freelancerCashuInfo || !freelancerCashuInfo.mints) {
             throw new Error(
                 `Could not fetch cashu payment info for ${userEnum}!`
             );
@@ -386,7 +400,7 @@
         }
 
         // TODO: Could offer payment with multiple Mints with enough balance here
-        const mintPromises = cashuPaymentInfo.mints.map(async (mintUrl) => {
+        const mintPromises = freelancerCashuInfo.mints.map(async (mintUrl) => {
             const mint = new CashuMint(mintUrl);
             return mint
                 .getInfo()
@@ -426,11 +440,11 @@
         }
 
         // Always use freelancers Mint preference or fail
-        cashuPaymentInfo.allowIntramintFallback = false;
+        freelancerCashuInfo.allowIntramintFallback = false;
         // Get Proofs tied to p2pk of freelancer
         const cashuResult = await $wallet
             .cashuPay({
-                ...cashuPaymentInfo,
+                ...freelancerCashuInfo,
                 mints,
                 target: userEnum === UserEnum.Freelancer ? offer! : ticket!,
                 recipientPubkey: pubkey,
@@ -471,7 +485,7 @@
 
         nutzapEvent.recipientPubkey = pubkey;
 
-        const explicitRelays = [...cashuPaymentInfo.relays ?? []];
+        const explicitRelays = [...freelancerCashuInfo.relays ?? []];
 
         await trySignAndPublishNutZap(nutzapEvent, explicitRelays);
     }

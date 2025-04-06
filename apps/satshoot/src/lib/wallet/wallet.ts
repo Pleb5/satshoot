@@ -62,11 +62,6 @@ export async function walletInit(
     nostrWallet.on("ready", async () => {
         walletStatus.set(NDKWalletStatus.READY);
 
-        console.log(
-            'Start collecting Cashu info of Freelancers',
-            get(cashuPaymentInfoMap)
-        );
-
         ndkNutzapMonitor = new NDKNutzapMonitor(ndk, user, {mintList});
         ndkNutzapMonitor.wallet = nostrWallet;
 
@@ -102,61 +97,3 @@ export async function walletInit(
     nostrWallet.start({subId: 'wallet', pubkey: user.pubkey});
 }
 
-// Maintain a previous map outside the derived store to persist state across invocations
-let previousMap = new Map<string, CashuPaymentInfo>(); // Global to ensure persistence between re-renders
-
-// Derived store that processes items and caches results to avoid redundant async operations
-export const cashuPaymentInfoMap: Readable<Map<string, CashuPaymentInfo>> = derived(
-    [myTickets],
-    ([$myTickets], set) => {
-        // Async function to update the derived store
-        async function update() {
-            // Copy the current state of previousMap to start fresh but retain processed data
-            const newMap = new Map(previousMap);
-
-            // construct a string array which contains all the user who has won the offer, current logged in user and satshoot
-            const users = $myTickets
-                .map((myTicket) => myTicket.winnerFreelancer)
-                .filter((winner) => winner !== undefined);
-
-            users.push(SatShootPubkey);
-
-            // Create an array of promises for each user to fetch payment info only if not already cached
-            const promises = users.map((user) => {
-                return new Promise<void>((resolve) => {
-                    // Check if the user has already been processed
-                    if (newMap.has(user)) {
-                        resolve(); // Resolve immediately if the data is already cached
-                        return;
-                    }
-
-                    // Fetch Cashu payment info asynchronously if not already present
-                    getCashuPaymentInfo(user)
-                        .then((info) => {
-                            if (info) newMap.set(user, info); // Add the fetched info to the Map
-                        })
-                        .catch((err) => {
-                            console.error(
-                                `An error occurred in fetching Cashu payment info for ${user}`,
-                                err
-                            );
-                        })
-                        .finally(() => resolve()); // Resolve the promise once done
-                });
-            });
-
-            // Wait for all promises to complete before updating the store
-            await Promise.allSettled(promises);
-
-            // Update the store with the newly populated map
-            set(newMap);
-
-            // Persist the updated map for future reference
-            previousMap = newMap;
-        }
-
-        update();
-    },
-    // Initial value
-    previousMap
-);

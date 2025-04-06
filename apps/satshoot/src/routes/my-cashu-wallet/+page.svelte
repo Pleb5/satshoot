@@ -765,7 +765,7 @@
                                         <div
                                             class="font-[500] text-white"
                                         >
-                                            <p>'My Nostr Wallet'</p>
+                                            <p>Wallet</p>
                                             
                                         </div>
                                         <p class="text-[24px] font-[500] text-white">
