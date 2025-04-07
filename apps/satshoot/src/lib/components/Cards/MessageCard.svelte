@@ -9,7 +9,6 @@
         type NDKSigner,
         type NDKUser,
     } from '@nostr-dev-kit/ndk';
-    import { Avatar } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
 
@@ -18,6 +17,7 @@
     import { selectedPerson } from '$lib/stores/messages';
     import Markdown from './Markdown.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { Avatar } from '@skeletonlabs/skeleton-svelte';
 
     interface Props {
         avatarRight?: boolean;
@@ -134,7 +134,7 @@
         <div class="grid {templateColumn} gap-x-2">
             {#if !avatarRight}
                 <a href={'/' + senderUser.npub}>
-                    <Avatar src={avatarImage} width="w-12" />
+                    <Avatar src={avatarImage} classes="w-12" {name} />
                 </a>
             {/if}
             <div class="card p-4 space-y-2 {extraClasses}">
@@ -163,7 +163,7 @@
             </div>
             {#if avatarRight}
                 <a href={'/' + senderUser.npub}>
-                    <Avatar src={avatarImage} width="w-12" />
+                    <Avatar src={avatarImage} classes="w-12" {name} />
                 </a>
             {/if}
         </div>

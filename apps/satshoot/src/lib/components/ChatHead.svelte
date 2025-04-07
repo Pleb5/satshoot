@@ -11,11 +11,10 @@
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
 
-    import { Avatar } from '@skeletonlabs/skeleton';
-
     import { navigating } from '$app/state';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import Button from './UI/Buttons/Button.svelte';
+    import { Avatar } from '@skeletonlabs/skeleton-svelte';
 
     interface Props {
         searchTerms?: string[];
@@ -117,7 +116,11 @@
 >
     <div class="flex gap-x-2">
         <div>
-            <Avatar class="rounded-full border-white" src={userProfile?.image || avatarImage} />
+            <Avatar
+                classes="rounded-full border-white"
+                src={userProfile?.image || avatarImage}
+                name={userProfile?.displayName || 'user avatar'}
+            />
         </div>
         <div class="flex flex-col items-start">
             <div class="h5 sm:h4 text-center font-bold text-lg sm:text-2xl">

@@ -5,8 +5,8 @@
     import { wot } from '$lib/stores/wot';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { onDestroy, onMount } from 'svelte';
-    import { Accordion, AccordionItem, Avatar } from '@skeletonlabs/skeleton';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+    import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
+    import { Avatar, createToaster } from '@skeletonlabs/skeleton-svelte';
     import {
         NDKEvent,
         NDKKind,
@@ -454,7 +454,9 @@
                                         <Avatar
                                             src={contact.person.profile?.picture ??
                                                 getRoboHashPicture(contact.person.pubkey)}
-                                            width="w-8"
+                                            classes="w-8"
+                                            name={contact.person.profile?.name ??
+                                                contact.person.npub.substring(0, 10)}
                                         />
                                         <span
                                             class="flex-1 text-start
@@ -485,7 +487,9 @@
                                                             getRoboHashPicture(
                                                                 currentPerson.pubkey
                                                             )}
-                                                        width="w-8"
+                                                        classes="w-8"
+                                                        name={currentPerson.profile?.name ??
+                                                            currentPerson.npub.substring(0, 15)}
                                                     />
                                                 </a>
                                             {/if}
@@ -534,7 +538,13 @@
                                                                         getRoboHashPicture(
                                                                             contact.person.pubkey
                                                                         )}
-                                                                    width="w-8"
+                                                                    classes="w-8"
+                                                                    name={contact.person.profile
+                                                                        ?.name ??
+                                                                        contact.person.npub.substring(
+                                                                            0,
+                                                                            15
+                                                                        )}
                                                                 />
                                                                 <span
                                                                     class="flex-1 text-start
