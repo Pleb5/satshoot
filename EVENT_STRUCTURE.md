@@ -3,9 +3,6 @@
 ### Freelance Service event (Posted by Freelancers)
 ```json
 {
-    "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Freelancer>,
-    "created_at": <unix timestamp in seconds>,
     "kind": 32765,
     "tags": [
         // Update/Replacement is based on this. Allows for multiple Services with simple edits. Mandatory
@@ -19,6 +16,12 @@
         ["t", <tag2>],
                 ...
         ["t", <tagN>],
+        
+        // Images for the Service. Multiple images allowed
+        ["image", <URL of image1 for this Service>],
+        ["image", <URL of image2 for this Service>],
+                ...
+        ["image", <URL of imageN for this Service>],
 
         // Pricing Strategy: Absolute or Time-based. Mandatory
         ["pricing", <'0'(sats) | '1'(sats/minute)>],
@@ -42,9 +45,7 @@
     ],
     "content": {
         <detailed description of the Service. Mandatory>
-    },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the
-    serialized event data, which is the same as the "id" field>
+    }
 }
 ```
 
@@ -52,9 +53,6 @@
 ```json
 
 {
-    "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Client>,
-    "created_at": <unix timestamp in seconds>,
     "kind": 32766,
     "tags": [
         // Update/Replacement is based on this. Allows for multiple Orders with simple edits. Mandatory
@@ -69,9 +67,7 @@
     ],
     "content": {
         <A Note for the Freelancer selling the Service. Optional>
-    },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash
-    of the serialized event data, which is the same as the "id" field>
+    }
 }
 
 ```
@@ -79,9 +75,6 @@
 ### Freelance Job event (Posted by Client)
 ```json
 {
-    "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Client>,
-    "created_at": <unix timestamp in seconds>,
     "kind": 32767,
     "tags": [
         // A title for the Job. Mandatory
@@ -105,18 +98,13 @@
     ],
     "content": {
         <detailed description of the Job, mandatory>
-    },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash
-    of the serialized event data, which is the same as the "id" field>
+    }
 }
 ```
 
 ### Freelance Bid (Posted by the Freelancer on a specific Job)
 ```json
 {
-    "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Freelancer>,
-    "created_at": <unix timestamp in seconds>,
     "kind": 32768,
     "tags": [
         // Replacement is based on this. Allows for multiple Bids with simple edits. Mandatory
@@ -138,9 +126,7 @@
     ],
     "content": {
         <Pitch explaining why Freelancer is the right fit for the Job. Optional>, 
-    },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash
-    of the serialized event data, which is the same as the "id" field>
+    }
 }
 ```
 
