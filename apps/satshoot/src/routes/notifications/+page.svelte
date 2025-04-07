@@ -21,7 +21,6 @@
     } from '$lib/stores/notifications';
     import currentUser from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
-    import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
 
     enum Tab {
@@ -32,8 +31,6 @@
         Messages,
         Reviews,
     }
-
-    const toastStore = getToastStore();
 
     let selectedTab = $state(Tab.Follows);
     let previousTab = $state<Tab | null>(null);

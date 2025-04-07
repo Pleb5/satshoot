@@ -1,6 +1,7 @@
 <script lang="ts">
     import currentUser from '$lib/stores/user';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { getFileExtension } from '$lib/utils/misc';
     import { decryptSecret } from '$lib/utils/crypto';
     import Popup from '../UI/Popup.svelte';
@@ -11,7 +12,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     let recovering = $state(false);
     let file = $state<File | null>(null);
@@ -34,9 +35,8 @@
     // Recover function to read and parse the JSON file
     async function recover() {
         if (!file) {
-            toastStore.trigger({
-                message: 'Please select a JSON file.',
-                background: `bg-error-300-600`,
+            toaster.error({
+                title: 'Please select a JSON file.',
             });
             return;
         }
@@ -44,18 +44,16 @@
         const fileExtension = getFileExtension(file.name);
 
         if (!fileExtension) {
-            toastStore.trigger({
-                message: `Failed to recover wallet. Couldn't identify file type.`,
-                background: `bg-error-300-600`,
+            toaster.error({
+                title: `Failed to recover wallet. Couldn't identify file type.`,
             });
 
             return;
         }
 
         if (fileExtension !== 'json' && fileExtension !== 'enc') {
-            toastStore.trigger({
-                message: `Failed to recover wallet. Invalid file type. Only .json or .enc is accepted.`,
-                background: `bg-error-300-600`,
+            toaster.error({
+                title: `Failed to recover wallet. Invalid file type. Only .json or .enc is accepted.`,
             });
 
             return;
@@ -63,9 +61,8 @@
 
         try {
             if (!$wallet) {
-                toastStore.trigger({
-                    message: 'Nostr wallet NOT found! Can only recover into an existing wallet',
-                    background: `bg-error-300-600-token`,
+                toaster.error({
+                    title: 'Nostr wallet NOT found! Can only recover into an existing wallet',
                 });
 
                 return;
@@ -80,9 +77,8 @@
                 try {
                     fileContent = decryptSecret(fileContent, passphrase, $currentUser!.pubkey);
                 } catch (error) {
-                    toastStore.trigger({
-                        message: 'Failed to decrypt backup file',
-                        background: `bg-error-300-600`,
+                    toaster.error({
+                        title: 'Failed to decrypt backup file',
                     });
                     return;
                 }
@@ -94,16 +90,14 @@
 
             await recoverWallet(walletStorage, $wallet, ndkNutzapMonitor!);
 
-            toastStore.trigger({
-                message: 'Wallet Loaded Successfully!',
-                background: `bg-success-300-600`,
+            toaster.success({
+                title: 'Wallet Loaded Successfully!',
             });
             modalStore.close();
         } catch (error) {
             console.error('Failed to recover wallet:', error);
-            toastStore.trigger({
-                message: `Failed to recover wallet:\n${error}`,
-                background: `bg-error-300-600`,
+            toaster.error({
+                title: `Failed to recover wallet:\n${error}`,
             });
         } finally {
             recovering = false;

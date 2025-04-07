@@ -11,7 +11,8 @@
     } from '$lib/utils/login';
     import { bunkerPerms } from '$lib/utils/misc';
     import { NDKNip46Signer, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { nip19 } from 'nostr-tools';
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
@@ -19,7 +20,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     let statusMessage = $state('');
     let statusColor = 'text-tertiary-200-700';
@@ -31,10 +32,8 @@
         if (!bunkerUrl || !bunkerUrl.startsWith('bunker://')) {
             // User tried to submit invalid token string
             attemptingBunkerConnection = false;
-            toastStore.trigger({
-                message: 'Invalid Bunker token! URL must start with "bunker://"',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Invalid Bunker token! URL must start with "bunker://"',
             });
             return;
         }
@@ -49,18 +48,14 @@
         console.log('secret', secret);
         if (!relayURLs) {
             attemptingBunkerConnection = false;
-            toastStore.trigger({
-                message: 'Error: No Relay URLs specified in Bunker token!',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Error: No Relay URLs specified in Bunker token!',
             });
             return;
         } else if (!remotePubkey) {
             attemptingBunkerConnection = false;
-            toastStore.trigger({
-                message: 'Error: No Remote Pubkey specified in Bunker token!',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Error: No Remote Pubkey specified in Bunker token!',
             });
             return;
         }
@@ -117,36 +112,29 @@
                 localStorage.setItem('bunkerTargetNpub', remoteUserNpub);
                 localStorage.setItem('bunkerRelayURLs', relayURLs.join(','));
 
-                toastStore.trigger({
-                    message: 'Bunker Connection Successful!',
-                    timeout: 7000,
-                    background: 'bg-success-300-600',
+                toaster.success({
+                    title: 'Bunker Connection Successful!',
                 });
 
-                initializeUser($ndk, toastStore);
+                initializeUser($ndk);
                 handleRedirection();
 
                 modalStore.close();
             } else {
-                toastStore.trigger({
-                    message: 'Could not connect to Bunker!',
-                    timeout: 7000,
-                    background: 'bg-error-300-600',
+                toaster.error({
+                    title: 'Could not connect to Bunker!',
                 });
                 modalStore.close();
             }
         } catch (error) {
-            toastStore.trigger({
-                message: `
+            toaster.error({
+                title: `
                         <p>Could not connect to Bunker!</p>
                         <p>
                         <span> Reason: </span>
                         <span> ${error} </span>
                         </p>
                     `,
-                autohide: false,
-                background: 'bg-error-300-600',
-                classes: 'font-bold',
             });
             console.error(error);
             modalStore.close();

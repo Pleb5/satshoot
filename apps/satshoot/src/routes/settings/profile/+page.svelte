@@ -15,9 +15,9 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     let userProfile = $state<NDKUserProfile>({});
     let updating = $state(false);
@@ -58,14 +58,11 @@
         if (profile) {
             userProfile = profileFromEvent(profile);
         } else {
-            const t: ToastSettings = {
-                message: `<p class='text-center font-bold'>Could NOT load Profile!</p>
+            toaster.error({
+                title: `<p class='text-center font-bold'>Could NOT load Profile!</p>
                           <p class='text-center font-bold'>Try to refresh page!</p>
                          `,
-                background: 'bg-error-300-600',
-                autohide: false,
-            };
-            toastStore.trigger(t);
+            });
         }
     }
 
@@ -79,10 +76,9 @@
                 $currentUser.profile = userProfile;
                 await broadcastUserProfile($ndk, userProfile);
 
-                const t: ToastSettings = {
-                    message: `Profile Updated!`,
-                };
-                toastStore.trigger(t);
+                toaster.success({
+                    title: `Profile Updated!`,
+                });
 
                 if (redirectPath) {
                     goto(redirectPath);
@@ -93,10 +89,9 @@
                     goto('/settings/relays');
                 }
             } catch (e) {
-                const t: ToastSettings = {
-                    message: `Profile update failed! Reason: ${e}`,
-                };
-                toastStore.trigger(t);
+                toaster.error({
+                    title: `Profile update failed! Reason: ${e}`,
+                });
             } finally {
                 updating = false;
             }

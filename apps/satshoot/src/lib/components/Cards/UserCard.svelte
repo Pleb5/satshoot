@@ -18,12 +18,8 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import {
-        getModalStore,
-        getToastStore,
-        type ModalComponent,
-        type ModalSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { nip19 } from 'nostr-tools';
     import ReputationCard from './ReputationCard.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
@@ -47,7 +43,7 @@
     }
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     interface Props {
         user: NDKUser;
@@ -151,11 +147,8 @@
         await newFollowEvent
             .publish()
             .then(() => {
-                toastStore.trigger({
-                    message: 'Followed!',
-                    background: `bg-success-300-600`,
-                    autohide: true,
-                    timeout: 5000,
+                toaster.success({
+                    title: 'Followed!',
                 });
 
                 freelanceFollowEvents.update((map) => {
@@ -165,11 +158,8 @@
             })
             .catch((err) => {
                 console.error(err);
-                toastStore.trigger({
-                    message: 'Failed to publish follow event',
-                    background: `bg-error-300-600`,
-                    autohide: true,
-                    timeout: 5000,
+                toaster.error({
+                    title: 'Failed to publish follow event',
                 });
             })
             .finally(() => {
@@ -203,11 +193,8 @@
         await newFollowEvent
             .publish()
             .then(() => {
-                toastStore.trigger({
-                    message: 'Un-followed!',
-                    background: `bg-success-300-600`,
-                    autohide: true,
-                    timeout: 5000,
+                toaster.success({
+                    title: 'Un-followed!',
                 });
 
                 freelanceFollowEvents.update((map) => {
@@ -217,11 +204,8 @@
             })
             .catch((err) => {
                 console.error(err);
-                toastStore.trigger({
-                    message: 'Failed to publish follow event',
-                    background: `bg-error-300-600`,
-                    autohide: true,
-                    timeout: 5000,
+                toaster.error({
+                    title: 'Failed to publish follow event',
                 });
             })
             .finally(() => {

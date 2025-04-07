@@ -1,11 +1,12 @@
 <script lang="ts">
-    import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     interface Props {
         mint: string; // URL of Mint to remove
@@ -21,12 +22,9 @@
             posting = true;
             await onConfirm(); // Invoke the parent's callback function
         } catch (e) {
-            const t: ToastSettings = {
-                message: 'Error: ' + e,
-                timeout: 7000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Error: ' + e,
+            });
         } finally {
             posting = false;
             modalStore.close(); // Close the modal after confirmation

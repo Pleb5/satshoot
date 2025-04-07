@@ -4,13 +4,8 @@
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import ndk from '$lib/stores/ndk';
     import { paymentDetail } from '$lib/stores/payment';
-    import {
-        getModalStore,
-        getToastStore,
-        type ModalComponent,
-        type ModalSettings,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { tick } from 'svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
@@ -21,7 +16,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     interface Props {
         job: TicketEvent;
@@ -82,20 +77,6 @@
                     console.log('published relays', relays);
                 }
 
-                // const closedToast: ToastSettings = {
-                //     message: 'Ticket Closed!',
-                //     timeout: 7000,
-                //     background: 'bg-success-300-600',
-                // };
-                // toastStore.trigger(closedToast);
-                //
-                // const checkWallet: ToastSettings = {
-                //     message: 'Check your Wallet to make sure the Payment is complete!',
-                //     autohide: false,
-                //     background: 'bg-warning-300-600',
-                // };
-                // toastStore.trigger(checkWallet);
-
                 // Close this modal and Open payment modal
                 modalStore.close();
 
@@ -123,12 +104,8 @@
             }
         } else {
             closing = false;
-            const t: ToastSettings = {
-                message: 'Error: Could could not find job to close!',
-                timeout: 7000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({ title: 'Could could not find job to close!' });
+
             modalStore.close();
         }
     }

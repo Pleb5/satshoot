@@ -2,7 +2,8 @@
     import { wallet } from '$lib/wallet/wallet';
     import { backupWallet } from '$lib/wallet/cashu';
     import { logout } from '$lib/utils/helpers';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -11,7 +12,7 @@
     import { LoginMethod } from '$lib/stores/ndk';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     let backupBeforeLogout = $state(true);
     let encryptWalletBackup = $state(false);
@@ -34,9 +35,8 @@
             }
         } catch (error) {
             console.error('An error occurred in backup process', error);
-            toastStore.trigger({
-                message: `Failed to backup! An error occurred in backup process.`,
-                background: `bg-error-300-600`,
+            toaster.error({
+                title: `Failed to backup! An error occurred in backup process.`,
             });
 
             return;

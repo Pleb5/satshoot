@@ -6,13 +6,14 @@
     import { loginMethod } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
     import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     let askingForNip07Permission = $state(false);
 
@@ -31,17 +32,15 @@
                     $loginMethod = LoginMethod.Nip07;
                     $ndk.signer = nip07Signer;
                     localStorage.setItem('login-method', $loginMethod);
-                    initializeUser($ndk, toastStore);
+                    initializeUser($ndk);
                     handleRedirection();
                     askingForNip07Permission = false;
                     modalStore.close();
                 }
             } catch (e) {
                 askingForNip07Permission = false;
-                toastStore.trigger({
-                    message: 'Browser extension rejected access!',
-                    autohide: false,
-                    background: 'bg-error-300-600',
+                toaster.error({
+                    title: 'Browser extension rejected access!',
                 });
             }
         } else if (!window.nostr) {

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { backupWallet } from '$lib/wallet/cashu';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Popup from '../UI/Popup.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -8,7 +9,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     let processing = false;
     let passphrase = $state('');
@@ -28,9 +29,8 @@
             modalStore.close();
         } catch (error) {
             console.error('An error occurred in backup process', error);
-            toastStore.trigger({
-                message: `Failed to backup! An error occurred in backup process.`,
-                background: `bg-error-300-600`,
+            toaster.error({
+                title: `Failed to backup! An error occurred in backup process.`,
             });
         }
     }

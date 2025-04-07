@@ -3,7 +3,8 @@
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { onMount, tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -11,7 +12,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     interface Props {
         job: TicketEvent;
@@ -37,22 +38,16 @@
         try {
             let relays = await kind1Event.publish();
             posting = false;
-            const t: ToastSettings = {
-                message: 'job Posted as Text Note!',
-                timeout: 7000,
-                background: 'bg-success-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.success({
+                title: 'Job Posted as Text Note!',
+            });
 
             modalStore.close();
         } catch (e) {
             posting = false;
-            const t: ToastSettings = {
-                message: 'Error happened while publishing note!',
-                timeout: 5000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Error happened while publishing note!',
+            });
 
             modalStore.close();
         }

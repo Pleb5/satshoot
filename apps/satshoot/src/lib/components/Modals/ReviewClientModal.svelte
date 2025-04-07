@@ -5,7 +5,8 @@
     import ndk from '$lib/stores/ndk';
 
     import type { ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { tick } from 'svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
@@ -14,7 +15,7 @@
     import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
     const modalStore = getModalStore();
 
     interface Props {
@@ -66,35 +67,23 @@
 
                 modalStore.close();
 
-                const t: ToastSettings = {
-                    message: `
-                        <p class='text-center font-bold mb-4'>Thank You for posting a Review!</p>
-                        <p class='text-center'>
-                        Freelancing just got better for everyone!
-                        </p>
-                        `,
-                    timeout: 7000,
-                    background: 'bg-success-300-600',
-                };
-                toastStore.trigger(t);
+                toaster.success({
+                    title: 'Thank You for posting a Review!',
+                    description: 'Freelancing just got better for everyone!',
+                });
             } catch (e) {
                 console.log(e);
-                const t: ToastSettings = {
-                    message: 'Error posting Review!',
-                    timeout: 7000,
-                    background: 'bg-error-300-600',
-                };
-                toastStore.trigger(t);
+
+                toaster.error({
+                    title: 'Error posting Review!',
+                });
                 modalStore.close();
             }
         } else {
             posting = false;
-            const t: ToastSettings = {
-                message: 'Error: Could could not find ticket to close!',
-                timeout: 7000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Error: Could could not find ticket to close!',
+            });
         }
     }
 </script>

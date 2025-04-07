@@ -9,16 +9,12 @@
     import browserNotificationsEnabled from '$lib/stores/notifications';
     import { useSatShootWoT } from '$lib/stores/wot';
     import { hexToBytes } from '@noble/ciphers/utils';
-    import {
-        getModalStore,
-        getToastStore,
-        type ModalSettings,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { nsecEncode } from 'nostr-tools/nip19';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     let nsec = $state('');
     let showing = $state(false);
@@ -40,18 +36,11 @@
                 Notification.requestPermission().then((permission: NotificationPermission) => {
                     if (permission !== 'granted') {
                         browserNotificationsEnabled.set(false);
-                        const t: ToastSettings = {
-                            message: `
-                            <p>Notifications Settings are Disabled in the Browser!</p>
-                            <p>
-                            <span>Click small icon </span>
-                            <span> left of browser search bar to enable this setting!</span>
-                            </p>
-                            `,
-                            autohide: false,
-                        };
-                        toastStore.clear();
-                        toastStore.trigger(t);
+                        toaster.info({
+                            title: 'Notifications Settings are Disabled in the Browser!',
+                            description:
+                                'Click small icon left of browser search bar to enable this setting!',
+                        });
                     }
                     // User enabled notification settings, set user choice in local storage too
                     browserNotificationsEnabled.set($browserNotificationsEnabled);

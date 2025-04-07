@@ -2,10 +2,10 @@
     import { type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import { getToastStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     interface Props {
         cashuWallet: NDKCashuWallet;
@@ -36,11 +36,8 @@
         // 'balance_updated' event, on which a backup is triggered (see walletInit)
         ndkCashuDeposit.on('success', () => {
             closeModal();
-            toastStore.trigger({
-                message: `Successfully deposited ${amount} sats!`,
-                timeout: 5000,
-                autohide: true,
-                background: `bg-success-300-600`,
+            toaster.success({
+                title: `Successfully deposited ${amount} sats!`,
             });
             depositing = false;
             amount = 0;
@@ -50,10 +47,8 @@
             console.log('ndkCashuDeposit failed', error);
             depositing = false;
             closeModal();
-            toastStore.trigger({
-                message: `Failed to deposit: \n${error}`,
-                autohide: false,
-                background: `bg-error-300-600`,
+            toaster.error({
+                title: `Failed to deposit: \n${error}`,
             });
         });
 

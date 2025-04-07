@@ -1,41 +1,34 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
-    import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Dexie from 'dexie';
     import Button from '../UI/Buttons/Button.svelte';
     import Popup from '../UI/Popup.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     async function handleConfirm() {
         try {
             await Dexie.delete('satshoot-db');
             // Must reload to open a brand new DB
             location.href = location.pathname + '?v=' + new Date().getTime();
-            const t: ToastSettings = {
-                message:
-                    '\
-                    <p class="text-center">Cache cleared!</p>\
-                    <p>Refreshing page in 3 seconds...</p>\
-                    ',
-                timeout: 3000,
-                background: 'bg-primary-300-600',
-            };
             setTimeout(() => {}, 3000);
 
             $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
 
             modalStore.clear();
-            toastStore.trigger(t);
+            toaster.info({
+                title: '\
+                    <p class="text-center">Cache cleared!</p>\
+                    <p>Refreshing page in 3 seconds...</p>\
+                    ',
+                duration: 3000,
+            });
         } catch (e) {
-            const t: ToastSettings = {
-                message: 'Could not clear cache: ' + e,
-                timeout: 7000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({ title: 'Could not clear cache: ' + e });
         }
     }
 </script>

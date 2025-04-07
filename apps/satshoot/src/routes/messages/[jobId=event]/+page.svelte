@@ -5,8 +5,8 @@
     import { wot } from '$lib/stores/wot';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { onDestroy, onMount } from 'svelte';
-    import type { ToastSettings } from '@skeletonlabs/skeleton';
-    import { Accordion, AccordionItem, Avatar, getToastStore } from '@skeletonlabs/skeleton';
+    import { Accordion, AccordionItem, Avatar } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import {
         NDKEvent,
         NDKKind,
@@ -31,7 +31,7 @@
         selected: boolean;
     }
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     // ======================
     // 1. URL & Search Params
@@ -268,12 +268,10 @@
     async function sendMessage() {
         if (currentMessage) {
             if (!currentPerson) {
-                const t: ToastSettings = {
-                    message: 'No Person to message!',
-                    timeout: 5000,
-                    background: 'bg-error-300-600',
-                };
-                toastStore.trigger(t);
+                toaster.error({
+                    title: 'No Person to message!',
+                });
+
                 return;
             }
             const dm = new NDKEvent($ndk);

@@ -26,13 +26,8 @@
         NDKEvent,
     } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import {
-        getModalStore,
-        getToastStore,
-        type ModalComponent,
-        type ModalSettings,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { onDestroy, onMount } from 'svelte';
 
     enum OfferTab {
@@ -41,7 +36,7 @@
         Lost,
     }
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
     const modalStore = getModalStore();
 
     const subOptions: NDKSubscriptionOptions = {
@@ -216,12 +211,10 @@
 
     async function createOffer(offer: OfferEvent | undefined) {
         if (!jobPost) {
-            const t: ToastSettings = {
-                message: 'Ticket is not loaded yet!',
-                autohide: false,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Job is not loaded yet!',
+            });
+
             return;
         }
         const offerPosted: boolean = await new Promise<boolean>((resolve) => {

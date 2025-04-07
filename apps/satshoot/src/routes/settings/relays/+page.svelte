@@ -13,13 +13,14 @@
     } from '$lib/utils/helpers';
     import { normalizeRelayUrl } from '$lib/utils/misc';
     import { NDKRelayList } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { onMount } from 'svelte';
     import { RelayType } from '$lib/stores/network';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     let needRelays = $state(true);
     let posting = $state(false);
@@ -110,20 +111,16 @@
 
             posting = false;
 
-            toastStore.trigger({
-                message: 'New Relay Config Broadcasted!',
-                timeout: 7000,
-                background: 'bg-success-300-600',
+            toaster.success({
+                title: 'New Relay Config Broadcasted!',
             });
 
             if ($onboardingStep === OnboardingStep.Profile_Updated) {
                 $onboardingStep = OnboardingStep.Relays_Configured;
             }
         } catch (e) {
-            toastStore.trigger({
-                message: 'Could not post Relays: ' + e,
-                timeout: 7000,
-                background: 'bg-error-300-600',
+            toaster.error({
+                title: 'Could not post Relays: ' + e,
             });
 
             fetchOutboxRelays();

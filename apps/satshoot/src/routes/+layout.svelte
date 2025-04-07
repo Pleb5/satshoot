@@ -49,21 +49,17 @@
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
     import { page } from '$app/stores';
-    import { AppShell, getModeAutoPrefers } from '@skeletonlabs/skeleton';
     // Popups
     import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
     import { storePopup, type PopupSettings } from '@skeletonlabs/skeleton';
 
-    // Menu Items
-
-    import { modeCurrent, setModeCurrent } from '@skeletonlabs/skeleton';
     // Skeleton Toast
-    import { Toast, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+    import { Toaster, createToaster } from '@skeletonlabs/skeleton-svelte';
 
     // Skeleton Modals
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
-    import { Drawer, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
     import { beforeNavigate } from '$app/navigation';
@@ -77,13 +73,18 @@
     import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
-    import drawerID, { DrawerIDs } from '$lib/stores/drawer';
-    import AppMenu from '$lib/components/layout/AppMenu.svelte';
+    import {
+        getModeOsPrefers,
+        getModeUserPrefers,
+        setModeUserPrefers,
+    } from '$lib/utils/lightSwitch';
     interface Props {
         children?: import('svelte').Snippet;
     }
 
     let { children }: Props = $props();
+
+    const toaster = createToaster();
 
     initializeStores();
 
@@ -96,6 +97,8 @@
             searchTerms.set(new Set());
         }
     });
+
+    let isDecryptSecretModalOpened = $state(false);
 
     let searchQuery = $derived($page.url.searchParams.get('searchTerms'));
     let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
@@ -114,7 +117,6 @@
         placement: 'right',
     };
 
-    const toastStore = getToastStore();
     const modalStore = getModalStore();
 
     let displayNav = $derived($loggedIn);
@@ -122,46 +124,43 @@
 
     $effect(() => {
         if ($retryConnection === 0) {
-            const t: ToastSettings = {
-                message: 'Could not reconnect to Relays!',
-                autohide: false,
+            toaster.warning({
+                title: 'Could not reconnect to Relays!',
                 action: {
                     label: 'Reload page',
-                    response: () => {
+                    onClick: () => {
                         window.location.reload();
                     },
                 },
-                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-            };
-            toastStore.trigger(t);
+            });
         }
     });
 
     $effect(() => {
         if ($wotUpdateFailed) {
-            const t: ToastSettings = {
-                message: 'Could not load Web of Trust!',
-                autohide: false,
+            toaster.warning({
+                title: 'Could not load Web of Trust!',
                 action: {
                     label: 'Retry',
-                    response: () => {
+                    onClick: () => {
                         window.location.reload();
                     },
                 },
-                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-            };
-            toastStore.trigger(t);
+            });
         }
     });
 
     $effect(() => {
         if ($wotUpdateNoResults) {
-            const t: ToastSettings = {
-                message: 'Your Web of Trust is Empty!',
-                timeout: 6000,
-                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-            };
-            toastStore.trigger(t);
+            toaster.warning({
+                title: 'Your Web of Trust is Empty!',
+                action: {
+                    label: 'Retry',
+                    onClick: () => {
+                        window.location.reload();
+                    },
+                },
+            });
         }
     });
 
@@ -170,174 +169,180 @@
         $loggingIn = true;
         await tick();
 
+        migrateLoginMethod();
+
+        // Try to get saved Login method from localStorage and login that way
+        $loginMethod = (localStorage.getItem('login-method') as LoginMethod) ?? null;
+
+        if (!$loginMethod) {
+            $loggingIn = false;
+            return;
+        }
+
+        try {
+            switch ($loginMethod) {
+                case LoginMethod.Local:
+                    await handleLocalLogin();
+                    break;
+                case LoginMethod.Bunker:
+                    await handleBunkerLogin();
+                    break;
+                case LoginMethod.Nip07:
+                    handleNip07Login();
+                    break;
+            }
+
+            // If signer is defined we can init user
+            if ($ndk.signer) {
+                initializeUser($ndk);
+            }
+        } finally {
+            $loggingIn = false;
+        }
+    }
+
+    function migrateLoginMethod() {
         // Migration to login-method = 'local'  instead of 'ephemeral'
         let method = localStorage.getItem('login-method');
         if (method === 'ephemeral') {
             localStorage.setItem('login-method', 'local');
-            method = 'local';
+        }
+    }
+
+    async function handleLocalLogin(): Promise<void> {
+        // We either get the private key from sessionStorage or decrypt from localStorage
+        if ($sessionPK) {
+            $ndk.signer = new NDKPrivateKeySigner($sessionPK);
+            return;
         }
 
-        // Try to get saved Login method from localStorage and login that way
-        $loginMethod = (method as LoginMethod) ?? null;
+        try {
+            // Get decrypted seed from a modal prompt where user enters passphrase
+            // User can dismiss modal in which case decryptedSeed is undefined
+            const responseObject = await promptForDecryption();
 
-        if ($loginMethod) {
-            if ($loginMethod === LoginMethod.Local) {
-                // We either get the private key from sessionStorage or decrypt from localStorage
-                if ($sessionPK) {
-                    $ndk.signer = new NDKPrivateKeySigner($sessionPK);
-                } else {
-                    try {
-                        // Get decrypted seed from a modal prompt where user enters passphrase
-                        // User can dismiss modal in which case decryptedSeed is undefined
-                        const responseObject: any = await new Promise<string | undefined>(
-                            (resolve) => {
-                                const modalComponent: ModalComponent = {
-                                    ref: DecryptSecretModal,
-                                };
-
-                                const modal: ModalSettings = {
-                                    type: 'component',
-                                    component: modalComponent,
-                                    response: (responseObject: any) => {
-                                        resolve(responseObject);
-                                    },
-                                };
-                                // Call DecryptSecret Modal to prompt for passphrase
-                                // This can throw invalid secret if decryption was unsuccessful
-                                modalStore.trigger(modal);
-                                // We got some kind of response from modal
-                            }
-                        );
-
-                        if (responseObject) {
-                            const decryptedSecret = responseObject['decryptedSecret'];
-                            const restoreMethod = responseObject['restoreMethod'];
-                            if (decryptedSecret && restoreMethod) {
-                                let privateKey: string | undefined = undefined;
-                                if (restoreMethod === RestoreMethod.Seed) {
-                                    privateKey = privateKeyFromSeedWords(decryptedSecret);
-                                } else if (restoreMethod === RestoreMethod.Nsec) {
-                                    privateKey = privateKeyFromNsec(decryptedSecret);
-                                }
-
-                                if (privateKey) {
-                                    $ndk.signer = new NDKPrivateKeySigner(privateKey);
-                                    $sessionPK = privateKey;
-                                } else {
-                                    throw new Error(
-                                        'Could not create hex private key from decrypted secret. \
-                                        Clear browser local storage and login again.'
-                                    );
-                                }
-                            } else {
-                                $loggingIn = false;
-                                return;
-                            }
-                        } else {
-                            $loggingIn = false;
-                            return;
-                        }
-                    } catch (e) {
-                        const t: ToastSettings = {
-                            message: `Could not create private key from local secret, error: ${e}`,
-                            autohide: false,
-                        };
-                        toastStore.trigger(t);
-                    }
-                }
-            } else if ($loginMethod === LoginMethod.Bunker) {
-                const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
-                const bunkerTargetNpub = localStorage.getItem('bunkerTargetNpub');
-                const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
-
-                if (localBunkerKey && bunkerTargetNpub && bunkerRelayURLsString) {
-                    const bunkerRelayURLs = bunkerRelayURLsString.split(',');
-                    bunkerRelayURLs.forEach((url: string) => {
-                        // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
-                        $bunkerNDK.addExplicitRelay(url);
-                    });
-
-                    await $bunkerNDK.connect();
-                    console.log(
-                        'ndk connected to specified bunker relays',
-                        $bunkerNDK.pool.connectedRelays()
-                    );
-
-                    let connectionParams = bunkerTargetNpub;
-
-                    const localSigner = new NDKPrivateKeySigner(localBunkerKey);
-                    const remoteSigner = new NDKNip46Signer(
-                        $bunkerNDK,
-                        connectionParams,
-                        localSigner
-                    );
-
-                    setTimeout(() => {
-                        if (!$ndk.signer) {
-                            const t: ToastSettings = {
-                                autohide: false,
-                                message:
-                                    '\
-                                    <p class="text-center">Bunker connection took too long!</p>\
-                                    <p>Fix or Remove Bunker Connection!</p>\
-                                    ',
-                                action: {
-                                    label: 'Delete Bunker Connection',
-                                    response: () => {
-                                        logout();
-                                    },
-                                },
-                                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-                                background: 'bg-warning-300-600-token',
-                            };
-                            toastStore.trigger(t);
-
-                            $loggingIn = false;
-                            tick();
-                        }
-                    }, 20000);
-                    try {
-                        const returnedUser = await remoteSigner.blockUntilReady();
-                        if (returnedUser.npub) {
-                            $ndk.signer = remoteSigner;
-                        }
-                    } catch (e) {
-                        const t: ToastSettings = {
-                            message: `
-                        <p>Could not connect to Bunker!</p>
-                        <p>
-                        <span> Reason: </span>
-                        <span> ${e} </span>
-                        </p>
-`,
-                            autohide: false,
-                            background: 'bg-error-300-600-token',
-                            classes: 'font-bold',
-                        };
-                        toastStore.trigger(t);
-                        $loggingIn = false;
-                        return;
-                    }
-                }
-            } else if ($loginMethod === LoginMethod.Nip07) {
-                if (!$ndk.signer) {
-                    $ndk.signer = new NDKNip07Signer();
-                }
+            if (!responseObject) {
+                return;
             }
+
+            const { decryptedSecret, restoreMethod } = responseObject;
+            const privateKey = getPrivateKeyFromDecryptedSecret(decryptedSecret, restoreMethod);
+
+            if (!privateKey) {
+                throw new Error(
+                    'Could not create hex private key from decrypted secret. Clear browser local storage and login again.'
+                );
+            }
+
+            $ndk.signer = new NDKPrivateKeySigner(privateKey);
+            $sessionPK = privateKey;
+        } catch (e) {
+            showErrorToast(`Could not create private key from local secret, error: ${e}`);
         }
-        // If signer is defined we can init user
-        if ($ndk.signer) {
-            initializeUser($ndk, toastStore);
+    }
+
+    async function promptForDecryption(): Promise<any> {
+        return new Promise<string | undefined>((resolve) => {
+            isDecryptSecretModalOpened = true;
+            const modalComponent: ModalComponent = { ref: DecryptSecretModal };
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (responseObject: any) => resolve(responseObject),
+            };
+            modalStore.trigger(modal);
+        });
+    }
+
+    function getPrivateKeyFromDecryptedSecret(
+        decryptedSecret: string,
+        restoreMethod: RestoreMethod
+    ): string | undefined {
+        switch (restoreMethod) {
+            case RestoreMethod.Seed:
+                return privateKeyFromSeedWords(decryptedSecret);
+            case RestoreMethod.Nsec:
+                return privateKeyFromNsec(decryptedSecret);
+            default:
+                return undefined;
+        }
+    }
+
+    async function handleBunkerLogin(): Promise<void> {
+        const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
+        const bunkerTargetNpub = localStorage.getItem('bunkerTargetNpub');
+        const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
+
+        if (!localBunkerKey || !bunkerTargetNpub || !bunkerRelayURLsString) {
+            return;
         }
 
-        console.log('setting loggingIn to false');
-        $loggingIn = false;
+        const bunkerRelayURLs = bunkerRelayURLsString.split(',');
+
+        // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
+        bunkerRelayURLs.forEach((url) => $bunkerNDK.addExplicitRelay(url));
+
+        await $bunkerNDK.connect();
+        console.log('ndk connected to specified bunker relays', $bunkerNDK.pool.connectedRelays());
+
+        setupBunkerTimeout();
+
+        try {
+            const localSigner = new NDKPrivateKeySigner(localBunkerKey);
+            const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerTargetNpub, localSigner);
+
+            const returnedUser = await remoteSigner.blockUntilReady();
+            if (returnedUser.npub) {
+                $ndk.signer = remoteSigner;
+            }
+        } catch (e) {
+            showBunkerConnectionError(e);
+        }
+    }
+
+    function setupBunkerTimeout() {
+        setTimeout(() => {
+            if (!$ndk.signer) {
+                toaster.warning({
+                    title: 'Bunker connection took too long!',
+                    description: 'Fix or Remove Bunker Connection!',
+                    action: {
+                        label: 'Delete Bunker Connection',
+                        onClick: () => logout(),
+                    },
+                });
+            }
+        }, 20000);
+    }
+
+    function showBunkerConnectionError(error: any) {
+        toaster.error({
+            title: 'Could not connect to Bunker!',
+            description: `Reason: ${error}`,
+        });
+    }
+
+    function handleNip07Login() {
+        if (!$ndk.signer) {
+            $ndk.signer = new NDKNip07Signer();
+        }
+    }
+
+    function showErrorToast(message: string) {
+        toaster.error({
+            title: message,
+        });
     }
 
     function configureBasics() {
         localStorage.debug = '*';
-        if (!$modeCurrent) {
-            setModeCurrent(getModeAutoPrefers());
+        const mode = getModeUserPrefers();
+        if (!mode) {
+            const modeAutoPrefers = getModeOsPrefers();
+            setModeUserPrefers(modeAutoPrefers);
+            document.documentElement.setAttribute('data-mode', modeAutoPrefers);
+        } else {
+            document.documentElement.setAttribute('data-mode', mode);
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -348,12 +353,9 @@
 
         window.addEventListener('offline', () => {
             console.log('offline');
-            const t: ToastSettings = {
-                message: 'Offline',
-                autohide: false,
-                background: 'bg-warning-300-600-token',
-            };
-            toastStore.trigger(t);
+            toaster.warning({
+                title: 'Offline',
+            });
             $online = false;
         });
 
@@ -422,20 +424,16 @@
     // Check for app updates and offer reload option to user in a Toast
     $effect(() => {
         if ($updated) {
-            let toastId: string;
-            const t: ToastSettings = {
-                message: 'New version of the app is available!',
-                autohide: false,
+            toaster.info({
+                title: 'New version of the app is available!',
                 action: {
                     label: 'Reload',
-                    response: () => {
+                    onClick: () => {
                         // Reload new page circumventing browser cache
                         location.href = location.pathname + '?v=' + new Date().getTime();
                     },
                 },
-                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-            };
-            toastId = toastStore.trigger(t);
+            });
         }
     });
 
@@ -445,14 +443,14 @@
     $effect(() => {
         if (showAppInstallPromotion) {
             showAppInstallPromotion = false;
-            let toastId: string;
-            const t: ToastSettings = {
-                message: 'Install app for a better experience!',
-                autohide: false,
+
+            const toastId = toaster.create({
+                title: 'Install app for a better experience!',
+                type: 'info',
                 action: {
                     label: 'Install',
-                    response: async () => {
-                        toastStore.close(toastId);
+                    onClick: async () => {
+                        toaster.remove(toastId);
                         deferredInstallPrompt.prompt();
                         // Find out whether the user confirmed the installation or not
                         const { outcome } = await deferredInstallPrompt.userChoice;
@@ -466,8 +464,7 @@
                         }
                     },
                 },
-            };
-            toastId = toastStore.trigger(t);
+            });
         }
     });
 
@@ -573,28 +570,34 @@
     });
 </script>
 
-<Toast zIndex="z-1100" />
-<Modal />
-<Drawer regionDrawer={'flex justify-center'} zIndex={'z-50'}>
-    {#if $drawerID === DrawerIDs.AppMenu}
-        <AppMenu />
-    {/if}
-</Drawer>
-<AppShell slotSidebarLeft="bg-surface-100-800-token">
-    {#snippet header()}
+<Toaster classes="z-1100" {toaster}></Toaster>
+
+<!-- layout structure -->
+<div class="grid h-screen grid-rows-[auto_1fr_auto] overflow-hidden">
+    <!-- Fixed Header -->
+    <header class="sticky top-0 z-10 bg-surface-100-800 p-4" aria-label="Main header">
         <Header on:restoreLogin={restoreLogin} />
-    {/snippet}
+    </header>
 
-    <!-- Router Slot -->
-    {@render children?.()}
+    <!-- Content Area -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Collapsible Sidebar (hidden on small screens) -->
+        {#if displayNav}
+            <aside class="hidden sm:block">
+                <SidebarLeft />
+            </aside>
+        {/if}
 
-    {#snippet sidebarLeft()}
-        <SidebarLeft hideSidebarLeft={!displayNav} />
-    {/snippet}
+        <!-- Main Content - improved accessibility -->
+        <main class="flex-1 overflow-y-auto p-4" aria-label="Main content">
+            {@render children?.()}
+        </main>
+    </div>
 
-    {#snippet footer()}
-        <Footer hideFooter={!displayNav} />
-    {/snippet}
-</AppShell>
-
-<!-- <AppHeader /> -->
+    <!-- Mobile Footer  -->
+    {#if displayNav}
+        <footer class="fixed bottom-0 w-full sm:hidden" aria-label="Mobile navigation">
+            <Footer />
+        </footer>
+    {/if}
+</div>

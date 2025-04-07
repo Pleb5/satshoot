@@ -3,13 +3,13 @@
     import { Invoice } from '@getalby/lightning-tools';
     import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
     import { onMount } from 'svelte';
-    import { getToastStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
 
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     interface Props {
         cashuWallet: NDKCashuWallet;
@@ -56,20 +56,15 @@
                     <br/>
                     <p>Total: ${total} sats</p>`;
                 }
-                toastStore.trigger({
-                    message: message,
-                    timeout: 5000,
-                    autohide: true,
-                    background: `bg-success-300-600`,
+                toaster.success({
+                    title: message,
                 });
                 pr = '';
             })
             .catch((err) => {
                 console.error('An error occurred in withdraw', err);
-                toastStore.trigger({
-                    message: `Failed to withdraw: ${err?.message || err} `,
-                    autohide: false,
-                    background: `bg-error-300-600`,
+                toaster.error({
+                    title: `Failed to withdraw: ${err?.message || err} `,
                 });
             })
             .finally(() => {
@@ -93,10 +88,8 @@
             });
 
         if (!cameraId) {
-            toastStore.trigger({
-                message: `Failed to get camera details!`,
-                autohide: false,
-                background: `bg-error-300-600`,
+            toaster.error({
+                title: `Failed to get camera details!`,
             });
             return;
         }
@@ -121,10 +114,8 @@
             })
             .catch((err) => {
                 console.error('Failed to start scanning :>> ', err);
-                toastStore.trigger({
-                    message: `Failed to start scanning!`,
-                    autohide: false,
-                    background: `bg-error-300-600`,
+                toaster.error({
+                    title: `Failed to start scanning!`,
                 });
             });
     }
@@ -150,10 +141,8 @@
                 })
                 .catch((err) => {
                     console.error('Error scanning file. Reason: ', err);
-                    toastStore.trigger({
-                        message: `Failed to get payment invoice!`,
-                        autohide: false,
-                        background: `bg-error-300-600`,
+                    toaster.error({
+                        title: `Failed to get payment invoice!`,
                     });
                 });
         }

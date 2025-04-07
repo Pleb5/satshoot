@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { getToastStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Button from './Button.svelte';
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     interface Props {
         text: string;
@@ -14,11 +14,8 @@
 
     function handleCopy() {
         navigator.clipboard.writeText(text).then(() =>
-            toastStore.trigger({
-                message: feedbackMessage,
-                background: `bg-success-300-600`,
-                autohide: true,
-                timeout: 3000,
+            toaster.error({
+                title: feedbackMessage,
             })
         );
     }

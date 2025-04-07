@@ -12,8 +12,9 @@
 
     import tagOptions from '$lib/utils/tag-options';
 
-    import type { ModalComponent, ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
 
     import { beforeNavigate, goto } from '$app/navigation';
     import { onMount, tick } from 'svelte';
@@ -25,7 +26,7 @@
     import { redirectAfterLogin } from '$lib/stores/gui';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
     const modalStore = getModalStore();
 
     let tagInput = $state('');
@@ -118,12 +119,9 @@
 
     function addTag(tag: string) {
         if (tagList.length >= maxTags) {
-            const t: ToastSettings = {
-                message: `Cannot add more than ${maxTags} tags!`,
-                timeout: 4000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: `Cannot add more than ${maxTags} tags!`,
+            });
 
             return;
         }
@@ -156,12 +154,9 @@
             occurrence === 0;
 
         if (!valid) {
-            const t: ToastSettings = {
-                message: 'Invalid tag! Only letters and numbers, NO duplicates!',
-                timeout: 4000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Invalid tag! Only letters and numbers, NO duplicates!',
+            });
         }
 
         return valid;
@@ -214,29 +209,19 @@
                 } catch (e) {
                     posting = false;
                     console.log(job);
-                    const t: ToastSettings = {
-                        message: 'Could not post Job: ' + e,
-                        timeout: 7000,
-                        background: 'bg-error-300-600',
-                    };
-                    toastStore.trigger(t);
+                    toaster.error({
+                        title: 'Could not post Job: ' + e,
+                    });
                 }
             } else {
-                const t: ToastSettings = {
-                    message: 'Log in to post the Job!',
-                    timeout: 7000,
-                    background: 'bg-error-300-600',
-                };
-                toastStore.trigger(t);
+                toaster.error({
+                    title: 'Log in to post the Job!',
+                });
             }
         } else {
-            const t: ToastSettings = {
-                message:
-                    '<p style="text-align:center;"><strong>Invalid Job!</strong></p><br/>Please fill in a <strong>valid Job Title</strong> and <strong>Description</strong> before posting!',
-                timeout: 7000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: '<p style="text-align:center;"><strong>Invalid Job!</strong></p><br/>Please fill in a <strong>valid Job Title</strong> and <strong>Description</strong> before posting!',
+            });
         }
     }
 
@@ -340,6 +325,7 @@
                                             <button
                                                 class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-white-100 hover:bg-blue-500"
                                                 onclick={() => removeTag(tag)}
+                                                aria-label="remove tag"
                                             >
                                                 <i class="bx bx-x"></i>
                                             </button>

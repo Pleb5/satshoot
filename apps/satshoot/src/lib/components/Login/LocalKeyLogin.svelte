@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Passphrase from '../Passphrase.svelte';
     import TabSelector from '../UI/Buttons/TabSelector.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -15,7 +16,7 @@
     import { goto } from '$app/navigation';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     enum LocalKeyLoginTabs {
         SecretKey,
@@ -47,20 +48,16 @@
 
     async function loginWithNsec() {
         if (passphraseForNsec.length < 14) {
-            toastStore.trigger({
-                message: 'Passphrase should be at least 14 characters long',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Passphrase should be at least 14 characters long',
             });
 
             return;
         }
 
         if (confirmPassphraseForNsec !== passphraseForNsec) {
-            toastStore.trigger({
-                message: 'Confirm passphrase does not match passphrase',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Confirm passphrase does not match passphrase',
             });
 
             return;
@@ -76,30 +73,24 @@
 
     async function loginWithSeedWords() {
         if (passphraseForSeedWords.length < 14) {
-            toastStore.trigger({
-                message: 'Passphrase should be at least 14 characters long',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Passphrase should be at least 14 characters long',
             });
 
             return;
         }
 
         if (confirmPassphraseForSeedWords !== passphraseForSeedWords) {
-            toastStore.trigger({
-                message: 'Confirm passphrase does not match passphrase',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Confirm passphrase does not match passphrase',
             });
 
             return;
         }
 
         if (!validateSeedWordInputs(seedWordsForLocalKey)) {
-            toastStore.trigger({
-                message: 'Invalid seed words input!',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Invalid seed words input!',
             });
             return;
         }
@@ -122,20 +113,16 @@
         });
 
         if (!allFilledIn) {
-            toastStore.trigger({
-                message: 'Fill in all seed words!',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Fill in all seed words!',
             });
             return false;
         }
 
         // validate valid bip39 wordlist provided
         if (!validateWords(seedWords.join(' '))) {
-            toastStore.trigger({
-                message: 'Check the seed words again! Not a valid bip39 wordlist!',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Check the seed words again! Not a valid bip39 wordlist!',
             });
             return false;
         }
@@ -179,23 +166,19 @@
             $ndk.signer = signer;
 
             // Initialize user
-            initializeUser($ndk, toastStore);
+            initializeUser($ndk);
 
             // Display success toast
-            toastStore.trigger({
-                message: 'Encrypted Secret saved in local storage!',
-                timeout: 7000,
-                background: 'bg-success-300-600',
+            toaster.success({
+                title: 'Encrypted Secret saved in local storage!',
             });
 
             handleRedirection();
             // Close login modal
             modalStore.close();
         } catch (e) {
-            toastStore.trigger({
-                message: `${failureMessage} ${e}`,
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: `${failureMessage} ${e}`,
             });
         }
     }

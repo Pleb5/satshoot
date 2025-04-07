@@ -1,27 +1,21 @@
 <script lang="ts">
-    import {
-        Avatar,
-        getDrawerStore,
-        getModalStore,
-        type DrawerSettings,
-        type ModalComponent,
-        type ModalSettings,
-    } from '@skeletonlabs/skeleton';
+    import { Avatar, Modal } from '@skeletonlabs/skeleton-svelte';
+
     import LoginModal from '../Modals/LoginModal.svelte';
     import currentUser, { loggedIn, loggingIn, loginMethod } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { createEventDispatcher } from 'svelte';
-    import drawerID, { DrawerIDs } from '$lib/stores/drawer';
     import { NDKKind, NDKRelaySet, profileFromEvent } from '@nostr-dev-kit/ndk';
     import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import AppMenu from './AppMenu.svelte';
 
     const dispatch = createEventDispatcher();
 
-    const drawerStore = getDrawerStore();
-    const modalStore = getModalStore();
+    let isLoginModalOpened = $state(false);
+    let isAppMenuOpened = $state(false);
 
     let profilePicture = $state('');
 
@@ -54,27 +48,15 @@
     };
 
     function handleLogin() {
-        const modalComponent: ModalComponent = {
-            ref: LoginModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-
-        modalStore.trigger(modal);
+        isLoginModalOpened = true;
     }
 
     function openAppMenu() {
-        $drawerID = DrawerIDs.AppMenu;
-        const drawerSettings: DrawerSettings = {
-            id: $drawerID.toString(),
-            width: 'w-[50vw] sm:w-[40vw] md:w-[30vw]',
-            position: 'right',
-            bgDrawer: 'bg-surface-300-600-token',
-        };
-        drawerStore.open(drawerSettings);
+        isAppMenuOpened = true;
+    }
+
+    function closeAppMenu() {
+        isAppMenuOpened = false;
     }
 
     const satShootLogoWrapperClass = 'flex flex-row items-center gap-4 ' + '';
@@ -110,12 +92,11 @@
                             <button onclick={openAppMenu}>
                                 <!-- Avatar image -->
                                 <Avatar
-                                    class="rounded-full border-white placeholder-white"
-                                    border="border-4 border-surface-300-600-token hover:border-primary-500!"
-                                    cursor="cursor-pointer"
-                                    width="w-12 sm:w-14"
+                                    classes="rounded-full border-white placeholder-white cursor-pointer w-12 sm:w-14"
+                                    border="border-4 border-surface-300-600 hover:border-primary-500!"
                                     src={profilePicture ??
                                         getRoboHashPicture($currentUser?.pubkey ?? '')}
+                                    name={$currentUser?.profile?.displayName ?? ''}
                                 />
                             </button>
                         {:else if $loggingIn}
@@ -134,3 +115,20 @@
         </div>
     </div>
 </div>
+
+<Modal
+    open={isAppMenuOpened}
+    onInteractOutside={closeAppMenu}
+    contentBase="bg-surface-300-600 w-[50vw] sm:w-[40vw] md:w-[30vw] h-screen"
+    positionerJustify="justify-end"
+>
+    {#snippet content()}
+        <AppMenu />
+    {/snippet}
+</Modal>
+
+<Modal open={isLoginModalOpened} closeOnInteractOutside={false} closeOnEscape={false}>
+    {#snippet content()}
+        <LoginModal />
+    {/snippet}
+</Modal>

@@ -7,7 +7,8 @@
     import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
     import { hexToBytes } from '@noble/hashes/utils';
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { generateSeedWords, privateKeyFromSeedWords } from 'nostr-tools/nip06';
     import { nsecEncode } from 'nostr-tools/nip19';
     import { onMount } from 'svelte';
@@ -17,7 +18,7 @@
     import SeedWords from './SeedWords.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     const seedWords = generateSeedWords();
     const generatedSeedWords = seedWords.split(' ');
@@ -38,20 +39,16 @@
 
     async function finalizeAccountGeneration() {
         if (passphraseForGeneratedAccount.length < 14) {
-            toastStore.trigger({
-                message: 'Passphrase should be at least 14 characters long',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Passphrase should be at least 14 characters long',
             });
 
             return;
         }
 
         if (confirmPassphraseForGeneratedAccount !== passphraseForGeneratedAccount) {
-            toastStore.trigger({
-                message: 'Confirm passphrase does not match passphrase',
-                background: 'bg-error-300-600',
-                timeout: 5000,
+            toaster.error({
+                title: 'Confirm passphrase does not match passphrase',
             });
 
             return;
@@ -88,12 +85,10 @@
             $onboardingStep = OnboardingStep.Account_Created;
 
             // initialize user
-            initializeUser($ndk, toastStore);
+            initializeUser($ndk);
 
-            toastStore.trigger({
-                message: '<strong>Nostr Keypair Created!</strong>',
-                timeout: 7000,
-                background: 'bg-success-300-600',
+            toaster.success({
+                title: '<strong>Nostr Keypair Created!</strong>',
             });
 
             handleRedirection();

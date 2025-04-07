@@ -1,7 +1,8 @@
 <script lang="ts">
     import { run } from 'svelte/legacy';
 
-    import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
@@ -19,7 +20,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     interface Props {
         ticket: TicketEvent;
@@ -114,44 +115,28 @@
 
             posting = false;
 
-            const t: ToastSettings = {
-                message: 'Offer Posted!',
-                timeout: 4000,
-                background: 'bg-success-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.success({ title: 'Offer Posted!' });
 
             if (!$currentUser?.profile?.lud16) {
                 console.log($currentUser?.profile);
 
-                let toastId: string;
-                const t: ToastSettings = {
-                    message: 'Set up an LN Address to receive payments!',
-                    background: 'bg-warning-300-600',
-                    autohide: false,
+                toaster.warning({
+                    title: 'Set up an LN Address to receive payments!',
                     action: {
                         label: 'Go to Profile',
-                        response: () => {
-                            goto('/' + $currentUser!.npub);
-                        },
+                        onClick: () => goto('/' + $currentUser!.npub),
                     },
-                };
-                toastId = toastStore.trigger(t);
+                });
             }
 
             if ($currentUser && !$wallet) {
-                const t: ToastSettings = {
-                    message: 'Set up a Nostr Wallet to receive payments in ecash tokens!',
-                    background: 'bg-warning-300-600',
-                    autohide: false,
+                toaster.warning({
+                    title: 'Set up a Nostr Wallet to receive payments in ecash tokens!',
                     action: {
                         label: 'Go to Wallet',
-                        response: () => {
-                            goto('/my-cashu-wallet');
-                        },
+                        onClick: () => goto('/my-cashu-wallet'),
                     },
-                };
-                toastStore.trigger(t);
+                });
             }
 
             if ($modalStore[0].response) {
@@ -167,12 +152,9 @@
             posting = false;
             const errorMessage = 'Error happened while publishing Offer:' + e;
 
-            const t: ToastSettings = {
-                message: errorMessage,
-                timeout: 7000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: errorMessage,
+            });
 
             if ($modalStore[0].response) {
                 $modalStore[0].response(false);

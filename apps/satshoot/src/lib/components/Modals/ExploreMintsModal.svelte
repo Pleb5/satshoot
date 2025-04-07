@@ -5,7 +5,8 @@
         type MintUrl,
         type NDKCashuMintRecommendation,
     } from '@nostr-dev-kit/ndk-wallet';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import CashuMintListItem from '$lib/components/Mints/Item.svelte';
     import { wot } from '$lib/stores/wot';
     import { getCashuMintRecommendations } from '$lib/wallet/cashu';
@@ -13,7 +14,7 @@
     import Button from '../UI/Buttons/Button.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     interface Props {
         cashuWallet: NDKCashuWallet;
@@ -37,10 +38,8 @@
             })
             .catch((err) => {
                 console.error(`An error occurred in getting cashu mint recommendations`, err);
-                toastStore.trigger({
-                    message: 'An error occurred in getting cashu mint recommendations',
-                    autohide: false,
-                    background: `bg-error-300-600`,
+                toaster.error({
+                    title: 'An error occurred in getting cashu mint recommendations',
                 });
                 modalStore.close();
             });

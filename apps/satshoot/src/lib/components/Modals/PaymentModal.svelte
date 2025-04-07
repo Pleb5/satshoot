@@ -1,10 +1,6 @@
 <script lang="ts">
-    import {
-        getModalStore,
-        getToastStore,
-        popup,
-        type PopupSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, popup, type PopupSettings } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
@@ -77,7 +73,7 @@
         }
     }
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
     const modalStore = getModalStore();
 
     // TODO: As soon as Modals can take Props this needs to stop
@@ -463,13 +459,11 @@
     const handlePaymentError = (err: Error, payee: string) => {
         // Save already minted p2pk NutZap proofs, when Nostr event creation fails
         if (err instanceof NutZapError) {
-            toastStore.trigger({
-                message: err.message,
-                background: 'bg-error-300-600',
-                autohide: false,
+            toaster.error({
+                title: err.message,
                 action: {
                     label: 'Copy Proofs',
-                    response: () => {
+                    onClick: () => {
                         navigator.clipboard.writeText(JSON.stringify(err.data));
                         handleToast(
                             'Copied Proofs with Mint info to clipboard!',
@@ -640,11 +634,9 @@
     }
 
     function handleToast(message: string, type: ToastType, autohide: boolean = true) {
-        toastStore.trigger({
-            message,
-            timeout: 7000,
-            autohide,
-            background: `bg-${type}-300-600`,
+        toaster.create({
+            title: message,
+            type,
         });
     }
 

@@ -5,14 +5,14 @@
 
     import { SatShootPubkey } from '$lib/utils/misc';
 
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
-    import type { ToastSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    const toaster = createToaster();
 
     let textArea = $state<HTMLTextAreaElement>();
 
@@ -41,22 +41,16 @@
             let relays = await kind1Event.publish();
             posting = false;
             console.log(relays);
-            const t: ToastSettings = {
-                message: 'Appreciate Your Feedback!',
-                timeout: 7000,
-                background: 'bg-success-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.success({
+                title: 'Appreciate Your Feedback!',
+            });
 
             modalStore.close();
         } catch (e) {
             posting = false;
-            const t: ToastSettings = {
-                message: 'Error happened while publishing Feedback! Try again later!',
-                timeout: 5000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Error happened while publishing Feedback! Try again later!',
+            });
 
             modalStore.close();
         }

@@ -1,11 +1,6 @@
 <script lang="ts">
-    import {
-        getModalStore,
-        getToastStore,
-        type ModalComponent,
-        type ModalSettings,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import ndk from '$lib/stores/ndk';
@@ -16,7 +11,7 @@
     import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
     const modalStore = getModalStore();
 
     interface Props {
@@ -60,22 +55,16 @@
                 goto('/messages/' + job.encode());
             } catch (e) {
                 console.log(e);
-                const t: ToastSettings = {
-                    message:
-                        'Error while accepting Offer! Fix connection with Relays and try again!',
-                    timeout: 7000,
-                    background: 'bg-error-300-600',
-                };
-                toastStore.trigger(t);
+                toaster.error({
+                    title: 'Error while accepting Offer! Fix connection with Relays and try again!',
+                });
+
                 modalStore.close();
             }
         } else {
-            const t: ToastSettings = {
-                message: 'Cannot accept Offer, Job not found!',
-                timeout: 7000,
-                background: 'bg-error-300-600',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Cannot accept Offer, Job not found!',
+            });
             modalStore.close();
         }
     }

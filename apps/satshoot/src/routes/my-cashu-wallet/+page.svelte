@@ -28,14 +28,13 @@
     } from '@nostr-dev-kit/ndk-wallet';
     import {
         getModalStore,
-        getToastStore,
         popup,
         ProgressRadial,
         type ModalComponent,
         type ModalSettings,
         type PopupSettings,
-        type ToastSettings,
     } from '@skeletonlabs/skeleton';
+    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
@@ -47,7 +46,7 @@
     import RelayRemovalConfirmation from '$lib/components/Modals/RelayRemovalConfirmation.svelte';
     import RemoveMintModal from '$lib/components/Modals/RemoveMintModal.svelte';
 
-    const toastStore = getToastStore();
+    const toaster = createToaster();
     const modalStore = getModalStore();
 
     let mintBalances: Record<string, number> = $state({});
@@ -101,43 +100,33 @@
 
         if ($wallet.event?.kind === NDKKind.LegacyCashuWallet && !toastTriggered) {
             toastTriggered = true;
-            const t: ToastSettings = {
-                message: 'You are using a legacy Nostr Wallet. Migrate to new?',
-                background: 'bg-warning-300-600-token',
-                autohide: false,
+            toaster.warning({
+                title: 'You are using a legacy Nostr Wallet. Migrate to new?',
                 action: {
                     label: 'Migrate',
-                    response: () => {
+                    onClick: () => {
                         respondedToAction = true;
                         migrateCashuWallet($ndk)
                             .then(() => {
-                                toastStore.trigger({
-                                    message: `Successfully migrated Wallet`,
-                                    timeout: 5000,
-                                    autohide: true,
-                                    background: `bg-success-300-600-token`,
+                                toaster.success({
+                                    title: `Successfully migrated Wallet`,
                                 });
                             })
                             .catch((err) => {
-                                toastStore.trigger({
-                                    message: `Failed to migrate Wallet!\n ${err}`,
-                                    autohide: false,
-                                    background: `bg-error-300-600-token`,
+                                toaster.error({
+                                    title: `Failed to migrate Wallet!\n ${err}`,
                                 });
                             });
                     },
                 },
-                callback: (res) => {
-                    if (res.status === 'closed' && !respondedToAction) {
-                        toastStore.trigger({
-                            message: `You'll continue using legacy Wallet!`,
-                            autohide: false,
-                            background: `bg-warning-300-600-token`,
+                onStatusChange: (res) => {
+                    if (res.status === 'dismissing' && !respondedToAction) {
+                        toaster.warning({
+                            title: `You'll continue using legacy Wallet!`,
                         });
                     }
                 },
-            };
-            toastStore.trigger(t);
+            });
         }
     };
 
@@ -151,45 +140,35 @@
         let respondedToAction = false;
         if ($wallet._p2pk !== $userCashuInfo.p2pk && !respondedToAction) {
             console.log(`wallet _p2pk: ${$wallet._p2pk}\ncashuInfo p2pk:${$userCashuInfo.p2pk}`);
-            const t: ToastSettings = {
-                message:
+            toaster.warning({
+                title:
                     'Receiver Cashu info does not match with Nostr Wallet info.' +
                     ' It is recommended to sync them.',
-                background: 'bg-warning-300-600-token',
-                autohide: false,
                 action: {
                     label: 'Sync',
-                    response: async () => {
+                    onClick: async () => {
                         respondedToAction = true;
                         try {
                             await syncP2PK();
-                            toastStore.trigger({
-                                message: `Successfully updated Cashu Info!`,
-                                timeout: 5000,
-                                autohide: true,
-                                background: `bg-success-300-600-token`,
+                            toaster.success({
+                                title: `Successfully updated Cashu Info!`,
                             });
                         } catch (err) {
-                            toastStore.trigger({
-                                message: `Failed to update cashu mint list!`,
-                                autohide: false,
-                                background: `bg-error-300-600-token`,
+                            toaster.error({
+                                title: `Failed to update cashu mint list!`,
                             });
                         }
                     },
                 },
-                callback: (res) => {
-                    if (res.status === 'closed' && !respondedToAction) {
+                onStatusChange: (res) => {
+                    if (res.status === 'dismissing' && !respondedToAction) {
                         respondedToAction = true;
-                        toastStore.trigger({
-                            message: `You'll not be able to receive ecash payments`,
-                            autohide: false,
-                            background: `bg-warning-300-600-token`,
+                        toaster.warning({
+                            title: `You'll not be able to receive ecash payments`,
                         });
                     }
                 },
-            };
-            toastStore.trigger(t);
+            });
         }
     };
 
@@ -215,15 +194,13 @@
     const tryCreateCashuInfo = async () => {
         let respondedToAction = false;
 
-        const t: ToastSettings = {
-            message:
+        toaster.warning({
+            title:
                 'Could not find Cashu Info to receive ecash payments. Would you like' +
                 ' to publish preferred receiver info based on your Nostr Wallet?',
-            background: 'bg-warning-300-600-token',
-            autohide: false,
             action: {
                 label: 'Publish',
-                response: async () => {
+                onClick: async () => {
                     respondedToAction = true;
 
                     const ndkMintList = new NDKCashuMintList($wallet!.ndk);
@@ -239,32 +216,24 @@
                         await broadcastEvent($ndk, ndkMintList, { replaceable: true });
                         walletInit($wallet!, ndkMintList, $ndk, $currentUser!);
 
-                        toastStore.trigger({
-                            message: `Successfully published Cashu Info`,
-                            timeout: 5000,
-                            autohide: true,
-                            background: `bg-success-300-600-token`,
+                        toaster.success({
+                            title: `Successfully published Cashu Info`,
                         });
                     } catch (err) {
-                        toastStore.trigger({
-                            message: `Error happened while publishing Cashu Info:\n${err}`,
-                            autohide: false,
-                            background: `bg-error-300-600-token`,
+                        toaster.error({
+                            title: `Error happened while publishing Cashu Info:\n${err}`,
                         });
                     }
                 },
             },
-            callback: (res) => {
-                if (res.status === 'closed' && !respondedToAction) {
-                    toastStore.trigger({
-                        message: `You'll not be able to receive Cashu payments`,
-                        autohide: false,
-                        background: `bg-warning-300-600-token`,
+            onStatusChange: (res) => {
+                if (res.status === 'dismissing' && !respondedToAction) {
+                    toaster.warning({
+                        title: `You'll not be able to receive Cashu payments`,
                     });
                 }
             },
-        };
-        toastStore.trigger(t);
+        });
     };
 
     function getBalanceStr($wallet: NDKCashuWallet): string {
@@ -303,10 +272,7 @@
         await mintPromise;
 
         if (!newWallet.mints.length) {
-            const t: ToastSettings = {
-                message: `No mint is selected. Choose at-least 1 mint`,
-            };
-            toastStore.trigger(t);
+            toaster.error({ title: `No mint is selected. Choose at-least 1 mint` });
 
             return;
         }
@@ -333,18 +299,16 @@
             await broadcastEvent($ndk, cashuInfo, { replaceable: true });
             await newWallet.publish();
 
-            const t: ToastSettings = {
-                message: `Nostr Wallet created!`,
-            };
-            toastStore.trigger(t);
+            toaster.success({
+                title: `Nostr Wallet created!`,
+            });
 
             walletInit(newWallet, cashuInfo, $ndk, $currentUser!);
         } catch (err) {
             console.error(err);
-            const t: ToastSettings = {
-                message: `Failed to create Nostr Wallet: ${err}`,
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: `Failed to create Nostr Wallet: ${err}`,
+            });
         }
     }
 
@@ -354,17 +318,13 @@
             if ($wallet) {
                 $wallet = $wallet;
             } else {
-                toastStore.trigger({
-                    message: `Could not load wallet!`,
-                    autohide: false,
-                    background: `bg-error-300-600-token`,
+                toaster.error({
+                    title: `Could not load wallet!`,
                 });
             }
         } else {
-            toastStore.trigger({
-                message: `Error: User not found!`,
-                autohide: false,
-                background: `bg-error-300-600-token`,
+            toaster.error({
+                title: `Error: User not found!`,
             });
         }
     }
@@ -383,14 +343,13 @@
 
             await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
 
-            toastStore.trigger({
-                message: `Mints updated!`,
+            toaster.success({
+                title: `Mints updated!`,
             });
         } catch (e) {
             console.trace(e);
-            toastStore.trigger({
-                message: `Wallet update failed! Reason: ${e}`,
-                background: 'bg-error-300-600-token',
+            toaster.error({
+                title: `Wallet update failed! Reason: ${e}`,
             });
         }
     }
@@ -471,17 +430,13 @@
                     }
 
                     await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
-                    const t: ToastSettings = {
-                        message: `Cashu Info updated!`,
-                    };
-                    toastStore.trigger(t);
+                    toaster.success({
+                        title: 'Cashu Info updated!',
+                    });
                 } else {
-                    const t: ToastSettings = {
-                        message: `Invalid Relay URL!`,
-                        autohide: false,
-                        background: 'bg-error-300-600-token',
-                    };
-                    toastStore.trigger(t);
+                    toaster.error({
+                        title: 'Invalid Relay URL!',
+                    });
                 }
             }
         });
@@ -516,26 +471,22 @@
 
             await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
 
-            const t: ToastSettings = {
-                message: `Cashu Info updated!`,
-            };
-            toastStore.trigger(t);
+            toaster.success({
+                title: 'Cashu Info updated!',
+            });
         } catch (err) {
             console.error(err);
-            const t: ToastSettings = {
-                message: `Failed to update Cashu Info : ${err}`,
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: `Failed to update Cashu Info : ${err}`,
+            });
             return;
         }
     }
 
     function handleCleanWallet() {
         if (!$wallet) {
-            toastStore.trigger({
-                message: `Error! Wallet not found!`,
-                autohide: false,
-                background: `bg-error-300-600-token`,
+            toaster.error({
+                title: `Error! Wallet not found!`,
             });
             return;
         }
@@ -557,10 +508,8 @@
                             amountDestroyed += proof.amount;
                         }
                     }
-                    toastStore.trigger({
-                        message: `${amountDestroyed} spent sats cleaned from wallet`,
-                        background: `bg-success-300-600`,
-                        autohide: false,
+                    toaster.success({
+                        title: `${amountDestroyed} spent sats cleaned from wallet`,
                     });
                 };
                 for (const mint of $wallet!.mints) {
@@ -573,9 +522,8 @@
                         );
                     } catch (err) {
                         console.error('An error occurred in cleaning wallet', err);
-                        toastStore.trigger({
-                            message: `Failed to clean used tokens!`,
-                            background: `bg-info-300-600`,
+                        toaster.error({
+                            title: `Failed to clean used tokens!`,
                         });
                     } finally {
                         cleaningWallet = false;
