@@ -80,34 +80,6 @@ export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
             );
             console.warn('User relays in init', userRelays);
 
-            const metadataFilter = {
-                kinds: [NDKKind.Metadata],
-                authors: [user.pubkey],
-            };
-
-            const metadataRelays = [
-                ...BOOTSTRAPOUTBOXRELAYS,
-                ...DEFAULTRELAYURLS
-            ];
-
-            const profile = await fetchEventFromRelaysFirst(
-                metadataFilter,
-                {
-                    relayTimeoutMS: 2000,
-                    fallbackToCache: true,
-                    explicitRelays: Array.from(
-                        NDKRelaySet.fromRelayUrls(metadataRelays, ndk).relays
-                    )
-                }
-            );
-
-            if (profile) {
-                const $currentUser = get(currentUser);
-                $currentUser!.profile = profileFromEvent(profile);
-                console.warn('profile:', profileFromEvent(profile))
-            } else {
-                console.log('Profile could not be loaded')
-            }
  
             let explicitRelays = DEFAULTRELAYURLS;
             if (userRelays) {

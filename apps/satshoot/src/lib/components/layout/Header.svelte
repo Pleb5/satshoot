@@ -11,19 +11,54 @@
     import LoginModal from '../Modals/LoginModal.svelte';
     import currentUser, { loggedIn, loggingIn, loginMethod } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { fetchEventFromRelaysFirst, getRoboHashPicture } from '$lib/utils/helpers';
     import { createEventDispatcher } from 'svelte';
     import drawerID, { DrawerIDs } from '$lib/stores/drawer';
+    import { NDKKind, NDKRelaySet, profileFromEvent } from '@nostr-dev-kit/ndk';
+    import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/ndk';
 
     const dispatch = createEventDispatcher();
 
     const drawerStore = getDrawerStore();
     const modalStore = getModalStore();
 
-    $: profilePicture = $currentUser?.profile?.picture;
-    $: if ($currentUser?.profile) {
-        console.warn('profile arrived in header', $currentUser.profile)
-        profilePicture = $currentUser?.profile?.picture;
+    let profilePicture = $state('')
+
+    $effect(() => {
+        if ($currentUser)fetchUserProfile();
+    })
+
+    const fetchUserProfile = async () => {
+        const metadataFilter = {
+            kinds: [NDKKind.Metadata],
+            authors: [$currentUser!.pubkey],
+        };
+
+        const metadataRelays = [
+            ...BOOTSTRAPOUTBOXRELAYS,
+            ...DEFAULTRELAYURLS
+        ];
+
+        const profileEvent = await fetchEventFromRelaysFirst(
+            metadataFilter,
+            {
+                relayTimeoutMS: 3000,
+                fallbackToCache: true,
+                explicitRelays: Array.from(
+                    NDKRelaySet.fromRelayUrls(metadataRelays, $ndk).relays
+                )
+            }
+        );
+
+        if (profileEvent) {
+            const profile = profileFromEvent(profileEvent)
+            $currentUser!.profile = profile;
+            profilePicture = profile?.picture 
+                ?? profile?.image
+                ?? getRoboHashPicture($currentUser!.pubkey);
+        } else {
+            profilePicture = getRoboHashPicture($currentUser!.pubkey);
+        }
     }
 
     function handleLogin() {
