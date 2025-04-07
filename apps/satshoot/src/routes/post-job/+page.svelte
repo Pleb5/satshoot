@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
-    import currentUser, { loggingIn } from '$lib/stores/user';
+    import currentUser, { loggedIn, loggingIn } from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
 
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
@@ -42,7 +42,7 @@
     let descriptionText = $state('');
     let posting = $state(false);
 
-    const allowPostJob = $derived(!!$currentUser && $loggingIn);
+    const allowPostJob = $derived(!!$currentUser && $loggedIn);
 
     const { titleValid, titleState } = $derived.by(() => {
         if (titleText.length < minTitleLength) {
