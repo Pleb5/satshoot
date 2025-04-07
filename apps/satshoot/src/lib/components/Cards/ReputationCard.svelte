@@ -21,7 +21,7 @@
         type Hexpubkey,
         type NDKEvent,
     } from '@nostr-dev-kit/ndk';
-    import type { NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy } from 'svelte';
     import ReviewSummaryAsFreelancer from '../Modals/ReviewSummaryAsFreelancer.svelte';
     import ReviewSummaryAsClient from '../Modals/ReviewSummaryAsClient.svelte';
@@ -40,41 +40,6 @@
 
     let { user, type = undefined, forUserCard = false }: Props = $props();
 
-    // Derived arrays for winning offers and involved tickets
-    const { winningOffersOfUser, winningOffersForUser, involvedTickets } = $derived.by(() => {
-        const userTickets = $wotFilteredTickets.filter(
-            (ticket: TicketEvent) => ticket.pubkey === user
-        );
-
-        const userOffers = $wotFilteredOffers.filter((offer: OfferEvent) => offer.pubkey === user);
-
-        const winningOffersOfUser: string[] = [];
-        const winningOffersForUser: string[] = [];
-        const involvedTickets: string[] = [];
-
-        // Find offers where user won as freelancer
-        $wotFilteredTickets.forEach((ticket: TicketEvent) => {
-            userOffers.forEach((offer: OfferEvent) => {
-                if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                    winningOffersOfUser.push(offer.id);
-                    involvedTickets.push(ticket.ticketAddress);
-                }
-            });
-        });
-
-        // Find offers where user was client and someone else won
-        $wotFilteredOffers.forEach((offer: OfferEvent) => {
-            userTickets.forEach((ticket: TicketEvent) => {
-                if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                    winningOffersForUser.push(offer.id);
-                    involvedTickets.push(ticket.ticketAddress);
-                }
-            });
-        });
-
-        return { winningOffersOfUser, winningOffersForUser, involvedTickets };
-    });
-
     const subOptions = {
         closeOnEose: false,
         groupable: true,
@@ -82,31 +47,89 @@
         autoStart: true,
     };
 
-    // Derived subscriptions
-    const allEarningsStore = $derived(
-        $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#p': [user], '#e': winningOffersOfUser },
-            subOptions
-        )
-    );
-    const allPaymentsStore = $derived(
-        $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#e': winningOffersForUser },
-            subOptions
-        )
-    );
-    const allPledgesStore = $derived(
-        $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#a': involvedTickets, '#p': [SatShootPubkey] },
-            subOptions
-        )
-    );
+    let allEarningsStore:NDKEventStore<NDKEvent> | undefined;
+    let allPaymentsStore:NDKEventStore<NDKEvent> | undefined;
+    let allPledgesStore:NDKEventStore<NDKEvent> | undefined;
+
+    // Init
+    $effect(() => {
+        if ($currentUser) {
+            // TODO: fetch wotFilteredOffers and wotFilteredTickets here (cache first, groupable delay) 
+            // and start subs based on that
+            const userTickets = $wotFilteredTickets.filter(
+                (ticket: TicketEvent) => ticket.pubkey === user
+            );
+
+            const userOffers = $wotFilteredOffers.filter((offer: OfferEvent) => offer.pubkey === user);
+
+            const winningOffersOfUser: string[] = [];
+            const winningOffersForUser: string[] = [];
+            const involvedTickets: string[] = [];
+
+            // Find offers where user won as freelancer
+            $wotFilteredTickets.forEach((ticket: TicketEvent) => {
+                userOffers.forEach((offer: OfferEvent) => {
+                    if (ticket.acceptedOfferAddress === offer.offerAddress) {
+                        winningOffersOfUser.push(offer.id);
+                        involvedTickets.push(ticket.ticketAddress);
+                    }
+                });
+            });
+
+            // Find offers where user was client and someone else won
+            $wotFilteredOffers.forEach((offer: OfferEvent) => {
+                userTickets.forEach((ticket: TicketEvent) => {
+                    if (ticket.acceptedOfferAddress === offer.offerAddress) {
+                        winningOffersForUser.push(offer.id);
+                        involvedTickets.push(ticket.ticketAddress);
+                    }
+                });
+            });
+
+            allEarningsStore = $ndk.storeSubscribe(
+                {
+                    kinds: [NDKKind.Zap, NDKKind.Nutzap], 
+                    '#p': [user], 
+                    '#e': winningOffersOfUser 
+                },
+                subOptions
+            )
+
+            allPaymentsStore = $ndk.storeSubscribe(
+                {
+                    kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                    '#e': winningOffersForUser 
+                },
+                subOptions
+            )
+
+            allPledgesStore = $ndk.storeSubscribe(
+                {
+                    kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                    '#a': involvedTickets,
+                    '#p': [SatShootPubkey]
+                },
+                subOptions
+            )
+        }
+    });
 
     // Derived financial metrics
-    const allEarnings = $derived(calculateTotalAmount($allEarningsStore));
-    const allPayments = $derived(calculateTotalAmount($allPaymentsStore));
+    const allEarnings = $derived(
+        $allEarningsStore
+        ? calculateTotalAmount($allEarningsStore)
+        : 0
+    );
+    const allPayments = $derived(
+        $allPaymentsStore
+        ? calculateTotalAmount($allPaymentsStore)
+        : 0
+    );
+
     const allPledges = $derived(
-        calculatePledges($allPledgesStore, $wotFilteredTickets, $wotFilteredOffers, user)
+        $allPledgesStore
+        ? calculateTotalAmount($allPledgesStore)
+        : 0
     );
 
     // Derived review data
