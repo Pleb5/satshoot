@@ -2,27 +2,28 @@ import { writable, get, derived } from 'svelte/store';
 import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
 
-import { getMapSerializer, SatShootPubkey, filterValidPTags, percentile } from '../utils/misc';
+import { getMapSerializer, SatShootPubkey, filterValidPTags } from '../utils/misc';
 
 import type { NDKEvent, NDKUser, Hexpubkey, NDKFilter } from '@nostr-dev-kit/ndk';
 
 import { NDKSubscriptionCacheUsage, NDKKind } from '@nostr-dev-kit/ndk';
 
-import { type NDKSvelte } from '@nostr-dev-kit/ndk-svelte';
+import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import { tick } from 'svelte';
 
-import currentUser, { currentUserFreelanceFollows } from '../stores/user';
+import currentUser, { currentUserFreelanceFollows, fetchFreelanceFollowEvent } from '../stores/user';
 import {followsUpdated } from '../stores/user';
 
 import satShootWoT from './satshoot-wot';
 
-export const networkWoTScores: Writable<Map<Hexpubkey, number> | null> = persisted(
+export const networkWoTScores: Writable<Map<Hexpubkey, number>> = persisted(
     'networkWoTScores',
-    null,
+    new Map(),
     { serializer: getMapSerializer<Hexpubkey, number>() }
 );
 
-// Minimum wot to be included in any result
+// Minimum wot to b
+// e included in any result
 export const minWot = writable(3);
 
 // WoT scores for follows, mutes and reports
@@ -39,11 +40,34 @@ export const useSatShootWoT: Writable<boolean> = persisted('useSatShootWoT', tru
 export const wotUpdating = writable(false);
 export const wotUpdateFailed = writable(false);
 export const wotUpdateNoResults = writable(false);
+export const wotLoaded = writable(false);
 
 let saveSatShootWoT = false;
 export const wot = derived(
-    [networkWoTScores, minWot, currentUser, currentUserFreelanceFollows, useSatShootWoT],
-    ([$networkWoTScores, $minWot, $currentUser, $currentUserFreelanceFollows, $useSatShootWoT]) => {
+    [
+        networkWoTScores,
+        minWot,
+        currentUser,
+        currentUserFreelanceFollows,
+        useSatShootWoT
+    ],
+    (
+        [
+            $networkWoTScores,
+            $minWot,
+            $currentUser,
+            $currentUserFreelanceFollows,
+            $useSatShootWoT
+        ]
+    ) => {
+        // Make sure all these stores are properly initialized
+        console.log('LOG', {
+            networkWoTScores: !!networkWoTScores,
+            minWot: !!minWot,
+            currentUser: !!currentUser,
+            currentUserFreelanceFollows: !!currentUserFreelanceFollows,
+            useSatShootWoT: !!useSatShootWoT,
+        });
         const initialWoT: Array<Hexpubkey> = [];
         if ($useSatShootWoT) {
             initialWoT.push(SatShootPubkey);
@@ -52,7 +76,7 @@ export const wot = derived(
 
         const pubkeys = new Set<Hexpubkey>(initialWoT);
 
-        $networkWoTScores?.forEach((score: number, follow: Hexpubkey) => {
+        $networkWoTScores.forEach((score: number, follow: Hexpubkey) => {
             if (score >= $minWot) pubkeys.add(follow);
         });
 
@@ -60,7 +84,7 @@ export const wot = derived(
             pubkeys.add($currentUser.pubkey);
 
             // add current user's freelance follows to wot
-            $currentUserFreelanceFollows?.forEach((follow) => {
+            $currentUserFreelanceFollows.forEach((follow) => {
                 pubkeys.add(follow);
             });
 
@@ -73,18 +97,7 @@ export const wot = derived(
     }
 );
 
-export function wotFiltered(events: NDKEvent[]): NDKEvent[] {
-    const $wot = get(wot);
-
-    const filteredEvents: NDKEvent[] = [];
-
-    for (const e of events) {
-        if ($wot.has(e.pubkey)) filteredEvents.push(e);
-    }
-
-    return filteredEvents;
-}
-export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
+export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
     // This should not take more than 15 sec
     setTimeout(() => {
         if (get(wotUpdating)) {
@@ -92,71 +105,113 @@ export async function updateFollowsAndWotScore(ndk: NDKSvelte) {
             throw new Error('Updating Wot score took too long!');
         }
     }, 30_000);
-    const user = get(currentUser);
+
     try {
         wotUpdating.set(true);
         await tick();
 
-        if (!user) throw new Error('Could not get user');
+        // fetch the freelance follow event of current user
+        const freelanceFollows = await fetchFreelanceFollowEvent(user.pubkey);
 
-        const $networkWoTScores = new Map<Hexpubkey, number>();
+        if (updateNecessary()) {
+            const primaryWoTEventsFilter: NDKFilter = {
+                kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
+                authors: [user.pubkey],
+            };
 
-        const primaryWoTEventsFilter: NDKFilter = {
-            kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
-            authors: [user.pubkey],
-        };
+            const primaryWoTEvents = await ndk.fetchEvents(
+                primaryWoTEventsFilter,
+                {
+                    groupable: false,
+                    closeOnEose: true,
+                    cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+                }
+            );
 
-        const primaryWoTEvents = await ndk.fetchEvents(primaryWoTEventsFilter, {
-            groupable: false,
-            closeOnEose: true,
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-        });
+            if (primaryWoTEvents.size > 0) {
+                await updateSocialWoT(primaryWoTEvents, ndk);
+            }
 
-        if (primaryWoTEvents.size === 0) {
-            wotUpdating.set(false);
-            wotUpdateNoResults.set(true);
-            return;
+            if (get(networkWoTScores).size === 0 && !freelanceFollows) {
+                wotUpdateNoResults.set(true);
+            }
         }
-
-        // first order scores. Authors for the second order wot score are recorded
-        const authors: Set<Hexpubkey> = updateWotScores(primaryWoTEvents, $networkWoTScores, true);
-        // Get a common relay set for the user's network
-
-        // Now get ALL second order follows, mutes and reports
-        const authorsArray = Array.from(authors);
-
-        await ndk.outboxTracker!.trackUsers(authorsArray);
-
-        const networkFilter = {
-            kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report, NDKKind.Metadata],
-            authors: authorsArray,
-        };
-
-        const networkStore = await ndk.fetchEvents(networkFilter, {
-            groupable: false,
-            closeOnEose: true,
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-        });
-
-        if (networkStore.size === 0) {
-            throw new Error('Could not fetch events to build trust network from INDIRECT follows!');
-        }
-
-        // Second order scores
-        updateWotScores(networkStore, $networkWoTScores, false);
-        console.log('Updated Network wot scores:', $networkWoTScores);
-
-        networkWoTScores.set($networkWoTScores);
-
-        followsUpdated.set(Math.floor(Date.now() / 1000));
 
         wotUpdating.set(false);
+        wotLoaded.set(true);
         wotUpdateFailed.set(false);
     } catch (e) {
         wotUpdating.set(false);
         wotUpdateFailed.set(true);
         console.log('Could not update Web of Trust scores: ', e);
     }
+}
+
+function updateNecessary(): boolean {
+    const $followsUpdated = get(followsUpdated) as number;
+    // Update wot every 5 hours: Newbies can get followers and after 5 hours
+    // their actions will be visible to a decent amount of people
+    const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
+
+    const $networkWoTScores = get(networkWoTScores);
+
+    if (
+        $followsUpdated < updateDelay ||
+            $networkWoTScores.size === 0
+    ) {
+        return true;
+    }
+    return false;
+}
+
+async function updateSocialWoT(
+    primaryWoTEvents: Set<NDKEvent>, 
+    ndk: NDKSvelte
+) {
+    const newWoTScores = new Map<Hexpubkey, number>();
+
+    // first order scores. Authors for the second order wot score are recorded
+    const authors: Set<Hexpubkey> = updateWotScores(
+        primaryWoTEvents,
+        newWoTScores,
+        true
+    );
+    // Get a common relay set for the user's network
+
+    // Now get ALL second order follows, mutes and reports
+    const authorsArray = Array.from(authors);
+
+    await ndk.outboxTracker!.trackUsers(authorsArray);
+
+    const networkFilter = {
+        kinds: [
+            NDKKind.Contacts,
+            NDKKind.MuteList,
+            NDKKind.Report,
+            NDKKind.Metadata
+        ],
+        authors: authorsArray,
+    };
+
+    const networkEvents = await ndk.fetchEvents(networkFilter, {
+        groupable: false,
+        closeOnEose: true,
+        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+    });
+
+    if (networkEvents.size === 0) {
+        throw new Error(
+            'Could not fetch events to build trust network from INDIRECT follows!'
+        );
+    }
+
+    // Second order scores
+    updateWotScores(networkEvents, newWoTScores, false);
+
+    networkWoTScores.set(newWoTScores);
+    console.log('Updated Network wot scores:', networkWoTScores);
+
+    followsUpdated.set(Math.floor(Date.now() / 1000));
 }
 
 function updateWotScores(
@@ -219,27 +274,6 @@ function updateWotScores(
     });
 
     return authors;
-}
-
-export function getWotScore(targetUser: NDKUser): number | undefined {
-    const $networkWoTScores = get(networkWoTScores);
-
-    if (!$networkWoTScores) return undefined;
-
-    return ($networkWoTScores as Map<Hexpubkey, number>).get(targetUser.pubkey);
-}
-
-export function getWotPercentile(targetUser: NDKUser): number | undefined {
-    const $networkWoTScores: Map<Hexpubkey, number> | null = get(networkWoTScores);
-    if (!$networkWoTScores) return undefined;
-
-    if (!$networkWoTScores.has(targetUser.pubkey)) return undefined;
-
-    const wotValue = $networkWoTScores.get(targetUser.pubkey) as number;
-
-    const wotValues: number[] = Array.from($networkWoTScores.values());
-
-    return percentile(wotValues, wotValue);
 }
 
 function saveSatShootWoTInFile(pubkeys: Set<Hexpubkey>) {

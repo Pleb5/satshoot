@@ -157,14 +157,8 @@
     $effect(() => {
         if ($wotUpdateNoResults) {
             const t: ToastSettings = {
-                message: 'Could not load Your Web of Trust!',
-                autohide: false,
-                action: {
-                    label: 'Retry',
-                    response: () => {
-                        window.location.reload();
-                    },
-                },
+                message: 'Your Web of Trust is Empty!',
+                timeout: 6000,
                 classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
             };
             toastStore.trigger(t);

@@ -21,9 +21,9 @@ import ndk, {
     DEFAULTRELAYURLS 
 } from '$lib/stores/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import currentUser, { fetchFreelanceFollowEvent } from '../stores/user';
+import currentUser from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
-import { updateFollowsAndWotScore, networkWoTScores } from '../stores/wot';
+import { loadWot, networkWoTScores } from '../stores/wot';
 import { allReviews } from '$lib/stores/reviews';
 import { allReceivedZapsFilter, allReceivedZaps } from '$lib/stores/zaps';
 import {
@@ -103,26 +103,7 @@ export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
                 });
             }
 
-            const $followsUpdated = get(followsUpdated) as number;
-            // Update wot every 5 hours: Newbies can get followers and after 5 hours
-            // their actions will be visible to a decent amount of people
-            const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
-
-            const $networkWoTScores = get(networkWoTScores);
-
-            if (
-                $followsUpdated < updateDelay ||
-                !$networkWoTScores ||
-                $networkWoTScores.size === 0
-            ) {
-                // console.log('wot outdated, updating...')
-                await updateFollowsAndWotScore(ndk);
-                // console.log('wot updated')
-                // wotArray = Array.from(get(wot));
-            }
-
-            // fetch the freelance follow event of current user
-            await fetchFreelanceFollowEvent(user.pubkey);
+            await loadWot(ndk, user);
         }
 
         myTickets.startSubscription();
@@ -217,7 +198,7 @@ export function logout() {
     loginMethod.set(null);
 
     followsUpdated.set(0);
-    networkWoTScores.set(null);
+    networkWoTScores.set(new Map());
 
     currentUser.set(null);
 
