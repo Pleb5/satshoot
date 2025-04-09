@@ -89,7 +89,6 @@
                 </label>
                 <QuestionIcon
                     extraClasses="w-6 h-6 text-lg *:pointer-events-none text-center"
-                    triggerEvent="click"
                     placement="top"
                     popUpText={wotTooltip}
                 />

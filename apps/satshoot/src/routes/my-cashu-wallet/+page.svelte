@@ -26,7 +26,6 @@
         NDKWalletStatus,
         type WalletProofChange,
     } from '@nostr-dev-kit/ndk-wallet';
-    import { popup, type PopupSettings } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
     import Card from '$lib/components/UI/Card.svelte';
@@ -493,18 +492,6 @@
         showRecoverEcashWallet = true;
     }
 
-    const tooltipRemoveMint: PopupSettings = {
-        event: 'hover',
-        target: 'tooltipRemoveMint',
-        placement: 'top-end',
-    };
-
-    const tooltipRemoveRelay: PopupSettings = {
-        event: 'hover',
-        target: 'tooltipRemoveRelay',
-        placement: 'top-end',
-    };
-
     const listItemWrapperClasses =
         'transition ease duration-[0.3s] w-full flex flex-row gap-[10px] justify-between rounded-[6px] ' +
         'bg-black-100 items-center overflow-hidden max-[576px]:gap-[0px] max-[576px]:flex-col hover:bg-blue-500 group';
@@ -714,7 +701,6 @@
                                                         <button
                                                             class={deleteButtonClasses}
                                                             onclick={() => removeMint(mint)}
-                                                            use:popup={tooltipRemoveMint}
                                                             aria-label="Remove Mint"
                                                         >
                                                             <i class={deleteIconClasses}> </i>
@@ -742,7 +728,6 @@
                                                             <button
                                                                 class={deleteButtonClasses}
                                                                 onclick={() => removeRelay(relay)}
-                                                                use:popup={tooltipRemoveRelay}
                                                                 aria-label="Remove Relay"
                                                             >
                                                                 <i class={deleteIconClasses}> </i>

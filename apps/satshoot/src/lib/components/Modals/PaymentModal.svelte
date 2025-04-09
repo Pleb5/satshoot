@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { popup, type PopupSettings } from '@skeletonlabs/skeleton';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+    import { createToaster, Popover } from '@skeletonlabs/skeleton-svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
@@ -80,6 +79,8 @@
     }
 
     let { isOpen = $bindable() }: Props = $props();
+
+    let cashuPopoverState = $state(false);
 
     // TODO: As soon as Modals can take Props this needs to stop
     let ticket: TicketEvent | undefined = $derived($paymentDetail?.ticket);
@@ -648,12 +649,6 @@
     function setupEcash() {
         goto('/my-cashu-wallet/');
     }
-
-    const cashuTooltip: PopupSettings = {
-        event: 'click',
-        target: 'cashuTooltip',
-        placement: 'top',
-    };
 </script>
 
 <ModalWrapper bind:isOpen title="Pay Freelancer">
@@ -813,16 +808,26 @@
                             {/if}
 
                             {#if ecashTooltipText}
-                                <i
-                                    class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
-                                    use:popup={cashuTooltip}
+                                <Popover
+                                    open={cashuPopoverState}
+                                    onOpenChange={(e) => (cashuPopoverState = e.open)}
+                                    positioning={{ placement: 'top' }}
+                                    triggerBase="btn preset-tonal"
+                                    contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
+                                    arrow
+                                    arrowBackground="!bg-surface-200 dark:!bg-surface-800"
                                 >
-                                </i>
-                                <div data-popup="cashuTooltip">
-                                    <Card>
-                                        <p>{ecashTooltipText}</p>
-                                    </Card>
-                                </div>
+                                    {#snippet trigger()}
+                                        <i
+                                            class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                        ></i>
+                                    {/snippet}
+                                    {#snippet content()}
+                                        <Card>
+                                            <p>{ecashTooltipText}</p>
+                                        </Card>
+                                    {/snippet}
+                                </Popover>
                             {/if}
                         </div>
                     </div>

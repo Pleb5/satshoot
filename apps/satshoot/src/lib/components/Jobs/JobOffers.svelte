@@ -1,24 +1,22 @@
 <script lang="ts">
     import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
     import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
-    import ndk, { connected } from '$lib/stores/ndk';
-    import {
-        createPaymentFilters,
-        createPaymentStore,
-        type PaymentStore,
-    } from '$lib/stores/payment';
+    import ndk from '$lib/stores/ndk';
+    import { createPaymentFilters, createPaymentStore } from '$lib/stores/payment';
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
     import { abbreviateNumber, insertThousandSeparator } from '$lib/utils/misc';
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
-    import { popup, type PopupSettings } from '@skeletonlabs/skeleton';
     import { nip19 } from 'nostr-tools';
     import Card from '../UI/Card.svelte';
+    import { Popover } from '@skeletonlabs/skeleton-svelte';
 
     interface Props {
         job: TicketEvent;
     }
 
     let { job }: Props = $props();
+
+    let paymentPopoverState = $state(false);
 
     const statusString = $derived(getJobStatusString(job.status));
     const statusColor = $derived(getJobStatusColor(job.status));
@@ -109,13 +107,6 @@
         };
     });
 
-    // For tooltip
-    const paymentTooltip: PopupSettings = {
-        event: 'click',
-        target: 'paymentTooltip',
-        placement: 'top',
-    };
-
     const boxWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] flex flex-row gap-[5px] p-[5px_10px] ' +
         'rounded-[6px] bg-black-100 text-black-500 dark:bg-white-100 dark:text-white items-center ' +
@@ -150,19 +141,28 @@
             <div class={boxWrapperClasses}>
                 <p class="font-[600]">
                     Payments
-                    <span>
-                        <i
-                            class="bx bx-question-mark bg-blue-500 text-white p-[3px] rounded-[50%]"
-                            use:popup={paymentTooltip}
-                        ></i>
-                    </span>
-                    :
+                    <Popover
+                        open={paymentPopoverState}
+                        onOpenChange={(e) => (paymentPopoverState = e.open)}
+                        positioning={{ placement: 'top' }}
+                        triggerBase="btn preset-tonal"
+                        contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
+                        arrow
+                        arrowBackground="!bg-surface-200 dark:!bg-surface-800"
+                    >
+                        {#snippet trigger()}
+                            <i
+                                class="bx bx-question-mark bg-blue-500 text-white p-[3px] rounded-[50%]"
+                            ></i>
+                        {/snippet}
+                        {#snippet content()}
+                            <Card>
+                                <p>Amount paid to freelancer / Amount promised for job</p>
+                            </Card>
+                        {/snippet}
+                    </Popover>
                 </p>
-                <div data-popup="paymentTooltip">
-                    <Card>
-                        <p>Amount paid to freelancer / Amount promised for job</p>
-                    </Card>
-                </div>
+
                 <p class="line-clamp-1 overflow-hidden">
                     <span>
                         {abbreviateNumber(freelancerPaid)}

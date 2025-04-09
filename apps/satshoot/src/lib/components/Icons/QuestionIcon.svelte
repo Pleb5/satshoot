@@ -1,47 +1,34 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { popup } from '@skeletonlabs/skeleton';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
+    import { Popover } from '@skeletonlabs/skeleton-svelte';
     import type { Placement } from '@floating-ui/dom';
     import Card from '../UI/Card.svelte';
 
     interface Props {
+        popUpText: string;
         extraClasses?: string;
-        triggerEvent?: 'click' | 'hover' | 'focus-click' | 'focus-blur' | null;
-        placement?: Placement | null;
-        popUpText?: string | null;
+        placement?: Placement;
     }
 
-    let {
-        extraClasses = 'text-lg',
-        triggerEvent = null,
-        placement = null,
-        popUpText = null,
-    }: Props = $props();
+    let { popUpText, extraClasses = 'text-lg', placement }: Props = $props();
 
-    let popupSettings: PopupSettings | null = $state(null);
-
-    onMount(() => {
-        if (triggerEvent && placement && popUpText) {
-            popupSettings = {
-                event: triggerEvent,
-                target: 'popupTarget',
-                placement: placement,
-            };
-        }
-    });
+    let openState = $state(false);
 </script>
 
-{#if popupSettings}
-    <i
-        class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"
-        use:popup={popupSettings}
-    ></i>
-    <div data-popup="popupTarget">
+<Popover
+    open={openState}
+    onOpenChange={(e) => (openState = e.open)}
+    positioning={{ placement }}
+    triggerBase="btn preset-tonal"
+    contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
+    arrow
+    arrowBackground="!bg-surface-200 dark:!bg-surface-800"
+>
+    {#snippet trigger()}
+        <i class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"></i>
+    {/snippet}
+    {#snippet content()}
         <Card classes="w-80 p-4 max-h-60 overflow-y-auto shadow-deep">
             {@html popUpText}
         </Card>
-    </div>
-{:else}
-    <i class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"></i>
-{/if}
+    {/snippet}
+</Popover>

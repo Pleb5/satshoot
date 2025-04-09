@@ -42,7 +42,6 @@
                             {#if popUpText}
                                 <QuestionIcon
                                     extraClasses="text-[14px] p-[3px]"
-                                    triggerEvent="click"
                                     placement="bottom-start"
                                     {popUpText}
                                 />
