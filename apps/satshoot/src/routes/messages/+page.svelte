@@ -50,8 +50,6 @@
             }
         );
 
-        console.log('my tickets in messages page:', tickets);
-
         if (tickets.size === 0) noTicketsWithFreelancers = true;
 
         tickets.forEach((ticketEvent: NDKEvent) => {
