@@ -6,7 +6,8 @@
     import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
-    import { broadcastUserProfile, fetchEventFromRelaysFirst } from '$lib/utils/helpers';
+    import { broadcastUserProfile } from '$lib/utils/helpers';
+    import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import {
         NDKKind,
         profileFromEvent,

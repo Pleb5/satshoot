@@ -11,7 +11,8 @@
     import LoginModal from '../Modals/LoginModal.svelte';
     import currentUser, { loggedIn, loggingIn, loginMethod } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
-    import { fetchEventFromRelaysFirst, getRoboHashPicture } from '$lib/utils/helpers';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { createEventDispatcher } from 'svelte';
     import drawerID, { DrawerIDs } from '$lib/stores/drawer';
     import { NDKKind, NDKRelaySet, profileFromEvent } from '@nostr-dev-kit/ndk';

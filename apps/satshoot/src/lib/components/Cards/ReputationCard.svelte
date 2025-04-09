@@ -10,7 +10,7 @@
         freelancerReviews,
     } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
-    import { wot, wotFullyLoaded } from '$lib/stores/wot';
+    import { wot, wotLoaded } from '$lib/stores/wot';
     import { averageToRatingText, type RatingConsensus } from '$lib/utils/helpers';
     import { abbreviateNumber, insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import {
@@ -46,7 +46,7 @@
 
     // Init
     $effect(() => {
-        // if ($currentUser && $wotFullyLoaded) {
+        // if ($currentUser && $wotLoaded) {
         //     console.log('INIT')
         //     init();
         // }

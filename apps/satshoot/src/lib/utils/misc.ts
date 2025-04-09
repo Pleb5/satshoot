@@ -1,6 +1,9 @@
 import { nip19 } from 'nostr-tools';
-import { type NDKTag, type Hexpubkey, NDKKind, type NostrEvent } from '@nostr-dev-kit/ndk';
+import { type NDKTag, type Hexpubkey, NDKKind, type NostrEvent, type NDKFilter, NDKEvent, NDKRelaySet, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 import normalizeUrl from 'normalize-url';
+import type { RelayFirstFetchOpts } from './helpers';
+import { get } from 'svelte/store';
+import ndk from '$lib/stores/ndk';
 
 export const JobsPerPage = 9;
 
@@ -220,4 +223,53 @@ export function normalizeRelayUrl(url: string) {
     }
 
     return 'wss://' + url;
+}
+
+export async function fetchEventFromRelaysFirst(
+    filter: NDKFilter,
+    fetchOpts: RelayFirstFetchOpts = {
+        relayTimeoutMS: 6000,
+        fallbackToCache:false,
+    }
+): Promise<NDKEvent | null> {
+    const $ndk = get(ndk);
+
+    // If relays are provided construct a set and pass over to sub
+    const relaySet = fetchOpts.explicitRelays
+        ? new NDKRelaySet(new Set(fetchOpts.explicitRelays), $ndk) 
+        : undefined
+
+    const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(null);
+        }, fetchOpts.relayTimeoutMS);
+    });
+
+    const relayPromise = $ndk.fetchEvent(
+        filter,
+        {
+            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+            groupable: false,
+        },
+        relaySet
+    );
+
+    const fetchedEvent: NDKEvent | null = (await Promise.race([
+        timeoutPromise,
+        relayPromise,
+    ])) as NDKEvent | null;
+
+    if (fetchedEvent) {
+        return fetchedEvent;
+    } else if (!fetchedEvent && !fetchOpts.fallbackToCache) {
+        return null;
+    }
+
+    console.warn('Could not fetch event from relays, fetching from Cache...')
+    const cachedEvent = await $ndk.fetchEvent(filter, {
+        cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
+        groupable: false,
+    });
+
+    return cachedEvent;
 }

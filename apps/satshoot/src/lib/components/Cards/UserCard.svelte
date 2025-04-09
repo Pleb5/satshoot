@@ -6,10 +6,10 @@
         freelanceFollowEvents,
     } from '$lib/stores/user';
     import {
-        fetchEventFromRelaysFirst,
         getRoboHashPicture,
         shortenTextWithEllipsesInMiddle,
     } from '$lib/utils/helpers';
+    import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterValidPTags } from '$lib/utils/misc';
     import {
         NDKEvent,

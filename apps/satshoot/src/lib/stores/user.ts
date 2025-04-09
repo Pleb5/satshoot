@@ -10,7 +10,7 @@ import type { Writable } from 'svelte/store';
 
 import { filterValidPTags } from '../utils/misc';
 import { LoginMethod } from '$lib/stores/ndk';
-import { fetchEventFromRelaysFirst } from '$lib/utils/helpers';
+import { fetchEventFromRelaysFirst } from '../utils/misc';
 
 export const loginAlert = writable(true);
 

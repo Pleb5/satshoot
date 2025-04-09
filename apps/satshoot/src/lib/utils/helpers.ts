@@ -5,7 +5,6 @@ import {
     NDKRelayList,
     NDKRelay,
     NDKSubscriptionCacheUsage,
-    type NDKFilter,
     profileFromEvent,
     getNip57ZapSpecFromLud,
     NDKRelaySet,
@@ -53,6 +52,7 @@ import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/
 import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
 import { type ToastStore } from '@skeletonlabs/skeleton';
 import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
+import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
 
 export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
     console.log('begin user init');
@@ -447,54 +447,6 @@ export type RelayFirstFetchOpts = {
     relayTimeoutMS: number,
     fallbackToCache: boolean,
     explicitRelays?: NDKRelay[]
-}
-export async function fetchEventFromRelaysFirst(
-    filter: NDKFilter,
-    fetchOpts: RelayFirstFetchOpts = {
-        relayTimeoutMS: 6000,
-        fallbackToCache:false,
-    }
-): Promise<NDKEvent | null> {
-    const $ndk = get(ndk);
-
-    // If relays are provided construct a set and pass over to sub
-    const relaySet = fetchOpts.explicitRelays
-        ? new NDKRelaySet(new Set(fetchOpts.explicitRelays), $ndk) 
-        : undefined
-
-    const timeoutPromise = new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(null);
-        }, fetchOpts.relayTimeoutMS);
-    });
-
-    const relayPromise = $ndk.fetchEvent(
-        filter,
-        {
-            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-            groupable: false,
-        },
-        relaySet
-    );
-
-    const fetchedEvent: NDKEvent | null = (await Promise.race([
-        timeoutPromise,
-        relayPromise,
-    ])) as NDKEvent | null;
-
-    if (fetchedEvent) {
-        return fetchedEvent;
-    } else if (!fetchedEvent && !fetchOpts.fallbackToCache) {
-        return null;
-    }
-
-    console.warn('Could not fetch event from relays, fetching from Cache...')
-    const cachedEvent = await $ndk.fetchEvent(filter, {
-        cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
-        groupable: false,
-    });
-
-    return cachedEvent;
 }
 
 export async function getZapConfiguration(pubkey: string) {
