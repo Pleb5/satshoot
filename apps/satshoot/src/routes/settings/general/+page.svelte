@@ -9,23 +9,19 @@
     import browserNotificationsEnabled from '$lib/stores/notifications';
     import { useSatShootWoT } from '$lib/stores/wot';
     import { hexToBytes } from '@noble/ciphers/utils';
-    import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { nsecEncode } from 'nostr-tools/nip19';
 
-    const modalStore = getModalStore();
     const toaster = createToaster();
 
+    let showClearCacheModal = $state(false);
     let nsec = $state('');
     let showing = $state(false);
     let copiedNsec = $state(false);
 
     async function clearCache() {
-        const modal: ModalSettings = {
-            type: 'component',
-            component: { ref: ClearCacheModal },
-        };
-        modalStore.trigger(modal);
+        showClearCacheModal = true;
     }
 
     $effect(() => {
@@ -155,3 +151,5 @@
         {/if}
     </div>
 </div>
+
+<ClearCacheModal bind:isOpen={showClearCacheModal} />

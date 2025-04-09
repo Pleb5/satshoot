@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Passphrase from '../Passphrase.svelte';
     import TabSelector from '../UI/Buttons/TabSelector.svelte';
@@ -15,7 +14,12 @@
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { goto } from '$app/navigation';
 
-    const modalStore = getModalStore();
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
+
     const toaster = createToaster();
 
     enum LocalKeyLoginTabs {
@@ -175,7 +179,7 @@
 
             handleRedirection();
             // Close login modal
-            modalStore.close();
+            isOpen = false;
         } catch (e) {
             toaster.error({
                 title: `${failureMessage} ${e}`,

@@ -1,17 +1,19 @@
 <script lang="ts">
-    import { type SvelteComponent } from 'svelte';
     import { tick } from 'svelte';
-
-    import { getModalStore } from '@skeletonlabs/skeleton';
 
     import { DataLoadError } from '$lib/utils/errors';
     import { RestoreMethod } from '$lib/stores/ndk';
     import { logout } from '$lib/utils/helpers';
-    import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
+    interface Props {
+        isOpen: boolean;
+        callback: (res: { decryptedSecret?: string; restoreMethod?: RestoreMethod }) => void;
+    }
+
+    let { isOpen = $bindable(), callback }: Props = $props();
 
     let passphrase: string = $state('');
     let statusMessage: string = $state('');
@@ -62,13 +64,8 @@
                 const decryptedSecret = m.data['decryptedSecret'];
                 decrypting = false;
                 if (decryptedSecret) {
-                    if ($modalStore[0].response) {
-                        $modalStore[0].response({
-                            decryptedSecret: decryptedSecret,
-                            restoreMethod: restoreMethod,
-                        });
-                        modalStore.close();
-                    }
+                    callback({ decryptedSecret, restoreMethod });
+                    isOpen = false;
                 } else {
                     statusMessage = 'Unexpected response from decryption process:' + m.data;
                     setTimeout(() => {
@@ -119,56 +116,53 @@
     let showPassword: boolean = $state(false);
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Decrypt Local Seed">
-        <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
-        <div class="flex justify-between items-center m-4">
-            <input
-                class="input"
-                title="Passphrase:"
-                required
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Enter Passphrase..."
-                oninput={(event) => (passphrase = event.currentTarget.value)}
-            />
-            <button
-                type="button"
-                class="btn btn-icon-sm"
-                onclick={() => (showPassword = !showPassword)}
-            >
+<ModalWrapper bind:isOpen title="Decrypt Local Seed">
+    <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
+    <div class="flex justify-between items-center m-4">
+        <input
+            class="input"
+            title="Passphrase:"
+            required
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Enter Passphrase..."
+            oninput={(event) => (passphrase = event.currentTarget.value)}
+        />
+        <button
+            type="button"
+            class="btn btn-icon-sm"
+            onclick={() => (showPassword = !showPassword)}
+            aria-label="toggle-password-visibility"
+        >
+            <span>
+                <i class="fa-solid {showPassword ? 'fa-eye' : 'fa-eye-slash'}"></i>
+            </span>
+        </button>
+    </div>
+    <div class="flex justify-between h-10 mt-4">
+        <Button
+            variant="outlined"
+            on:click={() => {
+                callback({
+                    decryptedSecret: undefined,
+                    restoreMethod: undefined,
+                });
+                isOpen = false;
+                logout();
+            }}
+        >
+            Logout
+        </Button>
+        <Button on:click={loadSecret} disabled={!passphrase || decrypting}>
+            {#if decrypting}
                 <span>
-                    <i class="fa-solid {showPassword ? 'fa-eye' : 'fa-eye-slash'}"></i>
+                    <ProgressRing color="primary" />
                 </span>
-            </button>
-        </div>
-        <div class="flex justify-between h-10 mt-4">
-            <Button
-                variant="outlined"
-                on:click={() => {
-                    if ($modalStore[0].response) {
-                        $modalStore[0].response({
-                            decryptedSecret: undefined,
-                            restoreMethod: undefined,
-                        });
-                    }
-                    modalStore.close();
-                    logout();
-                }}
-            >
-                Logout
-            </Button>
-            <Button on:click={loadSecret} disabled={!passphrase || decrypting}>
-                {#if decrypting}
-                    <span>
-                        <ProgressRing color="primary" />
-                    </span>
-                {:else}
-                    <span>Decrypt</span>
-                {/if}
-            </Button>
-        </div>
-        {#if statusMessage}
-            <h5 class="h5 font-bold text-center {statusColor} mt-2">{statusMessage}</h5>
-        {/if}
-    </Popup>
-{/if}
+            {:else}
+                <span>Decrypt</span>
+            {/if}
+        </Button>
+    </div>
+    {#if statusMessage}
+        <h5 class="h5 font-bold text-center {statusColor} mt-2">{statusMessage}</h5>
+    {/if}
+</ModalWrapper>

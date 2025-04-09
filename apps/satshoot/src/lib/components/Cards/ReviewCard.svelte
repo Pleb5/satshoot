@@ -15,15 +15,12 @@
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { beforeNavigate } from '$app/navigation';
-    import { getModalStore } from '@skeletonlabs/skeleton';
 
     interface Props {
         review: ReviewEvent;
     }
 
     let { review }: Props = $props();
-
-    const modalStore = getModalStore();
 
     let user = $ndk.getUser({ pubkey: review.pubkey });
     let userName = $state(user.npub.substring(0, 8));
@@ -95,7 +92,6 @@
         if (elemPage) {
             elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
         }
-        modalStore.close();
     });
 </script>
 

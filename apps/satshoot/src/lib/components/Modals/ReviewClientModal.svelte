@@ -1,11 +1,7 @@
 <script lang="ts">
-    import { run } from 'svelte/legacy';
-
     import { type ClientRating, ReviewEvent } from '$lib/events/ReviewEvent';
     import ndk from '$lib/stores/ndk';
 
-    import type { ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { tick } from 'svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
@@ -14,15 +10,16 @@
     import Input from '../UI/Inputs/input.svelte';
     import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
     const toaster = createToaster();
-    const modalStore = getModalStore();
 
     interface Props {
+        isOpen: boolean;
         jobAddress: string;
     }
 
-    let { jobAddress }: Props = $props();
+    let { isOpen = $bindable(), jobAddress }: Props = $props();
 
     let thumb = $state(true);
     let availability = $state(false);
@@ -65,8 +62,7 @@
                 const relays = await reviewEvent.publish();
                 console.log('published relays', relays);
 
-                modalStore.close();
-
+                isOpen = false;
                 toaster.success({
                     title: 'Thank You for posting a Review!',
                     description: 'Freelancing just got better for everyone!',
@@ -77,7 +73,7 @@
                 toaster.error({
                     title: 'Error posting Review!',
                 });
-                modalStore.close();
+                isOpen = false;
             }
         } else {
             posting = false;
@@ -88,62 +84,60 @@
     }
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Review Client">
-        <div class="w-full flex flex-col">
-            <!-- popups Job-Close start -->
-            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
-                <ReviewToggleQuestion
-                    question="Were you satisfied with the work?"
-                    bind:value={thumb}
-                    trueLabel="Yes"
-                    falseLabel="No"
-                />
-                {#if thumb}
-                    <div class="w-full flex flex-col gap-[5px]">
-                        <div class="w-full max-h-[50vh] overflow-auto">
-                            <p class="w-full">Select excellent qualities of the Client, if any:</p>
-                        </div>
-                        <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
-                            <Checkbox
-                                id="availability"
-                                label="Highly available, attentive, and responsive"
-                                bind:checked={availability}
-                            />
-                            <Checkbox
-                                id="communication"
-                                label="Especially clear and kind communication"
-                                bind:checked={communication}
-                            />
-                        </div>
-                    </div>
-                {/if}
-
+<ModalWrapper bind:isOpen title="Review Client">
+    <div class="w-full flex flex-col">
+        <!-- popups Job-Close start -->
+        <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+            <ReviewToggleQuestion
+                question="Were you satisfied with the work?"
+                bind:value={thumb}
+                trueLabel="Yes"
+                falseLabel="No"
+            />
+            {#if thumb}
                 <div class="w-full flex flex-col gap-[5px]">
                     <div class="w-full max-h-[50vh] overflow-auto">
-                        <p class="w-full">Share your experience to help others:</p>
+                        <p class="w-full">Select excellent qualities of the Client, if any:</p>
                     </div>
-                    <Input
-                        bind:value={reviewText}
-                        placeholder="Describe your experience..."
-                        classes="min-h-[100px]"
-                        fullWidth
-                        textarea
-                    />
+                    <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
+                        <Checkbox
+                            id="availability"
+                            label="Highly available, attentive, and responsive"
+                            bind:checked={availability}
+                        />
+                        <Checkbox
+                            id="communication"
+                            label="Especially clear and kind communication"
+                            bind:checked={communication}
+                        />
+                    </div>
                 </div>
-                <div class="w-full flex flex-row gap-[10px]">
-                    <Button grow on:click={postClientReview}>
-                        {#if posting}
-                            <span>
-                                <ProgressRing />
-                            </span>
-                        {:else}
-                            Publish review
-                        {/if}
-                    </Button>
+            {/if}
+
+            <div class="w-full flex flex-col gap-[5px]">
+                <div class="w-full max-h-[50vh] overflow-auto">
+                    <p class="w-full">Share your experience to help others:</p>
                 </div>
+                <Input
+                    bind:value={reviewText}
+                    placeholder="Describe your experience..."
+                    classes="min-h-[100px]"
+                    fullWidth
+                    textarea
+                />
             </div>
-            <!-- popups Job-Close end -->
+            <div class="w-full flex flex-row gap-[10px]">
+                <Button grow on:click={postClientReview}>
+                    {#if posting}
+                        <span>
+                            <ProgressRing />
+                        </span>
+                    {:else}
+                        Publish review
+                    {/if}
+                </Button>
+            </div>
         </div>
-    </Popup>
-{/if}
+        <!-- popups Job-Close end -->
+    </div>
+</ModalWrapper>

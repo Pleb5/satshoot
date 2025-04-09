@@ -1,13 +1,18 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Dexie from 'dexie';
     import Button from '../UI/Buttons/Button.svelte';
     import Popup from '../UI/Popup.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
+
     const toaster = createToaster();
 
     async function handleConfirm() {
@@ -19,7 +24,7 @@
 
             $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
 
-            modalStore.clear();
+            isOpen = false;
             toaster.info({
                 title: '\
                     <p class="text-center">Cache cleared!</p>\
@@ -33,31 +38,29 @@
     }
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Clear local Cache?">
-        <div class="w-full flex flex-col">
-            <div class="w-full py-[10px] px-[5px]">
-                <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px]">
-                    <div
-                        class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
-                    >
-                        <p class="font-[600] text-[16px] text-white">
-                            This can solve some data loading problems but will slow down App until
-                            cache is filled again
-                        </p>
-                    </div>
+<ModalWrapper bind:isOpen title="Clear local Cache?">
+    <div class="w-full flex flex-col">
+        <div class="w-full py-[10px] px-[5px]">
+            <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px]">
+                <div
+                    class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
+                >
+                    <p class="font-[600] text-[16px] text-white">
+                        This can solve some data loading problems but will slow down App until cache
+                        is filled again
+                    </p>
+                </div>
 
-                    <div class="flex flex-row gap-[10px] p-[5px]">
-                        <Button grow variant="outlined" on:click={() => modalStore.close()}>
-                            Cancel
-                        </Button>
-                        <Button grow on:click={handleConfirm}>
-                            <i class="bx bx-trash"></i>
-                            <span>Clear</span>
-                        </Button>
-                    </div>
+                <div class="flex flex-row gap-[10px] p-[5px]">
+                    <Button grow variant="outlined" on:click={() => (isOpen = false)}>
+                        Cancel
+                    </Button>
+                    <Button grow on:click={handleConfirm}>
+                        <i class="bx bx-trash"></i>
+                        <span>Clear</span>
+                    </Button>
                 </div>
             </div>
         </div>
-    </Popup>
-{/if}
+    </div>
+</ModalWrapper>

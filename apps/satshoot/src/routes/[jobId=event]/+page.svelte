@@ -26,7 +26,6 @@
         NDKEvent,
     } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { onDestroy, onMount } from 'svelte';
 
@@ -37,7 +36,6 @@
     }
 
     const toaster = createToaster();
-    const modalStore = getModalStore();
 
     const subOptions: NDKSubscriptionOptions = {
         closeOnEose: false,
@@ -51,6 +49,12 @@
     let needSetup = $state(true);
     let winningOffer = $state<OfferEvent>();
     let selectedOffersTab = $state<OfferTab>(OfferTab.Pending);
+
+    let showLoginModal = $state(false);
+    let showCreateOfferModal = $state(false);
+    let createOfferModalProps = $state<{ ticket: TicketEvent; offerToEdit?: OfferEvent } | null>(
+        null
+    );
 
     // Derived State
     const myJob = $derived(!!$currentUser && !!jobPost && $currentUser.pubkey === jobPost.pubkey);
@@ -217,33 +221,16 @@
 
             return;
         }
-        const offerPosted: boolean = await new Promise<boolean>((resolve) => {
-            const modalComponent: ModalComponent = {
-                ref: CreateOfferModal,
-                props: {
-                    ticket: jobPost,
-                    offerToEdit: offer,
-                },
-            };
 
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (offerPosted: boolean) => {
-                    resolve(offerPosted);
-                },
-            };
-            modalStore.trigger(modal);
-        });
+        createOfferModalProps = {
+            ticket: jobPost,
+            offerToEdit: offer,
+        };
+        showCreateOfferModal = true;
     }
 
     function triggerLogin() {
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: LoginModal,
-            },
-        });
+        showLoginModal = true;
     }
 
     const tabs = [
@@ -408,3 +395,9 @@
         </div>
     </div>
 </div>
+
+<LoginModal bind:isOpen={showLoginModal} />
+
+{#if createOfferModalProps}
+    <CreateOfferModal bind:isOpen={showCreateOfferModal} {...createOfferModalProps} />
+{/if}

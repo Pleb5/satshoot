@@ -1,20 +1,16 @@
 <script lang="ts">
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import ReviewCard from '../Cards/ReviewCard.svelte';
-    import Popup from '../UI/Popup.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
     interface Props {
+        isOpen: boolean;
         review: ReviewEvent;
     }
 
-    let { review }: Props = $props();
-
-    const modalStore = getModalStore();
+    let { isOpen = $bindable(), review }: Props = $props();
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Review">
-        <ReviewCard {review} />
-    </Popup>
-{/if}
+<ModalWrapper bind:isOpen title="Review">
+    <ReviewCard {review} />
+</ModalWrapper>

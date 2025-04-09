@@ -18,7 +18,6 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { nip19 } from 'nostr-tools';
     import ReputationCard from './ReputationCard.svelte';
@@ -42,7 +41,6 @@
         none,
     }
 
-    const modalStore = getModalStore();
     const toaster = createToaster();
 
     interface Props {
@@ -55,6 +53,9 @@
     // State
     let userProfile = $state<NDKUserProfile | null>(null);
     let processingFollowEvent = $state(false);
+    let showShareModal = $state(false);
+    let showNpubQR = $state(false);
+    let showNProfileQR = $state(false);
 
     // Derived state
     const npub = $derived(user.npub);
@@ -248,15 +249,7 @@
     }
 
     function handleShare() {
-        const modalComponent: ModalComponent = {
-            ref: ShareModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
+        showShareModal = true;
     }
 
     function handleEditProfile() {
@@ -400,13 +393,7 @@
                         variant="outlined"
                         classes={addressCopyBtnClasses}
                         on:click={() => {
-                            modalStore.trigger({
-                                type: 'component',
-                                component: {
-                                    ref: QrCodeModal,
-                                    props: { title: "User's Npub", data: user.npub },
-                                },
-                            });
+                            showNpubQR = true;
                         }}
                     >
                         <i class="bx bx-qr"></i>
@@ -431,16 +418,7 @@
                         variant="outlined"
                         classes={addressCopyBtnClasses}
                         on:click={() => {
-                            modalStore.trigger({
-                                type: 'component',
-                                component: {
-                                    ref: QrCodeModal,
-                                    props: {
-                                        title: "User's Profile Address",
-                                        data: nip19.nprofileEncode({ pubkey: user.pubkey }),
-                                    },
-                                },
-                            });
+                            showNProfileQR = true;
                         }}
                     >
                         <i class="bx bx-qr"></i>
@@ -470,3 +448,13 @@
         <ReputationCard user={user.pubkey} forUserCard />
     </div>
 </div>
+
+<ShareModal bind:isOpen={showShareModal} />
+
+<QrCodeModal bind:isOpen={showNpubQR} title="User's Npub" data={user.npub} />
+
+<QrCodeModal
+    bind:isOpen={showNProfileQR}
+    title="User's Profile Address"
+    data={nip19.nprofileEncode({ pubkey: user.pubkey })}
+/>

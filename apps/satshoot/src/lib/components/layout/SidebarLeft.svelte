@@ -1,29 +1,17 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import { AppRail, getModalStore } from '@skeletonlabs/skeleton';
+    import { Modal, Navigation } from '@skeletonlabs/skeleton-svelte';
+
     import SearchModal from '../Modals/SearchModal.svelte';
     import BottomNavItem from './BottomNavItem.svelte';
 
-    interface Props {
-        hideSidebarLeft?: boolean;
-    }
-
-    let { hideSidebarLeft = true }: Props = $props();
-
-    let hideMyself = $derived(hideSidebarLeft ? 'hidden' : '');
-
-    const modalStore = getModalStore();
+    let isSearchModalOpened = $state(false);
 
     let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
     let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
 
     function handleSearch() {
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: SearchModal,
-            },
-        });
+        isSearchModalOpened = true;
     }
 
     const items = [
@@ -45,22 +33,27 @@
     ];
 </script>
 
-<AppRail
-    class="{hideMyself} max-sm:hidden min-sm:block w-24 pt-2"
-    background="bg-surface-100-800-token"
->
-    <div class="flex flex-col items-center gap-y-4">
-        {#each items as { href, icon }}
-            {#if icon === 'bx-search'}
-                <BottomNavItem
-                    {href}
-                    {icon}
-                    isActive={filterList.length !== 0}
-                    on:click={handleSearch}
-                />
-            {:else}
-                <BottomNavItem {href} {icon} isActive={href === page.url.pathname} />
-            {/if}
-        {/each}
-    </div>
-</AppRail>
+<Navigation.Rail classes="w-24 pt-2" background="bg-surface-100-800-token">
+    {#snippet tiles()}
+        <div class="flex flex-col items-center gap-y-4">
+            {#each items as { href, icon }}
+                {#if icon === 'bx-search'}
+                    <BottomNavItem
+                        {href}
+                        {icon}
+                        isActive={filterList.length !== 0}
+                        on:click={handleSearch}
+                    />
+                {:else}
+                    <BottomNavItem {href} {icon} isActive={href === page.url.pathname} />
+                {/if}
+            {/each}
+        </div>
+    {/snippet}
+</Navigation.Rail>
+
+<Modal open={isSearchModalOpened} closeOnInteractOutside={false} closeOnEscape={false}>
+    {#snippet content()}
+        <SearchModal />
+    {/snippet}
+</Modal>

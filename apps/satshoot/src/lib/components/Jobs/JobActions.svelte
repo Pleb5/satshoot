@@ -1,10 +1,8 @@
 <script lang="ts">
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import Button from '../UI/Buttons/Button.svelte';
     import ShareJobModal from '../Modals/ShareJobModal.svelte';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import currentUser from '$lib/stores/user';
-    import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import { clientReviews } from '$lib/stores/reviews';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import ndk from '$lib/stores/ndk';
@@ -18,8 +16,6 @@
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
 
-    const modalStore = getModalStore();
-
     interface Props {
         job: TicketEvent;
     }
@@ -28,6 +24,11 @@
 
     // Reactive states
     let winnerOffer = $state<OfferEvent | null>(null);
+    let showShareModal = $state(false);
+    let showCloseJobModal = $state(false);
+    let showReviewClientModal = $state(false);
+    let showPaymentModal = $state(false);
+    let showReviewModal = $state(false);
 
     // Derived states
     const bech32ID = $derived(job.encode());
@@ -61,17 +62,7 @@
     });
 
     function handleShare() {
-        const modalComponent: ModalComponent = {
-            ref: ShareJobModal,
-            props: { job },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        showShareModal = true;
     }
 
     function handleEdit() {
@@ -83,17 +74,7 @@
     }
 
     function handleCloseJob() {
-        const modalComponent: ModalComponent = {
-            ref: CloseJobModal,
-            props: { job, offer: winnerOffer },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        showCloseJobModal = true;
     }
 
     function handlePay() {
@@ -104,16 +85,7 @@
             offer: winnerOffer,
         };
 
-        const modalComponent: ModalComponent = {
-            ref: PaymentModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        showPaymentModal = true;
     }
 
     function selectChatPartner() {
@@ -125,31 +97,11 @@
     }
 
     function handleReviewClient() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewClientModal,
-            props: { jobAddress: job.ticketAddress },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        showReviewClientModal = true;
     }
 
     function handlePreviewReview() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewModal,
-            props: { review },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        showReviewModal = true;
     }
 
     const btnClasses =
@@ -215,3 +167,13 @@
         {/if}
     </div>
 </div>
+
+<ShareJobModal bind:isOpen={showShareModal} {job} />
+
+<CloseJobModal bind:isOpen={showCloseJobModal} {job} offer={winnerOffer} />
+
+<ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.ticketAddress} />
+
+<PaymentModal bind:isOpen={showPaymentModal} />
+
+<ReviewModal bind:isOpen={showReviewModal} review={review!} />

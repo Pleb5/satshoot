@@ -3,22 +3,21 @@
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { onMount, tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
     const toaster = createToaster();
 
     interface Props {
+        isOpen: boolean;
         job: TicketEvent;
     }
 
-    let { job }: Props = $props();
+    let { isOpen = $bindable(), job }: Props = $props();
 
     let shareURL = $state('');
     let shareNaddr = $state('');
@@ -42,14 +41,14 @@
                 title: 'Job Posted as Text Note!',
             });
 
-            modalStore.close();
+            isOpen = false;
         } catch (e) {
             posting = false;
             toaster.error({
                 title: 'Error happened while publishing note!',
             });
 
-            modalStore.close();
+            isOpen = false;
         }
     }
 
@@ -96,48 +95,46 @@
         'px-[10px] py-[5px] outline-[0px] outline-blue-0 focus:border-blue-500 focus:bg-black-100';
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Share">
-        <div class="w-full flex flex-col">
-            <!-- popups Share Job Post start -->
-            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
-                <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]">
-                    <p class="">Share your job post with others</p>
-                    {#if job.pubkey === $currentUser?.pubkey}
-                        <Input
-                            bind:value={message}
-                            classes="min-h-[100px]"
-                            fullWidth
-                            textarea
-                            rows={10}
-                        />
-                    {/if}
-                </div>
-                <div class="w-full flex flex-wrap gap-[5px]">
-                    {#if job.pubkey === $currentUser?.pubkey}
-                        <Button grow on:click={postJob} disabled={posting}>
-                            {#if posting}
-                                <span>
-                                    <ProgressRing />
-                                </span>
-                            {:else}
-                                <span>Publish & Share on Nostr</span>
-                            {/if}
-                        </Button>
-                    {/if}
-                    <Button grow on:click={onCopyURL}>
-                        <span class="w-full h-full">
-                            {urlCopied ? 'Copied!' : 'Copy Job URL'}
-                        </span>
-                    </Button>
-                    <Button grow on:click={onCopyNaddr}>
-                        <span class="w-full h-full">
-                            {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
-                        </span>
-                    </Button>
-                </div>
+<ModalWrapper bind:isOpen title="Share">
+    <div class="w-full flex flex-col">
+        <!-- popups Share Job Post start -->
+        <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+            <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]">
+                <p class="">Share your job post with others</p>
+                {#if job.pubkey === $currentUser?.pubkey}
+                    <Input
+                        bind:value={message}
+                        classes="min-h-[100px]"
+                        fullWidth
+                        textarea
+                        rows={10}
+                    />
+                {/if}
             </div>
-            <!-- popups Share Job Post end -->
+            <div class="w-full flex flex-wrap gap-[5px]">
+                {#if job.pubkey === $currentUser?.pubkey}
+                    <Button grow on:click={postJob} disabled={posting}>
+                        {#if posting}
+                            <span>
+                                <ProgressRing />
+                            </span>
+                        {:else}
+                            <span>Publish & Share on Nostr</span>
+                        {/if}
+                    </Button>
+                {/if}
+                <Button grow on:click={onCopyURL}>
+                    <span class="w-full h-full">
+                        {urlCopied ? 'Copied!' : 'Copy Job URL'}
+                    </span>
+                </Button>
+                <Button grow on:click={onCopyNaddr}>
+                    <span class="w-full h-full">
+                        {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
+                    </span>
+                </Button>
+            </div>
         </div>
-    </Popup>
-{/if}
+        <!-- popups Share Job Post end -->
+    </div>
+</ModalWrapper>

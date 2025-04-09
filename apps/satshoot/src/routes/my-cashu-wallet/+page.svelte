@@ -26,14 +26,7 @@
         NDKWalletStatus,
         type WalletProofChange,
     } from '@nostr-dev-kit/ndk-wallet';
-    import {
-        getModalStore,
-        popup,
-        ProgressRadial,
-        type ModalComponent,
-        type ModalSettings,
-        type PopupSettings,
-    } from '@skeletonlabs/skeleton';
+    import { popup, type PopupSettings } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
     import Card from '$lib/components/UI/Card.svelte';
@@ -45,19 +38,34 @@
     import PieChart from '$lib/components/UI/Display/PieChart.svelte';
     import RelayRemovalConfirmation from '$lib/components/Modals/RelayRemovalConfirmation.svelte';
     import RemoveMintModal from '$lib/components/Modals/RemoveMintModal.svelte';
-
-    const toaster = createToaster();
-    const modalStore = getModalStore();
-
-    let mintBalances: Record<string, number> = $state({});
-    let walletBalance = $state('0');
-    let cleaningWallet = $state(false);
-    let toastTriggered = false;
+    import ConfirmationDialog from '$lib/components/UI/ConfirmationDialog.svelte';
+    import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
 
     enum Tab {
         Mints,
         Relays,
     }
+
+    const toaster = createToaster();
+
+    let showUpdateNameModal = $state(false);
+    let showAddRelayModal = $state(false);
+    let showRelayRemovalConfirmation = $state(false);
+    let relayToRemove = $state<string | null>(null);
+    let showMintRemovalConfirmation = $state(false);
+    let mintToRemove = $state<string | null>(null);
+    let showMintModal = $state(false);
+    let showExploreMintsModal = $state(false);
+    let tempWallet = $state<NDKCashuWallet | null>(null);
+    let showImportEcashWallet = $state(false);
+    let showRecoverEcashWallet = $state(false);
+    let showBackupEcashWallet = $state(false);
+    let showCleanWalletConfirmationDialog = $state(false);
+
+    let mintBalances: Record<string, number> = $state({});
+    let walletBalance = $state('0');
+    let cleaningWallet = $state(false);
+    let toastTriggered = false;
 
     let selectedTab = $state(Tab.Mints);
 
@@ -248,35 +256,24 @@
     }
 
     async function setupWallet() {
-        const newWallet = new NDKCashuWallet($ndk);
-        const mintPromise = new Promise<string[] | undefined>((resolve) => {
-            const modalComponent: ModalComponent = {
-                ref: ExploreMintsModal,
-                props: { $wallet: newWallet },
-            };
+        tempWallet = new NDKCashuWallet($ndk);
+        showMintModal = true;
+    }
 
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (mints?: string[]) => {
-                    resolve(mints);
-                },
-            };
-            modalStore.trigger(modal);
-        }).then((mints) => {
-            if (!mints || !mints.length) return;
-
-            newWallet.mints = mints;
-        });
-
-        await mintPromise;
-
-        if (!newWallet.mints.length) {
+    // Handler for new wallet mint selection
+    function handleMintSelection(selectedMints: string[]) {
+        if (!selectedMints?.length) {
             toaster.error({ title: `No mint is selected. Choose at-least 1 mint` });
-
             return;
         }
 
+        if (tempWallet) {
+            tempWallet.mints = selectedMints;
+            continueWalletSetup(tempWallet);
+        }
+    }
+
+    async function continueWalletSetup(newWallet: NDKCashuWallet) {
         try {
             await newWallet.getP2pk();
 
@@ -355,48 +352,26 @@
     }
 
     function exploreMints() {
-        // If user confirms modal do the editing
-        new Promise<string[] | undefined>((resolve) => {
-            const modalComponent: ModalComponent = {
-                ref: ExploreMintsModal,
-                props: { $wallet },
-            };
+        showExploreMintsModal = true;
+    }
 
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (mints?: string[]) => {
-                    resolve(mints);
-                },
-            };
-            modalStore.trigger(modal);
-        }).then((mints) => {
-            if (!$wallet || !mints || !mints.length) return;
+    // Handler for existing wallet mint updates
+    function handleMintsUpdate(selectedMints: string[]) {
+        if (!$wallet || !selectedMints?.length) return;
 
-            if (!arraysAreEqual($wallet.mints, mints)) {
-                updateMints(mints);
-            }
-        });
+        if (!arraysAreEqual($wallet.mints, selectedMints)) {
+            updateMints(selectedMints);
+        }
     }
 
     function removeMint(mint: string) {
         if (!$wallet) return;
 
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: RemoveMintModal,
-                props: {
-                    mint,
-                    onConfirm: () => {
-                        handleRemoveMint(mint);
-                    },
-                },
-            },
-        });
+        mintToRemove = mint;
+        showMintRemovalConfirmation = true;
     }
 
-    function handleRemoveMint(mint: string) {
+    async function handleRemoveMint(mint: string) {
         if (!$wallet) return;
 
         updateMints($wallet.mints.filter((m) => m !== mint));
@@ -405,56 +380,37 @@
     function addRelay() {
         if (!$wallet || !$userCashuInfo) return;
 
-        // If user confirms modal do the editing
-        new Promise<string | undefined>((resolve) => {
-            const modalComponent: ModalComponent = {
-                ref: AddRelayModal,
-            };
+        showAddRelayModal = true;
+    }
 
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (editedData: string | undefined) => {
-                    resolve(editedData);
-                },
-            };
-            modalStore.trigger(modal);
-            // We got some kind of response from modal
-        }).then(async (editedData: string | undefined) => {
-            if (editedData && editedData.replace('wss://', '').length > 1) {
-                const relayUrl = tryNormalizeRelayUrl(editedData);
-                if (relayUrl) {
-                    $userCashuInfo.relays = [...$userCashuInfo.relays, editedData];
-                    if ($wallet!.relaySet) {
-                        $wallet!.relaySet = NDKRelaySet.fromRelayUrls($userCashuInfo.relays, $ndk);
-                    }
+    async function handleAddRelay(editedData: string) {
+        if (!$wallet || !$userCashuInfo) return;
 
-                    await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
-                    toaster.success({
-                        title: 'Cashu Info updated!',
-                    });
-                } else {
-                    toaster.error({
-                        title: 'Invalid Relay URL!',
-                    });
+        if (editedData && editedData.replace('wss://', '').length > 1) {
+            const relayUrl = tryNormalizeRelayUrl(editedData);
+            if (relayUrl) {
+                $userCashuInfo.relays = [...$userCashuInfo.relays, editedData];
+                if ($wallet!.relaySet) {
+                    $wallet!.relaySet = NDKRelaySet.fromRelayUrls($userCashuInfo.relays, $ndk);
                 }
+
+                await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
+                toaster.success({
+                    title: `Cashu Info updated!`,
+                });
+            } else {
+                toaster.error({
+                    title: `Invalid Relay URL!`,
+                });
             }
-        });
+        }
     }
 
     function removeRelay(relay: string) {
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: RelayRemovalConfirmation,
-                props: {
-                    url: relay,
-                    onConfirm: () => {
-                        handleRemoveRelay(relay);
-                    },
-                },
-            },
-        });
+        if (!$wallet) return;
+
+        relayToRemove = relay;
+        showRelayRemovalConfirmation = true;
     }
 
     async function handleRemoveRelay(relay: string) {
@@ -472,7 +428,7 @@
             await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
 
             toaster.success({
-                title: 'Cashu Info updated!',
+                title: `Cashu Info updated!`,
             });
         } catch (err) {
             console.error(err);
@@ -490,85 +446,51 @@
             });
             return;
         }
-        const modalBody = `
-                <strong class="text-primary-400-500">
-                    If a wallet contains used tokens, they will be removed
-                    and you may see a decrease in wallet balance.
-                    Do you really wish to clean wallet?
-                </strong>`;
+        showCleanWalletConfirmationDialog = true;
+    }
 
-        let response = async function (r: boolean) {
-            if (r) {
-                modalStore.close();
-                cleaningWallet = true;
-                const onCleaningResult = (walletChange: WalletProofChange) => {
-                    let amountDestroyed = 0;
-                    if (walletChange.destroy) {
-                        for (const proof of walletChange.destroy) {
-                            amountDestroyed += proof.amount;
-                        }
-                    }
-                    toaster.success({
-                        title: `${amountDestroyed} spent sats cleaned from wallet`,
-                    });
-                };
-                for (const mint of $wallet!.mints) {
-                    try {
-                        await consolidateMintTokens(
-                            mint,
-                            $wallet!,
-                            undefined, // allProofs = wallet proofs implicitly
-                            onCleaningResult
-                        );
-                    } catch (err) {
-                        console.error('An error occurred in cleaning wallet', err);
-                        toaster.error({
-                            title: `Failed to clean used tokens!`,
-                        });
-                    } finally {
-                        cleaningWallet = false;
-                    }
+    async function cleanWallet() {
+        cleaningWallet = true;
+
+        const onCleaningResult = (walletChange: WalletProofChange) => {
+            let amountDestroyed = 0;
+            if (walletChange.destroy) {
+                for (const proof of walletChange.destroy) {
+                    amountDestroyed += proof.amount;
                 }
             }
+            toaster.success({
+                title: `${amountDestroyed} spent sats cleaned from wallet`,
+            });
         };
 
-        const modal: ModalSettings = {
-            type: 'confirm',
-            // Data
-            title: 'Confirm clean wallet',
-            body: modalBody,
-            response: response,
-        };
-
-        modalStore.trigger(modal);
+        for (const mint of $wallet!.mints) {
+            try {
+                await consolidateMintTokens(
+                    mint,
+                    $wallet!,
+                    undefined, // allProofs = wallet proofs implicitly
+                    onCleaningResult
+                );
+            } catch (err) {
+                console.error('An error occurred in cleaning wallet', err);
+                toaster.error({
+                    title: `Failed to clean used tokens!`,
+                });
+            } finally {
+                cleaningWallet = false;
+            }
+        }
     }
 
     async function handleWalletBackup() {
         if (!$wallet) return;
 
-        const modalComponent: ModalComponent = {
-            ref: BackupEcashWallet,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-
-        modalStore.trigger(modal);
+        showBackupEcashWallet = true;
     }
 
     async function recoverWallet() {
-        const modalComponent: ModalComponent = {
-            ref: RecoverEcashWallet,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-
-        modalStore.trigger(modal);
+        showRecoverEcashWallet = true;
     }
 
     const tooltipRemoveMint: PopupSettings = {
@@ -741,14 +663,7 @@
                                             on:click={handleCleanWallet}
                                         >
                                             {#if cleaningWallet}
-                                                <ProgressRadial
-                                                    value={undefined}
-                                                    stroke={60}
-                                                    meter="stroke-white-500"
-                                                    track="stroke-white-500/3"
-                                                    width="w-8"
-                                                    strokeLinecap="round"
-                                                />
+                                                <ProgressRing color="white" />
                                             {:else}
                                                 <i class="fa-solid fa-broom"></i>
                                                 Clean
@@ -847,3 +762,59 @@
         </div>
     </div>
 </div>
+
+<AddRelayModal bind:isOpen={showAddRelayModal} callback={handleAddRelay} />
+
+{#if relayToRemove}
+    <RelayRemovalConfirmation
+        bind:isOpen={showRelayRemovalConfirmation}
+        url={relayToRemove}
+        onConfirm={async () => {
+            await handleRemoveRelay(relayToRemove!);
+            relayToRemove = null;
+        }}
+    />
+{/if}
+
+{#if mintToRemove}
+    <RemoveMintModal
+        bind:isOpen={showRelayRemovalConfirmation}
+        mint={mintToRemove}
+        onConfirm={async () => {
+            await handleRemoveMint(mintToRemove!);
+            mintToRemove = null;
+        }}
+    />
+{/if}
+
+{#if tempWallet}
+    <ExploreMintsModal
+        bind:isOpen={showMintModal}
+        cashuWallet={tempWallet}
+        callback={handleMintSelection}
+    />
+{/if}
+
+{#if $wallet}
+    <ExploreMintsModal
+        bind:isOpen={showExploreMintsModal}
+        cashuWallet={$wallet}
+        callback={handleMintsUpdate}
+    />
+{/if}
+
+<RecoverEcashWallet bind:isOpen={showRecoverEcashWallet} />
+
+<BackupEcashWallet bind:isOpen={showBackupEcashWallet} />
+
+<ConfirmationDialog
+    bind:isOpen={showCleanWalletConfirmationDialog}
+    confirmText="Clean"
+    onConfirm={cleanWallet}
+    onCancel={() => (showCleanWalletConfirmationDialog = false)}
+>
+    <strong class="text-primary-400-500">
+        If a wallet contains used tokens, they will be removed and you may see a decrease in wallet
+        balance. Do you really wish to clean wallet?
+    </strong>
+</ConfirmationDialog>

@@ -1,51 +1,40 @@
 <script lang="ts">
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import Button from '../UI/Buttons/Button.svelte';
     import Popup from '../UI/Popup.svelte';
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import ShareJobModal from './ShareJobModal.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
     interface Props {
+        isOpen: boolean;
         job: TicketEvent;
     }
 
-    let { job }: Props = $props();
+    let { isOpen = $bindable(), job }: Props = $props();
 
-    const modalStore = getModalStore();
+    let showShareJobModal = $state(false);
 
     function handleConfirm() {
-        const modalComponent: ModalComponent = {
-            ref: ShareJobModal,
-            props: { job },
-        };
-
-        const shareModal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-
-        modalStore.clear();
-        modalStore.trigger(shareModal);
+        isOpen = false;
+        showShareJobModal = true;
     }
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Success!">
-        <div class="w-full flex flex-col">
-            <div class="w-full py-[10px] px-[5px]">
-                <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px]">
-                    <p class="w-full">Job posted successfully!</p>
-                    <p class="w-full">
-                        <strong>Share Job as Text Note?</strong> It will show up in your feed on popular
-                        clients.
-                    </p>
+<ModalWrapper bind:isOpen title="Success!">
+    <div class="w-full flex flex-col">
+        <div class="w-full py-[10px] px-[5px]">
+            <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px]">
+                <p class="w-full">Job posted successfully!</p>
+                <p class="w-full">
+                    <strong>Share Job as Text Note?</strong> It will show up in your feed on popular
+                    clients.
+                </p>
 
-                    <Button on:click={handleConfirm}>Of course!</Button>
-                    <Button variant="outlined" on:click={() => modalStore.close()}>
-                        No thanks
-                    </Button>
-                </div>
+                <Button on:click={handleConfirm}>Of course!</Button>
+                <Button variant="outlined" on:click={() => (isOpen = false)}>No thanks</Button>
             </div>
         </div>
-    </Popup>
-{/if}
+    </div>
+</ModalWrapper>
+
+<ShareJobModal bind:isOpen={showShareJobModal} {job} />

@@ -12,8 +12,6 @@
 
     import tagOptions from '$lib/utils/tag-options';
 
-    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
 
     import { beforeNavigate, goto } from '$app/navigation';
@@ -27,7 +25,10 @@
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
 
     const toaster = createToaster();
-    const modalStore = getModalStore();
+
+    let showLoginModal = $state(false);
+    let showJobPostSuccessModal = $state(false);
+    let postedJob = $state<TicketEvent | null>(null);
 
     let tagInput = $state('');
     let tagList = $state<string[]>([]);
@@ -193,16 +194,8 @@
 
                     $jobToEdit = null;
 
-                    const successModal: ModalComponent = {
-                        ref: JobPostSuccess,
-                        props: { job },
-                    };
-
-                    const shareModal: ModalSettings = {
-                        type: 'component',
-                        component: successModal,
-                    };
-                    modalStore.trigger(shareModal);
+                    postedJob = job;
+                    showJobPostSuccessModal = true;
 
                     $profileTabStore = ProfilePageTabs.Jobs;
                     goto('/' + $currentUser.npub + '/');
@@ -227,13 +220,7 @@
 
     function handleLogin() {
         $redirectAfterLogin = false;
-
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: LoginModal,
-            },
-        });
+        showLoginModal = true;
     }
 </script>
 
@@ -355,3 +342,9 @@
         </div>
     </div>
 </div>
+
+<LoginModal bind:isOpen={showLoginModal} />
+
+{#if postedJob}
+    <JobPostSuccess bind:isOpen={showJobPostSuccessModal} job={postedJob} />
+{/if}

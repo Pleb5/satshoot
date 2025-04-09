@@ -14,12 +14,8 @@
     import Announcement from '$lib/components/Modals/Announcement.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount } from 'svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
-
-    const modalStore = getModalStore();
 
     let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
     let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
@@ -29,6 +25,8 @@
     // tracks if user-defined filtering returned anything
     let noResults = $state(false);
     let currentPage = $state(1);
+
+    let showAnnouncementModal = $state(false);
 
     $effect(() => {
         if ($newJobs && filterList) {
@@ -87,15 +85,7 @@
     }
 
     function readyToWork() {
-        const modalComponent: ModalComponent = {
-            ref: Announcement,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
+        showAnnouncementModal = true;
     }
 
     function handlePrev() {
@@ -210,3 +200,5 @@
         </button>
     </div>
 {/if}
+
+<Announcement bind:isOpen={showAnnouncementModal} />

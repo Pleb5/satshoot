@@ -1,12 +1,9 @@
-<!-- src/lib/QRCode.svelte -->
 <script lang="ts">
     import QRCode from 'qrcode';
-    import Popup from '../UI/Popup.svelte';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-
-    const modalStore = getModalStore();
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
     interface Props {
+        isOpen: boolean;
         title: string;
         data: string; // The data to encode in the QR code
         size?: number; // Size of the QR code (width and height)
@@ -16,6 +13,7 @@
     }
 
     let {
+        isOpen = $bindable(),
         title,
         data,
         size = 200,
@@ -40,10 +38,8 @@
     });
 </script>
 
-{#if $modalStore[0]}
-    <Popup {title}>
-        <div class="flex flex-col justify-center items-center">
-            <canvas bind:this={canvas} width={size} height={size}></canvas>
-        </div>
-    </Popup>
-{/if}
+<ModalWrapper bind:isOpen {title}>
+    <div class="flex flex-col justify-center items-center">
+        <canvas bind:this={canvas} width={size} height={size}></canvas>
+    </div>
+</ModalWrapper>

@@ -1,15 +1,18 @@
 <script lang="ts">
     import { LoginMethod } from '$lib/stores/ndk';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
-    import Popup from '../UI/Popup.svelte';
     import Nip07Login from '../Login/Nip07Login.svelte';
     import BunkerLogin from '../Login/BunkerLogin.svelte';
     import LocalKeyLogin from '../Login/LocalKeyLogin.svelte';
     import GenerateAccount from '../Login/GenerateAccount.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
 
     let selectedLoginMethod: LoginMethod | null = $state(null);
 
@@ -54,61 +57,55 @@
 `;
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Login" {popUpText}>
-        {#snippet headerAction()}
-            <Button
-                classes={!selectedLoginMethod ? 'hidden' : ''}
-                variant="outlined"
-                on:click={() => (selectedLoginMethod = null)}
-            >
-                <i class="bx bx-chevron-left"></i>
-            </Button>
-        {/snippet}
+<ModalWrapper bind:isOpen title="login" {popUpText}>
+    {#snippet headerAction()}
+        <Button
+            classes={!selectedLoginMethod ? 'hidden' : ''}
+            variant="outlined"
+            on:click={() => (selectedLoginMethod = null)}
+        >
+            <i class="bx bx-chevron-left"></i>
+        </Button>
+    {/snippet}
 
-        <div class="w-full flex flex-col">
-            <div class="w-full flex flex-col gap-[10px] pt-[10px]">
-                {#if !selectedLoginMethod}
-                    <div class="w-full flex flex-col gap-[10px]">
-                        <h3 class="text-[18px]">Choose your login method</h3>
-                        <Card classes="gap-[10px]">
-                            <Button on:click={() => (selectedLoginMethod = LoginMethod.Nip07)}
-                                >Extension</Button
-                            >
-                            <Button on:click={() => (selectedLoginMethod = LoginMethod.Bunker)}
-                                >Bunker</Button
-                            >
-                            <Button on:click={() => (selectedLoginMethod = LoginMethod.Local)}
-                                >Local Key</Button
-                            >
-                        </Card>
-                        <div class="h-[1px] w-full bg-black-200 my-[10px]"></div>
-                        <h3 class="text-[18px]">Or, if you're new to Nostr</h3>
-                        <Button
-                            variant="outlined"
-                            on:click={() => (selectedLoginMethod = LoginMethod.Register)}
-                            >Generate Account</Button
+    <div class="w-full flex flex-col">
+        <div class="w-full flex flex-col gap-[10px] pt-[10px]">
+            {#if !selectedLoginMethod}
+                <div class="w-full flex flex-col gap-[10px]">
+                    <h3 class="text-[18px]">Choose your login method</h3>
+                    <Card classes="gap-[10px]">
+                        <Button on:click={() => (selectedLoginMethod = LoginMethod.Nip07)}
+                            >Extension</Button
                         >
-                        <div class="flex justify-center">
-                            <a
-                                class="anchor"
-                                href="https://github.com/Pleb5/satshoot"
-                                target="_blank"
-                            >
-                                <span>Running v0.3.0</span>
-                            </a>
-                        </div>
+                        <Button on:click={() => (selectedLoginMethod = LoginMethod.Bunker)}
+                            >Bunker</Button
+                        >
+                        <Button on:click={() => (selectedLoginMethod = LoginMethod.Local)}
+                            >Local Key</Button
+                        >
+                    </Card>
+                    <div class="h-[1px] w-full bg-black-200 my-[10px]"></div>
+                    <h3 class="text-[18px]">Or, if you're new to Nostr</h3>
+                    <Button
+                        variant="outlined"
+                        on:click={() => (selectedLoginMethod = LoginMethod.Register)}
+                        >Generate Account</Button
+                    >
+                    <div class="flex justify-center">
+                        <a class="anchor" href="https://github.com/Pleb5/satshoot" target="_blank">
+                            <span>Running v0.3.0</span>
+                        </a>
                     </div>
-                {:else if selectedLoginMethod === LoginMethod.Nip07}
-                    <Nip07Login />
-                {:else if selectedLoginMethod === LoginMethod.Bunker}
-                    <BunkerLogin />
-                {:else if selectedLoginMethod === LoginMethod.Local}
-                    <LocalKeyLogin />
-                {:else if selectedLoginMethod === LoginMethod.Register}
-                    <GenerateAccount />
-                {/if}
-            </div>
+                </div>
+            {:else if selectedLoginMethod === LoginMethod.Nip07}
+                <Nip07Login bind:isOpen />
+            {:else if selectedLoginMethod === LoginMethod.Bunker}
+                <BunkerLogin bind:isOpen />
+            {:else if selectedLoginMethod === LoginMethod.Local}
+                <LocalKeyLogin bind:isOpen />
+            {:else if selectedLoginMethod === LoginMethod.Register}
+                <GenerateAccount bind:isOpen />
+            {/if}
         </div>
-    </Popup>
-{/if}
+    </div>
+</ModalWrapper>

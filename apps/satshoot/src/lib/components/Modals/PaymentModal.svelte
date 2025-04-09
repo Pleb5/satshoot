@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getModalStore, popup, type PopupSettings } from '@skeletonlabs/skeleton';
+    import { popup, type PopupSettings } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
@@ -33,9 +33,9 @@
     import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
     import Card from '../UI/Card.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
     enum ToastType {
         Success = 'success',
@@ -74,7 +74,12 @@
     }
 
     const toaster = createToaster();
-    const modalStore = getModalStore();
+
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
 
     // TODO: As soon as Modals can take Props this needs to stop
     let ticket: TicketEvent | undefined = $derived($paymentDetail?.ticket);
@@ -651,187 +656,183 @@
     };
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Pay Freelancer">
-        {#if ticket && offer}
-            <div class="w-full flex flex-col">
-                <!-- popups Share Job Post start -->
-                <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+<ModalWrapper bind:isOpen title="Pay Freelancer">
+    {#if ticket && offer}
+        <div class="w-full flex flex-col">
+            <!-- popups Share Job Post start -->
+            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+                <div
+                    class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 dark:border-white-100 p-[10px]"
+                >
+                    <UserProfile pubkey={offer.pubkey} />
                     <div
-                        class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 dark:border-white-100 p-[10px]"
+                        class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                     >
-                        <UserProfile pubkey={offer.pubkey} />
-                        <div
-                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
-                        >
-                            <div class="grow-1">
-                                <p class="font-[500]">
-                                    Offer cost:
-                                    <span class="font-[300]">
-                                        {insertThousandSeparator(offer.amount) + ' ' + pricing}
-                                    </span>
-                                </p>
-                            </div>
-                            <div class="grow-1">
-                                <p class="font-[500]">
-                                    Pledge split:
-                                    <span class="font-[300]"> {offer.pledgeSplit} %</span>
-                                </p>
-                            </div>
+                        <div class="grow-1">
+                            <p class="font-[500]">
+                                Offer cost:
+                                <span class="font-[300]">
+                                    {insertThousandSeparator(offer.amount) + ' ' + pricing}
+                                </span>
+                            </p>
                         </div>
-                        <div
-                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
-                        >
-                            <div class="grow-1">
-                                <p class="font-[500]">
-                                    Freelancer Paid: <span class="font-[300]"
-                                        >{insertThousandSeparator(freelancerPaid)} sats</span
-                                    >
-                                </p>
-                            </div>
-                            <div class="grow-1">
-                                <p class="font-[500]">
-                                    SatShoot Paid: <span class="font-[300]"
-                                        >{insertThousandSeparator(satshootPaid)} sats</span
-                                    >
-                                </p>
-                            </div>
+                        <div class="grow-1">
+                            <p class="font-[500]">
+                                Pledge split:
+                                <span class="font-[300]"> {offer.pledgeSplit} %</span>
+                            </p>
                         </div>
                     </div>
                     <div
-                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
+                        class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                     >
-                        <p class="">Compensation for:</p>
-                        <p class="">{ticket.title}</p>
+                        <div class="grow-1">
+                            <p class="font-[500]">
+                                Freelancer Paid: <span class="font-[300]"
+                                    >{insertThousandSeparator(freelancerPaid)} sats</span
+                                >
+                            </p>
+                        </div>
+                        <div class="grow-1">
+                            <p class="font-[500]">
+                                SatShoot Paid: <span class="font-[300]"
+                                    >{insertThousandSeparator(satshootPaid)} sats</span
+                                >
+                            </p>
+                        </div>
                     </div>
-                    <div
-                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
-                    >
+                </div>
+                <div
+                    class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
+                >
+                    <p class="">Compensation for:</p>
+                    <p class="">{ticket.title}</p>
+                </div>
+                <div
+                    class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
+                >
+                    <div class="w-full flex flex-col gap-[5px]">
                         <div class="w-full flex flex-col gap-[5px]">
-                            <div class="w-full flex flex-col gap-[5px]">
-                                <label class="font-[500]" for="service-payment"
-                                    >Pay for service</label
-                                >
-                                <Input
-                                    id="service-payment"
-                                    type="number"
-                                    step="1"
-                                    min="0"
-                                    placeholder="000,000"
-                                    bind:value={amount}
-                                    fullWidth
-                                />
-                            </div>
-                            <div class="w-full flex flex-col gap-[5px]">
-                                <label class="font-[500]" for="plattform-contribution"
-                                    >Contribute to SatShoot</label
-                                >
-                                <Input
-                                    id="plattform-contribution"
-                                    type="number"
-                                    step="1"
-                                    min="0"
-                                    placeholder="000,000"
-                                    bind:value={pledgedAmount}
-                                    fullWidth
-                                />
-                            </div>
+                            <label class="font-[500]" for="service-payment">Pay for service</label>
+                            <Input
+                                id="service-payment"
+                                type="number"
+                                step="1"
+                                min="0"
+                                placeholder="000,000"
+                                bind:value={amount}
+                                fullWidth
+                            />
                         </div>
-                        <div
-                            class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
-                        >
-                            <p class="grow-1 text-center">
-                                Freelancer gets: {insertThousandSeparator(freelancerShare)} sats
-                            </p>
-                            <p class="grow-1 text-center">
-                                SatShoot gets: {insertThousandSeparator(satshootShare) +
-                                    ' + ' +
-                                    insertThousandSeparator(pledgedAmount ?? 0) +
-                                    ' = ' +
-                                    insertThousandSeparator(satshootShare + (pledgedAmount ?? 0)) +
-                                    ' sats'}
-                            </p>
+                        <div class="w-full flex flex-col gap-[5px]">
+                            <label class="font-[500]" for="plattform-contribution"
+                                >Contribute to SatShoot</label
+                            >
+                            <Input
+                                id="plattform-contribution"
+                                type="number"
+                                step="1"
+                                min="0"
+                                placeholder="000,000"
+                                bind:value={pledgedAmount}
+                                fullWidth
+                            />
                         </div>
                     </div>
-                    <div class="flex flex-row justify-center">
-                        <div class="flex flex-col gap-[5px]">
-                            <div class="flex flex-row">
+                    <div
+                        class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
+                    >
+                        <p class="grow-1 text-center">
+                            Freelancer gets: {insertThousandSeparator(freelancerShare)} sats
+                        </p>
+                        <p class="grow-1 text-center">
+                            SatShoot gets: {insertThousandSeparator(satshootShare) +
+                                ' + ' +
+                                insertThousandSeparator(pledgedAmount ?? 0) +
+                                ' = ' +
+                                insertThousandSeparator(satshootShare + (pledgedAmount ?? 0)) +
+                                ' sats'}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex flex-row justify-center">
+                    <div class="flex flex-col gap-[5px]">
+                        <div class="flex flex-row">
+                            <Button
+                                grow
+                                classes="w-[200px] max-w-[200px]"
+                                on:click={payWithLN}
+                                disabled={paying}
+                            >
+                                {#if paying}
+                                    <span>
+                                        <ProgressRing />
+                                    </span>
+                                {:else}
+                                    <img
+                                        class="h-[20px] w-auto"
+                                        src="/img/lightning.png"
+                                        alt="Lightning icon"
+                                    />
+                                    <span> Pay with LN</span>
+                                {/if}
+                            </Button>
+                        </div>
+                        <div class="flex flex-row items-center gap-[2px]">
+                            {#if hasSenderEcashSetup}
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    on:click={payWithLN}
-                                    disabled={paying}
+                                    on:click={payWithEcash}
+                                    disabled={paying || !canPayWithEcash}
+                                >
+                                    {#if paying}
+                                        <ProgressRing />
+                                    {:else}
+                                        <img
+                                            class="h-[20px] w-auto"
+                                            src="/img/cashu.png"
+                                            alt="Cashu icon"
+                                        />
+                                        <span>Pay with Cashu</span>
+                                    {/if}
+                                </Button>
+                            {:else}
+                                <Button
+                                    grow
+                                    classes="w-[200px] max-w-[200px]"
+                                    on:click={setupEcash}
                                 >
                                     {#if paying}
                                         <span>
                                             <ProgressRing />
                                         </span>
-                                    {:else}
-                                        <img
-                                            class="h-[20px] w-auto"
-                                            src="/img/lightning.png"
-                                            alt="Lightning icon"
-                                        />
-                                        <span> Pay with LN</span>
                                     {/if}
+                                    <span> Setup Nostr Wallet </span>
                                 </Button>
-                            </div>
-                            <div class="flex flex-row items-center gap-[2px]">
-                                {#if hasSenderEcashSetup}
-                                    <Button
-                                        grow
-                                        classes="w-[200px] max-w-[200px]"
-                                        on:click={payWithEcash}
-                                        disabled={paying || !canPayWithEcash}
-                                    >
-                                        {#if paying}
-                                            <ProgressRing />
-                                        {:else}
-                                            <img
-                                                class="h-[20px] w-auto"
-                                                src="/img/cashu.png"
-                                                alt="Cashu icon"
-                                            />
-                                            <span>Pay with Cashu</span>
-                                        {/if}
-                                    </Button>
-                                {:else}
-                                    <Button
-                                        grow
-                                        classes="w-[200px] max-w-[200px]"
-                                        on:click={setupEcash}
-                                    >
-                                        {#if paying}
-                                            <span>
-                                                <ProgressRing />
-                                            </span>
-                                        {/if}
-                                        <span> Setup Nostr Wallet </span>
-                                    </Button>
-                                {/if}
+                            {/if}
 
-                                {#if ecashTooltipText}
-                                    <i
-                                        class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
-                                        use:popup={cashuTooltip}
-                                    >
-                                    </i>
-                                    <div data-popup="cashuTooltip">
-                                        <Card>
-                                            <p>{ecashTooltipText}</p>
-                                        </Card>
-                                    </div>
-                                {/if}
-                            </div>
+                            {#if ecashTooltipText}
+                                <i
+                                    class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                    use:popup={cashuTooltip}
+                                >
+                                </i>
+                                <div data-popup="cashuTooltip">
+                                    <Card>
+                                        <p>{ecashTooltipText}</p>
+                                    </Card>
+                                </div>
+                            {/if}
                         </div>
                     </div>
                 </div>
-                <!-- popups Share Job Post end -->
             </div>
-        {:else}
-            <h2 class="h2 font-bold text-center text-error-300-600">
-                Error: Ticket & Offer is missing!
-            </h2>
-        {/if}
-    </Popup>
-{/if}
+            <!-- popups Share Job Post end -->
+        </div>
+    {:else}
+        <h2 class="h2 font-bold text-center text-error-300-600">
+            Error: Ticket & Offer is missing!
+        </h2>
+    {/if}
+</ModalWrapper>

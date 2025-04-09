@@ -4,7 +4,6 @@
     import { TicketEvent } from '$lib/events/TicketEvent';
     import ndk from '$lib/stores/ndk';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
@@ -13,8 +12,6 @@
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
     import { getRoboHashPicture } from '$lib/utils/helpers';
-
-    const modalStore = getModalStore();
 
     interface Props {
         notification: ReviewEvent;
@@ -28,6 +25,8 @@
 
     let userProfile: NDKUserProfile | null;
     let job = $state<TicketEvent | null>();
+
+    let showReviewModal = $state(false);
 
     onMount(async () => {
         userProfile = await user.fetchProfile();
@@ -66,16 +65,7 @@
     });
 
     function handlePreview() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewModal,
-            props: { review: notification },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
+        showReviewModal = true;
     }
 </script>
 
@@ -116,3 +106,5 @@
         </div>
     </div>
 </Card>
+
+<ReviewModal bind:isOpen={showReviewModal} review={notification} />

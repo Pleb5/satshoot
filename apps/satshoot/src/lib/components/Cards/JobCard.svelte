@@ -1,14 +1,11 @@
 <script lang="ts">
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { formatDate } from 'date-fns';
     import JobPostMenu from '../Modals/JobPostMenu.svelte';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Markdown from './Markdown.svelte';
-
-    const modalStore = getModalStore();
 
     interface Props {
         job: TicketEvent;
@@ -17,20 +14,13 @@
 
     let { job, tagCallback = null }: Props = $props();
 
+    let showJobPostMenu = $state(false);
+
     let statusString = $derived(getJobStatusString(job.status));
     let statusColor = $derived(getJobStatusColor(job.status));
 
     function handleOptionClick() {
-        const modalComponent: ModalComponent = {
-            ref: JobPostMenu,
-            props: { job },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
+        showJobPostMenu = true;
     }
 
     const statusRowWrapperClasses =
@@ -93,3 +83,5 @@
         {/each}
     </Card>
 {/if}
+
+<JobPostMenu bind:isOpen={showJobPostMenu} {job} />

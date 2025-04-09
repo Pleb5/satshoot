@@ -1,12 +1,10 @@
 <script lang="ts">
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import Card from './Card.svelte';
     import Button from './Buttons/Button.svelte';
     import QuestionIcon from '../Icons/QuestionIcon.svelte';
 
-    const modalStore = getModalStore();
-
     interface Props {
+        isOpen: boolean;
         title?: string; // Title for the modal header
         popUpText?: string | undefined;
         headerAction?: import('svelte').Snippet;
@@ -14,14 +12,15 @@
     }
 
     let {
+        isOpen = $bindable(),
         title = '',
         popUpText = undefined,
         headerAction,
-        children
+        children,
     }: Props = $props();
 
     function handleClose() {
-        modalStore.close();
+        isOpen = false;
     }
 </script>
 

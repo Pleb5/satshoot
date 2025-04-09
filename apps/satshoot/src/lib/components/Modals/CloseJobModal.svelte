@@ -4,26 +4,27 @@
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import ndk from '$lib/stores/ndk';
     import { paymentDetail } from '$lib/stores/payment';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { tick } from 'svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
     import PaymentModal from './PaymentModal.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
     const toaster = createToaster();
 
     interface Props {
+        isOpen: boolean;
         job: TicketEvent;
         offer?: OfferEvent | null;
     }
 
-    let { job, offer = null }: Props = $props();
+    let { isOpen = $bindable(), job, offer = null }: Props = $props();
+
+    let showPaymentModal = $state(false);
 
     let expertise = $state(false);
     let availability = $state(false);
@@ -78,7 +79,7 @@
                 }
 
                 // Close this modal and Open payment modal
-                modalStore.close();
+                isOpen = false;
 
                 if (offer) {
                     $paymentDetail = {
@@ -86,16 +87,8 @@
                         offer,
                     };
 
-                    const modalComponent: ModalComponent = {
-                        ref: PaymentModal,
-                    };
-
-                    const modal: ModalSettings = {
-                        type: 'component',
-                        component: modalComponent,
-                    };
-                    modalStore.clear();
-                    modalStore.trigger(modal);
+                    isOpen = false;
+                    showPaymentModal = true;
                 }
             } catch (e) {
                 console.log(e);
@@ -106,78 +99,78 @@
             closing = false;
             toaster.error({ title: 'Could could not find job to close!' });
 
-            modalStore.close();
+            isOpen = false;
         }
     }
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Close Job?">
-        <div class="w-full flex flex-col">
-            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
-                <ReviewToggleQuestion
-                    question="Was Your Issue Resolved?"
-                    bind:value={isIssueResolved}
-                    trueLabel="Yes"
-                    falseLabel="No"
-                />
-                {#if job.acceptedOfferAddress}
-                    {#if isIssueResolved}
-                        <div class="w-full flex flex-col gap-[5px]">
-                            <div class="w-full max-h-[50vh] overflow-auto">
-                                <p class="w-full">
-                                    Select excellent qualities of the Freelancer, if any:
-                                </p>
-                            </div>
-                            <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
-                                <Checkbox
-                                    id="expertise"
-                                    label="A skilled expert"
-                                    bind:checked={expertise}
-                                />
-                                <Checkbox
-                                    id="availability"
-                                    label="Highly available, attentive and responsive"
-                                    bind:checked={availability}
-                                />
-                                <Checkbox
-                                    id="communication"
-                                    label="Especially clear and kind communication"
-                                    bind:checked={communication}
-                                />
-                            </div>
-                        </div>
-                    {/if}
-
+<ModalWrapper bind:isOpen title="Close Job?">
+    <div class="w-full flex flex-col">
+        <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+            <ReviewToggleQuestion
+                question="Was Your Issue Resolved?"
+                bind:value={isIssueResolved}
+                trueLabel="Yes"
+                falseLabel="No"
+            />
+            {#if job.acceptedOfferAddress}
+                {#if isIssueResolved}
                     <div class="w-full flex flex-col gap-[5px]">
                         <div class="w-full max-h-[50vh] overflow-auto">
-                            <p class="w-full">Share your experience to help others:</p>
+                            <p class="w-full">
+                                Select excellent qualities of the Freelancer, if any:
+                            </p>
                         </div>
-                        <Input
-                            bind:value={reviewText}
-                            placeholder="Describe your experience..."
-                            classes="min-h-[100px]"
-                            fullWidth
-                            textarea
-                        />
+                        <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
+                            <Checkbox
+                                id="expertise"
+                                label="A skilled expert"
+                                bind:checked={expertise}
+                            />
+                            <Checkbox
+                                id="availability"
+                                label="Highly available, attentive and responsive"
+                                bind:checked={availability}
+                            />
+                            <Checkbox
+                                id="communication"
+                                label="Especially clear and kind communication"
+                                bind:checked={communication}
+                            />
+                        </div>
                     </div>
                 {/if}
 
-                <div class="w-full flex flex-row gap-[10px]">
-                    <Button grow on:click={closeJob} disabled={closing}>
-                        {#if closing}
-                            <span>
-                                <ProgressRing color="error" />
-                            </span>
-                        {:else}
-                            <span class="font-bold">
-                                {'Close job' + (offer ? ' and Pay' : '')}
-                            </span>
-                        {/if}
-                    </Button>
+                <div class="w-full flex flex-col gap-[5px]">
+                    <div class="w-full max-h-[50vh] overflow-auto">
+                        <p class="w-full">Share your experience to help others:</p>
+                    </div>
+                    <Input
+                        bind:value={reviewText}
+                        placeholder="Describe your experience..."
+                        classes="min-h-[100px]"
+                        fullWidth
+                        textarea
+                    />
                 </div>
+            {/if}
+
+            <div class="w-full flex flex-row gap-[10px]">
+                <Button grow on:click={closeJob} disabled={closing}>
+                    {#if closing}
+                        <span>
+                            <ProgressRing color="error" />
+                        </span>
+                    {:else}
+                        <span class="font-bold">
+                            {'Close job' + (offer ? ' and Pay' : '')}
+                        </span>
+                    {/if}
+                </Button>
             </div>
-            <!-- popups Job-Close end -->
         </div>
-    </Popup>
-{/if}
+        <!-- popups Job-Close end -->
+    </div>
+</ModalWrapper>
+
+<PaymentModal bind:isOpen={showPaymentModal} />

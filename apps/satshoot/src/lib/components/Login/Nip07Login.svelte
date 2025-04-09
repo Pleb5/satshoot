@@ -6,13 +6,17 @@
     import { loginMethod } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
     import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
-    import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
-    const modalStore = getModalStore();
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
+
     const toaster = createToaster();
 
     let askingForNip07Permission = $state(false);
@@ -35,7 +39,7 @@
                     initializeUser($ndk);
                     handleRedirection();
                     askingForNip07Permission = false;
-                    modalStore.close();
+                    isOpen = false;
                 }
             } catch (e) {
                 askingForNip07Permission = false;
@@ -44,13 +48,11 @@
                 });
             }
         } else if (!window.nostr) {
-            const modal: ModalSettings = {
-                type: 'alert',
+            toaster.error({
                 title: 'No Compatible Extension!',
-                body: 'No nip07-compatible browser extension found! See Alby, nos2x or similar!',
-                buttonTextCancel: 'Cancel',
-            };
-            modalStore.trigger(modal);
+                description:
+                    'No nip07-compatible browser extension found! See Alby, nos2x or similar!',
+            });
         }
     }
 

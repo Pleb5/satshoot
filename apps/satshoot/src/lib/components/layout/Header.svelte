@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Avatar, Modal } from '@skeletonlabs/skeleton-svelte';
+    import { Avatar } from '@skeletonlabs/skeleton-svelte';
 
     import LoginModal from '../Modals/LoginModal.svelte';
     import currentUser, { loggedIn, loggingIn, loginMethod } from '$lib/stores/user';
@@ -14,8 +14,8 @@
 
     const dispatch = createEventDispatcher();
 
-    let isLoginModalOpened = $state(false);
-    let isAppMenuOpened = $state(false);
+    let showLoginModal = $state(false);
+    let showAppMenu = $state(false);
 
     let profilePicture = $state('');
 
@@ -48,15 +48,7 @@
     };
 
     function handleLogin() {
-        isLoginModalOpened = true;
-    }
-
-    function openAppMenu() {
-        isAppMenuOpened = true;
-    }
-
-    function closeAppMenu() {
-        isAppMenuOpened = false;
+        showLoginModal = true;
     }
 
     const satShootLogoWrapperClass = 'flex flex-row items-center gap-4 ' + '';
@@ -89,7 +81,7 @@
                     <div class="flex flex-row grow gap-4 justify-end items-center">
                         {#if $loggedIn}
                             <Button href="/post-job/">Submit Job</Button>
-                            <button onclick={openAppMenu}>
+                            <button onclick={() => (showAppMenu = !showAppMenu)}>
                                 <!-- Avatar image -->
                                 <Avatar
                                     classes="rounded-full border-white placeholder-white cursor-pointer w-12 sm:w-14"
@@ -116,19 +108,6 @@
     </div>
 </div>
 
-<Modal
-    open={isAppMenuOpened}
-    onInteractOutside={closeAppMenu}
-    contentBase="bg-surface-300-600 w-[50vw] sm:w-[40vw] md:w-[30vw] h-screen"
-    positionerJustify="justify-end"
->
-    {#snippet content()}
-        <AppMenu />
-    {/snippet}
-</Modal>
+<AppMenu bind:isOpen={showAppMenu} />
 
-<Modal open={isLoginModalOpened} closeOnInteractOutside={false} closeOnEscape={false}>
-    {#snippet content()}
-        <LoginModal />
-    {/snippet}
-</Modal>
+<LoginModal bind:isOpen={showLoginModal} />

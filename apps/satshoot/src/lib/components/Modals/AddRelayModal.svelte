@@ -1,27 +1,27 @@
 <script lang="ts">
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import Popup from '../UI/Popup.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { normalizeRelayUrl } from '@nostr-dev-kit/ndk';
 
-    const modalStore = getModalStore();
+    interface Props {
+        isOpen: boolean;
+        callback: (value: string) => void;
+    }
+
+    let { isOpen = $bindable(), callback }: Props = $props();
 
     let value = $state('wss://');
 
     function finish() {
-        if ($modalStore[0].response) {
-            $modalStore[0].response(normalizeRelayUrl(value));
-            modalStore.close();
-        }
+        callback(normalizeRelayUrl(value));
+        isOpen = false;
     }
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Add New Relay">
-        <div class="flex flex-col gap-[15px] mt-4">
-            <Input bind:value />
-            <Button on:click={finish}>Add Relay</Button>
-        </div>
-    </Popup>
-{/if}
+<ModalWrapper bind:isOpen title="Add New Relay">
+    <div class="flex flex-col gap-[15px] mt-4">
+        <Input bind:value />
+        <Button on:click={finish}>Add Relay</Button>
+    </div>
+</ModalWrapper>

@@ -11,7 +11,6 @@
     } from '$lib/utils/login';
     import { bunkerPerms } from '$lib/utils/misc';
     import { NDKNip46Signer, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { nip19 } from 'nostr-tools';
     import { tick } from 'svelte';
@@ -19,7 +18,12 @@
     import Input from '../UI/Inputs/input.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
-    const modalStore = getModalStore();
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
+
     const toaster = createToaster();
 
     let statusMessage = $state('');
@@ -119,12 +123,12 @@
                 initializeUser($ndk);
                 handleRedirection();
 
-                modalStore.close();
+                isOpen = false;
             } else {
                 toaster.error({
                     title: 'Could not connect to Bunker!',
                 });
-                modalStore.close();
+                isOpen = false;
             }
         } catch (error) {
             toaster.error({
@@ -137,7 +141,7 @@
                     `,
             });
             console.error(error);
-            modalStore.close();
+            isOpen = false;
         }
     }
 

@@ -1,19 +1,18 @@
 <script lang="ts">
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Button from '../UI/Buttons/Button.svelte';
-    import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
     const toaster = createToaster();
 
     interface Props {
+        isOpen: boolean;
         url: string; // Relay URL to remove
         onConfirm: () => Promise<void>; // Callback function to invoke on confirmation
     }
 
-    let { url, onConfirm }: Props = $props();
+    let { isOpen = $bindable(), url, onConfirm }: Props = $props();
 
     let posting = $state(false);
 
@@ -27,12 +26,12 @@
             });
         } finally {
             posting = false;
-            modalStore.close(); // Close the modal after confirmation
+            isOpen = false; // Close the modal after confirmation
         }
     }
 </script>
 
-<Popup title="Confirm Removal of Relay">
+<ModalWrapper bind:isOpen title="Confirm Removal of Relay">
     <div class="w-full flex flex-col gap-[15px]">
         <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px] mt-[10px]">
             <div
@@ -44,7 +43,7 @@
             </div>
         </div>
         <div class="w-full flex items-center justify-center gap-[10px]">
-            <Button grow variant="outlined" on:click={() => modalStore.close()}>Cancel</Button>
+            <Button grow variant="outlined" on:click={() => (isOpen = false)}>Cancel</Button>
             <Button
                 classes="bg-red-600 hover:bg-red-500 text-white"
                 grow
@@ -59,4 +58,4 @@
             </Button>
         </div>
     </div>
-</Popup>
+</ModalWrapper>

@@ -2,7 +2,6 @@
     import { wallet } from '$lib/wallet/wallet';
     import { backupWallet } from '$lib/wallet/cashu';
     import { logout } from '$lib/utils/helpers';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
@@ -10,9 +9,15 @@
     import Popup from '../UI/Popup.svelte';
     import { loginMethod } from '$lib/stores/user';
     import { LoginMethod } from '$lib/stores/ndk';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
+    interface Props {
+        isOpen: boolean;
+    }
+
     const toaster = createToaster();
+
+    let { isOpen = $bindable() }: Props = $props();
 
     let backupBeforeLogout = $state(true);
     let encryptWalletBackup = $state(false);
@@ -42,8 +47,7 @@
             return;
         }
 
-        modalStore.close();
-
+        isOpen = false;
         logout();
     }
 
@@ -51,64 +55,61 @@
         'w-full flex flex-row bg-black-50 border-[1px] border-black-100 dark:border-white-100 border-t-[0px] overflow-hidden rounded-[6px]';
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Confirm Logout">
-        <div class="w-full flex flex-col">
-            <!-- popups Logout start -->
-            <div class="w-full py-[10px] px-[5px]">
-                <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px]">
-                    <p class="w-full">Do really you wish to log out?</p>
-                    {#if $loginMethod === LoginMethod.Local}
-                        <div
-                            class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
-                        >
-                            <p class="font-[600] text-[16px] text-white">
-                                Local Keypair will be deleted, make sure you have a backup!
-                            </p>
-                        </div>
-                    {/if}
-                    {#if showBackupCheckbox}
+<ModalWrapper bind:isOpen title="Confirm Logout">
+    <div class="w-full flex flex-col">
+        <!-- popups Logout start -->
+        <div class="w-full py-[10px] px-[5px]">
+            <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[10px]">
+                <p class="w-full">Do really you wish to log out?</p>
+                {#if $loginMethod === LoginMethod.Local}
+                    <div
+                        class="w-full py-[5px] px-[10px] rounded-[6px] bg-orange-500 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
+                    >
+                        <p class="font-[600] text-[16px] text-white">
+                            Local Keypair will be deleted, make sure you have a backup!
+                        </p>
+                    </div>
+                {/if}
+                {#if showBackupCheckbox}
+                    <Checkbox
+                        id="backup-wallet"
+                        label="Backup Nostr Wallet before logging out"
+                        bind:checked={backupBeforeLogout}
+                    />
+
+                    {#if backupBeforeLogout}
                         <Checkbox
-                            id="backup-wallet"
-                            label="Backup Nostr Wallet before logging out"
-                            bind:checked={backupBeforeLogout}
+                            id="encrypt-wallet-backup"
+                            label="Encrypt backup with passphrase"
+                            bind:checked={encryptWalletBackup}
                         />
 
-                        {#if backupBeforeLogout}
-                            <Checkbox
-                                id="encrypt-wallet-backup"
-                                label="Encrypt backup with passphrase"
-                                bind:checked={encryptWalletBackup}
-                            />
-
-                            {#if encryptWalletBackup}
-                                <div class={inputWrapperClasses}>
-                                    <Input
-                                        bind:value={passphrase}
-                                        type={showPassphrase ? 'text' : 'password'}
-                                        placeholder="Enter passphrase for encryption (min. 14 chars)"
-                                        classes={!passphraseValid ? 'input-error' : ''}
-                                        grow
-                                        noBorder
-                                        notRounded
-                                    />
-                                    <Button
-                                        variant="outlined"
-                                        classes="border-l-[1px] border-l-black-100 rounded-[0px]"
-                                        on:click={() => (showPassphrase = !showPassphrase)}
-                                    >
-                                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}
-                                        ></i>
-                                    </Button>
-                                </div>
-                            {/if}
+                        {#if encryptWalletBackup}
+                            <div class={inputWrapperClasses}>
+                                <Input
+                                    bind:value={passphrase}
+                                    type={showPassphrase ? 'text' : 'password'}
+                                    placeholder="Enter passphrase for encryption (min. 14 chars)"
+                                    classes={!passphraseValid ? 'input-error' : ''}
+                                    grow
+                                    noBorder
+                                    notRounded
+                                />
+                                <Button
+                                    variant="outlined"
+                                    classes="border-l-[1px] border-l-black-100 rounded-[0px]"
+                                    on:click={() => (showPassphrase = !showPassphrase)}
+                                >
+                                    <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
+                                </Button>
+                            </div>
                         {/if}
                     {/if}
+                {/if}
 
-                    <Button fullWidth on:click={confirmLogout}>Confirm Logout</Button>
-                </div>
+                <Button fullWidth on:click={confirmLogout}>Confirm Logout</Button>
             </div>
-            <!-- popups Logout end -->
         </div>
-    </Popup>
-{/if}
+        <!-- popups Logout end -->
+    </div>
+</ModalWrapper>

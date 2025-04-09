@@ -4,16 +4,11 @@
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk from '$lib/stores/ndk';
-    import {
-        createPaymentFilters,
-        createPaymentStore,
-        paymentDetail,
-    } from '$lib/stores/payment';
+    import { createPaymentFilters, createPaymentStore, paymentDetail } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { NDKKind, type NDKFilter } from '@nostr-dev-kit/ndk';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import { nip19 } from 'nostr-tools';
     import { onDestroy } from 'svelte';
@@ -27,8 +22,6 @@
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import ReputationCard from './ReputationCard.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
-
-    const modalStore = getModalStore();
 
     interface Props {
         offer: OfferEvent;
@@ -45,6 +38,10 @@
         showJobDetail = false,
         showPayments = false,
     }: Props = $props();
+
+    let showTakeOfferModal = $state(false);
+    let showPaymentModal = $state(false);
+    let showReviewModal = $state(false);
 
     let freelancerPaid = $state(0);
     let satshootPaid = $state(0);
@@ -139,12 +136,10 @@
             // Fetch and update profile asynchronously
             jobPoster.fetchProfile().then((profile) => {
                 if (profile) {
-                    jobPosterName = profile.name
-                        ?? jobPoster.npub.substring(0, 8);
+                    jobPosterName = profile.name ?? jobPoster.npub.substring(0, 8);
 
-                    jobPosterImage = profile.picture
-                        ?? profile.image
-                        ?? getRoboHashPicture(jobPoster.pubkey);
+                    jobPosterImage =
+                        profile.picture ?? profile.image ?? getRoboHashPicture(jobPoster.pubkey);
                 }
             });
         }
@@ -182,16 +177,7 @@
 
     function takeOffer() {
         if (job) {
-            const modalComponent: ModalComponent = {
-                ref: TakeOfferModal,
-                props: { job, offer },
-            };
-
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-            };
-            modalStore.trigger(modal);
+            showTakeOfferModal = true;
         }
     }
 
@@ -202,30 +188,11 @@
             offer,
         };
 
-        const modalComponent: ModalComponent = {
-            ref: PaymentModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        showPaymentModal = true;
     }
 
     function handlePreviewReview() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewModal,
-            props: { review },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        showReviewModal = true;
     }
 </script>
 
@@ -347,3 +314,13 @@
         {/if}
     </div>
 </Card>
+
+<PaymentModal bind:isOpen={showPaymentModal} />
+
+{#if job}
+    <TakeOfferModal bind:isOpen={showTakeOfferModal} {job} {offer} />
+{/if}
+
+{#if review}
+    <ReviewModal bind:isOpen={showReviewModal} {review} />
+{/if}

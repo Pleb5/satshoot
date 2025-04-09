@@ -48,19 +48,13 @@
 
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
-    import { page } from '$app/stores';
-    // Popups
-    import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
-
-    import { storePopup, type PopupSettings } from '@skeletonlabs/skeleton';
+    import { page } from '$app/state';
 
     // Skeleton Toast
     import { Toaster, createToaster } from '@skeletonlabs/skeleton-svelte';
 
     // Skeleton Modals
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
-    import { type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
-    import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
     import { beforeNavigate } from '$app/navigation';
     import Footer from '$lib/components/layout/Footer.svelte';
@@ -70,7 +64,6 @@
     import type { TicketEvent } from '$lib/events/TicketEvent';
 
     import { searchTerms } from '$lib/stores/search';
-    import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
     import {
@@ -86,11 +79,6 @@
 
     const toaster = createToaster();
 
-    initializeStores();
-
-    // Skeleton popup init
-    storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
-
     beforeNavigate(async ({ to }) => {
         if (to?.url.pathname !== '/jobs') {
             // clear search terms by initializing a new set
@@ -98,9 +86,9 @@
         }
     });
 
-    let isDecryptSecretModalOpened = $state(false);
+    let showDecryptSecretModal = $state(false);
 
-    let searchQuery = $derived($page.url.searchParams.get('searchTerms'));
+    let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
     let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
 
     // on page reload if url contains searchTerms add them to svelte store
@@ -109,15 +97,6 @@
             searchTerms.set(new Set(filterList));
         }
     });
-
-    // For WoT tooltip
-    const popupWoT: PopupSettings = {
-        event: 'click',
-        target: 'popupWoT',
-        placement: 'right',
-    };
-
-    const modalStore = getModalStore();
 
     let displayNav = $derived($loggedIn);
     let followSubscription = $state<NDKSubscription>();
@@ -179,25 +158,16 @@
             return;
         }
 
-        try {
-            switch ($loginMethod) {
-                case LoginMethod.Local:
-                    await handleLocalLogin();
-                    break;
-                case LoginMethod.Bunker:
-                    await handleBunkerLogin();
-                    break;
-                case LoginMethod.Nip07:
-                    handleNip07Login();
-                    break;
-            }
-
-            // If signer is defined we can init user
-            if ($ndk.signer) {
-                initializeUser($ndk);
-            }
-        } finally {
-            $loggingIn = false;
+        switch ($loginMethod) {
+            case LoginMethod.Local:
+                handleLocalLogin();
+                break;
+            case LoginMethod.Bunker:
+                handleBunkerLogin();
+                break;
+            case LoginMethod.Nip07:
+                handleNip07Login();
+                break;
         }
     }
 
@@ -209,49 +179,54 @@
         }
     }
 
-    async function handleLocalLogin(): Promise<void> {
+    function handleLocalLogin() {
         // We either get the private key from sessionStorage or decrypt from localStorage
         if ($sessionPK) {
             $ndk.signer = new NDKPrivateKeySigner($sessionPK);
+            $loggingIn = false;
+
+            initializeUser($ndk);
             return;
         }
 
-        try {
-            // Get decrypted seed from a modal prompt where user enters passphrase
-            // User can dismiss modal in which case decryptedSeed is undefined
-            const responseObject = await promptForDecryption();
-
-            if (!responseObject) {
-                return;
-            }
-
-            const { decryptedSecret, restoreMethod } = responseObject;
-            const privateKey = getPrivateKeyFromDecryptedSecret(decryptedSecret, restoreMethod);
-
-            if (!privateKey) {
-                throw new Error(
-                    'Could not create hex private key from decrypted secret. Clear browser local storage and login again.'
-                );
-            }
-
-            $ndk.signer = new NDKPrivateKeySigner(privateKey);
-            $sessionPK = privateKey;
-        } catch (e) {
-            showErrorToast(`Could not create private key from local secret, error: ${e}`);
-        }
+        showDecryptSecretModal = true;
     }
 
-    async function promptForDecryption(): Promise<any> {
-        return new Promise<string | undefined>((resolve) => {
-            isDecryptSecretModalOpened = true;
-            const modalComponent: ModalComponent = { ref: DecryptSecretModal };
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (responseObject: any) => resolve(responseObject),
-            };
-            modalStore.trigger(modal);
-        });
+    function decryptSecretModalCallback(res: {
+        decryptedSecret?: string;
+        restoreMethod?: RestoreMethod;
+    }) {
+        // Get decrypted seed from a modal prompt where user enters passphrase
+        // User can dismiss modal in which case decryptedSeed is undefined
+        const { decryptedSecret, restoreMethod } = res;
+
+        if (!decryptedSecret) {
+            showErrorToast(
+                'Could not get decrypted secret. Clear browser local storage and login again.'
+            );
+            return;
+        }
+
+        if (!restoreMethod) {
+            showErrorToast(
+                'Could not get restore method. Clear browser local storage and login again.'
+            );
+            return;
+        }
+
+        const privateKey = getPrivateKeyFromDecryptedSecret(decryptedSecret, restoreMethod);
+
+        if (!privateKey) {
+            showErrorToast(
+                'Could not create hex private key from decrypted secret. Clear browser local storage and login again.'
+            );
+            return;
+        }
+
+        $ndk.signer = new NDKPrivateKeySigner(privateKey);
+        $sessionPK = privateKey;
+
+        initializeUser($ndk);
     }
 
     function getPrivateKeyFromDecryptedSecret(
@@ -294,6 +269,8 @@
             const returnedUser = await remoteSigner.blockUntilReady();
             if (returnedUser.npub) {
                 $ndk.signer = remoteSigner;
+                initializeUser($ndk);
+                $loggingIn = false;
             }
         } catch (e) {
             showBunkerConnectionError(e);
@@ -325,6 +302,8 @@
     function handleNip07Login() {
         if (!$ndk.signer) {
             $ndk.signer = new NDKNip07Signer();
+            initializeUser($ndk);
+            $loggingIn = false;
         }
     }
 
@@ -601,3 +580,5 @@
         </footer>
     {/if}
 </div>
+
+<DecryptSecretModal bind:isOpen={showDecryptSecretModal} callback={decryptSecretModalCallback} />

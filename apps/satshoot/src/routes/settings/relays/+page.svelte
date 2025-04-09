@@ -13,14 +13,15 @@
     } from '$lib/utils/helpers';
     import { normalizeRelayUrl } from '$lib/utils/misc';
     import { NDKRelayList } from '@nostr-dev-kit/ndk';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { onMount } from 'svelte';
     import { RelayType } from '$lib/stores/network';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
 
-    const modalStore = getModalStore();
     const toaster = createToaster();
+
+    let showRelayRemovalConfirmation = $state(false);
+    let relayToRemove = $state<{ url: string; relayType: RelayType } | null>(null);
 
     let needRelays = $state(true);
     let posting = $state(false);
@@ -86,21 +87,16 @@
         } else {
             writeRelayUrls = writeRelayUrls.filter((relayUrl) => relayUrl !== url);
         }
+
+        relayToRemove = null;
     }
 
     function removeRelay(url: string, relayType: RelayType) {
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: RelayRemovalConfirmation,
-                props: {
-                    url,
-                    onConfirm: async () => {
-                        await handleRelayRemoval(url, relayType);
-                    },
-                },
-            },
-        });
+        relayToRemove = {
+            url,
+            relayType,
+        };
+        showRelayRemovalConfirmation = true;
     }
 
     async function updateRelays() {
@@ -303,3 +299,13 @@
         >
     {/if}
 </div>
+
+{#if relayToRemove}
+    <RelayRemovalConfirmation
+        bind:isOpen={showRelayRemovalConfirmation}
+        url={relayToRemove.url}
+        onConfirm={async () => {
+            handleRelayRemoval(relayToRemove!.url, relayToRemove!.relayType);
+        }}
+    />
+{/if}

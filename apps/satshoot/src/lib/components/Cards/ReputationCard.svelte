@@ -9,9 +9,8 @@
         clientReviews,
         freelancerReviews,
     } from '$lib/stores/reviews';
-    import currentUser from '$lib/stores/user';
     import { wot, wotLoaded } from '$lib/stores/wot';
-    import { averageToRatingText, type RatingConsensus } from '$lib/utils/helpers';
+    import { averageToRatingText } from '$lib/utils/helpers';
     import { abbreviateNumber, insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import {
         NDKKind,
@@ -21,16 +20,12 @@
         type Hexpubkey,
         type NDKEvent,
     } from '@nostr-dev-kit/ndk';
-    import type { NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy } from 'svelte';
     import ReviewSummaryAsFreelancer from '../Modals/ReviewSummaryAsFreelancer.svelte';
     import ReviewSummaryAsClient from '../Modals/ReviewSummaryAsClient.svelte';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import RatingBlock from '../UI/Display/RatingBlock.svelte';
-
-    const modalStore = getModalStore();
 
     interface Props {
         user: Hexpubkey;
@@ -39,6 +34,9 @@
     }
 
     let { user, type = undefined, forUserCard = false }: Props = $props();
+
+    let showReviewSummaryAsFreelancer = $state(false);
+    let showReviewSummaryAsClient = $state(false);
 
     let allEarningsEvents: Set<NDKEvent> = new Set();
     let allPaymentsEvents: Set<NDKEvent> = new Set();
@@ -339,29 +337,11 @@
     }
 
     function showFreelancerReviewBreakdown() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewSummaryAsFreelancer,
-            props: { userHex: user },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
+        showReviewSummaryAsFreelancer = true;
     }
 
     function showClientReviewBreakdown() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewSummaryAsClient,
-            props: { userHex: user },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
+        showReviewSummaryAsClient = true;
     }
 
     let financialItems = $derived([
@@ -519,3 +499,6 @@
         </div>
     </Card>
 {/if}
+
+<ReviewSummaryAsFreelancer bind:isOpen={showReviewSummaryAsFreelancer} userHex={user} />
+<ReviewSummaryAsClient bind:isOpen={showReviewSummaryAsClient} userHex={user} />

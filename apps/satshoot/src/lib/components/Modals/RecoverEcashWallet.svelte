@@ -1,18 +1,22 @@
 <script lang="ts">
     import currentUser from '$lib/stores/user';
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { getFileExtension } from '$lib/utils/misc';
     import { decryptSecret } from '$lib/utils/crypto';
-    import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import { ndkNutzapMonitor, wallet } from '$lib/wallet/wallet';
     import { parseAndValidateBackup, recoverWallet } from '$lib/wallet/cashu';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
     const toaster = createToaster();
+
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
 
     let recovering = $state(false);
     let file = $state<File | null>(null);
@@ -93,7 +97,7 @@
             toaster.success({
                 title: 'Wallet Loaded Successfully!',
             });
-            modalStore.close();
+            isOpen = false;
         } catch (error) {
             console.error('Failed to recover wallet:', error);
             toaster.error({
@@ -109,45 +113,43 @@
         'dark:border-white-100 border-t-[0px] overflow-hidden rounded-[6px]';
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Recover Ecash Wallet">
-        <div class="flex flex-col gap-[10px] mt-4">
-            <input
-                type="file"
-                accept=".json,.enc"
-                class="input text-center bg-transparent rounded-md"
-                aria-label="choose file"
-                onchange={handleFileChange}
-            />
+<ModalWrapper bind:isOpen title="Recover Ecash Wallet">
+    <div class="flex flex-col gap-[10px] mt-4">
+        <input
+            type="file"
+            accept=".json,.enc"
+            class="input text-center bg-transparent rounded-md"
+            aria-label="choose file"
+            onchange={handleFileChange}
+        />
 
-            {#if showPassphraseInput}
-                <div class={inputWrapperClasses}>
-                    <Input
-                        bind:value={passphrase}
-                        type={showPassphrase ? 'text' : 'password'}
-                        placeholder="Enter passphrase for encryption (min. 14 chars)"
-                        grow
-                        noBorder
-                        notRounded
-                    />
-                    <Button
-                        variant="outlined"
-                        classes="border-l-[1px] border-l-black-100 rounded-[0px]"
-                        on:click={() => (showPassphrase = !showPassphrase)}
-                    >
-                        <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
-                    </Button>
-                </div>
+        {#if showPassphraseInput}
+            <div class={inputWrapperClasses}>
+                <Input
+                    bind:value={passphrase}
+                    type={showPassphrase ? 'text' : 'password'}
+                    placeholder="Enter passphrase for encryption (min. 14 chars)"
+                    grow
+                    noBorder
+                    notRounded
+                />
+                <Button
+                    variant="outlined"
+                    classes="border-l-[1px] border-l-black-100 rounded-[0px]"
+                    on:click={() => (showPassphrase = !showPassphrase)}
+                >
+                    <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
+                </Button>
+            </div>
+        {/if}
+
+        <Button on:click={recover} disabled={recovering}>
+            Recover
+            {#if recovering}
+                <span>
+                    <ProgressRing color="white" />
+                </span>
             {/if}
-
-            <Button on:click={recover} disabled={recovering}>
-                Recover
-                {#if recovering}
-                    <span>
-                        <ProgressRing color="white" />
-                    </span>
-                {/if}
-            </Button>
-        </div>
-    </Popup>
-{/if}
+        </Button>
+    </div>
+</ModalWrapper>
