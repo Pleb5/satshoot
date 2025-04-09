@@ -4,7 +4,7 @@
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
-    import ndk, { connected } from '$lib/stores/ndk';
+    import ndk, { connected, DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import {
         broadcastRelayList,
@@ -135,12 +135,7 @@
         checkRelayConnections();
     });
 
-    const suggestedRelayUrls = [
-        'wss://nos.lol/',
-        'wss://relay.damus.io/',
-        'wss://relay.primal.net/',
-    ];
-
+    const suggestedRelayUrls = DEFAULTRELAYURLS;
     const filteredSuggestedInboxRelays = $derived(
         suggestedRelayUrls.filter((relay) => !readRelayUrls.includes(relay))
     );
