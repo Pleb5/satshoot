@@ -1,8 +1,7 @@
 <script lang="ts">
-    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import { OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import { wotFilteredOffers, wotFilteredTickets } from '$lib/stores/freelance-eventstores';
     import ndk from '$lib/stores/ndk';
     import {
         aggregateClientRatings,
@@ -11,17 +10,18 @@
         freelancerReviews,
     } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
-    import { wot } from '$lib/stores/wot';
+    import { wot, wotFullyLoaded } from '$lib/stores/wot';
     import { averageToRatingText, type RatingConsensus } from '$lib/utils/helpers';
     import { abbreviateNumber, insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import {
         NDKKind,
         NDKNutzap,
+        NDKSubscriptionCacheUsage,
         zapInvoiceFromEvent,
         type Hexpubkey,
         type NDKEvent,
     } from '@nostr-dev-kit/ndk';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+    import type { NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy } from 'svelte';
     import ReviewSummaryAsFreelancer from '../Modals/ReviewSummaryAsFreelancer.svelte';
     import ReviewSummaryAsClient from '../Modals/ReviewSummaryAsClient.svelte';
@@ -40,79 +40,139 @@
 
     let { user, type = undefined, forUserCard = false }: Props = $props();
 
-    const subOptions = {
-        closeOnEose: false,
-        groupable: true,
-        groupableDelay: 1500,
-        autoStart: true,
-    };
-
     let allEarningsStore:NDKEventStore<NDKEvent> | undefined;
     let allPaymentsStore:NDKEventStore<NDKEvent> | undefined;
     let allPledgesStore:NDKEventStore<NDKEvent> | undefined;
 
     // Init
     $effect(() => {
-        if ($currentUser) {
-            // TODO: fetch wotFilteredOffers and wotFilteredTickets here (cache first, groupable delay) 
-            // and start subs based on that
-            const userTickets = $wotFilteredTickets.filter(
-                (ticket: TicketEvent) => ticket.pubkey === user
-            );
-
-            const userOffers = $wotFilteredOffers.filter((offer: OfferEvent) => offer.pubkey === user);
-
-            const winningOffersOfUser: string[] = [];
-            const winningOffersForUser: string[] = [];
-            const involvedTickets: string[] = [];
-
-            // Find offers where user won as freelancer
-            $wotFilteredTickets.forEach((ticket: TicketEvent) => {
-                userOffers.forEach((offer: OfferEvent) => {
-                    if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                        winningOffersOfUser.push(offer.id);
-                        involvedTickets.push(ticket.ticketAddress);
-                    }
-                });
-            });
-
-            // Find offers where user was client and someone else won
-            $wotFilteredOffers.forEach((offer: OfferEvent) => {
-                userTickets.forEach((ticket: TicketEvent) => {
-                    if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                        winningOffersForUser.push(offer.id);
-                        involvedTickets.push(ticket.ticketAddress);
-                    }
-                });
-            });
-
-            allEarningsStore = $ndk.storeSubscribe(
-                {
-                    kinds: [NDKKind.Zap, NDKKind.Nutzap], 
-                    '#p': [user], 
-                    '#e': winningOffersOfUser 
-                },
-                subOptions
-            )
-
-            allPaymentsStore = $ndk.storeSubscribe(
-                {
-                    kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                    '#e': winningOffersForUser 
-                },
-                subOptions
-            )
-
-            allPledgesStore = $ndk.storeSubscribe(
-                {
-                    kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                    '#a': involvedTickets,
-                    '#p': [SatShootPubkey]
-                },
-                subOptions
-            )
-        }
+        // if ($currentUser && $wotFullyLoaded) {
+        //     console.log('INIT')
+        //     init();
+        // }
     });
+
+    const init = async () => {
+        console.log('init()')
+        const subOptionsForJobsAndOffers = {
+            groupable: true,
+            groupableDelay: 800,
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+        }
+
+        const subOptionsForZaps = {
+            closeOnEose: false,
+            groupable: true,
+            groupableDelay: 1500,
+            autoStart: true,
+        };
+
+
+        const winningOffersOfUser: string[] = [];
+        const winningOffersForUser: string[] = [];
+        const involvedTickets: string[] = [];
+
+        // Earnings of target user, Clients filtered by CURRENT users wot
+        const userOffers = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceOffer],
+                authors: [user]
+            },
+            subOptionsForJobsAndOffers
+        );
+
+        console.log('userOffers', userOffers)
+
+        const allTicketsUserWon = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceTicket],
+                '#a': Array.from(userOffers).map(o => o.tagAddress())
+            },
+            subOptionsForJobsAndOffers
+        );
+
+        for (const wonTicket of allTicketsUserWon) {
+            const ticketEvent = TicketEvent.from(wonTicket);
+            if ($wot.has(ticketEvent.pubkey)) {
+                const offerOfTicket = Array.from(userOffers).find(
+                    o => o.tagAddress() === ticketEvent.acceptedOfferAddress
+                );
+                if (offerOfTicket) {
+                    involvedTickets.push(ticketEvent.ticketAddress)
+                    winningOffersOfUser.push(offerOfTicket.id)
+                } else {
+                    console.error("BUG: Offer for this ticket SHOULD be found")
+                }
+            }
+        }
+
+        console.log('winningOffersOfUser', winningOffersOfUser)
+
+        allEarningsStore = $ndk.storeSubscribe(
+            {
+                kinds: [NDKKind.Zap, NDKKind.Nutzap], 
+                '#p': [user], 
+                '#e': winningOffersOfUser 
+            },
+            subOptionsForZaps
+        )
+
+
+        // Payments of target user, Freelancers filtered by CURRENT users wot
+        const userTickets = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceTicket],
+                authors: [user]
+            },
+            subOptionsForJobsAndOffers
+        );
+
+        const allWinningOffersOnUserTickets = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceOffer],
+                '#a': Array.from(userTickets).map(t => t.tagAddress())
+            },
+            subOptionsForJobsAndOffers
+        );
+
+        for (const offer of allWinningOffersOnUserTickets) {
+            const offerEvent = OfferEvent.from(offer);
+            if ($wot.has(offerEvent.pubkey)) {
+                const ticketOfOffer = Array.from(userTickets).find(
+                    t => t.tagAddress() === offerEvent.referencedTicketAddress
+                );
+                if (ticketOfOffer) {
+                    involvedTickets.push(ticketOfOffer.tagAddress());
+                    winningOffersForUser.push(offerEvent.id);
+                } else {
+                    console.error("BUG: Ticket for this offer SHOULD be found")
+                }
+            }
+        }
+
+        console.log('winningOffersOfUser', winningOffersOfUser)
+
+        console.log('involvedTickets at the end ', involvedTickets)
+
+        allPaymentsStore = $ndk.storeSubscribe(
+            {
+                kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                '#e': winningOffersForUser 
+            },
+            subOptionsForZaps
+        )
+
+        // Pledges of target user, both as a Freelancer and as a Client,
+        // Counterparties in both cases filtered by CURRENT users wot
+        allPledgesStore = $ndk.storeSubscribe(
+            {
+                kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                '#a': involvedTickets,
+                '#p': [SatShootPubkey]
+            },
+            subOptionsForZaps
+        )
+    }
 
     // Derived financial metrics
     const allEarnings = $derived(
