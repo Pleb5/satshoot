@@ -1,9 +1,9 @@
 <script lang="ts">
     import { onDestroy } from 'svelte';
-    import { modeCurrent } from '@skeletonlabs/skeleton';
     import { abbreviateNumber } from '$lib/utils/misc';
     import { Chart, ArcElement, Tooltip, Legend, PieController } from 'chart.js';
     import ChartDataLabels from 'chartjs-plugin-datalabels';
+    import { getModeUserPrefers } from '$lib/utils/lightSwitch';
 
     Chart.register(ArcElement, Tooltip, Legend, ChartDataLabels, PieController);
 
@@ -14,7 +14,9 @@
     let { dataset = {} }: Props = $props();
     let canvas = $state<HTMLCanvasElement>();
     let chartInstance = $state<Chart>();
-    let isDark = $derived(!$modeCurrent);
+    let mode = $state(getModeUserPrefers() || 'light');
+
+    let isDark = $derived(mode === 'dark');
 
     // Generate random HSL colors for each dataset entry
     function generateColors(count: number, darkMode: boolean) {

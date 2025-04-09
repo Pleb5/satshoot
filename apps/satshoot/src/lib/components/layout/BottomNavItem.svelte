@@ -1,12 +1,12 @@
 <script lang="ts">
     import { unReadNotifications } from '$lib/stores/notifications';
     import { createEventDispatcher } from 'svelte';
-    import { TabAnchor } from '@skeletonlabs/skeleton';
+    import { Navigation } from '@skeletonlabs/skeleton-svelte';
 
     const dispatch = createEventDispatcher();
 
     interface Props {
-        href: string | undefined;
+        href?: string;
         icon: string;
         isActive?: boolean;
     }
@@ -14,9 +14,9 @@
     let { href, icon, isActive = false }: Props = $props();
 
     // Use a computed class for active state
-    let activeClass = $derived(isActive
-        ? 'bg-blue-500 text-white'
-        : 'bg-blue-0 text-black-300 dark:text-white');
+    let activeClass = $derived(
+        isActive ? 'bg-blue-500 text-white' : 'bg-blue-0 text-black-300 dark:text-white'
+    );
 
     // Base classes for the nav item
     const baseClasses =
@@ -27,7 +27,7 @@
     }
 </script>
 
-<TabAnchor {href} padding="" rounded-sm="rounded-[5px]">
+<Navigation.Tile {href} padding="" rounded="rounded-[5px]" selected={isActive}>
     <button class={`${baseClasses} ${activeClass}`} onclick={handleClick}>
         {#if href}
             <i class={`bx ${icon} relative`}>
@@ -43,4 +43,4 @@
             <i class={`bx ${icon}`}></i>
         {/if}
     </button>
-</TabAnchor>
+</Navigation.Tile>

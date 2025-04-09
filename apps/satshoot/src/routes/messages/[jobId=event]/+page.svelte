@@ -5,7 +5,7 @@
     import { wot } from '$lib/stores/wot';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { onDestroy, onMount } from 'svelte';
-    import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
+    import { Accordion } from '@skeletonlabs/skeleton-svelte';
     import { Avatar, createToaster } from '@skeletonlabs/skeleton-svelte';
     import {
         NDKEvent,
@@ -55,6 +55,7 @@
     let disablePrompt = $state<boolean>();
     let hideChat = $state(false);
     let hideSearchIcon = $state(false);
+    let accordionState = $state(['contacts']);
 
     // DOM Elements
     let elemPage = $state<HTMLElement>();
@@ -476,9 +477,12 @@
                         <div class="md:hidden w-full" bind:this={elemContactsMobileView}>
                             <Card classes="p-[10px">
                                 <Accordion
-                                    class="flex flex-col items-center bg-transparent relative"
+                                    value={accordionState}
+                                    onValueChange={(e) => (accordionState = e.value)}
+                                    collapsible
+                                    classes="flex flex-col items-center bg-transparent relative"
                                 >
-                                    <AccordionItem bind:open={contactsOpen}>
+                                    <Accordion.Item value="contacts">
                                         {#snippet lead()}
                                             {#if currentPerson}
                                                 <a href={'/' + currentPerson.npub}>
@@ -494,7 +498,7 @@
                                                 </a>
                                             {/if}
                                         {/snippet}
-                                        {#snippet summary()}
+                                        {#snippet control()}
                                             {#if currentPerson}
                                                 <span
                                                     class="flex-1 text-start
@@ -511,7 +515,7 @@
                                                 <div>No Contacts</div>
                                             {/if}
                                         {/snippet}
-                                        {#snippet content()}
+                                        {#snippet panel()}
                                             <!-- Absolutely positioned content -->
                                             <div
                                                 class="absolute top-[70px] left-0 right-0 overflow-hidden z-100"
@@ -565,7 +569,7 @@
                                                 </div>
                                             </div>
                                         {/snippet}
-                                    </AccordionItem>
+                                    </Accordion.Item>
                                 </Accordion>
                             </Card>
                         </div>
