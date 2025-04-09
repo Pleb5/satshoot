@@ -80,18 +80,6 @@ export function getMapSerializer<K, V>(): MapSerializer<K, V> {
     };
 }
 
-export function percentile(arr: number[], val: number) {
-    let count = 0;
-    arr.forEach((v) => {
-        if (v < val) {
-            count++;
-        } else if (v == val) {
-            count += 0.5;
-        }
-    });
-    return Math.floor((100 * count) / arr.length);
-}
-
 export const filterValidPTags = (tags: NDKTag[]) =>
     tags
         .filter((t: NDKTag) => t[0] === 'p')

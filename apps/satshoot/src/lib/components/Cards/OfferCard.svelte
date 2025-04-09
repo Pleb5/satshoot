@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
-    import { ReviewEvent, ReviewType } from '$lib/events/ReviewEvent';
+    import { ReviewType } from '$lib/events/ReviewEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk from '$lib/stores/ndk';
