@@ -18,10 +18,7 @@
     open={openState}
     onOpenChange={(e) => (openState = e.open)}
     positioning={{ placement }}
-    triggerBase="btn preset-tonal"
-    contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
-    arrow
-    arrowBackground="!bg-surface-200 dark:!bg-surface-800"
+    zIndex="1000"
 >
     {#snippet trigger()}
         <i class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"></i>
