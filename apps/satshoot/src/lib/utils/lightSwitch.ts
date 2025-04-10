@@ -11,5 +11,5 @@ export function getModeUserPrefers() {
 
 /** Set the User's preference for light/dark mode */
 export function setModeUserPrefers(mode: string) {
-    return localStorage.set('mode', mode);
+    return localStorage.setItem('mode', mode);
 }

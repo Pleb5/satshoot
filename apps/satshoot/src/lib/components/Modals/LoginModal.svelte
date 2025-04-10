@@ -57,7 +57,7 @@
 `;
 </script>
 
-<ModalWrapper bind:isOpen title="login" {popUpText}>
+<ModalWrapper bind:isOpen title="Login" {popUpText}>
     {#snippet headerAction()}
         <Button
             classes={!selectedLoginMethod ? 'hidden' : ''}
