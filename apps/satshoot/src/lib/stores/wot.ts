@@ -60,14 +60,6 @@ export const wot = derived(
             $useSatShootWoT
         ]
     ) => {
-        // Make sure all these stores are properly initialized
-        console.log('LOG', {
-            networkWoTScores: !!networkWoTScores,
-            minWot: !!minWot,
-            currentUser: !!currentUser,
-            currentUserFreelanceFollows: !!currentUserFreelanceFollows,
-            useSatShootWoT: !!useSatShootWoT,
-        });
         const initialWoT: Array<Hexpubkey> = [];
         if ($useSatShootWoT) {
             initialWoT.push(SatShootPubkey);
@@ -99,6 +91,7 @@ export const wot = derived(
 
 export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
     // This should not take more than 15 sec
+    console.log('Start Loading WOT')
     setTimeout(() => {
         if (get(wotUpdating)) {
             wotUpdateFailed.set(true);
@@ -142,6 +135,7 @@ export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
         wotUpdateFailed.set(false);
     } catch (e) {
         wotUpdating.set(false);
+        wotLoaded.set(true);
         wotUpdateFailed.set(true);
         console.log('Could not update Web of Trust scores: ', e);
     }
