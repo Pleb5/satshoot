@@ -27,7 +27,7 @@
     }
 </script>
 
-<Navigation.Tile {href} padding="" rounded="rounded-[5px]" selected={isActive}>
+<Navigation.Tile {href} padding="" rounded="rounded-[5px]">
     <button class={`${baseClasses} ${activeClass}`} onclick={handleClick}>
         {#if href}
             <i class={`bx ${icon} relative`}>

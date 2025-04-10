@@ -33,7 +33,10 @@
     ];
 </script>
 
-<Navigation.Rail classes="w-24 pt-2" background="bg-surface-100-800-token">
+<Navigation.Rail
+    classes="hidden sm:block flex-none overflow-x-hidden overflow-y-auto"
+    background="bg-white dark:bg-brightGray"
+>
     {#snippet tiles()}
         <div class="flex flex-col items-center gap-y-4">
             {#each items as { href, icon }}

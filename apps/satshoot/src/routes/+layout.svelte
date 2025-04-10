@@ -552,23 +552,21 @@
 <Toaster classes="z-1100" {toaster}></Toaster>
 
 <!-- layout structure -->
-<div class="grid h-screen grid-rows-[auto_1fr_auto] overflow-hidden">
+<div class="w-full h-full flex flex-col overflow-hidden">
     <!-- Fixed Header -->
-    <header class="sticky top-0 z-10 bg-surface-100-800 p-4" aria-label="Main header">
+    <header class="z-10 bg-surface-100-800" aria-label="Main header">
         <Header on:restoreLogin={restoreLogin} />
     </header>
 
     <!-- Content Area -->
-    <div class="flex flex-1 overflow-hidden">
+    <div class="flex-auto w-full h-full flex overflow-hidden">
         <!-- Collapsible Sidebar (hidden on small screens) -->
         {#if displayNav}
-            <aside class="hidden sm:block">
-                <SidebarLeft />
-            </aside>
+            <SidebarLeft />
         {/if}
 
         <!-- Main Content - improved accessibility -->
-        <main class="flex-1 overflow-y-auto p-4" aria-label="Main content">
+        <main class="flex-1 overflow-y-auto" aria-label="Main content">
             {@render children?.()}
         </main>
     </div>
