@@ -22,6 +22,6 @@
 <ModalWrapper bind:isOpen title="Add New Relay">
     <div class="flex flex-col gap-[15px] mt-4">
         <Input bind:value />
-        <Button on:click={finish}>Add Relay</Button>
+        <Button onClick={finish}>Add Relay</Button>
     </div>
 </ModalWrapper>

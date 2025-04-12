@@ -127,7 +127,7 @@
                 />
             </div>
             <div class="w-full flex flex-row gap-[10px]">
-                <Button grow on:click={postClientReview}>
+                <Button grow onClick={postClientReview}>
                     {#if posting}
                         <span>
                             <ProgressRing />

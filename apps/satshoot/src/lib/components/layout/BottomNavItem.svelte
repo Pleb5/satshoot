@@ -1,17 +1,15 @@
 <script lang="ts">
     import { unReadNotifications } from '$lib/stores/notifications';
-    import { createEventDispatcher } from 'svelte';
     import { Navigation } from '@skeletonlabs/skeleton-svelte';
-
-    const dispatch = createEventDispatcher();
 
     interface Props {
         href?: string;
         icon: string;
         isActive?: boolean;
+        onClick?: () => void;
     }
 
-    let { href, icon, isActive = false }: Props = $props();
+    let { href, icon, isActive = false, onClick = () => {} }: Props = $props();
 
     // Use a computed class for active state
     let activeClass = $derived(
@@ -23,7 +21,7 @@
         'text-[16pt] sm:text-[20pt] border-0 outline-hidden py-[15px] px-[20px] rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row grow justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
 
     function handleClick() {
-        dispatch('click');
+        onClick();
     }
 </script>
 

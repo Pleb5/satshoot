@@ -87,7 +87,7 @@
         <p class={labelClasses}>Extension</p>
     </div>
     <div class={btnWrapperClasses}>
-        <Button grow disabled={askingForNip07Permission} on:click={nip07Login}>
+        <Button grow disabled={askingForNip07Permission} onClick={nip07Login}>
             {#if askingForNip07Permission}
                 <ProgressRing color="primary" />
             {:else}

@@ -62,7 +62,7 @@
         <Button
             classes={!selectedLoginMethod ? 'hidden' : ''}
             variant="outlined"
-            on:click={() => (selectedLoginMethod = null)}
+            onClick={() => (selectedLoginMethod = null)}
         >
             <i class="bx bx-chevron-left"></i>
         </Button>
@@ -74,13 +74,13 @@
                 <div class="w-full flex flex-col gap-[10px]">
                     <h3 class="text-[18px]">Choose your login method</h3>
                     <Card classes="gap-[10px]">
-                        <Button on:click={() => (selectedLoginMethod = LoginMethod.Nip07)}
+                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Nip07)}
                             >Extension</Button
                         >
-                        <Button on:click={() => (selectedLoginMethod = LoginMethod.Bunker)}
+                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Bunker)}
                             >Bunker</Button
                         >
-                        <Button on:click={() => (selectedLoginMethod = LoginMethod.Local)}
+                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Local)}
                             >Local Key</Button
                         >
                     </Card>
@@ -88,7 +88,7 @@
                     <h3 class="text-[18px]">Or, if you're new to Nostr</h3>
                     <Button
                         variant="outlined"
-                        on:click={() => (selectedLoginMethod = LoginMethod.Register)}
+                        onClick={() => (selectedLoginMethod = LoginMethod.Register)}
                         >Generate Account</Button
                     >
                     <div class="flex justify-center">

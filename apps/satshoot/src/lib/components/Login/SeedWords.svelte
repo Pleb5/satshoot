@@ -60,7 +60,7 @@
     <div class={btnWrapperClasses}>
         <Button
             variant="outlined"
-            on:click={onCopySeed}
+            onClick={onCopySeed}
             classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
             grow
         >

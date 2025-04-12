@@ -74,7 +74,7 @@
                 </p>
             </div>
             <div class="w-full flex flex-row gap-[5px]">
-                <Button grow on:click={takeOffer} disabled={takingOffer}>
+                <Button grow onClick={takeOffer} disabled={takingOffer}>
                     {#if takingOffer}
                         <span>
                             <ProgressRing />

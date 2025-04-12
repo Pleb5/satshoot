@@ -272,7 +272,7 @@
                                         {#if $loggedIn}
                                             <div class="flex flex-row justify-center">
                                                 <Button
-                                                    on:click={() => createOffer(offerToEdit)}
+                                                    onClick={() => createOffer(offerToEdit)}
                                                     classes="max-[768px]:grow-1"
                                                 >
                                                     {btnActionText}
@@ -281,7 +281,7 @@
                                         {:else}
                                             <div class="flex flex-row justify-center">
                                                 <Button
-                                                    on:click={triggerLogin}
+                                                    onClick={triggerLogin}
                                                     classes="max-[768px]:grow-1"
                                                 >
                                                     Login to make offer

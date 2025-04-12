@@ -178,7 +178,7 @@
         />
 
         <!-- import qr -->
-        <Button variant="text" classes="rounded-[0]" on:click={openFileDialog}>
+        <Button variant="text" classes="rounded-[0]" onClick={openFileDialog}>
             <i class="bx bx-upload"></i>
         </Button>
 
@@ -186,7 +186,7 @@
         <Button
             variant="text"
             classes="border-l-[1px] border-black-100 dark:border-white-100 rounded-[0]"
-            on:click={isScanning ? stopScanningQR : scanQRCode}
+            onClick={isScanning ? stopScanningQR : scanQRCode}
         >
             {#if isScanning}
                 <i class="bx bx-x"></i> <!-- Cancel icon when scanning -->
@@ -202,7 +202,7 @@
     <Button
         variant="text"
         classes="bg-black-100 text-black-50 dark:text-white border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
-        on:click={withdraw}
+        onClick={withdraw}
         disabled={withdrawing || !pr}
     >
         Withdraw

@@ -190,7 +190,7 @@
             noBorder
             notRounded
         />
-        <Button grow on:click={connectBunker} disabled={attemptingBunkerConnection}>
+        <Button grow onClick={connectBunker} disabled={attemptingBunkerConnection}>
             {#if attemptingBunkerConnection}
                 <ProgressRing color="primary" />
             {:else}

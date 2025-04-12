@@ -89,7 +89,7 @@
                 <Button
                     variant={tab.name === selectedTab ? 'contained' : 'text'}
                     classes={jobCardBtnClasses}
-                    on:click={() => (selectedTab = tab.name)}
+                    onClick={() => (selectedTab = tab.name)}
                 >
                     <i class={`bx ${tab.icon}`}></i>
                     {#if tab.name === Tabs.Offers && highlightOffersTab}

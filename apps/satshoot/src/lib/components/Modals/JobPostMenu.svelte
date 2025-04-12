@@ -121,13 +121,13 @@
     <div class="w-full flex flex-col">
         <!-- popups Job-Post-Menu start -->
         <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
-            <Button variant="outlined" classes="justify-start" fullWidth on:click={handleShare}>
+            <Button variant="outlined" classes="justify-start" fullWidth onClick={handleShare}>
                 <i class="bx bxs-share text-[20px]"></i>
                 <p class="">Share</p>
             </Button>
 
             {#if myJob && job.status === TicketStatus.New}
-                <Button variant="outlined" classes="justify-start" fullWidth on:click={handleEdit}>
+                <Button variant="outlined" classes="justify-start" fullWidth onClick={handleEdit}>
                     <i class="bx bxs-edit-alt text-[20px]"></i>
                     <p class="">Edit</p>
                 </Button>
@@ -138,7 +138,7 @@
                     variant="outlined"
                     classes="justify-start"
                     fullWidth
-                    on:click={handleCloseJob}
+                    onClick={handleCloseJob}
                 >
                     <i class="bx bxs-lock text-[20px]"></i>
                     <p class="">Close Job</p>
@@ -146,7 +146,7 @@
             {/if}
 
             {#if myJob && job.status !== TicketStatus.New && winnerOffer}
-                <Button variant="outlined" classes="justify-start" fullWidth on:click={handlePay}>
+                <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
                     <i class="bx bxs-bolt text-[20px]"></i>
                     <p class="">Pay</p>
                 </Button>
@@ -155,7 +155,7 @@
             {#if showMessageButton && bech32ID}
                 <Button
                     href={'/messages/' + bech32ID}
-                    on:click={selectChatPartner}
+                    onClick={selectChatPartner}
                     variant="outlined"
                     classes="justify-start"
                     fullWidth
@@ -170,7 +170,7 @@
                     variant="outlined"
                     classes="justify-start"
                     fullWidth
-                    on:click={handleReviewClient}
+                    onClick={handleReviewClient}
                 >
                     <i class="bx bxs-star text-[20px]"></i>
                     <p class="">Review Client</p>
@@ -180,7 +180,7 @@
                     variant="outlined"
                     classes="justify-start"
                     fullWidth
-                    on:click={handlePreviewReview}
+                    onClick={handlePreviewReview}
                 >
                     <i class="bx bxs-star text-[20px]"></i>
                     <p class="">Preview Review</p>

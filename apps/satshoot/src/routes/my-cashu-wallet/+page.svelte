@@ -524,7 +524,7 @@
                         <Button
                             variant="text"
                             classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
-                            on:click={() => ($displayEcashWarning = false)}
+                            onClick={() => ($displayEcashWarning = false)}
                         >
                             <i class="bx bx-x"> </i>
                         </Button>
@@ -585,8 +585,8 @@
                     {/each}
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <Button on:click={setupWallet}>New Nostr Wallet</Button>
-                        <Button on:click={tryLoadWallet}>Try loading Wallet</Button>
+                        <Button onClick={setupWallet}>New Nostr Wallet</Button>
+                        <Button onClick={tryLoadWallet}>Try loading Wallet</Button>
                     </div>
                 {:else if $wallet}
                     <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
@@ -629,7 +629,7 @@
                                             variant="text"
                                             classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                             grow
-                                            on:click={handleWalletBackup}
+                                            onClick={handleWalletBackup}
                                         >
                                             <i class="bx bx-download"> </i>
                                             Backup
@@ -638,7 +638,7 @@
                                             variant="text"
                                             classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                             grow
-                                            on:click={recoverWallet}
+                                            onClick={recoverWallet}
                                         >
                                             <i class="bx bx-upload"> </i>
                                             Recover
@@ -647,7 +647,7 @@
                                             variant="text"
                                             classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                             grow
-                                            on:click={handleCleanWallet}
+                                            onClick={handleCleanWallet}
                                         >
                                             {#if cleaningWallet}
                                                 <ProgressRing color="white" />
@@ -670,7 +670,7 @@
                                         <Button
                                             variant="text"
                                             classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
-                                            on:click={() => ($displayEcashWarning = false)}
+                                            onClick={() => ($displayEcashWarning = false)}
                                         >
                                             <i class="bx bx-x"> </i>
                                         </Button>
@@ -686,7 +686,7 @@
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card>
                                             <div class="flex justify-center">
-                                                <Button on:click={exploreMints}>
+                                                <Button onClick={exploreMints}>
                                                     Explore Mints
                                                 </Button>
                                             </div>
@@ -714,7 +714,7 @@
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card>
                                             <div class="w-full flex flex-row justify-end">
-                                                <Button on:click={addRelay}>Add Relay</Button>
+                                                <Button onClick={addRelay}>Add Relay</Button>
                                             </div>
                                             <div
                                                 class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"

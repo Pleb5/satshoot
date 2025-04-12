@@ -1,16 +1,14 @@
 <script lang="ts">
     import { mergeClasses } from '$lib/utils/styles';
-    import { createEventDispatcher } from 'svelte';
 
     interface Props {
         classes?: string;
         actAsButton?: boolean;
         children?: import('svelte').Snippet;
+        onClick?: () => void;
     }
 
-    const dispatch = createEventDispatcher();
-
-    let { classes = '', actAsButton = false, children }: Props = $props();
+    let { classes = '', actAsButton = false, children, onClick = () => {} }: Props = $props();
 
     const defaultClasses =
         'w-full flex flex-col gap-[5px] rounded-[8px] p-[15px] ' +
@@ -26,8 +24,8 @@
         }
     }
 
-    function forwardClick(event: MouseEvent) {
-        dispatch('click', { detail: event });
+    function forwardClick() {
+        onClick();
     }
 </script>
 

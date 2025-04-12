@@ -141,7 +141,7 @@
     <div class="flex justify-between h-10 mt-4">
         <Button
             variant="outlined"
-            on:click={() => {
+            onClick={() => {
                 callback({
                     decryptedSecret: undefined,
                     restoreMethod: undefined,
@@ -152,7 +152,7 @@
         >
             Logout
         </Button>
-        <Button on:click={loadSecret} disabled={!passphrase || decrypting}>
+        <Button onClick={loadSecret} disabled={!passphrase || decrypting}>
             {#if decrypting}
                 <span>
                     <ProgressRing color="primary" />

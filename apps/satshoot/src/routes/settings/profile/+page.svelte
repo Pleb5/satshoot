@@ -46,14 +46,11 @@
             ...$ndk.pool!.connectedRelays(),
         ];
 
-        const profile = await fetchEventFromRelaysFirst(
-            metadataFilter,
-            {
-                relayTimeoutMS:4000,
-                fallbackToCache,
-                explicitRelays: metadataRelays
-            }
-        );
+        const profile = await fetchEventFromRelaysFirst(metadataFilter, {
+            relayTimeoutMS: 4000,
+            fallbackToCache,
+            explicitRelays: metadataRelays,
+        });
 
         if (profile) {
             userProfile = profileFromEvent(profile);
@@ -204,7 +201,7 @@
             </div>
         </div>
 
-        <Button on:click={updateProfile} disabled={updating}>
+        <Button onClick={updateProfile} disabled={updating}>
             Save
             {#if updating}
                 <ProgressRing color="white" />

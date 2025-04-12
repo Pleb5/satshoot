@@ -64,14 +64,14 @@
                 <Button
                     variant="outlined"
                     classes="border-l-[1px] border-l-black-100 rounded-[0px]"
-                    on:click={() => (showPassphrase = !showPassphrase)}
+                    onClick={() => (showPassphrase = !showPassphrase)}
                 >
                     <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
                 </Button>
             </div>
         {/if}
 
-        <Button on:click={handleWalletBackup} disabled={processing}>
+        <Button onClick={handleWalletBackup} disabled={processing}>
             Backup
             {#if processing}
                 <span>

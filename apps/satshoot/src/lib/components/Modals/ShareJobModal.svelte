@@ -113,7 +113,7 @@
             </div>
             <div class="w-full flex flex-wrap gap-[5px]">
                 {#if job.pubkey === $currentUser?.pubkey}
-                    <Button grow on:click={postJob} disabled={posting}>
+                    <Button grow onClick={postJob} disabled={posting}>
                         {#if posting}
                             <span>
                                 <ProgressRing />
@@ -123,12 +123,12 @@
                         {/if}
                     </Button>
                 {/if}
-                <Button grow on:click={onCopyURL}>
+                <Button grow onClick={onCopyURL}>
                     <span class="w-full h-full">
                         {urlCopied ? 'Copied!' : 'Copy Job URL'}
                     </span>
                 </Button>
-                <Button grow on:click={onCopyNaddr}>
+                <Button grow onClick={onCopyNaddr}>
                     <span class="w-full h-full">
                         {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
                     </span>

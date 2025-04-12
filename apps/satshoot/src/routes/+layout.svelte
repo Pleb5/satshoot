@@ -555,7 +555,7 @@
 <div class="w-full h-full flex flex-col overflow-hidden">
     <!-- Fixed Header -->
     <header class="z-10 bg-surface-100-800" aria-label="Main header">
-        <Header on:restoreLogin={restoreLogin} />
+        <Header onRestoreLogin={restoreLogin} />
     </header>
 
     <!-- Content Area -->

@@ -29,7 +29,7 @@
 
     <div class="flex justify-center">
         <Button
-            on:click={() => {
+            onClick={() => {
                 isOpen = false;
             }}
         >

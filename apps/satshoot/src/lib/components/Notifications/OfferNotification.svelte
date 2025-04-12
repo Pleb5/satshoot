@@ -64,7 +64,7 @@
 <Card
     classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
-    on:click={() => {
+    onClick={() => {
         if (!$readNotifications.has(notification.id)) {
             readNotifications.update((notifications) => notifications.add(notification.id));
         }

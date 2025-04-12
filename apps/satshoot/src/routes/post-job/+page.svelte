@@ -283,7 +283,7 @@
                                     {#each displayOptions as { label, value }}
                                         <Button
                                             classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white hover:text-white p-[5px] font-400"
-                                            on:click={() => addTag(value)}
+                                            onClick={() => addTag(value)}
                                         >
                                             <span class="pl-[10px]"> {label} </span>
                                             <span
@@ -326,9 +326,9 @@
                         class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-black-100 dark:border-white-100 pt-[10px] mt-[10px]"
                     >
                         {#if !allowPostJob}
-                            <Button on:click={handleLogin}>Log in To Post</Button>
+                            <Button onClick={handleLogin}>Log in To Post</Button>
                         {:else}
-                            <Button on:click={postJob} disabled={posting}>
+                            <Button onClick={postJob} disabled={posting}>
                                 {#if posting}
                                     <ProgressRing color="white" />
                                 {:else}

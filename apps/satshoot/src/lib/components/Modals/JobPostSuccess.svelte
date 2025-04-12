@@ -30,8 +30,8 @@
                     clients.
                 </p>
 
-                <Button on:click={handleConfirm}>Of course!</Button>
-                <Button variant="outlined" on:click={() => (isOpen = false)}>No thanks</Button>
+                <Button onClick={handleConfirm}>Of course!</Button>
+                <Button variant="outlined" onClick={() => (isOpen = false)}>No thanks</Button>
             </div>
         </div>
     </div>

@@ -756,7 +756,7 @@
                             <Button
                                 grow
                                 classes="w-[200px] max-w-[200px]"
-                                on:click={payWithLN}
+                                onClick={payWithLN}
                                 disabled={paying}
                             >
                                 {#if paying}
@@ -778,7 +778,7 @@
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    on:click={payWithEcash}
+                                    onClick={payWithEcash}
                                     disabled={paying || !canPayWithEcash}
                                 >
                                     {#if paying}
@@ -793,11 +793,7 @@
                                     {/if}
                                 </Button>
                             {:else}
-                                <Button
-                                    grow
-                                    classes="w-[200px] max-w-[200px]"
-                                    on:click={setupEcash}
-                                >
+                                <Button grow classes="w-[200px] max-w-[200px]" onClick={setupEcash}>
                                     {#if paying}
                                         <span>
                                             <ProgressRing />

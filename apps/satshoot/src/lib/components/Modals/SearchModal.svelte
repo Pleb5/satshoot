@@ -97,10 +97,10 @@
                                 notRounded
                             />
                         </div>
-                        <Button on:click={handleAdd}>
+                        <Button onClick={handleAdd}>
                             <i class="bx bx-plus"></i>
                         </Button>
-                        <Button on:click={handleSearch}>
+                        <Button onClick={handleSearch}>
                             <i class="bx bx-search"></i>
                         </Button>
                     </div>

@@ -92,7 +92,7 @@
     <Button
         variant="text"
         classes="bg-black-100 text-black-50 dark:text-white border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
-        on:click={deposit}
+        onClick={deposit}
         disabled={depositing || !amount || !selectedMint}
     >
         Deposit
