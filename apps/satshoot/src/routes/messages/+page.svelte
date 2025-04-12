@@ -30,14 +30,15 @@
     let noTicketsWithFreelancers = $state(false);
     let noTicketsWithClients = $state(false);
 
+    let initialized = $state(false)
     $effect(() => {
-        if ($loggedIn && mounted) {
+        if ($loggedIn && mounted && !initialized) {
+            initialized = true;
             init();
         }
     });
 
     async function init() {
-        console.log('init');
         const tickets = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceTicket],
@@ -64,9 +65,6 @@
             }
         });
 
-        freelancers = freelancers;
-        ticketsWithFreelancers = ticketsWithFreelancers;
-
         const offers = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceOffer],
@@ -80,8 +78,6 @@
         );
 
         if (offers.size === 0) noTicketsWithClients = true;
-
-        console.log('my offers in messages page:', offers);
 
         // Batching tickets to fetch
         const ticketsToFetch: string[] = [];
@@ -103,7 +99,6 @@
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             }
         );
-        console.log('tickets of offers in message page', ticketEvents);
         ticketEvents.forEach((t: NDKEvent) => {
             const ticket = TicketEvent.from(t);
             offers.forEach((o: NDKEvent) => {
@@ -115,9 +110,6 @@
                 }
             });
         });
-
-        clients = clients;
-        ticketsWithClients = ticketsWithClients;
     }
 
     let pageTop = $state<HTMLDivElement>();
