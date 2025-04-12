@@ -280,7 +280,7 @@
             bind:checked={sendDm}
         />
         <div class="w-full flex flex-row justify-center">
-            <Button on:click={postOffer} disabled={posting || !validPledgePercent}>
+            <Button onClick={postOffer} disabled={posting || !validPledgePercent}>
                 {#if posting}
                     <span>
                         <ProgressRing />

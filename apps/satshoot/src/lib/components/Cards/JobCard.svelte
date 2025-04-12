@@ -60,7 +60,7 @@
             <i class="bx bx-globe"></i>
             satshoot.com
         </a>
-        <Button title="Options" on:click={handleOptionClick}>
+        <Button title="Options" onClick={handleOptionClick}>
             <i class="bx bx-dots-vertical-rounded"></i>
         </Button>
     </div>

@@ -72,7 +72,7 @@
 <Card
     classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
-    on:click={() => {
+    onClick={() => {
         if (!$readNotifications.has(notification.id)) {
             readNotifications.update((notifications) => notifications.add(notification.id));
         }
@@ -102,7 +102,7 @@
             </div>
         </div>
         <div class="flex flex-col gap-[5px] justify-end">
-            <Button on:click={handlePreview}>Preview</Button>
+            <Button onClick={handlePreview}>Preview</Button>
         </div>
     </div>
 </Card>

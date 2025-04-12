@@ -156,7 +156,7 @@
             {/if}
 
             <div class="w-full flex flex-row gap-[10px]">
-                <Button grow on:click={closeJob} disabled={closing}>
+                <Button grow onClick={closeJob} disabled={closing}>
                     {#if closing}
                         <span>
                             <ProgressRing color="error" />

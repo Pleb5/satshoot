@@ -1,6 +1,5 @@
 <script lang="ts">
     import { mergeClasses } from '$lib/utils/styles';
-    import { createEventDispatcher } from 'svelte';
     import { goto } from '$app/navigation';
     import type { HTMLAttributeAnchorTarget } from 'svelte/elements';
 
@@ -18,6 +17,7 @@
         fullWidth?: boolean;
         title?: string | null;
         children?: import('svelte').Snippet;
+        onClick?: () => void;
     }
 
     let {
@@ -31,11 +31,9 @@
         grow = false,
         fullWidth = false,
         title = null,
-        children
+        children,
+        onClick = () => {}
     }: Props = $props();
-
-    const dispatch = createEventDispatcher();
-
     const baseClasses =
         'transition-all ease duration-[0.3s] p-[6px_15px] rounded-[6px] ' +
         'flex flex-row justify-center items-center gap-[10px] font-[600] ' +
@@ -79,7 +77,7 @@
             event.preventDefault(); // Prevent default anchor behavior
             goto(href); // Use SvelteKit's client-side navigation
         }
-        dispatch('click'); // Emit the click event
+        onClick(); // Call the onClick callback
     }
 </script>
 

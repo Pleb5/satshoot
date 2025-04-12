@@ -298,19 +298,19 @@
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
     >
         {#if myJob && job && job.status === TicketStatus.New}
-            <Button on:click={takeOffer}>Take offer</Button>
+            <Button onClick={takeOffer}>Take offer</Button>
         {/if}
 
         {#if showPaymentButton}
-            <Button on:click={handlePay}>Pay</Button>
+            <Button onClick={handlePay}>Pay</Button>
         {/if}
 
         {#if job && myJob}
-            <Button on:click={setChatPartner} href={'/messages/' + job.encode()}>Message</Button>
+            <Button onClick={setChatPartner} href={'/messages/' + job.encode()}>Message</Button>
         {/if}
 
         {#if review}
-            <Button on:click={handlePreviewReview}>Preview Review</Button>
+            <Button onClick={handlePreviewReview}>Preview Review</Button>
         {/if}
     </div>
 </Card>

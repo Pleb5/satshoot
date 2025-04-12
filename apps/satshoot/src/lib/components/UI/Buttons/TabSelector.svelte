@@ -25,7 +25,7 @@
         <Button
             variant={selectedTab === tab.id ? 'contained' : 'text'}
             grow
-            on:click={() => handleClick(tab)}
+            onClick={() => handleClick(tab)}
         >
             {#if tab.icon}
                 <i class="bx bxs-{tab.icon} text-[18px]"></i>

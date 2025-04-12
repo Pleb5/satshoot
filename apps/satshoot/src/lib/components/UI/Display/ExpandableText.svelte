@@ -16,7 +16,7 @@
         maxCharacters = 100,
         expandText = 'Expand',
         collapseText = 'Collapse',
-        renderAsMarkdown = false
+        renderAsMarkdown = false,
     }: Props = $props();
 
     let isExpanded = $state(false); // State to track if content is expanded
@@ -37,7 +37,7 @@
         {/if}
     </p>
     {#if text.length > maxCharacters}
-        <Button on:click={toggleExpand}>
+        <Button onClick={toggleExpand}>
             <p>{isExpanded ? collapseText : expandText}</p>
         </Button>
     {/if}

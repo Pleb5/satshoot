@@ -45,7 +45,7 @@
                         {href}
                         {icon}
                         isActive={filterList.length !== 0}
-                        on:click={handleSearch}
+                        onClick={handleSearch}
                     />
                 {:else}
                     <BottomNavItem {href} {icon} isActive={href === page.url.pathname} />

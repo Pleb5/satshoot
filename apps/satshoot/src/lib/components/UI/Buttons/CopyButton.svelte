@@ -21,6 +21,6 @@
     }
 </script>
 
-<Button variant="outlined" classes="relative {classes}" on:click={handleCopy}>
+<Button variant="outlined" classes="relative {classes}" onClick={handleCopy}>
     <i class="bx bxs-copy"></i>
 </Button>

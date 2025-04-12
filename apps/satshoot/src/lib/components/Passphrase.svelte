@@ -1,22 +1,21 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
     import Button from './UI/Buttons/Button.svelte';
     import Input from './UI/Inputs/input.svelte';
-
-    const dispatch = createEventDispatcher();
 
     interface Props {
         passphrase: string;
         confirmPassphrase: string;
         btnLabel: string;
         roundedTop?: boolean;
+        onSubmit: () => void;
     }
 
     let {
         passphrase = $bindable(),
         confirmPassphrase = $bindable(),
         btnLabel,
-        roundedTop = false
+        roundedTop = false,
+        onSubmit
     }: Props = $props();
 
     let showPassphrase = $state(false);
@@ -47,7 +46,7 @@
     <Button
         variant="outlined"
         classes="border-l-[1px] border-l-black-100 rounded-[0px]"
-        on:click={() => (showPassphrase = !showPassphrase)}
+        onClick={() => (showPassphrase = !showPassphrase)}
     >
         <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
     </Button>
@@ -67,14 +66,14 @@
     <Button
         variant="outlined"
         classes="border-l-[1px] border-l-black-100 rounded-[0px]"
-        on:click={() => (showConfirmPassphrase = !showConfirmPassphrase)}
+        onClick={() => (showConfirmPassphrase = !showConfirmPassphrase)}
     >
         <i class={showConfirmPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
     </Button>
 </div>
 
 <div class={btnWrapperClasses}>
-    <Button grow on:click={() => dispatch('submit')}>
+    <Button grow onClick={onSubmit}>
         <i class="bx bx-log-in-circle"></i>
         {btnLabel}
     </Button>

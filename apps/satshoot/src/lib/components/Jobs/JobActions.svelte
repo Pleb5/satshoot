@@ -110,27 +110,27 @@
 
 <div class="flex flex-col grow-1 gap-[10px] p-[0px]">
     <div class="w-full flex flex-row flex-wrap gap-[10px]">
-        <Button classes={btnClasses} on:click={handleShare}>
+        <Button classes={btnClasses} onClick={handleShare}>
             <i class="bx bxs-share"></i>
             Share
         </Button>
 
         {#if myJob && job.status === TicketStatus.New}
-            <Button variant="outlined" classes={btnClasses} fullWidth on:click={handleEdit}>
+            <Button variant="outlined" classes={btnClasses} fullWidth onClick={handleEdit}>
                 <i class="bx bxs-edit-alt text-[20px]"></i>
                 <p class="">Edit</p>
             </Button>
         {/if}
 
         {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
-            <Button variant="outlined" classes={btnClasses} fullWidth on:click={handleCloseJob}>
+            <Button variant="outlined" classes={btnClasses} fullWidth onClick={handleCloseJob}>
                 <i class="bx bxs-lock text-[20px]"></i>
                 <p class="">Close Job</p>
             </Button>
         {/if}
 
         {#if myJob && job.status !== TicketStatus.New && winnerOffer}
-            <Button variant="outlined" classes={btnClasses} fullWidth on:click={handlePay}>
+            <Button variant="outlined" classes={btnClasses} fullWidth onClick={handlePay}>
                 <i class="bx bxs-bolt text-[20px]"></i>
                 <p class="">Pay</p>
             </Button>
@@ -139,7 +139,7 @@
         {#if showMessageButton && bech32ID}
             <Button
                 href={'/messages/' + bech32ID}
-                on:click={selectChatPartner}
+                onClick={selectChatPartner}
                 variant="outlined"
                 classes={btnClasses}
                 fullWidth
@@ -150,17 +150,12 @@
         {/if}
 
         {#if canReviewClient}
-            <Button variant="outlined" classes={btnClasses} fullWidth on:click={handleReviewClient}>
+            <Button variant="outlined" classes={btnClasses} fullWidth onClick={handleReviewClient}>
                 <i class="bx bxs-star text-[20px]"></i>
                 <p class="">Review Client</p>
             </Button>
         {:else if review}
-            <Button
-                variant="outlined"
-                classes={btnClasses}
-                fullWidth
-                on:click={handlePreviewReview}
-            >
+            <Button variant="outlined" classes={btnClasses} fullWidth onClick={handlePreviewReview}>
                 <i class="bx bxs-star text-[20px]"></i>
                 <p class="">Preview Review</p>
             </Button>

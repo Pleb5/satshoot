@@ -40,12 +40,12 @@
 
 <ModalWrapper bind:isOpen title="Share">
     <div class="w-full flex flex-col justify-center py-[10px] px-[5px] gap-[10px]">
-        <Button grow on:click={onCopyURL}>
+        <Button grow onClick={onCopyURL}>
             <span class="w-full h-full">
                 {copiedURL ? 'Copied!' : copyUrlLabel}
             </span>
         </Button>
-        <Button grow on:click={onCopyNostrAddress}>
+        <Button grow onClick={onCopyNostrAddress}>
             <span class="w-full h-full">
                 {copiedNostrAddress ? 'Copied!' : 'Copy Npub'}
             </span>

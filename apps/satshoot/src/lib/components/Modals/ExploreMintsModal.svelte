@@ -70,8 +70,8 @@
                             {mintUrl}
                             {mintUsage}
                             isSelected={selectedMints.includes(mintUrl)}
-                            on:selectMint={(e) =>
-                                toggleMintSelection(e.detail.mintUrl, e.detail.isSelected)}
+                            onSelectMint={(data) =>
+                                toggleMintSelection(data.mintUrl, data.isSelected)}
                         />
                     {/each}
                 </div>
@@ -80,8 +80,8 @@
             <div
                 class="w-full flex items-center justify-center gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
             >
-                <Button variant="outlined" on:click={() => (isOpen = false)} grow>Cancel</Button>
-                <Button on:click={handleSelect} grow>Save</Button>
+                <Button variant="outlined" onClick={() => (isOpen = false)} grow>Cancel</Button>
+                <Button onClick={handleSelect} grow>Save</Button>
             </div>
         {:else}
             <div class="flex w-full justify-center justify-self-center">

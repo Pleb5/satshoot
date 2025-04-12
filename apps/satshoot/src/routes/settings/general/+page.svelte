@@ -80,7 +80,7 @@
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
             <label class="grow-1 font-[500]" for="clear-cache-btn">Cache</label>
-            <Button on:click={clearCache}>Clear Cache</Button>
+            <Button onClick={clearCache}>Clear Cache</Button>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
             <div class="flex flex-row gap-2 grow-1">
@@ -138,7 +138,7 @@
                         </div>
                         <Button
                             classes="bg-red-500 hover:bg-red-600 transition-colors"
-                            on:click={onCopyNsec}
+                            onClick={onCopyNsec}
                         >
                             <span class="w-full h-full">
                                 {copiedNsec ? 'Copied!' : 'Dangerously Copy'}

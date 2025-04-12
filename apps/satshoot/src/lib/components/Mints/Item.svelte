@@ -2,18 +2,17 @@
     import type { MintUrl, MintUsage } from '@nostr-dev-kit/ndk-wallet';
     import { CashuMint, type GetInfoResponse } from '@cashu/cashu-ts';
     import Avatar from '../Users/Avatar.svelte';
-    import { createEventDispatcher, onMount } from 'svelte';
+    import { onMount } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
-
-    const dispatcher = createEventDispatcher();
 
     interface Props {
         mintUrl: MintUrl;
         mintUsage: MintUsage;
         isSelected?: boolean;
+        onSelectMint: (data: { mintUrl: MintUrl; isSelected: boolean }) => void;
     }
 
-    let { mintUrl, mintUsage, isSelected = $bindable(false) }: Props = $props();
+    let { mintUrl, mintUsage, isSelected = $bindable(false), onSelectMint }: Props = $props();
 
     let mintInfo: GetInfoResponse | null = $state(null);
     let gettingMintInfo = $state(true);
@@ -36,19 +35,23 @@
 
     function toggleSelection() {
         isSelected = !isSelected;
-        dispatcher('selectMint', {
+        onSelectMint({
             mintUrl,
             isSelected,
         });
     }
 
-    let selectedClass = $derived(isSelected 
-        ? 'bg-blue-500 hover:bg-blue-500 text-white' 
-        : 'bg-black-100 hover:bg-black-100 dark:bg-white-100 dark:hover:bg-white-100')
+    let selectedClass = $derived(
+        isSelected
+            ? 'bg-blue-500 hover:bg-blue-500 text-white'
+            : 'bg-black-100 hover:bg-black-100 dark:bg-white-100 dark:hover:bg-white-100'
+    );
 
-    let wrapperClasses = $derived(selectedClass +
-        ' w-full flex flex-col items-start gap-[3px] '+ 
-        'px-[10px] py-[10px] text-left relative outline-[0px]');
+    let wrapperClasses = $derived(
+        selectedClass +
+            ' w-full flex flex-col items-start gap-[3px] ' +
+            'px-[10px] py-[10px] text-left relative outline-[0px]'
+    );
 
     const avatarWrapperClasses =
         'transition-all ease-in-out duration-[0.3s] min-w-[30px] min-h-[30px] w-[30px] h-[30px] ' +
@@ -75,7 +78,7 @@
 {:else if mintInfo}
     <Button
         classes={wrapperClasses}
-        on:click={toggleSelection}
+        onClick={toggleSelection}
         variant={isSelected ? 'contained' : 'text'}
     >
         <span class="font-[500]">

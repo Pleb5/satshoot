@@ -163,7 +163,7 @@
                             >
                                 <Button
                                     classes="{paginationBtnClasses} max-[576px]:order-2"
-                                    on:click={handlePrev}
+                                    onClick={handlePrev}
                                     disabled={currentPage === 1}
                                 >
                                     <i class="bx bxs-chevron-left"></i>
@@ -175,7 +175,7 @@
                                 </div>
                                 <Button
                                     classes="{paginationBtnClasses} max-[576px]:order-3"
-                                    on:click={handleNext}
+                                    onClick={handleNext}
                                     disabled={jobList.size <= currentPage * JobsPerPage}
                                 >
                                     <i class="bx bxs-chevron-right"></i>

@@ -52,10 +52,8 @@
                 </div>
 
                 <div class="flex flex-row gap-[10px] p-[5px]">
-                    <Button grow variant="outlined" on:click={() => (isOpen = false)}>
-                        Cancel
-                    </Button>
-                    <Button grow on:click={handleConfirm}>
+                    <Button grow variant="outlined" onClick={() => (isOpen = false)}>Cancel</Button>
+                    <Button grow onClick={handleConfirm}>
                         <i class="bx bx-trash"></i>
                         <span>Clear</span>
                     </Button>

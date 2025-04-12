@@ -76,14 +76,14 @@
         <div class="grid grid-cols-[30%_1fr] gap-x-2">
             <Button
                 variant="outlined"
-                on:click={() => {
+                onClick={() => {
                     isOpen = false;
                 }}
             >
                 Cancel
             </Button>
 
-            <Button on:click={postFeedback} disabled={posting}>
+            <Button onClick={postFeedback} disabled={posting}>
                 {#if posting}
                     <span>
                         <ProgressRing />

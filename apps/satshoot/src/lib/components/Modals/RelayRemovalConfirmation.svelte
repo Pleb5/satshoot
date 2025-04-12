@@ -43,11 +43,11 @@
             </div>
         </div>
         <div class="w-full flex items-center justify-center gap-[10px]">
-            <Button grow variant="outlined" on:click={() => (isOpen = false)}>Cancel</Button>
+            <Button grow variant="outlined" onClick={() => (isOpen = false)}>Cancel</Button>
             <Button
                 classes="bg-red-600 hover:bg-red-500 text-white"
                 grow
-                on:click={handleConfirm}
+                onClick={handleConfirm}
                 disabled={posting}
             >
                 <i class="bx bx-trash"></i>

@@ -6,13 +6,16 @@
     import Button from '../UI/Buttons/Button.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
-    import { createEventDispatcher } from 'svelte';
     import { NDKKind, NDKRelaySet, profileFromEvent } from '@nostr-dev-kit/ndk';
     import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/ndk';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import AppMenu from './AppMenu.svelte';
 
-    const dispatch = createEventDispatcher();
+    interface Props {
+        onRestoreLogin: () => void;
+    }
+
+    let { onRestoreLogin }: Props = $props();
 
     let showLoginModal = $state(false);
     let showAppMenu = $state(false);
@@ -97,9 +100,9 @@
                                 <ProgressRing color="primary" size={12} />
                             </div>
                         {:else if $loginMethod === 'local'}
-                            <Button on:click={() => dispatch('restoreLogin')}>Login</Button>
+                            <Button onClick={onRestoreLogin}>Login</Button>
                         {:else}
-                            <Button on:click={handleLogin}>Login</Button>
+                            <Button onClick={handleLogin}>Login</Button>
                         {/if}
                     </div>
                 </div>

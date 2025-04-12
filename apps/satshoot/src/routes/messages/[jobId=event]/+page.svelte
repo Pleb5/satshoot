@@ -450,7 +450,7 @@
                                 {#each people as contact, i (contact.person.pubkey)}
                                     <Button
                                         variant={contact.selected ? 'contained' : 'text'}
-                                        on:click={() => selectCurrentPerson(contact)}
+                                        onClick={() => selectCurrentPerson(contact)}
                                     >
                                         <Avatar
                                             src={contact.person.profile?.picture ??

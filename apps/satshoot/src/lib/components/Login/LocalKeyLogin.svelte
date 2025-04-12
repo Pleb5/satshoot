@@ -244,7 +244,7 @@
                 bind:passphrase={passphraseForNsec}
                 bind:confirmPassphrase={confirmPassphraseForNsec}
                 btnLabel="Login"
-                on:submit={loginWithNsec}
+                onSubmit={loginWithNsec}
             />
         </div>
     {:else if activeTabForLocalKeyLogin === LocalKeyLoginTabs.SeedWords}
@@ -254,7 +254,7 @@
                 bind:passphrase={passphraseForSeedWords}
                 bind:confirmPassphrase={confirmPassphraseForSeedWords}
                 btnLabel="Login"
-                on:submit={loginWithSeedWords}
+                onSubmit={loginWithSeedWords}
             />
         </div>
     {/if}

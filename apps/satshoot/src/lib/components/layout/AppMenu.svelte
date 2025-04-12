@@ -110,7 +110,7 @@
                     variant="text"
                     classes={profileMenuItemClass}
                     fullWidth
-                    on:click={() => {
+                    onClick={() => {
                         if (callback) callback();
 
                         isOpen = false;
@@ -127,14 +127,14 @@
                 </Button>
             {/each}
 
-            <Button variant="text" classes={profileMenuItemClass} on:click={readyToWork}>
+            <Button variant="text" classes={profileMenuItemClass} onClick={readyToWork}>
                 <span class="w-6 text-center">
                     <TowerBroadcastIcon extraClasses={''} />
                 </span>
                 <span>Announcement</span>
             </Button>
 
-            <Button variant="text" classes={profileMenuItemClass} on:click={feedback}>
+            <Button variant="text" classes={profileMenuItemClass} onClick={feedback}>
                 <span class="w-6 text-center">
                     <i class="fa-regular fa-comment"></i>
                 </span>
@@ -145,7 +145,7 @@
                 {#if $loggedIn}
                     <Button
                         classes="{profileMenuItemClass} {extraClassesForLogoutBtn} "
-                        on:click={onLogout}
+                        onClick={onLogout}
                         fullWidth
                     >
                         Logout

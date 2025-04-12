@@ -48,7 +48,7 @@
                             {/if}
                         </div>
 
-                        <Button variant="outlined" on:click={handleClose}>
+                        <Button variant="outlined" onClick={handleClose}>
                             <i class="bx bx-x text-[20px]"></i>
                         </Button>
                     </div>

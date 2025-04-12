@@ -5,10 +5,7 @@
         fetchFreelanceFollowEvent,
         freelanceFollowEvents,
     } from '$lib/stores/user';
-    import {
-        getRoboHashPicture,
-        shortenTextWithEllipsesInMiddle,
-    } from '$lib/utils/helpers';
+    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterValidPTags } from '$lib/utils/misc';
     import {
@@ -64,7 +61,7 @@
         if (userProfile?.picture) {
             return userProfile.picture;
         }
-        return getRoboHashPicture(user.pubkey)
+        return getRoboHashPicture(user.pubkey);
     });
     const bech32ID = $derived(job ? job.encode() : '');
     const canEditProfile = $derived($currentUser && $currentUser?.pubkey === user.pubkey);
@@ -230,14 +227,11 @@
             ...$ndk.pool!.connectedRelays(),
         ];
 
-        const profile = await fetchEventFromRelaysFirst(
-            metadataFilter,
-            {
-                relayTimeoutMS: 3000,
-                fallbackToCache,
-                explicitRelays:metadataRelays
-            }
-        );
+        const profile = await fetchEventFromRelaysFirst(metadataFilter, {
+            relayTimeoutMS: 3000,
+            fallbackToCache,
+            explicitRelays: metadataRelays,
+        });
 
         if (profile) {
             userProfile = profileFromEvent(profile);
@@ -356,7 +350,7 @@
                         classes="bg-white dark:bg-brightGray"
                         fullWidth
                         title="Edit Profile"
-                        on:click={handleEditProfile}
+                        onClick={handleEditProfile}
                     >
                         <i class="bx bxs-edit-alt"></i>
                     </Button>
@@ -369,7 +363,7 @@
                         fullWidth
                         href={'/messages/' + bech32ID}
                         title="Message (DM) user"
-                        on:click={selectChatPartner}
+                        onClick={selectChatPartner}
                     >
                         <i class="bx bxs-conversation"></i>
                     </Button>
@@ -379,7 +373,7 @@
                     classes="bg-white dark:bg-brightGray"
                     fullWidth
                     title="Share (Copy profile page link)"
-                    on:click={handleShare}
+                    onClick={handleShare}
                 >
                     <i class="bx bxs-share-alt"></i>
                 </Button>
@@ -392,7 +386,7 @@
                     <Button
                         variant="outlined"
                         classes={addressCopyBtnClasses}
-                        on:click={() => {
+                        onClick={() => {
                             showNpubQR = true;
                         }}
                     >
@@ -417,7 +411,7 @@
                     <Button
                         variant="outlined"
                         classes={addressCopyBtnClasses}
-                        on:click={() => {
+                        onClick={() => {
                             showNProfileQR = true;
                         }}
                     >
@@ -432,9 +426,7 @@
             </div>
             {#if $currentUser && $currentUser.npub !== npub}
                 <div class="flex flex-col gap-[10px]">
-                    <Button
-                        on:click={followStatus === FollowStatus.isFollowing ? unFollow : follow}
-                    >
+                    <Button onClick={followStatus === FollowStatus.isFollowing ? unFollow : follow}>
                         {#if processingFollowEvent}
                             <ProgressRing />
                         {:else}

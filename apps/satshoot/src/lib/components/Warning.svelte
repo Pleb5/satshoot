@@ -1,14 +1,13 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount } from 'svelte';
+    import { onMount } from 'svelte';
 
     interface Props {
         text: string;
+        onClose: () => void;
     }
 
-    let { text }: Props = $props();
+    let { text, onClose }: Props = $props();
     let shouldWarningTextScroll = $state(false);
-
-    const dispatch = createEventDispatcher();
 
     onMount(() => {
         checkWarningTextOverflow();
@@ -45,7 +44,7 @@
         </div>
     </div>
     <!-- Close Icon -->
-    <button onclick={() => dispatch('close')}>
+    <button onclick={onClose} aria-label="close-warning">
         <i class="fa-solid fa-xmark text-xl"></i>
     </button>
 </div>

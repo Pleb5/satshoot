@@ -1,18 +1,23 @@
 <script lang="ts">
     import { NDKRelayStatus } from '@nostr-dev-kit/ndk';
     import Button from './UI/Buttons/Button.svelte';
-    import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import ndk from '$lib/stores/ndk';
     import { normalizeRelayUrl } from '$lib/utils/misc';
-
-    const dispatch = createEventDispatcher();
 
     interface Props {
         relayUrl: string;
         isSuggestedRelay?: boolean;
+        onAdd?: () => void;
+        onRemove?: () => void;
     }
 
-    let { relayUrl, isSuggestedRelay = false }: Props = $props();
+    let {
+        relayUrl,
+        isSuggestedRelay = false,
+        onAdd = () => {},
+        onRemove = () => {},
+    }: Props = $props();
 
     let relayStatusColor = $state('');
     let relayStatusText = $state('');
@@ -20,13 +25,13 @@
 
     function handleClick(event: MouseEvent) {
         if (isSuggestedRelay && !(event.target as HTMLElement).closest('button')) {
-            dispatch('add');
+            onAdd();
         }
     }
 
     function handleKeydown(event: KeyboardEvent) {
         if (isSuggestedRelay && (event.key === 'Enter' || event.key === ' ')) {
-            dispatch('add');
+            onAdd();
         }
     }
 
@@ -137,7 +142,7 @@
 
     {#if isSuggestedRelay}
         <Button
-            on:click={() => dispatch('add')}
+            onClick={() => onAdd()}
             variant="text"
             classes="min-h-[35px] rounded-[0px] hover:bg-green-600 hover:text-white"
         >
@@ -146,7 +151,7 @@
         </Button>
     {:else}
         <Button
-            on:click={() => dispatch('remove')}
+            onClick={() => onRemove()}
             variant="text"
             classes="min-h-[35px] rounded-[0px] hover:bg-red-500 hover:text-white"
         >

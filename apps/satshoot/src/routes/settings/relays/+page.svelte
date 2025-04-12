@@ -177,7 +177,7 @@
                         notRounded
                     />
                     <Button
-                        on:click={() => addRelay(RelayType.READ)}
+                        onClick={() => addRelay(RelayType.READ)}
                         disabled={posting}
                         classes="bg-black-100 text-gray-500 rounded-[0px] hover:text-white"
                     >
@@ -192,7 +192,7 @@
                     {#each readRelayUrls as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:remove={() => removeRelay(relayUrl, RelayType.READ)}
+                            onRemove={() => removeRelay(relayUrl, RelayType.READ)}
                         />
                     {/each}
                 {:else}
@@ -215,7 +215,7 @@
                     {#each filteredSuggestedInboxRelays as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:add={() => addRelay(RelayType.READ, relayUrl)}
+                            onAdd={() => addRelay(RelayType.READ, relayUrl)}
                             isSuggestedRelay
                         />
                     {/each}
@@ -242,7 +242,7 @@
                         notRounded
                     />
                     <Button
-                        on:click={() => addRelay(RelayType.WRITE)}
+                        onClick={() => addRelay(RelayType.WRITE)}
                         disabled={posting}
                         classes="bg-black-100 text-gray-500 rounded-[0px] hover:text-white"
                     >
@@ -257,7 +257,7 @@
                     {#each writeRelayUrls as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:remove={() => removeRelay(relayUrl, RelayType.WRITE)}
+                            onRemove={() => removeRelay(relayUrl, RelayType.WRITE)}
                         />
                     {/each}
                 {:else}
@@ -281,7 +281,7 @@
                     {#each filteredSuggestedOutboxRelays as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:add={() => addRelay(RelayType.WRITE, relayUrl)}
+                            onAdd={() => addRelay(RelayType.WRITE, relayUrl)}
                             isSuggestedRelay
                         />
                     {/each}
@@ -289,7 +289,7 @@
             {/if}
         </div>
         <Button
-            on:click={updateRelays}
+            onClick={updateRelays}
             disabled={posting || (readRelayUrls.length === 0 && writeRelayUrls.length === 0)}
         >
             Save

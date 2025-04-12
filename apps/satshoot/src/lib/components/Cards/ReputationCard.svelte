@@ -377,7 +377,7 @@
                 variant="outlined"
                 classes="justify-start"
                 grow
-                on:click={showFreelancerReviewBreakdown}
+                onClick={showFreelancerReviewBreakdown}
             >
                 <p class="font-[500]">
                     Freelancer Reputation:
@@ -403,7 +403,7 @@
                 variant="outlined"
                 classes="justify-start"
                 grow
-                on:click={showClientReviewBreakdown}
+                onClick={showClientReviewBreakdown}
             >
                 <p class="font-[500]">
                     Client Reputation:

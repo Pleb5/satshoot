@@ -98,7 +98,7 @@
                                 <Button
                                     variant="outlined"
                                     classes="border-l-[1px] border-l-black-100 rounded-[0px]"
-                                    on:click={() => (showPassphrase = !showPassphrase)}
+                                    onClick={() => (showPassphrase = !showPassphrase)}
                                 >
                                     <i class={showPassphrase ? 'bx bxs-hide' : 'bx bxs-show'}></i>
                                 </Button>
@@ -107,7 +107,7 @@
                     {/if}
                 {/if}
 
-                <Button fullWidth on:click={confirmLogout}>Confirm Logout</Button>
+                <Button fullWidth onClick={confirmLogout}>Confirm Logout</Button>
             </div>
         </div>
         <!-- popups Logout end -->
