@@ -8,7 +8,7 @@
 
 @source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
 
 @theme {
     --font-*: initial;
@@ -57,8 +57,8 @@
     --color-gray-500: rgba(99, 99, 99, 1);
     --color-gray-600: rgba(220, 220, 220, 1);
 
-    --color-bright-gray-700: rgba(55, 65, 81, 0.75);
-    --color-bright-gray: rgba(55, 65, 81, 1);
+    --color-brightGray-700: rgba(55, 65, 81, 0.75);
+    --color-brightGray: rgba(55, 65, 81, 1);
 
     --shadow-soft: 0 0 8px rgba(0, 0, 0, 0.25);
     --shadow-strong: 0 0 8px 4px rgba(0, 0, 0, 0.5);
