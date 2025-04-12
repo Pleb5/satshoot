@@ -60,8 +60,4 @@
     </div>
 </div>
 
-<Modal open={isSearchModalOpened} closeOnInteractOutside={false} closeOnEscape={false}>
-    {#snippet content()}
-        <SearchModal />
-    {/snippet}
-</Modal>
+<SearchModal bind:isOpen={isSearchModalOpened} />
