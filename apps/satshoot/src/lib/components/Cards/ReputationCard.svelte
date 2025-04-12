@@ -24,16 +24,9 @@
     import { onDestroy } from 'svelte';
     import ReviewSummaryAsFreelancer from '../Modals/ReviewSummaryAsFreelancer.svelte';
     import ReviewSummaryAsClient from '../Modals/ReviewSummaryAsClient.svelte';
-    import {
-        getModalStore,
-        type ModalComponent,
-        type ModalSettings 
-    } from '@skeletonlabs/skeleton';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import RatingBlock from '../UI/Display/RatingBlock.svelte';
-
-    const modalStore = getModalStore();
 
     interface Props {
         user: Hexpubkey;
