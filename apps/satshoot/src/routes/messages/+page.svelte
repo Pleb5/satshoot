@@ -120,10 +120,13 @@
         ticketsWithClients = ticketsWithClients;
     }
 
+    let pageTop = $state<HTMLDivElement>();
+
     onMount(() => {
         // Scroll to top as soon as ticket arrives
-        const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
-        elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
+        if (pageTop) {
+            pageTop.scrollIntoView(true)
+        }
 
         mounted = true;
 
@@ -140,7 +143,7 @@
 </script>
 
 {#if $currentUser}
-    <div class="w-full flex flex-col gap-0 grow">
+    <div bind:this={pageTop} class="w-full flex flex-col gap-0 grow">
         <div class="w-full h-full flex flex-col justify-center items-center py-[25px]">
             <div
                 class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"

@@ -177,6 +177,8 @@
         }
     });
 
+    let pageTop = $state<HTMLDivElement>()
+
     function handleTicketEvent(event: NDKEvent) {
         const arrivedTicket = TicketEvent.from(event);
 
@@ -188,8 +190,9 @@
         jobPost = arrivedTicket;
 
         // Scroll to top as soon as ticket arrives
-        const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
-        elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
+        if (pageTop) {
+            pageTop.scrollIntoView(true)
+        }
     }
 
     // Subscribe to offers if not already done
@@ -240,7 +243,7 @@
     ];
 </script>
 
-<div class="w-full flex flex-col gap-0 grow">
+<div bind:this={pageTop} class="w-full flex flex-col gap-0 grow">
     <div class="w-full flex flex-col justify-center items-center py-[25px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
