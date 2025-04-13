@@ -4,6 +4,7 @@
     import { DataLoadError } from '$lib/utils/errors';
     import { RestoreMethod } from '$lib/stores/ndk';
     import { logout } from '$lib/utils/helpers';
+    import { loggingIn } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
@@ -18,6 +19,16 @@
     let passphrase: string = $state('');
     let statusMessage: string = $state('');
     let statusColor = $state('text-tertiary-200-700');
+
+    let previousIsOpen: boolean | undefined = undefined;
+
+    $effect(() => {
+        if (previousIsOpen && !isOpen) {
+            // Only run when isOpen changes from true → false
+            $loggingIn = false;
+        }
+        previousIsOpen = isOpen;
+    });
 
     let decrypting = $state(false);
 
@@ -66,6 +77,7 @@
                 if (decryptedSecret) {
                     callback({ decryptedSecret, restoreMethod });
                     isOpen = false;
+                    $loggingIn = false;
                 } else {
                     statusMessage = 'Unexpected response from decryption process:' + m.data;
                     setTimeout(() => {
@@ -117,8 +129,8 @@
 </script>
 
 <ModalWrapper bind:isOpen title="Decrypt Local Seed">
-    <h4 class="h4 mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
-    <div class="flex justify-between items-center m-4">
+    <h4 class="mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
+    <div class="flex justify-between items-center m-4 gap-3">
         <input
             class="input"
             title="Passphrase:"
@@ -147,6 +159,7 @@
                     restoreMethod: undefined,
                 });
                 isOpen = false;
+                $loggingIn = false;
                 logout();
             }}
         >
