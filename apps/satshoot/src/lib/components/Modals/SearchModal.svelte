@@ -4,7 +4,13 @@
     import { searchTerms } from '$lib/stores/search';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
+
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
 
     let searchInput = $state('');
 
@@ -61,7 +67,7 @@
         // Navigate to the updated
         goto(url.toString(), { replaceState: true });
 
-        // todo: close search modal
+        isOpen = false;
     }
 
     const inputWrapperClasses =
@@ -77,7 +83,7 @@
         'pr-[10px] group-hover:text-white group-hover:border-r-white-200';
 </script>
 
-<Popup title="Search">
+<ModalWrapper bind:isOpen title="Search">
     <div class="w-full flex flex-col">
         <div class="w-full flex flex-col gap-[10px]">
             <div class="flex flex-col gap-[5px]">
@@ -132,4 +138,4 @@
             </div>
         </div>
     </div>
-</Popup>
+</ModalWrapper>
