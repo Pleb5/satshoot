@@ -19,14 +19,16 @@
 
     const toaster = createToaster();
 
+    let initialized = $state(false);
     let userProfile = $state<NDKUserProfile>({});
     let updating = $state(false);
 
     const redirectPath = $derived(page.url.searchParams.get('redirectPath'));
 
     $effect(() => {
-        if ($currentUser) {
+        if ($currentUser && !initialized) {
             setProfile($currentUser);
+            initialized = true;
         }
     });
 
@@ -56,9 +58,8 @@
             userProfile = profileFromEvent(profile);
         } else {
             toaster.error({
-                title: `<p class='text-center font-bold'>Could NOT load Profile!</p>
-                          <p class='text-center font-bold'>Try to refresh page!</p>
-                         `,
+                title: `Could NOT load Profile!`,
+                description: `Try to refresh page!`,
             });
         }
     }
