@@ -143,11 +143,7 @@
 
         <div class="flex flex-col justify-end grow">
             {#if $loggedIn}
-                <Button
-                    classes="{profileMenuItemClass} {extraClassesForLogoutBtn} "
-                    onClick={onLogout}
-                    fullWidth
-                >
+                <Button classes={extraClassesForLogoutBtn} onClick={onLogout} fullWidth>
                     Logout
                 </Button>
             {/if}
