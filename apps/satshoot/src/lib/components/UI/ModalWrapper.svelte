@@ -20,7 +20,7 @@
     }: Props = $props();
 </script>
 
-<Modal open={isOpen} closeOnInteractOutside={false} closeOnEscape={false}>
+<Modal open={isOpen}>
     {#snippet content()}
         <Popup bind:isOpen {title} {popUpText} {headerAction} {children} />
     {/snippet}
