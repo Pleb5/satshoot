@@ -34,6 +34,7 @@
                             title: 'Notifications Settings are Disabled in the Browser!',
                             description:
                                 'Click small icon left of browser search bar to enable this setting!',
+                            duration: 60000, // 1 min
                         });
                     }
                     // User enabled notification settings, set user choice in local storage too

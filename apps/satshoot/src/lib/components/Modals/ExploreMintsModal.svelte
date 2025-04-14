@@ -39,6 +39,7 @@
                 console.error(`An error occurred in getting cashu mint recommendations`, err);
                 toaster.error({
                     title: 'An error occurred in getting cashu mint recommendations',
+                    duration: 60000, // 1 min
                 });
                 isOpen = false;
             });

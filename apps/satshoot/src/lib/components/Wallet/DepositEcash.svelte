@@ -48,6 +48,7 @@
             closeModal();
             toaster.error({
                 title: `Failed to deposit: \n${error}`,
+                duration: 60000, // 1 min
             });
         });
 

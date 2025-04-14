@@ -148,6 +148,7 @@
                 title:
                     'Receiver Cashu info does not match with Nostr Wallet info.' +
                     ' It is recommended to sync them.',
+                duration: 60000, // 1 min
                 action: {
                     label: 'Sync',
                     onClick: async () => {
@@ -457,6 +458,7 @@
             }
             toaster.success({
                 title: `${amountDestroyed} spent sats cleaned from wallet`,
+                duration: 60000, // 1 min
             });
         };
 

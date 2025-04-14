@@ -75,6 +75,7 @@ export async function initializeUser(ndk: NDKSvelte ) {
             if (!userRelays) {
                 toaster.warning({
                     title: 'Could not find Your personal Relays',
+                    duration: 60000, // 1 min
                     action: {
                         label: 'Configure',
                         onClick: () => {

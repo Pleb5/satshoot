@@ -58,6 +58,7 @@
             toaster.error({
                 title: `Could NOT load Profile!`,
                 description: `Try to refresh page!`,
+                duration: 60000, // 1 min
             });
         }
     }

@@ -44,6 +44,7 @@
                 askingForNip07Permission = false;
                 toaster.error({
                     title: 'Browser extension rejected access!',
+                    duration: 60000, // 1 min
                 });
             }
         } else if (!window.nostr) {

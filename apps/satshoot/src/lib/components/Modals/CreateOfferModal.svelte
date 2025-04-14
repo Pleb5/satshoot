@@ -117,6 +117,7 @@
 
                 toaster.warning({
                     title: 'Set up an LN Address to receive payments!',
+                    duration: 60000, // 1 min
                     action: {
                         label: 'Go to Profile',
                         onClick: () => goto('/' + $currentUser!.npub),
@@ -127,6 +128,7 @@
             if ($currentUser && !$wallet) {
                 toaster.warning({
                     title: 'Set up a Nostr Wallet to receive payments in ecash tokens!',
+                    duration: 60000, // 1 min
                     action: {
                         label: 'Go to Wallet',
                         onClick: () => goto('/my-cashu-wallet'),

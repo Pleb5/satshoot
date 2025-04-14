@@ -642,6 +642,7 @@
         toaster.create({
             title: message,
             type,
+            duration: autohide ? undefined : 60000, // if autohide is false set duration to 1 min
         });
     }
 

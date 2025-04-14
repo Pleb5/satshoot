@@ -63,6 +63,7 @@
                 console.error('An error occurred in withdraw', err);
                 toaster.error({
                     title: `Failed to withdraw: ${err?.message || err} `,
+                    duration: 60000, // 1 min
                 });
             })
             .finally(() => {

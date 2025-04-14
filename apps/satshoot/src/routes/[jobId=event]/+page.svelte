@@ -216,6 +216,7 @@
         if (!jobPost) {
             toaster.error({
                 title: 'Job is not loaded yet!',
+                duration: 60000, // 1 min
             });
 
             return;

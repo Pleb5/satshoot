@@ -104,6 +104,7 @@
         if ($retryConnection === 0) {
             toaster.warning({
                 title: 'Could not reconnect to Relays!',
+                duration: 60000, // 1 min
                 action: {
                     label: 'Reload page',
                     onClick: () => {

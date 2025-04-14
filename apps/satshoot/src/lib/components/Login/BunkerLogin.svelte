@@ -131,13 +131,9 @@
             }
         } catch (error) {
             toaster.error({
-                title: `
-                        <p>Could not connect to Bunker!</p>
-                        <p>
-                        <span> Reason: </span>
-                        <span> ${error} </span>
-                        </p>
-                    `,
+                title: `Could not connect to Bunker!`,
+                description: `Reason: ${error}`,
+                duration: 60000, // 1 min
             });
             console.error(error);
             isOpen = false;
