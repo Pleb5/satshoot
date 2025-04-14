@@ -70,7 +70,7 @@
 </script>
 
 <Card classes="border-[1px_solid_rgba(0,0,0,0.1)] gap-[0px]  overflow-hidden p-[0px]">
-    <div class="jobCardDetails w-full flex flex-col gap-[0px] p-[10px] min-h-[165px]">
+    <div class="w-full flex flex-col gap-[0px] p-[10px] min-h-[240px]">
         {#if selectedTab === Tabs.JobDescription}
             <JobDetails title={job.title} description={job.description} {bech32ID} />
         {:else if selectedTab === Tabs.Author}

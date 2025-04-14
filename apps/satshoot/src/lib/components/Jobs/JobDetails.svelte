@@ -24,7 +24,7 @@
             </h4>
         </a>
         <div class="w-full">
-            <p class="font-normal text-[15px] overflow-y-auto line-clamp-3">
+            <p class="font-normal text-[15px] overflow-y-auto">
                 <Markdown content={processedDescription} />
             </p>
         </div>
