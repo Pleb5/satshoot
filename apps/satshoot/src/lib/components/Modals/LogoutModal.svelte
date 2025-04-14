@@ -88,7 +88,7 @@
                                     bind:value={passphrase}
                                     type={showPassphrase ? 'text' : 'password'}
                                     placeholder="Enter passphrase for encryption (min. 14 chars)"
-                                    classes={!passphraseValid ? 'input-error' : ''}
+                                    classes={!passphraseValid ? 'text-error-500' : ''}
                                     grow
                                     noBorder
                                     notRounded

@@ -46,13 +46,13 @@
         if (titleText.length < minTitleLength) {
             return {
                 titleValid: false,
-                titleState: 'input-error',
+                titleState: 'text-error-500',
             };
         }
 
         return {
             titleValid: true,
-            titleState: 'input-success',
+            titleState: 'text-success-500',
         };
     });
 
@@ -60,13 +60,13 @@
         if (descriptionText.length < minTitleLength) {
             return {
                 descriptionValid: false,
-                descriptionState: 'input-error',
+                descriptionState: 'text-error-500',
             };
         }
 
         return {
             descriptionValid: true,
-            descriptionState: 'input-success',
+            descriptionState: 'text-success-500',
         };
     });
 

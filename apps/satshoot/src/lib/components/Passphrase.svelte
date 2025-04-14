@@ -15,7 +15,7 @@
         confirmPassphrase = $bindable(),
         btnLabel,
         roundedTop = false,
-        onSubmit
+        onSubmit,
     }: Props = $props();
 
     let showPassphrase = $state(false);
@@ -37,7 +37,7 @@
     <Input
         type={showPassphrase ? 'text' : 'password'}
         placeholder="Enter Passphrase..."
-        classes={!passphraseValid ? 'input-error' : ''}
+        classes={!passphraseValid ? 'text-error-500' : ''}
         bind:value={passphrase}
         grow
         noBorder
@@ -57,7 +57,7 @@
     <Input
         type={showConfirmPassphrase ? 'text' : 'password'}
         placeholder="Confirm Passphrase..."
-        classes={!confirmPassphraseValid ? 'input-error' : ''}
+        classes={!confirmPassphraseValid ? 'text-error-500' : ''}
         bind:value={confirmPassphrase}
         grow
         noBorder
