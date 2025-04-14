@@ -2,20 +2,18 @@
     import { wallet } from '$lib/wallet/wallet';
     import { backupWallet } from '$lib/wallet/cashu';
     import { logout } from '$lib/utils/helpers';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import Button from '../UI/Buttons/Button.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
     import { loginMethod } from '$lib/stores/user';
     import { LoginMethod } from '$lib/stores/ndk';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
     }
-
-    const toaster = createToaster();
 
     let { isOpen = $bindable() }: Props = $props();
 

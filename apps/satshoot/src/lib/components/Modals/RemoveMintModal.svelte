@@ -1,11 +1,8 @@
 <script lang="ts">
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+    import { toaster } from '$lib/stores/toaster';
     import Button from '../UI/Buttons/Button.svelte';
-    import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
 
     interface Props {
         isOpen: boolean;

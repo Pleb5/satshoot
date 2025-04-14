@@ -5,17 +5,14 @@
 
     import { SatShootPubkey } from '$lib/utils/misc';
 
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
-
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
     }
-
-    const toaster = createToaster();
 
     let { isOpen = $bindable() }: Props = $props();
 

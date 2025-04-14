@@ -12,8 +12,6 @@
 
     import tagOptions from '$lib/utils/tag-options';
 
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
-
     import { beforeNavigate, goto } from '$app/navigation';
     import { onMount, tick } from 'svelte';
     import Card from '$lib/components/UI/Card.svelte';
@@ -23,8 +21,7 @@
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     let showLoginModal = $state(false);
     let showJobPostSuccessModal = $state(false);

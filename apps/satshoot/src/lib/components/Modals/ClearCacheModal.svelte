@@ -1,19 +1,17 @@
 <script lang="ts">
     import ndk from '$lib/stores/ndk';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import Dexie from 'dexie';
     import Button from '../UI/Buttons/Button.svelte';
-    import Popup from '../UI/Popup.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
     }
 
     let { isOpen = $bindable() }: Props = $props();
-
-    const toaster = createToaster();
 
     async function handleConfirm() {
         try {

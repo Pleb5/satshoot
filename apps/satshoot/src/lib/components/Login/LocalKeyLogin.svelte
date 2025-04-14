@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Passphrase from '../Passphrase.svelte';
     import TabSelector from '../UI/Buttons/TabSelector.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -13,14 +12,13 @@
     import { initializeUser } from '$lib/utils/helpers';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { goto } from '$app/navigation';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
     }
 
     let { isOpen = $bindable() }: Props = $props();
-
-    const toaster = createToaster();
 
     enum LocalKeyLoginTabs {
         SecretKey,

@@ -1,13 +1,12 @@
 <script lang="ts">
     import { backupWallet } from '$lib/wallet/cashu';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;

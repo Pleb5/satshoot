@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
@@ -13,11 +12,9 @@
     import { insertThousandSeparator } from '$lib/utils/misc';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;

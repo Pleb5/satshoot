@@ -38,11 +38,12 @@ import { connected, sessionPK } from '../stores/ndk';
 import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
 import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
-import { createToaster } from '@skeletonlabs/skeleton-svelte';
 import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
+import { toaster } from '$lib/stores/toaster';
 
-export async function initializeUser(ndk: NDKSvelte) {
+export async function initializeUser(ndk: NDKSvelte ) {
+    
     console.log('begin user init');
     try {
         loggingIn.set(false);
@@ -72,7 +73,6 @@ export async function initializeUser(ndk: NDKSvelte) {
             fetchAndInitWallet(user, ndk, { explicitRelays });
 
             if (!userRelays) {
-                const toaster = createToaster();
                 toaster.warning({
                     title: 'Could not find Your personal Relays',
                     action: {
@@ -82,7 +82,7 @@ export async function initializeUser(ndk: NDKSvelte) {
                         },
                     },
                 });
-            }
+             }
 
             await loadWot(ndk, user);
         }

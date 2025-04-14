@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createToaster, Popover } from '@skeletonlabs/skeleton-svelte';
+    import { Popover } from '@skeletonlabs/skeleton-svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
@@ -35,6 +35,7 @@
     import Card from '../UI/Card.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     enum ToastType {
         Success = 'success',
@@ -71,8 +72,6 @@
             }
         }
     }
-
-    const toaster = createToaster();
 
     interface Props {
         isOpen: boolean;

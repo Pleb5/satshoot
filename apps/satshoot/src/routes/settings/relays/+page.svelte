@@ -13,12 +13,11 @@
     } from '$lib/utils/helpers';
     import { normalizeRelayUrl } from '$lib/utils/misc';
     import { NDKRelayList } from '@nostr-dev-kit/ndk';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import { onMount } from 'svelte';
     import { RelayType } from '$lib/stores/network';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     let showRelayRemovalConfirmation = $state(false);
     let relayToRemove = $state<{ url: string; relayType: RelayType } | null>(null);

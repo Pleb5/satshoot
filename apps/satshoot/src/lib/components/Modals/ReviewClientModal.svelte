@@ -2,17 +2,14 @@
     import { type ClientRating, ReviewEvent } from '$lib/events/ReviewEvent';
     import ndk from '$lib/stores/ndk';
 
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { tick } from 'svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;

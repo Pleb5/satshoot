@@ -6,7 +6,7 @@
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { onDestroy, onMount } from 'svelte';
     import { Accordion } from '@skeletonlabs/skeleton-svelte';
-    import { Avatar, createToaster } from '@skeletonlabs/skeleton-svelte';
+    import { Avatar } from '@skeletonlabs/skeleton-svelte';
     import {
         NDKEvent,
         NDKKind,
@@ -25,13 +25,12 @@
     import { getRoboHashPicture, orderEventsChronologically } from '$lib/utils/helpers';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Contact {
         person: NDKUser;
         selected: boolean;
     }
-
-    const toaster = createToaster();
 
     // ======================
     // 1. URL & Search Params

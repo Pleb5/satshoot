@@ -4,7 +4,7 @@
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import ndk from '$lib/stores/ndk';
     import { paymentDetail } from '$lib/stores/payment';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import { tick } from 'svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
@@ -13,8 +13,7 @@
     import PaymentModal from './PaymentModal.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;

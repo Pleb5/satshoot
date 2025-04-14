@@ -51,7 +51,8 @@
     import { page } from '$app/state';
 
     // Skeleton Toast
-    import { Toaster, createToaster } from '@skeletonlabs/skeleton-svelte';
+    import { Toaster } from '@skeletonlabs/skeleton-svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     // Skeleton Modals
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
@@ -76,8 +77,6 @@
     }
 
     let { children }: Props = $props();
-
-    const toaster = createToaster();
 
     beforeNavigate(async ({ to }) => {
         if (to?.url.pathname !== '/jobs') {

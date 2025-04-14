@@ -7,13 +7,11 @@
     import LightSwitch from '$lib/components/UI/Inputs/LightSwitch.svelte';
     import { sessionPK } from '$lib/stores/ndk';
     import browserNotificationsEnabled from '$lib/stores/notifications';
+    import { toaster } from '$lib/stores/toaster';
     import { useSatShootWoT } from '$lib/stores/wot';
     import { hexToBytes } from '@noble/ciphers/utils';
 
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { nsecEncode } from 'nostr-tools/nip19';
-
-    const toaster = createToaster();
 
     let showClearCacheModal = $state(false);
     let nsec = $state('');
