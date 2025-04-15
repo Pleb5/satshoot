@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser, {
         currentUserFreelanceFollows,
         fetchFreelanceFollowEvent,
@@ -32,6 +32,7 @@
     import { page } from '$app/state';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import { sessionInitialized } from '$lib/stores/session';
 
     enum FollowStatus {
         isFollowing,

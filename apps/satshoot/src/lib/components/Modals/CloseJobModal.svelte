@@ -2,7 +2,7 @@
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewEvent, type FreelancerRating } from '$lib/events/ReviewEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { paymentDetail } from '$lib/stores/payment';
 
     import { tick } from 'svelte';

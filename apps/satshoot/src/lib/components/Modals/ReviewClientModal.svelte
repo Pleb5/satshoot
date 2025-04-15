@@ -1,6 +1,6 @@
 <script lang="ts">
     import { type ClientRating, ReviewEvent } from '$lib/events/ReviewEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
 
     import { tick } from 'svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';

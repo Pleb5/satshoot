@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import {
         NDKSubscriptionCacheUsage,

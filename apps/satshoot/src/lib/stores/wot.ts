@@ -40,7 +40,6 @@ export const useSatShootWoT: Writable<boolean> = persisted('useSatShootWoT', tru
 export const wotUpdating = writable(false);
 export const wotUpdateFailed = writable(false);
 export const wotUpdateNoResults = writable(false);
-export const wotLoaded = writable(false);
 
 let saveSatShootWoT = false;
 export const wot = derived(
@@ -131,11 +130,11 @@ export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
         }
 
         wotUpdating.set(false);
-        wotLoaded.set(true);
+        sessionInitialized.set(true);
         wotUpdateFailed.set(false);
     } catch (e) {
         wotUpdating.set(false);
-        wotLoaded.set(true);
+        sessionInitialized.set(true);
         wotUpdateFailed.set(true);
         console.log('Could not update Web of Trust scores: ', e);
     }

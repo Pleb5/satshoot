@@ -7,7 +7,7 @@
     import '@fortawesome/fontawesome-free/css/regular.css';
     import '@fortawesome/fontawesome-free/css/solid.css';
 
-    import ndk, { bunkerNDK, sessionPK } from '$lib/stores/ndk';
+    import ndk, { bunkerNDK, sessionPK } from '$lib/stores/session';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
 
     import { Dexie } from 'dexie';
@@ -34,7 +34,7 @@
 
     import { wotUpdateFailed, wotUpdateNoResults } from '$lib/stores/wot';
 
-    import { LoginMethod, RestoreMethod } from '$lib/stores/ndk';
+    import { LoginMethod, RestoreMethod } from '$lib/stores/session';
 
     import {
         NDKKind,
@@ -381,8 +381,10 @@
         await $ndk.connect();
 
         if (!$loggedIn) {
-            restoreLogin();
+            await restoreLogin();
         }
+
+        sessionInitialized.set(true);
     });
 
     onDestroy(() => {

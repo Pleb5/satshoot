@@ -2,7 +2,7 @@
     import { run } from 'svelte/legacy';
 
     import type { NDKUser, NDKUserProfile } from '@nostr-dev-kit/ndk';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { onMount } from 'svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 

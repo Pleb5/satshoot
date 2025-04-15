@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { LoginMethod } from '$lib/stores/ndk';
+    import { LoginMethod } from '$lib/stores/session';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import Nip07Login from '../Login/Nip07Login.svelte';

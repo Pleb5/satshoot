@@ -1,6 +1,6 @@
 <script lang="ts">
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';

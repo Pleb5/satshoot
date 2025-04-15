@@ -1,4 +1,4 @@
-import ndk from "./ndk";
+import ndk from "$lib/stores/session";
 import {
     type NDKFilter,
     type NDKSubscriptionOptions,

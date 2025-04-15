@@ -8,7 +8,7 @@
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
     import { encryptSecret } from '$lib/utils/crypto';
     import { loginMethod } from '$lib/stores/user';
-    import ndk, { LoginMethod, sessionPK } from '$lib/stores/ndk';
+    import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
     import { initializeUser } from '$lib/utils/helpers';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { goto } from '$app/navigation';

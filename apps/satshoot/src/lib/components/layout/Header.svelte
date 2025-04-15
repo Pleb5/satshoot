@@ -7,7 +7,7 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { NDKKind, NDKRelaySet, profileFromEvent } from '@nostr-dev-kit/ndk';
-    import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/ndk';
+    import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import AppMenu from './AppMenu.svelte';
 

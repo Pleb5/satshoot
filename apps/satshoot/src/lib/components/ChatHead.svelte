@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { loggedIn } from '$lib/stores/user';
     import {

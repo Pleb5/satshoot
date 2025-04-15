@@ -1,7 +1,7 @@
 <script lang="ts">
     import { run } from 'svelte/legacy';
 
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
         NDKEvent,

@@ -2,7 +2,7 @@
     import { NDKRelayStatus } from '@nostr-dev-kit/ndk';
     import Button from './UI/Buttons/Button.svelte';
     import { onMount, onDestroy } from 'svelte';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { normalizeRelayUrl } from '$lib/utils/misc';
 
     interface Props {

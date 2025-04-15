@@ -1,7 +1,7 @@
 <script lang="ts">
     import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
     import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { createPaymentFilters, createPaymentStore } from '$lib/stores/payment';
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
     import { abbreviateNumber, insertThousandSeparator } from '$lib/utils/misc';

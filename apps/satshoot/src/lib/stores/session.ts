@@ -39,6 +39,8 @@ export enum LoginMethod {
 // Saves us from decryption every time user reloads page during a session
 export const sessionPK: Writable<string> = persisted('pk', '', { storage: 'session' });
 
+export const sessionInitialized = writable(false);
+
 // Client-side caching. Used for performance enhancement as well as a solution to identify
 // new data and serve push notifications. Notify user when 'tickets of interest' change,
 // that is, my tickets and tickets I bid on, as well as new messages
@@ -50,8 +52,6 @@ const ndkSvelte = new NDKSvelte({
     autoFetchUserMutelist: true,
     explicitRelayUrls: DEFAULTRELAYURLS,
 });
-
-export const connected = writable(false);
 
 export const bunkerNDK = writable(new NDK({ enableOutboxModel: false }));
 

@@ -1,7 +1,7 @@
 import type { OfferEvent } from '$lib/events/OfferEvent';
 import { TicketEvent } from '$lib/events/TicketEvent';
 import { derived, get, writable, type Readable } from 'svelte/store';
-import ndk from './ndk';
+import ndk from '$lib/stores/session';
 import {
     NDKKind,
     NDKNutzap,

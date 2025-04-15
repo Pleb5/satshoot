@@ -2,7 +2,7 @@
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
     import { redirectAfterLogin } from '$lib/stores/gui';
-    import ndk, { LoginMethod } from '$lib/stores/ndk';
+    import ndk, { LoginMethod } from '$lib/stores/session';
     import { loginMethod } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
     import { NDKNip07Signer } from '@nostr-dev-kit/ndk';

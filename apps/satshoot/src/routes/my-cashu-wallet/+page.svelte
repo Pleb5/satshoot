@@ -2,7 +2,7 @@
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
     import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
-    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/ndk';
+    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { userCashuInfo, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
     import {

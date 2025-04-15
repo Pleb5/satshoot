@@ -4,7 +4,7 @@
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
-    import ndk, { connected, DEFAULTRELAYURLS } from '$lib/stores/ndk';
+    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
         broadcastRelayList,
@@ -15,7 +15,7 @@
     import { NDKRelayList } from '@nostr-dev-kit/ndk';
 
     import { onMount } from 'svelte';
-    import { RelayType } from '$lib/stores/network';
+    import { connected, RelayType } from '$lib/stores/network';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import { toaster } from '$lib/stores/toaster';
 

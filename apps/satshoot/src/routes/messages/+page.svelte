@@ -2,7 +2,7 @@
     import ChatHead from '$lib/components/ChatHead.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { checkRelayConnections } from '$lib/utils/helpers';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from '@nostr-dev-kit/ndk';
@@ -12,6 +12,7 @@
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { page } from '$app/stores';
+    import { sessionInitialized } from '$lib/stores/session';
 
     enum ConversationType {
         Freelancer = 0,

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
 
     import Dexie from 'dexie';

@@ -3,7 +3,7 @@
     import currentUser from '$lib/stores/user';
     import ShareJobModal from './ShareJobModal.svelte';
     import CloseJobModal from './CloseJobModal.svelte';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import ReviewClientModal from './ReviewClientModal.svelte';
     import { clientReviews } from '$lib/stores/reviews';

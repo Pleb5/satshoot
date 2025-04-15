@@ -1,4 +1,4 @@
-import ndk from './ndk.ts';
+import ndk from '$lib/stores/session';
 import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
 import type {  NDKFilter, NDKSubscriptionOptions } from '@nostr-dev-kit/ndk';
 import { NDKKind } from '@nostr-dev-kit/ndk';

@@ -1,4 +1,4 @@
-import ndk from '$lib/stores/ndk';
+import ndk from '$lib/stores/session';
 import {
     NDKCashuMintList,
     NDKEvent,

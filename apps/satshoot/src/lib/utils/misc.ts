@@ -3,7 +3,7 @@ import { type NDKTag, type Hexpubkey, NDKKind, type NostrEvent, type NDKFilter, 
 import normalizeUrl from 'normalize-url';
 import type { RelayFirstFetchOpts } from './helpers';
 import { get } from 'svelte/store';
-import ndk from '$lib/stores/ndk';
+import ndk from '$lib/stores/session';
 
 export const JobsPerPage = 9;
 

@@ -5,6 +5,9 @@ export enum RelayType {
     WRITE
 }
 
+// Sufficiently connected to relays
+export const connected = writable(false);
+// Internet connection
 export const online = writable(true);
 export const showedDisconnectToast = writable(false);
 export const maxRetryAttempts = 2;

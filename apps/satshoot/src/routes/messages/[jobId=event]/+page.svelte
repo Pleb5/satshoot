@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';

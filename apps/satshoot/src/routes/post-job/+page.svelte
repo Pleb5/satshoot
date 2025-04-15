@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser, { loggedIn, loggingIn } from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
 

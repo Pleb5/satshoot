@@ -10,18 +10,31 @@ import {
     NDKRelaySet,
     NDKCashuMintList,
     type CashuPaymentInfo,
-    type NDKUserProfile,
     serializeProfile,
     NDKUser,
 } from '@nostr-dev-kit/ndk';
-import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/ndk';
+import ndk,
+    { 
+        blastrUrl,
+        BOOTSTRAPOUTBOXRELAYS, 
+        DEFAULTRELAYURLS,
+        sessionPK
+    } from '$lib/stores/session';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import currentUser from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
 import { loadWot, networkWoTScores } from '../stores/wot';
+import { sessionInitialized } from '$lib/stores/session';
 import { allReviews } from '$lib/stores/reviews';
-import { allReceivedZapsFilter, allReceivedZaps } from '$lib/stores/zaps';
-import { messageStore, sentMessageFilter, receivedMessageFilter } from '$lib/stores/messages';
+import { 
+    allReceivedZapsFilter, 
+    allReceivedZaps 
+} from '$lib/stores/zaps';
+import {
+    messageStore,
+    sentMessageFilter,
+    receivedMessageFilter 
+} from '$lib/stores/messages';
 import {
     allTickets,
     allOffers,
@@ -30,13 +43,25 @@ import {
     myTickets,
     myOffers,
 } from '$lib/stores/freelance-eventstores';
-import { notifications, seenIDs, serviceWorkerRegistrationFailed } from '../stores/notifications';
+import { notifications,
+    seenIDs,
+    serviceWorkerRegistrationFailed 
+} from '../stores/notifications';
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { dev } from '$app/environment';
-import { connected, sessionPK } from '../stores/ndk';
-import { retriesLeft, retryDelay, maxRetryAttempts } from '../stores/network';
-import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
+import { connected } from '../stores/network';
+import { 
+    retriesLeft,
+    retryDelay,
+    maxRetryAttempts 
+} from '../stores/network';
+import {
+    ndkNutzapMonitor,
+    wallet,
+    walletInit,
+    walletStatus 
+} from '$lib/wallet/wallet';
 import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
 import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
@@ -87,6 +112,8 @@ export async function initializeUser(ndk: NDKSvelte ) {
 
             await loadWot(ndk, user);
         }
+
+        sessionInitialized.set(true);
 
         myTickets.startSubscription();
         myOffers.startSubscription();

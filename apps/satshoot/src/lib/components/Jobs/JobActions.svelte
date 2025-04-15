@@ -5,7 +5,7 @@
     import currentUser from '$lib/stores/user';
     import { clientReviews } from '$lib/stores/reviews';
     import { OfferEvent } from '$lib/events/OfferEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';

@@ -8,7 +8,7 @@
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { onMount } from 'svelte';

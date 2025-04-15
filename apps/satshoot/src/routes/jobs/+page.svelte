@@ -1,15 +1,13 @@
 <script lang="ts">
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 
-    import ndk, { connected } from '$lib/stores/ndk';
-    import { online } from '$lib/stores/network';
+    import ndk from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from '@nostr-dev-kit/ndk';
 
     import { page } from '$app/state';
-    import TowerBroadcastIcon from '$lib/components/Icons/TowerBroadcastIcon.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import Announcement from '$lib/components/Modals/Announcement.svelte';
     import { JobsPerPage } from '$lib/utils/misc';

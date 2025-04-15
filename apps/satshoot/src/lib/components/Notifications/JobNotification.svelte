@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { type NDKUserProfile } from '@nostr-dev-kit/ndk';
 
     import { onMount } from 'svelte';

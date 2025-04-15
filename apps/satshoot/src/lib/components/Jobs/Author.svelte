@@ -4,7 +4,7 @@
         type Hexpubkey,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { nip19 } from 'nostr-tools';
     import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';

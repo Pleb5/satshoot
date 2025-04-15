@@ -3,7 +3,7 @@
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { createPaymentFilters, createPaymentStore, paymentDetail } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
@@ -22,6 +22,7 @@
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import ReputationCard from './ReputationCard.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { sessionInitialized } from '$lib/stores/session';
 
     interface Props {
         offer: OfferEvent;

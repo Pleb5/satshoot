@@ -1,6 +1,6 @@
 <script lang="ts">
     import { tick } from 'svelte';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
 
     import { SatShootPubkey } from '$lib/utils/misc';

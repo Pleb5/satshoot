@@ -1,7 +1,7 @@
 <script lang="ts">
     import { marked, type Token, type Tokens, type TokenizerAndRendererExtension } from 'marked';
     import DOMPurify from 'dompurify';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import hljs from 'highlight.js';

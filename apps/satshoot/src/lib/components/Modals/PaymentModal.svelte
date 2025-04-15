@@ -12,7 +12,7 @@
     import currentUser from '$lib/stores/user';
     import { wallet } from '$lib/wallet/wallet';
     import { goto } from '$app/navigation';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import {
         generateZapRequest,
         NDKEvent,

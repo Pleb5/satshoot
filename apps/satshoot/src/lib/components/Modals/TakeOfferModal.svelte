@@ -1,7 +1,7 @@
 <script lang="ts">
     import { TicketEvent } from '$lib/events/TicketEvent';
     import type { OfferEvent } from '$lib/events/OfferEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { tick } from 'svelte';
     import OfferTakenModal from './OfferTakenModal.svelte';
     import { goto } from '$app/navigation';

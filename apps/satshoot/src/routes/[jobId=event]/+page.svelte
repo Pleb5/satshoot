@@ -9,7 +9,8 @@
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import ndk, { connected } from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
+    import { connected } from '$lib/stores/network'
     import { toaster } from '$lib/stores/toaster';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';

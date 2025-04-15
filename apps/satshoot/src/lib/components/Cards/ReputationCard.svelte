@@ -2,14 +2,15 @@
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import {
         aggregateClientRatings,
         aggregateFreelancerRatings,
         clientReviews,
         freelancerReviews,
     } from '$lib/stores/reviews';
-    import { wot, wotLoaded } from '$lib/stores/wot';
+    import {sessionInitialized } from '$lib/stores/session';
+    import { wot } from '$lib/stores/wot';
     import { averageToRatingText } from '$lib/utils/helpers';
     import { abbreviateNumber, SatShootPubkey } from '$lib/utils/misc';
     import {
@@ -89,7 +90,7 @@
 
     // Init
     $effect(() => {
-        if ($wotLoaded) {
+        if ($sessionInitialized) {
             init();
         }
     });

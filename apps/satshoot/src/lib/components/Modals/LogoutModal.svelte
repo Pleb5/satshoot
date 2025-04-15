@@ -7,7 +7,7 @@
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import { loginMethod } from '$lib/stores/user';
-    import { LoginMethod } from '$lib/stores/ndk';
+    import { LoginMethod } from '$lib/stores/session';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
 

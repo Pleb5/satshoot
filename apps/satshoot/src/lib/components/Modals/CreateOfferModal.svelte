@@ -3,7 +3,7 @@
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { onMount } from 'svelte';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKSigner } from '@nostr-dev-kit/ndk';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';

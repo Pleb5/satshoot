@@ -1,6 +1,6 @@
 <script lang="ts">
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';

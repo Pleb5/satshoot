@@ -5,7 +5,7 @@
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
     import currentUser from '$lib/stores/user';
     import { broadcastUserProfile } from '$lib/utils/helpers';

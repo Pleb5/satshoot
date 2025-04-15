@@ -2,7 +2,7 @@
     import { run } from 'svelte/legacy';
 
     import { OfferEvent } from '$lib/events/OfferEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import {
         NDKKind,
         NDKSubscriptionCacheUsage,

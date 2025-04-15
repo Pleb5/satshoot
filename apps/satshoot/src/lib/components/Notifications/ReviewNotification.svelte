@@ -2,7 +2,7 @@
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewType, type ReviewEvent } from '$lib/events/ReviewEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';

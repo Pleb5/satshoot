@@ -5,7 +5,7 @@
     import ClearCacheModal from '$lib/components/Modals/ClearCacheModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import LightSwitch from '$lib/components/UI/Inputs/LightSwitch.svelte';
-    import { sessionPK } from '$lib/stores/ndk';
+    import { sessionPK } from '$lib/stores/session';
     import browserNotificationsEnabled from '$lib/stores/notifications';
     import { toaster } from '$lib/stores/toaster';
     import { useSatShootWoT } from '$lib/stores/wot';

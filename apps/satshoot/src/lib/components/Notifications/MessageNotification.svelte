@@ -1,6 +1,6 @@
 <script lang="ts">
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
         NDKSubscriptionCacheUsage,

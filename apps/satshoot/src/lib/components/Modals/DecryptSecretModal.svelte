@@ -2,7 +2,7 @@
     import { tick } from 'svelte';
 
     import { DataLoadError } from '$lib/utils/errors';
-    import { RestoreMethod } from '$lib/stores/ndk';
+    import { RestoreMethod } from '$lib/stores/session';
     import { logout } from '$lib/utils/helpers';
     import { loggingIn } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';

@@ -9,9 +9,10 @@
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import { jobFilter, offerFilter, scrollToMyJobsAndMyOffers } from '$lib/stores/gui';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import currentUser from '$lib/stores/user';
+    import { sessionInitialized } from '$lib/stores/session';
     import { orderEventsChronologically } from '$lib/utils/helpers';
     import { NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
