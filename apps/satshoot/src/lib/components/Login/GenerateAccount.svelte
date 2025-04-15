@@ -84,7 +84,7 @@
                 lud16: '',
                 website: '',
             };
-            broadcastUserProfile($ndk, user.profile);
+            broadcastUserProfile($ndk, user);
 
             $onboardingStep = OnboardingStep.Account_Created;
 

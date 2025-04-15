@@ -321,14 +321,18 @@ export async function broadcastRelayList(
     console.log('relays posted to:', relaysPosted);
 }
 
-export async function broadcastUserProfile(ndk: NDKSvelte, userProfile: NDKUserProfile) {
+export async function broadcastUserProfile(ndk: NDKSvelte, user: NDKUser) {
+    if (!user.profile) {
+        console.error('BUG: Cannot broadcast undefined profile!')
+        return;
+    }
     const ndkEvent = new NDKEvent(ndk);
-    ndkEvent.content = serializeProfile(userProfile);
+    ndkEvent.content = serializeProfile(user.profile);
     ndkEvent.kind = NDKKind.Metadata;
 
     const explicitRelays: string[] = [...BOOTSTRAPOUTBOXRELAYS];
 
-    const relayListEvent = await fetchUserOutboxRelays(ndk, get(currentUser)!.pubkey);
+    const relayListEvent = await fetchUserOutboxRelays(ndk, user.pubkey);
     if (relayListEvent) {
         const relayList = NDKRelayList.from(relayListEvent);
         explicitRelays.push(...relayList.writeRelayUrls);
