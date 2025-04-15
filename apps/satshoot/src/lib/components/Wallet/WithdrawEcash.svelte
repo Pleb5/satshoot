@@ -3,13 +3,11 @@
     import { Invoice } from '@getalby/lightning-tools';
     import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
     import { onMount } from 'svelte';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
 
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         cashuWallet: NDKCashuWallet;
@@ -65,6 +63,7 @@
                 console.error('An error occurred in withdraw', err);
                 toaster.error({
                     title: `Failed to withdraw: ${err?.message || err} `,
+                    duration: 60000, // 1 min
                 });
             })
             .finally(() => {

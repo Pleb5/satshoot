@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import ndk from '$lib/stores/ndk';
@@ -9,8 +8,7 @@
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;

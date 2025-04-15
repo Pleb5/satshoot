@@ -3,14 +3,13 @@
     import ndk from '$lib/stores/ndk';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import { onMount, tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;

@@ -5,15 +5,13 @@
         type MintUrl,
         type NDKCashuMintRecommendation,
     } from '@nostr-dev-kit/ndk-wallet';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import CashuMintListItem from '$lib/components/Mints/Item.svelte';
     import { wot } from '$lib/stores/wot';
     import { getCashuMintRecommendations } from '$lib/wallet/cashu';
-    import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
@@ -41,6 +39,7 @@
                 console.error(`An error occurred in getting cashu mint recommendations`, err);
                 toaster.error({
                     title: 'An error occurred in getting cashu mint recommendations',
+                    duration: 60000, // 1 min
                 });
                 isOpen = false;
             });

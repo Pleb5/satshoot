@@ -6,18 +6,17 @@
     import { loginMethod } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
     import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
     }
 
     let { isOpen = $bindable() }: Props = $props();
-
-    const toaster = createToaster();
 
     let askingForNip07Permission = $state(false);
 
@@ -45,6 +44,7 @@
                 askingForNip07Permission = false;
                 toaster.error({
                     title: 'Browser extension rejected access!',
+                    duration: 60000, // 1 min
                 });
             }
         } else if (!window.nostr) {

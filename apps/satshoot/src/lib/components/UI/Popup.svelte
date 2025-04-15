@@ -2,6 +2,7 @@
     import Card from './Card.svelte';
     import Button from './Buttons/Button.svelte';
     import QuestionIcon from '../Icons/QuestionIcon.svelte';
+    import { onMount, onDestroy } from 'svelte';
 
     interface Props {
         isOpen: boolean;
@@ -19,9 +20,40 @@
         children,
     }: Props = $props();
 
+    // Reference to modal content container for click-outside detection
+    let modalRef: HTMLDivElement;
+
     function handleClose() {
         isOpen = false;
     }
+
+    // Handle clicks outside modal content
+    function handleClickOutside(event: MouseEvent) {
+        // Only close if click is outside modal content and modal is open
+        if (modalRef && !modalRef.contains(event.target as Node) && isOpen) {
+            handleClose();
+        }
+    }
+
+    // Handle keyboard events
+    function handleKeyDown(event: KeyboardEvent) {
+        // Close on Escape key if modal is open
+        if (event.key === 'Escape' && isOpen) {
+            handleClose();
+        }
+    }
+
+    // Set up event listeners when component mounts
+    onMount(() => {
+        document.addEventListener('click', handleClickOutside, true);
+        document.addEventListener('keydown', handleKeyDown);
+    });
+
+    // Clean up event listeners when component unmounts
+    onDestroy(() => {
+        document.removeEventListener('click', handleClickOutside, true);
+        document.removeEventListener('keydown', handleKeyDown);
+    });
 </script>
 
 <div
@@ -29,7 +61,7 @@
 >
     <div class="max-w-[1400px] w-full flex flex-col justify-start items-center px-[10px] relative">
         <div class="w-full flex flex-col justify-start items-center">
-            <div class="w-full max-w-[500px] justify-start items-center">
+            <div class="w-full max-w-[500px] justify-start items-center" bind:this={modalRef}>
                 <Card>
                     <div
                         class="flex flex-row justify-between items-center gap-[10px] pb-[5px] border-b-[1px] border-b-black-100 dark:border-b-white-100"

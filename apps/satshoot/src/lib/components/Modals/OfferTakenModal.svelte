@@ -1,5 +1,4 @@
 <script lang="ts">
-    import Popup from '../UI/Popup.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
 

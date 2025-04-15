@@ -99,64 +99,59 @@
 <Modal
     open={isOpen}
     onInteractOutside={() => (isOpen = false)}
-    contentBase="bg-surface-300-600 w-[50vw] sm:w-[40vw] md:w-[30vw] h-screen"
+    contentBase="flex flex-col gap-[20px] p-[20px] bg-white dark:bg-brightGray w-[50vw] sm:w-[40vw] md:w-[30vw] h-screen"
     positionerJustify="justify-end"
+    positionerPadding="p-0"
 >
     {#snippet content()}
-        <div class="flex flex-col grow gap-[20px] p-[20px] bg-white dark:bg-brightGray">
-            {#each profileMenuItems as { href, label, icon, callback }}
-                <Button
-                    {href}
-                    variant="text"
-                    classes={profileMenuItemClass}
-                    fullWidth
-                    onClick={() => {
-                        if (callback) callback();
+        {#each profileMenuItems as { href, label, icon, callback }}
+            <Button
+                {href}
+                variant="text"
+                classes={profileMenuItemClass}
+                fullWidth
+                onClick={() => {
+                    if (callback) callback();
 
-                        isOpen = false;
-                    }}
-                >
-                    <span class="w-6 text-center">
-                        {#if !icon.component}
-                            <i {...icon.props}></i>
-                        {:else}
-                            <icon.component {...icon.props} />
-                        {/if}
-                    </span>
-                    <span>{label}</span>
+                    isOpen = false;
+                }}
+            >
+                <span class="w-6 text-center">
+                    {#if !icon.component}
+                        <i {...icon.props}></i>
+                    {:else}
+                        <icon.component {...icon.props} />
+                    {/if}
+                </span>
+                <span>{label}</span>
+            </Button>
+        {/each}
+
+        <Button variant="text" classes={profileMenuItemClass} onClick={readyToWork}>
+            <span class="w-6 text-center">
+                <TowerBroadcastIcon extraClasses={''} />
+            </span>
+            <span>Announcement</span>
+        </Button>
+
+        <Button variant="text" classes={profileMenuItemClass} onClick={feedback}>
+            <span class="w-6 text-center">
+                <i class="fa-regular fa-comment"></i>
+            </span>
+            <span>Feedback</span>
+        </Button>
+
+        <div class="flex flex-col justify-end grow">
+            {#if $loggedIn}
+                <Button classes={extraClassesForLogoutBtn} onClick={onLogout} fullWidth>
+                    Logout
                 </Button>
-            {/each}
-
-            <Button variant="text" classes={profileMenuItemClass} onClick={readyToWork}>
-                <span class="w-6 text-center">
-                    <TowerBroadcastIcon extraClasses={''} />
-                </span>
-                <span>Announcement</span>
-            </Button>
-
-            <Button variant="text" classes={profileMenuItemClass} onClick={feedback}>
-                <span class="w-6 text-center">
-                    <i class="fa-regular fa-comment"></i>
-                </span>
-                <span>Feedback</span>
-            </Button>
-
-            <div class="flex flex-col justify-end grow">
-                {#if $loggedIn}
-                    <Button
-                        classes="{profileMenuItemClass} {extraClassesForLogoutBtn} "
-                        onClick={onLogout}
-                        fullWidth
-                    >
-                        Logout
-                    </Button>
-                {/if}
-            </div>
-            <div class="flex justify-center">
-                <a class="anchor" href="https://github.com/Pleb5/satshoot" target="_blank">
-                    <span>Running v0.3.0</span>
-                </a>
-            </div>
+            {/if}
+        </div>
+        <div class="flex justify-center">
+            <a class="anchor" href="https://github.com/Pleb5/satshoot" target="_blank">
+                <span>Running v0.3.0</span>
+            </a>
         </div>
     {/snippet}
 </Modal>

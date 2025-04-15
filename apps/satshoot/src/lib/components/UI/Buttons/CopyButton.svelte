@@ -1,8 +1,6 @@
 <script lang="ts">
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+    import { toaster } from '$lib/stores/toaster';
     import Button from './Button.svelte';
-
-    const toaster = createToaster();
 
     interface Props {
         text: string;

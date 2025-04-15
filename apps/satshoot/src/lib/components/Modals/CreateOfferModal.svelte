@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
@@ -13,11 +12,9 @@
     import { insertThousandSeparator } from '$lib/utils/misc';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
@@ -120,6 +117,7 @@
 
                 toaster.warning({
                     title: 'Set up an LN Address to receive payments!',
+                    duration: 60000, // 1 min
                     action: {
                         label: 'Go to Profile',
                         onClick: () => goto('/' + $currentUser!.npub),
@@ -130,6 +128,7 @@
             if ($currentUser && !$wallet) {
                 toaster.warning({
                     title: 'Set up a Nostr Wallet to receive payments in ecash tokens!',
+                    duration: 60000, // 1 min
                     action: {
                         label: 'Go to Wallet',
                         onClick: () => goto('/my-cashu-wallet'),

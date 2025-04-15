@@ -26,7 +26,7 @@
         NDKWalletStatus,
         type WalletProofChange,
     } from '@nostr-dev-kit/ndk-wallet';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
@@ -39,15 +39,13 @@
     import RemoveMintModal from '$lib/components/Modals/RemoveMintModal.svelte';
     import ConfirmationDialog from '$lib/components/UI/ConfirmationDialog.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     enum Tab {
         Mints,
         Relays,
     }
 
-    const toaster = createToaster();
-
-    let showUpdateNameModal = $state(false);
     let showAddRelayModal = $state(false);
     let showRelayRemovalConfirmation = $state(false);
     let relayToRemove = $state<string | null>(null);
@@ -56,7 +54,6 @@
     let showMintModal = $state(false);
     let showExploreMintsModal = $state(false);
     let tempWallet = $state<NDKCashuWallet | null>(null);
-    let showImportEcashWallet = $state(false);
     let showRecoverEcashWallet = $state(false);
     let showBackupEcashWallet = $state(false);
     let showCleanWalletConfirmationDialog = $state(false);
@@ -151,6 +148,7 @@
                 title:
                     'Receiver Cashu info does not match with Nostr Wallet info.' +
                     ' It is recommended to sync them.',
+                duration: 60000, // 1 min
                 action: {
                     label: 'Sync',
                     onClick: async () => {
@@ -460,6 +458,7 @@
             }
             toaster.success({
                 title: `${amountDestroyed} spent sats cleaned from wallet`,
+                duration: 60000, // 1 min
             });
         };
 

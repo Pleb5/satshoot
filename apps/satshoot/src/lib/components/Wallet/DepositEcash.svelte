@@ -2,10 +2,9 @@
     import { type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
-    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
-    const toaster = createToaster();
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         cashuWallet: NDKCashuWallet;
@@ -49,6 +48,7 @@
             closeModal();
             toaster.error({
                 title: `Failed to deposit: \n${error}`,
+                duration: 60000, // 1 min
             });
         });
 

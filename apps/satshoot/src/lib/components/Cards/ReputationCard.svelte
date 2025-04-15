@@ -10,8 +10,8 @@
         freelancerReviews,
     } from '$lib/stores/reviews';
     import { wot, wotLoaded } from '$lib/stores/wot';
-    import { averageToRatingText, type RatingConsensus } from '$lib/utils/helpers';
-    import { abbreviateNumber, insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
+    import { averageToRatingText } from '$lib/utils/helpers';
+    import { abbreviateNumber, SatShootPubkey } from '$lib/utils/misc';
     import {
         NDKKind,
         NDKNutzap,
@@ -425,7 +425,7 @@
                 {:else} 
                     <p class="font-[500]">
                         <span class="font-[300]">
-                            {insertThousandSeparator(allEarnings) + ' sats'}
+                            {abbreviateNumber(allEarnings) + ' sats'}
                         </span>
                     </p>
                 {/if}
@@ -451,7 +451,7 @@
                 {:else} 
                     <p class="font-[500]">
                         <span class="font-[300]">
-                            {insertThousandSeparator(allPayments) + ' sats'}
+                            {abbreviateNumber(allPayments) + ' sats'}
                         </span>
                     </p>
                 {/if}
@@ -465,7 +465,7 @@
             {:else} 
                 <p class="font-[500]">
                     <span class="font-[300]">
-                        {insertThousandSeparator(allPledges) + ' sats'}
+                        {abbreviateNumber(allPledges) + ' sats'}
                     </span>
                 </p>
             {/if}

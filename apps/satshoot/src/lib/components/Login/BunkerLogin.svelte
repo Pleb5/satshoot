@@ -11,20 +11,19 @@
     } from '$lib/utils/login';
     import { bunkerPerms } from '$lib/utils/misc';
     import { NDKNip46Signer, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import { nip19 } from 'nostr-tools';
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
     }
 
     let { isOpen = $bindable() }: Props = $props();
-
-    const toaster = createToaster();
 
     let statusMessage = $state('');
     let statusColor = 'text-tertiary-200-700';
@@ -132,13 +131,9 @@
             }
         } catch (error) {
             toaster.error({
-                title: `
-                        <p>Could not connect to Bunker!</p>
-                        <p>
-                        <span> Reason: </span>
-                        <span> ${error} </span>
-                        </p>
-                    `,
+                title: `Could not connect to Bunker!`,
+                description: `Reason: ${error}`,
+                duration: 60000, // 1 min
             });
             console.error(error);
             isOpen = false;

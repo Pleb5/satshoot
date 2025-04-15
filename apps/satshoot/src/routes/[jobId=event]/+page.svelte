@@ -10,6 +10,7 @@
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import ndk, { connected } from '$lib/stores/ndk';
+    import { toaster } from '$lib/stores/toaster';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
@@ -26,7 +27,7 @@
         NDKEvent,
     } from '@nostr-dev-kit/ndk';
     import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import { onDestroy, onMount } from 'svelte';
 
     enum OfferTab {
@@ -34,8 +35,6 @@
         Won,
         Lost,
     }
-
-    const toaster = createToaster();
 
     const subOptions: NDKSubscriptionOptions = {
         closeOnEose: false,
@@ -220,6 +219,7 @@
         if (!jobPost) {
             toaster.error({
                 title: 'Job is not loaded yet!',
+                duration: 60000, // 1 min
             });
 
             return;

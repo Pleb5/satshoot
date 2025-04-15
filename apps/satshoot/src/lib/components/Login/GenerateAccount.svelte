@@ -7,7 +7,7 @@
     import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
     import { hexToBytes } from '@noble/hashes/utils';
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import { generateSeedWords, privateKeyFromSeedWords } from 'nostr-tools/nip06';
     import { nsecEncode } from 'nostr-tools/nip19';
     import { onMount } from 'svelte';
@@ -15,14 +15,13 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import SeedWords from './SeedWords.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
     }
 
     let { isOpen = $bindable() }: Props = $props();
-
-    const toaster = createToaster();
 
     const seedWords = generateSeedWords();
     const generatedSeedWords = seedWords.split(' ');

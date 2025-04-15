@@ -49,7 +49,7 @@
                 bind:value={words[index]}
                 disabled={inputsDisabled}
                 placeholder="Seed word..."
-                classes={!validateSingleSeedWord(words[index]) ? 'input-error' : ''}
+                classes={!validateSingleSeedWord(words[index]) ? 'text-error-500' : ''}
                 noBorder
                 notRounded
             />

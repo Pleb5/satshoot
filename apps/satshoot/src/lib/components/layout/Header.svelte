@@ -87,7 +87,7 @@
                             <button onclick={() => (showAppMenu = !showAppMenu)}>
                                 <!-- Avatar image -->
                                 <Avatar
-                                    classes="rounded-full border-white placeholder-white cursor-pointer w-12 sm:w-14"
+                                    classes="rounded-full border-white placeholder-white cursor-pointer size-12 sm:size-14"
                                     border="border-4 border-surface-300-600 hover:border-primary-500!"
                                     src={profilePicture ??
                                         getRoboHashPicture($currentUser?.pubkey ?? '')}

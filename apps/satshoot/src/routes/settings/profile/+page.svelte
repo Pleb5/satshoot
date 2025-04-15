@@ -6,6 +6,7 @@
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
     import ndk from '$lib/stores/ndk';
+    import { toaster } from '$lib/stores/toaster';
     import currentUser from '$lib/stores/user';
     import { broadcastUserProfile } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
@@ -15,18 +16,17 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
 
-    const toaster = createToaster();
-
+    let initialized = $state(false);
     let userProfile = $state<NDKUserProfile>({});
     let updating = $state(false);
 
     const redirectPath = $derived(page.url.searchParams.get('redirectPath'));
 
     $effect(() => {
-        if ($currentUser) {
+        if ($currentUser && !initialized) {
             setProfile($currentUser);
+            initialized = true;
         }
     });
 
@@ -56,9 +56,9 @@
             userProfile = profileFromEvent(profile);
         } else {
             toaster.error({
-                title: `<p class='text-center font-bold'>Could NOT load Profile!</p>
-                          <p class='text-center font-bold'>Try to refresh page!</p>
-                         `,
+                title: `Could NOT load Profile!`,
+                description: `Try to refresh page!`,
+                duration: 60000, // 1 min
             });
         }
     }

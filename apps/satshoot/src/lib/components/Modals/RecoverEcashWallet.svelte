@@ -1,6 +1,6 @@
 <script lang="ts">
     import currentUser from '$lib/stores/user';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import { getFileExtension } from '$lib/utils/misc';
     import { decryptSecret } from '$lib/utils/crypto';
     import Button from '../UI/Buttons/Button.svelte';
@@ -9,8 +9,7 @@
     import { parseAndValidateBackup, recoverWallet } from '$lib/wallet/cashu';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
-
-    const toaster = createToaster();
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;

@@ -15,7 +15,7 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { createToaster } from '@skeletonlabs/skeleton-svelte';
+
     import { nip19 } from 'nostr-tools';
     import ReputationCard from './ReputationCard.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
@@ -31,14 +31,13 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     enum FollowStatus {
         isFollowing,
         beingFollowed,
         none,
     }
-
-    const toaster = createToaster();
 
     interface Props {
         user: NDKUser;

@@ -1,6 +1,5 @@
 <script lang="ts">
     import Button from '../UI/Buttons/Button.svelte';
-    import Popup from '../UI/Popup.svelte';
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import ShareJobModal from './ShareJobModal.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
