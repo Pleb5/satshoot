@@ -107,7 +107,9 @@
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
             <div class="flex flex-row gap-[5px] grow-1">
-                <label class="font-[500]" for="attach-satshoot-wot"> Browser Notifications </label>
+                <label class="font-[500]" for="browser-notifications-enabled">
+                    Browser Notifications
+                </label>
             </div>
             <div class="flex flex-row justify-center items-center relative">
                 <input
