@@ -1,7 +1,7 @@
 <script lang="ts">
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 
-    import ndk from '$lib/stores/session';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
@@ -11,79 +11,79 @@
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import Announcement from '$lib/components/Modals/Announcement.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { onDestroy, onMount } from 'svelte';
+    import { onDestroy } from 'svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
 
     let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
     let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
 
-    let newJobs = $state<NDKEventStore<ExtendedBaseType<TicketEvent>>>();
-    let jobList = $state<Set<TicketEvent>>(new Set());
+    let newJobs = $ndk.storeSubscribe(
+        {
+            kinds: [NDKKind.FreelanceTicket],
+        },
+        {
+            autoStart: false,
+            closeOnEose: false,
+            groupable: false,
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        },
+        TicketEvent
+    );
+
+    let jobList = $derived.by(() => {
+        let copiedJobs = [...$newJobs]
+        orderEventsChronologically(copiedJobs);
+        copiedJobs = copiedJobs.filter((t: TicketEvent) => {
+            const newJob = t.status === TicketStatus.New;
+            const partOfWot = $wot.has(t.pubkey);
+
+            return newJob && partOfWot;
+        })
+
+        if (filterList.length > 0) {
+            copiedJobs = filterJobs(copiedJobs);
+        }
+
+        return new Set(copiedJobs);
+    });
     // tracks if user-defined filtering returned anything
-    let noResults = $state(false);
-    let currentPage = $state(1);
+    let noResults = $derived.by(() => {
+        if (filterList.length > 0 && jobList.size === 0) return true;
+
+        return false;
+    });
+    // We can avoid $effect by reacting to filterlist length but can set this regardless
+    let currentPage = $derived(filterList.length > 0 ? 1 : 1);
 
     let showAnnouncementModal = $state(false);
 
-    $effect(() => {
-        if ($newJobs && filterList) {
-            // We just received a job
-            orderEventsChronologically($newJobs);
-            jobList = new Set(
-                $newJobs.filter((t: TicketEvent) => {
-                    // New job check: if a job status is changed this removes not new jobs
-                    const newJob = t.status === TicketStatus.New;
-                    // wot is always at least 3 if there is a user logged in
-                    // only update filter if other users are also present
-                    const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
-
-                    return newJob && partOfWot;
-                })
-            );
-
-            if (filterList.length > 0) {
-                filterJobs();
-            }
-        }
-    });
-
-    function filterJobs() {
+    function filterJobs(jobListToFilter: TicketEvent[]): TicketEvent[] {
         // We need to check all jobs against all filters
-        if (filterList.length > 0) {
-            const filteredJobList: Set<TicketEvent> = new Set();
-            jobList.forEach((job: TicketEvent) => {
-                filterList.forEach((filter: string) => {
-                    const lowerCaseFilter = filter.toLowerCase();
+        const filteredJobList: Set<TicketEvent> = new Set();
+        jobListToFilter.forEach((job: TicketEvent) => {
+            filterList.forEach((filter: string) => {
+                const lowerCaseFilter = filter.toLowerCase();
 
-                    const lowerCaseTitle = job.title.toLowerCase();
-                    const lowerCaseDescription = job.description.toLowerCase();
+                const lowerCaseTitle = job.title.toLowerCase();
+                const lowerCaseDescription = job.description.toLowerCase();
 
-                    let tagsContain: boolean = false;
-                    job.tags.forEach((tag: NDKTag) => {
-                        if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
-                            tagsContain = true;
-                        }
-                    });
-
-                    const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-                    const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
-
-                    if (titleContains || descContains || tagsContain) {
-                        filteredJobList.add(job);
+                let tagsContain: boolean = false;
+                job.tags.forEach((tag: NDKTag) => {
+                    if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
+                        tagsContain = true;
                     }
                 });
+
+                const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
+                const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+
+                if (titleContains || descContains || tagsContain) {
+                    filteredJobList.add(job);
+                }
             });
+        });
 
-            if (filteredJobList.size === 0) noResults = true;
-
-            jobList = filteredJobList;
-            currentPage = 1;
-        }
-    }
-
-    function readyToWork() {
-        showAnnouncementModal = true;
+        return Array.from(filteredJobList);
     }
 
     function handlePrev() {
@@ -94,26 +94,15 @@
         currentPage += 1;
     }
 
-    onMount(() => {
-        checkRelayConnections();
-
-        newJobs = $ndk.storeSubscribe(
-            {
-                kinds: [NDKKind.FreelanceTicket],
-            },
-            {
-                autoStart: true,
-                closeOnEose: false,
-                groupable: false,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            },
-            TicketEvent
-        );
-        $newJobs = $newJobs;
+    $effect(() => {
+        if ($sessionInitialized) {
+            checkRelayConnections();
+            newJobs.startSubscription();
+        }
     });
 
     onDestroy(() => {
-        if (newJobs) newJobs.unsubscribe();
+        if (newJobs) newJobs.empty();
     });
 
     const paginationBtnClasses =

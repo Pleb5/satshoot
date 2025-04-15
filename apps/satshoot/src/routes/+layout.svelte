@@ -7,7 +7,7 @@
     import '@fortawesome/fontawesome-free/css/regular.css';
     import '@fortawesome/fontawesome-free/css/solid.css';
 
-    import ndk, { bunkerNDK, sessionPK } from '$lib/stores/session';
+    import ndk, { bunkerNDK, sessionInitialized, sessionPK } from '$lib/stores/session';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
 
     import { Dexie } from 'dexie';

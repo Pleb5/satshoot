@@ -1,59 +1,53 @@
 <script lang="ts">
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/session';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import JobCard from '../Jobs/JobCard.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import { onDestroy } from 'svelte';
 
     // State
-    let newJobs = $state<NDKEventStore<ExtendedBaseType<TicketEvent>>>();
-    let jobList = $state<Set<TicketEvent>>(new Set());
+    const newJobs = $ndk.storeSubscribe(
+                {
+                    kinds: [NDKKind.FreelanceTicket],
+                },
+                {
+                    autoStart: false,
+                    closeOnEose: false,
+                    groupable: false,
+                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                },
+                TicketEvent
+            );
 
-    // Initialize jobs subscription
-    $effect(() => {
-        checkRelayConnections();
+    let jobList = $derived.by(() => {
+        const copiedJobs = [...$newJobs]
+        orderEventsChronologically(copiedJobs);
 
-        const subscription = $ndk.storeSubscribe(
-            {
-                kinds: [NDKKind.FreelanceTicket],
-            },
-            {
-                autoStart: true,
-                closeOnEose: false,
-                groupable: false,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            },
-            TicketEvent
-        );
-
-        newJobs = subscription;
-
-        return () => {
-            subscription?.unsubscribe();
-        };
-    });
-
-    // Update job list when new jobs arrive
-    $effect(() => {
-        if (!$newJobs) return;
-
-        orderEventsChronologically($newJobs);
-
-        const newJobList = $newJobs.filter((t: TicketEvent) => {
-            /// New job check: if a job status is changed this removes not new jobs
+        const newJobList = copiedJobs.filter((t: TicketEvent) => {
             const newJob = t.status === TicketStatus.New;
-            // wot is always at least 3 if there is a user logged in
-            // only update filter if other users are also present
-            const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
+            const partOfWot = $wot.has(t.pubkey);
 
             return newJob && partOfWot;
         });
 
-        jobList = new Set(newJobList.slice(0, 8));
+        return new Set(newJobList.slice(0, 8));
     });
+
+    // Initialize jobs subscription
+    $effect(() => {
+        if ($sessionInitialized) {
+            checkRelayConnections();
+
+            newJobs.startSubscription();
+        }
+    });
+
+    onDestroy(() => {
+        newJobs.empty();
+    })
 
     const viewMoreBtnClasses =
         'transform scale-100 w-full max-w-[200px] hover:max-w-[225px] dark:text-white dark:border-white-100 ';
