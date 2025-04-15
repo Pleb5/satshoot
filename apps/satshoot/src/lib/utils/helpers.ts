@@ -35,7 +35,7 @@ import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { dev } from '$app/environment';
 import { connected, sessionPK } from '../stores/ndk';
-import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
+import { retriesLeft, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
 import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
 import { createToaster } from '@skeletonlabs/skeleton-svelte';
@@ -385,26 +385,28 @@ export async function checkRelayConnections() {
     const $ndk = get(ndk);
 
     const anyConnectedRelays = $ndk.pool.stats().connected !== 0;
+    console.log('Checking relay connections')
+    console.log(`Connected relays: ${$ndk.pool.stats().connected}`)
 
     if (!anyConnectedRelays) {
         connected.set(false);
-        let retriesLeft = get(retryConnection);
-        if (retriesLeft > 0) {
-            retriesLeft -= 1;
-            retryConnection.set(retriesLeft);
+        let $retriesLeft = get(retriesLeft);
+        if ($retriesLeft > 0) {
+            $retriesLeft -= 1;
+            retriesLeft.set($retriesLeft);
             // Try to reconnect to relays, timeout in 2sec for each relay
-            $ndk.pool.connect(2000);
+            $ndk.connect(retryDelay);
             // Re-check recursively when retry delay expires
             // This sets an explicit cap on retries.
-            // After retryDelay X retryConnection amount of time is elapsed
+            // After retryDelay X retriesLeft amount of time is elapsed
             // retry process is concluded and either we reconnected or
-            // user needs to fix network and reload page (toast with btn is shown)
+            // user needs to fix network and  possibly reload page
             setTimeout(checkRelayConnections, retryDelay);
         }
     } else {
         // We are sufficiently connected
         connected.set(true);
-        retryConnection.set(maxRetryAttempts);
+        retriesLeft.set(maxRetryAttempts);
     }
 }
 

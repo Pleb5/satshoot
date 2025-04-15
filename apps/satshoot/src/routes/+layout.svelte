@@ -13,7 +13,7 @@
     import { Dexie } from 'dexie';
 
     import { updated, pollUpdated } from '$lib/stores/app-updated';
-    import { online, retryConnection } from '$lib/stores/network';
+    import { online, retriesLeft } from '$lib/stores/network';
     import currentUser, { loggedIn, loggingIn, loginMethod, mounted } from '$lib/stores/user';
 
     import {
@@ -56,7 +56,7 @@
     // Skeleton Modals
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
     // Skeleton stores init
-    import { beforeNavigate } from '$app/navigation';
+    import { beforeNavigate, goto } from '$app/navigation';
     import Footer from '$lib/components/layout/Footer.svelte';
     import Header from '$lib/components/layout/Header.svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
@@ -102,13 +102,13 @@
     let followSubscription = $state<NDKSubscription>();
 
     $effect(() => {
-        if ($retryConnection === 0) {
+        if ($retriesLeft === 0) {
             toaster.warning({
                 title: 'Could not reconnect to Relays!',
                 action: {
-                    label: 'Reload page',
+                    label: 'Check relays',
                     onClick: () => {
-                        window.location.reload();
+                        goto('/settings/relays');
                     },
                 },
             });
