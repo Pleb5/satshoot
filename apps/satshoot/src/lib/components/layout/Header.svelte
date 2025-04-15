@@ -23,7 +23,7 @@
     let profilePicture = $state('');
 
     $effect(() => {
-        if ($currentUser) fetchUserProfile();
+        if ($loggedIn) fetchUserProfile();
     });
 
     const fetchUserProfile = async () => {
