@@ -51,7 +51,7 @@
     import { page } from '$app/state';
 
     // Skeleton Toast
-    import { Toaster } from '@skeletonlabs/skeleton-svelte';
+    import Toaster from '$lib/components/UI/Toasts/Toaster.svelte';
     import { toaster } from '$lib/stores/toaster';
 
     // Skeleton Modals
@@ -72,6 +72,7 @@
         getModeUserPrefers,
         setModeUserPrefers,
     } from '$lib/utils/lightSwitch';
+
     interface Props {
         children?: import('svelte').Snippet;
     }
