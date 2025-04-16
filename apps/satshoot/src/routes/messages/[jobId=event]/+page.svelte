@@ -454,7 +454,7 @@
                                         <Avatar
                                             src={contact.person.profile?.picture ??
                                                 getRoboHashPicture(contact.person.pubkey)}
-                                            classes="w-8"
+                                            size="size-8"
                                             name={contact.person.profile?.name ??
                                                 contact.person.npub.substring(0, 10)}
                                         />
@@ -490,7 +490,7 @@
                                                             getRoboHashPicture(
                                                                 currentPerson.pubkey
                                                             )}
-                                                        classes="w-8"
+                                                        size="size-8"
                                                         name={currentPerson.profile?.name ??
                                                             currentPerson.npub.substring(0, 15)}
                                                     />
@@ -541,7 +541,7 @@
                                                                         getRoboHashPicture(
                                                                             contact.person.pubkey
                                                                         )}
-                                                                    classes="w-8"
+                                                                    size="size-8"
                                                                     name={contact.person.profile
                                                                         ?.name ??
                                                                         contact.person.npub.substring(
