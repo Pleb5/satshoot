@@ -17,15 +17,13 @@
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
-    import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import { jobPostSuccessState } from '$lib/stores/job-post-success';
 
     let showLoginModal = $state(false);
-    let showJobPostSuccessModal = $state(false);
-    let postedJob = $state<TicketEvent | null>(null);
 
     let tagInput = $state('');
     let tagList = $state<string[]>([]);
@@ -191,9 +189,13 @@
 
                     $jobToEdit = null;
 
-                    postedJob = job;
-                    showJobPostSuccessModal = true;
+                    // Set the job post success state in the svelte writable store before navigation
+                    jobPostSuccessState.set({
+                        showModal: true,
+                        jobData: job,
+                    });
 
+                    // Navigate to profile page
                     $profileTabStore = ProfilePageTabs.Jobs;
                     goto('/' + $currentUser.npub + '/');
                 } catch (e) {
@@ -210,7 +212,8 @@
             }
         } else {
             toaster.error({
-                title: '<p style="text-align:center;"><strong>Invalid Job!</strong></p><br/>Please fill in a <strong>valid Job Title</strong> and <strong>Description</strong> before posting!',
+                title: 'Invalid Job!',
+                description: `Please fill in a valid 'Job Title' and 'Description'!`,
             });
         }
     }
@@ -341,7 +344,3 @@
 </div>
 
 <LoginModal bind:isOpen={showLoginModal} />
-
-{#if postedJob}
-    <JobPostSuccess bind:isOpen={showJobPostSuccessModal} job={postedJob} />
-{/if}

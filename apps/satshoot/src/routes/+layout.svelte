@@ -72,6 +72,8 @@
         getModeUserPrefers,
         setModeUserPrefers,
     } from '$lib/utils/lightSwitch';
+    import { jobPostSuccessState } from '$lib/stores/job-post-success';
+    import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -581,3 +583,11 @@
 </div>
 
 <DecryptSecretModal bind:isOpen={showDecryptSecretModal} callback={decryptSecretModalCallback} />
+
+<!-- Job Post Success Modal -->
+{#if $jobPostSuccessState.showModal && $jobPostSuccessState.jobData}
+    <JobPostSuccess
+        bind:isOpen={$jobPostSuccessState.showModal}
+        job={$jobPostSuccessState.jobData}
+    />
+{/if}
