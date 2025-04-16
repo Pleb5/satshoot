@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import ndk from '$lib/stores/session';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
@@ -16,45 +16,48 @@
         type NDKSigner,
         type NDKUser,
     } from '@nostr-dev-kit/ndk';
-    import { browser } from '$app/environment';
     import MessageCard from '$lib/components/Cards/MessageCard.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import { getRoboHashPicture, orderEventsChronologically } from '$lib/utils/helpers';
+    import { checkRelayConnections, getRoboHashPicture, orderEventsChronologically } from '$lib/utils/helpers';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
     import { toaster } from '$lib/stores/toaster';
+    import { browser } from '$app/environment';
 
     interface Contact {
         person: NDKUser;
         selected: boolean;
     }
 
-    // ======================
-    // 1. URL & Search Params
-    // ======================
     const searchQuery = $derived(page.url.searchParams.get('searchTerms'));
     const searchTerms = $derived(searchQuery ? searchQuery.split(',') : []);
     const jobAddress = idFromNaddr(page.params.jobId);
     const relaysFromURL = relaysFromNaddr(page.params.jobId).split(',');
     let titleLink = '/' + page.params.jobId;
-    let jobTitle = $state('Job: ?');
-
-    // ======================
-    // 2. State Definitions
-    // ======================
     let job = $state<TicketEvent | null>(null);
+    let jobTitle = $derived.by(() => {
+        if (!job || !job.title) return 'Job: ?'
+
+        return job.title.length < 21 
+            ? job.title 
+            : job.title.substring(0, 20) + '...';
+        
+    });
     let myJob = $state(false);
     let initialized = $state(false);
+
+    let currentPerson = $state<NDKUser>();
     let currentMessage = $state('');
-    let winner = $state(''); // Pubkey of winning offer maker
+    let winner = $state('');
     let contactsOpen = $state(false);
     let disablePrompt = $state<boolean>();
     let hideChat = $state(false);
     let hideSearchIcon = $state(false);
-    let accordionState = $state(['contacts']);
+    let accordionState = $derived([(currentPerson?.pubkey ?? '')]);
+    let mounted = $state(false);
 
     // DOM Elements
     let elemPage = $state<HTMLElement>();
@@ -63,17 +66,6 @@
     let elemInput = $state<HTMLElement>();
     let elemContactsMobileView = $state<HTMLElement>();
 
-    // Contact List
-    let people = $state<Contact[]>([]);
-    let currentPerson = $state<NDKUser>();
-
-    // Message Stores
-    let jobMessages = $state<NDKEventStore<NDKEvent>>(); // Messages related to the job
-    let offerStore = $state<NDKEventStore<ExtendedBaseType<OfferEvent>>>();
-
-    // ======================
-    // 3. Derived Values
-    // ======================
     const chatHeight = $derived.by(() => {
         if (elemPage && elemHeader && elemInput && elemContactsMobileView) {
             const paddingsAndMargins = elemContactsMobileView.offsetHeight ? 95 : 80;
@@ -87,13 +79,6 @@
         }
     });
 
-    const wotFilteredMessages = $derived.by(() => {
-        if (!$currentUser || !$jobMessages?.length) return [];
-        return $jobMessages.filter((message) => {
-            const peer = peerFromMessage(message);
-            return peer && $wot?.size > 2 && $wot.has(peer);
-        });
-    });
 
     const currentPersonMessages = $derived.by(() => {
         if (!currentPerson || !wotFilteredMessages.length) return [];
@@ -111,116 +96,145 @@
         return copy;
     });
 
-    // ======================
-    // 4. Initial Setup
-    // ======================
-    // Add relays from URL
-    if (relaysFromURL.length > 0) {
-        relaysFromURL.forEach((relayURL: string) => {
-            if (relayURL) {
-                $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
-            }
+    const messageSubOptions: NDKSubscribeOptions = {
+        autoStart: false,
+        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        closeOnEose: false,
+        groupable: false,
+    };
+
+    const messageFilters:NDKFilter[] = [
+        {
+            kinds: [NDKKind.EncryptedDirectMessage],
+            '#t': [jobAddress],
+            limit: 50,
+        },
+        {
+            kinds: [NDKKind.EncryptedDirectMessage],
+            '#t': [jobAddress],
+            limit: 50,
+        },
+    ];
+
+    const jobMessages = $ndk.storeSubscribe(messageFilters, messageSubOptions);
+
+    const wotFilteredMessages = $derived.by(() => {
+        if (!$currentUser || !$jobMessages?.length) return [];
+        return $jobMessages.filter((message) => {
+            const peer = peerFromMessage(message);
+            return peer && $wot.has(peer);
         });
+    });
+
+    // Contact List
+    let people = $derived.by(() => {
+        const contactList: Contact[] = [];
+
+        if (job && $currentUser) {
+            if($currentUser?.pubkey !== job?.pubkey) {
+                addPerson(job.pubkey, contactList)
+            } else if ($offerMakerToSelect) {
+                addPerson($offerMakerToSelect, contactList)
+            } else if ($selectedPerson?.split('$')[1] === jobAddress) {
+                const pubkey = $selectedPerson.split('$')[0];
+                addPerson(pubkey, contactList)
+            }
+        }
+
+        if (myJob) {
+            $offerStore.forEach((offer) => {
+                if ($wot.has(offer.pubkey)) {
+                    addPerson(offer.pubkey, contactList);
+                }
+            });
+        }
+
+        wotFilteredMessages.forEach((message) => {
+            const peer = peerFromMessage(message);
+            if (peer && $wot.has(peer)) addPerson(peer, contactList);
+        });
+
+        return contactList;
+    });
+
+    async function addPerson(pubkey: string, people: Contact[]) {
+        if (people.some((c) => c.person.pubkey === pubkey)) return;
+
+        // We havent added this person yet
+        const person = $ndk.getUser({ pubkey: pubkey });
+        // console.log('adding new person', person)
+        const contact = { person: person, selected: false };
+
+        people.push(contact);
+
+        await person.fetchProfile();
     }
 
-    // Define offers filter
+    const offersSubOptions: NDKSubscribeOptions = {
+        autoStart: false,
+        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        closeOnEose: false,
+    };
+
     let offersFilter: NDKFilter<NDKKind.FreelanceOffer> = {
         kinds: [NDKKind.FreelanceOffer],
         '#a': [jobAddress],
     };
 
-    // ======================
-    // 5. Effect Handlers
-    // ======================
-    // Handle adding people from offers
-    $effect(() => {
-        if (myJob && $offerStore) {
-            $offerStore.forEach((offer) => {
-                if ($wot?.size > 1 && $wot.has(offer.pubkey)) {
-                    addPerson(offer.pubkey);
-                }
-            });
-        }
-    });
-
-    // Handle adding people from messages
-    $effect(() => {
-        if ($wot?.size > 2) {
-            wotFilteredMessages.forEach((message) => {
-                const peer = peerFromMessage(message);
-                if (peer && $wot.has(peer)) addPerson(peer);
-            });
-        }
-    });
-
-    // Handle scrolling when messages change
-    $effect(() => {
-        if (orderedMessages.length && elemChat) {
-            setTimeout(() => scrollChatBottom('smooth'), 0);
-        }
-    });
+    let offerStore = $ndk.storeSubscribe<OfferEvent>(
+        offersFilter,
+        offersSubOptions,
+        OfferEvent
+    ); 
 
     // Initial setup effect
     $effect(() => {
-        if (!$currentUser || !job || initialized) return;
+        if ($sessionInitialized && !initialized) {
+            initialized = true;
 
-        initialized = true;
-
-        // START MESSAGE STORE SUB
-        const messageFilters = createMessageFilters();
-        jobMessages = $ndk.storeSubscribe(messageFilters, getSubscriptionOptions());
-
-        if ($currentUser.pubkey !== job.pubkey) {
-            initializeAsNonOwner();
-        } else {
-            initializeAsOwner();
-        }
-    });
-
-    // UI state effects
-    $effect(() => {
-        if (browser) {
-            if (contactsOpen) {
-                onContactListExpanded();
-            } else {
-                onContactListCollapsed();
+            // Add relays from URL
+            if (relaysFromURL.length > 0) {
+                relaysFromURL.forEach((relayURL: string) => {
+                    if (relayURL) {
+                        $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
+                    }
+                });
             }
+
+            checkRelayConnections();
+
+            init();
         }
     });
 
-    // ======================
-    // 6. Helper Functions
-    // ======================
+    const init = async () => {
+        const jobEvent = await $ndk.fetchEvent(
+            jobAddress,
+            // Try to fetch latest state of the job
+            // but fall back to cache
+            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
+        );
 
-    function createMessageFilters(): NDKFilter<NDKKind.EncryptedDirectMessage>[] {
-        return [
-            {
-                kinds: [NDKKind.EncryptedDirectMessage],
-                '#p': [$currentUser!.pubkey],
-                '#t': [jobAddress],
-                limit: 50_000,
-            },
-            {
-                kinds: [NDKKind.EncryptedDirectMessage],
-                authors: [$currentUser!.pubkey],
-                '#t': [jobAddress],
-                limit: 50_000,
-            },
-        ];
-    }
+        if (jobEvent) {
+            job = TicketEvent.from(jobEvent);
 
-    function getSubscriptionOptions() {
-        return {
-            autoStart: true,
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            closeOnEose: false,
-            groupable: false,
-        };
-    }
+            messageFilters[0]['#p'] = [$currentUser!.pubkey],
+            messageFilters[1].authors = [$currentUser!.pubkey],
 
-    // Invoke this function when it's not user's job
+            jobMessages.startSubscription();
+            offerStore.startSubscription();
+
+            if ($currentUser!.pubkey !== job.pubkey) {
+                initializeAsNonOwner();
+            } else {
+                initializeAsOwner();
+            }
+        } else {
+            console.warn('Job could not be fetched in chat page!')
+        }
+    };
+
     function initializeAsNonOwner() {
-        addPerson(job!.pubkey);
         const contact = people.find((c) => c.person.pubkey === job!.pubkey);
         if (contact) selectCurrentPerson(contact);
     }
@@ -241,30 +255,29 @@
 
     function handlePreselectedContacts() {
         if ($offerMakerToSelect) {
-            handleOfferMakerSelection();
+            const contact = people.find((c) => c.person.pubkey === $offerMakerToSelect);
+            if (contact) selectCurrentPerson(contact);
         } else if ($selectedPerson?.split('$')[1] === jobAddress) {
-            handleSavedSelection();
+            const pubkey = $selectedPerson.split('$')[0];
+            const contact = people.find((c) => c.person.pubkey === pubkey);
+            if (contact) selectCurrentPerson(contact);
         }
     }
 
-    function handleOfferMakerSelection() {
-        addPerson($offerMakerToSelect);
-        const contact = people.find((c) => c.person.pubkey === $offerMakerToSelect);
-        if (contact) selectCurrentPerson(contact);
-        $offerMakerToSelect = '';
-    }
+    $effect.root(() => {
+        let previousLength = 0;
 
-    function handleSavedSelection() {
-        const pubkey = $selectedPerson.split('$')[0];
-        addPerson(pubkey);
-        const contact = people.find((c) => c.person.pubkey === pubkey);
-        if (contact) selectCurrentPerson(contact);
-    }
+        $effect(() => {
+            const currentLength = orderedMessages.length;
 
-    // ======================
-    // 7. Core Functions
-    // ======================
-    // Message Functions
+            if (currentLength > previousLength && currentLength > 0 && mounted) {
+                setTimeout(() => scrollChatBottom('smooth'), 0);
+            }
+
+            previousLength = currentLength;
+        });
+    });
+
     async function sendMessage() {
         if (currentMessage) {
             if (!currentPerson) {
@@ -300,25 +313,7 @@
         }
     }
 
-    // Contact Management
-    async function addPerson(pubkey: string) {
-        if (people.some((c) => c.person.pubkey === pubkey)) return;
-
-        // We havent added this person yet
-        const person = $ndk.getUser({ pubkey: pubkey });
-        // console.log('adding new person', person)
-        const contact = { person: person, selected: false };
-
-        people.push(contact);
-        // console.log('updateUserProfile', user)
-        people = people;
-
-        await person.fetchProfile();
-        people = people;
-        currentPerson = currentPerson;
-    }
-
-    async function selectCurrentPerson(contact: Contact) {
+    function selectCurrentPerson(contact: Contact) {
         if (currentPerson !== contact.person) {
             console.log('selectCurrentPerson');
             if (job) {
@@ -334,15 +329,10 @@
 
             contact.selected = true;
 
-            people = people;
-
             contactsOpen = false;
-            hideChat = false;
-            disablePrompt = false;
         }
     }
 
-    // UI Helpers
     function scrollChatBottom(behavior?: ScrollBehavior): void {
         elemChat?.scrollTo({ top: elemChat.scrollHeight, behavior });
     }
@@ -377,6 +367,16 @@
         hideSearchIcon = false;
     }
 
+    $effect(() => {
+        if (browser) {
+            if (contactsOpen) {
+                onContactListExpanded();
+            } else {
+                onContactListCollapsed();
+            }
+        }
+    });
+
     function peerFromMessage(message: NDKEvent): string | undefined {
         const peerPubkey =
             message.tagValue('p') === $currentUser!.pubkey ? message.pubkey : message.tagValue('p');
@@ -386,30 +386,13 @@
 
     onMount(async () => {
         elemPage = document.querySelector('#page') as HTMLElement;
-        onContactListExpanded();
-
-        const jobEvent = await $ndk.fetchEvent(
-            jobAddress,
-            // Try to fetch latest state of the job
-            // but fall back to cache
-            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
-        );
-
-        if (jobEvent) {
-            job = TicketEvent.from(jobEvent);
-            jobTitle = job.title.length < 21 ? job.title : job.title.substring(0, 20) + '...';
-
-            offerStore = $ndk.storeSubscribe<OfferEvent>(
-                offersFilter,
-                { closeOnEose: false, cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST },
-                OfferEvent
-            );
-        }
+        mounted = true;
     });
 
     onDestroy(() => {
         if (jobMessages) jobMessages.unsubscribe();
         if (offerStore) offerStore.unsubscribe();
+        $offerMakerToSelect = '';
     });
 </script>
 
@@ -427,7 +410,7 @@
                                 class="anchor font-[700] sm:text-[24px] justify-center"
                                 href={titleLink}
                             >
-                                {'Job: ' + (jobTitle ?? '?')}
+                                {'Job: ' + jobTitle}
                             </a>
                         </Card>
                     </div>
@@ -454,7 +437,7 @@
                                         <Avatar
                                             src={contact.person.profile?.picture ??
                                                 getRoboHashPicture(contact.person.pubkey)}
-                                            classes="w-8"
+                                            classes="size-8"
                                             name={contact.person.profile?.name ??
                                                 contact.person.npub.substring(0, 10)}
                                         />
@@ -490,7 +473,7 @@
                                                             getRoboHashPicture(
                                                                 currentPerson.pubkey
                                                             )}
-                                                        classes="w-8"
+                                                        classes="size-8"
                                                         name={currentPerson.profile?.name ??
                                                             currentPerson.npub.substring(0, 15)}
                                                     />
@@ -541,7 +524,7 @@
                                                                         getRoboHashPicture(
                                                                             contact.person.pubkey
                                                                         )}
-                                                                    classes="w-8"
+                                                                    classes="size-8"
                                                                     name={contact.person.profile
                                                                         ?.name ??
                                                                         contact.person.npub.substring(
@@ -629,9 +612,12 @@
                                     disabled={disablePrompt}
                                 ></textarea>
                                 <button
-                                    class={currentMessage
-                                        ? 'preset-filled-primary'
-                                        : 'input-group-shim'}
+                                    class= {
+                                        currentMessage
+                                            ? 'preset-filled-primary'
+                                            : 'input-group-shim'
+                                        + ' p-2'
+                                    }
                                     onclick={sendMessage}
                                     aria-label="send message"
                                 >
