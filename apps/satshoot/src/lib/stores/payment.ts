@@ -54,7 +54,7 @@ export const createPaymentStore = (filters: NDKFilter[]) => {
         closeOnEose: false,
         groupable: true,
         groupableDelay: 1500,
-        autoStart: true,
+        autoStart: false,
     });
 
     const $wot = get(wot);

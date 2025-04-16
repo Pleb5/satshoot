@@ -160,13 +160,13 @@
 
         switch ($loginMethod) {
             case LoginMethod.Local:
-                handleLocalLogin();
+                await handleLocalLogin();
                 break;
             case LoginMethod.Bunker:
-                handleBunkerLogin();
+                await handleBunkerLogin();
                 break;
             case LoginMethod.Nip07:
-                handleNip07Login();
+                await handleNip07Login();
                 break;
         }
     }
@@ -179,17 +179,16 @@
         }
     }
 
-    function handleLocalLogin() {
+    async function handleLocalLogin() {
         // We either get the private key from sessionStorage or decrypt from localStorage
         if ($sessionPK) {
             $ndk.signer = new NDKPrivateKeySigner($sessionPK);
             $loggingIn = false;
 
-            initializeUser($ndk);
-            return;
+            await initializeUser($ndk);
+        } else {
+            showDecryptSecretModal = true;
         }
-
-        showDecryptSecretModal = true;
     }
 
     function decryptSecretModalCallback(res: {
@@ -243,7 +242,7 @@
         }
     }
 
-    async function handleBunkerLogin(): Promise<void> {
+    async function handleBunkerLogin() {
         const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
         const bunkerTargetNpub = localStorage.getItem('bunkerTargetNpub');
         const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
@@ -269,7 +268,7 @@
             const returnedUser = await remoteSigner.blockUntilReady();
             if (returnedUser.npub) {
                 $ndk.signer = remoteSigner;
-                initializeUser($ndk);
+                await initializeUser($ndk);
                 $loggingIn = false;
             }
         } catch (e) {
@@ -299,10 +298,10 @@
         });
     }
 
-    function handleNip07Login() {
+    async function handleNip07Login() {
         if (!$ndk.signer) {
             $ndk.signer = new NDKNip07Signer();
-            initializeUser($ndk);
+            await initializeUser($ndk);
             $loggingIn = false;
         }
     }
@@ -381,8 +380,10 @@
         await $ndk.connect();
 
         if (!$loggedIn) {
+            console.log('logging in user')
             await restoreLogin();
         }
+            console.log('Session initialized!')
 
         sessionInitialized.set(true);
     });

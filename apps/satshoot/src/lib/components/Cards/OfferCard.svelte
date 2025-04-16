@@ -6,9 +6,9 @@
     import ndk from '$lib/stores/session';
     import { createPaymentFilters, createPaymentStore, paymentDetail } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
-    import currentUser from '$lib/stores/user';
+    import currentUser, { loggedIn } from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import { NDKKind, type NDKFilter } from '@nostr-dev-kit/ndk';
+    import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import { nip19 } from 'nostr-tools';
     import { onDestroy } from 'svelte';
@@ -44,9 +44,6 @@
     let showPaymentModal = $state(false);
     let showReviewModal = $state(false);
 
-    let freelancerPaid = $state(0);
-    let satshootPaid = $state(0);
-
     const freelancerPaymentStore = $derived.by(() => {
         const freelancerFilters = createPaymentFilters(offer, 'freelancer');
         return createPaymentStore(freelancerFilters);
@@ -57,6 +54,9 @@
         return createPaymentStore(satshootFilters);
     });
 
+    let freelancerPaid = $derived(freelancerPaymentStore.totalPaid);
+    let satshootPaid = $derived(satshootPaymentStore.totalPaid);
+
     const jobStore = $derived.by(() => {
         const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
             kinds: [NDKKind.FreelanceTicket],
@@ -66,7 +66,7 @@
         return $ndk.storeSubscribe<TicketEvent>(
             jobFilter,
             {
-                autoStart: true,
+                autoStart: false,
                 closeOnEose: false,
                 groupable: true,
                 groupableDelay: 1000,
@@ -83,7 +83,10 @@
         return undefined;
     });
 
-    const winner = $derived(!!job && job.acceptedOfferAddress === offer.offerAddress);
+    const winner = $derived(
+        !!job
+        && job.acceptedOfferAddress === offer.offerAddress
+    );
 
     const { status, statusColor } = $derived.by(() => {
         if (!job)
@@ -109,7 +112,11 @@
         return '';
     });
 
-    const myJob = $derived(!!$currentUser && !!job && $currentUser.pubkey === job.pubkey);
+    const myJob = $derived(
+        !!$currentUser
+        && !!job 
+        && $currentUser.pubkey === job.pubkey
+    );
 
     const showPaymentButton = $derived(myJob && winner);
 
@@ -127,7 +134,14 @@
     let jobPosterImage = $state('');
     let jobPosterName = $state('?');
 
-    // Reactive effect to handle profile fetching
+    $effect(() => {
+        if ($sessionInitialized) {
+            freelancerPaymentStore.paymentStore.startSubscription();
+            satshootPaymentStore.paymentStore.startSubscription();
+            jobStore.startSubscription();
+        }
+    });
+
     $effect(() => {
         if (jobPoster) {
             // Set initial values
@@ -135,35 +149,18 @@
             jobPosterName = jobPoster.npub.substring(0, 8);
 
             // Fetch and update profile asynchronously
-            jobPoster.fetchProfile().then((profile) => {
+            jobPoster.fetchProfile(
+                { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
+            ).then((profile) => {
                 if (profile) {
                     jobPosterName = profile.name ?? jobPoster.npub.substring(0, 8);
 
-                    jobPosterImage =
-                        profile.picture ?? profile.image ?? getRoboHashPicture(jobPoster.pubkey);
+                    jobPosterImage = profile.picture
+                            ?? profile.image 
+                            ?? getRoboHashPicture(jobPoster.pubkey);
                 }
             });
         }
-    });
-
-    $effect(() => {
-        const unSubscribe = freelancerPaymentStore.totalPaid.subscribe((value) => {
-            freelancerPaid = value;
-        });
-
-        return () => {
-            unSubscribe();
-        };
-    });
-
-    $effect(() => {
-        const unSubscribe = satshootPaymentStore.totalPaid.subscribe((value) => {
-            satshootPaid = value;
-        });
-
-        return () => {
-            unSubscribe();
-        };
     });
 
     function setChatPartner() {

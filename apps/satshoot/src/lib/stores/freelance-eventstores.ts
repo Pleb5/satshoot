@@ -1,6 +1,7 @@
 import ndk from '$lib/stores/session';
 import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
-import type {  NDKFilter, NDKSubscriptionOptions } from '@nostr-dev-kit/ndk';
+import type {  NDKFilter } from '@nostr-dev-kit/ndk';
+import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
 import { NDKKind } from '@nostr-dev-kit/ndk';
 
 import { TicketEvent } from '$lib/events/TicketEvent';
@@ -11,7 +12,7 @@ import { wot } from '$lib/stores/wot';
 import { get, derived } from "svelte/store";
 
 // Export necessary when restarting a subscription with a new filter
-export const subOptions: NDKSubscriptionOptions = {
+export const subOptions: NDKSubscribeOptions = {
     closeOnEose: false,
     groupable: false,
     autoStart: false,

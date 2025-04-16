@@ -7,10 +7,8 @@
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
-    import Input from '$lib/components/UI/Inputs/input.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import Card from '$lib/components/UI/Card.svelte';
-    import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { page } from '$app/stores';
     import { sessionInitialized } from '$lib/stores/session';
 
@@ -33,9 +31,11 @@
 
     let initialized = $state(false)
     $effect(() => {
-        if ($loggedIn && mounted && !initialized) {
+        if ($loggedIn && $sessionInitialized && mounted && !initialized) {
             initialized = true;
             init();
+
+            checkRelayConnections();
         }
     });
 
@@ -122,8 +122,6 @@
         }
 
         mounted = true;
-
-        checkRelayConnections();
     });
 
     const tabs = [

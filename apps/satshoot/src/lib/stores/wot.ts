@@ -130,11 +130,9 @@ export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
         }
 
         wotUpdating.set(false);
-        sessionInitialized.set(true);
         wotUpdateFailed.set(false);
     } catch (e) {
         wotUpdating.set(false);
-        sessionInitialized.set(true);
         wotUpdateFailed.set(true);
         console.log('Could not update Web of Trust scores: ', e);
     }

@@ -106,14 +106,11 @@
     });
 
     $effect(() => {
-        if (user) {
+        if ($sessionInitialized) {
             setProfile();
-        }
-    });
-
-    $effect(() => {
-        if (user.pubkey !== $currentUser?.pubkey) {
-            fetchFreelanceFollowEvent(user.pubkey);
+            if (user.pubkey !== $currentUser?.pubkey) {
+                fetchFreelanceFollowEvent(user.pubkey);
+            }
         }
     });
 

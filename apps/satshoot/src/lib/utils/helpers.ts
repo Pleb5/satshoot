@@ -24,7 +24,6 @@ import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import currentUser from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
 import { loadWot, networkWoTScores } from '../stores/wot';
-import { sessionInitialized } from '$lib/stores/session';
 import { allReviews } from '$lib/stores/reviews';
 import { 
     allReceivedZapsFilter, 
@@ -112,8 +111,6 @@ export async function initializeUser(ndk: NDKSvelte ) {
 
             await loadWot(ndk, user);
         }
-
-        sessionInitialized.set(true);
 
         myTickets.startSubscription();
         myOffers.startSubscription();
@@ -555,8 +552,6 @@ export function orderEventsChronologically(events: NDKEvent[], reverse: boolean 
         if (reverse) return e1.created_at! - e2.created_at!;
         else return e2.created_at! - e1.created_at!;
     });
-
-    events = events;
 }
 
 export function arraysAreEqual<T>(arr1: T[], arr2: T[]): boolean {
