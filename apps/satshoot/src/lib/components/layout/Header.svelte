@@ -21,9 +21,17 @@
     let showAppMenu = $state(false);
 
     let profilePicture = $state('');
+    let hasAttemptedProfileFetch = $state(false);
 
+    // Only trigger profile fetch when logged in changes to true and we haven't attempted yet
     $effect(() => {
-        if ($currentUser) fetchUserProfile();
+        if ($loggedIn && !hasAttemptedProfileFetch) {
+            fetchUserProfile();
+            hasAttemptedProfileFetch = true;
+        } else if (!$loggedIn) {
+            // Reset the flag when logged out, so we fetch again on next login
+            hasAttemptedProfileFetch = false;
+        }
     });
 
     const fetchUserProfile = async () => {
