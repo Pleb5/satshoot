@@ -22,7 +22,7 @@
                             <a
                                 href="https://lightning.network/"
                                 target="_blank"
-                                class="transition-all ease duration-[0.3s] bg-blue-500 border-0 outline-0 text-white p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-1 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[200px] opacity-0 group-hover:opacity-100 hover:bg-blue-600 hover:text-white dark:text-white"
+                                class="transition-all ease duration-[0.3s] bg-blue-500 border-0 outline-0 text-white p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[200px] opacity-0 group-hover:opacity-100 hover:bg-blue-600 hover:text-white dark:text-white"
                             >
                                 <img
                                     src="/img/lightning.png"
@@ -36,7 +36,7 @@
                             <a
                                 href="https://cashu.space/"
                                 target="_blank"
-                                class="transition-all ease duration-[0.3s] bg-blue-500 border-0 outline-0 text-white p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-1 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[200px] opacity-0 group-hover:opacity-100 hover:bg-blue-600 hover:text-white dark:text-white"
+                                class="transition-all ease duration-[0.3s] bg-blue-500 border-0 outline-0 text-white p-[10px_20px] rounded-[5px] font-semibold text-[18px] transform scale-100 whitespace-nowrap flex flex-row justify-center items-center gap-[10px] w-full max-w-[200px] opacity-0 group-hover:opacity-100 hover:bg-blue-600 hover:text-white dark:text-white"
                             >
                                 <img src="/img/cashu.png" alt="Cashu Icon" class="h-6 w-6" />
                                 Cashu
