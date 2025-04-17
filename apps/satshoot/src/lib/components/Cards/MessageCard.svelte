@@ -134,7 +134,7 @@
         <div class="grid {templateColumn} gap-x-2">
             {#if !avatarRight}
                 <a href={'/' + senderUser.npub}>
-                    <Avatar src={avatarImage} classes="size-12" {name} />
+                    <Avatar src={avatarImage} size="size-12" {name} />
                 </a>
             {/if}
             <div class="card p-4 space-y-2 {extraClasses}">
@@ -163,7 +163,7 @@
             </div>
             {#if avatarRight}
                 <a href={'/' + senderUser.npub}>
-                    <Avatar src={avatarImage} classes="size-12" {name} />
+                    <Avatar src={avatarImage} size="size-12" {name} />
                 </a>
             {/if}
         </div>

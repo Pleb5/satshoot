@@ -157,17 +157,30 @@
         return contactList;
     });
 
+    const profiles = $state<{person: NDKUser, name: string, image: string}[]>([])
+
     async function addPerson(pubkey: string, people: Contact[]) {
         if (people.some((c) => c.person.pubkey === pubkey)) return;
 
         // We havent added this person yet
         const person = $ndk.getUser({ pubkey: pubkey });
         // console.log('adding new person', person)
-        const contact = { person: person, selected: false };
+        const contact = {
+            person: person,
+            selected: false,
+        };
 
         people.push(contact);
 
-        await person.fetchProfile();
+        const profile = await person.fetchProfile();
+        console.log('Profile:',profile?.name)
+        profiles.push({
+            person: person,
+            name: profile?.name ?? person.npub.substring(0, 10),
+            image: profile?.picture ?? 
+                profile?.image ?? 
+                getRoboHashPicture(person.pubkey)
+        })
     }
 
     const offersSubOptions: NDKSubscribeOptions = {
@@ -429,26 +442,35 @@
                                 </p>
                             </div>
                             <div class="flex flex-col gap-[10px] overflow-y-auto grow">
-                                {#each people as contact, i (contact.person.pubkey)}
+                                {#each people as contact}
+                                    {@const profile = profiles.find(p => p.person === contact.person)}
+                                    {@const image = profile?.image
+                                        ?? getRoboHashPicture(contact.person.pubkey)
+                                    }
+                                    {@const name = profile?.name
+                                        ?? contact.person.npub.substring(0, 10)
+                                    }
+                                    {@const bg = contact.person === currentPerson
+                                        ? 'bg-blue-600'
+                                        : 'bg-transparent'
+                                    }
                                     <Button
                                         variant={contact.selected ? 'contained' : 'text'}
                                         onClick={() => selectCurrentPerson(contact)}
+                                        classes={bg}
                                     >
                                         <Avatar
-                                            src={contact.person.profile?.picture ??
-                                                getRoboHashPicture(contact.person.pubkey)}
-                                            classes="size-8"
-                                            name={contact.person.profile?.name ??
-                                                contact.person.npub.substring(0, 10)}
+                                            src={image}
+                                            size="size-12"
+                                            name={name}
                                         />
                                         <span
                                             class="flex-1 text-start
-                                        {contact.person.pubkey === winner
+                                            {contact.person.pubkey === winner
                                                 ? 'text-warning-500 font-bold'
                                                 : ''}"
                                         >
-                                            {contact.person.profile?.name ??
-                                                contact.person.npub.substring(0, 10)}
+                                            {name}
                                         </span>
                                     </Button>
                                 {/each}
@@ -467,13 +489,14 @@
                                     <Accordion.Item value="contacts">
                                         {#snippet lead()}
                                             {#if currentPerson}
+                                                {@const profileImage = currentPerson.profile?.picture ??
+                                                    currentPerson.profile?.image ??
+                                                    getRoboHashPicture(currentPerson.pubkey)
+                                                }
                                                 <a href={'/' + currentPerson.npub}>
                                                     <Avatar
-                                                        src={currentPerson.profile?.picture ??
-                                                            getRoboHashPicture(
-                                                                currentPerson.pubkey
-                                                            )}
-                                                        classes="size-8"
+                                                        src={profileImage}
+                                                        size="size-8"
                                                         name={currentPerson.profile?.name ??
                                                             currentPerson.npub.substring(0, 15)}
                                                     />
@@ -508,7 +531,11 @@
                                                     <Card
                                                         classes="overflow-y-auto border-[2px] border-black-100 dark:border-white-100 h-[200px]"
                                                     >
-                                                        {#each people as contact, i}
+                                                        {#each people as contact}
+                                                            {@const profileImage = contact.person.profile?.picture ??
+                                                                contact.person.profile?.image ??
+                                                                getRoboHashPicture(contact.person.pubkey)
+                                                            }
                                                             <button
                                                                 type="button"
                                                                 class="btn w-full flex items-center space-x-4
@@ -519,12 +546,8 @@
                                                                     selectCurrentPerson(contact)}
                                                             >
                                                                 <Avatar
-                                                                    src={contact.person.profile
-                                                                        ?.image ??
-                                                                        getRoboHashPicture(
-                                                                            contact.person.pubkey
-                                                                        )}
-                                                                    classes="size-8"
+                                                                    src= {profileImage}
+                                                                    size="size-8"
                                                                     name={contact.person.profile
                                                                         ?.name ??
                                                                         contact.person.npub.substring(

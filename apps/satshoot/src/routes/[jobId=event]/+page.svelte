@@ -375,7 +375,7 @@
                                 <div class="w-full hidden max-[768px]:flex">
                                     <p class="font-[600] text-[24px]">Posted By</p>
                                 </div>
-                                <UserCard {user} job={jobPost} />
+                                <!-- <UserCard {user} job={jobPost} /> -->
                             </div>
                         {/if}
                     </div>
