@@ -1,12 +1,14 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
 
     interface Props {
         isOpen: boolean;
+        jobId: string;
     }
 
-    let { isOpen = $bindable() }: Props = $props();
+    let { isOpen = $bindable(), jobId }: Props = $props();
 </script>
 
 <ModalWrapper bind:isOpen title="You accepted the Offer!">
@@ -29,6 +31,7 @@
     <div class="flex justify-center">
         <Button
             onClick={() => {
+                goto('/messages/' + jobId);
                 isOpen = false;
             }}
         >

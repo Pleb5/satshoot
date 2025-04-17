@@ -42,19 +42,15 @@
     let jobSubscription = $state<NDKSubscription>();
     let jobPost = $state<TicketEvent>();
 
-    const offersFilter:NDKFilter = {
+    const offersFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceOffer],
     };
     const offerSubOptions: NDKSubscribeOptions = {
         closeOnEose: false,
         autoStart: false,
-    }
+    };
 
-    const offerStore = $ndk.storeSubscribe<OfferEvent>(
-        offersFilter,
-        offerSubOptions,
-        OfferEvent
-    );
+    const offerStore = $ndk.storeSubscribe<OfferEvent>(offersFilter, offerSubOptions, OfferEvent);
 
     let alreadySubscribedToOffers = $state(false);
     let winningOffer = $derived.by(() => {
@@ -63,9 +59,7 @@
         }
 
         // First check in filtered offers
-        const found = filteredOffers.find(
-            (o) => o.offerAddress === jobPost?.acceptedOfferAddress
-        );
+        const found = filteredOffers.find((o) => o.offerAddress === jobPost?.acceptedOfferAddress);
         if (found) {
             return found;
         }
@@ -82,10 +76,10 @@
 
     let selectedOffersTab = $derived.by(() => {
         if (winningOffer) {
-           return OfferTab.Won;
+            return OfferTab.Won;
         }
 
-        return OfferTab.Pending
+        return OfferTab.Pending;
     });
 
     let showLoginModal = $state(false);
@@ -94,29 +88,26 @@
         null
     );
 
-    const myJob = $derived(
-        !!$currentUser
-        && !!jobPost 
-        && $currentUser.pubkey === jobPost.pubkey
-    );
+    const myJob = $derived(!!$currentUser && !!jobPost && $currentUser.pubkey === jobPost.pubkey);
 
     const { allowCreateOffer, disallowCreateOfferReason } = $derived.by(() => {
-        if (!jobPost) return {
-            allowCreateOffer: false,
-            disallowCreateOfferReason: '' 
-        };
+        if (!jobPost)
+            return {
+                allowCreateOffer: false,
+                disallowCreateOfferReason: '',
+            };
 
         if (jobPost.status === TicketStatus.New) {
             return {
                 allowCreateOffer: true,
-                disallowCreateOfferReason: '' 
+                disallowCreateOfferReason: '',
             };
         }
 
         return {
             allowCreateOffer: false,
-            disallowCreateOfferReason: "Job status not 'New' anymore!" +
-            " Cannot Create/Edit Offer!",
+            disallowCreateOfferReason:
+                "Job status not 'New' anymore!" + ' Cannot Create/Edit Offer!',
         };
     });
 
@@ -136,8 +127,8 @@
         offers = offers.filter((offer: OfferEvent) => {
             return (
                 $wot.has(offer.pubkey) ||
-                    (jobPost?.acceptedOfferAddress &&
-                        jobPost.acceptedOfferAddress === offer.offerAddress)
+                (jobPost?.acceptedOfferAddress &&
+                    jobPost.acceptedOfferAddress === offer.offerAddress)
             );
         });
         orderEventsChronologically(offers);
@@ -169,7 +160,7 @@
     $effect(() => {
         if ($sessionInitialized && !initialized) {
             initialized = true;
-            checkRelayConnections()
+            checkRelayConnections();
 
             const naddr = page.params.jobId;
             const relaysFromURL = relaysFromNaddr(naddr).split(',');
@@ -209,13 +200,13 @@
         jobPost = arrivedTicket;
     }
 
-    let pageTop = $state<HTMLDivElement>()
+    let pageTop = $state<HTMLDivElement>();
 
     onMount(() => {
         if (pageTop) {
-            pageTop.scrollIntoView(true)
+            pageTop.scrollIntoView(true);
         }
-    })
+    });
 
     onDestroy(() => {
         jobSubscription?.stop();
@@ -375,7 +366,7 @@
                                 <div class="w-full hidden max-[768px]:flex">
                                     <p class="font-[600] text-[24px]">Posted By</p>
                                 </div>
-                                <!-- <UserCard {user} job={jobPost} /> -->
+                                <UserCard {user} job={jobPost} />
                             </div>
                         {/if}
                     </div>

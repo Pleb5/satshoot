@@ -72,8 +72,9 @@
         getModeUserPrefers,
         setModeUserPrefers,
     } from '$lib/utils/lightSwitch';
-    import { jobPostSuccessState } from '$lib/stores/job-post-success';
+    import { jobPostSuccessState, offerTakenState } from '$lib/stores/modals';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
+    import OfferTakenModal from '$lib/components/Modals/OfferTakenModal.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -383,10 +384,10 @@
         await $ndk.connect();
 
         if (!$loggedIn) {
-            console.log('logging in user')
+            console.log('logging in user');
             await restoreLogin();
         }
-            console.log('Session initialized!')
+        console.log('Session initialized!');
 
         sessionInitialized.set(true);
     });
@@ -593,4 +594,9 @@
         bind:isOpen={$jobPostSuccessState.showModal}
         job={$jobPostSuccessState.jobData}
     />
+{/if}
+
+<!-- Modal to display after offer is accepted -->
+{#if $offerTakenState.showModal && $offerTakenState.jobId}
+    <OfferTakenModal bind:isOpen={$offerTakenState.showModal} jobId={$offerTakenState.jobId} />
 {/if}

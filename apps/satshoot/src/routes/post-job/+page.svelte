@@ -21,7 +21,7 @@
     import { redirectAfterLogin } from '$lib/stores/gui';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import { toaster } from '$lib/stores/toaster';
-    import { jobPostSuccessState } from '$lib/stores/job-post-success';
+    import { jobPostSuccessState } from '$lib/stores/modals';
 
     let showLoginModal = $state(false);
 

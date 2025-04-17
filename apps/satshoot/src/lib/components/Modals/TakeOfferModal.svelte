@@ -3,12 +3,11 @@
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import ndk from '$lib/stores/session';
     import { tick } from 'svelte';
-    import OfferTakenModal from './OfferTakenModal.svelte';
-    import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import { offerTakenState } from '$lib/stores/modals';
 
     interface Props {
         isOpen: boolean;
@@ -19,7 +18,6 @@
     let { isOpen = $bindable(), job, offer }: Props = $props();
 
     let takingOffer = $state(false);
-    let showOfferTakenModal = $state(false);
 
     async function takeOffer() {
         if (job && offer) {
@@ -30,18 +28,21 @@
             // Important part! This also sets status to in progress
             jobToPublish.acceptedOfferAddress = offer.offerAddress;
 
+            const jobId = job.encode();
+
             try {
                 takingOffer = true;
                 await tick();
 
                 await jobToPublish.publish();
 
+                offerTakenState.set({
+                    showModal: true,
+                    jobId,
+                });
+
                 takingOffer = false;
                 isOpen = false;
-                showOfferTakenModal = true;
-
-                // Navigate to job messages
-                goto('/messages/' + job.encode());
             } catch (e) {
                 console.error(e);
                 toaster.error({
@@ -87,5 +88,3 @@
         <!-- popups Share Job Post end -->
     </div>
 </ModalWrapper>
-
-<OfferTakenModal bind:isOpen={showOfferTakenModal} />

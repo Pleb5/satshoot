@@ -12,3 +12,13 @@ export const jobPostSuccessState = writable<JobPostSuccessState>({
     showModal: false,
     jobData: null,
 });
+
+interface OfferTakenState {
+    showModal: boolean;
+    jobId: string | null;
+}
+
+export const offerTakenState = writable<OfferTakenState>({
+    showModal: false,
+    jobId: null,
+});
