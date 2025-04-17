@@ -1,11 +1,9 @@
 <script lang="ts">
     import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
     import currentUser from '$lib/stores/user';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import ShareJobModal from './ShareJobModal.svelte';
     import CloseJobModal from './CloseJobModal.svelte';
-    import ndk from '$lib/stores/ndk';
-    import { onMount } from 'svelte';
+    import ndk from '$lib/stores/session';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import ReviewClientModal from './ReviewClientModal.svelte';
     import { clientReviews } from '$lib/stores/reviews';
@@ -15,103 +13,71 @@
     import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
-    import Popup from '../UI/Popup.svelte';
-    import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
+    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
-
-    export let job: TicketEvent;
-
-    let bech32ID = '';
-    $: if (job) {
-        bech32ID = job.encode();
+    interface Props {
+        isOpen: boolean;
+        job: TicketEvent;
     }
 
-    let myJob = false;
-    $: if ($currentUser && job && $currentUser.pubkey === job.pubkey) {
-        myJob = true;
-    } else {
-        myJob = false;
-    }
+    let { isOpen = $bindable(), job }: Props = $props();
 
-    let isWinner = false;
-    $: if ($currentUser && job.winnerFreelancer === $currentUser.pubkey) {
-        isWinner = true;
-    } else {
-        isWinner = false;
-    }
+    let showShareModal = $state(false);
+    let showCloseJobModal = $state(false);
+    let showReviewClientModal = $state(false);
+    let showPaymentModal = $state(false);
+    let showReviewModal = $state(false);
 
-    let review: ReviewEvent | undefined = undefined;
-    let canReviewClient = false;
-    $: if ($clientReviews) {
-        review = $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress);
+    const bech32ID = $derived(job.encode());
 
-        if (review) {
-            canReviewClient = false;
-        } else if (isWinner) {
-            canReviewClient = true;
+    const myJob = $derived($currentUser?.pubkey === job.pubkey);
+    const isWinner = $derived($currentUser?.pubkey === job.winnerFreelancer);
+    const showMessageButton = $derived(
+        !!$currentUser && (myJob || job.winnerFreelancer === $currentUser.pubkey)
+    );
+
+    const review = $derived(
+        $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress)
+    );
+
+    const canReviewClient = $derived.by(() => {
+        if (!review && $currentUser && job.winnerFreelancer === $currentUser.pubkey) {
+            return true;
         }
-    }
+        return false;
+    });
 
-    let showMessageButton = false;
-    $: if ($currentUser && (myJob || job.winnerFreelancer === $currentUser.pubkey)) {
-        showMessageButton = true;
-    } else {
-        showMessageButton = false;
-    }
+    // Reactive states
+    let winnerOffer = $state<OfferEvent | null>(null);
 
-    let winnerOffer: OfferEvent | null = null;
+    // Effect to fetch winner offer
+    $effect(() => {
+        if (!job.acceptedOfferAddress) return;
 
-    onMount(async () => {
-        if (job.acceptedOfferAddress) {
-            const winnerOfferEvent = await $ndk.fetchEvent(job.acceptedOfferAddress);
-            if (winnerOfferEvent) {
-                winnerOffer = OfferEvent.from(winnerOfferEvent);
+        $ndk.fetchEvent(job.acceptedOfferAddress, {
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        }).then((event) => {
+            if (event) {
+                winnerOffer = OfferEvent.from(event);
             }
-        }
+        });
     });
 
     function handleShare() {
-        const modalComponent: ModalComponent = {
-            ref: ShareJobModal,
-            props: { job },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        isOpen = false;
+        showShareModal = true;
     }
 
     function handleCloseJob() {
-        const modalComponent: ModalComponent = {
-            ref: CloseJobModal,
-            props: { job, offer: winnerOffer },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        isOpen = false;
+        showCloseJobModal = true;
     }
 
     function handleReviewClient() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewClientModal,
-            props: { jobAddress: job.ticketAddress },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        isOpen = false;
+        showReviewClientModal = true;
     }
 
     function selectChatPartner() {
@@ -121,7 +87,7 @@
             $offerMakerToSelect = job.winnerFreelancer;
         }
 
-        modalStore.close();
+        isOpen = false;
     }
 
     function handlePay() {
@@ -132,16 +98,8 @@
             offer: winnerOffer,
         };
 
-        const modalComponent: ModalComponent = {
-            ref: PaymentModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        isOpen = false;
+        showPaymentModal = true;
     }
 
     function handleEdit() {
@@ -149,107 +107,96 @@
             $jobToEdit = job;
 
             goto('/post-job');
-            modalStore.clear();
+            isOpen = false;
         }
     }
 
     function handlePreviewReview() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewModal,
-            props: { review },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        isOpen = false;
+        showReviewModal = true;
     }
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Job Menu">
-        <div class="w-full flex flex-col">
-            <!-- popups Job-Post-Menu start -->
-            <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
-                <Button variant="outlined" classes="justify-start" fullWidth on:click={handleShare}>
-                    <i class="bx bxs-share text-[20px]"></i>
-                    <p class="">Share</p>
+<ModalWrapper bind:isOpen title="Job Menu">
+    <div class="w-full flex flex-col">
+        <!-- popups Job-Post-Menu start -->
+        <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
+            <Button variant="outlined" classes="justify-start" fullWidth onClick={handleShare}>
+                <i class="bx bxs-share text-[20px]"></i>
+                <p class="">Share</p>
+            </Button>
+
+            {#if myJob && job.status === TicketStatus.New}
+                <Button variant="outlined" classes="justify-start" fullWidth onClick={handleEdit}>
+                    <i class="bx bxs-edit-alt text-[20px]"></i>
+                    <p class="">Edit</p>
                 </Button>
+            {/if}
 
-                {#if myJob && job.status === TicketStatus.New}
-                    <Button
-                        variant="outlined"
-                        classes="justify-start"
-                        fullWidth
-                        on:click={handleEdit}
-                    >
-                        <i class="bx bxs-edit-alt text-[20px]"></i>
-                        <p class="">Edit</p>
-                    </Button>
-                {/if}
+            {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
+                <Button
+                    variant="outlined"
+                    classes="justify-start"
+                    fullWidth
+                    onClick={handleCloseJob}
+                >
+                    <i class="bx bxs-lock text-[20px]"></i>
+                    <p class="">Close Job</p>
+                </Button>
+            {/if}
 
-                {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
-                    <Button
-                        variant="outlined"
-                        classes="justify-start"
-                        fullWidth
-                        on:click={handleCloseJob}
-                    >
-                        <i class="bx bxs-lock text-[20px]"></i>
-                        <p class="">Close Job</p>
-                    </Button>
-                {/if}
+            {#if myJob && job.status !== TicketStatus.New && winnerOffer}
+                <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
+                    <i class="bx bxs-bolt text-[20px]"></i>
+                    <p class="">Pay</p>
+                </Button>
+            {/if}
 
-                {#if myJob && job.status !== TicketStatus.New && winnerOffer}
-                    <Button
-                        variant="outlined"
-                        classes="justify-start"
-                        fullWidth
-                        on:click={handlePay}
-                    >
-                        <i class="bx bxs-bolt text-[20px]"></i>
-                        <p class="">Pay</p>
-                    </Button>
-                {/if}
+            {#if showMessageButton && bech32ID}
+                <Button
+                    href={'/messages/' + bech32ID}
+                    onClick={selectChatPartner}
+                    variant="outlined"
+                    classes="justify-start"
+                    fullWidth
+                >
+                    <i class="bx bxs-conversation"></i>
+                    <p class="">Message</p>
+                </Button>
+            {/if}
 
-                {#if showMessageButton && bech32ID}
-                    <Button
-                        href={'/messages/' + bech32ID}
-                        on:click={selectChatPartner}
-                        variant="outlined"
-                        classes="justify-start"
-                        fullWidth
-                    >
-                        <i class="bx bxs-conversation" />
-                        <p class="">Message</p>
-                    </Button>
-                {/if}
-
-                {#if canReviewClient}
-                    <Button
-                        variant="outlined"
-                        classes="justify-start"
-                        fullWidth
-                        on:click={handleReviewClient}
-                    >
-                        <i class="bx bxs-star text-[20px]"></i>
-                        <p class="">Review Client</p>
-                    </Button>
-                {:else if review}
-                    <Button
-                        variant="outlined"
-                        classes="justify-start"
-                        fullWidth
-                        on:click={handlePreviewReview}
-                    >
-                        <i class="bx bxs-star text-[20px]"></i>
-                        <p class="">Preview Review</p>
-                    </Button>
-                {/if}
-            </div>
-            <!-- popups Job-Post-Menu end -->
+            {#if canReviewClient}
+                <Button
+                    variant="outlined"
+                    classes="justify-start"
+                    fullWidth
+                    onClick={handleReviewClient}
+                >
+                    <i class="bx bxs-star text-[20px]"></i>
+                    <p class="">Review Client</p>
+                </Button>
+            {:else if review}
+                <Button
+                    variant="outlined"
+                    classes="justify-start"
+                    fullWidth
+                    onClick={handlePreviewReview}
+                >
+                    <i class="bx bxs-star text-[20px]"></i>
+                    <p class="">Preview Review</p>
+                </Button>
+            {/if}
         </div>
-    </Popup>
-{/if}
+        <!-- popups Job-Post-Menu end -->
+    </div>
+</ModalWrapper>
+
+<ShareJobModal bind:isOpen={showShareModal} {job} />
+
+<CloseJobModal bind:isOpen={showCloseJobModal} {job} offer={winnerOffer} />
+
+<ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.ticketAddress} />
+
+<PaymentModal bind:isOpen={showPaymentModal} />
+
+<ReviewModal bind:isOpen={showReviewModal} review={review!} />

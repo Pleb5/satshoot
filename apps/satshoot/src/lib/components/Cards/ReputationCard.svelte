@@ -1,119 +1,249 @@
 <script lang="ts">
-    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import { OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import { wotFilteredOffers, wotFilteredTickets } from '$lib/stores/freelance-eventstores';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import {
         aggregateClientRatings,
         aggregateFreelancerRatings,
         clientReviews,
         freelancerReviews,
     } from '$lib/stores/reviews';
-    import currentUser from '$lib/stores/user';
+    import {sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
-    import { averageToRatingText, type RatingConsensus } from '$lib/utils/helpers';
-    import { abbreviateNumber, insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
+    import { averageToRatingText } from '$lib/utils/helpers';
+    import { abbreviateNumber, SatShootPubkey } from '$lib/utils/misc';
     import {
         NDKKind,
         NDKNutzap,
+        NDKSubscriptionCacheUsage,
         zapInvoiceFromEvent,
         type Hexpubkey,
         type NDKEvent,
+        type NDKFilter,
     } from '@nostr-dev-kit/ndk';
-    import type { NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy } from 'svelte';
     import ReviewSummaryAsFreelancer from '../Modals/ReviewSummaryAsFreelancer.svelte';
     import ReviewSummaryAsClient from '../Modals/ReviewSummaryAsClient.svelte';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import RatingBlock from '../UI/Display/RatingBlock.svelte';
 
-    const modalStore = getModalStore();
-
-    export let user: Hexpubkey;
-    export let type: ReviewType | undefined = undefined;
-    export let forUserCard: boolean = false;
-
-    let reviewType: ReviewType;
-
-    $: reviewArraysExist = $clientReviews && $freelancerReviews;
-    $: reviewsExist =
-        reviewArraysExist && ($clientReviews.length > 0 || $freelancerReviews.length > 0);
-
-    $: if (type) {
-        reviewType = type;
-    } else if (reviewArraysExist) {
-        reviewType =
-            $clientReviews.length > $freelancerReviews.length
-                ? ReviewType.Client
-                : ReviewType.Freelancer;
+    interface Props {
+        user: Hexpubkey;
+        type?: ReviewType;
+        forUserCard?: boolean;
     }
 
-    const subOptions = {
-        closeOnEose: false,
-        groupable: true,
-        groupableDelay: 1500,
-        autoStart: true,
-    };
+    let { user, type = undefined, forUserCard = false }: Props = $props();
 
-    let allEarningsStore: NDKEventStore<NDKEvent>;
-    let allPaymentsStore: NDKEventStore<NDKEvent>;
-    let allPledgesStore: NDKEventStore<NDKEvent>;
+    let initInProgress = $state(true);
 
-    let allEarnings = 0;
-    let allPayments = 0;
-    let allPledges = 0;
+    // Earnings
+    const allEarningsFilter: NDKFilter = {
+        kinds: [NDKKind.Zap, NDKKind.Nutzap],
+    }
+    const allEarningsStore = $ndk.storeSubscribe(
+        allEarningsFilter,
+        {
+            autoStart: false,
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL   
+        },
+    )
+    let allEarnings = $derived(calculateTotalAmount(Array.from($allEarningsStore)));
 
-    let ratingConsensus = '?';
-    let asClientRatingConsensus = '?';
-    let asFreelancerRatingConsensus = '?';
-    let ratingColor = '';
-    let asClientRatingColor = '';
-    let asFreelancerRatingColor = '';
+    // Payments
+    const allPaymentsFilter: NDKFilter = {
+        kinds: [NDKKind.Zap, NDKKind.Nutzap],
+    }
+    const allPaymentsStore = $ndk.storeSubscribe(
+        allPaymentsFilter,
+        {
+            autoStart: false,
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL   
+        },
+    )
+    let allPayments = $derived(calculateTotalAmount(Array.from($allPaymentsStore)));
 
-    // Get all winner offer a-tags OF this user as a freelancer
-    // We take only those that were on tickets from a client in wot
-    const allWinnerOffersOfUser: string[] = [];
+    // Pledges
+    const involvedTicketEvents: TicketEvent[] = [];
+    const involvedOffers: OfferEvent[] = [];
 
-    // Get all winner offer a-tags FOR this user as a client
-    // We take only freelancers in wot
-    const allWinnerOffersForUser: string[] = [];
+    const allPledgesFilter: NDKFilter = {
+        kinds: [NDKKind.Zap, NDKKind.Nutzap],
+    }
+    const allPledgesStore = $ndk.storeSubscribe(
+        allPledgesFilter,
+        {
+            autoStart: false,
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL   
+        },
+    )
+    let allPledges = $derived(
+        calculatePledges(
+            $allPledgesStore,
+            involvedTicketEvents,
+            involvedOffers,
+            user
+        )
+    );
 
-    // Get all tickets where user won and client is in wot
-    // OR tickets where user is a client and winner freelancer is in wot
-    const allTicketsWhereUserInvolved: string[] = [];
+    // Init
+    $effect(() => {
+        if ($sessionInitialized) {
+            init();
+        }
+    });
 
-    let needSetup = true;
-
-    $: if ($currentUser && user && $clientReviews && $freelancerReviews) {
-        const clientAverage = aggregateClientRatings(user).average;
-        const freelancerAverage = aggregateFreelancerRatings(user).average;
-        let overallAverage: number = NaN;
-
-        if (reviewType === ReviewType.Client) {
-            overallAverage = clientAverage;
-        } else if (reviewType === ReviewType.Freelancer) {
-            overallAverage = freelancerAverage;
-        } else if (type === undefined) {
-            overallAverage = calculateOverallAverage(clientAverage, freelancerAverage);
+    const init = async () => {
+        const subOptions = {
+            // Not enough places where we view many ppls rep to justify grouping yet
+            // groupable: true,
+            // groupableDelay: 300,
+            // The info we need here is most likely already in the cache
+            // since this info is important to the notifications as well
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL
         }
 
-        const ratingText: RatingConsensus = averageToRatingText(overallAverage);
-        ratingConsensus = ratingText.ratingConsensus;
-        ratingColor = ratingText.ratingColor;
+        const winningOffersOfUser: string[] = [];
+        const winningOffersForUser: string[] = [];
+        const involvedTickets: string[] = [];
 
-        const asClientRating = averageToRatingText(clientAverage);
-        const asFreelancerRating = averageToRatingText(freelancerAverage);
+        // Earnings of target user, Clients filtered by CURRENT users wot
+        const userOffers = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceOffer],
+                authors: [user]
+            },
+            subOptions
+        );
 
-        asClientRatingConsensus = asClientRating.ratingConsensus;
-        asFreelancerRatingConsensus = asFreelancerRating.ratingConsensus;
-        asClientRatingColor = asClientRating.ratingColor;
-        asFreelancerRatingColor = asFreelancerRating.ratingColor;
+        const allTicketsUserWon = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceTicket],
+                '#a': Array.from(userOffers).map(o => o.tagAddress())
+            },
+            subOptions
+        );
+
+        for (const wonTicket of allTicketsUserWon) {
+            const ticketEvent = TicketEvent.from(wonTicket);
+            if ($wot.has(ticketEvent.pubkey)) {
+                const offerOfTicket = Array.from(userOffers).find(
+                    o => o.tagAddress() === ticketEvent.acceptedOfferAddress
+                );
+                if (offerOfTicket) {
+                    involvedTickets.push(ticketEvent.ticketAddress)
+                    winningOffersOfUser.push(offerOfTicket.id)
+
+                    involvedTicketEvents.push(ticketEvent);
+                    involvedOffers.push(OfferEvent.from(offerOfTicket))
+                } else {
+                    console.error("BUG: Offer for this ticket SHOULD be found")
+                }
+            }
+        }
+
+        allEarningsFilter['#p'] = [user], 
+        allEarningsFilter['#e'] = winningOffersOfUser;
+        allEarningsStore.startSubscription();
+
+
+        // Payments of target user, Freelancers filtered by CURRENT users wot
+        const userTickets = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceTicket],
+                authors: [user]
+            },
+            subOptions
+        );
+
+        const allWinningOffersOnUserTickets = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceOffer],
+                '#a': Array.from(userTickets).map(t => t.tagAddress())
+            },
+            subOptions
+        );
+
+        for (const offer of allWinningOffersOnUserTickets) {
+            const offerEvent = OfferEvent.from(offer);
+            if ($wot.has(offerEvent.pubkey)) {
+                const ticketOfOffer = Array.from(userTickets).find(
+                    t => t.tagAddress() === offerEvent.referencedTicketAddress
+                );
+                if (ticketOfOffer) {
+                    involvedTickets.push(ticketOfOffer.tagAddress());
+                    winningOffersForUser.push(offerEvent.id);
+
+                    involvedTicketEvents.push(TicketEvent.from(ticketOfOffer));
+                    involvedOffers.push(offerEvent)
+                } else {
+                    console.error("BUG: Ticket for this offer SHOULD be found")
+                }
+            }
+        }
+
+        allPaymentsFilter['#e'] = winningOffersForUser;
+        allPaymentsStore.startSubscription();
+
+        // Pledges of target user, both as a Freelancer and as a Client,
+        // Counterparties in both cases filtered by CURRENT users wot
+        allPledgesFilter['#a'] = involvedTickets;
+        allPledgesFilter['#p'] = [SatShootPubkey]
+        allPledgesStore.startSubscription();
+
+        initInProgress = false;
     }
 
-    function calculateOverallAverage(clientAverage: number, freelancerAverage: number): number {
+    onDestroy(() => {
+        allEarningsStore.empty();
+        allPaymentsStore.empty();
+        allPledgesStore.empty();
+    })
+
+    // Derived review data
+    const clientAverage = $derived(aggregateClientRatings(user).average);
+    const freelancerAverage = $derived(aggregateFreelancerRatings(user).average);
+
+    const reviewType = $derived(
+        type ??
+            ($clientReviews && $freelancerReviews
+                ? $clientReviews.length > $freelancerReviews.length
+                    ? ReviewType.Client
+                    : ReviewType.Freelancer
+                : undefined)
+    );
+
+    const overallAverage = $derived(
+        reviewType === ReviewType.Client
+            ? clientAverage
+            : reviewType === ReviewType.Freelancer
+              ? freelancerAverage
+              : calculateOverallAverage(clientAverage, freelancerAverage)
+    );
+
+    const {
+        ratingConsensus, 
+        ratingColor 
+    } = $derived(averageToRatingText(overallAverage));
+
+    const {
+        ratingConsensus: asClientRatingConsensus,
+        ratingColor: asClientRatingColor 
+    } = $derived(
+        averageToRatingText(clientAverage)
+    );
+
+    const {
+        ratingConsensus: asFreelancerRatingConsensus,
+        ratingColor: asFreelancerRatingColor 
+    } =
+        $derived(averageToRatingText(freelancerAverage));
+
+    function calculateOverallAverage(
+        clientAverage: number, freelancerAverage: number
+    ): number {
         if (!isNaN(clientAverage) && !isNaN(freelancerAverage)) {
             return (clientAverage + freelancerAverage) / 2;
         } else if (isNaN(clientAverage) && !isNaN(freelancerAverage)) {
@@ -123,71 +253,6 @@
         } else {
             return NaN;
         }
-    }
-
-    $: if ($currentUser && needSetup && user && $wot && $wotFilteredTickets && $wotFilteredOffers) {
-        needSetup = false;
-
-        const allTicketsOfUser = $wotFilteredTickets.filter(
-            (ticket: TicketEvent) => ticket.pubkey === user
-        );
-        const allOffersOfUser = $wotFilteredOffers.filter(
-            (offer: OfferEvent) => offer.pubkey === user
-        );
-
-        $wotFilteredTickets.forEach((t: TicketEvent) => {
-            allOffersOfUser.forEach((o: OfferEvent) => {
-                if (t.acceptedOfferAddress === o.offerAddress) {
-                    allWinnerOffersOfUser.push(o.id);
-                    allTicketsWhereUserInvolved.push(t.ticketAddress);
-                }
-            });
-        });
-
-        $wotFilteredOffers.forEach((o: OfferEvent) => {
-            allTicketsOfUser.forEach((t: TicketEvent) => {
-                if (t.acceptedOfferAddress === o.offerAddress) {
-                    allWinnerOffersForUser.push(o.id);
-                    allTicketsWhereUserInvolved.push(t.ticketAddress);
-                }
-            });
-        });
-
-        allEarningsStore = $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#p': [user], '#e': allWinnerOffersOfUser },
-            subOptions
-        );
-
-        allPaymentsStore = $ndk.storeSubscribe(
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap], '#e': allWinnerOffersForUser },
-            subOptions
-        );
-
-        allPledgesStore = $ndk.storeSubscribe(
-            {
-                kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                '#a': allTicketsWhereUserInvolved,
-                '#p': [SatShootPubkey],
-            },
-            subOptions
-        );
-    }
-
-    $: if ($allEarningsStore) {
-        allEarnings = calculateTotalAmount($allEarningsStore);
-    }
-
-    $: if ($allPaymentsStore) {
-        allPayments = calculateTotalAmount($allPaymentsStore);
-    }
-
-    $: if ($allPledgesStore) {
-        allPledges = calculatePledges(
-            $allPledgesStore,
-            $wotFilteredTickets,
-            $wotFilteredOffers,
-            user
-        );
     }
 
     function calculateTotalAmount(events: NDKEvent[]): number {
@@ -206,6 +271,7 @@
             return total;
         }, 0);
     }
+
 
     /**
      * Calculates the total pledges for a user by processing a list of NDK events (zaps or nutzaps).
@@ -297,42 +363,12 @@
         const absolutePledgeSplit = Math.round((offer.pledgeSplit / 100) * pledgeSum);
         // If the user is the client, they get the remaining amount after the freelancer's split
         // If the user is the freelancer, they get the pledge split
-        return ticket.pubkey === user ? pledgeSum - absolutePledgeSplit : absolutePledgeSplit;
+        return ticket.pubkey === user ?
+            pledgeSum - absolutePledgeSplit :
+            absolutePledgeSplit;
     }
 
-    onDestroy(() => {
-        allEarningsStore?.empty();
-        allPaymentsStore?.empty();
-        allPledgesStore?.empty();
-    });
-
-    function showFreelancerReviewBreakdown() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewSummaryAsFreelancer,
-            props: { userHex: user },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
-    }
-
-    function showClientReviewBreakdown() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewSummaryAsClient,
-            props: { userHex: user },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
-    }
-
-    $: financialItems = [
+    let financialItems = $derived([
         {
             title: 'The total amount of money this user has received for completing jobs',
             label: 'Earnings',
@@ -348,7 +384,18 @@
             label: 'Pledges',
             amount: allPledges,
         },
-    ];
+    ]);
+
+    let showReviewSummaryAsFreelancer = $state(false);
+    let showReviewSummaryAsClient = $state(false);
+
+    function showFreelancerReviewBreakdown() {
+        showReviewSummaryAsFreelancer = true;
+    }
+
+    function showClientReviewBreakdown() {
+        showReviewSummaryAsClient = true;
+    }
 
     const reputationBlockWrapperClasses =
         'transition ease duration-[0.3s] flex flex-col cursor-pointer w-full gap-[5px] hover:text-white p-[10px] rounded-[4px] hover:bg-blue-500 hover:shadow-soft group';
@@ -365,18 +412,24 @@
                 variant="outlined"
                 classes="justify-start"
                 grow
-                on:click={showFreelancerReviewBreakdown}
+                onClick={showFreelancerReviewBreakdown}
             >
                 <p class="font-[500]">
                     Freelancer Reputation:
                     <span class="badge px-4 {ratingColor}">{asFreelancerRatingConsensus}</span>
                 </p>
             </Button>
-            <div class="flex flex-row grow-[1] px-[20px]">
-                <p class="font-[500]">
-                    Total Earnings:
-                    <span class="font-[300]">{insertThousandSeparator(allEarnings) + ' sats'}</span>
-                </p>
+            <div class="flex flex-row grow-[1] px-[20px] gap-x-1">
+                <div class="font-bold">Total Earnings:</div>
+                {#if initInProgress}
+                    <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
+                {:else} 
+                    <p class="font-[500]">
+                        <span class="font-[300]">
+                            {abbreviateNumber(allEarnings) + ' sats'}
+                        </span>
+                    </p>
+                {/if}
             </div>
         {/if}
 
@@ -385,26 +438,38 @@
                 variant="outlined"
                 classes="justify-start"
                 grow
-                on:click={showClientReviewBreakdown}
+                onClick={showClientReviewBreakdown}
             >
                 <p class="font-[500]">
                     Client Reputation:
                     <span class="badge px-4 {ratingColor}">{asClientRatingConsensus}</span>
                 </p>
             </Button>
-            <div class="flex flex-row grow-[1] px-[20px]">
-                <p class="font-[500]">
-                    Total Payments:
-                    <span class="font-[300]">{insertThousandSeparator(allPayments) + ' sats'}</span>
-                </p>
+            <div class="flex flex-row grow-[1] px-[20px] gap-x-1">
+                <div class="font-bold">Total Payments:</div>
+                {#if initInProgress}
+                    <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
+                {:else} 
+                    <p class="font-[500]">
+                        <span class="font-[300]">
+                            {abbreviateNumber(allPayments) + ' sats'}
+                        </span>
+                    </p>
+                {/if}
             </div>
         {/if}
 
-        <div class="flex flex-row grow-[1] px-[20px]">
-            <p class="font-[500]">
-                Total Pledges:
-                <span class="font-[300]">{insertThousandSeparator(allPledges) + ' sats'}</span>
-            </p>
+        <div class="flex flex-row grow-[1] px-[20px] gap-x-1">
+            <div class="font-bold">Total Pledges:</div>
+            {#if initInProgress}
+                <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
+            {:else} 
+                <p class="font-[500]">
+                    <span class="font-[300]">
+                        {abbreviateNumber(allPledges) + ' sats'}
+                    </span>
+                </p>
+            {/if}
         </div>
     </div>
 {/if}
@@ -419,7 +484,7 @@
                 >
                     <button
                         class={reputationBlockWrapperClasses}
-                        on:click={showFreelancerReviewBreakdown}
+                        onclick={showFreelancerReviewBreakdown}
                     >
                         <RatingBlock
                             label="As a freelancer"
@@ -431,7 +496,7 @@
                     </button>
                     <button
                         class={reputationBlockWrapperClasses}
-                        on:click={showClientReviewBreakdown}
+                        onclick={showClientReviewBreakdown}
                     >
                         <RatingBlock
                             label="As a client"
@@ -451,15 +516,22 @@
                         <p class={boltIconWrapperClasses}>
                             <i
                                 class="bx bxs-bolt text-black-500 dark:text-white-500 group-hover:text-yellow-200"
-                            />
+                            ></i>
                             {label}
                         </p>
-                        <p class="group-hover:text-white">
-                            {abbreviateNumber(amount) + ' sats'}
-                        </p>
+                        {#if initInProgress}
+                            <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
+                        {:else} 
+                            <p class="group-hover:text-white">
+                                {abbreviateNumber(amount) + ' sats'}
+                            </p>
+                        {/if}
                     </div>
                 {/each}
             </div>
         </div>
     </Card>
 {/if}
+
+<ReviewSummaryAsFreelancer bind:isOpen={showReviewSummaryAsFreelancer} userHex={user} />
+<ReviewSummaryAsClient bind:isOpen={showReviewSummaryAsClient} userHex={user} />

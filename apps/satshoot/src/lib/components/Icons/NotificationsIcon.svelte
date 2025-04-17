@@ -1,8 +1,11 @@
 <script lang="ts">
-import { notifications } from '$lib/stores/notifications';
+    import { notifications } from '$lib/stores/notifications';
 
-    export let sizeClass = 'text-lg';
+    interface Props {
+        sizeClass?: string;
+    }
 
+    let { sizeClass = 'text-lg' }: Props = $props();
 </script>
 
 <div class="relative inline-block">
@@ -11,8 +14,8 @@ import { notifications } from '$lib/stores/notifications';
     </span>
 
     {#if $notifications?.length > 0}
-        <span 
-            class="badge-icon custom-badge-size variant-filled-error 
+        <span
+            class="badge-icon custom-badge-size preset-filled-error
             absolute -top-2 -right-4 z-10"
         >
             {$notifications.length}
@@ -22,14 +25,14 @@ import { notifications } from '$lib/stores/notifications';
 
 <style>
     .custom-badge-size {
-        font-size:7pt;
-        width: 21px; 
+        font-size: 7pt;
+        width: 21px;
         height: 21px;
     }
     @screen sm {
         .custom-badge-size {
-            font-size:9pt;
-            width: 25px; 
+            font-size: 9pt;
+            width: 25px;
             height: 25px;
         }
     }

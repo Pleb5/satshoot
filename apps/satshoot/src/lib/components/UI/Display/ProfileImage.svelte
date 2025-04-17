@@ -1,6 +1,10 @@
 <script lang="ts">
-    export let src: string;
-    export let size: 'xs' | 'sm' | 'md' | 'lg' = 'sm'; // Default to "sm"
+    interface Props {
+        src: string;
+        size?: 'xs' | 'sm' | 'md' | 'lg'; // Default to "sm"
+    }
+
+    let { src, size = 'sm' }: Props = $props();
 
     const sizeClasses = {
         xs: 'w-[35px] h-[35px] min-w-[35px] min-h-[35px]',
@@ -9,12 +13,13 @@
         lg: 'w-[100px] h-[100px] min-w-[100px] min-h-[100px]',
     };
 
-    $: wrapperClasses =
+    const baseClasses =
         'transition-all ease-in-out duration-[0.3s] flex flex-col ' +
         'justify-center items-center relative overflow-hidden bg-white-200 ' +
         'rounded-full border-[4px] border-white shadow-strong ' +
-        'ring-4 ring-white hover:ring-blue-500 hover:scale-[1.02] ' +
-        sizeClasses[size];
+        'ring-4 ring-white hover:ring-blue-500 hover:scale-[1.02] ';
+
+    let wrapperClasses = $derived(baseClasses + sizeClasses[size]);
 </script>
 
 <div class={wrapperClasses}>

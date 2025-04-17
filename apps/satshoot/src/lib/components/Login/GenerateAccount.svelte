@@ -1,13 +1,13 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { OnboardingStep, onboardingStep, redirectAfterLogin } from '$lib/stores/gui';
-    import ndk, { LoginMethod } from '$lib/stores/ndk';
+    import ndk, { LoginMethod } from '$lib/stores/session';
     import { loginMethod } from '$lib/stores/user';
     import { encryptSecret } from '$lib/utils/crypto';
     import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
     import { hexToBytes } from '@noble/hashes/utils';
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-    import { clipboard, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+
     import { generateSeedWords, privateKeyFromSeedWords } from 'nostr-tools/nip06';
     import { nsecEncode } from 'nostr-tools/nip19';
     import { onMount } from 'svelte';
@@ -15,20 +15,24 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import SeedWords from './SeedWords.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
-    const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
 
     const seedWords = generateSeedWords();
     const generatedSeedWords = seedWords.split(' ');
     const privateKey = privateKeyFromSeedWords(seedWords);
     const generatedNsec = nsecEncode(hexToBytes(privateKey));
 
-    let generatedNpub = '';
-    let passphraseForGeneratedAccount = '';
-    let confirmPassphraseForGeneratedAccount = '';
-    let copiedNpub = false;
-    let copiedNsec = false;
+    let generatedNpub = $state('');
+    let passphraseForGeneratedAccount = $state('');
+    let confirmPassphraseForGeneratedAccount = $state('');
+    let copiedNpub = $state(false);
+    let copiedNsec = $state(false);
 
     onMount(async () => {
         const signer = new NDKPrivateKeySigner(generatedNsec);
@@ -38,20 +42,16 @@
 
     async function finalizeAccountGeneration() {
         if (passphraseForGeneratedAccount.length < 14) {
-            toastStore.trigger({
-                message: 'Passphrase should be at least 14 characters long',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Passphrase should be at least 14 characters long',
             });
 
             return;
         }
 
         if (confirmPassphraseForGeneratedAccount !== passphraseForGeneratedAccount) {
-            toastStore.trigger({
-                message: 'Confirm passphrase does not match passphrase',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Confirm passphrase does not match passphrase',
             });
 
             return;
@@ -83,22 +83,20 @@
                 lud16: '',
                 website: '',
             };
-            broadcastUserProfile($ndk, user.profile);
+            broadcastUserProfile($ndk, user);
 
             $onboardingStep = OnboardingStep.Account_Created;
 
             // initialize user
-            initializeUser($ndk, toastStore);
+            initializeUser($ndk);
 
-            toastStore.trigger({
-                message: '<strong>Nostr Keypair Created!</strong>',
-                timeout: 7000,
-                background: 'bg-success-300-600-token',
+            toaster.success({
+                title: '<strong>Nostr Keypair Created!</strong>',
             });
 
             handleRedirection();
 
-            modalStore.close();
+            isOpen = false;
         }
     }
 
@@ -112,17 +110,21 @@
     }
 
     function onCopyNpub(): void {
-        copiedNpub = true;
-        setTimeout(() => {
-            copiedNpub = false;
-        }, 1000);
+        navigator.clipboard.writeText(generatedNpub).then(() => {
+            copiedNpub = true;
+            setTimeout(() => {
+                copiedNpub = false;
+            }, 1000);
+        });
     }
 
     function onCopyNsec(): void {
-        copiedNsec = true;
-        setTimeout(() => {
-            copiedNsec = false;
-        }, 1000);
+        navigator.clipboard.writeText(generatedNsec).then(() => {
+            copiedNsec = true;
+            setTimeout(() => {
+                copiedNsec = false;
+            }, 1000);
+        });
     }
 
     const labelClasses =
@@ -158,10 +160,11 @@
     <div class={btnWrapperClasses}>
         <Button
             variant="outlined"
+            onClick={onCopyNsec}
             classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
             grow
         >
-            <span class="w-full h-full" use:clipboard={generatedNsec} on:click={onCopyNsec}>
+            <span class="w-full h-full">
                 {copiedNsec ? 'Copied' : 'Dangerously Copy'}
             </span>
         </Button>
@@ -176,8 +179,8 @@
         <Input value={generatedNpub} disabled grow noBorder notRounded />
     </div>
     <div class={btnWrapperClasses}>
-        <Button variant="outlined" classes="rounded-[0]" grow>
-            <span class="w-full h-full" use:clipboard={generatedNpub} on:click={onCopyNpub}>
+        <Button variant="outlined" onClick={onCopyNpub} classes="rounded-[0]" grow>
+            <span class="w-full h-full">
                 {copiedNpub ? 'Copied' : 'Copy'}
             </span>
         </Button>
@@ -189,7 +192,7 @@
         bind:passphrase={passphraseForGeneratedAccount}
         bind:confirmPassphrase={confirmPassphraseForGeneratedAccount}
         btnLabel="Login"
-        on:submit={finalizeAccountGeneration}
+        onSubmit={finalizeAccountGeneration}
         roundedTop
     />
 </div>

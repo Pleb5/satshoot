@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { type NDKUserProfile } from '@nostr-dev-kit/ndk';
 
     import { onMount } from 'svelte';
@@ -12,14 +12,18 @@
     import { readNotifications } from '$lib/stores/notifications';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
-    export let notification: TicketEvent;
+    interface Props {
+        notification: TicketEvent;
+    }
 
-    $: statusString = getJobStatusString(notification.status);
-    $: statusColor = getJobStatusColor(notification.status);
+    let { notification }: Props = $props();
+
+    let statusString = $derived(getJobStatusString(notification.status));
+    let statusColor = $derived(getJobStatusColor(notification.status));
 
     let user = $ndk.getUser({ pubkey: notification.pubkey });
-    let userName = user.npub.substring(0, 8);
-    let userImage = getRoboHashPicture(user.pubkey);
+    let userName = $state(user.npub.substring(0, 8));
+    let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
 
@@ -29,8 +33,8 @@
             if (userProfile.name) {
                 userName = userProfile.name;
             }
-            if (userProfile.image) {
-                userImage = userProfile.image;
+            if (userProfile.picture) {
+                userImage = userProfile.picture;
             }
         }
     });
@@ -39,7 +43,7 @@
 <Card
     classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
-    on:click={() => {
+    onClick={() => {
         if (!$readNotifications.has(notification.id)) {
             readNotifications.update((notifications) => notifications.add(notification.id));
         }

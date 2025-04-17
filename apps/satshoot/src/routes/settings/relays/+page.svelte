@@ -4,7 +4,7 @@
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
-    import ndk, { connected } from '$lib/stores/ndk';
+    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
         broadcastRelayList,
@@ -13,33 +13,37 @@
     } from '$lib/utils/helpers';
     import { normalizeRelayUrl } from '$lib/utils/misc';
     import { NDKRelayList } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+
     import { onMount } from 'svelte';
-    import { RelayType } from '$lib/stores/network';
+    import { connected, RelayType } from '$lib/stores/network';
+    import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
-    const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    let showRelayRemovalConfirmation = $state(false);
+    let relayToRemove = $state<{ url: string; relayType: RelayType } | null>(null);
 
-    let needRelays = true;
-    let posting = false;
+    let needRelays = $state(true);
+    let posting = $state(false);
 
-    let readRelayUrls: string[] = [];
-    let writeRelayUrls: string[] = [];
+    let readRelayUrls = $state<string[]>([]);
+    let writeRelayUrls = $state<string[]>([]);
 
-    let readRelayInputValue = '';
-    let writeRelayInputValue = '';
+    let readRelayInputValue = $state('');
+    let writeRelayInputValue = $state('');
 
-    let relaysLoaded = false;
+    let relaysLoaded = $state(false);
 
-    $: if ($currentUser && $connected && needRelays) {
-        needRelays = false;
-        relaysLoaded = false;
+    $effect(() => {
+        if ($currentUser && $connected && needRelays) {
+            needRelays = false;
+            relaysLoaded = false;
 
-        fetchOutboxRelays();
-    }
+            fetchOutboxRelays();
+        }
+    });
 
     async function fetchOutboxRelays() {
-        const relays = await fetchUserOutboxRelays($ndk);
+        const relays = await fetchUserOutboxRelays($ndk, $currentUser!.pubkey);
 
         if (relays) {
             const ndkRelayList = NDKRelayList.from(relays);
@@ -82,21 +86,16 @@
         } else {
             writeRelayUrls = writeRelayUrls.filter((relayUrl) => relayUrl !== url);
         }
+
+        relayToRemove = null;
     }
 
     function removeRelay(url: string, relayType: RelayType) {
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: RelayRemovalConfirmation,
-                props: {
-                    url,
-                    onConfirm: async () => {
-                        await handleRelayRemoval(url, relayType);
-                    },
-                },
-            },
-        });
+        relayToRemove = {
+            url,
+            relayType,
+        };
+        showRelayRemovalConfirmation = true;
     }
 
     async function updateRelays() {
@@ -107,20 +106,16 @@
 
             posting = false;
 
-            toastStore.trigger({
-                message: 'New Relay Config Broadcasted!',
-                timeout: 7000,
-                background: 'bg-success-300-600-token',
+            toaster.success({
+                title: 'New Relay Config Broadcasted!',
             });
 
             if ($onboardingStep === OnboardingStep.Profile_Updated) {
                 $onboardingStep = OnboardingStep.Relays_Configured;
             }
         } catch (e) {
-            toastStore.trigger({
-                message: 'Could not post Relays: ' + e,
-                timeout: 7000,
-                background: 'bg-error-300-600-token',
+            toaster.error({
+                title: 'Could not post Relays: ' + e,
             });
 
             fetchOutboxRelays();
@@ -133,18 +128,12 @@
         checkRelayConnections();
     });
 
-    const suggestedRelayUrls = [
-        'wss://nos.lol/',
-        'wss://relay.damus.io/',
-        'wss://relay.primal.net/',
-    ];
-
-    $: filteredSuggestedInboxRelays = suggestedRelayUrls.filter(
-        (relay) => !readRelayUrls.includes(relay)
+    const suggestedRelayUrls = DEFAULTRELAYURLS;
+    const filteredSuggestedInboxRelays = $derived(
+        suggestedRelayUrls.filter((relay) => !readRelayUrls.includes(relay))
     );
-
-    $: filteredSuggestedOutboxRelays = suggestedRelayUrls.filter(
-        (relay) => !writeRelayUrls.includes(relay)
+    const filteredSuggestedOutboxRelays = $derived(
+        suggestedRelayUrls.filter((relay) => !writeRelayUrls.includes(relay))
     );
 </script>
 
@@ -154,17 +143,17 @@
         {#each { length: 4 } as _}
             <section class="w-full">
                 <div class="p-4 space-y-4">
-                    <div class="placeholder animate-pulse" />
+                    <div class="placeholder animate-pulse"></div>
                     <div class="grid grid-cols-3 gap-8">
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
                     </div>
                     <div class="grid grid-cols-4 gap-4">
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
-                        <div class="placeholder animate-pulse" />
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
+                        <div class="placeholder animate-pulse"></div>
                     </div>
                 </div>
             </section>
@@ -187,11 +176,11 @@
                         notRounded
                     />
                     <Button
-                        on:click={() => addRelay(RelayType.READ)}
+                        onClick={() => addRelay(RelayType.READ)}
                         disabled={posting}
                         classes="bg-black-100 text-gray-500 rounded-[0px] hover:text-white"
                     >
-                        <i class="bx bx-plus" />
+                        <i class="bx bx-plus"></i>
                     </Button>
                 </div>
             </div>
@@ -202,16 +191,14 @@
                     {#each readRelayUrls as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:remove={() => removeRelay(relayUrl, RelayType.READ)}
+                            onRemove={() => removeRelay(relayUrl, RelayType.READ)}
                         />
                     {/each}
                 {:else}
                     <div
                         class="w-full min-h-[50px] rounded-[8px] bg-black-100 dark:bg-white-100 border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                     >
-                        <p class="font-[600] text-[18px] text-red-500">
-                            No Inbox Relays Selected!
-                        </p>
+                        <p class="font-[600] text-[18px] text-red-500">No Inbox Relays Selected!</p>
                     </div>
                 {/if}
             </div>
@@ -227,7 +214,7 @@
                     {#each filteredSuggestedInboxRelays as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:add={() => addRelay(RelayType.READ, relayUrl)}
+                            onAdd={() => addRelay(RelayType.READ, relayUrl)}
                             isSuggestedRelay
                         />
                     {/each}
@@ -254,11 +241,11 @@
                         notRounded
                     />
                     <Button
-                        on:click={() => addRelay(RelayType.WRITE)}
+                        onClick={() => addRelay(RelayType.WRITE)}
                         disabled={posting}
                         classes="bg-black-100 text-gray-500 rounded-[0px] hover:text-white"
                     >
-                        <i class="bx bx-plus" />
+                        <i class="bx bx-plus"></i>
                     </Button>
                 </div>
             </div>
@@ -269,7 +256,7 @@
                     {#each writeRelayUrls as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:remove={() => removeRelay(relayUrl, RelayType.WRITE)}
+                            onRemove={() => removeRelay(relayUrl, RelayType.WRITE)}
                         />
                     {/each}
                 {:else}
@@ -293,7 +280,7 @@
                     {#each filteredSuggestedOutboxRelays as relayUrl (relayUrl)}
                         <RelayListElement
                             {relayUrl}
-                            on:add={() => addRelay(RelayType.WRITE, relayUrl)}
+                            onAdd={() => addRelay(RelayType.WRITE, relayUrl)}
                             isSuggestedRelay
                         />
                     {/each}
@@ -301,20 +288,23 @@
             {/if}
         </div>
         <Button
-            on:click={updateRelays}
+            onClick={updateRelays}
             disabled={posting || (readRelayUrls.length === 0 && writeRelayUrls.length === 0)}
         >
             Save
             {#if posting}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-white-500"
-                    track="stroke-white-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="white" />
             {/if}</Button
         >
     {/if}
 </div>
+
+{#if relayToRemove}
+    <RelayRemovalConfirmation
+        bind:isOpen={showRelayRemovalConfirmation}
+        url={relayToRemove.url}
+        onConfirm={async () => {
+            handleRelayRemoval(relayToRemove!.url, relayToRemove!.relayType);
+        }}
+    />
+{/if}

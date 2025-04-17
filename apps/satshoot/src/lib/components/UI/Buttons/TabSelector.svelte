@@ -3,8 +3,12 @@
 
     type Tab = { id: any; label: string; icon?: string; notificationCount?: number };
 
-    export let tabs: Tab[];
-    export let selectedTab: number | null = null;
+    interface Props {
+        tabs: Tab[];
+        selectedTab?: number | null;
+    }
+
+    let { tabs, selectedTab = $bindable(null) }: Props = $props();
 
     const handleClick = (tab: Tab) => {
         if (tab.id !== selectedTab) {
@@ -21,7 +25,7 @@
         <Button
             variant={selectedTab === tab.id ? 'contained' : 'text'}
             grow
-            on:click={() => handleClick(tab)}
+            onClick={() => handleClick(tab)}
         >
             {#if tab.icon}
                 <i class="bx bxs-{tab.icon} text-[18px]"></i>

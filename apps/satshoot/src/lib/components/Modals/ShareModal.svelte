@@ -1,45 +1,54 @@
 <script lang="ts">
-    import { clipboard, getModalStore } from '@skeletonlabs/skeleton';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import Button from '../UI/Buttons/Button.svelte';
-    import Popup from '../UI/Popup.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
-
-    $: copyUrlLabel = `Copy ${$page.route.id === '/[jobId=event]' ? 'Job' : 'Profile'} URL`;
-
-    $: nostrAddress = $page.route.id === '/[jobId=event]' ? $page.params.jobId : $page.params.npub;
-
-    let copiedURL = false;
-    function onCopyURL() {
-        copiedURL = true;
-        setTimeout(() => {
-            copiedURL = false;
-        }, 1000);
+    interface Props {
+        isOpen: boolean;
     }
 
-    let copiedNostrAddress = false;
+    let { isOpen = $bindable() }: Props = $props();
+
+    let copyUrlLabel = $derived(
+        `Copy ${page.route.id === '/[jobId=event]' ? 'Job' : 'Profile'} URL`
+    );
+
+    let nostrAddress = $derived(
+        page.route.id === '/[jobId=event]' ? page.params.jobId : page.params.npub
+    );
+
+    let copiedURL = $state(false);
+    function onCopyURL() {
+        navigator.clipboard.writeText(page.url.href).then(() => {
+            copiedURL = true;
+            setTimeout(() => {
+                copiedURL = false;
+            }, 1000);
+        });
+    }
+
+    let copiedNostrAddress = $state(false);
     function onCopyNostrAddress() {
-        copiedNostrAddress = true;
-        setTimeout(() => {
-            copiedNostrAddress = false;
-        }, 1000);
+        navigator.clipboard.writeText(nostrAddress).then(() => {
+            copiedNostrAddress = true;
+            setTimeout(() => {
+                copiedNostrAddress = false;
+            }, 1000);
+        });
     }
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Share">
-        <div class="w-full flex flex-col justify-center py-[10px] px-[5px] gap-[10px]">
-            <Button grow>
-                <span class="w-full h-full" use:clipboard={$page.url.href} on:click={onCopyURL}>
-                    {copiedURL ? 'Copied!' : copyUrlLabel}
-                </span>
-            </Button>
-            <Button grow>
-                <span class="w-full h-full" use:clipboard={nostrAddress} on:click={onCopyNostrAddress}>
-                    {copiedNostrAddress ? 'Copied!' : 'Copy Npub'}
-                </span>
-            </Button>
-        </div>
-    </Popup>
-{/if}
+<ModalWrapper bind:isOpen title="Share">
+    <div class="w-full flex flex-col justify-center py-[10px] px-[5px] gap-[10px]">
+        <Button grow onClick={onCopyURL}>
+            <span class="w-full h-full">
+                {copiedURL ? 'Copied!' : copyUrlLabel}
+            </span>
+        </Button>
+        <Button grow onClick={onCopyNostrAddress}>
+            <span class="w-full h-full">
+                {copiedNostrAddress ? 'Copied!' : 'Copy Npub'}
+            </span>
+        </Button>
+    </div>
+</ModalWrapper>

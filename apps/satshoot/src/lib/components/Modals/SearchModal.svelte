@@ -1,23 +1,25 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { searchTerms } from '$lib/stores/search';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
 
-    const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    interface Props {
+        isOpen: boolean;
+    }
 
-    let searchInput = '';
+    let { isOpen = $bindable() }: Props = $props();
+
+    let searchInput = $state('');
 
     function handleRemoveTerm(term: string) {
         const newArray = Array.from($searchTerms).filter((t) => t !== term);
         searchTerms.set(new Set(newArray));
 
         // Get the current query parameters
-        const url = new URL($page.url);
+        const url = new URL(page.url);
 
         if (newArray.length === 0) {
             url.searchParams.delete('searchTerms');
@@ -59,18 +61,17 @@
         }
 
         // Get the current query parameters
-        const url = new URL($page.url);
+        const url = new URL(page.url);
         // Add or update the query parameter
         url.searchParams.set('searchTerms', Array.from($searchTerms).join(','));
         // Navigate to the updated
         goto(url.toString(), { replaceState: true });
 
-        // close search modal
-        modalStore.close();
+        isOpen = false;
     }
 
     const inputWrapperClasses =
-        'flex flex-row flex-grow rounded-[6px] overflow-hidden bg-white dark:bg-brightGray outline ' +
+        'flex flex-row grow rounded-[6px] overflow-hidden bg-white dark:bg-brightGray outline ' +
         'outline-[5px] outline-white dark:outline-brightGray border-[1px] border-black-100 dark:border-white-100 gap-[2px]';
 
     const termWrapperClasses =
@@ -82,60 +83,59 @@
         'pr-[10px] group-hover:text-white group-hover:border-r-white-200';
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Search">
-        <div class="w-full flex flex-col">
-            <div class="w-full flex flex-col gap-[10px]">
-                <div class="flex flex-col gap-[5px]">
-                    <label for="search-input" class="m-[0px] text-[14px] font-[500]">
-                        Search (for: term)
-                    </label>
-                    <div class="flex flex-col gap-[10px]">
-                        <div class="w-full flex flex-row gap-[5px]">
-                            <div class={inputWrapperClasses}>
-                                <Input
-                                    id="search-input"
-                                    bind:value={searchInput}
-                                    onKeyPress={handleEnterKey}
-                                    placeholder="Search term or add tag"
-                                    fullWidth
-                                    noBorder
-                                    notRounded
-                                />
-                            </div>
-                            <Button on:click={handleAdd}>
-                                <i class="bx bx-plus" />
-                            </Button>
-                            <Button on:click={handleSearch}>
-                                <i class="bx bx-search" />
-                            </Button>
+<ModalWrapper bind:isOpen title="Search">
+    <div class="w-full flex flex-col">
+        <div class="w-full flex flex-col gap-[10px]">
+            <div class="flex flex-col gap-[5px]">
+                <label for="search-input" class="m-[0px] text-[14px] font-[500]">
+                    Search (for: term)
+                </label>
+                <div class="flex flex-col gap-[10px]">
+                    <div class="w-full flex flex-row gap-[5px]">
+                        <div class={inputWrapperClasses}>
+                            <Input
+                                id="search-input"
+                                bind:value={searchInput}
+                                onKeyPress={handleEnterKey}
+                                placeholder="Search term or add tag"
+                                fullWidth
+                                noBorder
+                                notRounded
+                            />
                         </div>
-                        <div class="w-full flex flex-col gap-[5px]">
-                            <label for="added-tags" class="m-[0px] text-[14px] font-[500]"
-                                >Added tags</label
-                            >
-                            <div
-                                id="added-tags"
-                                class="w-full flex flex-row flex-wrap gap-[5px] p-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] min-h-[40px] overflow-x-auto"
-                            >
-                                {#each $searchTerms as term}
-                                    <div class={termWrapperClasses}>
-                                        <p class={termClasses}>
-                                            {term}
-                                        </p>
-                                        <button
-                                            class="transition ease duration-[0.2s] p-[5px] mr-[-5px] rounded-[4px] group-hover:text-white"
-                                            on:click={() => handleRemoveTerm(term)}
-                                        >
-                                            <i class="bx bx-x" />
-                                        </button>
-                                    </div>
-                                {/each}
-                            </div>
+                        <Button onClick={handleAdd}>
+                            <i class="bx bx-plus"></i>
+                        </Button>
+                        <Button onClick={handleSearch}>
+                            <i class="bx bx-search"></i>
+                        </Button>
+                    </div>
+                    <div class="w-full flex flex-col gap-[5px]">
+                        <label for="added-tags" class="m-[0px] text-[14px] font-[500]"
+                            >Added tags</label
+                        >
+                        <div
+                            id="added-tags"
+                            class="w-full flex flex-row flex-wrap gap-[5px] p-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] min-h-[40px] overflow-x-auto"
+                        >
+                            {#each $searchTerms as term}
+                                <div class={termWrapperClasses}>
+                                    <p class={termClasses}>
+                                        {term}
+                                    </p>
+                                    <button
+                                        class="transition ease duration-[0.2s] p-[5px] mr-[-5px] rounded-[4px] group-hover:text-white"
+                                        aria-label="remove-search-term"
+                                        onclick={() => handleRemoveTerm(term)}
+                                    >
+                                        <i class="bx bx-x"></i>
+                                    </button>
+                                </div>
+                            {/each}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </Popup>
-{/if}
+    </div>
+</ModalWrapper>

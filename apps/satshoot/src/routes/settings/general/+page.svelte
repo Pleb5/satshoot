@@ -4,60 +4,45 @@
     import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
     import ClearCacheModal from '$lib/components/Modals/ClearCacheModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
-    import { sessionPK } from '$lib/stores/ndk';
+    import LightSwitch from '$lib/components/UI/Inputs/LightSwitch.svelte';
+    import { sessionPK } from '$lib/stores/session';
     import browserNotificationsEnabled from '$lib/stores/notifications';
+    import { toaster } from '$lib/stores/toaster';
     import { useSatShootWoT } from '$lib/stores/wot';
     import { hexToBytes } from '@noble/ciphers/utils';
-    import {
-        clipboard,
-        getModalStore,
-        getToastStore,
-        LightSwitch,
-        type ModalSettings,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+
     import { nsecEncode } from 'nostr-tools/nip19';
 
-    const modalStore = getModalStore();
-    const toastStore = getToastStore();
-
-    let nsec = '';
-    let showing = false;
-    let copiedNsec = false;
+    let showClearCacheModal = $state(false);
+    let nsec = $state('');
+    let showing = $state(false);
+    let copiedNsec = $state(false);
 
     async function clearCache() {
-        const modal: ModalSettings = {
-            type: 'component',
-            component: { ref: ClearCacheModal },
-        };
-        modalStore.trigger(modal);
+        showClearCacheModal = true;
     }
 
-    $: if (browser && Number($browserNotificationsEnabled) >= 0) {
-        // If there is no permission for notifications yet, ask for it
-        // If it is denied then return and turn notifications off
-        if (Notification.permission !== 'granted') {
-            Notification.requestPermission().then((permission: NotificationPermission) => {
-                if (permission !== 'granted') {
-                    browserNotificationsEnabled.set(false);
-                    const t: ToastSettings = {
-                        message: `
-                        <p>Notifications Settings are Disabled in the Browser!</p>
-                        <p>
-                        <span>Click small icon </span>
-                        <span> left of browser search bar to enable this setting!</span>
-                        </p>
-                        `,
-                        autohide: false,
-                    };
-                    toastStore.clear();
-                    toastStore.trigger(t);
-                }
-                // User enabled notification settings, set user choice in local storage too
-                browserNotificationsEnabled.set($browserNotificationsEnabled);
-            });
+    $effect(() => {
+        if (browser && Number($browserNotificationsEnabled) >= 0) {
+            // If there is no permission for notifications yet, ask for it
+            // If it is denied then return and turn notifications off
+            if (Notification.permission !== 'granted') {
+                Notification.requestPermission().then((permission: NotificationPermission) => {
+                    if (permission !== 'granted') {
+                        browserNotificationsEnabled.set(false);
+                        toaster.info({
+                            title: 'Notifications Settings are Disabled in the Browser!',
+                            description:
+                                'Click small icon left of browser search bar to enable this setting!',
+                            duration: 60000, // 1 min
+                        });
+                    }
+                    // User enabled notification settings, set user choice in local storage too
+                    browserNotificationsEnabled.set($browserNotificationsEnabled);
+                });
+            }
         }
-    }
+    });
 
     function showPrivateKey() {
         showing = !showing;
@@ -67,10 +52,12 @@
     }
 
     function onCopyNsec(): void {
-        copiedNsec = true;
-        setTimeout(() => {
-            copiedNsec = false;
-        }, 1000);
+        navigator.clipboard.writeText(nsec).then(() => {
+            copiedNsec = true;
+            setTimeout(() => {
+                copiedNsec = false;
+            }, 1000);
+        });
     }
 
     let wotTooltip =
@@ -86,29 +73,21 @@
 <div class="w-full flex flex-col gap-[15px] overflow-y-auto">
     <div class="w-full flex flex-col gap-[15px] p-2">
         <div class="w-full flex flex-row gap-[10px] items-center pt-[5px] pr-[5px]">
-            <label class="grow-[1] font-[500]" for="toggle-dark-mode"> Theme </label>
-            <LightSwitch
-                bgLight="bg-black-100"
-                bgDark="bg-white-100"
-                fillLight="fill-blue-500"
-                fillDark="fill-white"
-                ring="ring-[2px]"
-                width="w-16"
-                height="h-8"
-            />
+            <label class="grow-1 font-[500]" for="toggle-dark-mode"> Theme </label>
+
+            <LightSwitch />
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
-            <label class="grow-[1] font-[500]" for="clear-cache-btn">Cache</label>
-            <Button on:click={clearCache}>Clear Cache</Button>
+            <label class="grow-1 font-[500]" for="clear-cache-btn">Cache</label>
+            <Button onClick={clearCache}>Clear Cache</Button>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
-            <div class="flex flex-row gap-2 grow-[1]">
+            <div class="flex flex-row gap-2 grow-1">
                 <label class="font-[500]" for="attach-satshoot-wot">
                     Attach SatShoot Web of Trust
                 </label>
                 <QuestionIcon
-                    extraClasses="w-6 h-6 text-lg [&>*]:pointer-events-none text-center"
-                    triggerEvent="click"
+                    extraClasses="w-6 h-6 text-lg *:pointer-events-none text-center"
                     placement="top"
                     popUpText={wotTooltip}
                 />
@@ -123,12 +102,12 @@
                 />
                 <i
                     class="bx bx-check hidden peer-checked:block absolute pointer-events-none text-white"
-                />
+                ></i>
             </div>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
-            <div class="flex flex-row gap-[5px] grow-[1]">
-                <label class="font-[500]" for="attach-satshoot-wot">
+            <div class="flex flex-row gap-[5px] grow-1">
+                <label class="font-[500]" for="browser-notifications-enabled">
                     Browser Notifications
                 </label>
             </div>
@@ -146,7 +125,7 @@
                 <button
                     class="w-full flex justify-center items-center gap-[10px] bg-blue-500 text-white font-[500] py-[8px] px-[16px] rounded-[4px] hover:bg-blue-600 transition-colors"
                     type="button"
-                    on:click={showPrivateKey}
+                    onclick={showPrivateKey}
                 >
                     <EyeIcon show={showing} />
                     <span>Show Private Key (nsec)</span>
@@ -159,10 +138,10 @@
                                 nsec.substring(nsec.length - 11, nsec.length - 1)}
                         </div>
                         <Button
-                            
                             classes="bg-red-500 hover:bg-red-600 transition-colors"
+                            onClick={onCopyNsec}
                         >
-                            <span class="w-full h-full" use:clipboard={nsec} on:click={onCopyNsec}>
+                            <span class="w-full h-full">
                                 {copiedNsec ? 'Copied!' : 'Dangerously Copy'}
                             </span>
                         </Button>
@@ -172,3 +151,5 @@
         {/if}
     </div>
 </div>
+
+<ClearCacheModal bind:isOpen={showClearCacheModal} />

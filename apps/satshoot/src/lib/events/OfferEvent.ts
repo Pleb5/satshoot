@@ -1,7 +1,8 @@
-import { NDKEvent, type Hexpubkey, type NDK, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
+import type NDK from "@nostr-dev-kit/ndk";
+import { NDKEvent, type Hexpubkey, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
 import { SatShootPubkey } from "$lib/utils/misc";
 
-import { BOOTSTRAPOUTBOXRELAYS } from "$lib/stores/ndk";
+import { BOOTSTRAPOUTBOXRELAYS } from "$lib/stores/session";
 
 import {nip19} from 'nostr-tools';
 import { NDKKind } from "@nostr-dev-kit/ndk";

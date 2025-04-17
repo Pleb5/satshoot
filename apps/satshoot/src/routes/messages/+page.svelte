@@ -2,40 +2,44 @@
     import ChatHead from '$lib/components/ChatHead.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { checkRelayConnections } from '$lib/utils/helpers';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
-    import Input from '$lib/components/UI/Inputs/input.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import Card from '$lib/components/UI/Card.svelte';
-    import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { page } from '$app/stores';
+    import { sessionInitialized } from '$lib/stores/session';
 
     enum ConversationType {
         Freelancer = 0,
         Client = 1,
     }
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: searchTerms = searchQuery ? searchQuery.split(',') : [];
+    let searchQuery = $derived($page.url.searchParams.get('searchTerms'));
+    let searchTerms = $derived(searchQuery ? searchQuery.split(',') : []);
 
-    let freelancers: NDKUser[] = [];
-    let ticketsWithFreelancers: TicketEvent[] = [];
-    let clients: NDKUser[] = [];
-    let ticketsWithClients: TicketEvent[] = [];
-    let conversationType: ConversationType = ConversationType.Freelancer;
-    let mounted = false;
-    let noTicketsWithFreelancers = false;
-    let noTicketsWithClients = false;
+    let freelancers = $state<NDKUser[]>([]);
+    let ticketsWithFreelancers = $state<TicketEvent[]>([]);
+    let clients = $state<NDKUser[]>([]);
+    let ticketsWithClients = $state<TicketEvent[]>([]);
+    let conversationType = $state(ConversationType.Freelancer);
+    let mounted = $state(false);
+    let noTicketsWithFreelancers = $state(false);
+    let noTicketsWithClients = $state(false);
 
-    $: if ($loggedIn && mounted) {
-        init();
-    }
+    let initialized = $state(false)
+    $effect(() => {
+        if ($loggedIn && $sessionInitialized && mounted && !initialized) {
+            initialized = true;
+            init();
+
+            checkRelayConnections();
+        }
+    });
 
     async function init() {
-        console.log('init');
         const tickets = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceTicket],
@@ -47,8 +51,6 @@
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             }
         );
-
-        console.log('my tickets in messages page:', tickets);
 
         if (tickets.size === 0) noTicketsWithFreelancers = true;
 
@@ -64,9 +66,6 @@
             }
         });
 
-        freelancers = freelancers;
-        ticketsWithFreelancers = ticketsWithFreelancers;
-
         const offers = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceOffer],
@@ -80,8 +79,6 @@
         );
 
         if (offers.size === 0) noTicketsWithClients = true;
-
-        console.log('my offers in messages page:', offers);
 
         // Batching tickets to fetch
         const ticketsToFetch: string[] = [];
@@ -103,7 +100,6 @@
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             }
         );
-        console.log('tickets of offers in message page', ticketEvents);
         ticketEvents.forEach((t: NDKEvent) => {
             const ticket = TicketEvent.from(t);
             offers.forEach((o: NDKEvent) => {
@@ -115,19 +111,17 @@
                 }
             });
         });
-
-        clients = clients;
-        ticketsWithClients = ticketsWithClients;
     }
+
+    let pageTop = $state<HTMLDivElement>();
 
     onMount(() => {
         // Scroll to top as soon as ticket arrives
-        const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
-        elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
+        if (pageTop) {
+            pageTop.scrollIntoView(true)
+        }
 
         mounted = true;
-
-        checkRelayConnections();
     });
 
     const tabs = [
@@ -140,15 +134,13 @@
 </script>
 
 {#if $currentUser}
-    <div class="w-full flex flex-col gap-0 flex-grow">
+    <div bind:this={pageTop} class="w-full flex flex-col gap-0 grow">
         <div class="w-full h-full flex flex-col justify-center items-center py-[25px]">
             <div
                 class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"
             >
                 <div class="w-full h-full flex flex-col gap-[15px]">
-                    <div
-                        class="w-full h-full flex gap-[15px] max-h-[calc(100vh-160px)]"
-                    >
+                    <div class="w-full h-full flex gap-[15px] max-h-[calc(100vh-160px)]">
                         <Card classes="gap-[10px]">
                             <TabSelector {tabs} bind:selectedTab={conversationType} />
 
@@ -172,11 +164,11 @@
                                             <div class="w-full card flex gap-2 h-28 p-4">
                                                 <div
                                                     class="w-20 placeholder-circle animate-pulse"
-                                                />
+                                                ></div>
                                                 <div class="w-28 grid grid-rows-3 gap-2">
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
-                                                    <div class="placeholder animate-pulse" />
+                                                    <div class="placeholder animate-pulse"></div>
+                                                    <div class="placeholder animate-pulse"></div>
+                                                    <div class="placeholder animate-pulse"></div>
                                                 </div>
                                             </div>
                                         {/each}
@@ -196,11 +188,11 @@
                                         <div class="w-full card flex gap-2 h-28 p-4">
                                             <div
                                                 class="w-20 placeholder-circle animate-pulse"
-                                            />
+                                            ></div>
                                             <div class="w-28 grid grid-rows-3 gap-2">
-                                                <div class="placeholder animate-pulse" />
-                                                <div class="placeholder animate-pulse" />
-                                                <div class="placeholder animate-pulse" />
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
                                             </div>
                                         </div>
                                     {/each}

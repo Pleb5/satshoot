@@ -1,39 +1,31 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { popup } from '@skeletonlabs/skeleton';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
+    import { Popover } from '@skeletonlabs/skeleton-svelte';
     import type { Placement } from '@floating-ui/dom';
     import Card from '../UI/Card.svelte';
 
-    export let extraClasses = 'text-lg';
-    export let triggerEvent: 'click' | 'hover' | 'focus-click' | 'focus-blur' | null = null;
+    interface Props {
+        popUpText: string;
+        extraClasses?: string;
+        placement?: Placement;
+    }
 
-    export let placement: Placement | null = null;
-    export let popUpText: string | null = null;
+    let { popUpText, extraClasses = 'text-lg', placement }: Props = $props();
 
-    let popupSettings: PopupSettings | null = null;
-
-    onMount(() => {
-        if (triggerEvent && placement && popUpText) {
-            popupSettings = {
-                event: triggerEvent,
-                target: 'popupTarget',
-                placement: placement,
-            };
-        }
-    });
+    let openState = $state(false);
 </script>
 
-{#if popupSettings}
-    <i
-        class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"
-        use:popup={popupSettings}
-    />
-    <div data-popup="popupTarget">
+<Popover
+    open={openState}
+    onOpenChange={(e) => (openState = e.open)}
+    positioning={{ placement }}
+    zIndex="1000"
+>
+    {#snippet trigger()}
+        <i class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"></i>
+    {/snippet}
+    {#snippet content()}
         <Card classes="w-80 p-4 max-h-60 overflow-y-auto shadow-deep">
             {@html popUpText}
         </Card>
-    </div>
-{:else}
-    <i class="bx bx-question-mark bg-blue-500 text-white rounded-[50%] {extraClasses}"></i>
-{/if}
+    {/snippet}
+</Popover>

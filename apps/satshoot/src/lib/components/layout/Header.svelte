@@ -1,47 +1,65 @@
 <script lang="ts">
-    import {
-        Avatar,
-        getDrawerStore,
-        getModalStore,
-        ProgressRadial,
-        type DrawerSettings,
-        type ModalComponent,
-        type ModalSettings,
-    } from '@skeletonlabs/skeleton';
+    import { Avatar } from '@skeletonlabs/skeleton-svelte';
+
     import LoginModal from '../Modals/LoginModal.svelte';
     import currentUser, { loggedIn, loggingIn, loginMethod } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
-    import { createEventDispatcher } from 'svelte';
-    import drawerID, { DrawerIDs } from '$lib/stores/drawer';
+    import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
+    import { NDKKind, NDKRelaySet, profileFromEvent } from '@nostr-dev-kit/ndk';
+    import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import AppMenu from './AppMenu.svelte';
 
-    const dispatch = createEventDispatcher();
-
-    const drawerStore = getDrawerStore();
-    const modalStore = getModalStore();
-
-    function handleLogin() {
-        const modalComponent: ModalComponent = {
-            ref: LoginModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-
-        modalStore.trigger(modal);
+    interface Props {
+        onRestoreLogin: () => void;
     }
 
-    function openAppMenu() {
-        $drawerID = DrawerIDs.AppMenu;
-        const drawerSettings: DrawerSettings = {
-            id: $drawerID.toString(),
-            width: 'w-[50vw] sm:w-[40vw] md:w-[30vw]',
-            position: 'right',
-            bgDrawer: 'bg-surface-300-600-token',
+    let { onRestoreLogin }: Props = $props();
+
+    let showLoginModal = $state(false);
+    let showAppMenu = $state(false);
+
+    let profilePicture = $state('');
+    let hasAttemptedProfileFetch = $state(false);
+
+    // Only trigger profile fetch when logged in changes to true and we haven't attempted yet
+    $effect(() => {
+        if ($loggedIn && !hasAttemptedProfileFetch) {
+            fetchUserProfile();
+            hasAttemptedProfileFetch = true;
+        } else if (!$loggedIn) {
+            // Reset the flag when logged out, so we fetch again on next login
+            hasAttemptedProfileFetch = false;
+        }
+    });
+
+    const fetchUserProfile = async () => {
+        const metadataFilter = {
+            kinds: [NDKKind.Metadata],
+            authors: [$currentUser!.pubkey],
         };
-        drawerStore.open(drawerSettings);
+
+        const metadataRelays = [...BOOTSTRAPOUTBOXRELAYS, ...DEFAULTRELAYURLS];
+
+        const profileEvent = await fetchEventFromRelaysFirst(metadataFilter, {
+            relayTimeoutMS: 3000,
+            fallbackToCache: true,
+            explicitRelays: Array.from(NDKRelaySet.fromRelayUrls(metadataRelays, $ndk).relays),
+        });
+
+        if (profileEvent) {
+            const profile = profileFromEvent(profileEvent);
+            $currentUser!.profile = profile;
+            profilePicture =
+                profile?.picture ?? profile?.image ?? getRoboHashPicture($currentUser!.pubkey);
+        } else {
+            profilePicture = getRoboHashPicture($currentUser!.pubkey);
+        }
+    };
+
+    function handleLogin() {
+        showLoginModal = true;
     }
 
     const satShootLogoWrapperClass = 'flex flex-row items-center gap-4 ' + '';
@@ -71,36 +89,28 @@
                             <p class="max-[576px]:hidden">SatShoot</p>
                         </a>
                     </div>
-                    <div class="flex flex-row flex-grow gap-4 justify-end items-center">
+                    <div class="flex flex-row grow gap-4 justify-end items-center">
                         {#if $loggedIn}
                             <Button href="/post-job/">Submit Job</Button>
-                            <button on:click={openAppMenu}>
+                            <button onclick={() => (showAppMenu = !showAppMenu)}>
                                 <!-- Avatar image -->
                                 <Avatar
-                                    class="rounded-full border-white placeholder-white"
-                                    border="border-4 border-surface-300-600-token hover:!border-primary-500"
-                                    cursor="cursor-pointer"
-                                    width="w-12 sm:w-14"
-                                    src={$currentUser?.profile?.image ??
+                                    classes="rounded-full border-white placeholder-white cursor-pointer size-12 sm:size-14"
+                                    border="border-4 border-surface-300-600 hover:border-primary-500!"
+                                    src={profilePicture ??
                                         getRoboHashPicture($currentUser?.pubkey ?? '')}
+                                    name={$currentUser?.profile?.displayName ?? ''}
                                 />
                             </button>
                         {:else if $loggingIn}
                             <div class="flex items-center gap-x-2">
                                 <h3 class="h6 md:h3 font-bold">Logging in...</h3>
-                                <ProgressRadial
-                                    value={undefined}
-                                    stroke={80}
-                                    meter="stroke-primary-500"
-                                    track="stroke-primary-500/30"
-                                    strokeLinecap="round"
-                                    width="w-12"
-                                />
+                                <ProgressRing color="primary" size={12} />
                             </div>
                         {:else if $loginMethod === 'local'}
-                            <Button on:click={() => dispatch('restoreLogin')}>Login</Button>
+                            <Button onClick={onRestoreLogin}>Login</Button>
                         {:else}
-                            <Button on:click={handleLogin}>Login</Button>
+                            <Button onClick={handleLogin}>Login</Button>
                         {/if}
                     </div>
                 </div>
@@ -108,3 +118,7 @@
         </div>
     </div>
 </div>
+
+<AppMenu bind:isOpen={showAppMenu} />
+
+<LoginModal bind:isOpen={showLoginModal} />

@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
     import Passphrase from '../Passphrase.svelte';
     import TabSelector from '../UI/Buttons/TabSelector.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -9,13 +8,17 @@
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
     import { encryptSecret } from '$lib/utils/crypto';
     import { loginMethod } from '$lib/stores/user';
-    import ndk, { LoginMethod, sessionPK } from '$lib/stores/ndk';
+    import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
     import { initializeUser } from '$lib/utils/helpers';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { goto } from '$app/navigation';
+    import { toaster } from '$lib/stores/toaster';
 
-    const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    interface Props {
+        isOpen: boolean;
+    }
+
+    let { isOpen = $bindable() }: Props = $props();
 
     enum LocalKeyLoginTabs {
         SecretKey,
@@ -33,34 +36,30 @@
         },
     ];
 
-    let activeTabForLocalKeyLogin = LocalKeyLoginTabs.SecretKey;
+    let activeTabForLocalKeyLogin = $state(LocalKeyLoginTabs.SecretKey);
 
-    let nsecForLocalKey = '';
-    let seedWordsForLocalKey = Array(12).fill('');
-    let passphraseForNsec = '';
-    let confirmPassphraseForNsec = '';
-    let passphraseForSeedWords = '';
-    let confirmPassphraseForSeedWords = '';
+    let nsecForLocalKey = $state('');
+    let seedWordsForLocalKey = $state(Array(12).fill(''));
+    let passphraseForNsec = $state('');
+    let confirmPassphraseForNsec = $state('');
+    let passphraseForSeedWords = $state('');
+    let confirmPassphraseForSeedWords = $state('');
 
-    let statusMessage = '';
-    let statusColor = 'text-tertiary-200-700-token';
+    let statusMessage = $state('');
+    let statusColor = $state('text-tertiary-200-700');
 
     async function loginWithNsec() {
         if (passphraseForNsec.length < 14) {
-            toastStore.trigger({
-                message: 'Passphrase should be at least 14 characters long',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Passphrase should be at least 14 characters long',
             });
 
             return;
         }
 
         if (confirmPassphraseForNsec !== passphraseForNsec) {
-            toastStore.trigger({
-                message: 'Confirm passphrase does not match passphrase',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Confirm passphrase does not match passphrase',
             });
 
             return;
@@ -76,30 +75,24 @@
 
     async function loginWithSeedWords() {
         if (passphraseForSeedWords.length < 14) {
-            toastStore.trigger({
-                message: 'Passphrase should be at least 14 characters long',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Passphrase should be at least 14 characters long',
             });
 
             return;
         }
 
         if (confirmPassphraseForSeedWords !== passphraseForSeedWords) {
-            toastStore.trigger({
-                message: 'Confirm passphrase does not match passphrase',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Confirm passphrase does not match passphrase',
             });
 
             return;
         }
 
         if (!validateSeedWordInputs(seedWordsForLocalKey)) {
-            toastStore.trigger({
-                message: 'Invalid seed words input!',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Invalid seed words input!',
             });
             return;
         }
@@ -122,20 +115,16 @@
         });
 
         if (!allFilledIn) {
-            toastStore.trigger({
-                message: 'Fill in all seed words!',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Fill in all seed words!',
             });
             return false;
         }
 
         // validate valid bip39 wordlist provided
         if (!validateWords(seedWords.join(' '))) {
-            toastStore.trigger({
-                message: 'Check the seed words again! Not a valid bip39 wordlist!',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Check the seed words again! Not a valid bip39 wordlist!',
             });
             return false;
         }
@@ -150,7 +139,7 @@
         failureMessage: string
     ) {
         statusMessage = 'Encrypting and saving Secret in browser storage...';
-        statusColor = 'text-tertiary-200-700-token';
+        statusColor = 'text-tertiary-200-700';
 
         try {
             const privateKey =
@@ -179,23 +168,19 @@
             $ndk.signer = signer;
 
             // Initialize user
-            initializeUser($ndk, toastStore);
+            initializeUser($ndk);
 
             // Display success toast
-            toastStore.trigger({
-                message: 'Encrypted Secret saved in local storage!',
-                timeout: 7000,
-                background: 'bg-success-300-600-token',
+            toaster.success({
+                title: 'Encrypted Secret saved in local storage!',
             });
 
             handleRedirection();
             // Close login modal
-            modalStore.close();
+            isOpen = false;
         } catch (e) {
-            toastStore.trigger({
-                message: `${failureMessage} ${e}`,
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: `${failureMessage} ${e}`,
             });
         }
     }
@@ -257,7 +242,7 @@
                 bind:passphrase={passphraseForNsec}
                 bind:confirmPassphrase={confirmPassphraseForNsec}
                 btnLabel="Login"
-                on:submit={loginWithNsec}
+                onSubmit={loginWithNsec}
             />
         </div>
     {:else if activeTabForLocalKeyLogin === LocalKeyLoginTabs.SeedWords}
@@ -267,7 +252,7 @@
                 bind:passphrase={passphraseForSeedWords}
                 bind:confirmPassphrase={confirmPassphraseForSeedWords}
                 btnLabel="Login"
-                on:submit={loginWithSeedWords}
+                onSubmit={loginWithSeedWords}
             />
         </div>
     {/if}

@@ -1,30 +1,32 @@
 <script lang="ts">
     import { unReadNotifications } from '$lib/stores/notifications';
-    import { createEventDispatcher } from 'svelte';
-    import { TabAnchor } from '@skeletonlabs/skeleton';
+    import { Navigation } from '@skeletonlabs/skeleton-svelte';
 
-    const dispatch = createEventDispatcher();
+    interface Props {
+        href?: string;
+        icon: string;
+        isActive?: boolean;
+        onClick?: () => void;
+    }
 
-    export let href: string | undefined;
-    export let icon: string;
-    export let isActive = false;
+    let { href, icon, isActive = false, onClick = () => {} }: Props = $props();
 
     // Use a computed class for active state
-    $: activeClass = isActive
-        ? 'bg-blue-500 text-white'
-        : 'bg-blue-0 text-black-300 dark:text-white';
+    let activeClass = $derived(
+        isActive ? 'bg-blue-500 text-white' : 'bg-blue-0 text-black-300 dark:text-white'
+    );
 
     // Base classes for the nav item
     const baseClasses =
-        'text-[16pt] sm:text-[20pt] border-0 outline-none py-[15px] px-[20px] rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row flex-grow justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
+        'text-[16pt] sm:text-[20pt] border-0 outline-hidden py-[15px] px-[20px] rounded-[5px] font-semibold transform scale-100 whitespace-nowrap flex flex-row grow justify-center items-center gap-[8px] hover:bg-blue-600 hover:text-white relative';
 
     function handleClick() {
-        dispatch('click');
+        onClick();
     }
 </script>
 
-<TabAnchor {href} padding="" rounded="rounded-[5px]">
-    <button class={`${baseClasses} ${activeClass}`} on:click={handleClick}>
+<Navigation.Tile {href} padding="" rounded="rounded-[5px]">
+    <button class={`${baseClasses} ${activeClass}`} onclick={handleClick}>
         {#if href}
             <i class={`bx ${icon} relative`}>
                 {#if href === '/notifications/' && $unReadNotifications.length > 0}
@@ -36,7 +38,7 @@
                 {/if}
             </i>
         {:else}
-            <i class={`bx ${icon}`} />
+            <i class={`bx ${icon}`}></i>
         {/if}
     </button>
-</TabAnchor>
+</Navigation.Tile>

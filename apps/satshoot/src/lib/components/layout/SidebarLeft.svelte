@@ -1,26 +1,17 @@
 <script lang="ts">
-    import { page } from "$app/stores";
-    import { AppRail, getModalStore } from "@skeletonlabs/skeleton";
-    import SearchModal from "../Modals/SearchModal.svelte";
-    import BottomNavItem from "./BottomNavItem.svelte";
+    import { page } from '$app/state';
+    import { Modal, Navigation } from '@skeletonlabs/skeleton-svelte';
 
+    import SearchModal from '../Modals/SearchModal.svelte';
+    import BottomNavItem from './BottomNavItem.svelte';
 
-    export let hideSidebarLeft = true
+    let isSearchModalOpened = $state(false);
 
-    $: hideMyself = hideSidebarLeft ? 'hidden' : ''
-
-    const modalStore = getModalStore();
-
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: filterList = searchQuery ? searchQuery.split(',') : [];
+    let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
+    let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
 
     function handleSearch() {
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: SearchModal,
-            },
-        });
+        isSearchModalOpened = true;
     }
 
     const items = [
@@ -40,25 +31,28 @@
             icon: 'bxs-bell',
         },
     ];
-
 </script>
 
-<AppRail
-    class="{hideMyself} max-sm:hidden min-sm:block w-24 pt-2"
-    background="bg-surface-100-800-token"
+<Navigation.Rail
+    classes="hidden sm:block flex-none overflow-x-hidden overflow-y-auto"
+    background="bg-white dark:bg-brightGray"
 >
-    <div class="flex flex-col items-center gap-y-4">
-        {#each items as { href, icon }}
-            {#if icon === 'bx-search'}
-                <BottomNavItem
-                    {href}
-                    {icon}
-                    isActive={filterList.length !== 0}
-                    on:click={handleSearch}
-                />
-            {:else}
-                <BottomNavItem {href} {icon} isActive={href === $page.url.pathname} />
-            {/if}
-        {/each}
-    </div>
-</AppRail>
+    {#snippet tiles()}
+        <div class="flex flex-col items-center gap-y-4">
+            {#each items as { href, icon }}
+                {#if icon === 'bx-search'}
+                    <BottomNavItem
+                        {href}
+                        {icon}
+                        isActive={filterList.length !== 0}
+                        onClick={handleSearch}
+                    />
+                {:else}
+                    <BottomNavItem {href} {icon} isActive={href === page.url.pathname} />
+                {/if}
+            {/each}
+        </div>
+    {/snippet}
+</Navigation.Rail>
+
+<SearchModal bind:isOpen={isSearchModalOpened} />

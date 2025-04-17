@@ -1,10 +1,14 @@
 <script lang="ts">
     import Button from './Button.svelte';
 
-    export let question: string;
-    export let value: boolean;
-    export let trueLabel: string;
-    export let falseLabel: string;
+    interface Props {
+        question: string;
+        value: boolean;
+        trueLabel: string;
+        falseLabel: string;
+    }
+
+    let { question, value = $bindable(), trueLabel, falseLabel }: Props = $props();
 
     const handleOptionTrueClick = () => {
         value = true;
@@ -22,10 +26,10 @@
     <div
         class="w-full flex flex-row flex-wrap gap-[10px] rounded-[6px] bg-black-100 p-[5px] border-[1px] border-black-100 dark:border-white-100"
     >
-        <Button variant="text" selected={value} grow isToggle on:click={handleOptionTrueClick}>
+        <Button variant="text" selected={value} grow isToggle onClick={handleOptionTrueClick}>
             {trueLabel}
         </Button>
-        <Button variant="text" selected={!value} grow isToggle on:click={handleOptionFalseClick}>
+        <Button variant="text" selected={!value} grow isToggle onClick={handleOptionFalseClick}>
             {falseLabel}
         </Button>
     </div>

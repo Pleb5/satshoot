@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import type { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
     import Card from '../UI/Card.svelte';
@@ -8,11 +8,15 @@
     import { readNotifications } from '$lib/stores/notifications';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
-    export let notification: NDKEvent;
+    interface Props {
+        notification: NDKEvent;
+    }
+
+    let { notification }: Props = $props();
 
     const follower = $ndk.getUser({ pubkey: notification.pubkey });
-    let followerName = follower.npub.substring(0, 8);
-    let followerImage = getRoboHashPicture(follower.pubkey);
+    let followerName = $state(follower.npub.substring(0, 8));
+    let followerImage = $state(getRoboHashPicture(follower.pubkey));
     let followerProfile: NDKUserProfile | null;
 
     onMount(async () => {
@@ -21,8 +25,8 @@
             if (followerProfile.name) {
                 followerName = followerProfile.name;
             }
-            if (followerProfile.image) {
-                followerImage = followerProfile.image;
+            if (followerProfile.picture) {
+                followerImage = followerProfile.picture;
             }
         }
     });
@@ -31,7 +35,7 @@
 <Card
     classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
-    on:click={() => {
+    onClick={() => {
         if (!$readNotifications.has(notification.id)) {
             readNotifications.update((notifications) => notifications.add(notification.id));
         }

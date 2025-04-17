@@ -7,7 +7,7 @@
     import PaymentSection from '$lib/components/HomePage/PaymentSection.svelte';
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div class="w-full flex flex-col gap-0 grow">
     <IntroSection />
     <JobListing />
     <About />

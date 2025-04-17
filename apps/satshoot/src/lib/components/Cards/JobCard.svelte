@@ -1,32 +1,26 @@
 <script lang="ts">
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
     import { formatDate } from 'date-fns';
     import JobPostMenu from '../Modals/JobPostMenu.svelte';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Markdown from './Markdown.svelte';
 
-    const modalStore = getModalStore();
+    interface Props {
+        job: TicketEvent;
+        tagCallback?: ((tag: string) => void) | null;
+    }
 
-    export let job: TicketEvent;
-    export let tagCallback: ((tag: string) => void) | null = null;
+    let { job, tagCallback = null }: Props = $props();
 
-    $: statusString = getJobStatusString(job.status);
-    $: statusColor = getJobStatusColor(job.status);
+    let showJobPostMenu = $state(false);
+
+    let statusString = $derived(getJobStatusString(job.status));
+    let statusColor = $derived(getJobStatusColor(job.status));
 
     function handleOptionClick() {
-        const modalComponent: ModalComponent = {
-            ref: JobPostMenu,
-            props: { job },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
+        showJobPostMenu = true;
     }
 
     const statusRowWrapperClasses =
@@ -34,7 +28,7 @@
         'border-[1px] border-black-100 dark:border-white-100 text-black-500 dark:text-white font-[600] p-[5px]';
 
     const statusRowItemClasses =
-        'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center grow-[1] items-center ' +
+        'transition ease duration-[0.3s] flex flex-row gap-[5px] justify-center grow-1 items-center ' +
         'px-[10px] py-[5px] rounded-[4px] hover:text-white hover:bg-blue-500 max-[768px]:justify-start';
 
     const tagItemClasses =
@@ -48,12 +42,12 @@
     </div>
     <div class={statusRowWrapperClasses}>
         <p title="Job Status" class="{statusRowItemClasses} {statusColor}">
-            <i class="bx bx-info-circle" />
+            <i class="bx bx-info-circle"></i>
             Job Status: {statusString}
         </p>
         {#if job.created_at}
             <p title="Edit Date/Time" class={statusRowItemClasses}>
-                <i class="bx bx-edit-alt" />
+                <i class="bx bx-edit-alt"></i>
                 {formatDate(job.created_at * 1000, 'dd-MMM-yyyy, h:m:ss a')}
             </p>
         {/if}
@@ -63,11 +57,11 @@
             target="_blank"
             class={statusRowItemClasses}
         >
-            <i class="bx bx-globe" />
+            <i class="bx bx-globe"></i>
             satshoot.com
         </a>
-        <Button title="Options" on:click={handleOptionClick}>
-            <i class="bx bx-dots-vertical-rounded" />
+        <Button title="Options" onClick={handleOptionClick}>
+            <i class="bx bx-dots-vertical-rounded"></i>
         </Button>
     </div>
     <div class="w-full flex flex-col gap-[10px]">
@@ -80,7 +74,7 @@
         {#each job.tTags as tag}
             <button
                 class={tagItemClasses}
-                on:click={() => {
+                onclick={() => {
                     if (tagCallback) tagCallback(tag[1]);
                 }}
             >
@@ -89,3 +83,5 @@
         {/each}
     </Card>
 {/if}
+
+<JobPostMenu bind:isOpen={showJobPostMenu} {job} />

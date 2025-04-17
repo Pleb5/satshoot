@@ -1,15 +1,12 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser, {
         currentUserFreelanceFollows,
         fetchFreelanceFollowEvent,
         freelanceFollowEvents,
     } from '$lib/stores/user';
-    import {
-        fetchEventFromRelaysFirst,
-        getRoboHashPicture,
-        shortenTextWithEllipsesInMiddle,
-    } from '$lib/utils/helpers';
+    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterValidPTags } from '$lib/utils/misc';
     import {
         NDKEvent,
@@ -18,14 +15,7 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import {
-        clipboard,
-        getModalStore,
-        getToastStore,
-        ProgressRadial,
-        type ModalComponent,
-        type ModalSettings,
-    } from '@skeletonlabs/skeleton';
+
     import { nip19 } from 'nostr-tools';
     import ReputationCard from './ReputationCard.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
@@ -39,7 +29,10 @@
     import CopyButton from '../UI/Buttons/CopyButton.svelte';
     import QrCodeModal from '../Modals/QRCodeModal.svelte';
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
+    import { sessionInitialized } from '$lib/stores/session';
 
     enum FollowStatus {
         isFollowing,
@@ -47,65 +40,79 @@
         none,
     }
 
-    const modalStore = getModalStore();
-    const toastStore = getToastStore();
-
-    export let user: NDKUser;
-    export let job: TicketEvent | undefined = undefined;
-
-    let userProfile: NDKUserProfile;
-    let followBtnText = 'Follow';
-    let followStatus = FollowStatus.none;
-
-    $: npub = user.npub;
-    $: profileHref = '/' + npub;
-    $: avatarImage = getRoboHashPicture(user.pubkey);
-
-    $: bech32ID = job ? job.encode() : '';
-    $: canEditProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
-
-    let showMessageButton = false;
-    $: if (job && job.pubkey !== $currentUser?.pubkey) {
-        showMessageButton = true;
-    } else {
-        showMessageButton = false;
+    interface Props {
+        user: NDKUser;
+        job?: TicketEvent | undefined;
     }
 
-    $: if (user) {
-        setProfile();
-    }
+    let { user, job = undefined }: Props = $props();
 
-    $: if (user.pubkey !== $currentUser?.pubkey) {
-        fetchFreelanceFollowEvent(user.pubkey);
-    }
+    // State
+    let userProfile = $state<NDKUserProfile | null>(null);
+    let processingFollowEvent = $state(false);
+    let showShareModal = $state(false);
+    let showNpubQR = $state(false);
+    let showNProfileQR = $state(false);
 
-    $: if ($currentUserFreelanceFollows) {
-        const isFollowing = $currentUserFreelanceFollows.has(user.pubkey);
-
-        if (isFollowing) {
-            followBtnText = 'Un-Follow';
-            followStatus = FollowStatus.isFollowing;
+    // Derived state
+    const npub = $derived(user.npub);
+    const profileHref = $derived('/' + npub);
+    const avatarImage = $derived.by(() => {
+        if (userProfile?.picture) {
+            return userProfile.picture;
         }
-    }
+        return getRoboHashPicture(user.pubkey);
+    });
+    const bech32ID = $derived(job ? job.encode() : '');
+    const canEditProfile = $derived($currentUser && $currentUser?.pubkey === user.pubkey);
+    const showMessageButton = $derived(!!job && job.pubkey !== $currentUser?.pubkey);
 
-    $: if ($freelanceFollowEvents.has(user.pubkey) && $currentUser) {
-        if (followStatus !== FollowStatus.isFollowing) {
-            const targetUserFollowEvent = $freelanceFollowEvents.get(user.pubkey)!;
+    const followStatus = $derived.by(() => {
+        if (!$currentUserFreelanceFollows || !$freelanceFollowEvents || !$currentUser) {
+            return FollowStatus.none;
+        }
 
+        // Check if current user is following this user
+        const isFollowing = $currentUserFreelanceFollows.has(user.pubkey);
+        if (isFollowing) {
+            return FollowStatus.isFollowing;
+        }
+
+        // Check if this user is following current user
+        const targetUserFollowEvent = $freelanceFollowEvents.get(user.pubkey);
+        if (targetUserFollowEvent) {
             // list of all users whom target user is following
             const follows = filterValidPTags(targetUserFollowEvent.tags);
-
-            const isFollowing = follows.includes($currentUser.pubkey);
             // Update the status if target user is following current user
             // but current user is not following target user
-            if (isFollowing) {
-                followBtnText = 'Follow Back';
-                followStatus = FollowStatus.beingFollowed;
+            if (follows.includes($currentUser.pubkey)) {
+                return FollowStatus.beingFollowed;
             }
         }
-    }
 
-    let processingFollowEvent = false;
+        return FollowStatus.none;
+    });
+
+    // Derived state for button text
+    const followBtnText = $derived.by(() => {
+        switch (followStatus) {
+            case FollowStatus.isFollowing:
+                return 'Un-Follow';
+            case FollowStatus.beingFollowed:
+                return 'Follow Back';
+            default:
+                return 'Follow';
+        }
+    });
+
+    $effect(() => {
+        if ($sessionInitialized) {
+            setProfile();
+            if (user.pubkey !== $currentUser?.pubkey) {
+                fetchFreelanceFollowEvent(user.pubkey);
+            }
+        }
+    });
 
     async function follow() {
         if (!$currentUser) return;
@@ -135,11 +142,8 @@
         await newFollowEvent
             .publish()
             .then(() => {
-                toastStore.trigger({
-                    message: 'Followed!',
-                    background: `bg-success-300-600-token`,
-                    autohide: true,
-                    timeout: 5000,
+                toaster.success({
+                    title: 'Followed!',
                 });
 
                 freelanceFollowEvents.update((map) => {
@@ -149,11 +153,8 @@
             })
             .catch((err) => {
                 console.error(err);
-                toastStore.trigger({
-                    message: 'Failed to publish follow event',
-                    background: `bg-error-300-600-token`,
-                    autohide: true,
-                    timeout: 5000,
+                toaster.error({
+                    title: 'Failed to publish follow event',
                 });
             })
             .finally(() => {
@@ -187,28 +188,19 @@
         await newFollowEvent
             .publish()
             .then(() => {
-                toastStore.trigger({
-                    message: 'Un-followed!',
-                    background: `bg-success-300-600-token`,
-                    autohide: true,
-                    timeout: 5000,
+                toaster.success({
+                    title: 'Un-followed!',
                 });
 
                 freelanceFollowEvents.update((map) => {
                     map.set($currentUser.pubkey, newFollowEvent);
                     return map;
                 });
-
-                followBtnText = 'Follow';
-                followStatus = FollowStatus.none;
             })
             .catch((err) => {
                 console.error(err);
-                toastStore.trigger({
-                    message: 'Failed to publish follow event',
-                    background: `bg-error-300-600-token`,
-                    autohide: true,
-                    timeout: 5000,
+                toaster.error({
+                    title: 'Failed to publish follow event',
                 });
             })
             .finally(() => {
@@ -220,7 +212,7 @@
         // Logged in user's metadata MUST be fetched from relays
         // to avoid metadata edit from stale state
         // Otherwise we can fall back to cache
-        const fallBackToCache = user.pubkey !== $currentUser?.pubkey;
+        const fallbackToCache = user.pubkey !== $currentUser?.pubkey;
 
         const metadataFilter = {
             kinds: [NDKKind.Metadata],
@@ -232,18 +224,14 @@
             ...$ndk.pool!.connectedRelays(),
         ];
 
-        const profile = await fetchEventFromRelaysFirst(
-            metadataFilter,
-            3000,
-            fallBackToCache,
-            metadataRelays
-        );
+        const profile = await fetchEventFromRelaysFirst(metadataFilter, {
+            relayTimeoutMS: 3000,
+            fallbackToCache,
+            explicitRelays: metadataRelays,
+        });
 
         if (profile) {
             userProfile = profileFromEvent(profile);
-            if (userProfile.image) {
-                avatarImage = userProfile.image;
-            }
         }
     }
 
@@ -252,25 +240,17 @@
     }
 
     function handleShare() {
-        const modalComponent: ModalComponent = {
-            ref: ShareModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
+        showShareModal = true;
     }
 
     function handleEditProfile() {
-        const currentPath = $page.url.pathname;
+        const currentPath = page.url.pathname;
         const profileSettingsUrl = new URL('/settings/profile', window.location.origin);
         profileSettingsUrl.searchParams.set('redirectPath', currentPath);
         goto(profileSettingsUrl);
     }
 
-    $: userInfoItems = [
+    let userInfoItems = $derived([
         {
             text: userProfile?.nip05,
             href: profileHref,
@@ -287,7 +267,7 @@
             isExternal: true,
             title: 'website address',
         },
-    ];
+    ]);
 
     const addressCopyBtnClasses =
         'bg-white dark:bg-brightGray rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
@@ -309,7 +289,7 @@
                 </div>
                 <div class="w-full mt-[-35px] flex flex-col justify-center items-center">
                     <a href={profileHref}>
-                        <ProfileImage src={userProfile?.image || avatarImage} size="md" />
+                        <ProfileImage src={userProfile?.picture || avatarImage} size="md" />
                     </a>
                 </div>
             </div>
@@ -331,13 +311,13 @@
                                         <a
                                             {href}
                                             target={isExternal ? '_blank' : '_self'}
-                                            class="anchor grow-[1] px-[10px] py-[5px] whitespace-nowrap"
+                                            class="anchor grow-1 px-[10px] py-[5px] whitespace-nowrap"
                                         >
                                             {text}
                                         </a>
                                     {:else}
                                         <p
-                                            class="grow-[1] px-[10px] py-[5px] text-start whitespace-nowrap"
+                                            class="grow-1 px-[10px] py-[5px] text-start whitespace-nowrap"
                                         >
                                             {text}
                                         </p>
@@ -367,9 +347,9 @@
                         classes="bg-white dark:bg-brightGray"
                         fullWidth
                         title="Edit Profile"
-                        on:click={handleEditProfile}
+                        onClick={handleEditProfile}
                     >
-                        <i class="bx bxs-edit-alt" />
+                        <i class="bx bxs-edit-alt"></i>
                     </Button>
                 {/if}
 
@@ -380,9 +360,9 @@
                         fullWidth
                         href={'/messages/' + bech32ID}
                         title="Message (DM) user"
-                        on:click={selectChatPartner}
+                        onClick={selectChatPartner}
                     >
-                        <i class="bx bxs-conversation" />
+                        <i class="bx bxs-conversation"></i>
                     </Button>
                 {/if}
                 <Button
@@ -390,9 +370,9 @@
                     classes="bg-white dark:bg-brightGray"
                     fullWidth
                     title="Share (Copy profile page link)"
-                    on:click={handleShare}
+                    onClick={handleShare}
                 >
-                    <i class="bx bxs-share-alt" />
+                    <i class="bx bxs-share-alt"></i>
                 </Button>
             </div>
             <div class="w-full flex flex-col gap-[5px]">
@@ -403,17 +383,11 @@
                     <Button
                         variant="outlined"
                         classes={addressCopyBtnClasses}
-                        on:click={() => {
-                            modalStore.trigger({
-                                type: 'component',
-                                component: {
-                                    ref: QrCodeModal,
-                                    props: { title: "User's Npub", data: user.npub },
-                                },
-                            });
+                        onClick={() => {
+                            showNpubQR = true;
                         }}
                     >
-                        <i class="bx bx-qr" />
+                        <i class="bx bx-qr"></i>
                     </Button>
                     <CopyButton
                         text={user.npub}
@@ -434,20 +408,11 @@
                     <Button
                         variant="outlined"
                         classes={addressCopyBtnClasses}
-                        on:click={() => {
-                            modalStore.trigger({
-                                type: 'component',
-                                component: {
-                                    ref: QrCodeModal,
-                                    props: {
-                                        title: "User's Profile Address",
-                                        data: nip19.nprofileEncode({ pubkey: user.pubkey }),
-                                    },
-                                },
-                            });
+                        onClick={() => {
+                            showNProfileQR = true;
                         }}
                     >
-                        <i class="bx bx-qr" />
+                        <i class="bx bx-qr"></i>
                     </Button>
                     <CopyButton
                         text={nip19.nprofileEncode({ pubkey: user.pubkey })}
@@ -458,18 +423,9 @@
             </div>
             {#if $currentUser && $currentUser.npub !== npub}
                 <div class="flex flex-col gap-[10px]">
-                    <Button
-                        on:click={followStatus === FollowStatus.isFollowing ? unFollow : follow}
-                    >
+                    <Button onClick={followStatus === FollowStatus.isFollowing ? unFollow : follow}>
                         {#if processingFollowEvent}
-                            <ProgressRadial
-                                value={undefined}
-                                stroke={60}
-                                meter="stroke-tertiary-500"
-                                track="stroke-tertiary-500/30"
-                                strokeLinecap="round"
-                                width="w-8"
-                            />
+                            <ProgressRing />
                         {:else}
                             {followBtnText}
                         {/if}
@@ -481,3 +437,13 @@
         <ReputationCard user={user.pubkey} forUserCard />
     </div>
 </div>
+
+<ShareModal bind:isOpen={showShareModal} />
+
+<QrCodeModal bind:isOpen={showNpubQR} title="User's Npub" data={user.npub} />
+
+<QrCodeModal
+    bind:isOpen={showNProfileQR}
+    title="User's Profile Address"
+    data={nip19.nprofileEncode({ pubkey: user.pubkey })}
+/>

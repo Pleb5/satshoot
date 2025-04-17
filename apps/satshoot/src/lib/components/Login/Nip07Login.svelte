@@ -2,23 +2,23 @@
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
     import { redirectAfterLogin } from '$lib/stores/gui';
-    import ndk, { LoginMethod } from '$lib/stores/ndk';
+    import ndk, { LoginMethod } from '$lib/stores/session';
     import { loginMethod } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
     import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
-    import {
-        getModalStore,
-        getToastStore,
-        ProgressRadial,
-        type ModalSettings,
-    } from '@skeletonlabs/skeleton';
+
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
-    const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    interface Props {
+        isOpen: boolean;
+    }
 
-    let askingForNip07Permission = false;
+    let { isOpen = $bindable() }: Props = $props();
+
+    let askingForNip07Permission = $state(false);
 
     async function nip07Login() {
         if (browser && window.nostr) {
@@ -35,27 +35,24 @@
                     $loginMethod = LoginMethod.Nip07;
                     $ndk.signer = nip07Signer;
                     localStorage.setItem('login-method', $loginMethod);
-                    initializeUser($ndk, toastStore);
+                    initializeUser($ndk);
                     handleRedirection();
                     askingForNip07Permission = false;
-                    modalStore.close();
+                    isOpen = false;
                 }
             } catch (e) {
                 askingForNip07Permission = false;
-                toastStore.trigger({
-                    message: 'Browser extension rejected access!',
-                    autohide: false,
-                    background: 'bg-error-300-600-token',
+                toaster.error({
+                    title: 'Browser extension rejected access!',
+                    duration: 60000, // 1 min
                 });
             }
         } else if (!window.nostr) {
-            const modal: ModalSettings = {
-                type: 'alert',
+            toaster.error({
                 title: 'No Compatible Extension!',
-                body: 'No nip07-compatible browser extension found! See Alby, nos2x or similar!',
-                buttonTextCancel: 'Cancel',
-            };
-            modalStore.trigger(modal);
+                description:
+                    'No nip07-compatible browser extension found! See Alby, nos2x or similar!',
+            });
         }
     }
 
@@ -90,18 +87,11 @@
         <p class={labelClasses}>Extension</p>
     </div>
     <div class={btnWrapperClasses}>
-        <Button grow disabled={askingForNip07Permission} on:click={nip07Login}>
+        <Button grow disabled={askingForNip07Permission} onClick={nip07Login}>
             {#if askingForNip07Permission}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-primary-500"
-                    track="stroke-primary-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="primary" />
             {:else}
-                <i class="bx bx-log-in-circle" />
+                <i class="bx bx-log-in-circle"></i>
                 Connect
             {/if}
         </Button>

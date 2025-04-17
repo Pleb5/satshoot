@@ -1,6 +1,6 @@
 <script lang="ts">
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
         NDKSubscriptionCacheUsage,
@@ -8,7 +8,6 @@
         type NDKSigner,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
@@ -16,16 +15,21 @@
     import { readNotifications } from '$lib/stores/notifications';
     import { goto } from '$app/navigation';
     import { getRoboHashPicture } from '$lib/utils/helpers';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
-    export let notification: NDKEvent;
+    interface Props {
+        notification: NDKEvent;
+    }
+
+    let { notification }: Props = $props();
 
     let user = $ndk.getUser({ pubkey: notification.pubkey });
-    let userName = user.npub.substring(0, 8);
-    let userImage = getRoboHashPicture(user.pubkey);
+    let userName = $state(user.npub.substring(0, 8));
+    let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let decryptedDM: string;
-    let messageLink = '';
+    let decryptedDM = $state<string>();
+    let messageLink = $state('');
     const ticketAddress = notification.tagValue('t');
 
     onMount(async () => {
@@ -34,8 +38,8 @@
             if (userProfile.name) {
                 userName = userProfile.name;
             }
-            if (userProfile.image) {
-                userImage = userProfile.image;
+            if (userProfile.picture) {
+                userImage = userProfile.picture;
             }
         }
 
@@ -69,7 +73,7 @@
 <Card
     classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
-    on:click={() => {
+    onClick={() => {
         if (!$readNotifications.has(notification.id)) {
             readNotifications.update((notifications) => notifications.add(notification.id));
         }
@@ -92,14 +96,7 @@
                     </a>
                 </div>
             {:else}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-primary-500"
-                    track="stroke-primary-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="primary" />
             {/if}
         </div>
     </div>

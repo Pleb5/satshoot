@@ -1,7 +1,7 @@
 import type { OfferEvent } from '$lib/events/OfferEvent';
 import { TicketEvent } from '$lib/events/TicketEvent';
 import { derived, get, writable, type Readable } from 'svelte/store';
-import ndk from './ndk';
+import ndk from '$lib/stores/session';
 import {
     NDKKind,
     NDKNutzap,
@@ -48,13 +48,18 @@ export const createPaymentFilters = (
     }
 };
 
-export const createPaymentStore = (filters: NDKFilter[]) => {
+export interface PaymentStore {
+    paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>,
+    totalPaid: Readable<number>
+}
+
+export const createPaymentStore = (filters: NDKFilter[]): PaymentStore => {
     const $ndk = get(ndk);
     const paymentStore = $ndk.storeSubscribe(filters, {
         closeOnEose: false,
         groupable: true,
         groupableDelay: 1500,
-        autoStart: true,
+        autoStart: false,
     });
 
     const $wot = get(wot);
@@ -71,7 +76,7 @@ export const createPaymentStore = (filters: NDKFilter[]) => {
             } else if (zap.kind === NDKKind.Nutzap) {
                 const nutzap = NDKNutzap.from(zap);
                 if (nutzap && $wot.has(nutzap.pubkey)) {
-                    total += Math.round(nutzap.amount / 1000);
+                    total += Math.round(nutzap.amount);
                 }
             }
         });

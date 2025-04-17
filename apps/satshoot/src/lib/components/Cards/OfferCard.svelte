@@ -1,24 +1,17 @@
 <script lang="ts">
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
-    import { ReviewEvent, ReviewType } from '$lib/events/ReviewEvent';
+    import { ReviewType } from '$lib/events/ReviewEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
-    import ndk from '$lib/stores/ndk';
-    import {
-        createPaymentFilters,
-        createPaymentStore,
-        paymentDetail,
-        type PaymentStore,
-    } from '$lib/stores/payment';
+    import ndk from '$lib/stores/session';
+    import { createPaymentFilters, createPaymentStore, paymentDetail } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import { NDKKind, type NDKFilter } from '@nostr-dev-kit/ndk';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { getModalStore, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
+    import { NDKKind, NDKSubscriptionCacheUsage, NDKUser, type NDKFilter, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import { nip19 } from 'nostr-tools';
-    import { onDestroy, onMount } from 'svelte';
+    import { onDestroy } from 'svelte';
     import PaymentModal from '../Modals/PaymentModal.svelte';
     import TakeOfferModal from '../Modals/TakeOfferModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
@@ -29,141 +22,152 @@
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import ReputationCard from './ReputationCard.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { sessionInitialized } from '$lib/stores/session';
 
-    const modalStore = getModalStore();
-
-    export let offer: OfferEvent;
-    export let skipUserProfile = false;
-    export let skipReputation = false;
-    export let showJobDetail = false;
-    export let showPayments = false;
-
-    let freelancerPaid = 0;
-    let satshootPaid = 0;
-    let freelancerPaymentStore: PaymentStore;
-    let satshootPaymentStore: PaymentStore;
-
-    let jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
-        kinds: [NDKKind.FreelanceTicket],
-        '#d': [],
-    };
-    let dTagOfJob: string;
-    let jobStore: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let job: TicketEvent | undefined = undefined;
-    let pricing: string = '';
-
-    let jobPosterImage = '';
-    let jobPosterName = '?';
-
-    let winner = false;
-    let status = '?';
-    let statusColor = 'text-primary-400-500-token';
-
-    let myJob = false;
-    $: if ($currentUser && job && $currentUser.pubkey === job.pubkey) {
-        myJob = true;
-    } else {
-        myJob = false;
+    interface Props {
+        offer: OfferEvent;
+        skipUserProfile?: boolean;
+        skipReputation?: boolean;
+        showJobDetail?: boolean;
+        showPayments?: boolean;
     }
 
-    let showPaymentButton = false;
-    $: if (myJob && winner) {
-        showPaymentButton = true;
-    } else {
-        showPaymentButton = false;
-    }
+    let {
+        offer,
+        skipUserProfile = false,
+        skipReputation = false,
+        showJobDetail = false,
+        showPayments = false,
+    }: Props = $props();
 
-    let review: ReviewEvent | undefined = undefined;
-    $: if ($freelancerReviews) {
-        review = $freelancerReviews.find(
-            (review) => review.reviewedEventAddress === offer.offerAddress
-        );
-    }
+    let showTakeOfferModal = $state(false);
+    let showPaymentModal = $state(false);
+    let showReviewModal = $state(false);
 
-    $: if (offer) {
-        dTagOfJob = offer.referencedTicketAddress.split(':')[2];
-        jobFilter['#d'] = [dTagOfJob];
-
-        switch (offer.pricing) {
-            case Pricing.Absolute:
-                pricing = 'sats';
-                break;
-            case Pricing.SatsPerMin:
-                pricing = 'sats/min';
-                break;
-        }
-
+    const freelancerPaymentStore = $derived.by(() => {
         const freelancerFilters = createPaymentFilters(offer, 'freelancer');
+        return createPaymentStore(freelancerFilters);
+    });
+
+    const satshootPaymentStore = $derived.by(() => {
         const satshootFilters = createPaymentFilters(offer, 'satshoot');
+        return createPaymentStore(satshootFilters);
+    });
 
-        freelancerPaymentStore = createPaymentStore(freelancerFilters);
-        satshootPaymentStore = createPaymentStore(satshootFilters);
+    let freelancerPaid = $derived(freelancerPaymentStore.totalPaid);
+    let satshootPaid = $derived.by(() => {
+        console.log('total paid: ', satshootPaymentStore.totalPaid)
+        return satshootPaymentStore.totalPaid;
+    });
 
-        freelancerPaymentStore.totalPaid.subscribe((value) => {
-            freelancerPaid = value;
-        });
+    const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
+        kinds: [NDKKind.FreelanceTicket],
+        '#d': [offer.referencedTicketAddress.split(':')[2]],
+    };
+    const jobStore = $ndk.storeSubscribe<TicketEvent>(
+        jobFilter,
+        {
+            autoStart: false,
+            closeOnEose: false,
+            groupable: true,
+            groupableDelay: 1000,
+        },
+        TicketEvent
+    );
 
-        satshootPaymentStore.totalPaid.subscribe((value) => {
-            satshootPaid = value;
-        });
-    }
+    const job = $derived.by(() => {
+        return $jobStore[0] ?? null;
+    });
 
-    $: if ($jobStore?.length > 0) {
-        job = $jobStore[0];
+    const winner = $derived(
+        !!job
+        && job.acceptedOfferAddress === offer.offerAddress
+    );
+
+    const { status, statusColor } = $derived.by(() => {
+        if (!job)
+            return {
+                status: '?',
+                statusColor: 'text-primary-400-500',
+            };
+
         const winnerId = job.acceptedOfferAddress;
         if (winnerId === offer!.offerAddress) {
-            winner = true;
-            status = 'Won';
-            statusColor = 'text-warning-500';
+            return { status: 'Won', statusColor: 'text-warning-500' };
         } else if (winnerId || job.isClosed()) {
-            status = 'Lost';
-            statusColor = 'text-error-500';
+            return { status: 'Lost', statusColor: 'text-error-500' };
         } else {
-            // The winner is defined but it is not us so our offer lost
-            // OR the ticket does not have a winner but it is closed
-            status = 'Pending';
-            statusColor = 'text-primary-400-500-token';
+            return { status: 'Pending', statusColor: 'text-primary-400-500' };
         }
-    }
+    });
 
-    $: if (job) {
-        const jobPoster = $ndk.getUser({ pubkey: job.pubkey });
+    const pricing = $derived.by(() => {
+        if (offer.pricing === Pricing.Absolute) return 'sats';
+        if (offer.pricing === Pricing.SatsPerMin) return 'sats/min';
 
-        jobPosterImage = getRoboHashPicture(jobPoster.pubkey);
-        jobPosterName = jobPoster.npub.substring(0, 8);
+        return '';
+    });
 
-        jobPoster.fetchProfile().then((profile) => {
-            if (profile) {
-                if (profile.name) jobPosterName = profile.name;
-                if (profile.image) jobPosterImage = profile.image;
-            }
-        });
-    }
+    const myJob = $derived(
+        !!$currentUser
+        && !!job 
+        && $currentUser.pubkey === job.pubkey
+    );
 
-    function startJobSub() {
-        if (jobFilter['#d']!.length > 0) {
-            jobStore = $ndk.storeSubscribe<TicketEvent>(
-                jobFilter,
-                {
-                    autoStart: true,
-                    closeOnEose: false,
-                    groupable: true,
-                    groupableDelay: 1000,
-                },
-                TicketEvent
+    const showPaymentButton = $derived(myJob && winner);
+
+    const review = $derived.by(() => {
+        if ($freelancerReviews) {
+            return $freelancerReviews.find(
+                (review) => review.reviewedEventAddress === offer.offerAddress
             );
-        } else {
-            console.log('Cannot start job sub! Filter does not contain a job d-tag!');
         }
+        return undefined;
+    });
+
+    let jobPosterProfile = $state<NDKUserProfile | null>(null);
+
+    const fetchJobPosterProfile = async (poster: NDKUser) => {
+        const profile = await poster.fetchProfile(
+            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
+        );
+        jobPosterProfile = profile;
     }
+
+    const jobPoster = $derived.by(() => {
+        if (!job) return null;
+
+        const user = $ndk.getUser({ pubkey: job.pubkey })
+        fetchJobPosterProfile(user);
+        return user;
+    });
+
+    let jobPosterImage = $derived.by(() => {
+        if (!jobPosterProfile) return ''
+
+        return jobPosterProfile?.picture
+            ?? jobPosterProfile?.image
+            ?? getRoboHashPicture(jobPoster!.pubkey);
+    });
+
+    let jobPosterName = $derived.by(() => {
+        if (!jobPosterProfile) return '?';
+
+        return jobPosterProfile?.name
+            ?? jobPoster!.npub.substring(0, 8);
+    });
+
+    $effect(() => {
+        if ($sessionInitialized) {
+            freelancerPaymentStore.paymentStore.startSubscription();
+            satshootPaymentStore.paymentStore.startSubscription();
+            jobStore.startSubscription();
+        }
+    });
 
     function setChatPartner() {
         $offerMakerToSelect = offer.pubkey;
     }
-
-    onMount(async () => {
-        startJobSub();
-    });
 
     onDestroy(() => {
         if (jobStore) jobStore.empty();
@@ -173,49 +177,22 @@
 
     function takeOffer() {
         if (job) {
-            const modalComponent: ModalComponent = {
-                ref: TakeOfferModal,
-                props: { job, offer },
-            };
-
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-            };
-            modalStore.trigger(modal);
+            showTakeOfferModal = true;
         }
     }
 
     function handlePay() {
+        // TODO: this should be a prop once skeleton is migrated
         $paymentDetail = {
             ticket: job!,
             offer,
         };
 
-        const modalComponent: ModalComponent = {
-            ref: PaymentModal,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        showPaymentModal = true;
     }
 
     function handlePreviewReview() {
-        const modalComponent: ModalComponent = {
-            ref: ReviewModal,
-            props: { review },
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.clear();
-        modalStore.trigger(modal);
+        showReviewModal = true;
     }
 </script>
 
@@ -233,7 +210,7 @@
         <div
             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100"
         >
-            <div class="grow-[1]">
+            <div class="grow-1">
                 <p class="font-[500]">
                     Offer cost:
                     <span class="font-[300]">
@@ -241,26 +218,26 @@
                     </span>
                 </p>
             </div>
-            <div class="grow-[1]">
+            <div class="grow-1">
                 <p class="font-[500]">
                     Pledge split:
                     <span class="font-[300]"> {offer.pledgeSplit + ' %'} </span>
                 </p>
             </div>
             {#if showPayments}
-                <div class="grow-[1]">
+                <div class="grow-1">
                     <p class="font-[500]">
                         Freelancer Paid:
                         <span class="font-[300]">
-                            {insertThousandSeparator(freelancerPaid)} sats
+                            {insertThousandSeparator($freelancerPaid)} sats
                         </span>
                     </p>
                 </div>
-                <div class="grow-[1]">
+                <div class="grow-1">
                     <p class="font-[500]">
                         SatShoot Paid:
                         <span class="font-[300]">
-                            {insertThousandSeparator(satshootPaid)} sats
+                            {insertThousandSeparator($satshootPaid)} sats
                         </span>
                     </p>
                 </div>
@@ -271,7 +248,7 @@
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
     >
         {#if offer.created_at}
-            <p class="font-[500] grow-[1] flex flex-row flex-wrap">
+            <p class="font-[500] grow-1 flex flex-row flex-wrap">
                 Offer published on:
                 <span class="font-[300]">
                     {formatDate(offer.created_at * 1000, 'dd-MMM-yyyy, h:m a') +
@@ -281,7 +258,7 @@
                 </span>
             </p>
         {/if}
-        <p class="font-[500] grow-[1] flex flex-row flex-wrap">
+        <p class="font-[500] grow-1 flex flex-row flex-wrap">
             Offer Status:
             <span class="ml-[5px] font-[300] {statusColor}"> {status} </span>
         </p>
@@ -290,7 +267,7 @@
         <div
             class="w-full flex flex-row flex-wrap items-center gap-[10px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
         >
-            <div class="font-[500] grow-[1] flex flex-row items-center flex-wrap gap-[10px]">
+            <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
                 <p>Job Title:</p>
                 <a
                     href={'/' + job.encode() + '/'}
@@ -302,11 +279,11 @@
                 </a>
             </div>
 
-            <div class="font-[500] grow-[1] flex flex-row items-center flex-wrap gap-[10px]">
+            <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
                 <p>Job Posted By:</p>
                 <a
                     href={'/' + nip19.npubEncode(job.pubkey)}
-                    class="flex flex-row items-center grow-[1] gap-[10px]"
+                    class="flex flex-row items-center grow-1 gap-[10px]"
                 >
                     {#if jobPosterImage}
                         <ProfileImage src={jobPosterImage} size="xs" />
@@ -321,19 +298,29 @@
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
     >
         {#if myJob && job && job.status === TicketStatus.New}
-            <Button on:click={takeOffer}>Take offer</Button>
+            <Button onClick={takeOffer}>Take offer</Button>
         {/if}
 
         {#if showPaymentButton}
-            <Button on:click={handlePay}>Pay</Button>
+            <Button onClick={handlePay}>Pay</Button>
         {/if}
 
         {#if job && myJob}
-            <Button on:click={setChatPartner} href={'/messages/' + job.encode()}>Message</Button>
+            <Button onClick={setChatPartner} href={'/messages/' + job.encode()}>Message</Button>
         {/if}
 
         {#if review}
-            <Button on:click={handlePreviewReview}>Preview Review</Button>
+            <Button onClick={handlePreviewReview}>Preview Review</Button>
         {/if}
     </div>
 </Card>
+
+<PaymentModal bind:isOpen={showPaymentModal} />
+
+{#if job}
+    <TakeOfferModal bind:isOpen={showTakeOfferModal} {job} {offer} />
+{/if}
+
+{#if review}
+    <ReviewModal bind:isOpen={showReviewModal} {review} />
+{/if}
