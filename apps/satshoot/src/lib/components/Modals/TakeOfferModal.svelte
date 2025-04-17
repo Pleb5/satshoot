@@ -43,9 +43,10 @@
                 // Navigate to job messages
                 goto('/messages/' + job.encode());
             } catch (e) {
-                console.log(e);
+                console.error(e);
                 toaster.error({
-                    title: 'Error while accepting Offer! Fix connection with Relays and try again!',
+                    title: `Error while accepting Offer!`,
+                    description: e,
                 });
 
                 isOpen = false;

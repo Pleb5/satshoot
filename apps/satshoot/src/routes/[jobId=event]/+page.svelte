@@ -187,8 +187,8 @@
         jobPost = arrivedTicket;
 
         // Scroll to top as soon as ticket arrives
-        const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
-        elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
+        const elemPage = document.querySelector('#page');
+        elemPage?.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
     }
 
     // Subscribe to offers if not already done
@@ -365,7 +365,7 @@
                                 <div class="w-full hidden max-[768px]:flex">
                                     <p class="font-[600] text-[24px]">Posted By</p>
                                 </div>
-                                <UserCard {user} job={jobPost} />
+                                <!-- <UserCard {user} job={jobPost} /> -->
                             </div>
                         {/if}
                     </div>
