@@ -1,14 +1,25 @@
 <script lang="ts">
     import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
     import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/session';
-    import { createPaymentFilters, createPaymentStore } from '$lib/stores/payment';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
+    import {
+        createPaymentFilters, 
+        createPaymentStore,
+        type PaymentStore 
+    } from '$lib/stores/payment';
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
     import { abbreviateNumber, insertThousandSeparator } from '$lib/utils/misc';
-    import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
+    import {
+        NDKKind,
+        NDKSubscriptionCacheUsage,
+        NDKUser,
+        type NDKFilter,
+        type NDKUserProfile 
+    } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import Card from '../UI/Card.svelte';
     import { Popover } from '@skeletonlabs/skeleton-svelte';
+    import { onDestroy } from 'svelte';
 
     interface Props {
         job: TicketEvent;
@@ -22,10 +33,7 @@
     const statusColor = $derived(getJobStatusColor(job.status));
 
     let offers = $state<OfferEvent[]>([]);
-    let winningOffer = $state<OfferEvent | undefined>();
-
-    let freelancerName = $state('?');
-    let freelancerPaid = $state(0);
+    let winningOffer = $state<OfferEvent | null>(null);
 
     const pricing = $derived.by(() => {
         if (winningOffer) {
@@ -39,72 +47,84 @@
         return '';
     });
 
-    const freelancerPaymentStore = $derived.by(() => {
-        if (!winningOffer) return undefined;
-        const freelancerFilters = createPaymentFilters(winningOffer, 'freelancer');
-        return createPaymentStore(freelancerFilters);
+    let freelancerPaymentStore = $state<PaymentStore>()
+
+    const jobWinner = $derived.by(() => {
+        if (!job.winnerFreelancer) return null;
+
+        const winner = $ndk.getUser({ pubkey: job.winnerFreelancer });
+
+        fetchJobWinnerProfile(winner)
+
+        return winner
     });
 
-    // Effect to fetch freelancer profile
-    $effect(() => {
-        if (!job.winnerFreelancer) return;
+    let jobWinnerProfile = $state<NDKUserProfile | null>(null);
 
-        const jobWinner = $ndk.getUser({ pubkey: job.winnerFreelancer });
-        freelancerName = jobWinner.npub.substring(0, 8);
+    const fetchJobWinnerProfile = async (winner: NDKUser) => {
+        const profile = await winner.fetchProfile(
+            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
+        );
+        jobWinnerProfile = profile;
+    }
 
-        jobWinner.fetchProfile().then((profile) => {
-            if (profile?.name) {
-                freelancerName = profile.name;
-            }
-        });
+    let freelancerName = $derived.by(() => {
+        if (!jobWinnerProfile) return '?';
+
+        return jobWinnerProfile?.name
+            ?? jobWinner!.npub.substring(0, 8);
+
+    });
+
+    let freelancerPaid = $derived.by(() => {
+        if (!freelancerPaymentStore) return null;
+
+        return freelancerPaymentStore.totalPaid
     });
 
     // Effect to fetch winning offer
     $effect(() => {
-        if (!job.acceptedOfferAddress) return;
+        if ($sessionInitialized) init();
+    });
 
-        $ndk.fetchEvent(job.acceptedOfferAddress, {
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-        }).then((event) => {
-            if (event) {
-                winningOffer = OfferEvent.from(event);
+    const init = async () => {
+        if (job.acceptedOfferAddress) {
+            const offer = await $ndk.fetchEvent(
+                job.acceptedOfferAddress,
+                {
+                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                }
+            )
+
+            console.log('Winning offer:', offer)
+            if (offer) {
+                winningOffer = OfferEvent.from(offer);
+                const freelancerFilters = createPaymentFilters(
+                    winningOffer,
+                    'freelancer'
+                );
+                freelancerPaymentStore = createPaymentStore(freelancerFilters);
+                freelancerPaymentStore.paymentStore.startSubscription();
             }
-        });
-    });
-
-    $effect(() => {
-        const unSubscribe = freelancerPaymentStore?.totalPaid.subscribe((value) => {
-            freelancerPaid = value;
-        });
-
-        return () => {
-            if (unSubscribe) unSubscribe();
+        }
+         
+        const offersFilter: NDKFilter = {
+            kinds: [NDKKind.FreelanceOffer],
+            '#a': [job.ticketAddress],
         };
-    });
 
-    // Effect to fetch offers on mount
-    $effect(() => {
-        const fetchOffers = async () => {
-            const offersFilter: NDKFilter = {
-                kinds: [NDKKind.FreelanceOffer],
-                '#a': [job.ticketAddress],
-            };
-
-            const events = await $ndk.fetchEvents(offersFilter, {
+        const events = await $ndk.fetchEvents(
+            offersFilter,
+            {
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            });
+            }
+        );
 
-            offers = Array.from(events).map((event) => OfferEvent.from(event));
-        };
+        offers = Array.from(events).map((event) => OfferEvent.from(event));
+    }
 
-        fetchOffers();
-    });
-
-    // Cleanup effect
-    $effect(() => {
-        return () => {
-            freelancerPaymentStore?.paymentStore.empty();
-        };
+    onDestroy(() => {
+        freelancerPaymentStore?.paymentStore.empty();
     });
 
     const boxWrapperClasses =
@@ -125,11 +145,11 @@
                 {insertThousandSeparator(offers.length)}
             </p>
         </div>
-        {#if job.winnerFreelancer}
+        {#if jobWinner}
             <div class={boxWrapperClasses}>
                 <p class="font-[600]">Freelancer:</p>
                 <a
-                    href={'/' + nip19.npubEncode(job.winnerFreelancer)}
+                    href={'/' + nip19.npubEncode(job.winnerFreelancer!)}
                     class="font-[600] line-clamp-1 overflow-hidden max-w-[200px]"
                 >
                     {freelancerName}
@@ -165,7 +185,11 @@
 
                 <p class="line-clamp-1 overflow-hidden">
                     <span>
-                        {abbreviateNumber(freelancerPaid)}
+                        {
+                            $freelancerPaid 
+                            ? abbreviateNumber($freelancerPaid)
+                            : '?'
+                        }
                     </span>
                     <span>/</span>
                     <span>

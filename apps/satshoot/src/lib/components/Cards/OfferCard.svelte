@@ -6,9 +6,9 @@
     import ndk from '$lib/stores/session';
     import { createPaymentFilters, createPaymentStore, paymentDetail } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
-    import currentUser, { loggedIn } from '$lib/stores/user';
+    import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
+    import { NDKKind, NDKSubscriptionCacheUsage, NDKUser, type NDKFilter, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import { nip19 } from 'nostr-tools';
     import { onDestroy } from 'svelte';
@@ -55,32 +55,28 @@
     });
 
     let freelancerPaid = $derived(freelancerPaymentStore.totalPaid);
-    let satshootPaid = $derived(satshootPaymentStore.totalPaid);
-
-    const jobStore = $derived.by(() => {
-        const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
-            kinds: [NDKKind.FreelanceTicket],
-            '#d': [offer.referencedTicketAddress.split(':')[2]],
-        };
-
-        return $ndk.storeSubscribe<TicketEvent>(
-            jobFilter,
-            {
-                autoStart: false,
-                closeOnEose: false,
-                groupable: true,
-                groupableDelay: 1000,
-            },
-            TicketEvent
-        );
+    let satshootPaid = $derived.by(() => {
+        console.log('total paid: ', satshootPaymentStore.totalPaid)
+        return satshootPaymentStore.totalPaid;
     });
 
-    const job = $derived.by(() => {
-        if ($jobStore.length > 0) {
-            return $jobStore[0];
-        }
+    const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
+        kinds: [NDKKind.FreelanceTicket],
+        '#d': [offer.referencedTicketAddress.split(':')[2]],
+    };
+    const jobStore = $ndk.storeSubscribe<TicketEvent>(
+        jobFilter,
+        {
+            autoStart: false,
+            closeOnEose: false,
+            groupable: true,
+            groupableDelay: 1000,
+        },
+        TicketEvent
+    );
 
-        return undefined;
+    const job = $derived.by(() => {
+        return $jobStore[0] ?? null;
     });
 
     const winner = $derived(
@@ -129,37 +125,43 @@
         return undefined;
     });
 
-    const jobPoster = $derived(job ? $ndk.getUser({ pubkey: job.pubkey }) : null);
+    let jobPosterProfile = $state<NDKUserProfile | null>(null);
 
-    let jobPosterImage = $state('');
-    let jobPosterName = $state('?');
+    const fetchJobPosterProfile = async (poster: NDKUser) => {
+        const profile = await poster.fetchProfile(
+            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
+        );
+        jobPosterProfile = profile;
+    }
+
+    const jobPoster = $derived.by(() => {
+        if (!job) return null;
+
+        const user = $ndk.getUser({ pubkey: job.pubkey })
+        fetchJobPosterProfile(user);
+        return user;
+    });
+
+    let jobPosterImage = $derived.by(() => {
+        if (!jobPosterProfile) return ''
+
+        return jobPosterProfile?.picture
+            ?? jobPosterProfile?.image
+            ?? getRoboHashPicture(jobPoster!.pubkey);
+    });
+
+    let jobPosterName = $derived.by(() => {
+        if (!jobPosterProfile) return '?';
+
+        return jobPosterProfile?.name
+            ?? jobPoster!.npub.substring(0, 8);
+    });
 
     $effect(() => {
         if ($sessionInitialized) {
             freelancerPaymentStore.paymentStore.startSubscription();
             satshootPaymentStore.paymentStore.startSubscription();
             jobStore.startSubscription();
-        }
-    });
-
-    $effect(() => {
-        if (jobPoster) {
-            // Set initial values
-            jobPosterImage = getRoboHashPicture(jobPoster.pubkey);
-            jobPosterName = jobPoster.npub.substring(0, 8);
-
-            // Fetch and update profile asynchronously
-            jobPoster.fetchProfile(
-                { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
-            ).then((profile) => {
-                if (profile) {
-                    jobPosterName = profile.name ?? jobPoster.npub.substring(0, 8);
-
-                    jobPosterImage = profile.picture
-                            ?? profile.image 
-                            ?? getRoboHashPicture(jobPoster.pubkey);
-                }
-            });
         }
     });
 
@@ -227,7 +229,7 @@
                     <p class="font-[500]">
                         Freelancer Paid:
                         <span class="font-[300]">
-                            {insertThousandSeparator(freelancerPaid)} sats
+                            {insertThousandSeparator($freelancerPaid)} sats
                         </span>
                     </p>
                 </div>
@@ -235,7 +237,7 @@
                     <p class="font-[500]">
                         SatShoot Paid:
                         <span class="font-[300]">
-                            {insertThousandSeparator(satshootPaid)} sats
+                            {insertThousandSeparator($satshootPaid)} sats
                         </span>
                     </p>
                 </div>

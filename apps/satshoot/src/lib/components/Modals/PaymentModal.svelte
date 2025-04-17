@@ -125,8 +125,16 @@
         return '';
     });
 
-    let freelancerPaid = $state(0);
-    let satshootPaid = $state(0);
+    let freelancerPaid = $derived.by(() => {
+        if (!freelancerPaymentStore) return null;
+        return freelancerPaymentStore.totalPaid;
+    });
+
+    let satshootPaid = $derived.by(() => {
+        if (!satshootPaymentStore) return null;
+        return satshootPaymentStore.totalPaid;
+    });
+
     let freelancerPaymentStore: PaymentStore;
     let satshootPaymentStore: PaymentStore;
 
@@ -151,13 +159,8 @@
             freelancerPaymentStore = createPaymentStore(freelancerFilters);
             satshootPaymentStore = createPaymentStore(satshootFilters);
 
-            freelancerPaymentStore.totalPaid.subscribe((value) => {
-                freelancerPaid = value;
-            });
-
-            satshootPaymentStore.totalPaid.subscribe((value) => {
-                satshootPaid = value;
-            });
+            freelancerPaymentStore.paymentStore.startSubscription();
+            satshootPaymentStore.paymentStore.startSubscription();
         }
     });
 
@@ -683,16 +686,26 @@
                     >
                         <div class="grow-1">
                             <p class="font-[500]">
-                                Freelancer Paid: <span class="font-[300]"
-                                    >{insertThousandSeparator(freelancerPaid)} sats</span
-                                >
+                                Freelancer Paid: 
+                                <span class="font-[300]">
+                                    {
+                                        $freelancerPaid
+                                        ? insertThousandSeparator($freelancerPaid)
+                                        : '?'
+                                    } sats
+                                </span>
                             </p>
                         </div>
                         <div class="grow-1">
                             <p class="font-[500]">
-                                SatShoot Paid: <span class="font-[300]"
-                                    >{insertThousandSeparator(satshootPaid)} sats</span
-                                >
+                                SatShoot Paid: 
+                                <span class="font-[300]">
+                                    {
+                                        $satshootPaid
+                                        ? insertThousandSeparator($satshootPaid)
+                                        : '?'
+                                    } sats
+                                </span>
                             </p>
                         </div>
                     </div>

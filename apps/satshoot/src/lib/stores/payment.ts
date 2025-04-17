@@ -48,7 +48,12 @@ export const createPaymentFilters = (
     }
 };
 
-export const createPaymentStore = (filters: NDKFilter[]) => {
+export interface PaymentStore {
+    paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>,
+    totalPaid: Readable<number>
+}
+
+export const createPaymentStore = (filters: NDKFilter[]): PaymentStore => {
     const $ndk = get(ndk);
     const paymentStore = $ndk.storeSubscribe(filters, {
         closeOnEose: false,
@@ -71,7 +76,7 @@ export const createPaymentStore = (filters: NDKFilter[]) => {
             } else if (zap.kind === NDKKind.Nutzap) {
                 const nutzap = NDKNutzap.from(zap);
                 if (nutzap && $wot.has(nutzap.pubkey)) {
-                    total += Math.round(nutzap.amount / 1000);
+                    total += Math.round(nutzap.amount);
                 }
             }
         });
