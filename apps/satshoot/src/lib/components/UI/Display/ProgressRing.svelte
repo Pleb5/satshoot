@@ -7,10 +7,10 @@
         value?: number | null;
     }
 
-    let { color = 'tertiary', size = 8, value = null }: Props = $props();
+    let { color = 'white', size = 8, value = null }: Props = $props();
 
-    const meterStroke = $derived(`stroke-${color}-500`);
-    const trackStroke = $derived(`stroke-${color}-500/30`);
+    const meterStroke = $derived(color === 'white' ? 'stroke-white' : `stroke-${color}-500`);
+    const trackStroke = $derived(color === 'white' ? 'stroke-white/50' : `stroke-${color}-400`);
 </script>
 
-<ProgressRing {value} {meterStroke} {trackStroke} size={`size-${size}`} strokeLinecap="round" />
+<ProgressRing {value} size={`size-${size}`} {meterStroke} {trackStroke} />

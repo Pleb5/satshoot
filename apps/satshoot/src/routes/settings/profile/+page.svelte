@@ -71,7 +71,7 @@
                 updating = true;
 
                 $currentUser.profile = userProfile;
-                await broadcastUserProfile($ndk, userProfile);
+                await broadcastUserProfile($ndk, $currentUser);
 
                 toaster.success({
                     title: `Profile Updated!`,
@@ -201,7 +201,7 @@
             </div>
         </div>
 
-        <Button onClick={updateProfile} disabled={updating}>
+        <Button onClick={updateProfile} disabled={updating} classes="min-h-[50px]">
             Save
             {#if updating}
                 <ProgressRing color="white" />
