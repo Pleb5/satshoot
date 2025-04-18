@@ -6,7 +6,7 @@ import { get } from 'svelte/store';
 
 import { wallet, walletInit, walletStatus } from './wallet';
 import { serializeWallet, WALLET_BACKUP_VERSION, type WalletStorage } from './cashu';
-import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
+import { DEFAULTRELAYURLS } from '$lib/stores/session';
 
 describe('walletStatus', () => {
     test('should be `INITIAL` by default', () => {
