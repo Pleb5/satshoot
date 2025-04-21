@@ -101,7 +101,8 @@
         }
     });
 
-    let displayNav = $derived($loggedIn);
+    const displayNav = $derived($loggedIn);
+    const hideBottomNav = $derived(page.route.id === '/messages/[jobId=event]');
     let followSubscription = $state<NDKSubscription>();
 
     $effect(() => {
@@ -579,7 +580,7 @@
     </div>
 
     <!-- Mobile Footer  -->
-    {#if displayNav}
+    {#if displayNav && !hideBottomNav}
         <footer class="fixed bottom-0 w-full sm:hidden" aria-label="Mobile navigation">
             <Footer />
         </footer>
