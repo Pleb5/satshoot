@@ -1,282 +1,127 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import ndk, { sessionInitialized } from '$lib/stores/session';
+    import { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
-    import { wot } from '$lib/stores/wot';
     import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { onDestroy, onMount } from 'svelte';
     import { Accordion } from '@skeletonlabs/skeleton-svelte';
     import { Avatar } from '@skeletonlabs/skeleton-svelte';
-    import {
-        NDKEvent,
-        NDKKind,
-        NDKRelay,
-        NDKSubscriptionCacheUsage,
-        type NDKFilter,
-        type NDKSigner,
-        type NDKUser,
-    } from '@nostr-dev-kit/ndk';
+    import { NDKEvent, type NDKUser } from '@nostr-dev-kit/ndk';
     import MessageCard from '$lib/components/Cards/MessageCard.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Card from '$lib/components/UI/Card.svelte';
-    import { OfferEvent } from '$lib/events/OfferEvent';
-    import { TicketEvent } from '$lib/events/TicketEvent';
-    import { checkRelayConnections, getRoboHashPicture, orderEventsChronologically } from '$lib/utils/helpers';
+    import { getRoboHashPicture } from '$lib/utils/helpers';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
-    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
-    import { toaster } from '$lib/stores/toaster';
     import { browser } from '$app/environment';
 
-    interface Contact {
-        person: NDKUser;
-        selected: boolean;
-    }
+    import { MessageService, ContactService, JobService, UIService } from '$lib/services/messages';
 
+    let initialized = $state(false);
+
+    // Parse URL parameters
     const searchQuery = $derived(page.url.searchParams.get('searchTerms'));
     const searchTerms = $derived(searchQuery ? searchQuery.split(',') : []);
     const jobAddress = idFromNaddr(page.params.jobId);
     const relaysFromURL = relaysFromNaddr(page.params.jobId).split(',');
-    let titleLink = '/' + page.params.jobId;
-    let job = $state<TicketEvent | null>(null);
-    let jobTitle = $derived.by(() => {
-        if (!job || !job.title) return 'Job: ?'
+    const titleLink = '/' + page.params.jobId;
 
-        return job.title.length < 21 
-            ? job.title 
-            : job.title.substring(0, 20) + '...';
-        
-    });
-    let myJob = $state(false);
-    let initialized = $state(false);
+    // Initialize services
+    const messageService = $state(new MessageService(jobAddress));
+    const contactService = $state(new ContactService());
+    const jobService = $state(new JobService(jobAddress, relaysFromURL));
+    const uiService = $state(new UIService());
 
-    let currentPerson = $state<NDKUser>();
+    // DOM element references
+    let headerElem = $state<HTMLElement>();
+    let chatElem = $state<HTMLElement>();
+    let inputElem = $state<HTMLElement>();
+    let contactsMobileViewElem = $state<HTMLElement>();
+
+    // Service state values
+    const wotFilteredMessages = $derived(messageService.messages);
+    const contacts = $derived(contactService.contacts);
+    const profiles = $derived(contactService.profiles);
+    const currentPerson = $derived(contactService.currentPerson);
+    const winnerPubkey = $derived(contactService.winnerPubkey);
+    const job = $derived(jobService.job);
+    const myJob = $derived(jobService.isOwner);
+    const offers = $derived(jobService.offers);
+    // UI state - direct access to service properties
+    const contactsOpen = $derived(uiService.contactsOpen);
+    const disablePrompt = $derived(uiService.disablePrompt);
+    const hideChat = $derived(uiService.hideChat);
+    const hideSearchIcon = $derived(uiService.hideSearchIcon);
+    const mounted = $derived(uiService.mounted);
+    const chatHeight = $derived(uiService.chatHeight);
+
+    // Message state
     let currentMessage = $state('');
-    let winner = $state('');
-    let contactsOpen = $state(false);
-    let disablePrompt = $state<boolean>();
-    let hideChat = $state(false);
-    let hideSearchIcon = $state(false);
-    let accordionState = $derived([(currentPerson?.pubkey ?? '')]);
-    let mounted = $state(false);
 
-    // DOM Elements
-    let elemPage = $state<HTMLElement>();
-    let elemChat = $state<HTMLElement>();
-    let elemHeader = $state<HTMLElement>();
-    let elemInput = $state<HTMLElement>();
-    let elemContactsMobileView = $state<HTMLElement>();
+    // Accordion state
+    let accordionState = $derived([currentPerson?.pubkey ?? '']);
 
-    const chatHeight = $derived.by(() => {
-        if (elemPage && elemHeader && elemInput && elemContactsMobileView) {
-            const paddingsAndMargins = elemContactsMobileView.offsetHeight ? 95 : 80;
-            return (
-                elemPage.offsetHeight -
-                elemHeader.offsetHeight -
-                elemInput.offsetHeight -
-                elemContactsMobileView.offsetHeight -
-                paddingsAndMargins
-            );
-        }
+    // Effect to update UI service with DOM elements
+    $effect(() => {
+        if (headerElem) uiService.setHeaderElement(headerElem);
+        if (chatElem) uiService.setChatElement(chatElem);
+        if (inputElem) uiService.setInputElement(inputElem);
+        if (contactsMobileViewElem) uiService.setContactsMobileViewElement(contactsMobileViewElem);
     });
 
-
+    // Current person messages
     const currentPersonMessages = $derived.by(() => {
         if (!currentPerson || !wotFilteredMessages.length) return [];
-        return wotFilteredMessages.filter((message) => {
-            return (
-                message.pubkey === currentPerson!.pubkey ||
-                message.tagValue('p') === currentPerson!.pubkey
-            );
-        });
+        return messageService.getPersonMessages(currentPerson, wotFilteredMessages);
     });
 
+    // Ordered messages
     const orderedMessages = $derived.by(() => {
-        const copy = [...currentPersonMessages];
-        orderEventsChronologically(copy, true);
-        return copy;
+        return messageService.orderMessages(currentPersonMessages);
     });
 
-    const messageSubOptions: NDKSubscribeOptions = {
-        autoStart: false,
-        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-        closeOnEose: false,
-        groupable: false,
-    };
+    const jobTitle = $derived.by(() => {
+        if (!job || !job.title) return '?';
 
-    const messageFilters:NDKFilter[] = [
-        {
-            kinds: [NDKKind.EncryptedDirectMessage],
-            '#t': [jobAddress],
-            limit: 50,
-        },
-        {
-            kinds: [NDKKind.EncryptedDirectMessage],
-            '#t': [jobAddress],
-            limit: 50,
-        },
-    ];
-
-    const jobMessages = $ndk.storeSubscribe(messageFilters, messageSubOptions);
-
-    const wotFilteredMessages = $derived.by(() => {
-        if (!$currentUser || !$jobMessages?.length) return [];
-        return $jobMessages.filter((message) => {
-            const peer = peerFromMessage(message);
-            return peer && $wot.has(peer);
-        });
+        return job.title.length < 21 ? job.title : job.title.substring(0, 20) + '...';
     });
 
-    // Contact List
-    let people = $derived.by(() => {
-        const contactList: Contact[] = [];
-
-        if (job && $currentUser) {
-            if($currentUser?.pubkey !== job?.pubkey) {
-                addPerson(job.pubkey, contactList)
-            } else if ($offerMakerToSelect) {
-                addPerson($offerMakerToSelect, contactList)
-            } else if ($selectedPerson?.split('$')[1] === jobAddress) {
-                const pubkey = $selectedPerson.split('$')[0];
-                addPerson(pubkey, contactList)
-            }
-        }
-
-        if (myJob) {
-            $offerStore.forEach((offer) => {
-                if ($wot.has(offer.pubkey)) {
-                    addPerson(offer.pubkey, contactList);
-                }
-            });
-        }
-
-        wotFilteredMessages.forEach((message) => {
-            const peer = peerFromMessage(message);
-            if (peer && $wot.has(peer)) addPerson(peer, contactList);
-        });
-
-        return contactList;
-    });
-
-    const profiles = $state<{person: NDKUser, name: string, image: string}[]>([])
-
-    async function addPerson(pubkey: string, people: Contact[]) {
-        if (people.some((c) => c.person.pubkey === pubkey)) return;
-
-        // We havent added this person yet
-        const person = $ndk.getUser({ pubkey: pubkey });
-        // console.log('adding new person', person)
-        const contact = {
-            person: person,
-            selected: false,
-        };
-
-        people.push(contact);
-
-        const profile = await person.fetchProfile();
-        console.log('Profile:',profile?.name)
-        profiles.push({
-            person: person,
-            name: profile?.name ?? person.npub.substring(0, 10),
-            image: profile?.picture ?? 
-                profile?.image ?? 
-                getRoboHashPicture(person.pubkey)
-        })
-    }
-
-    const offersSubOptions: NDKSubscribeOptions = {
-        autoStart: false,
-        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-        closeOnEose: false,
-    };
-
-    let offersFilter: NDKFilter<NDKKind.FreelanceOffer> = {
-        kinds: [NDKKind.FreelanceOffer],
-        '#a': [jobAddress],
-    };
-
-    let offerStore = $ndk.storeSubscribe<OfferEvent>(
-        offersFilter,
-        offersSubOptions,
-        OfferEvent
-    ); 
-
-    // Initial setup effect
+    // Initialize when session is ready
     $effect(() => {
-        if ($sessionInitialized && !initialized) {
+        if ($sessionInitialized && $currentUser && !initialized) {
             initialized = true;
 
-            // Add relays from URL
-            if (relaysFromURL.length > 0) {
-                relaysFromURL.forEach((relayURL: string) => {
-                    if (relayURL) {
-                        $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
-                    }
-                });
-            }
-
-            checkRelayConnections();
-
-            init();
+            jobService.initialize(contactService);
+            messageService.initialize($currentUser.pubkey);
         }
     });
 
-    const init = async () => {
-        const jobEvent = await $ndk.fetchEvent(
-            jobAddress,
-            // Try to fetch latest state of the job
-            // but fall back to cache
-            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
-        );
-
-        if (jobEvent) {
-            job = TicketEvent.from(jobEvent);
-
-            messageFilters[0]['#p'] = [$currentUser!.pubkey],
-            messageFilters[1].authors = [$currentUser!.pubkey],
-
-            jobMessages.startSubscription();
-            offerStore.startSubscription();
-
-            if ($currentUser!.pubkey !== job.pubkey) {
-                initializeAsNonOwner();
-            } else {
-                initializeAsOwner();
-            }
-        } else {
-            console.warn('Job could not be fetched in chat page!')
+    $effect(() => {
+        if (job && $currentUser) {
+            contactService.addInitialContacts(
+                job.pubkey,
+                $currentUser.pubkey,
+                $offerMakerToSelect,
+                $selectedPerson
+            );
         }
-    };
+    });
 
-    function initializeAsNonOwner() {
-        const contact = people.find((c) => c.person.pubkey === job!.pubkey);
-        if (contact) selectCurrentPerson(contact);
-    }
+    $effect(() => {
+        if (myJob && offers) {
+            const offerPubkeys = offers.map((offer: any) => offer.pubkey);
+            contactService.addPeopleFromPubkeys(offerPubkeys);
+        }
+    });
 
-    function initializeAsOwner() {
-        myJob = true;
-        handleWinningOffer();
-        handlePreselectedContacts();
-    }
-
-    function handleWinningOffer() {
-        if (job!.acceptedOfferAddress) {
-            $ndk.fetchEvent(job!.acceptedOfferAddress).then((offer) => {
-                if (offer) winner = offer.pubkey;
+    $effect(() => {
+        if (wotFilteredMessages && $currentUser) {
+            wotFilteredMessages.forEach((message: any) => {
+                contactService.addPersonFromMessage(message, $currentUser.pubkey);
             });
         }
-    }
+    });
 
-    function handlePreselectedContacts() {
-        if ($offerMakerToSelect) {
-            const contact = people.find((c) => c.person.pubkey === $offerMakerToSelect);
-            if (contact) selectCurrentPerson(contact);
-        } else if ($selectedPerson?.split('$')[1] === jobAddress) {
-            const pubkey = $selectedPerson.split('$')[0];
-            const contact = people.find((c) => c.person.pubkey === pubkey);
-            if (contact) selectCurrentPerson(contact);
-        }
-    }
-
+    // Auto-scroll to bottom when new messages arrive
     $effect.root(() => {
         let previousLength = 0;
 
@@ -284,128 +129,57 @@
             const currentLength = orderedMessages.length;
 
             if (currentLength > previousLength && currentLength > 0 && mounted) {
-                setTimeout(() => scrollChatBottom('smooth'), 0);
+                setTimeout(() => uiService.scrollChatBottom('smooth'), 0);
             }
 
             previousLength = currentLength;
         });
     });
 
-    async function sendMessage() {
-        if (currentMessage) {
-            if (!currentPerson) {
-                toaster.error({
-                    title: 'No Person to message!',
-                });
-
-                return;
-            }
-            const dm = new NDKEvent($ndk);
-            console.log('signer', dm.ndk?.signer);
-            dm.kind = NDKKind.EncryptedDirectMessage;
-            dm.tags.push(['t', jobAddress]);
-            dm.tags.push(['p', currentPerson.pubkey]);
-
-            console.log('dm before encryption', dm);
-            dm.content = await ($ndk.signer as NDKSigner).encrypt(currentPerson, currentMessage);
-            console.log('encrypted dm', dm);
-            // Clear prompt
-            currentMessage = '';
-
-            const relays = await dm.publish();
-            console.log('relays published', relays);
-        }
-    }
-
-    function onPromptKeyDown(event: KeyboardEvent) {
-        if (currentMessage) {
-            if (['Enter'].includes(event.code)) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-    }
-
-    function selectCurrentPerson(contact: Contact) {
-        if (currentPerson !== contact.person) {
-            console.log('selectCurrentPerson');
-            if (job) {
-                $selectedPerson = contact.person.pubkey + '$' + jobAddress;
-                console.log($selectedPerson);
-            }
-
-            currentPerson = contact.person;
-
-            people.forEach((c: Contact) => {
-                c.selected = false;
-            });
-
-            contact.selected = true;
-
-            contactsOpen = false;
-        }
-    }
-
-    function scrollChatBottom(behavior?: ScrollBehavior): void {
-        elemChat?.scrollTo({ top: elemChat.scrollHeight, behavior });
-    }
-
-    function isFirstMessageOfDay(messages: NDKEvent[], index: number): boolean {
-        if (index === 0) return true;
-
-        const currentMessage = messages[index];
-        const previousMessage = messages[index - 1];
-
-        // Check if messages exist and have created_at timestamps
-        if (!currentMessage?.created_at || !previousMessage?.created_at) {
-            return false;
-        }
-
-        const currentDate = new Date(currentMessage.created_at * 1000);
-        const previousDate = new Date(previousMessage.created_at * 1000);
-
-        return currentDate.toDateString() !== previousDate.toDateString();
-    }
-
-    function onContactListExpanded() {
-        // console.log('expandContacts')
-        hideChat = true;
-        disablePrompt = true;
-        hideSearchIcon = true;
-    }
-
-    function onContactListCollapsed() {
-        hideChat = false;
-        disablePrompt = false;
-        hideSearchIcon = false;
-    }
-
     $effect(() => {
+        console.log('job', job);
+    });
+
+    // Handle keyboard events
+    function onPromptKeyDown(event: KeyboardEvent) {
+        if (currentMessage && ['Enter'].includes(event.code)) {
+            event.preventDefault();
+            sendMessage();
+        }
+    }
+
+    // Send message
+    async function sendMessage() {
+        if (currentMessage && currentPerson) {
+            await messageService.sendMessage(currentPerson as unknown as NDKUser, currentMessage);
+            currentMessage = '';
+        }
+    }
+
+    // Select contact
+    function selectCurrentPerson(contact: any) {
+        contactService.selectCurrentPerson(contact);
+        uiService.setContactsOpen(false);
+    }
+
+    // Check if first message of day
+    function isFirstMessageOfDay(messages: NDKEvent[], index: number): boolean {
+        return messageService.isFirstMessageOfDay(messages, index);
+    }
+
+    // Setup on mount
+    onMount(() => {
         if (browser) {
-            if (contactsOpen) {
-                onContactListExpanded();
-            } else {
-                onContactListCollapsed();
-            }
+            const pageElement = document.querySelector('#page') as HTMLElement;
+            if (pageElement) uiService.setPageElement(pageElement);
         }
     });
 
-    function peerFromMessage(message: NDKEvent): string | undefined {
-        const peerPubkey =
-            message.tagValue('p') === $currentUser!.pubkey ? message.pubkey : message.tagValue('p');
-
-        return peerPubkey;
-    }
-
-    onMount(async () => {
-        elemPage = document.querySelector('#page') as HTMLElement;
-        mounted = true;
-    });
-
+    // Cleanup on destroy
     onDestroy(() => {
-        if (jobMessages) jobMessages.unsubscribe();
-        if (offerStore) offerStore.unsubscribe();
-        $offerMakerToSelect = '';
+        messageService.unsubscribe();
+        jobService.unsubscribe();
+        offerMakerToSelect.set('');
     });
 </script>
 
@@ -417,7 +191,7 @@
             >
                 <div class="w-full h-full flex flex-col gap-[10px] pb-1">
                     <!-- Title Card -->
-                    <div bind:this={elemHeader}>
+                    <div bind:this={headerElem}>
                         <Card classes="items-center">
                             <a
                                 class="anchor font-[700] sm:text-[24px] justify-center"
@@ -442,31 +216,22 @@
                                 </p>
                             </div>
                             <div class="flex flex-col gap-[10px] overflow-y-auto grow">
-                                {#each people as contact}
-                                    {@const profile = profiles.find(p => p.person === contact.person)}
-                                    {@const image = profile?.image
-                                        ?? getRoboHashPicture(contact.person.pubkey)
-                                    }
-                                    {@const name = profile?.name
-                                        ?? contact.person.npub.substring(0, 10)
-                                    }
-                                    {@const bg = contact.person === currentPerson
-                                        ? 'bg-blue-600'
-                                        : 'bg-transparent'
-                                    }
+                                {#each contacts as contact}
+                                    {@const profile = profiles.find(
+                                        (p) => p.person === contact.person
+                                    )}
+                                    {@const image =
+                                        profile?.image ?? getRoboHashPicture(contact.person.pubkey)}
+                                    {@const name =
+                                        profile?.name ?? contact.person.npub.substring(0, 10)}
                                     <Button
                                         variant={contact.selected ? 'contained' : 'text'}
                                         onClick={() => selectCurrentPerson(contact)}
-                                        classes={bg}
                                     >
-                                        <Avatar
-                                            src={image}
-                                            size="size-12"
-                                            name={name}
-                                        />
+                                        <Avatar src={image} size="size-12" {name} />
                                         <span
-                                            class="flex-1 text-start
-                                            {contact.person.pubkey === winner
+                                            class="flex-1 text-start {contact.person.pubkey ===
+                                            winnerPubkey
                                                 ? 'text-warning-500 font-bold'
                                                 : ''}"
                                         >
@@ -478,7 +243,7 @@
                         </Card>
 
                         <!-- Contact List Dropdown (Mobile) -->
-                        <div class="md:hidden w-full" bind:this={elemContactsMobileView}>
+                        <div class="md:hidden w-full" bind:this={contactsMobileViewElem}>
                             <Card classes="p-[10px">
                                 <Accordion
                                     value={accordionState}
@@ -489,10 +254,10 @@
                                     <Accordion.Item value="contacts">
                                         {#snippet lead()}
                                             {#if currentPerson}
-                                                {@const profileImage = currentPerson.profile?.picture ??
+                                                {@const profileImage =
+                                                    currentPerson.profile?.picture ??
                                                     currentPerson.profile?.image ??
-                                                    getRoboHashPicture(currentPerson.pubkey)
-                                                }
+                                                    getRoboHashPicture(currentPerson.pubkey)}
                                                 <a href={'/' + currentPerson.npub}>
                                                     <Avatar
                                                         src={profileImage}
@@ -507,14 +272,14 @@
                                             {#if currentPerson}
                                                 <span
                                                     class="flex-1 text-start
-                                                        {currentPerson.pubkey === winner
+                                                        {currentPerson.pubkey === winnerPubkey
                                                         ? 'text-warning-400 font-bold'
                                                         : ''}"
                                                 >
                                                     {currentPerson.profile?.name ??
                                                         currentPerson.npub.substring(0, 15)}
                                                 </span>
-                                            {:else if people.length > 0}
+                                            {:else if contacts.length > 0}
                                                 <div class="">Select Contact</div>
                                             {:else}
                                                 <div>No Contacts</div>
@@ -531,11 +296,13 @@
                                                     <Card
                                                         classes="overflow-y-auto border-[2px] border-black-100 dark:border-white-100 h-[200px]"
                                                     >
-                                                        {#each people as contact}
-                                                            {@const profileImage = contact.person.profile?.picture ??
+                                                        {#each contacts as contact}
+                                                            {@const profileImage =
+                                                                contact.person.profile?.picture ??
                                                                 contact.person.profile?.image ??
-                                                                getRoboHashPicture(contact.person.pubkey)
-                                                            }
+                                                                getRoboHashPicture(
+                                                                    contact.person.pubkey
+                                                                )}
                                                             <button
                                                                 type="button"
                                                                 class="btn w-full flex items-center space-x-4
@@ -546,7 +313,7 @@
                                                                     selectCurrentPerson(contact)}
                                                             >
                                                                 <Avatar
-                                                                    src= {profileImage}
+                                                                    src={profileImage}
                                                                     size="size-8"
                                                                     name={contact.person.profile
                                                                         ?.name ??
@@ -558,7 +325,7 @@
                                                                 <span
                                                                     class="flex-1 text-start
                                                                         {contact.person.pubkey ===
-                                                                    winner
+                                                                    winnerPubkey
                                                                         ? 'text-warning-400 font-bold'
                                                                         : ''}"
                                                                 >
@@ -580,9 +347,9 @@
                         </div>
 
                         <!-- Conversation -->
-                        <Card classes="flex-2 h-full overflow-hidden flex flex-col ">
+                        <Card classes="flex-2 h-full overflow-hidden flex flex-col">
                             <div
-                                bind:this={elemChat}
+                                bind:this={chatElem}
                                 class="flex flex-col grow gap-[5px] overflow-y-auto p-[5px]"
                                 style="height: {chatHeight}px;"
                             >
@@ -619,7 +386,7 @@
                     </div>
 
                     <!-- Input Wrapper -->
-                    <div bind:this={elemInput}>
+                    <div bind:this={inputElem}>
                         <Card classes="p-1">
                             <div
                                 class="w-full h-full input-group input-group-divider grid-cols-[1fr_auto] rounded-container"
@@ -635,12 +402,9 @@
                                     disabled={disablePrompt}
                                 ></textarea>
                                 <button
-                                    class= {
-                                        currentMessage
-                                            ? 'preset-filled-primary'
-                                            : 'input-group-shim'
-                                        + ' p-2'
-                                    }
+                                    class={currentMessage
+                                        ? 'preset-filled-primary p-2'
+                                        : 'input-group-shim p-2'}
                                     onclick={sendMessage}
                                     aria-label="send message"
                                 >
