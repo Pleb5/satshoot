@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { run } from 'svelte/legacy';
-
     import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
@@ -68,7 +66,6 @@
         // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
 
         // ALWAYS USE OTHER USER REGARDLESS OF WHO SENT THE MESSAGE
-        console.log('start decryption', message);
         try {
             const peerPubkey =
                 message.tagValue('p') === $currentUser!.pubkey
@@ -87,8 +84,6 @@
             groupableDelay: 500,
         });
         if (senderUser.profile) {
-            console.log('profile', profile);
-            console.log('pubkey', senderUser.pubkey);
             if (senderUser.profile.displayName) name = senderUser.profile.displayName;
             if (senderUser.profile.name) name = senderUser.profile.name;
             if (senderUser.profile.picture) avatarImage = senderUser.profile.picture;
@@ -106,7 +101,6 @@
                 const ticketEvent = TicketEvent.from(event);
                 messageLink = '/messages/' + ticketEvent.encode();
             }
-            console.log('message link', messageLink);
         }
     });
 
