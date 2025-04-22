@@ -27,7 +27,7 @@
 
     // Initialize services
     const messageService = $state(new MessageService(jobAddress));
-    const contactService = $state(new ContactService());
+    const contactService = $state(new ContactService(jobAddress));
     const jobService = $state(new JobService(jobAddress, relaysFromURL));
     const uiService = $state(new UIService());
 
@@ -134,10 +134,6 @@
 
             previousLength = currentLength;
         });
-    });
-
-    $effect(() => {
-        console.log('job', job);
     });
 
     // Handle keyboard events

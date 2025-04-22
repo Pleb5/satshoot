@@ -236,7 +236,7 @@
     }
 
     function selectChatPartner() {
-        $selectedPerson = job!.pubkey + '$' + bech32ID;
+        $selectedPerson = job!.pubkey + '$' + job!.ticketAddress;
     }
 
     function handleShare() {

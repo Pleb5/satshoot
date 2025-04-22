@@ -82,7 +82,7 @@
 
     function selectChatPartner() {
         if ($currentUser && $currentUser.pubkey !== job.pubkey) {
-            $selectedPerson = job.pubkey + '$' + bech32ID;
+            $selectedPerson = job.pubkey + '$' + job.ticketAddress;
         } else if (job.winnerFreelancer) {
             $offerMakerToSelect = job.winnerFreelancer;
         }

@@ -29,7 +29,11 @@ export class ContactService {
     currentPerson = $state<NDKUser | undefined>(undefined);
     winnerPubkey = $state<string>('');
 
-    constructor() {}
+    private jobAddress: string;
+
+    constructor(jobAddress: string) {
+        this.jobAddress = jobAddress;
+    }
 
     /**
      * Set the winner pubkey
@@ -59,8 +63,9 @@ export class ContactService {
             const person = ndkInstance.getUser({ pubkey: offerMakerToSelect });
             this.addPerson(person, true);
             this.currentPerson = person;
-        } else if (selectedPersonString && selectedPersonString !== currentUserPubkey) {
-            const person = ndkInstance.getUser({ pubkey: selectedPersonString });
+        } else if (selectedPersonString && selectedPersonString.split('$')[1] === this.jobAddress) {
+            const pubkey = selectedPersonString.split('$')[0];
+            const person = ndkInstance.getUser({ pubkey });
             this.addPerson(person, true);
             this.currentPerson = person;
         }

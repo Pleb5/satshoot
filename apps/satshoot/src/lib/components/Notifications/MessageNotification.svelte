@@ -16,6 +16,7 @@
     import { goto } from '$app/navigation';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { selectedPerson } from '$lib/stores/messages';
 
     interface Props {
         notification: NDKEvent;
@@ -77,6 +78,7 @@
         if (!$readNotifications.has(notification.id)) {
             readNotifications.update((notifications) => notifications.add(notification.id));
         }
+        $selectedPerson = notification.pubkey + '$' + ticketAddress;
         goto(messageLink);
     }}
 >
