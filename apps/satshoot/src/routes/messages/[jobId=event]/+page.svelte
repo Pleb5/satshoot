@@ -181,6 +181,11 @@
         jobService.unsubscribe();
         offerMakerToSelect.set('');
     });
+
+    // Function to navigate back
+    function goBack() {
+        window.history.back();
+    }
 </script>
 
 {#if $currentUser && job}
@@ -192,9 +197,12 @@
                 <div class="w-full h-full flex flex-col gap-[10px] pb-1">
                     <!-- Title Card -->
                     <div bind:this={headerElem}>
-                        <Card classes="items-center">
+                        <Card classes="flex-row">
+                            <Button variant="outlined" onClick={goBack}>
+                                <i class="bx bx-chevron-left"></i>
+                            </Button>
                             <a
-                                class="anchor font-[700] sm:text-[24px] justify-center"
+                                class="anchor font-[700] sm:text-[24px] text-center flex-grow"
                                 href={titleLink}
                             >
                                 {'Job: ' + jobTitle}
