@@ -101,5 +101,5 @@
 
 html,
 body {
-    @apply h-full overflow-hidden;
+    @apply h-full;
 }

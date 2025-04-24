@@ -401,7 +401,7 @@
     }
 
     function handleTouchMove(e: TouchEvent) {
-        if (pullStartY && !isRefreshing && window.scrollY <= 0) {
+        if (pullStartY && !isRefreshing) {
             pullMoveY = e.touches[0].clientY - pullStartY;
 
             if (pullMoveY > 0) {
@@ -625,44 +625,45 @@
 
 <!-- layout structure -->
 <div
-    class="w-full h-full flex flex-col overflow-hidden"
+    class="w-full h-full flex flex-col"
     ontouchstart={handleTouchStart}
     ontouchmove={handleTouchMove}
     ontouchend={handleTouchEnd}
 >
-    {#if pullProgress > 0}
-        <div
-            class="flex flex-col items-center justify-center"
-            aria-live="polite"
-            aria-atomic="true"
-        >
-            <i class="fa-solid fa-rotate-right"></i>
-            <span class="text-xs mt-1 font-semibold">
-                {#if isRefreshing}
-                    Refreshing...
-                {:else if pullProgress >= 100}
-                    Release to refresh
-                {:else if pullProgress > 0}
-                    Pull to refresh
-                {/if}
-            </span>
-        </div>
-    {/if}
-
-    <!-- Fixed Header -->
-    <header class="z-10 bg-surface-100-800" aria-label="Main header">
+    <header
+        class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
+        aria-label="Main header"
+    >
+        {#if pullProgress > 0}
+            <div
+                class="flex flex-col items-center justify-center"
+                aria-live="polite"
+                aria-atomic="true"
+            >
+                <i class="fa-solid fa-rotate-right"></i>
+                <span class="text-xs mt-1 font-semibold">
+                    {#if isRefreshing}
+                        Refreshing...
+                    {:else if pullProgress >= 100}
+                        Release to refresh
+                    {:else if pullProgress > 0}
+                        Pull to refresh
+                    {/if}
+                </span>
+            </div>
+        {/if}
         <Header onRestoreLogin={restoreLogin} />
     </header>
 
     <!-- Content Area -->
-    <div class="flex-auto w-full h-full flex overflow-hidden">
+    <div class="mt-[65px] flex-auto w-full h-full flex">
         <!-- Collapsible Sidebar (hidden on small screens) -->
         {#if displayNav}
             <SidebarLeft />
         {/if}
 
-        <!-- Main Content - improved accessibility -->
-        <main class="flex-1 overflow-y-auto" aria-label="Main content">
+        <!-- Main Content  -->
+        <main class="sm:ml-[96px] flex-1" aria-label="Main content">
             {@render children?.()}
         </main>
     </div>

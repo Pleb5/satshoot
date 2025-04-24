@@ -70,7 +70,7 @@
         'transition ease-in-out duration-[0.3s] w-full ';
 </script>
 
-<div class="w-full flex flex-col justify-center items-center gap-0 bg-white dark:bg-brightGray">
+<div class="w-full flex flex-col justify-center items-center gap-0">
     <div class="flex flex-col justify-center items-center w-full">
         <div
             class="w-full flex flex-col items-center border-b border-b-black-100 py-1 dark:border-b-white-100"
@@ -95,7 +95,8 @@
                             <button onclick={() => (showAppMenu = !showAppMenu)}>
                                 <!-- Avatar image -->
                                 <Avatar
-                                    classes="rounded-full border-white placeholder-white cursor-pointer size-12 sm:size-14"
+                                    classes="rounded-full border-white placeholder-white cursor-pointer"
+                                    size="size-14"
                                     border="border-4 border-surface-300-600 hover:border-primary-500!"
                                     src={profilePicture ??
                                         getRoboHashPicture($currentUser?.pubkey ?? '')}

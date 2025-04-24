@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import { Modal, Navigation } from '@skeletonlabs/skeleton-svelte';
+    import { Navigation } from '@skeletonlabs/skeleton-svelte';
 
     import SearchModal from '../Modals/SearchModal.svelte';
     import BottomNavItem from './BottomNavItem.svelte';
@@ -34,7 +34,7 @@
 </script>
 
 <Navigation.Rail
-    classes="hidden sm:block flex-none overflow-x-hidden overflow-y-auto"
+    classes="fixed left-0 top-[65px] hidden sm:block flex-none overflow-x-hidden overflow-y-auto"
     background="bg-white dark:bg-brightGray"
 >
     {#snippet tiles()}
