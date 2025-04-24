@@ -28,11 +28,11 @@
     let statusMessage = $state('');
     let statusColor = 'text-tertiary-200-700';
 
-    let bunkerUrl = $state('');
+    let bunkerUrlString = $state('');
     let attemptingBunkerConnection = $state(false);
 
     async function connectBunker() {
-        if (!bunkerUrl || !bunkerUrl.startsWith('bunker://')) {
+        if (!bunkerUrlString || !bunkerUrlString.startsWith('bunker://')) {
             // User tried to submit invalid token string
             attemptingBunkerConnection = false;
             toaster.error({
@@ -44,11 +44,9 @@
         attemptingBunkerConnection = true;
         const localSigner = NDKPrivateKeySigner.generate();
         // Parse relays from connection token and connect bunkerNDK to them
-        const relayURLs: string[] | undefined = parseRelaysFromBunkerUrl(bunkerUrl);
-        const remotePubkey: string | undefined = parseRemotePubkeyFromBunkerUrl(bunkerUrl);
-        const secret: string | undefined = parseSecretFromBunkerUrl(bunkerUrl);
-        console.log('remotePubkey', remotePubkey);
-        console.log('secret', secret);
+        const relayURLs: string[] | undefined = parseRelaysFromBunkerUrl(bunkerUrlString);
+        const remotePubkey: string | undefined = parseRemotePubkeyFromBunkerUrl(bunkerUrlString);
+
         if (!relayURLs) {
             attemptingBunkerConnection = false;
             toaster.error({
@@ -72,27 +70,13 @@
 
         console.log('remote signer bunker connected!', $bunkerNDK.pool.connectedRelays());
 
-        // Here we transform pubkey to npub for NDK to transform it back to pubkey...
-        // NDK should actually handle pubkeys directly
-        // bc the token strings contain just that
-        const remoteUserNpub = nip19.npubEncode(remotePubkey);
-        let connectionParams = remoteUserNpub + '#';
+        const bunkerUrl = new URL(bunkerUrlString);
+        bunkerUrl.searchParams.set('permissions', bunkerPerms.join(','));
 
-        if (secret) {
-            // NDK parses 'remoteUserOrToken' using a '#' as a separator
-            // 'Token is mistakenly called like this though.
-            // It is the SECRET according to nip46 spec'
-            connectionParams += secret;
-        }
-
-        // The connectionParams eventually is split into 3 parts:
-        // [<target user npub>, <secret || ''>, <default perms>]
-        connectionParams += '#' + bunkerPerms.join(',');
-
-        const remoteSigner = new NDKNip46Signer($bunkerNDK, connectionParams, localSigner);
+        const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerUrl.toString(), localSigner);
 
         // remoteSigner.on('authUrl', (url) => {
-        //     window.open(url, "auth", "width=600, height=600");
+        //     window.open(url, 'auth', 'width=600, height=600');
         // });
 
         statusMessage = 'Check your Bunker!';
@@ -112,7 +96,7 @@
                 $loginMethod = LoginMethod.Bunker;
                 localStorage.setItem('login-method', $loginMethod);
                 localStorage.setItem('bunkerLocalSignerPK', localSigner.privateKey as string);
-                localStorage.setItem('bunkerTargetNpub', remoteUserNpub);
+                localStorage.setItem('bunkerTargetNpub', nip19.npubEncode(remotePubkey));
                 localStorage.setItem('bunkerRelayURLs', relayURLs.join(','));
 
                 toaster.success({
@@ -177,7 +161,7 @@
     </div>
     <div class={btnWrapperClasses}>
         <Input
-            bind:value={bunkerUrl}
+            bind:value={bunkerUrlString}
             placeholder="bunker://..."
             type="url"
             classes="focus:ring-0 border-[0px] border-b-[1px] border-black-100 dark:border-white-100 bg-transparent"
