@@ -130,8 +130,12 @@ export class MessageService {
         dm.content = await (ndkInstance.signer as NDKSigner).encrypt(recipient, content);
 
         try {
-            await dm.publish();
-            return dm;
+            // sign the dm
+            await dm.sign();
+            // immediately add the dm to messages array
+            this.messages = [...this.messages, dm];
+            // publish the dm asynchronously
+            dm.publish();
         } catch (error) {
             console.error('Failed to send message:', error);
             throw error;
