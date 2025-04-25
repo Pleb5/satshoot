@@ -75,9 +75,9 @@
 
         const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerUrl.toString(), localSigner);
 
-        // remoteSigner.on('authUrl', (url) => {
-        //     window.open(url, 'auth', 'width=600, height=600');
-        // });
+        remoteSigner.on('authUrl', (url) => {
+            window.open(url, 'auth', 'width=600, height=600');
+        });
 
         statusMessage = 'Check your Bunker!';
         await tick();
