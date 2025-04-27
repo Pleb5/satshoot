@@ -147,7 +147,7 @@
     // Send message
     async function sendMessage() {
         if (currentMessage && currentPerson) {
-            await messageService.sendMessage(currentPerson as unknown as NDKUser, currentMessage);
+            messageService.sendMessage(currentPerson as unknown as NDKUser, currentMessage);
             currentMessage = '';
         }
     }
