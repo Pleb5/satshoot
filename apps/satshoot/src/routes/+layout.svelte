@@ -249,10 +249,10 @@
 
     async function handleBunkerLogin() {
         const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
-        const bunkerTargetNpub = localStorage.getItem('bunkerTargetNpub');
+        const bunkerUrl = localStorage.getItem('bunkerUrl');
         const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
 
-        if (!localBunkerKey || !bunkerTargetNpub || !bunkerRelayURLsString) {
+        if (!localBunkerKey || !bunkerRelayURLsString || !bunkerUrl) {
             return;
         }
 
@@ -268,7 +268,7 @@
 
         try {
             const localSigner = new NDKPrivateKeySigner(localBunkerKey);
-            const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerTargetNpub, localSigner);
+            const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerUrl, localSigner);
 
             const returnedUser = await remoteSigner.blockUntilReady();
             if (returnedUser.npub) {
@@ -287,9 +287,13 @@
                 toaster.warning({
                     title: 'Bunker connection took too long!',
                     description: 'Fix or Remove Bunker Connection!',
+                    duration: 60000, // 1 min
                     action: {
                         label: 'Delete Bunker Connection',
-                        onClick: () => logout(),
+                        onClick: () => {
+                            $loggingIn = false;
+                            logout();
+                        },
                     },
                 });
             }

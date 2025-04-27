@@ -4,15 +4,10 @@
     import ndk, { bunkerNDK, LoginMethod } from '$lib/stores/session';
     import { loginMethod } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
-    import {
-        parseRelaysFromBunkerUrl,
-        parseRemotePubkeyFromBunkerUrl,
-        parseSecretFromBunkerUrl,
-    } from '$lib/utils/login';
+    import { parseRelaysFromBunkerUrl, parseRemotePubkeyFromBunkerUrl } from '$lib/utils/login';
     import { bunkerPerms } from '$lib/utils/misc';
     import { NDKNip46Signer, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 
-    import { nip19 } from 'nostr-tools';
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -84,7 +79,6 @@
 
         try {
             // Connect to remote signer
-            console.log('remoteSigner', remoteSigner);
             const returnedUser = await remoteSigner.blockUntilReady();
 
             // Since the blockUntilReady could reject with error
@@ -95,8 +89,8 @@
 
                 $loginMethod = LoginMethod.Bunker;
                 localStorage.setItem('login-method', $loginMethod);
+                localStorage.setItem('bunkerUrl', bunkerUrl.toString());
                 localStorage.setItem('bunkerLocalSignerPK', localSigner.privateKey as string);
-                localStorage.setItem('bunkerTargetNpub', nip19.npubEncode(remotePubkey));
                 localStorage.setItem('bunkerRelayURLs', relayURLs.join(','));
 
                 toaster.success({
