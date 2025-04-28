@@ -1,9 +1,9 @@
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { svelteTesting } from '@testing-library/svelte/vite';
 
 export default defineConfig({
-    plugins: [sveltekit(), svelte({ hot: !process.env.VITEST })],
+    plugins: [sveltekit(), svelteTesting()],
     resolve: {
         conditions: process.env.VITEST ? ['browser'] : [],
     },
