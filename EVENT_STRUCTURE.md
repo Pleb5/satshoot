@@ -58,8 +58,16 @@
         // Update/Replacement is based on this. Allows for multiple Orders with simple edits. Mandatory
         ["d", "<Order id>"],
 
-        // Clients can change their mind about a Service while its not being fulfilled. Mandatory
-        [ "s", <'0' (InActive) OR '1' (Active)> ],
+        // Mandatory. Clients place and Order on a Service and the following happens:
+        // 1. The Order's initial state is '0' (Open) which can be displayed as 'Pending' in apps,
+        // because the Freelancer has not yet confirmed the Order fulfillment
+        // 2. If the Freelancer confirms the Order by adding the 'a' tag of this Order to its Service,
+        // the Order is still Open but apps can change displayed status to 'In Fulfillment'
+        // 3. The Order is closed by the Client paying and posting a Review. This concludes the Order
+        // with a '1' (Fulfilled) state or a '2' (Failed) state. Orders with Fulfilled and Failed states
+        // can be displayed as 'Closed' in apps that want to gather cocluded Orders together.
+        // 
+        [ "s", <'0' (Open) OR '1' (Fulfilled) OR '2' (Failed)> ],
 
         // This tag MUST be set on creation of this event. Points to the 
         // Freelance Service that the Client wants to order. Mandatory
