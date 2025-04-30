@@ -153,48 +153,36 @@ Clients and Freelancers by their outstanding attributes.
 ### Freelancer Review event (posted by Client)
 ```json
 {
-    "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Client>,
-    "created_at": <unix timestamp in seconds>,
     "kind": 1986,
     "tags": [
         // ALL tags are mandatory
         ["L", qts/freelancing]
         ["l", “freelancer”, “qts/freelancing”],
         ["rating", “<0 | 0.5>”, “success”], 
-        ["rating", “<0 | 0.2>”, “expertise”], 
-        ["rating", “<0 | 0.15>”, “availability”], 
-        ["rating", “<0 | 0.15>”, “communication”], 
-        ["a", 32768:<hex pubkey of Freelancer>:<Bid/Service d-tag>],
+        ["rating", “<0 | 0.3>”, “expertise”], 
+        ["rating", “<0 | 0.2>”, “communication”], 
+        ["a", "<32765 | 32768>:<hex pubkey of Freelancer>:<Service/Bid d-tag>"],
     ],
     "content": {
         <Short summary of the experience. Optional>
     },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the
-    serialized event data, which is the same as the "id" field>
 }
 ```
 
 ### Client Review event (posted by Freelancer)
 ```json
 {
-    "id": <32-bytes lowercase hex-encoded sha256 of the serialized event data>,
-    "pubkey": <hex public key of the Freelancer>,
-    "created_at": <unix timestamp in seconds>,
     "kind": 1986,
     "tags": [
         // ALL tags are mandatory
         ["L", qts/freelancing]
         ["l", “client”, “qts/freelancing”],
         ["rating", “<0 | 0.5>”, “thumb”], 
-        ["rating", “<0 | 0.25>”, “availability”], 
-        ["rating", “<0 | 0.25>”, “communication”], 
-        ["a", 32767:<hex pubkey of the Client>:<Job/Order d-tag>],
+        ["rating", “<0 | 0.5>”, “communication”], 
+        ["a", "<32766 | 32767>:<hex pubkey of the Client>:<Order/Job d-tag>"],
     ],
     "content": {
         <Short summary of the experience. Optional>
     },
-    "sig": <64-bytes lowercase hex of the signature of the sha256 hash of the
-    serialized event data, which is the same as the "id" field>
 }
 ```
