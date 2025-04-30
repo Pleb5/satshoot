@@ -64,7 +64,6 @@
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import type { TicketEvent } from '$lib/events/TicketEvent';
 
-    import { searchTerms } from '$lib/stores/search';
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
     import {
@@ -82,24 +81,7 @@
 
     let { children }: Props = $props();
 
-    beforeNavigate(async ({ to }) => {
-        if (to?.url.pathname !== '/jobs') {
-            // clear search terms by initializing a new set
-            searchTerms.set(new Set());
-        }
-    });
-
     let showDecryptSecretModal = $state(false);
-
-    let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
-    let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
-
-    // on page reload if url contains searchTerms add them to svelte store
-    $effect(() => {
-        if (filterList.length > 0) {
-            searchTerms.set(new Set(filterList));
-        }
-    });
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(page.route.id === '/messages/[jobId=event]');

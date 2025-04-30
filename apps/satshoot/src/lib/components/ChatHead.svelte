@@ -1,4 +1,5 @@
 <script lang="ts">
+    import UserProfile from './UI/Display/UserProfile.svelte';
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk, { sessionInitialized } from '$lib/stores/session';
@@ -10,26 +11,26 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-
+    import Fuse from 'fuse.js';
     import { navigating } from '$app/state';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import Button from './UI/Buttons/Button.svelte';
     import { Avatar } from '@skeletonlabs/skeleton-svelte';
 
     interface Props {
-        searchTerms?: string[];
+        searchQuery?: string | null;
         user: NDKUser;
         ticket: TicketEvent;
     }
 
-    let { searchTerms = [], user, ticket }: Props = $props();
+    let { searchQuery = null, user, ticket }: Props = $props();
     const naddr = ticket.encode();
 
     let userProfile = $state<NDKUserProfile | null>(null);
     let latestMessage = $state('');
-    let avatarImage = $derived.by(()=>{
+    let avatarImage = $derived.by(() => {
         if (userProfile?.picture) return userProfile.picture;
-        return getRoboHashPicture(user.pubkey)
+        return getRoboHashPicture(user.pubkey);
     });
 
     async function fetchProfile() {
@@ -95,14 +96,36 @@
     });
 
     const display = $derived.by(() => {
-        if (searchTerms.length > 0) {
-            return searchTerms.some((term) => {
-                if (term.startsWith('npub1')) {
-                    return term === user.npub;
-                }
-                const name = userProfile?.name ?? userProfile?.displayName ?? '';
-                return name.toLowerCase().includes(term.toLowerCase());
+        if (searchQuery && searchQuery.length > 0) {
+            const dataToSearch = [
+                {
+                    npub: user.npub,
+                    ...userProfile,
+                },
+            ];
+
+            const fuse = new Fuse(dataToSearch, {
+                isCaseSensitive: false,
+                ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+                threshold: 0.6,
+                minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+                keys: [
+                    {
+                        name: 'npub',
+                        weight: 0.4,
+                    },
+                    {
+                        name: 'name',
+                        weight: 0.3,
+                    },
+                    {
+                        name: 'displayName',
+                        weight: 0.3,
+                    },
+                ],
             });
+            const searchResult = fuse.search(searchQuery);
+            return searchResult.length > 0;
         }
 
         return true;

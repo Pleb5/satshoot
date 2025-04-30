@@ -11,6 +11,7 @@
     import Button from '../UI/Buttons/Button.svelte';
     import TowerBroadcastIcon from '../Icons/TowerBroadcastIcon.svelte';
     import { Modal } from '@skeletonlabs/skeleton-svelte';
+    import { goto } from '$app/navigation';
 
     interface Props {
         isOpen: boolean;
@@ -41,51 +42,62 @@
 
     let profileMenuItems = $derived([
         {
-            href: profileHref,
             label: 'Profile',
             icon: {
                 component: null, // No component, just an HTML icon class
                 props: { class: 'fa-solid fa-user' },
             },
+            onClick: () => {
+                goto(profileHref);
+                isOpen = false;
+            },
         },
         {
-            href: `${profileHref}`,
             label: 'My Jobs',
             icon: {
                 component: TicketIcon,
                 props: { sizeClass: '' },
             },
-            callback: () => {
+            onClick: () => {
                 $scrollToMyJobsAndMyOffers = true;
                 $profileTabStore = ProfilePageTabs.Jobs;
+                goto(profileHref);
+                isOpen = false;
             },
         },
         {
-            href: `${profileHref}`,
             label: 'My Offers',
             icon: {
                 component: BitcoinIcon,
                 props: { extraClasses: 'text-lg' },
             },
-            callback: () => {
+            onClick: () => {
                 $scrollToMyJobsAndMyOffers = true;
                 $profileTabStore = ProfilePageTabs.Offers;
+                goto(profileHref);
+                isOpen = false;
             },
         },
         {
-            href: '/my-cashu-wallet/',
             label: 'Wallet',
             icon: {
                 component: WalletIcon,
                 props: {},
             },
+            onClick: () => {
+                goto('/my-cashu-wallet/');
+                isOpen = false;
+            },
         },
         {
-            href: '/settings/',
             label: 'Settings',
             icon: {
                 component: null, // No component, just an HTML icon class
                 props: { class: 'fa-solid fa-gear' },
+            },
+            onClick: () => {
+                goto('/settings/');
+                isOpen = false;
             },
         },
     ]);
@@ -104,18 +116,8 @@
     positionerPadding="p-0"
 >
     {#snippet content()}
-        {#each profileMenuItems as { href, label, icon, callback }}
-            <Button
-                {href}
-                variant="text"
-                classes={profileMenuItemClass}
-                fullWidth
-                onClick={() => {
-                    if (callback) callback();
-
-                    isOpen = false;
-                }}
-            >
+        {#each profileMenuItems as { label, icon, onClick }}
+            <Button variant="text" classes={profileMenuItemClass} {onClick} fullWidth>
                 <span class="w-6 text-center">
                     {#if !icon.component}
                         <i {...icon.props}></i>

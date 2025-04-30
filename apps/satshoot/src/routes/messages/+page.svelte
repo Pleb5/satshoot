@@ -17,8 +17,7 @@
         Client = 1,
     }
 
-    let searchQuery = $derived($page.url.searchParams.get('searchTerms'));
-    let searchTerms = $derived(searchQuery ? searchQuery.split(',') : []);
+    let searchQuery = $derived($page.url.searchParams.get('searchQuery'));
 
     let freelancers = $state<NDKUser[]>([]);
     let ticketsWithFreelancers = $state<TicketEvent[]>([]);
@@ -29,7 +28,7 @@
     let noTicketsWithFreelancers = $state(false);
     let noTicketsWithClients = $state(false);
 
-    let initialized = $state(false)
+    let initialized = $state(false);
     $effect(() => {
         if ($loggedIn && $sessionInitialized && mounted && !initialized) {
             initialized = true;
@@ -118,7 +117,7 @@
     onMount(() => {
         // Scroll to top as soon as ticket arrives
         if (pageTop) {
-            pageTop.scrollIntoView(true)
+            pageTop.scrollIntoView(true);
         }
 
         mounted = true;
@@ -150,7 +149,7 @@
                                     {#if freelancers?.length > 0}
                                         {#each freelancers as freelancer, i}
                                             <ChatHead
-                                                {searchTerms}
+                                                {searchQuery}
                                                 user={freelancer}
                                                 ticket={ticketsWithFreelancers[i]}
                                             />
@@ -176,7 +175,7 @@
                                 {:else if clients.length > 0}
                                     {#each clients as client, i}
                                         <ChatHead
-                                            {searchTerms}
+                                            {searchQuery}
                                             user={client}
                                             ticket={ticketsWithClients[i]}
                                         />

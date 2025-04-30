@@ -7,9 +7,9 @@
         type NDKSigner,
         type NDKUser,
     } from '@nostr-dev-kit/ndk';
+    import Fuse from 'fuse.js';
     import { onMount } from 'svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
-
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { selectedPerson } from '$lib/stores/messages';
@@ -20,11 +20,11 @@
     interface Props {
         avatarRight?: boolean;
         message: NDKEvent;
-        searchTerms?: string[];
+        searchQuery?: string | null;
         isFirstOfDay?: boolean;
     }
 
-    let { avatarRight = true, message, searchTerms = [], isFirstOfDay = false }: Props = $props();
+    let { avatarRight = true, message, searchQuery = null, isFirstOfDay = false }: Props = $props();
 
     let decryptedDM: string | undefined = $state();
     const senderUser = $ndk.getUser({ pubkey: message.pubkey });
@@ -106,8 +106,15 @@
 
     const showMyself = $derived.by(() => {
         if (decryptedDM) {
-            if (searchTerms.length > 0) {
-                return searchTerms.some((term) => decryptedDM!.includes(term));
+            if (searchQuery && searchQuery.length > 0) {
+                const fuse = new Fuse([decryptedDM], {
+                    isCaseSensitive: false,
+                    ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+                    threshold: 0.6,
+                    minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+                });
+                const searchResult = fuse.search(searchQuery);
+                return searchResult.length > 0;
             } else {
                 return true;
             }

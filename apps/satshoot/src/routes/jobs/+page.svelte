@@ -6,7 +6,7 @@
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from '@nostr-dev-kit/ndk';
-
+    import Fuse from 'fuse.js';
     import { page } from '$app/state';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import Announcement from '$lib/components/Modals/Announcement.svelte';
@@ -14,8 +14,11 @@
     import { onDestroy } from 'svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
 
-    let searchQuery = $derived(page.url.searchParams.get('searchTerms'));
-    let filterList = $derived(searchQuery ? searchQuery.split(',') : []);
+    let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
+
+    // Track debounced jobs
+    let debouncedNewJobs = $state<TicketEvent[]>([]);
+    let debounceTimer: NodeJS.Timeout | null = null; // Not reactive state
 
     let newJobs = $ndk.storeSubscribe(
         {
@@ -30,60 +33,78 @@
         TicketEvent
     );
 
+    // Debounce the new jobs updates
+    $effect(() => {
+        // Only react to $newJobs changes
+        const currentJobs = $newJobs;
+
+        if (debounceTimer) clearTimeout(debounceTimer);
+
+        debounceTimer = setTimeout(() => {
+            debouncedNewJobs = [...currentJobs];
+        }, 300); // 300ms debounce delay
+
+        return () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+        };
+    });
+
     let jobList = $derived.by(() => {
-        let copiedJobs = [...$newJobs]
-        orderEventsChronologically(copiedJobs);
+        let copiedJobs = [...debouncedNewJobs];
         copiedJobs = copiedJobs.filter((t: TicketEvent) => {
             const newJob = t.status === TicketStatus.New;
             const partOfWot = $wot.has(t.pubkey);
 
             return newJob && partOfWot;
-        })
+        });
+        orderEventsChronologically(copiedJobs);
 
-        if (filterList.length > 0) {
-            copiedJobs = filterJobs(copiedJobs);
+        if (searchQuery && searchQuery.length > 0) {
+            copiedJobs = filterJobs(copiedJobs, searchQuery);
         }
 
         return new Set(copiedJobs);
     });
+
     // tracks if user-defined filtering returned anything
     let noResults = $derived.by(() => {
-        if (filterList.length > 0 && jobList.size === 0) return true;
+        if (searchQuery && searchQuery.length > 0 && jobList.size === 0) return true;
 
         return false;
     });
-    // We can avoid $effect by reacting to filterlist length but can set this regardless
-    let currentPage = $derived(filterList.length > 0 ? 1 : 1);
+    // We can avoid $effect by reacting to filterList length but can set this regardless
+    let currentPage = $derived(searchQuery && searchQuery.length > 0 ? 1 : 1);
 
     let showAnnouncementModal = $state(false);
 
-    function filterJobs(jobListToFilter: TicketEvent[]): TicketEvent[] {
-        // We need to check all jobs against all filters
-        const filteredJobList: Set<TicketEvent> = new Set();
-        jobListToFilter.forEach((job: TicketEvent) => {
-            filterList.forEach((filter: string) => {
-                const lowerCaseFilter = filter.toLowerCase();
-
-                const lowerCaseTitle = job.title.toLowerCase();
-                const lowerCaseDescription = job.description.toLowerCase();
-
-                let tagsContain: boolean = false;
-                job.tags.forEach((tag: NDKTag) => {
-                    if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
-                        tagsContain = true;
-                    }
-                });
-
-                const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-                const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
-
-                if (titleContains || descContains || tagsContain) {
-                    filteredJobList.add(job);
-                }
-            });
+    function filterJobs(jobListToFilter: TicketEvent[], searchTerm: string): TicketEvent[] {
+        const fuse = new Fuse(jobListToFilter, {
+            isCaseSensitive: false,
+            shouldSort: true, // Whether to sort the result list, by score
+            ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+            threshold: 0.6,
+            minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+            keys: [
+                {
+                    name: 'title',
+                    weight: 0.4,
+                },
+                {
+                    name: 'description',
+                    weight: 0.2,
+                },
+                {
+                    name: 'tags',
+                    weight: 0.4,
+                },
+            ],
         });
 
-        return Array.from(filteredJobList);
+        const searchResult = fuse.search(searchTerm);
+
+        const filteredJobList = searchResult.map(({ item }) => item);
+
+        return filteredJobList;
     }
 
     function handlePrev() {
@@ -103,6 +124,7 @@
 
     onDestroy(() => {
         if (newJobs) newJobs.empty();
+        if (debounceTimer) clearTimeout(debounceTimer);
     });
 
     const paginationBtnClasses =

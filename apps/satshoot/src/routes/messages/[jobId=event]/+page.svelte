@@ -19,8 +19,7 @@
     let initialized = $state(false);
 
     // Parse URL parameters
-    const searchQuery = $derived(page.url.searchParams.get('searchTerms'));
-    const searchTerms = $derived(searchQuery ? searchQuery.split(',') : []);
+    const searchQuery = $derived(page.url.searchParams.get('searchQuery'));
     const jobAddress = idFromNaddr(page.params.jobId);
     const relaysFromURL = relaysFromNaddr(page.params.jobId).split(',');
     const titleLink = '/' + page.params.jobId;
@@ -362,7 +361,7 @@
                                         <MessageCard
                                             avatarRight={message.pubkey !== $currentUser.pubkey}
                                             {message}
-                                            {searchTerms}
+                                            {searchQuery}
                                             isFirstOfDay={isFirstMessageOfDay(
                                                 orderedMessages,
                                                 index
