@@ -57,7 +57,7 @@
     // Skeleton Modals
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
     // Skeleton stores init
-    import { beforeNavigate, goto } from '$app/navigation';
+    import { goto } from '$app/navigation';
     import Footer from '$lib/components/layout/Footer.svelte';
     import Header from '$lib/components/layout/Header.svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
@@ -354,70 +354,6 @@
         };
     }
 
-    let pullStartY = 0;
-    let pullMoveY = 0;
-    let isRefreshing = $state(false);
-    let pullProgress = $state(0);
-    let showRefreshIndicator = $state(false);
-    let pullThreshold = $state(0);
-
-    // Set a dynamic threshold based on device height (between 80-150px)
-    function setDynamicThreshold() {
-        const windowHeight = window.innerHeight;
-        pullThreshold = Math.max(80, Math.min(150, windowHeight * 0.15));
-    }
-
-    async function handleRefresh() {
-        if (isRefreshing) return;
-
-        isRefreshing = true;
-        pullProgress = 100;
-
-        // Add a small delay with animation before reload
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
-    }
-
-    function handleTouchStart(e: TouchEvent) {
-        if (window.scrollY <= 0) {
-            pullStartY = e.touches[0].clientY;
-            setDynamicThreshold();
-        }
-    }
-
-    function handleTouchMove(e: TouchEvent) {
-        if (pullStartY && !isRefreshing) {
-            pullMoveY = e.touches[0].clientY - pullStartY;
-
-            if (pullMoveY > 0) {
-                // Calculate progress as percentage of threshold
-                pullProgress = Math.min(100, Math.round((pullMoveY / pullThreshold) * 100));
-            }
-        }
-    }
-
-    function handleTouchEnd() {
-        if (!isRefreshing && pullStartY) {
-            // Check if we pulled past the threshold before releasing
-            if (pullProgress >= 100) {
-                handleRefresh();
-            } else {
-                // Reset if we didn't pull far enough
-                resetPullState();
-            }
-        }
-    }
-
-    function resetPullState() {
-        pullStartY = 0;
-        pullMoveY = 0;
-        pullProgress = 0;
-        setTimeout(() => {
-            showRefreshIndicator = false;
-        }, 300);
-    }
-
     onMount(async () => {
         console.log('onMount layout');
 
@@ -612,32 +548,11 @@
 <!-- layout structure -->
 <div
     class="w-full h-full flex flex-col"
-    ontouchstart={handleTouchStart}
-    ontouchmove={handleTouchMove}
-    ontouchend={handleTouchEnd}
 >
     <header
         class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
         aria-label="Main header"
     >
-        {#if pullProgress > 0}
-            <div
-                class="flex flex-col items-center justify-center"
-                aria-live="polite"
-                aria-atomic="true"
-            >
-                <i class="fa-solid fa-rotate-right"></i>
-                <span class="text-xs mt-1 font-semibold">
-                    {#if isRefreshing}
-                        Refreshing...
-                    {:else if pullProgress >= 100}
-                        Release to refresh
-                    {:else if pullProgress > 0}
-                        Pull to refresh
-                    {/if}
-                </span>
-            </div>
-        {/if}
         <Header onRestoreLogin={restoreLogin} />
     </header>
 
