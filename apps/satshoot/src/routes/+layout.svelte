@@ -85,6 +85,8 @@
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(page.route.id === '/messages/[jobId=event]');
+    const displayFooter = $derived(displayNav && !hideBottomNav);
+    let footerHeight = $state(0);
     let followSubscription = $state<NDKSubscription>();
 
     $effect(() => {
@@ -566,12 +568,20 @@
         <!-- Main Content  -->
         <main class="sm:ml-[96px] flex-1" aria-label="Main content">
             {@render children?.()}
+            <div
+                style={`height: ${footerHeight}px;`}
+            >
+            </div>
         </main>
     </div>
 
     <!-- Mobile Footer  -->
-    {#if displayNav && !hideBottomNav}
-        <footer class="fixed bottom-0 w-full sm:hidden" aria-label="Mobile navigation">
+    {#if displayFooter}
+        <footer
+            class="fixed bottom-0 w-full sm:hidden"
+            aria-label="Mobile navigation"
+            bind:offsetHeight={footerHeight}
+        >
             <Footer />
         </footer>
     {/if}
