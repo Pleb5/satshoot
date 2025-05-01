@@ -1,5 +1,5 @@
 import { get, derived } from 'svelte/store';
-import ndk from '$lib/stores/ndk';
+import ndk from '$lib/stores/session';
 import { type NDKSubscriptionOptions } from '@nostr-dev-kit/ndk';
 import { wot } from '$lib/stores/wot';
 import currentUser from '$lib/stores/user';

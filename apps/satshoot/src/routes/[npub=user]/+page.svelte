@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import OfferCard from '$lib/components/Cards/OfferCard.svelte';
     import UserCard from '$lib/components/Cards/UserCard.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
@@ -9,13 +9,17 @@
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import { jobFilter, offerFilter, scrollToMyJobsAndMyOffers } from '$lib/stores/gui';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import currentUser from '$lib/stores/user';
+    import { sessionInitialized } from '$lib/stores/session';
     import { orderEventsChronologically } from '$lib/utils/helpers';
-    import { NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+    import { NDKKind, type NDKFilter, type NDKTag } from '@nostr-dev-kit/ndk';
+    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
+    import { nip19 } from 'nostr-tools';
     import { onDestroy, onMount } from 'svelte';
+    import { debounce } from '$lib/utils/misc';
+    import Fuse from 'fuse.js';
 
     enum OfferStatus {
         Unknown,
@@ -24,72 +28,106 @@
         Lost,
     }
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: filterList = searchQuery ? searchQuery.split(',') : [];
-    $: npub = $page.params.npub;
-    $: user = $ndk.getUser({ npub: npub });
+    let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
+    let npub = page.params.npub;
+    let pubkey = nip19.decode(npub).data as string;
+    let user = $ndk.getUser({ npub: npub });
 
-    const subOptions = {
-        autoStart: true,
+    const subOptions: NDKSubscribeOptions = {
+        autoStart: false,
     };
 
-    let allJobsOfUser: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let allOffersOfUser: NDKEventStore<ExtendedBaseType<OfferEvent>>;
-    let filteredJobs: ExtendedBaseType<ExtendedBaseType<TicketEvent>>[] = [];
-    let filteredOffers: ExtendedBaseType<ExtendedBaseType<OfferEvent>>[] = [];
+    const allJobsFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceTicket],
+    };
+    const allJobsOfUser = $ndk.storeSubscribe<TicketEvent>(allJobsFilter, subOptions, TicketEvent);
 
-    // jobs on which use has made offers
-    let appliedJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
+    const allOffersFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceOffer],
+    };
+    const allOffersOfUser = $ndk.storeSubscribe<OfferEvent>(
+        allOffersFilter,
+        subOptions,
+        OfferEvent
+    );
 
-    $: if (user) {
-        if (allJobsOfUser) allJobsOfUser.empty();
-        if (allOffersOfUser) allOffersOfUser.empty();
+    const dTagOfJobs = $derived(
+        $allOffersOfUser.map((offer) => offer.referencedTicketAddress.split(':')[2])
+    );
 
-        allJobsOfUser = $ndk.storeSubscribe<TicketEvent>(
-            {
-                kinds: [NDKKind.FreelanceTicket],
-                authors: [user.pubkey],
-            },
-            subOptions,
-            TicketEvent
-        );
+    // jobs on which user has made offers
+    const appliedJobsFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceTicket],
+    };
+    const appliedJobs = $ndk.storeSubscribe<TicketEvent>(
+        appliedJobsFilter,
+        {
+            autoStart: false,
+            closeOnEose: false,
+            groupable: true,
+            groupableDelay: 1000,
+        },
+        TicketEvent
+    );
 
-        allOffersOfUser = $ndk.storeSubscribe<OfferEvent>(
-            {
-                kinds: [NDKKind.FreelanceOffer],
-                authors: [user.pubkey],
-            },
-            subOptions,
-            OfferEvent
-        );
-    }
+    // Track debounced jobs
+    let debouncedUserJobs = $state<TicketEvent[]>([]);
+    let debouncedJobsTimer: NodeJS.Timeout | null = null; // Not reactive state
 
-    $: if ($allOffersOfUser.length > 0) {
-        const dTagOfJobs = $allOffersOfUser.map(
-            (offer) => offer.referencedTicketAddress.split(':')[2]
-        );
+    // Track debounced jobs
+    let debouncedUserOffers = $state<OfferEvent[]>([]);
+    let debouncedOffersTimer: NodeJS.Timeout | null = null; // Not reactive state
 
-        appliedJobs = $ndk.storeSubscribe<TicketEvent>(
-            {
-                kinds: [NDKKind.FreelanceTicket],
-                '#d': dTagOfJobs,
-            },
-            {
-                autoStart: true,
-                closeOnEose: false,
-                groupable: true,
-                groupableDelay: 1000,
-            },
-            TicketEvent
-        );
-    }
+    // Debounce the user jobs updates
+    $effect(() => {
+        // Only react to $allJobsOfUser changes
+        const userJobs = $allJobsOfUser;
 
-    $: if ($allJobsOfUser && filterList) {
-        orderEventsChronologically($allJobsOfUser);
+        if (debouncedJobsTimer) clearTimeout(debouncedJobsTimer);
+
+        debouncedJobsTimer = setTimeout(() => {
+            debouncedUserJobs = [...userJobs];
+        }, 300); // 300ms debounce delay
+
+        return () => {
+            if (debouncedJobsTimer) clearTimeout(debouncedJobsTimer);
+        };
+    });
+
+    // Debounce the user offer updates
+    $effect(() => {
+        // Only react to $allOffersOfUser changes
+        const userOffers = $allOffersOfUser;
+
+        if (debouncedOffersTimer) clearTimeout(debouncedOffersTimer);
+
+        debouncedOffersTimer = setTimeout(() => {
+            debouncedUserOffers = [...userOffers];
+        }, 300); // 300ms debounce delay
+
+        return () => {
+            if (debouncedOffersTimer) clearTimeout(debouncedOffersTimer);
+        };
+    });
+
+    $effect(
+        debounce(() => {
+            if (dTagOfJobs.length > 0) {
+                appliedJobs.subscription?.stop();
+                appliedJobsFilter['#d'] = dTagOfJobs;
+                appliedJobs.startSubscription();
+            }
+        }, 800)
+    );
+
+    const { new: isNew, inProgress, closed } = $derived($jobFilter);
+
+    const filteredJobs = $derived.by(() => {
+        let copied = [...debouncedUserJobs];
+        orderEventsChronologically(copied);
 
         // filter based on status
-        filteredJobs = $allJobsOfUser.filter((job) => {
-            const { new: isNew, inProgress, closed } = $jobFilter;
+        copied = copied.filter((job) => {
             const { status } = job;
 
             return (
@@ -99,14 +137,52 @@
             );
         });
 
-        filterJobs();
+        if (searchQuery && searchQuery.length > 0) {
+            return filterJobs(copied, searchQuery);
+        }
+
+        return copied;
+    });
+
+    // filter based on search terms
+    function filterJobs(jobs: TicketEvent[], searchTerm: string): TicketEvent[] {
+        const fuse = new Fuse(jobs, {
+            isCaseSensitive: false,
+            shouldSort: true, // Whether to sort the result list, by score
+            ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+            threshold: 0.6,
+            minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+            keys: [
+                {
+                    name: 'title',
+                    weight: 0.4,
+                },
+                {
+                    name: 'description',
+                    weight: 0.2,
+                },
+                {
+                    name: 'tags',
+                    weight: 0.4,
+                },
+            ],
+        });
+
+        const searchResult = fuse.search(searchTerm);
+
+        const filteredJobList = searchResult.map(({ item }) => item);
+
+        return filteredJobList;
     }
 
-    $: if ($allOffersOfUser && filterList) {
-        orderEventsChronologically($allOffersOfUser);
+    const { pending, success, lost } = $derived($offerFilter);
 
-        filteredOffers = $allOffersOfUser.filter((offer) => {
-            const job = $appliedJobs.find(
+    const filteredOffers = $derived.by(() => {
+        let copied = [...$allOffersOfUser];
+        orderEventsChronologically(copied);
+
+        copied = copied.filter((offer) => {
+            const job = $appliedJobs?.find(
                 (job) => job.ticketAddress === offer.referencedTicketAddress
             );
 
@@ -118,8 +194,6 @@
                     : OfferStatus.Pending
                 : OfferStatus.Unknown;
 
-            const { pending, success, lost } = $offerFilter;
-
             return (
                 (pending && offerStatus === OfferStatus.Pending) ||
                 (success && offerStatus === OfferStatus.Won) ||
@@ -128,10 +202,53 @@
             );
         });
 
-        filterOffers();
+        if (searchQuery && searchQuery.length > 0) {
+            return filterOffers(copied, searchQuery);
+        }
+
+        return copied;
+    });
+
+    // filter based on search terms
+    function filterOffers(offers: OfferEvent[], searchTerm: string): OfferEvent[] {
+        const fuse = new Fuse(offers, {
+            isCaseSensitive: false,
+            shouldSort: true,
+            ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+            threshold: 0.6,
+            minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+            keys: [
+                {
+                    name: 'description',
+                    weight: 0.3,
+                },
+                {
+                    name: 'tags',
+                    weight: 0.7,
+                },
+            ],
+        });
+
+        const searchResult = fuse.search(searchTerm);
+
+        const filteredOfferList = searchResult.map(({ item }) => item);
+
+        return filteredOfferList;
     }
 
-    let myJobsAndMyOffersElement: HTMLDivElement;
+    let initialized = $state(false);
+    $effect(() => {
+        if (pubkey && $sessionInitialized && !initialized) {
+            initialized = true;
+            allJobsFilter.authors = [pubkey];
+            allOffersFilter.authors = [pubkey];
+
+            allJobsOfUser.startSubscription();
+            allOffersOfUser.startSubscription();
+        }
+    });
+
+    let myJobsAndMyOffersElement = $state<HTMLDivElement>();
     onMount(() => {
         if (myJobsAndMyOffersElement && $scrollToMyJobsAndMyOffers) {
             $scrollToMyJobsAndMyOffers = false;
@@ -143,70 +260,24 @@
         if (allJobsOfUser) allJobsOfUser.empty();
         if (allOffersOfUser) allOffersOfUser.empty();
         if (appliedJobs) appliedJobs.empty();
+        if (debouncedJobsTimer) clearTimeout(debouncedJobsTimer);
+        if (debouncedOffersTimer) clearTimeout(debouncedOffersTimer);
     });
 
-    // filter based on search terms
-    function filterJobs() {
-        // We need to check all jobs against all filters
-        if (filterList.length > 0) {
-            filteredJobs = filteredJobs.filter((job) => {
-                const lowerCaseTitle = job.title.toLowerCase();
-                const lowerCaseDescription = job.description.toLowerCase();
+    let isOwnProfile = $derived($currentUser && $currentUser?.pubkey === pubkey);
 
-                // Check if the job matches any filter
-                const matchesFilter = filterList.some((filter: string) => {
-                    const lowerCaseFilter = filter.toLowerCase();
-
-                    // Check title and description and tags
-                    const titleContains = lowerCaseTitle.includes(lowerCaseFilter);
-                    const descContains = lowerCaseDescription.includes(lowerCaseFilter);
-                    const tagsContain = job.tags.some((tag: NDKTag) =>
-                        (tag[1] as string).toLowerCase().includes(lowerCaseFilter)
-                    );
-
-                    return titleContains || descContains || tagsContain;
-                });
-
-                return matchesFilter;
-            });
-        }
-    }
-
-    // filter based on search terms
-    function filterOffers() {
-        // We need to check all jobs against all filters
-        if (filterList.length > 0) {
-            filteredOffers = filteredOffers.filter((offer) => {
-                const lowerCaseDescription = offer.description.toLowerCase();
-
-                // Check if the job matches any filter
-                const matchesFilter = filterList.some((filter: string) => {
-                    const lowerCaseFilter = filter.toLowerCase();
-
-                    const descContains = lowerCaseDescription.includes(lowerCaseFilter);
-
-                    return descContains;
-                });
-
-                return matchesFilter;
-            });
-        }
-    }
-
-    $: isOwnProfile = $currentUser && $currentUser?.pubkey === user.pubkey;
-
-    $: tabs = [
+    let tabs = $derived([
         { id: ProfilePageTabs.Jobs, label: `${isOwnProfile ? 'My' : ''} Jobs` },
         { id: ProfilePageTabs.Offers, label: `${isOwnProfile ? 'My' : ''} Offers` },
-    ];
+    ]);
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div class="w-full flex flex-col gap-0 grow mt-0 sm:mt-5 mb-20 sm:mb-0">
     <!-- Section start -->
-    <div class="w-full flex flex-col justify-center items-center pb-[50px]">
+    <div class="w-full flex flex-col justify-center items-center">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
-                <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
+                <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col max-[768px]:gap-0">
                     <UserCard {user} />
                     <div
                         id="job-and-offers"

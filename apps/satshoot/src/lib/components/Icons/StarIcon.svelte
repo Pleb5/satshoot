@@ -1,5 +1,9 @@
 <script lang="ts">
-    export let extraClasses = 'text-lg';
+    interface Props {
+        extraClasses?: string;
+    }
+
+    let { extraClasses = 'text-lg' }: Props = $props();
 </script>
 
 <span class="">

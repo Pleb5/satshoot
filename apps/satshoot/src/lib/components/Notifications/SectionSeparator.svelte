@@ -1,5 +1,9 @@
 <script lang="ts">
-    export let label: string;
+    interface Props {
+        label: string;
+    }
+
+    let { label }: Props = $props();
 </script>
 
 <div class="flex items-center my-4">

@@ -1,40 +1,40 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
+    import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
+    import { toaster } from '$lib/stores/toaster';
     import currentUser from '$lib/stores/user';
-    import { broadcastUserProfile, fetchEventFromRelaysFirst } from '$lib/utils/helpers';
+    import { broadcastUserProfile } from '$lib/utils/helpers';
+    import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import {
         NDKKind,
         profileFromEvent,
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-    import { getToastStore, ProgressRadial, type ToastSettings } from '@skeletonlabs/skeleton';
 
-    const toastStore = getToastStore();
+    let initialized = $state(false);
+    let userProfile = $state<NDKUserProfile>({});
+    let updating = $state(false);
 
-    let userProfile: NDKUserProfile = {};
-    let updating = false;
+    const redirectPath = $derived(page.url.searchParams.get('redirectPath'));
 
-    $: if ($currentUser) {
-        setProfile($currentUser);
-    }
-
-    let redirectPath: string | null = null;
-
-    $: {
-        redirectPath = $page.url.searchParams.get('redirectPath');
-    }
+    $effect(() => {
+        if ($currentUser && !initialized) {
+            setProfile($currentUser);
+            initialized = true;
+        }
+    });
 
     async function setProfile(user: NDKUser) {
         // Logged in user's metadata MUST be fetched from relays
         // to avoid metadata edit from stale state
         // Otherwise we can fall back to cache
-        const fallBackToCache = user.pubkey !== $currentUser?.pubkey;
+        const fallbackToCache = user.pubkey !== $currentUser?.pubkey;
 
         const metadataFilter = {
             kinds: [NDKKind.Metadata],
@@ -46,24 +46,20 @@
             ...$ndk.pool!.connectedRelays(),
         ];
 
-        const profile = await fetchEventFromRelaysFirst(
-            metadataFilter,
-            4000,
-            fallBackToCache,
-            metadataRelays
-        );
+        const profile = await fetchEventFromRelaysFirst(metadataFilter, {
+            relayTimeoutMS: 4000,
+            fallbackToCache,
+            explicitRelays: metadataRelays,
+        });
 
         if (profile) {
             userProfile = profileFromEvent(profile);
         } else {
-            const t: ToastSettings = {
-                message: `<p class='text-center font-bold'>Could NOT load Profile!</p>
-                          <p class='text-center font-bold'>Try to refresh page!</p>
-                         `,
-                background: 'bg-error-300-600-token',
-                autohide: false
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: `Could NOT load Profile!`,
+                description: `Try to refresh page!`,
+                duration: 60000, // 1 min
+            });
         }
     }
 
@@ -75,12 +71,11 @@
                 updating = true;
 
                 $currentUser.profile = userProfile;
-                await broadcastUserProfile($ndk, userProfile);
+                await broadcastUserProfile($ndk, $currentUser);
 
-                const t: ToastSettings = {
-                    message: `Profile Updated!`,
-                };
-                toastStore.trigger(t);
+                toaster.success({
+                    title: `Profile Updated!`,
+                });
 
                 if (redirectPath) {
                     goto(redirectPath);
@@ -91,10 +86,9 @@
                     goto('/settings/relays');
                 }
             } catch (e) {
-                const t: ToastSettings = {
-                    message: `Profile update failed! Reason: ${e}`,
-                };
-                toastStore.trigger(t);
+                toaster.error({
+                    title: `Profile update failed! Reason: ${e}`,
+                });
             } finally {
                 updating = false;
             }
@@ -106,7 +100,7 @@
     <div class="w-full flex flex-col gap-[15px] overflow-y-auto">
         <div class="w-full flex flex-col gap-[15px]">
             <!-- Display Name -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="displaly_name">Display Name</label>
                 </div>
@@ -120,7 +114,7 @@
             </div>
 
             <!-- Bio -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="about">About</label>
                 </div>
@@ -134,21 +128,21 @@
             </div>
 
             <!-- Profile Picture -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
-                    <label class="font-[600]" for="pofile_picture_url">Profile Picture</label>
+                    <label class="font-[600]" for="profile_picture_url">Profile Picture</label>
                 </div>
                 <Input
                     id="profile_picture_url"
                     type="url"
                     placeholder="Profile Picture URL"
-                    bind:value={userProfile.image}
+                    bind:value={userProfile.picture}
                     fullWidth
                 />
             </div>
 
             <!-- Profile Banner -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="profile_banner_url">Profile Banner</label>
                 </div>
@@ -163,7 +157,7 @@
             </div>
 
             <!-- NIP-05 Address -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="nip05">NIP-05 Address</label>
                 </div>
@@ -178,7 +172,7 @@
             </div>
 
             <!-- LN Address -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="ln_address">LN Address</label>
                 </div>
@@ -193,7 +187,7 @@
             </div>
 
             <!-- Website -->
-            <div class="flex flex-col gap-[5px] grow-[1]">
+            <div class="flex flex-col gap-[5px] grow-1">
                 <div>
                     <label class="font-[600]" for="website">Website</label>
                 </div>
@@ -207,17 +201,10 @@
             </div>
         </div>
 
-        <Button on:click={updateProfile} disabled={updating}>
+        <Button onClick={updateProfile} disabled={updating} classes="min-h-[50px]">
             Save
             {#if updating}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-white-500"
-                    track="stroke-white-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="white" />
             {/if}
         </Button>
     </div>

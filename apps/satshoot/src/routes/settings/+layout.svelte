@@ -1,8 +1,13 @@
 <!-- src/routes/settings/+layout.svelte -->
 <script lang="ts">
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Card from '$lib/components/UI/Card.svelte';
+    interface Props {
+        children?: import('svelte').Snippet;
+    }
+
+    let { children }: Props = $props();
 
     const navLinks = [
         {
@@ -20,7 +25,7 @@
     ];
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div class="w-full flex flex-col gap-0 grow">
     <div class="w-full h-full flex flex-col justify-center items-center py-4">
         <div
             class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"
@@ -33,7 +38,7 @@
                             {#each navLinks as { label, href }}
                                 <Button
                                     {href}
-                                    variant={$page.url.pathname === href ? 'contained' : 'text'}
+                                    variant={page.url.pathname === href ? 'contained' : 'text'}
                                 >
                                     {label}
                                 </Button>
@@ -44,7 +49,7 @@
                     <!-- Page Content -->
                     <div class="w-full">
                         <Card>
-                            <slot />
+                            {@render children?.()}
                         </Card>
                         <!-- This will be replaced by the nested routes -->
                     </div>
@@ -52,7 +57,7 @@
                     <div
                         class="w-full max-w-[300px] max-[576px]:max-w-full flex flex-col gap-[10px] text-[16px] text-center"
                     >
-                        {#if $page.route.id === '/settings/general'}
+                        {#if page.route.id === '/settings/general'}
                             <Card>
                                 <p>Store Your Secret key (nsec) securely.</p>
                                 <p>
@@ -70,7 +75,7 @@
                                     </a>
                                 </p>
                             </Card>
-                        {:else if $page.route.id === '/settings/profile'}
+                        {:else if page.route.id === '/settings/profile'}
                             <Card>
                                 <p>
                                     For sending and receiving payments, setup your
@@ -78,7 +83,7 @@
                                         LN address
                                     </a>
                                     or your
-                                    <a href="/my-cashu-wallet/" class="anchor"> Cashu wallet </a>
+                                    <a href="/my-cashu-wallet/" class="anchor"> Nostr Wallet </a>
                                     .
                                 </p>
                                 <br />

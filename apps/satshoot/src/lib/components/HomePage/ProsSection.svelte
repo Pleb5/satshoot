@@ -30,7 +30,7 @@
     ];
 
     const itemWrapperClasses =
-        'transition-all ease duration-[0.4s] flex-grow w-0 bg-white dark:bg-brightGray p-[25px_15px] ' +
+        'transition-all ease duration-[0.4s] grow w-0 bg-white dark:bg-brightGray p-[25px_15px] ' +
         'shadow-subtle gap-[25px] flex flex-col justify-center ' +
         'items-center rounded-[10px] relative overflow-hidden min-h-[175px] min-w-[200px] ' +
         'hover:bg-blue-500 hover:text-white hover:scale-[1.02] group';
@@ -51,7 +51,7 @@
                     <div class={itemWrapperClasses}>
                         <i
                             class={`bx ${item.icon} transition-all ease duration-[0.4s] text-[48px] text-center text-blue-500 group-hover:text-white`}
-                        />
+                        ></i>
                         <p class="text-center font-bold">{item.title}</p>
                         <p class="text-center mt-[-10px]">
                             {item.description}

@@ -1,5 +1,9 @@
 <script lang="ts">
-    export let extraClasses = 'text-lg';
-    export let show = true;
+    interface Props {
+        extraClasses?: string;
+        show?: boolean;
+    }
+
+    let { extraClasses = 'text-lg', show = true }: Props = $props();
 </script>
 <i class="fa-solid { show ? 'fa-eye' : 'fa-eye-slash' } {extraClasses}"></i>

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
         NDKEvent,
@@ -7,35 +7,39 @@
         type NDKSigner,
         type NDKUser,
     } from '@nostr-dev-kit/ndk';
-    import { Avatar } from '@skeletonlabs/skeleton';
+    import Fuse from 'fuse.js';
     import { onMount } from 'svelte';
     import { TicketEvent } from '$lib/events/TicketEvent';
-
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { selectedPerson } from '$lib/stores/messages';
     import Markdown from './Markdown.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { Avatar } from '@skeletonlabs/skeleton-svelte';
 
-    export let avatarRight = true;
-    export let message: NDKEvent;
-    export let searchTerms: string[] = [];
-    export let isFirstOfDay = false;
+    interface Props {
+        avatarRight?: boolean;
+        message: NDKEvent;
+        searchQuery?: string | null;
+        isFirstOfDay?: boolean;
+    }
 
-    let decryptedDM: string;
+    let { avatarRight = true, message, searchQuery = null, isFirstOfDay = false }: Props = $props();
+
+    let decryptedDM: string | undefined = $state();
     const senderUser = $ndk.getUser({ pubkey: message.pubkey });
-    let name = (senderUser as NDKUser).npub.substring(0, 10);
-    let avatarImage = getRoboHashPicture(message.pubkey);
+    let name = $state((senderUser as NDKUser).npub.substring(0, 10));
+    let avatarImage = $state(getRoboHashPicture(message.pubkey));
     const recipient = message.tagValue('p');
 
     const messageDate = new Date((message.created_at as number) * 1000);
     // Time is shown in local time zone
     const timestamp = messageDate.toLocaleString();
     const ticketAddress = message.tagValue('t');
-    let messageLink = '';
+    let messageLink = $state('');
 
-    let extraClasses = 'variant-soft-primary rounded-tr-none';
-    let templateColumn = 'grid-cols-[auto_1fr]';
+    let extraClasses = $state('preset-soft-primary rounded-tr-none');
+    let templateColumn = $state('grid-cols-[auto_1fr]');
 
     function formatDate(date: Date): string {
         const now = new Date();
@@ -51,7 +55,7 @@
 
     onMount(async () => {
         if (avatarRight) {
-            extraClasses = 'variant-soft rounded-tl-none';
+            extraClasses = 'preset-soft rounded-tl-none';
             templateColumn = 'grid-cols-[1fr_auto]';
         }
 
@@ -62,7 +66,6 @@
         // let sharedPoint = secp.getSharedSecret(ourPrivateKey, '02' + theirPublicKey)
 
         // ALWAYS USE OTHER USER REGARDLESS OF WHO SENT THE MESSAGE
-        console.log('start decryption', message);
         try {
             const peerPubkey =
                 message.tagValue('p') === $currentUser!.pubkey
@@ -81,11 +84,9 @@
             groupableDelay: 500,
         });
         if (senderUser.profile) {
-            console.log('profile', profile);
-            console.log('pubkey', senderUser.pubkey);
             if (senderUser.profile.displayName) name = senderUser.profile.displayName;
             if (senderUser.profile.name) name = senderUser.profile.name;
-            if (senderUser.profile.image) avatarImage = senderUser.profile.image;
+            if (senderUser.profile.picture) avatarImage = senderUser.profile.picture;
         } else {
             console.log('no profile');
         }
@@ -100,18 +101,26 @@
                 const ticketEvent = TicketEvent.from(event);
                 messageLink = '/messages/' + ticketEvent.encode();
             }
-            console.log('message link', messageLink);
         }
     });
 
-    let showMyself = false;
-    $: if (decryptedDM) {
-        if (searchTerms.length > 0) {
-            showMyself = searchTerms.some((term) => decryptedDM.includes(term));
-        } else {
-            showMyself = true;
+    const showMyself = $derived.by(() => {
+        if (decryptedDM) {
+            if (searchQuery && searchQuery.length > 0) {
+                const fuse = new Fuse([decryptedDM], {
+                    isCaseSensitive: false,
+                    ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+                    threshold: 0.6,
+                    minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+                });
+                const searchResult = fuse.search(searchQuery);
+                return searchResult.length > 0;
+            } else {
+                return true;
+            }
         }
-    }
+        return false; // Default value if decryptedDM is falsy
+    });
 </script>
 
 <div class={showMyself ? '' : 'hidden'}>
@@ -126,7 +135,7 @@
         <div class="grid {templateColumn} gap-x-2">
             {#if !avatarRight}
                 <a href={'/' + senderUser.npub}>
-                    <Avatar src={avatarImage} width="w-12" />
+                    <Avatar src={avatarImage} size="size-12" {name} />
                 </a>
             {/if}
             <div class="card p-4 space-y-2 {extraClasses}">
@@ -135,12 +144,12 @@
                     <small class="opacity-50">{timestamp}</small>
                 </header>
                 <Markdown content={decryptedDM} />
-                {#if messageLink && !$page.url.pathname.includes('/messages')}
+                {#if messageLink && !page.url.pathname.includes('/messages')}
                     <div class="flex justify-center mr-4">
                         <button
                             type="button"
-                            class="btn btn-icon-lg p-2 text-primary-400-500-token"
-                            on:click={() => {
+                            class="btn btn-icon-lg p-2 text-primary-400-500"
+                            onclick={() => {
                                 $selectedPerson = message.pubkey + '$' + ticketAddress;
                                 goto(messageLink);
                             }}
@@ -155,20 +164,20 @@
             </div>
             {#if avatarRight}
                 <a href={'/' + senderUser.npub}>
-                    <Avatar src={avatarImage} width="w-12" />
+                    <Avatar src={avatarImage} size="size-12" {name} />
                 </a>
             {/if}
         </div>
     {:else}
         <div class="p-4 space-y-4 w-32">
             <div class="grid grid-cols-1">
-                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse"></div>
             </div>
             <div class="grid grid-cols-1">
-                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse"></div>
             </div>
             <div class="grid grid-cols-1">
-                <div class="placeholder animate-pulse" />
+                <div class="placeholder animate-pulse"></div>
             </div>
         </div>
     {/if}
@@ -181,7 +190,7 @@
         margin: 1rem 0;
     }
     .date-separator hr {
-        flex-grow: 1;
+        grow: 1;
         border: none;
         border-top: 1px solid #ccc;
     }

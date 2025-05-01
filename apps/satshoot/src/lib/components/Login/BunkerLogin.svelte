@@ -1,39 +1,37 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { redirectAfterLogin } from '$lib/stores/gui';
-    import ndk, { bunkerNDK, LoginMethod } from '$lib/stores/ndk';
+    import ndk, { bunkerNDK, LoginMethod } from '$lib/stores/session';
     import { loginMethod } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
-    import {
-        parseRelaysFromBunkerUrl,
-        parseRemotePubkeyFromBunkerUrl,
-        parseSecretFromBunkerUrl,
-    } from '$lib/utils/login';
+    import { parseRelaysFromBunkerUrl, parseRemotePubkeyFromBunkerUrl } from '$lib/utils/login';
     import { bunkerPerms } from '$lib/utils/misc';
     import { NDKNip46Signer, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-    import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
-    import { nip19 } from 'nostr-tools';
+
     import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
-    const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    interface Props {
+        isOpen: boolean;
+    }
 
-    let statusMessage = '';
-    let statusColor = 'text-tertiary-200-700-token';
+    let { isOpen = $bindable() }: Props = $props();
 
-    let bunkerUrl = '';
-    let attemptingBunkerConnection = false;
+    let statusMessage = $state('');
+    let statusColor = 'text-tertiary-200-700';
+
+    let bunkerUrlString = $state('');
+    let attemptingBunkerConnection = $state(false);
 
     async function connectBunker() {
-        if (!bunkerUrl || !bunkerUrl.startsWith('bunker://')) {
+        if (!bunkerUrlString || !bunkerUrlString.startsWith('bunker://')) {
             // User tried to submit invalid token string
             attemptingBunkerConnection = false;
-            toastStore.trigger({
-                message: 'Invalid Bunker token! URL must start with "bunker://"',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Invalid Bunker token! URL must start with "bunker://"',
             });
             return;
         }
@@ -41,25 +39,19 @@
         attemptingBunkerConnection = true;
         const localSigner = NDKPrivateKeySigner.generate();
         // Parse relays from connection token and connect bunkerNDK to them
-        const relayURLs: string[] | undefined = parseRelaysFromBunkerUrl(bunkerUrl);
-        const remotePubkey: string | undefined = parseRemotePubkeyFromBunkerUrl(bunkerUrl);
-        const secret: string | undefined = parseSecretFromBunkerUrl(bunkerUrl);
-        console.log('remotePubkey', remotePubkey);
-        console.log('secret', secret);
+        const relayURLs: string[] | undefined = parseRelaysFromBunkerUrl(bunkerUrlString);
+        const remotePubkey: string | undefined = parseRemotePubkeyFromBunkerUrl(bunkerUrlString);
+
         if (!relayURLs) {
             attemptingBunkerConnection = false;
-            toastStore.trigger({
-                message: 'Error: No Relay URLs specified in Bunker token!',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Error: No Relay URLs specified in Bunker token!',
             });
             return;
         } else if (!remotePubkey) {
             attemptingBunkerConnection = false;
-            toastStore.trigger({
-                message: 'Error: No Remote Pubkey specified in Bunker token!',
-                background: 'bg-error-300-600-token',
-                timeout: 5000,
+            toaster.error({
+                title: 'Error: No Remote Pubkey specified in Bunker token!',
             });
             return;
         }
@@ -73,35 +65,20 @@
 
         console.log('remote signer bunker connected!', $bunkerNDK.pool.connectedRelays());
 
-        // Here we transform pubkey to npub for NDK to transform it back to pubkey...
-        // NDK should actually handle pubkeys directly
-        // bc the token strings contain just that
-        const remoteUserNpub = nip19.npubEncode(remotePubkey);
-        let connectionParams = remoteUserNpub + '#';
+        const bunkerUrl = new URL(bunkerUrlString);
+        bunkerUrl.searchParams.set('permissions', bunkerPerms.join(','));
 
-        if (secret) {
-            // NDK parses 'remoteUserOrToken' using a '#' as a separator
-            // 'Token is mistakenly called like this though.
-            // It is the SECRET according to nip46 spec'
-            connectionParams += secret;
-        }
+        const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerUrl.toString(), localSigner);
 
-        // The connectionParams eventually is split into 3 parts:
-        // [<target user npub>, <secret || ''>, <default perms>]
-        connectionParams += '#' + bunkerPerms.join(',');
-
-        const remoteSigner = new NDKNip46Signer($bunkerNDK, connectionParams, localSigner);
-
-        // remoteSigner.on('authUrl', (url) => {
-        //     window.open(url, "auth", "width=600, height=600");
-        // });
+        remoteSigner.on('authUrl', (url) => {
+            window.open(url, 'auth', 'width=600, height=600');
+        });
 
         statusMessage = 'Check your Bunker!';
         await tick();
 
         try {
             // Connect to remote signer
-            console.log('remoteSigner', remoteSigner);
             const returnedUser = await remoteSigner.blockUntilReady();
 
             // Since the blockUntilReady could reject with error
@@ -112,43 +89,32 @@
 
                 $loginMethod = LoginMethod.Bunker;
                 localStorage.setItem('login-method', $loginMethod);
+                localStorage.setItem('bunkerUrl', bunkerUrl.toString());
                 localStorage.setItem('bunkerLocalSignerPK', localSigner.privateKey as string);
-                localStorage.setItem('bunkerTargetNpub', remoteUserNpub);
                 localStorage.setItem('bunkerRelayURLs', relayURLs.join(','));
 
-                toastStore.trigger({
-                    message: 'Bunker Connection Successful!',
-                    timeout: 7000,
-                    background: 'bg-success-300-600-token',
+                toaster.success({
+                    title: 'Bunker Connection Successful!',
                 });
 
-                initializeUser($ndk, toastStore);
+                initializeUser($ndk);
                 handleRedirection();
 
-                modalStore.close();
+                isOpen = false;
             } else {
-                toastStore.trigger({
-                    message: 'Could not connect to Bunker!',
-                    timeout: 7000,
-                    background: 'bg-error-300-600-token',
+                toaster.error({
+                    title: 'Could not connect to Bunker!',
                 });
-                modalStore.close();
+                isOpen = false;
             }
         } catch (error) {
-            toastStore.trigger({
-                message: `
-                        <p>Could not connect to Bunker!</p>
-                        <p>
-                        <span> Reason: </span>
-                        <span> ${error} </span>
-                        </p>
-                    `,
-                autohide: false,
-                background: 'bg-error-300-600-token',
-                classes: 'font-bold',
+            toaster.error({
+                title: `Could not connect to Bunker!`,
+                description: `Reason: ${error}`,
+                duration: 60000, // 1 min
             });
             console.error(error);
-            modalStore.close();
+            isOpen = false;
         }
     }
 
@@ -189,7 +155,7 @@
     </div>
     <div class={btnWrapperClasses}>
         <Input
-            bind:value={bunkerUrl}
+            bind:value={bunkerUrlString}
             placeholder="bunker://..."
             type="url"
             classes="focus:ring-0 border-[0px] border-b-[1px] border-black-100 dark:border-white-100 bg-transparent"
@@ -197,18 +163,11 @@
             noBorder
             notRounded
         />
-        <Button grow on:click={connectBunker} disabled={attemptingBunkerConnection}>
+        <Button grow onClick={connectBunker} disabled={attemptingBunkerConnection}>
             {#if attemptingBunkerConnection}
-                <ProgressRadial
-                    value={undefined}
-                    stroke={60}
-                    meter="stroke-primary-500"
-                    track="stroke-primary-500/30"
-                    strokeLinecap="round"
-                    width="w-8"
-                />
+                <ProgressRing color="primary" />
             {:else}
-                <i class="bx bx-log-in-circle" />
+                <i class="bx bx-log-in-circle"></i>
                 Connect
             {/if}
         </Button>

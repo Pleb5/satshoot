@@ -1,108 +1,110 @@
 <script lang="ts">
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
 
-    import ndk, { connected } from '$lib/stores/ndk';
-    import { online } from '$lib/stores/network';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from '@nostr-dev-kit/ndk';
-
-    import { page } from '$app/stores';
-    import TowerBroadcastIcon from '$lib/components/Icons/TowerBroadcastIcon.svelte';
+    import Fuse from 'fuse.js';
+    import { page } from '$app/state';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import Announcement from '$lib/components/Modals/Announcement.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import type { ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import { onDestroy, onMount } from 'svelte';
+    import { onDestroy } from 'svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
 
-    const modalStore = getModalStore();
+    let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: filterList = searchQuery ? searchQuery.split(',') : [];
+    // Track debounced jobs
+    let debouncedNewJobs = $state<TicketEvent[]>([]);
+    let debounceTimer: NodeJS.Timeout | null = null; // Not reactive state
 
-    let newJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let jobList: Set<TicketEvent> = new Set();
+    let newJobs = $ndk.storeSubscribe(
+        {
+            kinds: [NDKKind.FreelanceTicket],
+        },
+        {
+            autoStart: false,
+            closeOnEose: false,
+            groupable: false,
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        },
+        TicketEvent
+    );
+
+    // Debounce the new jobs updates
+    $effect(() => {
+        // Only react to $newJobs changes
+        const currentJobs = $newJobs;
+
+        if (debounceTimer) clearTimeout(debounceTimer);
+
+        debounceTimer = setTimeout(() => {
+            debouncedNewJobs = [...currentJobs];
+        }, 300); // 300ms debounce delay
+
+        return () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+        };
+    });
+
+    let jobList = $derived.by(() => {
+        let copiedJobs = [...debouncedNewJobs];
+        copiedJobs = copiedJobs.filter((t: TicketEvent) => {
+            const newJob = t.status === TicketStatus.New;
+            const partOfWot = $wot.has(t.pubkey);
+
+            return newJob && partOfWot;
+        });
+        orderEventsChronologically(copiedJobs);
+
+        if (searchQuery && searchQuery.length > 0) {
+            copiedJobs = filterJobs(copiedJobs, searchQuery);
+        }
+
+        return new Set(copiedJobs);
+    });
+
     // tracks if user-defined filtering returned anything
-    let noResults = false;
+    let noResults = $derived.by(() => {
+        if (searchQuery && searchQuery.length > 0 && jobList.size === 0) return true;
 
-    let currentPage = 1;
+        return false;
+    });
+    // We can avoid $effect by reacting to filterList length but can set this regardless
+    let currentPage = $derived(searchQuery && searchQuery.length > 0 ? 1 : 1);
 
-    function filterJobs() {
-        // We need to check all jobs against all filters
-        if (filterList.length > 0) {
-            const filteredJobList: Set<TicketEvent> = new Set();
-            jobList.forEach((job: TicketEvent) => {
-                filterList.forEach((filter: string) => {
-                    const lowerCaseFilter = filter.toLowerCase();
+    let showAnnouncementModal = $state(false);
 
-                    const lowerCaseTitle = job.title.toLowerCase();
-                    const lowerCaseDescription = job.description.toLowerCase();
+    function filterJobs(jobListToFilter: TicketEvent[], searchTerm: string): TicketEvent[] {
+        const fuse = new Fuse(jobListToFilter, {
+            isCaseSensitive: false,
+            shouldSort: true, // Whether to sort the result list, by score
+            ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+            threshold: 0.6,
+            minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+            keys: [
+                {
+                    name: 'title',
+                    weight: 0.4,
+                },
+                {
+                    name: 'description',
+                    weight: 0.2,
+                },
+                {
+                    name: 'tags',
+                    weight: 0.4,
+                },
+            ],
+        });
 
-                    let tagsContain: boolean = false;
-                    job.tags.forEach((tag: NDKTag) => {
-                        if ((tag[1] as string).toLowerCase().includes(lowerCaseFilter)) {
-                            tagsContain = true;
-                        }
-                    });
+        const searchResult = fuse.search(searchTerm);
 
-                    const titleContains: boolean = lowerCaseTitle.includes(lowerCaseFilter);
-                    const descContains: boolean = lowerCaseDescription.includes(lowerCaseFilter);
+        const filteredJobList = searchResult.map(({ item }) => item);
 
-                    if (titleContains || descContains || tagsContain) {
-                        filteredJobList.add(job);
-                    }
-                });
-            });
-
-            if (filteredJobList.size === 0) noResults = true;
-
-            jobList = filteredJobList;
-            currentPage = 1;
-        }
-    }
-
-    function addTagAndFilter(tag: string) {
-        if (!filterList.includes(tag)) {
-            filterList.push(tag);
-            filterList = filterList;
-            filterJobs();
-        }
-    }
-
-    function readyToWork() {
-        const modalComponent: ModalComponent = {
-            ref: Announcement,
-        };
-
-        const modal: ModalSettings = {
-            type: 'component',
-            component: modalComponent,
-        };
-        modalStore.trigger(modal);
-    }
-
-    $: if ($newJobs && filterList) {
-        // We just received a job
-        orderEventsChronologically($newJobs);
-        jobList = new Set(
-            $newJobs.filter((t: TicketEvent) => {
-                // New job check: if a job status is changed this removes not new jobs
-                const newJob = t.status === TicketStatus.New;
-                // wot is always at least 3 if there is a user logged in
-                // only update filter if other users are also present
-                const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
-
-                return newJob && partOfWot;
-            })
-        );
-
-        if (filterList.length > 0) {
-            filterJobs();
-        }
+        return filteredJobList;
     }
 
     function handlePrev() {
@@ -113,33 +115,23 @@
         currentPage += 1;
     }
 
-    onMount(() => {
-        checkRelayConnections();
-
-        newJobs = $ndk.storeSubscribe(
-            {
-                kinds: [NDKKind.FreelanceTicket],
-            },
-            {
-                autoStart: true,
-                closeOnEose: false,
-                groupable: false,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            },
-            TicketEvent
-        );
-        $newJobs = $newJobs;
+    $effect(() => {
+        if ($sessionInitialized) {
+            checkRelayConnections();
+            newJobs.startSubscription();
+        }
     });
 
     onDestroy(() => {
-        if (newJobs) newJobs.unsubscribe();
+        if (newJobs) newJobs.empty();
+        if (debounceTimer) clearTimeout(debounceTimer);
     });
 
     const paginationBtnClasses =
-        'font-[18px] py-[10px] px-[20px] ' + 'max-[576px]:grow-[1] shadow-subtle';
+        'font-[18px] py-[10px] px-[20px] ' + 'max-[576px]:grow-1 shadow-subtle';
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div class="w-full flex flex-col gap-0 grow">
     <div class="w-full flex flex-col justify-center items-center py-[50px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
@@ -160,12 +152,14 @@
                             {:else}
                                 <div class="w-[90vw] flex flex-wrap items-center gap-x-4 gap-y-8">
                                     {#each { length: 8 } as _}
-                                        <div class="card w-[80vw] sm:w-[40vw] flex flex-col items-center flex-grow flex-wrap h-48 p-4 space-y-4">
-                                            <div class="w-full placeholder animate-pulse" />
+                                        <div
+                                            class="card w-[80vw] sm:w-[40vw] flex flex-col items-center grow flex-wrap h-48 p-4 space-y-4"
+                                        >
+                                            <div class="w-full placeholder animate-pulse"></div>
                                             <div class="w-[60%] grid grid-rows-3 gap-8">
-                                                <div class="placeholder animate-pulse" />
-                                                <div class="placeholder animate-pulse" />
-                                                <div class="placeholder animate-pulse" />
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
                                             </div>
                                         </div>
                                     {/each}
@@ -177,8 +171,8 @@
                                 class="w-full max-w-[300px] flex flex-row gap-[15px] justify-center items-center max-[576px]:flex-wrap"
                             >
                                 <Button
-                                    classes="{paginationBtnClasses} max-[576px]:order-[2]"
-                                    on:click={handlePrev}
+                                    classes="{paginationBtnClasses} max-[576px]:order-2"
+                                    onClick={handlePrev}
                                     disabled={currentPage === 1}
                                 >
                                     <i class="bx bxs-chevron-left"></i>
@@ -189,8 +183,8 @@
                                     <p>Current page: {currentPage}</p>
                                 </div>
                                 <Button
-                                    classes="{paginationBtnClasses} max-[576px]:order-[3]"
-                                    on:click={handleNext}
+                                    classes="{paginationBtnClasses} max-[576px]:order-3"
+                                    onClick={handleNext}
                                     disabled={jobList.size <= currentPage * JobsPerPage}
                                 >
                                     <i class="bx bxs-chevron-right"></i>
@@ -203,15 +197,4 @@
         </div>
     </div>
 </div>
-{#if $connected && $online}
-    <div class="fixed bottom-20 sm:bottom-5 right-4 sm:right-8">
-        <button
-            class="btn btn-icon-lg sm:btn-icon-xl bg-blue-500"
-            on:click={() => {
-                readyToWork();
-            }}
-        >
-            <TowerBroadcastIcon extraClasses={'text-3xl text-white'} />
-        </button>
-    </div>
-{/if}
+<Announcement bind:isOpen={showAnnouncementModal} />

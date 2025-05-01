@@ -1,28 +1,37 @@
 <script lang="ts">
     import { NDKRelayStatus } from '@nostr-dev-kit/ndk';
     import Button from './UI/Buttons/Button.svelte';
-    import { createEventDispatcher, onMount, onDestroy } from 'svelte';
-    import ndk from '$lib/stores/ndk';
+    import { onMount, onDestroy } from 'svelte';
+    import ndk from '$lib/stores/session';
     import { normalizeRelayUrl } from '$lib/utils/misc';
 
-    const dispatch = createEventDispatcher();
+    interface Props {
+        relayUrl: string;
+        isSuggestedRelay?: boolean;
+        onAdd?: () => void;
+        onRemove?: () => void;
+    }
 
-    export let relayUrl: string;
-    export let isSuggestedRelay = false;
+    let {
+        relayUrl,
+        isSuggestedRelay = false,
+        onAdd = () => {},
+        onRemove = () => {},
+    }: Props = $props();
 
-    let relayStatusColor: string;
-    let relayStatusText: string;
-    let relayElement: HTMLDivElement | null = null;
+    let relayStatusColor = $state('');
+    let relayStatusText = $state('');
+    let relayElement: HTMLDivElement | null = $state(null);
 
     function handleClick(event: MouseEvent) {
         if (isSuggestedRelay && !(event.target as HTMLElement).closest('button')) {
-            dispatch('add');
+            onAdd();
         }
     }
 
     function handleKeydown(event: KeyboardEvent) {
         if (isSuggestedRelay && (event.key === 'Enter' || event.key === ' ')) {
-            dispatch('add');
+            onAdd();
         }
     }
 
@@ -126,27 +135,27 @@
         <p class="max-[576px]:block hidden">{relayStatusText}</p>
     </div>
     <p
-        class="transition ease duration-[0.3s] grow-[1] group-hover:text-white break-all max-[576px]:py-[5px]"
+        class="transition ease duration-[0.3s] grow-1 group-hover:text-white break-all max-[576px]:py-[5px]"
     >
         {relayUrl}
     </p>
 
     {#if isSuggestedRelay}
         <Button
-            on:click={() => dispatch('add')}
+            onClick={() => onAdd()}
             variant="text"
             classes="min-h-[35px] rounded-[0px] hover:bg-green-600 hover:text-white"
         >
-            <i class="bx bx-plus" />
+            <i class="bx bx-plus"></i>
             Add
         </Button>
     {:else}
         <Button
-            on:click={() => dispatch('remove')}
+            onClick={() => onRemove()}
             variant="text"
             classes="min-h-[35px] rounded-[0px] hover:bg-red-500 hover:text-white"
         >
-            <i class="bx bxs-trash" />
+            <i class="bx bxs-trash"></i>
         </Button>
     {/if}
 </div>

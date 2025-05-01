@@ -1,30 +1,28 @@
 <script lang="ts">
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
-    import {
-        clipboard,
-        getModalStore,
-        getToastStore,
-        ProgressRadial,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+
     import { onMount, tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import Popup from '../UI/Popup.svelte';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
-    const modalStore = getModalStore();
-    const toastStore = getToastStore();
+    interface Props {
+        isOpen: boolean;
+        job: TicketEvent;
+    }
 
-    export let job: TicketEvent;
+    let { isOpen = $bindable(), job }: Props = $props();
 
-    let shareURL = '';
-    let shareNaddr = '';
+    let shareURL = $state('');
+    let shareNaddr = $state('');
 
-    let message: string = '';
-    let posting = false;
+    let message: string = $state('');
+    let posting = $state(false);
     async function postJob() {
         posting = true;
         await tick();
@@ -38,47 +36,45 @@
         try {
             let relays = await kind1Event.publish();
             posting = false;
-            const t: ToastSettings = {
-                message: 'job Posted as Text Note!',
-                timeout: 7000,
-                background: 'bg-success-300-600-token',
-            };
-            toastStore.trigger(t);
+            toaster.success({
+                title: 'Job Posted as Text Note!',
+            });
 
-            modalStore.close();
+            isOpen = false;
         } catch (e) {
             posting = false;
-            const t: ToastSettings = {
-                message: 'Error happened while publishing note!',
-                timeout: 5000,
-                background: 'bg-error-300-600-token',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Error happened while publishing note!',
+            });
 
-            modalStore.close();
+            isOpen = false;
         }
     }
 
-    let urlCopied = false;
+    let urlCopied = $state(false);
     function onCopyURL(): void {
-        urlCopied = true;
-        setTimeout(() => {
-            urlCopied = false;
-        }, 1000);
+        navigator.clipboard.writeText(shareURL).then(() => {
+            urlCopied = true;
+            setTimeout(() => {
+                urlCopied = false;
+            }, 1000);
+        });
     }
 
-    let naddrCopied = false;
+    let naddrCopied = $state(false);
     function onCopyNaddr(): void {
-        naddrCopied = true;
-        setTimeout(() => {
-            naddrCopied = false;
-        }, 1000);
+        navigator.clipboard.writeText(shareNaddr).then(() => {
+            naddrCopied = true;
+            setTimeout(() => {
+                naddrCopied = false;
+            }, 1000);
+        });
     }
 
     onMount(() => {
         if (job) {
             const naddr = job.encode();
-            shareNaddr = 'nostr:' + naddr
+            shareNaddr = 'nostr:' + naddr;
             shareURL = `https://satshoot.com/${naddr}`;
             // Set default text
             message = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
@@ -98,55 +94,46 @@
         'px-[10px] py-[5px] outline-[0px] outline-blue-0 focus:border-blue-500 focus:bg-black-100';
 </script>
 
-{#if $modalStore[0]}
-    <Popup title="Share">
-        <div class="w-full flex flex-col">
-            <!-- popups Share Job Post start -->
-            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
-                <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]">
-                    <p class="">Share your job post with others</p>
-                    {#if job.pubkey === $currentUser?.pubkey}
-                        <Input
-                            bind:value={message}
-                            classes="min-h-[100px]"
-                            fullWidth
-                            textarea
-                            rows={10}
-                        />
-                    {/if}
-                </div>
-                <div class="w-full flex flex-wrap gap-[5px]">
-                    {#if job.pubkey === $currentUser?.pubkey}
-                        <Button grow on:click={postJob} disabled={posting}>
-                            {#if posting}
-                                <span>
-                                    <ProgressRadial
-                                        value={undefined}
-                                        stroke={60}
-                                        meter="stroke-tertiary-500"
-                                        track="stroke-tertiary-500/30"
-                                        strokeLinecap="round"
-                                        width="w-8"
-                                    />
-                                </span>
-                            {:else}
-                                <span>Publish & Share on Nostr</span>
-                            {/if}
-                        </Button>
-                    {/if}
-                    <Button grow>
-                        <span class="w-full h-full" use:clipboard={shareURL} on:click={onCopyURL}>
-                            {urlCopied ? 'Copied!' : 'Copy Job URL'}
-                        </span>
-                    </Button>
-                    <Button grow >
-                        <span class="w-full h-full" use:clipboard={shareNaddr} on:click={onCopyNaddr}>
-                            {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
-                        </span>
-                    </Button>
-                </div>
+<ModalWrapper bind:isOpen title="Share">
+    <div class="w-full flex flex-col">
+        <!-- popups Share Job Post start -->
+        <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
+            <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]">
+                <p class="">Share your job post with others</p>
+                {#if job.pubkey === $currentUser?.pubkey}
+                    <Input
+                        bind:value={message}
+                        classes="min-h-[100px]"
+                        fullWidth
+                        textarea
+                        rows={10}
+                    />
+                {/if}
             </div>
-            <!-- popups Share Job Post end -->
+            <div class="w-full flex flex-wrap gap-[5px]">
+                {#if job.pubkey === $currentUser?.pubkey}
+                    <Button grow onClick={postJob} disabled={posting}>
+                        {#if posting}
+                            <span>
+                                <ProgressRing />
+                            </span>
+                        {:else}
+                            <span>Publish & Share on Nostr</span>
+                        {/if}
+                    </Button>
+                {/if}
+                <Button grow onClick={onCopyURL}>
+                    <span class="w-full h-full">
+                        {urlCopied ? 'Copied!' : 'Copy Job URL'}
+                    </span>
+                </Button>
+                <Button grow onClick={onCopyNaddr}>
+                    <span class="w-full h-full">
+                        {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
+                    </span>
+                </Button>
+            </div>
         </div>
-    </Popup>
-{/if}
+        <!-- popups Share Job Post end -->
+    </div>
+</ModalWrapper>

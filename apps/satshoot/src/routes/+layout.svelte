@@ -7,13 +7,13 @@
     import '@fortawesome/fontawesome-free/css/regular.css';
     import '@fortawesome/fontawesome-free/css/solid.css';
 
-    import ndk, { bunkerNDK, sessionPK } from '$lib/stores/ndk';
+    import ndk, { bunkerNDK, sessionInitialized, sessionPK } from '$lib/stores/session';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
 
     import { Dexie } from 'dexie';
 
     import { updated, pollUpdated } from '$lib/stores/app-updated';
-    import { online, retryConnection } from '$lib/stores/network';
+    import { online, retriesLeft } from '$lib/stores/network';
     import currentUser, { loggedIn, loggingIn, loginMethod, mounted } from '$lib/stores/user';
 
     import {
@@ -34,7 +34,7 @@
 
     import { wotUpdateFailed, wotUpdateNoResults } from '$lib/stores/wot';
 
-    import { LoginMethod, RestoreMethod } from '$lib/stores/ndk';
+    import { LoginMethod, RestoreMethod } from '$lib/stores/session';
 
     import {
         NDKKind,
@@ -48,305 +48,270 @@
 
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
-    import { page } from '$app/stores';
-    import { AppShell, getDrawerStore, getModeAutoPrefers } from '@skeletonlabs/skeleton';
-    // Popups
-    import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+    import { page } from '$app/state';
 
-    import { storePopup, type PopupSettings } from '@skeletonlabs/skeleton';
-
-    // Menu Items
-
-    import { modeCurrent, setModeCurrent } from '@skeletonlabs/skeleton';
     // Skeleton Toast
-    import { Toast, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+    import Toaster from '$lib/components/UI/Toasts/Toaster.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     // Skeleton Modals
     import DecryptSecretModal from '$lib/components/Modals/DecryptSecretModal.svelte';
-    import { Drawer, type ModalComponent, type ModalSettings } from '@skeletonlabs/skeleton';
-    import { Modal, getModalStore } from '@skeletonlabs/skeleton';
     // Skeleton stores init
-    import { beforeNavigate } from '$app/navigation';
+    import { beforeNavigate, goto } from '$app/navigation';
     import Footer from '$lib/components/layout/Footer.svelte';
     import Header from '$lib/components/layout/Header.svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import type { TicketEvent } from '$lib/events/TicketEvent';
 
-    import { searchTerms } from '$lib/stores/search';
-    import {
-        cashuPaymentInfoMap,
-        cashuTokensBackup,
-        unsavedProofsBackup,
-        wallet,
-    } from '$lib/stores/wallet';
-    import { cleanWallet, isCashuMintListSynced, resyncWalletAndBackup } from '$lib/utils/cashu';
-    import { debounce } from '$lib/utils/misc';
-    import { initializeStores } from '@skeletonlabs/skeleton';
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
-    import drawerID, { DrawerIDs } from '$lib/stores/drawer';
-    import AppMenu from '$lib/components/layout/AppMenu.svelte';
+    import {
+        getModeOsPrefers,
+        getModeUserPrefers,
+        setModeUserPrefers,
+    } from '$lib/utils/lightSwitch';
+    import { jobPostSuccessState, offerTakenState } from '$lib/stores/modals';
+    import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
+    import OfferTakenModal from '$lib/components/Modals/OfferTakenModal.svelte';
 
-    initializeStores();
+    interface Props {
+        children?: import('svelte').Snippet;
+    }
 
-    // Skeleton popup init
-    storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
+    let { children }: Props = $props();
 
-    beforeNavigate(async ({ to }) => {
-        if (to?.url.pathname !== '/jobs') {
-            // clear search terms by initializing a new set
-            searchTerms.set(new Set());
+    let showDecryptSecretModal = $state(false);
+
+    const displayNav = $derived($loggedIn);
+    const hideBottomNav = $derived(page.route.id === '/messages/[jobId=event]');
+    let followSubscription = $state<NDKSubscription>();
+
+    $effect(() => {
+        if ($retriesLeft === 0) {
+            toaster.warning({
+                title: 'Could not reconnect to Relays!',
+                duration: 60000, // 1 min
+                action: {
+                    label: 'Check relays',
+                    onClick: () => {
+                        goto('/settings/relays');
+                    },
+                },
+            });
         }
     });
 
-    $: searchQuery = $page.url.searchParams.get('searchTerms');
-    $: filterList = searchQuery ? searchQuery.split(',') : [];
-
-    // on page reload if url contains searchTerms add them to svelte store
-    $: if (filterList.length > 0) {
-        searchTerms.set(new Set(filterList));
-    }
-
-    // For WoT tooltip
-    const popupWoT: PopupSettings = {
-        event: 'click',
-        target: 'popupWoT',
-        placement: 'right',
-    };
-
-    const toastStore = getToastStore();
-    const modalStore = getModalStore();
-
-    $: displayNav = $loggedIn;
-
-    let followSubscription: NDKSubscription | undefined = undefined;
-
-    $: if ($retryConnection === 0) {
-        const t: ToastSettings = {
-            message: 'Could not reconnect to Relays!',
-            autohide: false,
-            action: {
-                label: 'Reload page',
-                response: () => {
-                    window.location.reload();
+    $effect(() => {
+        if ($wotUpdateFailed) {
+            toaster.warning({
+                title: 'Could not load Web of Trust!',
+                action: {
+                    label: 'Retry',
+                    onClick: () => {
+                        window.location.reload();
+                    },
                 },
-            },
-            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-        };
-        toastStore.trigger(t);
-    }
+            });
+        }
+    });
 
-    $: if ($wotUpdateFailed) {
-        const t: ToastSettings = {
-            message: 'Could not load Web of Trust!',
-            autohide: false,
-            action: {
-                label: 'Retry',
-                response: () => {
-                    window.location.reload();
+    $effect(() => {
+        if ($wotUpdateNoResults) {
+            toaster.warning({
+                title: 'Your Web of Trust is Empty!',
+                action: {
+                    label: 'Retry',
+                    onClick: () => {
+                        window.location.reload();
+                    },
                 },
-            },
-            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-        };
-        toastStore.trigger(t);
-    }
-
-    $: if ($wotUpdateNoResults) {
-        const t: ToastSettings = {
-            message: 'Could not load Your Web of Trust!',
-            autohide: false,
-            action: {
-                label: 'Retry',
-                response: () => {
-                    window.location.reload();
-                },
-            },
-            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-        };
-        toastStore.trigger(t);
-    }
-
-    // Use the debounced function with resyncWalletAndBackup, setting a delay of 10 seconds
-    const debouncedResync = debounce(resyncWalletAndBackup, 10000);
-
-    $: if ($wallet && $cashuTokensBackup && $unsavedProofsBackup) {
-        debouncedResync($wallet, $cashuTokensBackup, $unsavedProofsBackup);
-    }
+            });
+        }
+    });
 
     async function restoreLogin() {
         // For UI feedback
         $loggingIn = true;
         await tick();
 
+        migrateLoginMethod();
+
+        // Try to get saved Login method from localStorage and login that way
+        $loginMethod = (localStorage.getItem('login-method') as LoginMethod) ?? null;
+
+        if (!$loginMethod) {
+            $loggingIn = false;
+            return;
+        }
+
+        switch ($loginMethod) {
+            case LoginMethod.Local:
+                await handleLocalLogin();
+                break;
+            case LoginMethod.Bunker:
+                await handleBunkerLogin();
+                break;
+            case LoginMethod.Nip07:
+                await handleNip07Login();
+                break;
+        }
+    }
+
+    function migrateLoginMethod() {
         // Migration to login-method = 'local'  instead of 'ephemeral'
         let method = localStorage.getItem('login-method');
         if (method === 'ephemeral') {
             localStorage.setItem('login-method', 'local');
-            method = 'local';
+        }
+    }
+
+    async function handleLocalLogin() {
+        // We either get the private key from sessionStorage or decrypt from localStorage
+        if ($sessionPK) {
+            $ndk.signer = new NDKPrivateKeySigner($sessionPK);
+            $loggingIn = false;
+
+            await initializeUser($ndk);
+        } else {
+            showDecryptSecretModal = true;
+        }
+    }
+
+    function decryptSecretModalCallback(res: {
+        decryptedSecret?: string;
+        restoreMethod?: RestoreMethod;
+    }) {
+        // Get decrypted seed from a modal prompt where user enters passphrase
+        // User can dismiss modal in which case decryptedSeed is undefined
+        const { decryptedSecret, restoreMethod } = res;
+
+        if (!decryptedSecret) {
+            showErrorToast(
+                'Could not get decrypted secret. Clear browser local storage and login again.'
+            );
+            return;
         }
 
-        // Try to get saved Login method from localStorage and login that way
-        $loginMethod = (method as LoginMethod) ?? null;
+        if (!restoreMethod) {
+            showErrorToast(
+                'Could not get restore method. Clear browser local storage and login again.'
+            );
+            return;
+        }
 
-        if ($loginMethod) {
-            if ($loginMethod === LoginMethod.Local) {
-                // We either get the private key from sessionStorage or decrypt from localStorage
-                if ($sessionPK) {
-                    $ndk.signer = new NDKPrivateKeySigner($sessionPK);
-                } else {
-                    try {
-                        // Get decrypted seed from a modal prompt where user enters passphrase
-                        // User can dismiss modal in which case decryptedSeed is undefined
-                        const responseObject: any = await new Promise<string | undefined>(
-                            (resolve) => {
-                                const modalComponent: ModalComponent = {
-                                    ref: DecryptSecretModal,
-                                };
+        const privateKey = getPrivateKeyFromDecryptedSecret(decryptedSecret, restoreMethod);
 
-                                const modal: ModalSettings = {
-                                    type: 'component',
-                                    component: modalComponent,
-                                    response: (responseObject: any) => {
-                                        resolve(responseObject);
-                                    },
-                                };
-                                // Call DecryptSecret Modal to prompt for passphrase
-                                // This can throw invalid secret if decryption was unsuccessful
-                                modalStore.trigger(modal);
-                                // We got some kind of response from modal
-                            }
-                        );
+        if (!privateKey) {
+            showErrorToast(
+                'Could not create hex private key from decrypted secret. Clear browser local storage and login again.'
+            );
+            return;
+        }
 
-                        if (responseObject) {
-                            const decryptedSecret = responseObject['decryptedSecret'];
-                            const restoreMethod = responseObject['restoreMethod'];
-                            if (decryptedSecret && restoreMethod) {
-                                let privateKey: string | undefined = undefined;
-                                if (restoreMethod === RestoreMethod.Seed) {
-                                    privateKey = privateKeyFromSeedWords(decryptedSecret);
-                                } else if (restoreMethod === RestoreMethod.Nsec) {
-                                    privateKey = privateKeyFromNsec(decryptedSecret);
-                                }
+        $ndk.signer = new NDKPrivateKeySigner(privateKey);
+        $sessionPK = privateKey;
 
-                                if (privateKey) {
-                                    $ndk.signer = new NDKPrivateKeySigner(privateKey);
-                                    $sessionPK = privateKey;
-                                } else {
-                                    throw new Error(
-                                        'Could not create hex private key from decrypted secret. \
-                                        Clear browser local storage and login again.'
-                                    );
-                                }
-                            } else {
-                                $loggingIn = false;
-                                return;
-                            }
-                        } else {
-                            $loggingIn = false;
-                            return;
-                        }
-                    } catch (e) {
-                        const t: ToastSettings = {
-                            message: `Could not create private key from local secret, error: ${e}`,
-                            autohide: false,
-                        };
-                        toastStore.trigger(t);
-                    }
-                }
-            } else if ($loginMethod === LoginMethod.Bunker) {
-                const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
-                const bunkerTargetNpub = localStorage.getItem('bunkerTargetNpub');
-                const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
+        initializeUser($ndk);
+    }
 
-                if (localBunkerKey && bunkerTargetNpub && bunkerRelayURLsString) {
-                    const bunkerRelayURLs = bunkerRelayURLsString.split(',');
-                    bunkerRelayURLs.forEach((url: string) => {
-                        // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
-                        $bunkerNDK.addExplicitRelay(url);
-                    });
+    function getPrivateKeyFromDecryptedSecret(
+        decryptedSecret: string,
+        restoreMethod: RestoreMethod
+    ): string | undefined {
+        switch (restoreMethod) {
+            case RestoreMethod.Seed:
+                return privateKeyFromSeedWords(decryptedSecret);
+            case RestoreMethod.Nsec:
+                return privateKeyFromNsec(decryptedSecret);
+            default:
+                return undefined;
+        }
+    }
 
-                    await $bunkerNDK.connect();
-                    console.log(
-                        'ndk connected to specified bunker relays',
-                        $bunkerNDK.pool.connectedRelays()
-                    );
+    async function handleBunkerLogin() {
+        const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
+        const bunkerUrl = localStorage.getItem('bunkerUrl');
+        const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
 
-                    let connectionParams = bunkerTargetNpub;
+        if (!localBunkerKey || !bunkerRelayURLsString || !bunkerUrl) {
+            return;
+        }
 
-                    const localSigner = new NDKPrivateKeySigner(localBunkerKey);
-                    const remoteSigner = new NDKNip46Signer(
-                        $bunkerNDK,
-                        connectionParams,
-                        localSigner
-                    );
+        const bunkerRelayURLs = bunkerRelayURLsString.split(',');
 
-                    setTimeout(() => {
-                        if (!$ndk.signer) {
-                            const t: ToastSettings = {
-                                autohide: false,
-                                message:
-                                    '\
-                                    <p class="text-center">Bunker connection took too long!</p>\
-                                    <p>Fix or Remove Bunker Connection!</p>\
-                                    ',
-                                action: {
-                                    label: 'Delete Bunker Connection',
-                                    response: () => {
-                                        logout();
-                                    },
-                                },
-                                classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-                                background: 'bg-warning-300-600-token',
-                            };
-                            toastStore.trigger(t);
+        // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
+        bunkerRelayURLs.forEach((url) => $bunkerNDK.addExplicitRelay(url));
 
-                            $loggingIn = false;
-                            tick();
-                        }
-                    }, 20000);
-                    try {
-                        const returnedUser = await remoteSigner.blockUntilReady();
-                        if (returnedUser.npub) {
-                            $ndk.signer = remoteSigner;
-                        }
-                    } catch (e) {
-                        const t: ToastSettings = {
-                            message: `
-                        <p>Could not connect to Bunker!</p>
-                        <p>
-                        <span> Reason: </span>
-                        <span> ${e} </span>
-                        </p>
-`,
-                            autohide: false,
-                            background: 'bg-error-300-600-token',
-                            classes: 'font-bold',
-                        };
-                        toastStore.trigger(t);
-                        $loggingIn = false;
-                        return;
-                    }
-                }
-            } else if ($loginMethod === LoginMethod.Nip07) {
-                if (!$ndk.signer) {
-                    $ndk.signer = new NDKNip07Signer();
-                }
+        await $bunkerNDK.connect();
+        console.log('ndk connected to specified bunker relays', $bunkerNDK.pool.connectedRelays());
+
+        setupBunkerTimeout();
+
+        try {
+            const localSigner = new NDKPrivateKeySigner(localBunkerKey);
+            const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerUrl, localSigner);
+
+            const returnedUser = await remoteSigner.blockUntilReady();
+            if (returnedUser.npub) {
+                $ndk.signer = remoteSigner;
+                await initializeUser($ndk);
+                $loggingIn = false;
             }
+        } catch (e) {
+            showBunkerConnectionError(e);
         }
-        // If signer is defined we can init user
-        if ($ndk.signer) {
-            initializeUser($ndk, toastStore);
-        }
+    }
 
-        console.log('setting loggingIn to false');
-        $loggingIn = false;
+    function setupBunkerTimeout() {
+        setTimeout(() => {
+            if (!$ndk.signer) {
+                toaster.warning({
+                    title: 'Bunker connection took too long!',
+                    description: 'Fix or Remove Bunker Connection!',
+                    duration: 60000, // 1 min
+                    action: {
+                        label: 'Delete Bunker Connection',
+                        onClick: () => {
+                            $loggingIn = false;
+                            logout();
+                        },
+                    },
+                });
+            }
+        }, 20000);
+    }
+
+    function showBunkerConnectionError(error: any) {
+        toaster.error({
+            title: 'Could not connect to Bunker!',
+            description: `Reason: ${error}`,
+        });
+    }
+
+    async function handleNip07Login() {
+        if (!$ndk.signer) {
+            $ndk.signer = new NDKNip07Signer();
+            await initializeUser($ndk);
+            $loggingIn = false;
+        }
+    }
+
+    function showErrorToast(message: string) {
+        toaster.error({
+            title: message,
+        });
     }
 
     function configureBasics() {
         localStorage.debug = '*';
-        if (!$modeCurrent) {
-            setModeCurrent(getModeAutoPrefers());
+        const mode = getModeUserPrefers();
+        if (!mode) {
+            const modeAutoPrefers = getModeOsPrefers();
+            setModeUserPrefers(modeAutoPrefers);
+            document.documentElement.setAttribute('data-mode', modeAutoPrefers);
+        } else {
+            document.documentElement.setAttribute('data-mode', mode);
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -357,12 +322,9 @@
 
         window.addEventListener('offline', () => {
             console.log('offline');
-            const t: ToastSettings = {
-                message: 'Offline',
-                autohide: false,
-                background: 'bg-warning-300-600-token',
-            };
-            toastStore.trigger(t);
+            toaster.warning({
+                title: 'Offline',
+            });
             $online = false;
         });
 
@@ -392,6 +354,70 @@
         };
     }
 
+    let pullStartY = 0;
+    let pullMoveY = 0;
+    let isRefreshing = $state(false);
+    let pullProgress = $state(0);
+    let showRefreshIndicator = $state(false);
+    let pullThreshold = $state(0);
+
+    // Set a dynamic threshold based on device height (between 80-150px)
+    function setDynamicThreshold() {
+        const windowHeight = window.innerHeight;
+        pullThreshold = Math.max(80, Math.min(150, windowHeight * 0.15));
+    }
+
+    async function handleRefresh() {
+        if (isRefreshing) return;
+
+        isRefreshing = true;
+        pullProgress = 100;
+
+        // Add a small delay with animation before reload
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    }
+
+    function handleTouchStart(e: TouchEvent) {
+        if (window.scrollY <= 0) {
+            pullStartY = e.touches[0].clientY;
+            setDynamicThreshold();
+        }
+    }
+
+    function handleTouchMove(e: TouchEvent) {
+        if (pullStartY && !isRefreshing) {
+            pullMoveY = e.touches[0].clientY - pullStartY;
+
+            if (pullMoveY > 0) {
+                // Calculate progress as percentage of threshold
+                pullProgress = Math.min(100, Math.round((pullMoveY / pullThreshold) * 100));
+            }
+        }
+    }
+
+    function handleTouchEnd() {
+        if (!isRefreshing && pullStartY) {
+            // Check if we pulled past the threshold before releasing
+            if (pullProgress >= 100) {
+                handleRefresh();
+            } else {
+                // Reset if we didn't pull far enough
+                resetPullState();
+            }
+        }
+    }
+
+    function resetPullState() {
+        pullStartY = 0;
+        pullMoveY = 0;
+        pullProgress = 0;
+        setTimeout(() => {
+            showRefreshIndicator = false;
+        }, 300);
+    }
+
     onMount(async () => {
         console.log('onMount layout');
 
@@ -409,8 +435,12 @@
         await $ndk.connect();
 
         if (!$loggedIn) {
-            restoreLogin();
+            console.log('logging in user');
+            await restoreLogin();
         }
+        console.log('Session initialized!');
+
+        sessionInitialized.set(true);
     });
 
     onDestroy(() => {
@@ -426,214 +456,223 @@
         if (messageStore) messageStore.empty();
         if (allReceivedZaps) allReceivedZaps.empty();
         if (allReviews) allReviews.empty();
-
-        debouncedResync.clear();
     });
 
     // Check for app updates and offer reload option to user in a Toast
-    $: if ($updated) {
-        let toastId: string;
-        const t: ToastSettings = {
-            message: 'New version of the app is available!',
-            autohide: false,
-            action: {
-                label: 'Reload',
-                response: () => {
-                    // Reload new page circumventing browser cache
-                    location.href = location.pathname
-                        + '?v=' + new Date().getTime();
-                },
-            },
-            classes: 'flex flex-col items-center gap-y-2 text-lg font-bold',
-        };
-        toastId = toastStore.trigger(t);
-    }
-
-    // Install App promotion
-    let deferredInstallPrompt: BeforeInstallPromptEvent;
-    let showAppInstallPromotion = false;
-    $: if (showAppInstallPromotion) {
-        showAppInstallPromotion = false;
-        let toastId: string;
-        const t: ToastSettings = {
-            message: 'Install app for a better experience!',
-            autohide: false,
-            action: {
-                label: 'Install',
-                response: async () => {
-                    toastStore.close(toastId);
-                    deferredInstallPrompt.prompt();
-                    // Find out whether the user confirmed the installation or not
-                    const { outcome } = await deferredInstallPrompt.userChoice;
-                    // The deferredInstallPrompt can only be used once.
-                    deferredInstallPrompt = null;
-                    // Act on the user's choice
-                    if (outcome === 'accepted') {
-                        console.log('User accepted the install prompt.');
-                    } else if (outcome === 'dismissed') {
-                        console.log('User dismissed the install prompt');
-                    }
-                },
-            },
-        };
-        toastId = toastStore.trigger(t);
-    }
-
-    // ----- Notifications ------ //
-    $: if ($wotFilteredTickets && $myOffers) {
-        // console.log('all tickets change:', $wotFilteredTickets)
-        $wotFilteredTickets.forEach((t: TicketEvent) => {
-            $myOffers.forEach((o: OfferEvent) => {
-                if (o.referencedTicketDTag === t.dTag) {
-                    // If users offer won send that else just send relevant ticket
-                    if (t.acceptedOfferAddress === o.offerAddress) {
-                        sendNotification(o);
-                    } else {
-                        sendNotification(t);
-                    }
-                }
-            });
-        });
-    }
-
-    $: if ($wotFilteredOffers && $myTickets) {
-        // console.log('all offers change:', $wotFilteredOffers)
-        $wotFilteredOffers.forEach((o: OfferEvent) => {
-            $myTickets.forEach((t: TicketEvent) => {
-                if (o.referencedTicketDTag === t.dTag) {
-                    sendNotification(o);
-                }
-            });
-        });
-    }
-
-    $: if ($wotFilteredMessageFeed && $currentUser) {
-        $wotFilteredMessageFeed.forEach((dm: NDKEvent) => {
-            // This is somewhat wasteful: If there was a nice way to attach
-            // a callback on uniquely new events in NDKEventStore-s
-            // We would not have to iterate over the whole array
-            if (dm.pubkey !== $currentUser.pubkey) {
-                sendNotification(dm);
-            }
-        });
-    }
-
-    $: if ($clientReviews) {
-        $clientReviews.forEach((r: ReviewEvent) => {
-            $myTickets.forEach((t: TicketEvent) => {
-                if (t.ticketAddress === r.reviewedEventAddress) {
-                    sendNotification(r);
-                }
-            });
-        });
-    }
-
-    $: if ($freelancerReviews) {
-        $freelancerReviews.forEach((r: ReviewEvent) => {
-            $myOffers.forEach((o: OfferEvent) => {
-                if (o.offerAddress === r.reviewedEventAddress) {
-                    sendNotification(r);
-                }
-            });
-        });
-    }
-
-    $: if ($filteredReceivedZaps && $currentUser) {
-        $filteredReceivedZaps.forEach((zap: NDKEvent) => {
-            sendNotification(zap);
-        });
-    }
-
-    $: if ($currentUser) {
-        if (!followSubscription) {
-            followSubscription = $ndk.subscribe(
-                {
-                    kinds: [NDKKind.KindScopedFollow],
-                    '#k': [NDKKind.FreelanceTicket.toString(), NDKKind.FreelanceOffer.toString()],
-                    '#p': [$currentUser.pubkey],
-                },
-                {
-                    closeOnEose: false,
-                }
-            );
-
-            followSubscription.on('event', (event) => {
-                sendNotification(event);
-            });
-        }
-    }
-
-    $: if ($currentUser && $wallet) {
-        // The Cashu wallet may have just been created,
-        // and the Cashu mint list event might still be in progress.
-        // To allow for this delay, call isCashuMintListSynced
-        // within a setTimeout to provide a margin.
-        setTimeout(() => {
-            isCashuMintListSynced($wallet, $currentUser, toastStore);
-        }, 15 * 1000);
-
-        $wallet.on('found_spent_token', () => {
-            toastStore.trigger({
-                message: `Cashu Wallet contains some tokens which have been spent. Do you want to clean the wallet?`,
-                background: 'bg-warning-300-600-token',
-                autohide: false,
+    $effect(() => {
+        if ($updated) {
+            toaster.info({
+                title: 'New version of the app is available!',
                 action: {
-                    label: 'Clean Wallet',
-                    response: () => {
-                        cleanWallet($wallet)
-                            .then((cleanedAmount) => {
-                                toastStore.trigger({
-                                    message: `${cleanedAmount} spent/duplicate sats cleaned from wallet`,
-                                    autohide: false,
-                                    background: `bg-success-300-600-token`,
-                                });
-                            })
-                            .catch((err) => {
-                                console.trace(err);
-                                toastStore.trigger({
-                                    message: `Failed to clean wallet!`,
-                                    autohide: false,
-                                    background: `bg-error-300-600-token`,
-                                });
-                            });
+                    label: 'Reload',
+                    onClick: () => {
+                        // Reload new page circumventing browser cache
+                        location.href = location.pathname + '?v=' + new Date().getTime();
                     },
                 },
             });
-        });
-    }
+        }
+    });
 
-    /**
-     * When a derived store like cashuPaymentInfoMap is not referenced or used directly in a component, 
-     * Svelte might not trigger the store’s subscription, leading to unexpected behaviors like the store 
-     * appearing as undefined in modal components.
+    // Install App promotion
+    let deferredInstallPrompt = $state<BeforeInstallPromptEvent>();
+    let showAppInstallPromotion = $state(false);
+    $effect(() => {
+        if (showAppInstallPromotion) {
+            showAppInstallPromotion = false;
 
-     * Therefore, we are just referencing cashuPaymentInfoMap to subscribe it and use in payment modal
-     */
-    console.log('cashuPaymentInfoMap :>> ', $cashuPaymentInfoMap);
+            const toastId = toaster.create({
+                title: 'Install app for a better experience!',
+                type: 'info',
+                action: {
+                    label: 'Install',
+                    onClick: async () => {
+                        toaster.remove(toastId);
+                        deferredInstallPrompt.prompt();
+                        // Find out whether the user confirmed the installation or not
+                        const { outcome } = await deferredInstallPrompt.userChoice;
+                        // The deferredInstallPrompt can only be used once.
+                        deferredInstallPrompt = null;
+                        // Act on the user's choice
+                        if (outcome === 'accepted') {
+                            console.log('User accepted the install prompt.');
+                        } else if (outcome === 'dismissed') {
+                            console.log('User dismissed the install prompt');
+                        }
+                    },
+                },
+            });
+        }
+    });
+
+    // ----- Notifications ------ //
+    $effect(() => {
+        if ($wotFilteredTickets && $myOffers) {
+            // console.log('all tickets change:', $wotFilteredTickets)
+            $wotFilteredTickets.forEach((t: TicketEvent) => {
+                $myOffers.forEach((o: OfferEvent) => {
+                    if (o.referencedTicketDTag === t.dTag) {
+                        // If users offer won send that else just send relevant ticket
+                        if (t.acceptedOfferAddress === o.offerAddress) {
+                            sendNotification(o);
+                        } else {
+                            sendNotification(t);
+                        }
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($wotFilteredOffers && $myTickets) {
+            // console.log('all offers change:', $wotFilteredOffers)
+            $wotFilteredOffers.forEach((o: OfferEvent) => {
+                $myTickets.forEach((t: TicketEvent) => {
+                    if (o.referencedTicketDTag === t.dTag) {
+                        sendNotification(o);
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($wotFilteredMessageFeed && $currentUser) {
+            $wotFilteredMessageFeed.forEach((dm: NDKEvent) => {
+                // This is somewhat wasteful: If there was a nice way to attach
+                // a callback on uniquely new events in NDKEventStore-s
+                // We would not have to iterate over the whole array
+                if (dm.pubkey !== $currentUser.pubkey) {
+                    sendNotification(dm);
+                }
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($clientReviews) {
+            $clientReviews.forEach((r: ReviewEvent) => {
+                $myTickets.forEach((t: TicketEvent) => {
+                    if (t.ticketAddress === r.reviewedEventAddress) {
+                        sendNotification(r);
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($freelancerReviews) {
+            $freelancerReviews.forEach((r: ReviewEvent) => {
+                $myOffers.forEach((o: OfferEvent) => {
+                    if (o.offerAddress === r.reviewedEventAddress) {
+                        sendNotification(r);
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($filteredReceivedZaps && $currentUser) {
+            $filteredReceivedZaps.forEach((zap: NDKEvent) => {
+                sendNotification(zap);
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($currentUser) {
+            if (!followSubscription) {
+                followSubscription = $ndk.subscribe(
+                    {
+                        kinds: [NDKKind.KindScopedFollow],
+                        '#k': [
+                            NDKKind.FreelanceTicket.toString(),
+                            NDKKind.FreelanceOffer.toString(),
+                        ],
+                        '#p': [$currentUser.pubkey],
+                    },
+                    {
+                        closeOnEose: false,
+                    }
+                );
+
+                followSubscription.on('event', (event) => {
+                    sendNotification(event);
+                });
+            }
+        }
+    });
 </script>
 
-<Toast zIndex="z-[1100]" />
-<Modal />
-<Drawer regionDrawer={'flex justify-center'} zIndex={'z-50'}>
-    {#if $drawerID === DrawerIDs.AppMenu}
-        <AppMenu />
+<Toaster classes="z-1100" {toaster}></Toaster>
+
+<!-- layout structure -->
+<div
+    class="w-full h-full flex flex-col"
+    ontouchstart={handleTouchStart}
+    ontouchmove={handleTouchMove}
+    ontouchend={handleTouchEnd}
+>
+    <header
+        class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
+        aria-label="Main header"
+    >
+        {#if pullProgress > 0}
+            <div
+                class="flex flex-col items-center justify-center"
+                aria-live="polite"
+                aria-atomic="true"
+            >
+                <i class="fa-solid fa-rotate-right"></i>
+                <span class="text-xs mt-1 font-semibold">
+                    {#if isRefreshing}
+                        Refreshing...
+                    {:else if pullProgress >= 100}
+                        Release to refresh
+                    {:else if pullProgress > 0}
+                        Pull to refresh
+                    {/if}
+                </span>
+            </div>
+        {/if}
+        <Header onRestoreLogin={restoreLogin} />
+    </header>
+
+    <!-- Content Area -->
+    <div class="mt-[65px] flex-auto w-full h-full flex">
+        <!-- Collapsible Sidebar (hidden on small screens) -->
+        {#if displayNav}
+            <SidebarLeft />
+        {/if}
+
+        <!-- Main Content  -->
+        <main class="sm:ml-[96px] flex-1" aria-label="Main content">
+            {@render children?.()}
+        </main>
+    </div>
+
+    <!-- Mobile Footer  -->
+    {#if displayNav && !hideBottomNav}
+        <footer class="fixed bottom-0 w-full sm:hidden" aria-label="Mobile navigation">
+            <Footer />
+        </footer>
     {/if}
-</Drawer>
-<AppShell slotSidebarLeft="bg-surface-100-800-token">
-    <svelte:fragment slot="header">
-        <Header on:restoreLogin={restoreLogin} />
-    </svelte:fragment>
+</div>
 
-    <!-- Router Slot -->
-    <slot />
+<DecryptSecretModal bind:isOpen={showDecryptSecretModal} callback={decryptSecretModalCallback} />
 
-    <svelte:fragment slot="sidebarLeft">
-        <SidebarLeft hideSidebarLeft={!displayNav} />
-    </svelte:fragment>
+<!-- Job Post Success Modal -->
+{#if $jobPostSuccessState.showModal && $jobPostSuccessState.jobData}
+    <JobPostSuccess
+        bind:isOpen={$jobPostSuccessState.showModal}
+        job={$jobPostSuccessState.jobData}
+    />
+{/if}
 
-    <svelte:fragment slot="footer">
-        <Footer hideFooter={!displayNav} />
-    </svelte:fragment>
-</AppShell>
-
-<!-- <AppHeader /> -->
+<!-- Modal to display after offer is accepted -->
+{#if $offerTakenState.showModal && $offerTakenState.jobId}
+    <OfferTakenModal bind:isOpen={$offerTakenState.showModal} jobId={$offerTakenState.jobId} />
+{/if}

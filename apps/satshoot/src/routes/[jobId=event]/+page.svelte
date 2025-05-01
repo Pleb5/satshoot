@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import JobCard from '$lib/components/Cards/JobCard.svelte';
     import OfferCard from '$lib/components/Cards/OfferCard.svelte';
     import UserCard from '$lib/components/Cards/UserCard.svelte';
@@ -9,7 +9,8 @@
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import ndk, { connected } from '$lib/stores/ndk';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
+    import { toaster } from '$lib/stores/toaster';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
@@ -20,19 +21,12 @@
         type NDKFilter,
         NDKKind,
         NDKSubscription,
-        type NDKSubscriptionOptions,
-        NDKUser,
         NDKSubscriptionCacheUsage,
+        NDKEvent,
     } from '@nostr-dev-kit/ndk';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import {
-        getModalStore,
-        getToastStore,
-        type ModalComponent,
-        type ModalSettings,
-        type ToastSettings,
-    } from '@skeletonlabs/skeleton';
+
     import { onDestroy, onMount } from 'svelte';
+    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
 
     enum OfferTab {
         Pending,
@@ -40,207 +34,204 @@
         Lost,
     }
 
-    const toastStore = getToastStore();
-    const modalStore = getModalStore();
-
-    const subOptions: NDKSubscriptionOptions = {
+    const jobSubOptions: NDKSubscribeOptions = {
         closeOnEose: false,
     };
-    let jobSubscription: NDKSubscription | undefined = undefined;
-    let jobPost: TicketEvent | undefined = undefined;
-    let user: NDKUser | undefined = undefined;
 
-    let offersFilter: NDKFilter = {
+    // Component state
+    let jobSubscription = $state<NDKSubscription>();
+    let jobPost = $state<TicketEvent>();
+
+    const offersFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceOffer],
-        '#a': [],
     };
-    let offerStore: NDKEventStore<ExtendedBaseType<OfferEvent>>;
-    let alreadySubscribedToOffers = false;
+    const offerSubOptions: NDKSubscribeOptions = {
+        closeOnEose: false,
+        autoStart: false,
+    };
 
-    let offerToEdit: OfferEvent | undefined = undefined;
-    let btnActionText = 'Create Offer';
+    const offerStore = $ndk.storeSubscribe<OfferEvent>(offersFilter, offerSubOptions, OfferEvent);
 
-    let allowCreateOffer: boolean = false;
-    let disallowCreateOfferReason = '';
-
-    let selectedOffersTab = OfferTab.Pending;
-
-    let myJob = false;
-    $: if ($currentUser && jobPost) {
-        if ($currentUser && $currentUser.pubkey === jobPost.pubkey) {
-            myJob = true;
+    let alreadySubscribedToOffers = $state(false);
+    let winningOffer = $derived.by(() => {
+        if (!jobPost?.acceptedOfferAddress || !filteredOffers.length) {
+            return null;
         }
-    }
 
-    let needSetup = true;
-    // Wait for ndk to connect then setup subscription on ticket from URL params
-    // Also check for existing ndk because we try to add relays from the naddr here
-    $: if ($ndk && $connected && needSetup) {
-        needSetup = false;
-        const naddr = $page.params.jobId;
-        const relaysFromURL = relaysFromNaddr(naddr).split(',');
-        // console.log('ticket relays', relaysFromURL)
-        if (relaysFromURL.length > 0) {
+        // First check in filtered offers
+        const found = filteredOffers.find((o) => o.offerAddress === jobPost?.acceptedOfferAddress);
+        if (found) {
+            return found;
+        }
+
+        // If not found, fetch it
+        $ndk.fetchEvent(jobPost.acceptedOfferAddress, {
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        }).then((event) => {
+            if (event) {
+                winningOffer = OfferEvent.from(event);
+            }
+        });
+    });
+
+    let selectedOffersTab = $derived.by(() => {
+        if (winningOffer) {
+            return OfferTab.Won;
+        }
+
+        return OfferTab.Pending;
+    });
+
+    let showLoginModal = $state(false);
+    let showCreateOfferModal = $state(false);
+    let createOfferModalProps = $state<{ ticket: TicketEvent; offerToEdit?: OfferEvent } | null>(
+        null
+    );
+
+    const myJob = $derived(!!$currentUser && !!jobPost && $currentUser.pubkey === jobPost.pubkey);
+
+    const { allowCreateOffer, disallowCreateOfferReason } = $derived.by(() => {
+        if (!jobPost)
+            return {
+                allowCreateOffer: false,
+                disallowCreateOfferReason: '',
+            };
+
+        if (jobPost.status === TicketStatus.New) {
+            return {
+                allowCreateOffer: true,
+                disallowCreateOfferReason: '',
+            };
+        }
+
+        return {
+            allowCreateOffer: false,
+            disallowCreateOfferReason:
+                "Job status not 'New' anymore!" + ' Cannot Create/Edit Offer!',
+        };
+    });
+
+    const user = $derived.by(() => {
+        if (jobPost) {
+            return $ndk.getUser({ pubkey: jobPost.pubkey });
+        }
+    });
+
+    // Derived offer data
+    const filteredOffers = $derived.by(() => {
+        if (!$offerStore) return [];
+
+        let offers: OfferEvent[] = [...$offerStore];
+
+        // Filtering out offers not in the web of Trust
+        offers = offers.filter((offer: OfferEvent) => {
+            return (
+                $wot.has(offer.pubkey) ||
+                (jobPost?.acceptedOfferAddress &&
+                    jobPost.acceptedOfferAddress === offer.offerAddress)
+            );
+        });
+        orderEventsChronologically(offers);
+
+        return offers;
+    });
+
+    const offerToEdit = $derived.by(() => {
+        if (!filteredOffers.length || !$currentUser) return undefined;
+
+        return filteredOffers.find((offer) => offer.pubkey === $currentUser.pubkey);
+    });
+
+    const btnActionText = $derived(offerToEdit ? 'Edit Your Offer' : 'Create Offer');
+
+    const pendingOffers = $derived.by(() => {
+        if (!filteredOffers.length || !jobPost || jobPost.status !== TicketStatus.New) return [];
+        return filteredOffers;
+    });
+
+    const lostOffers = $derived.by(() => {
+        if (!filteredOffers.length || !jobPost || jobPost.status === TicketStatus.New) return [];
+        return filteredOffers.filter(
+            (offer) => offer.offerAddress !== jobPost?.acceptedOfferAddress
+        );
+    });
+
+    let initialized = $state(false);
+    $effect(() => {
+        if ($sessionInitialized && !initialized) {
+            initialized = true;
+            checkRelayConnections();
+
+            const naddr = page.params.jobId;
+            const relaysFromURL = relaysFromNaddr(naddr).split(',');
+
+            // Add relays from URL
             relaysFromURL.forEach((relayURL: string) => {
                 if (relayURL) {
-                    // url, authopolicy and ndk. authopolicy is not important yet
                     $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
                 }
             });
+
+            // Subscribe to ticket events
+            const dTag = idFromNaddr(naddr).split(':')[2];
+            const ticketFilter: NDKFilter = {
+                kinds: [NDKKind.FreelanceTicket],
+                '#d': [dTag],
+            };
+
+            jobSubscription = $ndk.subscribe(ticketFilter, jobSubOptions);
+            jobSubscription.on('event', handleTicketEvent);
+        }
+    });
+
+    function handleTicketEvent(event: NDKEvent) {
+        const arrivedTicket = TicketEvent.from(event);
+
+        if (!alreadySubscribedToOffers) {
+            alreadySubscribedToOffers = true;
+            offersFilter['#a'] = [arrivedTicket.ticketAddress];
+            offerStore.startSubscription();
+        }
+        // Skip older tickets
+        if (jobPost && arrivedTicket.created_at! < jobPost.created_at!) {
+            return;
         }
 
-        // Create new subscription on this ticket
-        const dTag = idFromNaddr(naddr).split(':')[2];
-        const ticketFilter: NDKFilter = {
-            kinds: [NDKKind.FreelanceTicket],
-            '#d': [dTag],
-        };
-
-        jobSubscription = $ndk.subscribe(ticketFilter, subOptions);
-        jobSubscription.on('event', (event) => {
-            console.log('event :>> ', event);
-            // Dismiss with old tickets
-            if (jobPost) {
-                const arrivedTicket = TicketEvent.from(event);
-                if (arrivedTicket.created_at! < jobPost.created_at!) {
-                    return;
-                }
-            }
-            jobPost = TicketEvent.from(event);
-            user = $ndk.getUser({ pubkey: jobPost.pubkey });
-
-            // Scroll to top as soon as ticket arrives
-            const elemPage: HTMLElement = document.querySelector('#page') as HTMLElement;
-            elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
-
-            if (jobPost.status === TicketStatus.New) {
-                allowCreateOffer = true;
-                disallowCreateOfferReason = '';
-            } else {
-                allowCreateOffer = false;
-                disallowCreateOfferReason =
-                    "Status of the Job not 'New' anymore! Cannot Create/Edit Offer!";
-            }
-
-            // Subscribe on Offers of this ticket. Do this only once
-            if (!alreadySubscribedToOffers) {
-                alreadySubscribedToOffers = true;
-                // Add a live sub on offers of this ticket if not already subbed
-                // Else already subbed, we can check if new offer arrived on ticket
-                offersFilter['#a']!.push(jobPost.ticketAddress);
-                offerStore = $ndk.storeSubscribe<OfferEvent>(offersFilter, subOptions, OfferEvent);
-            }
-        });
+        jobPost = arrivedTicket;
     }
 
-    $: if ($offerStore) {
-        // Filtering out offers not in the web of Trust
-        if ($wot && $wot.size > 2) {
-            $offerStore = $offerStore.filter((offer: OfferEvent) => {
-                return (
-                    $wot.has(offer.pubkey) ||
-                    (jobPost?.acceptedOfferAddress &&
-                        jobPost.acceptedOfferAddress === offer.offerAddress)
-                );
-            });
+    let pageTop = $state<HTMLDivElement>();
+
+    onMount(() => {
+        if (pageTop) {
+            pageTop.scrollIntoView(true);
         }
-
-        orderEventsChronologically($offerStore);
-
-        $offerStore.forEach((offer: OfferEvent) => {
-            if (offer.pubkey === $currentUser?.pubkey) {
-                offerToEdit = offer;
-                btnActionText = 'Edit Your Offer';
-            }
-        });
-    }
-
-    let pendingOffers: OfferEvent[] = [];
-    let winningOffer: OfferEvent | undefined = undefined;
-    let lostOffers: OfferEvent[] = [];
-
-    $: if (jobPost && $offerStore) {
-        if (jobPost.status !== TicketStatus.New) {
-            winningOffer = undefined;
-            pendingOffers = [];
-
-            if (jobPost.acceptedOfferAddress) {
-                winningOffer = $offerStore.find(
-                    (offer) => offer.offerAddress === jobPost?.acceptedOfferAddress
-                );
-
-                // its possible that winning offer might have been filtered out due to wot
-                // so, we'll fetch it directly instead of finding it in offerStore
-                if (!winningOffer) {
-                    // fetch winning offer
-                    $ndk.fetchEvent(jobPost.acceptedOfferAddress, {
-                        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-                    }).then((event) => {
-                        if (event) {
-                            winningOffer = OfferEvent.from(event);
-                        }
-                    });
-                }
-
-                selectedOffersTab = OfferTab.Won;
-            }
-
-            lostOffers = $offerStore.filter(
-                (offer) => offer.offerAddress !== jobPost?.acceptedOfferAddress
-            );
-        } else {
-            pendingOffers = $offerStore;
-            winningOffer = undefined;
-            lostOffers = [];
-        }
-    }
-
-    onMount(() => checkRelayConnections());
+    });
 
     onDestroy(() => {
         jobSubscription?.stop();
-        if (offerStore) {
-            offerStore.unsubscribe();
-        }
+        offerStore?.empty();
     });
 
     async function createOffer(offer: OfferEvent | undefined) {
         if (!jobPost) {
-            const t: ToastSettings = {
-                message: 'Ticket is not loaded yet!',
-                autohide: false,
-                background: 'bg-error-300-600-token',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Job is not loaded yet!',
+                duration: 60000, // 1 min
+            });
+
             return;
         }
-        const offerPosted: boolean = await new Promise<boolean>((resolve) => {
-            const modalComponent: ModalComponent = {
-                ref: CreateOfferModal,
-                props: {
-                    ticket: jobPost,
-                    offerToEdit: offer,
-                },
-            };
 
-            const modal: ModalSettings = {
-                type: 'component',
-                component: modalComponent,
-                response: (offerPosted: boolean) => {
-                    resolve(offerPosted);
-                },
-            };
-            modalStore.trigger(modal);
-        });
+        createOfferModalProps = {
+            ticket: jobPost,
+            offerToEdit: offer,
+        };
+        showCreateOfferModal = true;
     }
 
     function triggerLogin() {
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: LoginModal,
-            },
-        });
+        showLoginModal = true;
     }
 
     const tabs = [
@@ -250,7 +241,7 @@
     ];
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div bind:this={pageTop} class="w-full flex flex-col gap-0 grow">
     <div class="w-full flex flex-col justify-center items-center py-[25px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
@@ -282,8 +273,8 @@
                                         {#if $loggedIn}
                                             <div class="flex flex-row justify-center">
                                                 <Button
-                                                    on:click={() => createOffer(offerToEdit)}
-                                                    classes="max-[768px]:grow-[1]"
+                                                    onClick={() => createOffer(offerToEdit)}
+                                                    classes="max-[768px]:grow-1"
                                                 >
                                                     {btnActionText}
                                                 </Button>
@@ -291,8 +282,8 @@
                                         {:else}
                                             <div class="flex flex-row justify-center">
                                                 <Button
-                                                    on:click={triggerLogin}
-                                                    classes="max-[768px]:grow-[1]"
+                                                    onClick={triggerLogin}
+                                                    classes="max-[768px]:grow-1"
                                                 >
                                                     Login to make offer
                                                 </Button>
@@ -321,7 +312,9 @@
                                     >
                                         Offers
                                         <span class="font-[400] text-[16px]"
-                                            >({insertThousandSeparator($offerStore.length)})</span
+                                            >({insertThousandSeparator(
+                                                filteredOffers.length
+                                            )})</span
                                         >
                                     </p>
                                 </div>
@@ -382,18 +375,18 @@
                         <div class="sm:grid sm:grid-cols-[70%_1fr] sm:gap-x-4">
                             <div class="space-y-6">
                                 <div class="w-full h-[50vh] card p-8 flex justify-center">
-                                    <div class="w-[50%] card placeholder animate-pulse" />
+                                    <div class="w-[50%] card placeholder animate-pulse"></div>
                                 </div>
                                 <div class="w-full h-[20vh] card p-8 flex justify-center">
-                                    <div class="w-[50%] card placeholder animate-pulse" />
+                                    <div class="w-[50%] card placeholder animate-pulse"></div>
                                 </div>
                             </div>
                             <div class="hidden sm:block sm:space-y-6">
                                 <div class="w-full h-[70vh] card p-8 flex justify-center">
-                                    <div class="w-[50%] card placeholder animate-pulse" />
+                                    <div class="w-[50%] card placeholder animate-pulse"></div>
                                 </div>
                                 <div class="w-full h-[30vh] card p-8 flex justify-center">
-                                    <div class="w-[50%] card placeholder animate-pulse" />
+                                    <div class="w-[50%] card placeholder animate-pulse"></div>
                                 </div>
                             </div>
                         </div>
@@ -403,3 +396,9 @@
         </div>
     </div>
 </div>
+
+<LoginModal bind:isOpen={showLoginModal} />
+
+{#if createOfferModalProps}
+    <CreateOfferModal bind:isOpen={showCreateOfferModal} {...createOfferModalProps} />
+{/if}

@@ -1,7 +1,8 @@
 <script lang="ts">
+    import UserProfile from './UI/Display/UserProfile.svelte';
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
-    import ndk from '$lib/stores/ndk';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { loggedIn } from '$lib/stores/user';
     import {
@@ -10,37 +11,34 @@
         type NDKUser,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
-
-    import { Avatar } from '@skeletonlabs/skeleton';
-
-    import { navigating } from '$app/stores';
-    import { onMount } from 'svelte';
+    import Fuse from 'fuse.js';
+    import { navigating } from '$app/state';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import Button from './UI/Buttons/Button.svelte';
+    import { Avatar } from '@skeletonlabs/skeleton-svelte';
 
-    export let searchTerms: string[] = [];
-    export let user: NDKUser;
-    export let ticket: TicketEvent;
+    interface Props {
+        searchQuery?: string | null;
+        user: NDKUser;
+        ticket: TicketEvent;
+    }
+
+    let { searchQuery = null, user, ticket }: Props = $props();
     const naddr = ticket.encode();
 
-    let userProfile: NDKUserProfile;
-    let latestMessage = '';
-    $: avatarImage = getRoboHashPicture(user.pubkey);
-
-    onMount(async () => {});
+    let userProfile = $state<NDKUserProfile | null>(null);
+    let latestMessage = $state('');
+    let avatarImage = $derived.by(() => {
+        if (userProfile?.picture) return userProfile.picture;
+        return getRoboHashPicture(user.pubkey);
+    });
 
     async function fetchProfile() {
-        const profile = await user.fetchProfile({
+        userProfile = await user.fetchProfile({
             groupable: true,
             groupableDelay: 800,
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         });
-        if (profile) {
-            userProfile = profile;
-            if (userProfile.image) {
-                avatarImage = userProfile.image;
-            }
-        }
     }
 
     async function fetchLatestMessage() {
@@ -80,29 +78,58 @@
         }
     }
 
-    $: if ($loggedIn) {
-        fetchProfile();
-        fetchLatestMessage();
-    }
+    $effect(() => {
+        if ($loggedIn && $sessionInitialized) {
+            fetchProfile();
+            fetchLatestMessage();
+        }
+    });
 
-    $: if ($navigating) {
-        if ($navigating.to?.url.pathname === '/messages/' + naddr) {
-            if (ticket.acceptedOfferAddress) {
-                $offerMakerToSelect = ticket.winnerFreelancer as string;
+    $effect(() => {
+        if (navigating) {
+            if (navigating.to?.url.pathname === '/messages/' + naddr) {
+                if (ticket.acceptedOfferAddress) {
+                    $offerMakerToSelect = ticket.winnerFreelancer as string;
+                }
             }
         }
-    }
+    });
 
-    let display = true;
-    $: if (searchTerms.length > 0) {
-        display = searchTerms.some((term) => {
-            if (term.startsWith('npub1')) {
-                return term === user.npub;
-            }
-            const name = userProfile?.name ?? userProfile?.displayName ?? '';
-            return name.toLowerCase().includes(term.toLowerCase());
-        });
-    }
+    const display = $derived.by(() => {
+        if (searchQuery && searchQuery.length > 0) {
+            const dataToSearch = [
+                {
+                    npub: user.npub,
+                    ...userProfile,
+                },
+            ];
+
+            const fuse = new Fuse(dataToSearch, {
+                isCaseSensitive: false,
+                ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+                threshold: 0.6,
+                minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+                keys: [
+                    {
+                        name: 'npub',
+                        weight: 0.4,
+                    },
+                    {
+                        name: 'name',
+                        weight: 0.3,
+                    },
+                    {
+                        name: 'displayName',
+                        weight: 0.3,
+                    },
+                ],
+            });
+            const searchResult = fuse.search(searchQuery);
+            return searchResult.length > 0;
+        }
+
+        return true;
+    });
 </script>
 
 <Button
@@ -112,7 +139,11 @@
 >
     <div class="flex gap-x-2">
         <div>
-            <Avatar class="rounded-full border-white" src={avatarImage} />
+            <Avatar
+                classes="rounded-full border-white"
+                src={userProfile?.image || avatarImage}
+                name={userProfile?.displayName || 'user avatar'}
+            />
         </div>
         <div class="flex flex-col items-start">
             <div class="h5 sm:h4 text-center font-bold text-lg sm:text-2xl">
@@ -127,7 +158,7 @@
                     {latestMessage}
                 </div>
             {:else}
-                <div class="placeholder bg-blue-600 animate-pulse w-40" />
+                <div class="placeholder bg-blue-600 animate-pulse w-40"></div>
             {/if}
         </div>
     </div>

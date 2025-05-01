@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import FollowNotification from '$lib/components/Notifications/FollowNotification.svelte';
     import JobNotification from '$lib/components/Notifications/JobNotification.svelte';
     import MessageNotification from '$lib/components/Notifications/MessageNotification.svelte';
@@ -19,7 +21,6 @@
     } from '$lib/stores/notifications';
     import currentUser from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
-    import { type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
     import { onMount } from 'svelte';
 
     enum Tab {
@@ -31,17 +32,15 @@
         Reviews,
     }
 
-    const toastStore = getToastStore();
+    let selectedTab = $state(Tab.Follows);
+    let previousTab = $state<Tab | null>(null);
 
-    let selectedTab = Tab.Follows;
-    let previousTab: Tab | null = null;
-
-    $: {
+    $effect(() => {
         if (previousTab !== null && previousTab !== selectedTab) {
             markNotificationsAsRead(previousTab);
         }
         previousTab = selectedTab;
-    }
+    });
 
     function markNotificationsAsRead(tab: Tab) {
         switch (tab) {
@@ -98,7 +97,7 @@
 
     onMount(() => checkRelayConnections());
 
-    $: tabs = [
+    let tabs = $derived([
         {
             id: Tab.Follows,
             label: 'Follows',
@@ -147,18 +146,18 @@
                 (notification) => !$readNotifications.has(notification.id)
             ).length,
         },
-    ];
+    ]);
 </script>
 
 {#if $currentUser}
-    <div class="w-full flex flex-col gap-0 flex-grow">
+    <div class="w-full flex flex-col gap-0 grow">
         <div class="w-full h-full flex flex-col justify-center items-center py-4">
             <div
                 class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"
             >
                 <div class="w-full h-full flex flex-col gap-[15px]">
                     <TabSelector {tabs} bind:selectedTab />
-                    <div class="w-full flex flex-col flex-grow overflow-y-auto">
+                    <div class="w-full flex flex-col grow overflow-y-auto">
                         {#if selectedTab === Tab.Follows}
                             <NotificationsList
                                 notifications={$followNotifications}

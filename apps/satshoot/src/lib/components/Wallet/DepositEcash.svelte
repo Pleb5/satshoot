@@ -1,67 +1,54 @@
 <script lang="ts">
-    import { NDKCashuToken, type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
+    import { type NDKCashuWallet } from '@nostr-dev-kit/ndk-wallet';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import { getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
-    import { cashuTokensBackup } from '$lib/stores/wallet';
 
-    const toastStore = getToastStore();
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
-    export let cashuWallet: NDKCashuWallet;
+    interface Props {
+        cashuWallet: NDKCashuWallet;
+    }
 
-    let depositing = false;
-    let amount = 0;
-    let unit = 'sat';
-    let selectedMint = '';
+    let { cashuWallet }: Props = $props();
 
-    $: {
+    let depositing = $state(false);
+    let amount = $state(0);
+    let selectedMint = $state('');
+
+    $effect(() => {
         amount ??= 0;
-    }
+    });
 
-    $: if (cashuWallet.mints.length > 0 && !selectedMint) {
-        selectedMint = cashuWallet.mints[0];
-    }
+    // Initialize selected mint
+    $effect(() => {
+        if (cashuWallet.mints.length > 0 && !selectedMint) {
+            selectedMint = cashuWallet.mints[0];
+        }
+    });
 
     async function deposit() {
         depositing = true;
-        const ndkCashuDeposit = cashuWallet.deposit(amount, selectedMint, unit);
+        const ndkCashuDeposit = cashuWallet.deposit(amount, selectedMint);
 
-        ndkCashuDeposit.on('success', async (token) => {
-            // Token received has encrypted content
-            // but we want to store it in local storage as un-encrypted.
-            // Therefore, we'll have to make it un-encrypted
-
-            const newToken = await NDKCashuToken.from(token);
-
-            if (newToken) {
-                console.log('ndkCashuDeposit successful', newToken.rawEvent());
-
-                cashuTokensBackup.update((map) => {
-                    // add newToken to backup
-                    map.set(newToken.id, newToken.rawEvent());
-
-                    return map;
-                });
-            }
-
+        // The deposit process updates wallet state that is captured in
+        // 'balance_updated' event, on which a backup is triggered (see walletInit)
+        ndkCashuDeposit.on('success', () => {
             closeModal();
-            toastStore.trigger({
-                message: `Successfully deposited ${amount} ${unit}!`,
-                timeout: 5000,
-                autohide: true,
-                background: `bg-success-300-600-token`,
+            toaster.success({
+                title: `Successfully deposited ${amount} sats!`,
             });
             depositing = false;
             amount = 0;
         });
+
         ndkCashuDeposit.on('error', (error) => {
             console.log('ndkCashuDeposit failed', error);
             depositing = false;
             closeModal();
-            toastStore.trigger({
-                message: `Failed to deposit!`,
-                autohide: false,
-                background: `bg-error-300-600-token`,
+            toaster.error({
+                title: `Failed to deposit: \n${error}`,
+                duration: 60000, // 1 min
             });
         });
 
@@ -94,7 +81,7 @@
 
         <select
             bind:value={selectedMint}
-            class="input bg-transparent border-[0] border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
+            class="input bg-transparent border-0 border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
         >
             <option value="" disabled>Select a mint</option>
             {#each cashuWallet.mints as mint (mint)}
@@ -105,19 +92,12 @@
     <Button
         variant="text"
         classes="bg-black-100 text-black-50 dark:text-white border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
-        on:click={deposit}
+        onClick={deposit}
         disabled={depositing || !amount || !selectedMint}
     >
         Deposit
         {#if depositing}
-            <ProgressRadial
-                value={undefined}
-                stroke={60}
-                meter="stroke-error-500"
-                track="stroke-error-500/30"
-                strokeLinecap="round"
-                width="w-8"
-            />
+            <ProgressRing color="error" />
         {/if}
     </Button>
 </div>

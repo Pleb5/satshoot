@@ -5,32 +5,35 @@ import {
     NDKRelayList,
     NDKRelay,
     NDKSubscriptionCacheUsage,
-    type NDKFilter,
     profileFromEvent,
     getNip57ZapSpecFromLud,
     NDKRelaySet,
     NDKCashuMintList,
     type CashuPaymentInfo,
-    type NDKUserProfile,
     serializeProfile,
-    type NostrEvent,
+    NDKUser,
 } from '@nostr-dev-kit/ndk';
-
-import ndk, { blastrUrl, BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/ndk';
-
+import ndk,
+    { 
+        blastrUrl,
+        BOOTSTRAPOUTBOXRELAYS, 
+        DEFAULTRELAYURLS,
+        sessionPK
+    } from '$lib/stores/session';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-
-import currentUser, { fetchFreelanceFollowEvent } from '../stores/user';
+import currentUser from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
-
-import { updateFollowsAndWotScore, networkWoTScores } from '../stores/wot';
-
+import { loadWot, networkWoTScores } from '../stores/wot';
 import { allReviews } from '$lib/stores/reviews';
-
-import { allReceivedZapsFilter, allReceivedZaps } from '$lib/stores/zaps';
-
-import { messageStore, sentMessageFilter, receivedMessageFilter } from '$lib/stores/messages';
-
+import { 
+    allReceivedZapsFilter, 
+    allReceivedZaps 
+} from '$lib/stores/zaps';
+import {
+    messageStore,
+    sentMessageFilter,
+    receivedMessageFilter 
+} from '$lib/stores/messages';
 import {
     allTickets,
     allOffers,
@@ -39,21 +42,32 @@ import {
     myTickets,
     myOffers,
 } from '$lib/stores/freelance-eventstores';
-
-import { DEFAULTRELAYURLS } from '$lib/stores/ndk';
-import { notifications, seenIDs } from '../stores/notifications';
-
+import { notifications,
+    seenIDs,
+    serviceWorkerRegistrationFailed 
+} from '../stores/notifications';
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { dev } from '$app/environment';
-import { connected, sessionPK } from '../stores/ndk';
-import { retryConnection, retryDelay, maxRetryAttempts } from '../stores/network';
-import { ndkNutzapMonitor, wallet, walletInit } from '$lib/stores/wallet';
-import { nip19 } from 'nostr-tools';
+import { connected } from '../stores/network';
+import { 
+    retriesLeft,
+    retryDelay,
+    maxRetryAttempts 
+} from '../stores/network';
+import {
+    ndkNutzapMonitor,
+    wallet,
+    walletInit,
+    walletStatus 
+} from '$lib/wallet/wallet';
 import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
-import { type ToastStore } from '@skeletonlabs/skeleton';
+import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
+import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
+import { toaster } from '$lib/stores/toaster';
 
-export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
+export async function initializeUser(ndk: NDKSvelte ) {
+    
     console.log('begin user init');
     try {
         loggingIn.set(false);
@@ -68,65 +82,39 @@ export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
         myTicketFilter.authors! = [user.pubkey];
         myOfferFilter.authors! = [user.pubkey];
 
-        myTickets.startSubscription();
-        myOffers.startSubscription();
-
-        // --------- User Profile --------------- //
-        const profile = await user.fetchProfile({ cacheUsage: NDKSubscriptionCacheUsage.PARALLEL });
-        // for now loading profile from cache disabled but if reenabled, this bug
-        // that profile returned is a strangely nested object should be handled
-        if (profile) {
-            user.profile = profile;
-        }
-        currentUser.set(user);
-
-        // initialize user wallet for ecash payments
-        walletInit(ndk, user);
-
         const $onboardingStep = get(onboardingStep);
-
-        // no need to fetch relays, update follows and wot when user just created the account
         if ($onboardingStep !== OnboardingStep.Account_Created) {
-            // fetch users relays. If there are no outbox relays,
-            // prompt the user in a Toast to setup his relays
-            const relays = await fetchUserOutboxRelays(ndk);
-            if (!relays) {
-                toastStore.trigger({
-                    message: 'Could not find Your personal Relays',
-                    background: 'bg-warning-300-600-token',
-                    autohide: false,
+            // initialize user wallet for ecash payments
+            const userRelays = await fetchUserOutboxRelays(ndk, user.pubkey, 3000);
+            console.warn('User relays in init', userRelays);
+
+            let explicitRelays = DEFAULTRELAYURLS;
+            if (userRelays) {
+                const writeRelayUrls = NDKRelayList.from(userRelays).writeRelayUrls;
+                explicitRelays = [...explicitRelays, ...writeRelayUrls];
+            }
+
+            fetchAndInitWallet(user, ndk, { explicitRelays });
+
+            if (!userRelays) {
+                toaster.warning({
+                    title: 'Could not find Your personal Relays',
+                    duration: 60000, // 1 min
                     action: {
                         label: 'Configure',
-                        response: () => {
+                        onClick: () => {
                             goto('/settings/relays');
                         },
                     },
                 });
-            }
+             }
 
-            const $followsUpdated = get(followsUpdated) as number;
-            // Update wot every 5 hours: Newbies can get followers and after 5 hours
-            // their actions will be visible to a decent amount of people
-            const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
-
-            const $networkWoTScores = get(networkWoTScores);
-
-            if (
-                $followsUpdated < updateDelay ||
-                !$networkWoTScores ||
-                $networkWoTScores.size === 0
-            ) {
-                // console.log('wot outdated, updating...')
-                await updateFollowsAndWotScore(ndk);
-                // console.log('wot updated')
-                // wotArray = Array.from(get(wot));
-            }
-
-            // fetch the freelance follow event of current user
-            await fetchFreelanceFollowEvent(user.pubkey);
+            await loadWot(ndk, user);
         }
 
-        // Start all tickets/offers sub
+        myTickets.startSubscription();
+        myOffers.startSubscription();
+
         allTickets.startSubscription();
         allOffers.startSubscription();
 
@@ -143,6 +131,63 @@ export async function initializeUser(ndk: NDKSvelte, toastStore: ToastStore) {
     }
 }
 
+export type WalletFetchOpts = {
+    fetchLegacyWallet?: boolean;
+    explicitRelays?: string[];
+};
+
+export async function fetchAndInitWallet(
+    user: NDKUser,
+    ndk: NDKSvelte,
+    walletFetchOpts: WalletFetchOpts = {
+        fetchLegacyWallet: true,
+    }
+) {
+    walletStatus.set(NDKWalletStatus.LOADING);
+
+    let relays = DEFAULTRELAYURLS;
+    if (!walletFetchOpts.explicitRelays || walletFetchOpts.explicitRelays.length === 0) {
+        const userRelays = await fetchUserOutboxRelays(ndk, user.pubkey, 2000);
+        if (userRelays) {
+            relays = [...relays, ...NDKRelayList.from(userRelays).writeRelayUrls];
+        }
+    }
+
+    const kindsArr = [NDKKind.CashuWallet, NDKKind.LegacyCashuWallet, NDKKind.CashuMintList];
+    if (walletFetchOpts.fetchLegacyWallet) kindsArr.push(NDKKind.LegacyCashuWallet);
+
+    const cashuPromise = ndk.fetchEvents(
+        {
+            kinds: kindsArr,
+            authors: [user.pubkey],
+        },
+        { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY },
+        NDKRelaySet.fromRelayUrls(relays, ndk)
+    );
+
+    const cashuEvents: Set<NDKEvent> = await cashuPromise;
+
+    console.info('cashuEvents loaded:', cashuEvents);
+    let nostrWallet: NDKCashuWallet | undefined;
+    let cashuMintList: NDKCashuMintList | undefined;
+    let checkLegacy = true;
+    for (const event of cashuEvents) {
+        if (event.kind === NDKKind.LegacyCashuWallet && checkLegacy) {
+            nostrWallet = await NDKCashuWallet.from(event);
+        } else if (event.kind === NDKKind.CashuWallet) {
+            checkLegacy = false;
+            nostrWallet = await NDKCashuWallet.from(event);
+        } else if (event.kind === NDKKind.CashuMintList) {
+            cashuMintList = NDKCashuMintList.from(event);
+        }
+    }
+    if (nostrWallet && cashuMintList) {
+        walletInit(nostrWallet, cashuMintList, ndk, user);
+    } else {
+        walletStatus.set(NDKWalletStatus.FAILED);
+    }
+}
+
 export function logout() {
     console.log('logout');
 
@@ -151,18 +196,18 @@ export function logout() {
     loginMethod.set(null);
 
     followsUpdated.set(0);
-    networkWoTScores.set(null);
+    networkWoTScores.set(new Map());
 
     currentUser.set(null);
 
     // We dont remove modeCurrent(dark/light theme), debug and app_updated_at entries
-    localStorage.removeItem('unsavedProofsBackup');
-    localStorage.removeItem('cashuTokensBackup');
+    localStorage.removeItem('walletBackup');
     localStorage.removeItem('followsUpdated');
     localStorage.removeItem('tabStore');
     localStorage.removeItem('ticketTabStore');
     localStorage.removeItem('offerTabStore');
     localStorage.removeItem('notificationsEnabled');
+    localStorage.removeItem('serviceWorkerRegFailed');
     localStorage.removeItem('useSatShootWoT');
     localStorage.removeItem('networkWoTScores');
     localStorage.removeItem('seenIDs');
@@ -199,10 +244,8 @@ export function logout() {
 
     wallet.set(null);
 
-    const nutzapMonitor = get(ndkNutzapMonitor);
-    if (nutzapMonitor) {
-        nutzapMonitor.stop();
-        ndkNutzapMonitor.set(null);
+    if (ndkNutzapMonitor) {
+        ndkNutzapMonitor.stop();
     }
 
     get(ndk).signer = undefined;
@@ -211,57 +254,62 @@ export function logout() {
 }
 
 export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
-    if ('serviceWorker' in navigator) {
-        let registeredSW = await (
-            navigator.serviceWorker as ServiceWorkerContainer
-        ).getRegistration();
-        if (!registeredSW) {
-            console.log('No registered Service Worker for this page!');
-            console.log('Trying to register one...');
-            // Try to register new service worker here
-            registeredSW = await (navigator.serviceWorker as ServiceWorkerContainer).register(
-                '/service-worker.js',
-                { type: dev ? 'module' : 'classic' }
-            );
-
-            if (!registeredSW) return null;
-        }
-
-        const activeSW = registeredSW.active;
-        if (activeSW) {
-            return activeSW;
-        } else {
-            console.log('No active Service Worker. Must wait for it...');
-            console.log((navigator.serviceWorker as ServiceWorkerContainer).getRegistrations());
-
-            let pendingSW;
-            if (registeredSW.installing) {
-                pendingSW = registeredSW.installing;
-            } else if (registeredSW.waiting) {
-                pendingSW = registeredSW.waiting;
-            }
-
-            if (pendingSW) {
-                pendingSW.onstatechange = (event: Event) => {
-                    if (registeredSW!.active) {
-                        console.log('Regsitered Service worker activated!');
-                    }
-                };
-            }
-        }
-    } else {
-        console.log('service worker not supported');
+    // Early return if we've already determined that registration has failed
+    if (get(serviceWorkerRegistrationFailed)) {
         return null;
     }
 
-    return null;
+    // Check if service workers are supported
+    if (!('serviceWorker' in navigator)) {
+        console.log('Service workers are not supported in this browser');
+        serviceWorkerRegistrationFailed.set(true);
+        return null;
+    }
+
+    try {
+        // Get existing registration
+        let registeredSW = await navigator.serviceWorker.getRegistration();
+
+        // If no registration exists, try to register
+        if (!registeredSW) {
+            console.log('No registered Service Worker, attempting to register...');
+            try {
+                registeredSW = await navigator.serviceWorker.register('/service-worker.js', {
+                    type: dev ? 'module' : 'classic',
+                });
+            } catch (error) {
+                console.error('Service worker registration failed:', error);
+                serviceWorkerRegistrationFailed.set(true);
+                return null;
+            }
+        }
+
+        // Check if there's an active service worker
+        if (registeredSW.active) {
+            console.log('Found active service worker');
+            return registeredSW.active;
+        }
+
+        // At this point we have a registration but no active service worker yet
+        console.log('Service worker is registered but not yet active');
+
+        // Instead of waiting, we'll mark this as "not failed" but return null
+        // This avoids repeated registration attempts and correctly handles the
+        // case where the service worker is still installing/waiting
+        return null;
+    } catch (error) {
+        console.error('Error while handling service worker:', error);
+        serviceWorkerRegistrationFailed.set(true);
+        return null;
+    }
 }
 
 export async function fetchUserOutboxRelays(
     ndk: NDKSvelte,
-    pubkey?: string
+    pubkey: string,
+    timeout: number = 4000
 ): Promise<NDKEvent | null> {
-    const queryRelaysUrls = [...ndk.pool.urls(), ...ndk.outboxPool!.urls()];
+    const queryRelaysUrls = [...BOOTSTRAPOUTBOXRELAYS, ...DEFAULTRELAYURLS];
 
     const queryRelays: Array<NDKRelay> = [];
 
@@ -269,17 +317,16 @@ export async function fetchUserOutboxRelays(
         queryRelays.push(new NDKRelay(url, undefined, ndk));
     });
 
-    if (!pubkey) {
-        const $currentUser = get(currentUser);
-        pubkey = $currentUser!.pubkey;
-    }
-
     const relayFilter = {
         kinds: [NDKKind.RelayList],
         authors: [pubkey],
     };
 
-    let relays = await fetchEventFromRelaysFirst(relayFilter, 4000, true, queryRelays);
+    let relays = await fetchEventFromRelaysFirst(relayFilter, {
+        relayTimeoutMS: timeout,
+        fallbackToCache: true,
+        explicitRelays: queryRelays,
+    });
 
     return relays;
 }
@@ -293,123 +340,106 @@ export async function broadcastRelayList(
     userRelayList.readRelayUrls = Array.from(readRelayUrls);
     userRelayList.writeRelayUrls = Array.from(writeRelayUrls);
 
-    const relaysPosted = await broadcastEvent(ndk, userRelayList, [...writeRelayUrls]);
+    const relaysPosted = await broadcastEvent(ndk, userRelayList, {
+        explicitRelays: [...writeRelayUrls],
+    });
     console.log('relays posted to:', relaysPosted);
 }
 
-export async function broadcastUserProfile(ndk: NDKSvelte, userProfile: NDKUserProfile) {
+export async function broadcastUserProfile(ndk: NDKSvelte, user: NDKUser) {
+    if (!user.profile) {
+        console.error('BUG: Cannot broadcast undefined profile!')
+        return;
+    }
     const ndkEvent = new NDKEvent(ndk);
-    ndkEvent.content = serializeProfile(userProfile);
+    ndkEvent.content = serializeProfile(user.profile);
     ndkEvent.kind = NDKKind.Metadata;
 
-    const explicitRelays: string[] = [];
+    const explicitRelays: string[] = [...BOOTSTRAPOUTBOXRELAYS];
 
-    const relayListEvent = await fetchUserOutboxRelays(ndk);
+    const relayListEvent = await fetchUserOutboxRelays(ndk, user.pubkey);
     if (relayListEvent) {
         const relayList = NDKRelayList.from(relayListEvent);
         explicitRelays.push(...relayList.writeRelayUrls);
     }
 
-    const relaysPosted = await broadcastEvent(ndk, ndkEvent, explicitRelays);
+    const relaysPosted = await broadcastEvent(ndk, ndkEvent, { explicitRelays });
     console.log('userProfile posted to:', relaysPosted);
 }
 
+export type BroadCastOpts = {
+    explicitRelays?: string[];
+    includePoolRelays?: boolean;
+    includeOutboxPoolRelays?: boolean;
+    includeBlastUrl?: boolean;
+    replaceable?: boolean;
+};
 export async function broadcastEvent(
     ndk: NDKSvelte,
     ndkEvent: NDKEvent,
-    explicitRelayUrls: string[],
-    includePoolRelays: boolean = true,
-    includeOutboxPoolRelays: boolean = true,
-    includeBlastUrl: boolean = true
+    broadCastOpts: BroadCastOpts = {
+        explicitRelays: [],
+        includePoolRelays: true,
+        includeOutboxPoolRelays: true,
+        includeBlastUrl: true,
+        replaceable: false,
+    }
 ) {
-    const relayUrls = [...explicitRelayUrls];
+    const relayUrls = [...(broadCastOpts.explicitRelays ?? [])];
 
-    if (includePoolRelays) {
+    if (broadCastOpts.includePoolRelays) {
         relayUrls.push(...ndk.pool.urls());
     }
 
-    if (includeOutboxPoolRelays && ndk.outboxPool) {
+    if (broadCastOpts.includeOutboxPoolRelays && ndk.outboxPool) {
         relayUrls.push(...ndk.outboxPool.urls());
     }
 
-    if (includeBlastUrl) {
+    if (broadCastOpts.includeBlastUrl) {
         relayUrls.push(blastrUrl);
     }
 
-    return await ndkEvent.publish(NDKRelaySet.fromRelayUrls(relayUrls, ndk));
+    if (!broadCastOpts.replaceable) {
+        return await ndkEvent.publish(NDKRelaySet.fromRelayUrls(relayUrls, ndk));
+    } else {
+        return await ndkEvent.publishReplaceable(NDKRelaySet.fromRelayUrls(relayUrls, ndk));
+    }
 }
 
 export async function checkRelayConnections() {
     const $ndk = get(ndk);
 
     const anyConnectedRelays = $ndk.pool.stats().connected !== 0;
+    console.log('Checking relay connections')
+    console.log(`Connected relays: ${$ndk.pool.stats().connected}`)
 
     if (!anyConnectedRelays) {
         connected.set(false);
-        let retriesLeft = get(retryConnection);
-        if (retriesLeft > 0) {
-            retriesLeft -= 1;
-            retryConnection.set(retriesLeft);
+        let $retriesLeft = get(retriesLeft);
+        if ($retriesLeft > 0) {
+            $retriesLeft -= 1;
+            retriesLeft.set($retriesLeft);
             // Try to reconnect to relays, timeout in 2sec for each relay
-            $ndk.pool.connect(2000);
+            $ndk.connect(retryDelay);
             // Re-check recursively when retry delay expires
             // This sets an explicit cap on retries.
-            // After retryDelay X retryConnection amount of time is elapsed
+            // After retryDelay X retriesLeft amount of time is elapsed
             // retry process is concluded and either we reconnected or
-            // user needs to fix network and reload page (toast with btn is shown)
+            // user needs to fix network and  possibly reload page
             setTimeout(checkRelayConnections, retryDelay);
         }
     } else {
         // We are sufficiently connected
         connected.set(true);
-        retryConnection.set(maxRetryAttempts);
+        retriesLeft.set(maxRetryAttempts);
     }
 }
 
-export async function fetchEventFromRelaysFirst(
-    filter: NDKFilter,
-    relayTimeoutMS: number = 6000,
-    fallbackToCache: boolean = false,
-    relays?: NDKRelay[]
-): Promise<NDKEvent | null> {
-    const $ndk = get(ndk);
-
-    // If relays are provided construct a set and pass over to sub
-    const relaySet = relays ? new NDKRelaySet(new Set(relays), $ndk) : undefined;
-
-    const timeoutPromise = new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(null);
-        }, relayTimeoutMS);
-    });
-
-    const relayPromise = $ndk.fetchEvent(
-        filter,
-        {
-            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-            groupable: false,
-        },
-        relaySet
-    );
-
-    const fetchedEvent: NDKEvent | null = (await Promise.race([
-        timeoutPromise,
-        relayPromise,
-    ])) as NDKEvent | null;
-
-    if (fetchedEvent) {
-        return fetchedEvent;
-    } else if (!fetchedEvent && !fallbackToCache) {
-        return null;
-    }
-
-    const cachedEvent = await $ndk.fetchEvent(filter, {
-        cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
-        groupable: false,
-    });
-
-    return cachedEvent;
-}
+export type RelayFirstFetchOpts = {
+    relayTimeoutMS: number;
+    fallbackToCache: boolean;
+    explicitRelays?: NDKRelay[];
+};
 
 export async function getZapConfiguration(pubkey: string) {
     const $ndk = get(ndk);
@@ -421,12 +451,11 @@ export async function getZapConfiguration(pubkey: string) {
 
     const metadataRelays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    const metadataEvent = await fetchEventFromRelaysFirst(
-        metadataFilter,
-        5000,
-        false,
-        metadataRelays
-    );
+    const metadataEvent = await fetchEventFromRelaysFirst(metadataFilter, {
+        relayTimeoutMS: 5000,
+        fallbackToCache: false,
+        explicitRelays: metadataRelays,
+    });
 
     if (!metadataEvent) return null;
 
@@ -484,9 +513,23 @@ export async function getCashuPaymentInfo(
         authors: [pubkey],
     };
 
-    const relays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
+    let relays = [
+        ...($ndk.outboxPool?.connectedRelays() || []),
+        ...($ndk.pool.connectedRelays() || []),
+    ];
 
-    const cashuMintlistEvent = await fetchEventFromRelaysFirst(filter, 5000, false, relays);
+    if (relays.length === 0) {
+        for (const url of DEFAULTRELAYURLS) {
+            const relay = new NDKRelay(url, undefined, $ndk);
+            relays.push(relay);
+        }
+    }
+
+    const cashuMintlistEvent = await fetchEventFromRelaysFirst(filter, {
+        relayTimeoutMS: 5000,
+        fallbackToCache: false,
+        explicitRelays: relays,
+    });
 
     if (!cashuMintlistEvent) {
         console.warn(`Could not fetch Cashu Mint list for ${pubkey}`);
@@ -509,8 +552,6 @@ export function orderEventsChronologically(events: NDKEvent[], reverse: boolean 
         if (reverse) return e1.created_at! - e2.created_at!;
         else return e2.created_at! - e1.created_at!;
     });
-
-    events = events;
 }
 
 export function arraysAreEqual<T>(arr1: T[], arr2: T[]): boolean {

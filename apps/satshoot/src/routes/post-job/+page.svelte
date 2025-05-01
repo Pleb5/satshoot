@@ -1,6 +1,6 @@
 <script lang="ts">
-    import ndk from '$lib/stores/ndk';
-    import currentUser, { loggingIn } from '$lib/stores/user';
+    import ndk from '$lib/stores/session';
+    import currentUser, { loggedIn, loggingIn } from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
 
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
@@ -12,91 +12,84 @@
 
     import tagOptions from '$lib/utils/tag-options';
 
-    import type { ModalComponent, ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
-    import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
-
-    import { ProgressRadial } from '@skeletonlabs/skeleton';
-
     import { beforeNavigate, goto } from '$app/navigation';
     import { onMount, tick } from 'svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
-    import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import { redirectAfterLogin } from '$lib/stores/gui';
+    import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
+    import { toaster } from '$lib/stores/toaster';
+    import { jobPostSuccessState } from '$lib/stores/modals';
 
-    const toastStore = getToastStore();
-    const modalStore = getModalStore();
+    let showLoginModal = $state(false);
 
-    let tagInput = '';
-    let tagList: string[] = [];
+    let tagInput = $state('');
+    let tagList = $state<string[]>([]);
 
     // For form validation
     const maxTags: number = 5;
     const minDescriptionLength = 20;
     const minTitleLength = 10;
 
-    // For form submission
-    let titleValid = false;
-    let descriptionValid = false;
-
     // reactive values bound to user input
-    let titleText: string = '';
-    let descriptionText: string = '';
-    // reactive classes based on validity of user input
-    let titleState = '';
-    let descriptionState = '';
+    let titleText = $state('');
+    let descriptionText = $state('');
+    let posting = $state(false);
 
-    let allowPostJob: boolean = true;
-    let posting = false;
+    const allowPostJob = $derived(!!$currentUser && $loggedIn);
 
-    // Checking Title and description values on user input
-    $: {
+    const { titleValid, titleState } = $derived.by(() => {
         if (titleText.length < minTitleLength) {
-            titleValid = false;
-            titleState = 'input-error';
-        } else {
-            titleValid = true;
-            titleState = 'input-success';
+            return {
+                titleValid: false,
+                titleState: 'text-error-500',
+            };
         }
 
-        if (descriptionText.length < minDescriptionLength) {
-            descriptionValid = false;
-            descriptionState = 'input-error';
-        } else {
-            descriptionValid = true;
-            descriptionState = 'input-success';
-        }
-    }
-
-    $: transformedTag = tagInput.length > 0 ? transFormTag(tagInput) : '';
-
-    $: sortedTagOptions = tagOptions.sort((a, b) => {
-        if (a.label < b.label) return -1;
-        if (a.label > b.label) return 1;
-        return 0;
+        return {
+            titleValid: true,
+            titleState: 'text-success-500',
+        };
     });
 
-    $: filteredTagOptions =
+    const { descriptionValid, descriptionState } = $derived.by(() => {
+        if (descriptionText.length < minTitleLength) {
+            return {
+                descriptionValid: false,
+                descriptionState: 'text-error-500',
+            };
+        }
+
+        return {
+            descriptionValid: true,
+            descriptionState: 'text-success-500',
+        };
+    });
+
+    const transformedTag = $derived(tagInput.length > 0 ? transFormTag(tagInput) : '');
+    const sortedTagOptions = $derived(
+        tagOptions.sort((a, b) => {
+            if (a.label < b.label) return -1;
+            if (a.label > b.label) return 1;
+            return 0;
+        })
+    );
+    const filteredTagOptions = $derived(
         tagInput.length > 0
             ? sortedTagOptions.filter((option) => option.value.includes(transformedTag))
-            : [];
-
+            : []
+    );
     // Always include the input tag as the first item, even if it's an exact match
-    $: displayOptions =
+    const displayOptions = $derived(
         transformedTag.length > 0
             ? [
                   { label: tagInput, value: transformedTag },
                   ...filteredTagOptions.filter((option) => option.value !== transformedTag),
               ]
-            : filteredTagOptions;
-
-    $: if (!$currentUser || $loggingIn) {
-        allowPostJob = false;
-    } else {
-        allowPostJob = true;
-    }
+            : filteredTagOptions
+    );
 
     onMount(() => {
         if ($jobToEdit) {
@@ -122,12 +115,9 @@
 
     function addTag(tag: string) {
         if (tagList.length >= maxTags) {
-            const t: ToastSettings = {
-                message: `Cannot add more than ${maxTags} tags!`,
-                timeout: 4000,
-                background: 'bg-error-300-600-token',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: `Cannot add more than ${maxTags} tags!`,
+            });
 
             return;
         }
@@ -160,12 +150,9 @@
             occurrence === 0;
 
         if (!valid) {
-            const t: ToastSettings = {
-                message: 'Invalid tag! Only letters and numbers, NO duplicates!',
-                timeout: 4000,
-                background: 'bg-error-300-600-token',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Invalid tag! Only letters and numbers, NO duplicates!',
+            });
         }
 
         return valid;
@@ -202,61 +189,42 @@
 
                     $jobToEdit = null;
 
-                    const successModal: ModalComponent = {
-                        ref: JobPostSuccess,
-                        props: { job },
-                    };
+                    // Set the job post success state in the svelte writable store before navigation
+                    jobPostSuccessState.set({
+                        showModal: true,
+                        jobData: job,
+                    });
 
-                    const shareModal: ModalSettings = {
-                        type: 'component',
-                        component: successModal,
-                    };
-                    modalStore.trigger(shareModal);
-
+                    // Navigate to profile page
                     $profileTabStore = ProfilePageTabs.Jobs;
                     goto('/' + $currentUser.npub + '/');
                 } catch (e) {
                     posting = false;
                     console.log(job);
-                    const t: ToastSettings = {
-                        message: 'Could not post Job: ' + e,
-                        timeout: 7000,
-                        background: 'bg-error-300-600-token',
-                    };
-                    toastStore.trigger(t);
+                    toaster.error({
+                        title: 'Could not post Job: ' + e,
+                    });
                 }
             } else {
-                const t: ToastSettings = {
-                    message: 'Log in to post the Job!',
-                    timeout: 7000,
-                    background: 'bg-error-300-600-token',
-                };
-                toastStore.trigger(t);
+                toaster.error({
+                    title: 'Log in to post the Job!',
+                });
             }
         } else {
-            const t: ToastSettings = {
-                message:
-                    '<p style="text-align:center;"><strong>Invalid Job!</strong></p><br/>Please fill in a <strong>valid Job Title</strong> and <strong>Description</strong> before posting!',
-                timeout: 7000,
-                background: 'bg-error-300-600-token',
-            };
-            toastStore.trigger(t);
+            toaster.error({
+                title: 'Invalid Job!',
+                description: `Please fill in a valid 'Job Title' and 'Description'!`,
+            });
         }
     }
 
     function handleLogin() {
         $redirectAfterLogin = false;
-
-        modalStore.trigger({
-            type: 'component',
-            component: {
-                ref: LoginModal,
-            },
-        });
+        showLoginModal = true;
     }
 </script>
 
-<div class="w-full flex flex-col gap-0 flex-grow">
+<div class="w-full flex flex-col gap-0 grow">
     <div class="w-full flex flex-col justify-center items-center py-[10px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[10px]">
@@ -315,13 +283,13 @@
                                     {#each displayOptions as { label, value }}
                                         <Button
                                             classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white hover:text-white p-[5px] font-400"
-                                            on:click={() => addTag(value)}
+                                            onClick={() => addTag(value)}
                                         >
                                             <span class="pl-[10px]"> {label} </span>
                                             <span
                                                 class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100 dark:border-white-100"
                                             >
-                                                <i class="bx bx-plus" />
+                                                <i class="bx bx-plus"></i>
                                             </span>
                                         </Button>
                                     {/each}
@@ -343,7 +311,8 @@
                                             <span class="pl-[10px] py-[5px]">{tag}</span>
                                             <button
                                                 class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-white-100 hover:bg-blue-500"
-                                                on:click={() => removeTag(tag)}
+                                                onclick={() => removeTag(tag)}
+                                                aria-label="remove tag"
                                             >
                                                 <i class="bx bx-x"></i>
                                             </button>
@@ -357,18 +326,11 @@
                         class="w-full flex flex-row gap-[10px] justify-center border-t-[1px] border-black-100 dark:border-white-100 pt-[10px] mt-[10px]"
                     >
                         {#if !allowPostJob}
-                            <Button on:click={handleLogin}>Log in To Post</Button>
+                            <Button onClick={handleLogin}>Log in To Post</Button>
                         {:else}
-                            <Button on:click={postJob} disabled={posting}>
+                            <Button onClick={postJob} disabled={posting}>
                                 {#if posting}
-                                    <ProgressRadial
-                                        value={undefined}
-                                        stroke={60}
-                                        meter="stroke-white-500"
-                                        track="stroke-white-500/3"
-                                        width="w-8"
-                                        strokeLinecap="round"
-                                    />
+                                    <ProgressRing color="white" />
                                 {:else}
                                     <span>Publish Job Post</span>
                                 {/if}
@@ -380,3 +342,5 @@
         </div>
     </div>
 </div>
+
+<LoginModal bind:isOpen={showLoginModal} />

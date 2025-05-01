@@ -1,10 +1,13 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount } from 'svelte';
+    import { onMount } from 'svelte';
 
-    export let text: string;
-    let shouldWarningTextScroll = false;
+    interface Props {
+        text: string;
+        onClose: () => void;
+    }
 
-    const dispatch = createEventDispatcher();
+    let { text, onClose }: Props = $props();
+    let shouldWarningTextScroll = $state(false);
 
     onMount(() => {
         checkWarningTextOverflow();
@@ -27,7 +30,7 @@
 </script>
 
 <div
-    class="w-full bg-warning-500 dark:bg-warning-700 text-warning-900 dark:text-warning-100 p-2 flex justify-between items-center gap-2 rounded"
+    class="w-full bg-warning-500 dark:bg-warning-700 text-warning-900 dark:text-warning-100 p-2 flex justify-between items-center gap-2 rounded-sm"
 >
     <div class="flex items-center gap-2 overflow-hidden whitespace-nowrap">
         <!-- Warning Icon -->
@@ -41,7 +44,7 @@
         </div>
     </div>
     <!-- Close Icon -->
-    <button on:click={() => dispatch('close')}>
+    <button onclick={onClose} aria-label="close-warning">
         <i class="fa-solid fa-xmark text-xl"></i>
     </button>
 </div>

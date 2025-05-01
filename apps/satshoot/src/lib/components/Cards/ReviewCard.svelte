@@ -8,25 +8,26 @@
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { onMount } from 'svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { beforeNavigate } from '$app/navigation';
-    import { getModalStore } from '@skeletonlabs/skeleton';
 
-    export let review: ReviewEvent;
+    interface Props {
+        review: ReviewEvent;
+    }
 
-    const modalStore = getModalStore();
+    let { review }: Props = $props();
 
     let user = $ndk.getUser({ pubkey: review.pubkey });
-    let userName = user.npub.substring(0, 8);
-    let userImage = getRoboHashPicture(user.pubkey);
+    let userName = $state(user.npub.substring(0, 8));
+    let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let job: TicketEvent | null;
+    let job = $state<TicketEvent | null>(null);
 
     let elemPage: HTMLElement;
     onMount(async () => {
@@ -37,8 +38,8 @@
             if (userProfile.name) {
                 userName = userProfile.name;
             }
-            if (userProfile.image) {
-                userImage = userProfile.image;
+            if (userProfile.picture) {
+                userImage = userProfile.picture;
             }
         }
 
@@ -91,8 +92,7 @@
         if (elemPage) {
             elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
         }
-        modalStore.close()
-    })
+    });
 </script>
 
 <div
@@ -102,7 +102,7 @@
         <a href={'/' + user.npub}>
             <ProfileImage src={userImage} />
         </a>
-        <div class="flex flex-col grow-[1] items-start">
+        <div class="flex flex-col grow-1 items-start">
             <a href={'/' + user.npub}>
                 <p>{userName}</p>
             </a>
@@ -136,12 +136,12 @@
                 <!-- Freelancer-specific badges -->
                 {#if freelancerRatings.success}
                     <div class={`${reviewBadgeClasses} text-gray-500 bg-green-600`}>
-                        <i class="bx bxs-check-circle" />
+                        <i class="bx bxs-check-circle"></i>
                         <p>Job Fulfilled</p>
                     </div>
                 {:else}
                     <div class={`${reviewBadgeClasses} text-white bg-red-600`}>
-                        <i class="bx bxs-x-circle" />
+                        <i class="bx bxs-x-circle"></i>
                         <p>Job Unfulfilled</p>
                     </div>
                 {/if}
@@ -149,12 +149,12 @@
                 <!-- Client-specific badges -->
                 {#if clientRatings.thumb}
                     <div class={`${reviewBadgeClasses} text-gray-500 bg-green-600`}>
-                        <i class="bx bxs-check-circle" />
+                        <i class="bx bxs-check-circle"></i>
                         <p>Satisfied</p>
                     </div>
                 {:else}
                     <div class={`${reviewBadgeClasses} text-white bg-red-600`}>
-                        <i class="bx bxs-x-circle" />
+                        <i class="bx bxs-x-circle"></i>
                         <p>Dissatisfied</p>
                     </div>
                 {/if}
@@ -162,17 +162,17 @@
 
             <!-- Shared badges -->
             <div class={getBadgeClasses(ratings.availability)}>
-                <i class="bx bxs-star" />
+                <i class="bx bxs-star"></i>
                 <p>{isFreelancerReview ? 'Availability' : 'Attentive & Responsive'}</p>
             </div>
             <div class={getBadgeClasses(ratings.communication)}>
-                <i class="bx bxs-star" />
+                <i class="bx bxs-star"></i>
                 <p>{isFreelancerReview ? 'Communication' : 'Clear Communication'}</p>
             </div>
 
             {#if isFreelancerReview && freelancerRatings?.expertise !== undefined}
                 <div class={getBadgeClasses(freelancerRatings.expertise)}>
-                    <i class="bx bxs-star" />
+                    <i class="bx bxs-star"></i>
                     <p>Expertise</p>
                 </div>
             {/if}
@@ -183,7 +183,7 @@
         <div
             class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 pl-[5px] pr-[5px] pt-[10px]"
         >
-            <p class="font-[500] grow-[1] flex flex-row flex-wrap">
+            <p class="font-[500] grow-1 flex flex-row flex-wrap">
                 Review published on:
                 <span class="font-[300]">
                     {formatDate(review.created_at * 1000, 'dd-MMM-yyyy, h:m a') +

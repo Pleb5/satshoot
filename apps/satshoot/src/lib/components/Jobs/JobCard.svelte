@@ -1,6 +1,6 @@
 <script lang="ts">
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk from '$lib/stores/session';
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
@@ -9,12 +9,31 @@
     import JobDetails from './JobDetails.svelte';
     import JobOffers from './JobOffers.svelte';
 
-    export let job: TicketEvent;
-    export let showOffersDetail = false;
+    enum Tabs {
+        JobDescription,
+        Author,
+        Offers,
+        Actions,
+    }
 
-    let highlightOffersTab = false;
+    interface Props {
+        job: TicketEvent;
+        showOffersDetail?: boolean;
+    }
 
-    $: if (showOffersDetail && job.status === TicketStatus.New) {
+    let { job, showOffersDetail = false }: Props = $props();
+
+    // Reactive state
+    let highlightOffersTab = $state(false);
+    let selectedTab = $state(Tabs.JobDescription);
+
+    // Derived state
+    const bech32ID = $derived(job.encode());
+
+    // Effect to check for offers when needed
+    $effect(() => {
+        if (!showOffersDetail || job?.status !== TicketStatus.New) return;
+
         const offersFilter: NDKFilter = {
             kinds: [NDKKind.FreelanceOffer],
             '#a': [job.ticketAddress],
@@ -23,24 +42,9 @@
         $ndk.fetchEvents(offersFilter, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         }).then((offers) => {
-            if (offers.size > 0) {
-                highlightOffersTab = true;
-            }
+            highlightOffersTab = offers.size > 0;
         });
-    }
-
-    let bech32ID = '';
-
-    $: if (job) {
-        bech32ID = job.encode();
-    }
-
-    enum Tabs {
-        JobDescription,
-        Author,
-        Offers,
-        Actions,
-    }
+    });
 
     const tabs = [
         {
@@ -62,13 +66,11 @@
         },
     ];
 
-    let selectedTab = Tabs.JobDescription;
-
-    const jobCardBtnClasses = 'border-0 scale-100 ' + 'flex-grow ';
+    const jobCardBtnClasses = 'border-0 scale-100 ' + 'grow ';
 </script>
 
 <Card classes="border-[1px_solid_rgba(0,0,0,0.1)] gap-[0px]  overflow-hidden p-[0px]">
-    <div class="jobCardDetails w-full flex flex-col gap-[0px] p-[10px] min-h-[165px]">
+    <div class="w-full flex flex-col gap-[0px] p-[10px] min-h-[240px]">
         {#if selectedTab === Tabs.JobDescription}
             <JobDetails title={job.title} description={job.description} {bech32ID} />
         {:else if selectedTab === Tabs.Author}
@@ -87,9 +89,9 @@
                 <Button
                     variant={tab.name === selectedTab ? 'contained' : 'text'}
                     classes={jobCardBtnClasses}
-                    on:click={() => (selectedTab = tab.name)}
+                    onClick={() => (selectedTab = tab.name)}
                 >
-                    <i class={`bx ${tab.icon}`} />
+                    <i class={`bx ${tab.icon}`}></i>
                     {#if tab.name === Tabs.Offers && highlightOffersTab}
                         <div
                             class="h-[4px] w-full max-w-[35px] rounded-[10px] absolute bottom-[2px] bg-red-400"
@@ -101,7 +103,7 @@
     </div>
     <div class="w-full flex flex-row gap-[0px] border-t-[1px_solid_rgba(0,0,0,0.11)]">
         <Button href={'/' + bech32ID + '/'} variant="text" classes="rounded-[0]" fullWidth>
-            <i class="bx bxs-show" />
+            <i class="bx bxs-show"></i>
         </Button>
     </div>
 </Card>

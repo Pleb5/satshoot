@@ -1,5 +1,5 @@
 import { get, derived } from 'svelte/store';
-import ndk from '$lib/stores/ndk';
+import ndk from '$lib/stores/session';
 
 import { NDKKind, type NDKFilter, type NDKEvent } from '@nostr-dev-kit/ndk';
 import { myOffers } from './freelance-eventstores';

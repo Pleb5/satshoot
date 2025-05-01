@@ -14,6 +14,8 @@ import { goto } from '$app/navigation';
 
 export const browserNotificationsEnabled: Writable<boolean> = persisted('browserNotificationsEnabled', true);
 
+export const serviceWorkerRegistrationFailed = persisted('serviceWorkerRegFailed', false);
+
 export const seenIDs = writable<Set<string>>(new Set());
 
 export const notifications = writable<NDKEvent[]>([]);

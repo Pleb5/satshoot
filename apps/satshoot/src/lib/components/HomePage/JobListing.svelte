@@ -1,57 +1,53 @@
 <script lang="ts">
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/ndk';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
-    import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-    import { onDestroy, onMount } from 'svelte';
     import JobCard from '../Jobs/JobCard.svelte';
-    import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
+    import { onDestroy } from 'svelte';
 
-    let newJobs: NDKEventStore<ExtendedBaseType<TicketEvent>>;
-    let jobList: Set<TicketEvent> = new Set();
+    // State
+    const newJobs = $ndk.storeSubscribe(
+                {
+                    kinds: [NDKKind.FreelanceTicket],
+                },
+                {
+                    autoStart: false,
+                    closeOnEose: false,
+                    groupable: false,
+                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                },
+                TicketEvent
+            );
 
-    $: if ($newJobs) {
-        // We just received a job
-        orderEventsChronologically($newJobs);
-        const newJobList = new Set(
-            $newJobs.filter((t: TicketEvent) => {
-                // New job check: if a job status is changed this removes not new jobs
-                const newJob = t.status === TicketStatus.New;
-                // wot is always at least 3 if there is a user logged in
-                // only update filter if other users are also present
-                const partOfWot = $wot?.size > 2 && $wot.has(t.pubkey);
+    let jobList = $derived.by(() => {
+        const copiedJobs = [...$newJobs]
+        orderEventsChronologically(copiedJobs);
 
-                return newJob && partOfWot;
-            })
-        );
+        const newJobList = copiedJobs.filter((t: TicketEvent) => {
+            const newJob = t.status === TicketStatus.New;
+            const partOfWot = $wot.has(t.pubkey);
 
-        jobList = new Set(Array.from(newJobList).slice(0, 8));
-    }
+            return newJob && partOfWot;
+        });
 
-    onMount(() => {
-        checkRelayConnections();
+        return new Set(newJobList.slice(0, 8));
+    });
 
-        newJobs = $ndk.storeSubscribe(
-            {
-                kinds: [NDKKind.FreelanceTicket],
-            },
-            {
-                autoStart: true,
-                closeOnEose: false,
-                groupable: false,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            },
-            TicketEvent
-        );
-        $newJobs = $newJobs;
+    // Initialize jobs subscription
+    $effect(() => {
+        if ($sessionInitialized) {
+            checkRelayConnections();
+
+            newJobs.startSubscription();
+        }
     });
 
     onDestroy(() => {
-        if (newJobs) newJobs.unsubscribe();
-    });
+        newJobs.empty();
+    })
 
     const viewMoreBtnClasses =
         'transform scale-100 w-full max-w-[200px] hover:max-w-[225px] dark:text-white dark:border-white-100 ';
@@ -72,17 +68,17 @@
                     {/each}
                 {:else}
                     <div class="p-4 space-y-4 w-full">
-                        <div class="placeholder animate-pulse" />
+                        <div class="placeholder animate-pulse"></div>
                         <div class="grid grid-cols-3 gap-8">
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
                         </div>
                         <div class="grid grid-cols-4 gap-4">
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
-                            <div class="placeholder animate-pulse" />
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
+                            <div class="placeholder animate-pulse"></div>
                         </div>
                     </div>
                 {/if}
