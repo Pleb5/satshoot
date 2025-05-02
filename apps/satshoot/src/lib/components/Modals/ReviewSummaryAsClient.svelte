@@ -120,11 +120,11 @@
             <div class="w-full flex flex-col gap-[15px]">
                 {#if onlyShowMyReviews}
                     {#each myReviews as review}
-                        <ReviewCard {review} />
+                        <ReviewCard {review} bind:isOpen={isOpen} />
                     {/each}
                 {:else}
                     {#each reviews as review}
-                        <ReviewCard {review} />
+                        <ReviewCard {review} bind:isOpen={isOpen} />
                     {/each}
                 {/if}
             </div>

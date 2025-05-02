@@ -12,5 +12,5 @@
 </script>
 
 <ModalWrapper bind:isOpen title="Review">
-    <ReviewCard {review} />
+    <ReviewCard {review} bind:isOpen={isOpen} />
 </ModalWrapper>

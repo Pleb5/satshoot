@@ -14,13 +14,15 @@
     import { onMount } from 'svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
-    import { beforeNavigate } from '$app/navigation';
+    import { beforeNavigate, goto } from '$app/navigation';
+    import { page } from '$app/state';
 
     interface Props {
         review: ReviewEvent;
+        isOpen: boolean
     }
 
-    let { review }: Props = $props();
+    let { review, isOpen = $bindable() }: Props = $props();
 
     let user = $ndk.getUser({ pubkey: review.pubkey });
     let userName = $state(user.npub.substring(0, 8));
@@ -93,6 +95,22 @@
             elemPage.scrollTo({ top: elemPage.scrollHeight * -1, behavior: 'instant' });
         }
     });
+
+    const gotoJob = async () => {
+        if (job) {
+            const url = `/${job.encode()}/`;
+            const currentPath = page.url.pathname;
+            const targetPath = new URL(url, window.location.origin).pathname;
+
+            // Check if we're on the same route (but with different params)
+            if (currentPath !== targetPath) {
+                // Same route with different params - force reload
+                await goto(url, { replaceState: true});
+                window.location.reload();
+            }
+            isOpen = false;
+        }
+    };
 </script>
 
 <div
@@ -109,12 +127,12 @@
             <div class="flex flex-row gap-[5px] flex-wrap">
                 <p>wrote a review for job:</p>
                 {#if job}
-                    <a
-                        href={'/' + job.encode() + '/'}
-                        class="anchor transition ease duration-[0.3s] font-[600]"
+                    <button
+                        onclick={gotoJob}
+                        class="anchor transition ease duration-[0.3s] font-[600] bg-none"
                     >
                         {job.title}
-                    </a>
+                    </button>
                 {:else}
                     <div class="w-full h-4 placeholder animate-pulse bg-blue-600"></div>
                 {/if}
