@@ -25,7 +25,7 @@
     }
 </script>
 
-<Navigation.Tile {href} padding="" rounded="rounded-[5px]">
+<Navigation.Tile {href} padding="" rounded="rounded-[5px]" hover="">
     <button class={`${baseClasses} ${activeClass}`} onclick={handleClick}>
         {#if href}
             <i class={`bx ${icon} relative`}>
