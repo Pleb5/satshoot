@@ -578,7 +578,7 @@
     <!-- Mobile Footer  -->
     {#if displayFooter}
         <footer
-            class="fixed bottom-0 w-full sm:hidden"
+            class="fixed bottom-0 w-full sm:hidden z-10"
             aria-label="Mobile navigation"
             bind:offsetHeight={footerHeight}
         >
