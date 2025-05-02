@@ -240,7 +240,12 @@
     }
 
     function handleShare() {
-        showShareModal = true;
+        const profileLink = `https://satshoot.com/${npub}/`;
+        navigator.clipboard.writeText(profileLink).then(() =>
+            toaster.success({
+                title: 'Porfile link copied!',
+            })
+        );
     }
 
     function handleEditProfile() {
