@@ -65,7 +65,9 @@
         </Button>
     </div>
     <div class="w-full flex flex-col gap-[10px]">
-        <Markdown content={job.description} />
+        <div class="w-full break-words break-all overflow-hidden overflow-wrap-anywhere">
+            <Markdown content={job.description} />
+        </div>
     </div>
 </Card>
 
