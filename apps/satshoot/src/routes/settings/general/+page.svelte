@@ -22,6 +22,7 @@
         showClearCacheModal = true;
     }
 
+    let browserNotifsToastTriggered = false;
     $effect(() => {
         if (browser && Number($browserNotificationsEnabled) >= 0) {
             // If there is no permission for notifications yet, ask for it
@@ -30,12 +31,15 @@
                 Notification.requestPermission().then((permission: NotificationPermission) => {
                     if (permission !== 'granted') {
                         browserNotificationsEnabled.set(false);
-                        toaster.info({
-                            title: 'Notifications Settings are Disabled in the Browser!',
-                            description:
+                        if (!browserNotifsToastTriggered) {
+                            browserNotifsToastTriggered = true;
+                            toaster.info({
+                                title: 'Notifications Settings are Disabled in the Browser!',
+                                description:
                                 'Click small icon left of browser search bar to enable this setting!',
-                            duration: 60000, // 1 min
-                        });
+                                duration: 60000, // 1 min
+                            });
+                        }
                     }
                     // User enabled notification settings, set user choice in local storage too
                     browserNotificationsEnabled.set($browserNotificationsEnabled);
