@@ -12,7 +12,7 @@
 
     function handleCopy() {
         navigator.clipboard.writeText(text).then(() =>
-            toaster.error({
+            toaster.success({
                 title: feedbackMessage,
             })
         );
