@@ -70,6 +70,8 @@
             try {
                 updating = true;
 
+                userProfile.name = userProfile.displayName;
+
                 $currentUser.profile = userProfile;
                 await broadcastUserProfile($ndk, $currentUser);
 
@@ -102,7 +104,7 @@
             <!-- Display Name -->
             <div class="flex flex-col gap-[5px] grow-1">
                 <div>
-                    <label class="font-[600]" for="displaly_name">Display Name</label>
+                    <label class="font-[600]" for="display_name">Display Name</label>
                 </div>
                 <Input
                     id="display_name"
