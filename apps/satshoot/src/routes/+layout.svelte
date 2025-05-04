@@ -401,6 +401,7 @@
         if ($updated) {
             toaster.info({
                 title: 'New version of the app is available!',
+                duration: 60_000,
                 action: {
                     label: 'Reload',
                     onClick: () => {
