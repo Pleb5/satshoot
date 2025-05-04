@@ -597,66 +597,68 @@
                                 class="w-full flex flex-col gap-[15px] relative max-[768px]:mt-[15px]"
                             >
                                 <!-- Wallet card start -->
-                                <Card classes="gap-[15px]">
-                                    <div
-                                        class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-linear-to-tl from-blue-500 to-blue-400 shadow-deep"
-                                    >
-                                        <div class="font-[500] text-white">
-                                            <p>Wallet</p>
-                                        </div>
-                                        <p class="text-[24px] font-[500] text-white">
-                                            {walletBalance}
-                                            <span
-                                                class="text-[16px] opacity-[0.5] font-[500] text-white mt-[-5px]"
-                                            >
-                                                sats
-                                            </span>
-                                        </p>
+                                <div class="max-w-[95vw]">
+                                    <Card classes="gap-[15px]">
+                                        <div
+                                            class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-linear-to-tl from-blue-500 to-blue-400 shadow-deep"
+                                        >
+                                            <div class="font-[500] text-white">
+                                                <p>Wallet</p>
+                                            </div>
+                                            <p class="text-[24px] font-[500] text-white">
+                                                {walletBalance}
+                                                <span
+                                                    class="text-[16px] opacity-[0.5] font-[500] text-white mt-[-5px]"
+                                                >
+                                                    sats
+                                                </span>
+                                            </p>
 
-                                        <i
-                                            class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]"
+                                            <!-- <i -->
+                                            <!--         class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]" -->
+                                            <!--     > -->
+                                            <!--     </i> -->
+                                        </div>
+                                        <PieChart dataset={mintBalances} />
+                                        <WithdrawEcash cashuWallet={$wallet} />
+                                        <DepositEcash cashuWallet={$wallet} />
+                                        <div
+                                            class="w-full flex flex-row justify-end overflow-hidden rounded-[6px] bg-black-100 dark:bg-white-100 border-[1px] border-black-200 dark:border-white-200"
                                         >
-                                        </i>
-                                    </div>
-                                    <PieChart dataset={mintBalances} />
-                                    <WithdrawEcash cashuWallet={$wallet} />
-                                    <DepositEcash cashuWallet={$wallet} />
-                                    <div
-                                        class="w-full flex flex-row justify-end overflow-hidden rounded-[6px] bg-black-100 dark:bg-white-100 border-[1px] border-black-200 dark:border-white-200"
-                                    >
-                                        <Button
-                                            variant="text"
-                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
-                                            grow
-                                            onClick={handleWalletBackup}
-                                        >
-                                            <i class="bx bx-download"> </i>
-                                            Backup
-                                        </Button>
-                                        <Button
-                                            variant="text"
-                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
-                                            grow
-                                            onClick={recoverWallet}
-                                        >
-                                            <i class="bx bx-upload"> </i>
-                                            Recover
-                                        </Button>
-                                        <Button
-                                            variant="text"
-                                            classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
-                                            grow
-                                            onClick={handleCleanWallet}
-                                        >
-                                            {#if cleaningWallet}
-                                                <ProgressRing color="white" />
-                                            {:else}
-                                                <i class="fa-solid fa-broom"></i>
-                                                Clean
-                                            {/if}
-                                        </Button>
-                                    </div>
-                                </Card>
+                                            <Button
+                                                variant="text"
+                                                classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
+                                                grow
+                                                onClick={handleWalletBackup}
+                                            >
+                                                <i class="bx bx-download"> </i>
+                                                Backup
+                                            </Button>
+                                            <Button
+                                                variant="text"
+                                                classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
+                                                grow
+                                                onClick={recoverWallet}
+                                            >
+                                                <i class="bx bx-upload"> </i>
+                                                Recover
+                                            </Button>
+                                            <Button
+                                                variant="text"
+                                                classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
+                                                grow
+                                                onClick={handleCleanWallet}
+                                            >
+                                                {#if cleaningWallet}
+                                                    <ProgressRing color="white" />
+                                                {:else}
+                                                    <i class="fa-solid fa-broom"></i>
+                                                    Clean
+                                                {/if}
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                </div>
                                 <!-- Wallet card end -->
                                 {#if $displayEcashWarning}
                                     <Card
