@@ -16,7 +16,7 @@
         maxCharacters = 100,
         expandText = 'Expand',
         collapseText = 'Collapse',
-        renderAsMarkdown = false,
+        renderAsMarkdown = true,
     }: Props = $props();
 
     let isExpanded = $state(false); // State to track if content is expanded
@@ -29,13 +29,13 @@
 </script>
 
 <div class="flex flex-col gap-[10px] font-[500] px-[10px] py-[10px]">
-    <p>
+    <div class="w-full wrap-normal overflow-hidden">
         {#if renderAsMarkdown}
             <Markdown content={textToDisplay} />
         {:else}
-            {textToDisplay}
+            <p class="wrap-anywhere">{textToDisplay}</p>
         {/if}
-    </p>
+    </div>
     {#if text.length > maxCharacters}
         <Button onClick={toggleExpand}>
             <p>{isExpanded ? collapseText : expandText}</p>
