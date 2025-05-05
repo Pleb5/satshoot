@@ -28,7 +28,7 @@
 <Navigation.Tile {href} padding="" rounded="rounded-[5px]" hover="">
     <button class={`${baseClasses} ${activeClass}`} onclick={handleClick}>
         {#if href}
-            <i class={`bx ${icon} relative`}>
+            <i class={`${icon} relative`}>
                 {#if href === '/notifications/' && $unReadNotifications.length > 0}
                     <span
                         class="absolute -top-3 -right-3 bg-[red] text-white font-bold rounded-full text-[11pt] min-w-[20px] h-[20px] p-[2px]"
@@ -38,7 +38,7 @@
                 {/if}
             </i>
         {:else}
-            <i class={`bx ${icon}`}></i>
+            <i class={`${icon}`}></i>
         {/if}
     </button>
 </Navigation.Tile>

@@ -1,9 +1,4 @@
-import {
-    type NDKUser,
-    type Hexpubkey,
-    type NDKEvent,
-    NDKKind,
-} from '@nostr-dev-kit/ndk';
+import { type NDKUser, type Hexpubkey, type NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
 import { derived, writable } from 'svelte/store';
 import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
@@ -11,6 +6,13 @@ import type { Writable } from 'svelte/store';
 import { filterValidPTags } from '../utils/misc';
 import { LoginMethod } from '$lib/stores/session';
 import { fetchEventFromRelaysFirst } from '../utils/misc';
+
+export enum UserMode {
+    Freelancer,
+    Client,
+}
+
+export const userMode: Writable<UserMode> = persisted<UserMode>('userMode', UserMode.Freelancer);
 
 export const loginAlert = writable(true);
 
@@ -31,20 +33,17 @@ export const currentUserFreelanceFollows = derived(
         const pubKeySet: Set<Hexpubkey> = new Set();
 
         if ($currentUser) {
-            const currentUserFollowEvent = $freelanceFollowsEvents.get(
-                $currentUser.pubkey
-            );
+            const currentUserFollowEvent = $freelanceFollowsEvents.get($currentUser.pubkey);
             if (currentUserFollowEvent) {
                 const follows = filterValidPTags(currentUserFollowEvent.tags);
-                follows.forEach((f) => pubKeySet.add(f))
+                follows.forEach((f) => pubKeySet.add(f));
             }
         }
         return pubKeySet;
     }
 );
 
-export const fetchFreelanceFollowEvent = async (pubkey: Hexpubkey)
-: Promise<NDKEvent | null> => {
+export const fetchFreelanceFollowEvent = async (pubkey: Hexpubkey): Promise<NDKEvent | null> => {
     const followEvent = await fetchEventFromRelaysFirst(
         {
             kinds: [NDKKind.KindScopedFollow],

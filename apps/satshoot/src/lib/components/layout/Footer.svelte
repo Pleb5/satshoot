@@ -1,21 +1,27 @@
 <script lang="ts">
     import { page } from '$app/state';
+    import { UserMode, userMode } from '$lib/stores/user';
     import BottomNavItem from './BottomNavItem.svelte';
 
-    const items = [
-        {
-            href: '/jobs/',
-            icon: 'bxs-briefcase',
-        },
+    const items = $derived([
+        $userMode === UserMode.Client
+            ? {
+                  href: '/services/',
+                  icon: 'fa-solid fa-laptop-code',
+              }
+            : {
+                  href: '/jobs/',
+                  icon: 'bx bxs-briefcase',
+              },
         {
             href: '/messages/',
-            icon: 'bxs-conversation',
+            icon: 'bx bxs-conversation',
         },
         {
             href: '/notifications/',
-            icon: 'bxs-bell',
+            icon: 'bx bxs-bell',
         },
-    ];
+    ]);
 </script>
 
 <div class="flex flex-col items-center max-sm:w-full">

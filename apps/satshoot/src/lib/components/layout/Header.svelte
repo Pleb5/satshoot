@@ -2,7 +2,13 @@
     import { Avatar } from '@skeletonlabs/skeleton-svelte';
 
     import LoginModal from '../Modals/LoginModal.svelte';
-    import currentUser, { loggedIn, loggingIn, loginMethod } from '$lib/stores/user';
+    import currentUser, {
+        loggedIn,
+        loggingIn,
+        loginMethod,
+        UserMode,
+        userMode,
+    } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
     import { getRoboHashPicture, logout } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
@@ -188,7 +194,11 @@
                                     </Button>
                                 </div>
 
-                                <Button href="/post-job/">Submit Job</Button>
+                                {#if $userMode === UserMode.Client}
+                                    <Button href="/post-job/">Submit Job</Button>
+                                {:else if $userMode === UserMode.Freelancer}
+                                    <Button href="/post-service/">Create Service</Button>
+                                {/if}
 
                                 <!-- User Avatar and trigger for user app menu  -->
                                 <button onclick={() => (showAppMenu = !showAppMenu)}>

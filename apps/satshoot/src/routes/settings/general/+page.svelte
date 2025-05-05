@@ -12,6 +12,7 @@
     import { hexToBytes } from '@noble/ciphers/utils';
 
     import { nsecEncode } from 'nostr-tools/nip19';
+    import { UserMode, userMode } from '$lib/stores/user';
 
     let showClearCacheModal = $state(false);
     let nsec = $state('');
@@ -80,6 +81,27 @@
             <label class="grow-1 font-[500]" for="toggle-dark-mode"> Theme </label>
 
             <LightSwitch />
+        </div>
+        <div class="w-full flex flex-row gap-[10px] items-center">
+            <label class="grow-1 font-[500]" for="user-mode-switch">User Mode</label>
+            <div
+                class="flex flex-row outline-[1px] outline-black-100 dark:outline-white-100 rounded-[6px]"
+            >
+                <Button
+                    variant={$userMode === UserMode.Freelancer ? 'contained' : 'text'}
+                    onClick={() => ($userMode = UserMode.Freelancer)}
+                    classes="grow "
+                >
+                    Freelancer
+                </Button>
+                <Button
+                    variant={$userMode === UserMode.Client ? 'contained' : 'text'}
+                    onClick={() => ($userMode = UserMode.Client)}
+                    classes="grow "
+                >
+                    Client
+                </Button>
+            </div>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
             <label class="grow-1 font-[500]" for="clear-cache-btn">Cache</label>

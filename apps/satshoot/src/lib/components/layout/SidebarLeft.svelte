@@ -2,21 +2,27 @@
     import { page } from '$app/state';
     import { Navigation } from '@skeletonlabs/skeleton-svelte';
     import BottomNavItem from './BottomNavItem.svelte';
+    import { UserMode, userMode } from '$lib/stores/user';
 
-    const items = [
-        {
-            href: '/jobs/',
-            icon: 'bxs-briefcase',
-        },
+    const items = $derived([
+        $userMode === UserMode.Client
+            ? {
+                  href: '/services/',
+                  icon: 'fa-solid fa-laptop-code',
+              }
+            : {
+                  href: '/jobs/',
+                  icon: 'bx bxs-briefcase',
+              },
         {
             href: '/messages/',
-            icon: 'bxs-conversation',
+            icon: 'bx bxs-conversation',
         },
         {
             href: '/notifications/',
-            icon: 'bxs-bell',
+            icon: 'bx bxs-bell',
         },
-    ];
+    ]);
 </script>
 
 <Navigation.Rail
