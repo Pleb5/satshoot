@@ -1,7 +1,7 @@
 <script lang="ts">
     import Button from '../UI/Buttons/Button.svelte';
     import ShareJobModal from '../Modals/ShareJobModal.svelte';
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import currentUser from '$lib/stores/user';
     import { clientReviews } from '$lib/stores/reviews';
     import { OfferEvent } from '$lib/events/OfferEvent';
@@ -17,7 +17,7 @@
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
 
     interface Props {
-        job: TicketEvent;
+        job: JobEvent;
     }
 
     let { job }: Props = $props();
@@ -38,7 +38,7 @@
     );
 
     const review = $derived(
-        $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress)
+        $clientReviews.find((review) => review.reviewedEventAddress === job.jobAddress)
     );
 
     const canReviewClient = $derived.by(() => {
@@ -81,7 +81,7 @@
         if (!winnerOffer) return;
 
         $paymentDetail = {
-            ticket: job,
+            job: job,
             offer: winnerOffer,
         };
 
@@ -90,7 +90,7 @@
 
     function selectChatPartner() {
         if ($currentUser && $currentUser.pubkey !== job.pubkey) {
-            $selectedPerson = job.pubkey + '$' + job.ticketAddress;
+            $selectedPerson = job.pubkey + '$' + job.jobAddress;
         } else if (job.winnerFreelancer) {
             $offerMakerToSelect = job.winnerFreelancer;
         }
@@ -115,21 +115,21 @@
             Share
         </Button>
 
-        {#if myJob && job.status === TicketStatus.New}
+        {#if myJob && job.status === JobStatus.New}
             <Button variant="outlined" classes={btnClasses} fullWidth onClick={handleEdit}>
                 <i class="bx bxs-edit-alt text-[20px]"></i>
                 <p class="">Edit</p>
             </Button>
         {/if}
 
-        {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
+        {#if myJob && (job.status === JobStatus.New || job.status === JobStatus.InProgress)}
             <Button variant="outlined" classes={btnClasses} fullWidth onClick={handleCloseJob}>
                 <i class="bx bxs-lock text-[20px]"></i>
                 <p class="">Close Job</p>
             </Button>
         {/if}
 
-        {#if myJob && job.status !== TicketStatus.New && winnerOffer}
+        {#if myJob && job.status !== JobStatus.New && winnerOffer}
             <Button variant="outlined" classes={btnClasses} fullWidth onClick={handlePay}>
                 <i class="bx bxs-bolt text-[20px]"></i>
                 <p class="">Pay</p>
@@ -167,7 +167,7 @@
 
 <CloseJobModal bind:isOpen={showCloseJobModal} {job} offer={winnerOffer} />
 
-<ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.ticketAddress} />
+<ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
 
 <PaymentModal bind:isOpen={showPaymentModal} />
 

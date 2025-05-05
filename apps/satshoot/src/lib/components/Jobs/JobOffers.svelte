@@ -1,11 +1,11 @@
 <script lang="ts">
     import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
-    import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
+    import { JobStatus, type JobEvent } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import {
-        createPaymentFilters, 
+        createPaymentFilters,
         createPaymentStore,
-        type PaymentStore 
+        type PaymentStore,
     } from '$lib/stores/payment';
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
     import { abbreviateNumber, insertThousandSeparator } from '$lib/utils/misc';
@@ -14,7 +14,7 @@
         NDKSubscriptionCacheUsage,
         NDKUser,
         type NDKFilter,
-        type NDKUserProfile 
+        type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import Card from '../UI/Card.svelte';
@@ -22,7 +22,7 @@
     import { onDestroy } from 'svelte';
 
     interface Props {
-        job: TicketEvent;
+        job: JobEvent;
     }
 
     let { job }: Props = $props();
@@ -47,39 +47,37 @@
         return '';
     });
 
-    let freelancerPaymentStore = $state<PaymentStore>()
+    let freelancerPaymentStore = $state<PaymentStore>();
 
     const jobWinner = $derived.by(() => {
         if (!job.winnerFreelancer) return null;
 
         const winner = $ndk.getUser({ pubkey: job.winnerFreelancer });
 
-        fetchJobWinnerProfile(winner)
+        fetchJobWinnerProfile(winner);
 
-        return winner
+        return winner;
     });
 
     let jobWinnerProfile = $state<NDKUserProfile | null>(null);
 
     const fetchJobWinnerProfile = async (winner: NDKUser) => {
-        const profile = await winner.fetchProfile(
-            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
-        );
+        const profile = await winner.fetchProfile({
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+        });
         jobWinnerProfile = profile;
-    }
+    };
 
     let freelancerName = $derived.by(() => {
         if (!jobWinnerProfile) return '?';
 
-        return jobWinnerProfile?.name
-            ?? jobWinner!.npub.substring(0, 8);
-
+        return jobWinnerProfile?.name ?? jobWinner!.npub.substring(0, 8);
     });
 
     let freelancerPaid = $derived.by(() => {
         if (!freelancerPaymentStore) return null;
 
-        return freelancerPaymentStore.totalPaid
+        return freelancerPaymentStore.totalPaid;
     });
 
     // Effect to fetch winning offer
@@ -89,39 +87,30 @@
 
     const init = async () => {
         if (job.acceptedOfferAddress) {
-            const offer = await $ndk.fetchEvent(
-                job.acceptedOfferAddress,
-                {
-                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-                }
-            )
+            const offer = await $ndk.fetchEvent(job.acceptedOfferAddress, {
+                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            });
 
-            console.log('Winning offer:', offer)
+            console.log('Winning offer:', offer);
             if (offer) {
                 winningOffer = OfferEvent.from(offer);
-                const freelancerFilters = createPaymentFilters(
-                    winningOffer,
-                    'freelancer'
-                );
+                const freelancerFilters = createPaymentFilters(winningOffer, 'freelancer');
                 freelancerPaymentStore = createPaymentStore(freelancerFilters);
                 freelancerPaymentStore.paymentStore.startSubscription();
             }
         }
-         
+
         const offersFilter: NDKFilter = {
             kinds: [NDKKind.FreelanceOffer],
-            '#a': [job.ticketAddress],
+            '#a': [job.jobAddress],
         };
 
-        const events = await $ndk.fetchEvents(
-            offersFilter,
-            {
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            }
-        );
+        const events = await $ndk.fetchEvents(offersFilter, {
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        });
 
         offers = Array.from(events).map((event) => OfferEvent.from(event));
-    }
+    };
 
     onDestroy(() => {
         freelancerPaymentStore?.paymentStore.empty();
@@ -140,7 +129,7 @@
             <p class="line-clamp-1 overflow-hidden {statusColor}">{statusString}</p>
         </div>
         <div class={boxWrapperClasses}>
-            <p class="font-[600]">{job.status === TicketStatus.New ? 'Pending ' : ''} Offers:</p>
+            <p class="font-[600]">{job.status === JobStatus.New ? 'Pending ' : ''} Offers:</p>
             <p class="line-clamp-1 overflow-hidden">
                 {insertThousandSeparator(offers.length)}
             </p>
@@ -185,11 +174,7 @@
 
                 <p class="line-clamp-1 overflow-hidden">
                     <span>
-                        {
-                            $freelancerPaid 
-                            ? abbreviateNumber($freelancerPaid)
-                            : '?'
-                        }
+                        {$freelancerPaid ? abbreviateNumber($freelancerPaid) : '?'}
                     </span>
                     <span>/</span>
                     <span>

@@ -1,18 +1,18 @@
-import type NDK from "@nostr-dev-kit/ndk";
-import { NDKEvent, type Hexpubkey, type NDKTag, type NostrEvent } from "@nostr-dev-kit/ndk";
-import { SatShootPubkey } from "$lib/utils/misc";
+import type NDK from '@nostr-dev-kit/ndk';
+import { NDKEvent, type Hexpubkey, type NDKTag, type NostrEvent } from '@nostr-dev-kit/ndk';
+import { SatShootPubkey } from '$lib/utils/misc';
 
-import { BOOTSTRAPOUTBOXRELAYS } from "$lib/stores/session";
+import { BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/session';
 
-import {nip19} from 'nostr-tools';
-import { NDKKind } from "@nostr-dev-kit/ndk";
+import { nip19 } from 'nostr-tools';
+import { NDKKind } from '@nostr-dev-kit/ndk';
 
-// Offer Status is implicitly set by the TicketEvent referenced by this offer's 'a' tag.
-// When ticket updates its 'a' tag, ALL offers statuses change that referenced this ticket
+// Offer Status is implicitly set by the JobEvent referenced by this offer's 'a' tag.
+// When job updates its 'a' tag, ALL offers statuses change that referenced this job
 export enum OfferStatus {
-    Pending = 0, // No 'a' tag present in TicketEvent
-    Won = 1, // TicketEvent references this event in its 'a' tag
-    Lost = 2, // TicketEvent references a different OfferEvent
+    Pending = 0, // No 'a' tag present in JobEvent
+    Won = 1, // JobEvent references this event in its 'a' tag
+    Lost = 2, // JobEvent references a different OfferEvent
 }
 
 export enum Pricing {
@@ -32,9 +32,9 @@ export class OfferEvent extends NDKEvent {
         super(ndk, rawEvent);
         this.kind ??= NDKKind.FreelanceOffer;
         this._pricing = parseInt(this.tagValue('pricing') ?? Pricing.Absolute.toString());
-        this._amount = parseInt(this.tagValue("amount") ?? '0');
-        this.tags.forEach((tag:NDKTag) => {
-            if (tag[0] === "zap") {
+        this._amount = parseInt(this.tagValue('amount') ?? '0');
+        this.tags.forEach((tag: NDKTag) => {
+            if (tag[0] === 'zap') {
                 // console.log('offer zap tag:', tag)
                 if (tag[1] === SatShootPubkey) {
                     this._pledgeSplit = parseInt(tag[3] ?? '0');
@@ -48,7 +48,7 @@ export class OfferEvent extends NDKEvent {
         });
     }
 
-    static from(event:NDKEvent){
+    static from(event: NDKEvent) {
         return new OfferEvent(event.ndk, event.rawEvent());
     }
 
@@ -58,17 +58,17 @@ export class OfferEvent extends NDKEvent {
 
     // this.generateTags() will take care of setting d-tag
 
-    get referencedTicketAddress(): string {
-        return this.tagValue("a") as string;
+    get referencedJobAddress(): string {
+        return this.tagValue('a') as string;
     }
 
-    set referencedTicketAddress(referencedTicketAddress: string) {
+    set referencedJobAddress(referencedJobAddress: string) {
         // Can only have exactly one accepted offer tag
         this.removeTag('a');
-        this.tags.push(['a', referencedTicketAddress]);
+        this.tags.push(['a', referencedJobAddress]);
     }
 
-    get referencedTicketDTag(): string | undefined {
+    get referencedJobDTag(): string | undefined {
         const aTag = this.tagValue('a');
         if (!aTag) return undefined;
 
@@ -107,13 +107,18 @@ export class OfferEvent extends NDKEvent {
             throw new Error(`Trying to set invalid zap split percentage: ${pledgeSplit} !`);
         }
         try {
-            nip19.npubEncode(freelancer)
+            nip19.npubEncode(freelancer);
         } catch {
             throw new Error(`Invalid Freelancer pubkey: ${freelancer}, cannot set zap splits!`);
         }
-        this.removeTag("zap");
+        this.removeTag('zap');
         this.tags.push(['zap', SatShootPubkey, BOOTSTRAPOUTBOXRELAYS[0], pledgeSplit.toString()]);
-        this.tags.push(['zap', freelancer, BOOTSTRAPOUTBOXRELAYS[0], (100 - pledgeSplit).toString()]);
+        this.tags.push([
+            'zap',
+            freelancer,
+            BOOTSTRAPOUTBOXRELAYS[0],
+            (100 - pledgeSplit).toString(),
+        ]);
         this._pledgeSplit = pledgeSplit;
     }
 

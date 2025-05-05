@@ -3,7 +3,7 @@
     import currentUser, { loggedIn, loggingIn } from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
 
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import type { NDKTag } from '@nostr-dev-kit/ndk';
 
     import { jobToEdit } from '$lib/stores/job-to-edit';
@@ -165,11 +165,11 @@
                 posting = true;
                 await tick();
 
-                const job = new TicketEvent($ndk);
+                const job = new JobEvent($ndk);
 
                 job.title = titleText;
                 job.description = descriptionText;
-                job.status = TicketStatus.New;
+                job.status = JobStatus.New;
                 tagList.forEach((tag) => {
                     job.tags.push(['t', tag]);
                 });

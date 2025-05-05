@@ -1,7 +1,7 @@
 <script lang="ts">
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
@@ -18,13 +18,13 @@
 
     interface Props {
         isOpen: boolean;
-        ticket: TicketEvent;
+        job: JobEvent;
         offerToEdit?: OfferEvent | undefined;
     }
 
-    let { isOpen = $bindable(), ticket, offerToEdit = undefined }: Props = $props();
+    let { isOpen = $bindable(), job, offerToEdit = undefined }: Props = $props();
 
-    const ticketAddress = ticket.ticketAddress;
+    const jobAddress = job.jobAddress;
 
     let validPledgePercent = $state(true);
     let pricingMethod: Pricing = $state(Pricing.Absolute);
@@ -71,7 +71,7 @@
         offer.setPledgeSplit(pledgeSplit, $currentUser!.pubkey);
         offer.description = description;
 
-        offer.referencedTicketAddress = ticketAddress as string;
+        offer.referencedJobAddress = jobAddress as string;
 
         // Only generate new d-tag if we are not editing an existing one
         if (!offerToEdit) {
@@ -89,21 +89,21 @@
             if (sendDm) {
                 const dm = new NDKEvent($ndk);
                 dm.kind = NDKKind.EncryptedDirectMessage;
-                dm.tags.push(['t', ticketAddress!]);
-                const ticketHolder = ticket.pubkey;
-                const ticketHolderUser = $ndk.getUser({ pubkey: ticketHolder });
+                dm.tags.push(['t', jobAddress!]);
+                const jobHolder = job.pubkey;
+                const jobHolderUser = $ndk.getUser({ pubkey: jobHolder });
 
-                if (!ticketHolder || !ticketHolderUser) {
-                    throw new Error('Could not identify Ticket Holder, sending DM failed!');
+                if (!jobHolder || !jobHolderUser) {
+                    throw new Error('Could not identify Job Holder, sending DM failed!');
                 }
 
-                dm.tags.push(['p', ticketHolder]);
+                dm.tags.push(['p', jobHolder]);
 
                 const content =
-                    `SatShoot Offer update on Ticket: ${ticket.title} | \n\n` +
+                    `SatShoot Offer update on Job: ${job.title} | \n\n` +
                     `Amount: ${offer.amount}${offer.pricing === Pricing.Absolute ? 'sats' : 'sats/min'} | \n` +
                     `Description: ${offer.description}`;
-                dm.content = await ($ndk.signer as NDKSigner).encrypt(ticketHolderUser, content);
+                dm.content = await ($ndk.signer as NDKSigner).encrypt(jobHolderUser, content);
 
                 await dm.publish();
             }

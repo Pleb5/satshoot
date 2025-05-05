@@ -1,5 +1,5 @@
 import type { OfferEvent } from '$lib/events/OfferEvent';
-import { TicketEvent } from '$lib/events/TicketEvent';
+import { JobEvent } from '$lib/events/JobEvent';
 import { derived, get, writable, type Readable } from 'svelte/store';
 import ndk from '$lib/stores/session';
 import {
@@ -19,7 +19,7 @@ export interface PaymentStore {
 }
 
 export const paymentDetail = writable<{
-    ticket: TicketEvent;
+    job: JobEvent;
     offer: OfferEvent;
 } | null>(null);
 
@@ -37,20 +37,20 @@ export const createPaymentFilters = (
             {
                 kinds: [NDKKind.Zap],
                 '#p': [SatShootPubkey],
-                '#a': [offer.referencedTicketAddress],
+                '#a': [offer.referencedJobAddress],
             },
             {
                 kinds: [NDKKind.Nutzap],
                 '#p': [SatShootPubkey],
-                '#a': [offer.referencedTicketAddress],
+                '#a': [offer.referencedJobAddress],
             },
         ];
     }
 };
 
 export interface PaymentStore {
-    paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>,
-    totalPaid: Readable<number>
+    paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
+    totalPaid: Readable<number>;
 }
 
 export const createPaymentStore = (filters: NDKFilter[]): PaymentStore => {

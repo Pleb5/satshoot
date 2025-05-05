@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
@@ -31,7 +31,7 @@
     let userProfile: NDKUserProfile | null;
     let decryptedDM = $state<string>();
     let messageLink = $state('');
-    const ticketAddress = notification.tagValue('t');
+    const jobAddress = notification.tagValue('t');
 
     onMount(async () => {
         userProfile = await user.fetchProfile();
@@ -56,15 +56,15 @@
             console.trace(e);
         }
 
-        if (ticketAddress) {
-            const event = await $ndk.fetchEvent(ticketAddress, {
+        if (jobAddress) {
+            const event = await $ndk.fetchEvent(jobAddress, {
                 groupable: true,
                 groupableDelay: 1000,
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             });
             if (event) {
-                const ticketEvent = TicketEvent.from(event);
-                messageLink = '/messages/' + ticketEvent.encode();
+                const jobEvent = JobEvent.from(event);
+                messageLink = '/messages/' + jobEvent.encode();
             }
             console.log('message link', messageLink);
         }
@@ -78,7 +78,7 @@
         if (!$readNotifications.has(notification.id)) {
             readNotifications.update((notifications) => notifications.add(notification.id));
         }
-        $selectedPerson = notification.pubkey + '$' + ticketAddress;
+        $selectedPerson = notification.pubkey + '$' + jobAddress;
         goto(messageLink);
     }}
 >

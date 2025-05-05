@@ -1,7 +1,7 @@
 <script lang="ts">
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import {
         aggregateClientRatings,
@@ -9,7 +9,7 @@
         clientReviews,
         freelancerReviews,
     } from '$lib/stores/reviews';
-    import {sessionInitialized } from '$lib/stores/session';
+    import { sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { averageToRatingText } from '$lib/utils/helpers';
     import { abbreviateNumber, SatShootPubkey } from '$lib/utils/misc';
@@ -42,50 +42,36 @@
     // Earnings
     const allEarningsFilter: NDKFilter = {
         kinds: [NDKKind.Zap, NDKKind.Nutzap],
-    }
-    const allEarningsStore = $ndk.storeSubscribe(
-        allEarningsFilter,
-        {
-            autoStart: false,
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL   
-        },
-    )
+    };
+    const allEarningsStore = $ndk.storeSubscribe(allEarningsFilter, {
+        autoStart: false,
+        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+    });
     let allEarnings = $derived(calculateTotalAmount(Array.from($allEarningsStore)));
 
     // Payments
     const allPaymentsFilter: NDKFilter = {
         kinds: [NDKKind.Zap, NDKKind.Nutzap],
-    }
-    const allPaymentsStore = $ndk.storeSubscribe(
-        allPaymentsFilter,
-        {
-            autoStart: false,
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL   
-        },
-    )
+    };
+    const allPaymentsStore = $ndk.storeSubscribe(allPaymentsFilter, {
+        autoStart: false,
+        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+    });
     let allPayments = $derived(calculateTotalAmount(Array.from($allPaymentsStore)));
 
     // Pledges
-    const involvedTicketEvents: TicketEvent[] = [];
+    const involvedJobEvents: JobEvent[] = [];
     const involvedOffers: OfferEvent[] = [];
 
     const allPledgesFilter: NDKFilter = {
         kinds: [NDKKind.Zap, NDKKind.Nutzap],
-    }
-    const allPledgesStore = $ndk.storeSubscribe(
-        allPledgesFilter,
-        {
-            autoStart: false,
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL   
-        },
-    )
+    };
+    const allPledgesStore = $ndk.storeSubscribe(allPledgesFilter, {
+        autoStart: false,
+        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+    });
     let allPledges = $derived(
-        calculatePledges(
-            $allPledgesStore,
-            involvedTicketEvents,
-            involvedOffers,
-            user
-        )
+        calculatePledges($allPledgesStore, involvedJobEvents, involvedOffers, user)
     );
 
     // Init
@@ -102,84 +88,82 @@
             // groupableDelay: 300,
             // The info we need here is most likely already in the cache
             // since this info is important to the notifications as well
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL
-        }
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+        };
 
         const winningOffersOfUser: string[] = [];
         const winningOffersForUser: string[] = [];
-        const involvedTickets: string[] = [];
+        const involvedJobs: string[] = [];
 
         // Earnings of target user, Clients filtered by CURRENT users wot
         const userOffers = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceOffer],
-                authors: [user]
+                authors: [user],
             },
             subOptions
         );
 
-        const allTicketsUserWon = await $ndk.fetchEvents(
+        const allJobsUserWon = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceTicket],
-                '#a': Array.from(userOffers).map(o => o.tagAddress())
+                kinds: [NDKKind.FreelanceJob],
+                '#a': Array.from(userOffers).map((o) => o.tagAddress()),
             },
             subOptions
         );
 
-        for (const wonTicket of allTicketsUserWon) {
-            const ticketEvent = TicketEvent.from(wonTicket);
-            if ($wot.has(ticketEvent.pubkey)) {
-                const offerOfTicket = Array.from(userOffers).find(
-                    o => o.tagAddress() === ticketEvent.acceptedOfferAddress
+        for (const wonJob of allJobsUserWon) {
+            const jobEvent = JobEvent.from(wonJob);
+            if ($wot.has(jobEvent.pubkey)) {
+                const offerOfJob = Array.from(userOffers).find(
+                    (o) => o.tagAddress() === jobEvent.acceptedOfferAddress
                 );
-                if (offerOfTicket) {
-                    involvedTickets.push(ticketEvent.ticketAddress)
-                    winningOffersOfUser.push(offerOfTicket.id)
+                if (offerOfJob) {
+                    involvedJobs.push(jobEvent.jobAddress);
+                    winningOffersOfUser.push(offerOfJob.id);
 
-                    involvedTicketEvents.push(ticketEvent);
-                    involvedOffers.push(OfferEvent.from(offerOfTicket))
+                    involvedJobEvents.push(jobEvent);
+                    involvedOffers.push(OfferEvent.from(offerOfJob));
                 } else {
-                    console.error("BUG: Offer for this ticket SHOULD be found")
+                    console.error('BUG: Offer for this job SHOULD be found');
                 }
             }
         }
 
-        allEarningsFilter['#p'] = [user], 
-        allEarningsFilter['#e'] = winningOffersOfUser;
+        (allEarningsFilter['#p'] = [user]), (allEarningsFilter['#e'] = winningOffersOfUser);
         allEarningsStore.startSubscription();
 
-
         // Payments of target user, Freelancers filtered by CURRENT users wot
-        const userTickets = await $ndk.fetchEvents(
+        const userJobs = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceTicket],
-                authors: [user]
+                kinds: [NDKKind.FreelanceJob],
+                authors: [user],
             },
             subOptions
         );
 
-        const allWinningOffersOnUserTickets = await $ndk.fetchEvents(
+        const allWinningOffersOnUserJobs = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceOffer],
-                '#a': Array.from(userTickets).map(t => t.tagAddress())
+                '#a': Array.from(userJobs).map((t) => t.tagAddress()),
             },
             subOptions
         );
 
-        for (const offer of allWinningOffersOnUserTickets) {
+        for (const offer of allWinningOffersOnUserJobs) {
             const offerEvent = OfferEvent.from(offer);
             if ($wot.has(offerEvent.pubkey)) {
-                const ticketOfOffer = Array.from(userTickets).find(
-                    t => t.tagAddress() === offerEvent.referencedTicketAddress
+                const jobOfOffer = Array.from(userJobs).find(
+                    (t) => t.tagAddress() === offerEvent.referencedJobAddress
                 );
-                if (ticketOfOffer) {
-                    involvedTickets.push(ticketOfOffer.tagAddress());
+                if (jobOfOffer) {
+                    involvedJobs.push(jobOfOffer.tagAddress());
                     winningOffersForUser.push(offerEvent.id);
 
-                    involvedTicketEvents.push(TicketEvent.from(ticketOfOffer));
-                    involvedOffers.push(offerEvent)
+                    involvedJobEvents.push(JobEvent.from(jobOfOffer));
+                    involvedOffers.push(offerEvent);
                 } else {
-                    console.error("BUG: Ticket for this offer SHOULD be found")
+                    console.error('BUG: Job for this offer SHOULD be found');
                 }
             }
         }
@@ -189,18 +173,18 @@
 
         // Pledges of target user, both as a Freelancer and as a Client,
         // Counterparties in both cases filtered by CURRENT users wot
-        allPledgesFilter['#a'] = involvedTickets;
-        allPledgesFilter['#p'] = [SatShootPubkey]
+        allPledgesFilter['#a'] = involvedJobs;
+        allPledgesFilter['#p'] = [SatShootPubkey];
         allPledgesStore.startSubscription();
 
         initInProgress = false;
-    }
+    };
 
     onDestroy(() => {
         allEarningsStore.empty();
         allPaymentsStore.empty();
         allPledgesStore.empty();
-    })
+    });
 
     // Derived review data
     const clientAverage = $derived(aggregateClientRatings(user).average);
@@ -223,27 +207,16 @@
               : calculateOverallAverage(clientAverage, freelancerAverage)
     );
 
-    const {
-        ratingConsensus, 
-        ratingColor 
-    } = $derived(averageToRatingText(overallAverage));
+    const { ratingConsensus, ratingColor } = $derived(averageToRatingText(overallAverage));
 
-    const {
-        ratingConsensus: asClientRatingConsensus,
-        ratingColor: asClientRatingColor 
-    } = $derived(
+    const { ratingConsensus: asClientRatingConsensus, ratingColor: asClientRatingColor } = $derived(
         averageToRatingText(clientAverage)
     );
 
-    const {
-        ratingConsensus: asFreelancerRatingConsensus,
-        ratingColor: asFreelancerRatingColor 
-    } =
+    const { ratingConsensus: asFreelancerRatingConsensus, ratingColor: asFreelancerRatingColor } =
         $derived(averageToRatingText(freelancerAverage));
 
-    function calculateOverallAverage(
-        clientAverage: number, freelancerAverage: number
-    ): number {
+    function calculateOverallAverage(clientAverage: number, freelancerAverage: number): number {
         if (!isNaN(clientAverage) && !isNaN(freelancerAverage)) {
             return (clientAverage + freelancerAverage) / 2;
         } else if (isNaN(clientAverage) && !isNaN(freelancerAverage)) {
@@ -272,20 +245,19 @@
         }, 0);
     }
 
-
     /**
      * Calculates the total pledges for a user by processing a list of NDK events (zaps or nutzaps).
-     * It sums up the user's share of pledges based on their role (client or freelancer) in the associated tickets and offers.
+     * It sums up the user's share of pledges based on their role (client or freelancer) in the associated jobs and offers.
      *
      * @param events - An array of NDKEvent objects representing zaps or nutzaps.
-     * @param tickets - An array of TicketEvent objects representing tickets.
+     * @param jobs - An array of JobEvent objects representing jobs.
      * @param offers - An array of OfferEvent objects representing offers.
      * @param user - The hexpubkey of the user for whom the pledges are being calculated.
      * @returns The total amount of pledges (in sats) that the user is entitled to.
      */
     function calculatePledges(
         events: NDKEvent[],
-        tickets: TicketEvent[],
+        jobs: JobEvent[],
         offers: OfferEvent[],
         user: Hexpubkey
     ): number {
@@ -293,11 +265,11 @@
             // Calculate the total amount of the zap/nutzap in sats
             const pledgeSum = calculatePledgeSum(zap);
             if (pledgeSum > 0) {
-                // Find the associated ticket and offer for the zap/nutzap
-                const { ticket, offer } = getTicketAndOffer(zap, tickets, offers);
-                if (ticket && offer) {
+                // Find the associated job and offer for the zap/nutzap
+                const { job, offer } = getJobAndOffer(zap, jobs, offers);
+                if (job && offer) {
                     // Calculate the user's share of the pledge based on their role
-                    const userShare = calculateUserShare(pledgeSum, ticket, offer, user);
+                    const userShare = calculateUserShare(pledgeSum, job, offer, user);
                     return total + userShare;
                 }
             }
@@ -325,37 +297,37 @@
     }
 
     /**
-     * Finds the ticket and offer associated with a zap/nutzap event.
+     * Finds the job and offer associated with a zap/nutzap event.
      *
      * @param zap - An NDKEvent object representing a zap or nutzap.
-     * @param tickets - An array of TicketEvent objects representing tickets.
+     * @param jobs - An array of JobEvent objects representing jobs.
      * @param offers - An array of OfferEvent objects representing offers.
-     * @returns An object containing the associated ticket and offer, or undefined if not found.
+     * @returns An object containing the associated job and offer, or undefined if not found.
      */
-    function getTicketAndOffer(
+    function getJobAndOffer(
         zap: NDKEvent,
-        tickets: TicketEvent[],
+        jobs: JobEvent[],
         offers: OfferEvent[]
-    ): { ticket: TicketEvent | undefined; offer: OfferEvent | undefined } {
-        // Find the ticket associated with the zap/nutzap using the 'a' tag
-        const ticket = tickets.find((t) => t.ticketAddress === zap.tagValue('a'));
-        // Find the offer associated with the ticket's accepted offer address
-        const offer = offers.find((o) => o.offerAddress === ticket?.acceptedOfferAddress);
-        return { ticket, offer };
+    ): { job: JobEvent | undefined; offer: OfferEvent | undefined } {
+        // Find the job associated with the zap/nutzap using the 'a' tag
+        const job = jobs.find((t) => t.jobAddress === zap.tagValue('a'));
+        // Find the offer associated with the job's accepted offer address
+        const offer = offers.find((o) => o.offerAddress === job?.acceptedOfferAddress);
+        return { job, offer };
     }
 
     /**
      * Calculates the user's share of a pledge based on their role (client or freelancer).
      *
      * @param pledgeSum - The total amount of the pledge in sats.
-     * @param ticket - The TicketEvent object associated with the pledge.
+     * @param job - The JobEvent object associated with the pledge.
      * @param offer - The OfferEvent object associated with the pledge.
      * @param user - The hexpubkey of the user for whom the share is being calculated.
      * @returns The user's share of the pledge in sats.
      */
     function calculateUserShare(
         pledgeSum: number,
-        ticket: TicketEvent,
+        job: JobEvent,
         offer: OfferEvent,
         user: Hexpubkey
     ): number {
@@ -363,9 +335,7 @@
         const absolutePledgeSplit = Math.round((offer.pledgeSplit / 100) * pledgeSum);
         // If the user is the client, they get the remaining amount after the freelancer's split
         // If the user is the freelancer, they get the pledge split
-        return ticket.pubkey === user ?
-            pledgeSum - absolutePledgeSplit :
-            absolutePledgeSplit;
+        return job.pubkey === user ? pledgeSum - absolutePledgeSplit : absolutePledgeSplit;
     }
 
     let financialItems = $derived([
@@ -423,7 +393,7 @@
                 <div class="font-bold">Total Earnings:</div>
                 {#if initInProgress}
                     <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-                {:else} 
+                {:else}
                     <p class="font-[500]">
                         <span class="font-[300]">
                             {abbreviateNumber(allEarnings) + ' sats'}
@@ -449,7 +419,7 @@
                 <div class="font-bold">Total Payments:</div>
                 {#if initInProgress}
                     <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-                {:else} 
+                {:else}
                     <p class="font-[500]">
                         <span class="font-[300]">
                             {abbreviateNumber(allPayments) + ' sats'}
@@ -463,7 +433,7 @@
             <div class="font-bold">Total Pledges:</div>
             {#if initInProgress}
                 <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-            {:else} 
+            {:else}
                 <p class="font-[500]">
                     <span class="font-[300]">
                         {abbreviateNumber(allPledges) + ' sats'}
@@ -520,8 +490,10 @@
                             {label}
                         </p>
                         {#if initInProgress}
-                            <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-                        {:else} 
+                            <div
+                                class="placeholder bg-primary-300-600-token animate-pulse w-12"
+                            ></div>
+                        {:else}
                             <p class="group-hover:text-white">
                                 {abbreviateNumber(amount) + ' sats'}
                             </p>

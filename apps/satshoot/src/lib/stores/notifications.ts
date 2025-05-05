@@ -4,7 +4,7 @@ import { derived, writable } from 'svelte/store';
 import { getSetSerializer } from '$lib//utils/misc';
 import { get } from 'svelte/store';
 import { type NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
-import { TicketEvent } from '$lib/events/TicketEvent';
+import { JobEvent } from '$lib/events/JobEvent';
 import { OfferEvent } from '$lib/events/OfferEvent';
 import { ReviewEvent } from '$lib/events/ReviewEvent';
 import currentUser from './user';
@@ -12,7 +12,10 @@ import currentUser from './user';
 import { getActiveServiceWorker, orderEventsChronologically } from '$lib/utils/helpers';
 import { goto } from '$app/navigation';
 
-export const browserNotificationsEnabled: Writable<boolean> = persisted('browserNotificationsEnabled', true);
+export const browserNotificationsEnabled: Writable<boolean> = persisted(
+    'browserNotificationsEnabled',
+    true
+);
 
 export const serviceWorkerRegistrationFailed = persisted('serviceWorkerRegFailed', false);
 
@@ -33,17 +36,17 @@ export const unReadNotifications = derived(
 
 export const jobNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-        return notification.kind === NDKKind.FreelanceTicket;
+        return notification.kind === NDKKind.FreelanceJob;
     });
 
-    const tickets: TicketEvent[] = [];
+    const jobs: JobEvent[] = [];
     filteredEvents.forEach((t: NDKEvent) => {
-        tickets.push(TicketEvent.from(t));
+        jobs.push(JobEvent.from(t));
     });
 
-    orderEventsChronologically(tickets);
+    orderEventsChronologically(jobs);
 
-    return tickets;
+    return jobs;
 });
 
 export const offerNotifications = derived([notifications], ([$notifications]) => {
@@ -126,8 +129,8 @@ export async function sendNotification(event: NDKEvent) {
 
         const $readNotifications = get(readNotifications);
         // Browser notifications are disabled or the notification is already read
-        if(!get(browserNotificationsEnabled) || $readNotifications.has(event.id)) {
-            return
+        if (!get(browserNotificationsEnabled) || $readNotifications.has(event.id)) {
+            return;
         }
 
         let title = '';
@@ -135,12 +138,12 @@ export async function sendNotification(event: NDKEvent) {
         let tag = '';
         const icon = '/satshoot.svg';
 
-        // The Ticket of our _Offer_ was updated
-        if (event.kind === NDKKind.FreelanceTicket) {
+        // The Job of our _Offer_ was updated
+        if (event.kind === NDKKind.FreelanceJob) {
             title = 'Update!';
             body = '🔔 Check your Notifications!';
-            tag = NDKKind.FreelanceTicket.toString();
-            // The Offer on our _Ticket_ was updated
+            tag = NDKKind.FreelanceJob.toString();
+            // The Offer on our _Job_ was updated
         } else if (event.kind === NDKKind.FreelanceOffer) {
             title = 'Update!';
             body = '🔔 Check your Notifications!';

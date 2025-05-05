@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
     import Button from '../UI/Buttons/Button.svelte';
@@ -17,7 +17,7 @@
     }
 
     interface Props {
-        job: TicketEvent;
+        job: JobEvent;
         showOffersDetail?: boolean;
     }
 
@@ -32,11 +32,11 @@
 
     // Effect to check for offers when needed
     $effect(() => {
-        if (!showOffersDetail || job?.status !== TicketStatus.New) return;
+        if (!showOffersDetail || job?.status !== JobStatus.New) return;
 
         const offersFilter: NDKFilter = {
             kinds: [NDKKind.FreelanceOffer],
-            '#a': [job.ticketAddress],
+            '#a': [job.jobAddress],
         };
 
         $ndk.fetchEvents(offersFilter, {

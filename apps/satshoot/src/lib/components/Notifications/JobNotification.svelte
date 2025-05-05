@@ -4,7 +4,7 @@
 
     import { onMount } from 'svelte';
 
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
@@ -13,7 +13,7 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
     interface Props {
-        notification: TicketEvent;
+        notification: JobEvent;
     }
 
     let { notification }: Props = $props();
@@ -58,7 +58,7 @@
             <a href={'/' + user.npub}>
                 <p>{userName}</p>
             </a>
-            {#if notification.status === TicketStatus.New}
+            {#if notification.status === JobStatus.New}
                 <div class="flex flex-row gap-[5px] flex-wrap">
                     <p>Has posted a new job:</p>
 

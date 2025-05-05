@@ -6,16 +6,11 @@ import currentUser from '$lib/stores/user';
 import {
     type ClientRating,
     type FreelancerRating,
-    ReviewEvent, 
+    ReviewEvent,
     ReviewType,
-
 } from '$lib/events/ReviewEvent';
 
-import {
-    NDKKind,
-    type Hexpubkey,
-    type NDKFilter,
-} from '@nostr-dev-kit/ndk';
+import { NDKKind, type Hexpubkey, type NDKFilter } from '@nostr-dev-kit/ndk';
 
 import { orderEventsChronologically } from '$lib/utils/helpers';
 
@@ -29,7 +24,7 @@ export const allReviewsFilter: NDKFilter<NDKKind.Review> = {
     '#L': ['qts/freelancing'],
 };
 
-// export const reviewsOnMyTicketsFilter: NDKFilter<NDKKind.Review> = {
+// export const reviewsOnMyJobsFilter: NDKFilter<NDKKind.Review> = {
 //     kinds: [NDKKind.Review],
 //     '#L': ['qts/freelancing'],
 //     authors: [],
@@ -43,40 +38,28 @@ export const allReviewsFilter: NDKFilter<NDKKind.Review> = {
 //     '#a': [],
 // };
 
-export const allReviews = get(ndk).storeSubscribe(
-    allReviewsFilter,
-    subOptions,
-    ReviewEvent
-);
+export const allReviews = get(ndk).storeSubscribe(allReviewsFilter, subOptions, ReviewEvent);
 
-export const clientReviews = derived(
-    [wot, allReviews],
-    ([$wot, $allReviews]) => {
-        const reviews = $allReviews.filter((r: ReviewEvent) => {
-            return (r.type === ReviewType.Client && $wot.has(r.pubkey))
-        });
+export const clientReviews = derived([wot, allReviews], ([$wot, $allReviews]) => {
+    const reviews = $allReviews.filter((r: ReviewEvent) => {
+        return r.type === ReviewType.Client && $wot.has(r.pubkey);
+    });
 
-        orderEventsChronologically(reviews);
-        return reviews;
-    }
-);
+    orderEventsChronologically(reviews);
+    return reviews;
+});
 
-export const freelancerReviews = derived(
-    [wot, allReviews],
-    ([$wot, $allReviews]) => {
-        // console.log('review arrived', get(allReviews))
-        const reviews = $allReviews.filter((r: ReviewEvent) => {
-            return (r.type === ReviewType.Freelancer && $wot.has(r.pubkey))
-        });
+export const freelancerReviews = derived([wot, allReviews], ([$wot, $allReviews]) => {
+    // console.log('review arrived', get(allReviews))
+    const reviews = $allReviews.filter((r: ReviewEvent) => {
+        return r.type === ReviewType.Freelancer && $wot.has(r.pubkey);
+    });
 
-        orderEventsChronologically(reviews);
-        return reviews;
+    orderEventsChronologically(reviews);
+    return reviews;
+});
 
-    }
-);
-
-export function userClientRatings(source: Hexpubkey, target: Hexpubkey):
-    Array<ClientRating> {
+export function userClientRatings(source: Hexpubkey, target: Hexpubkey): Array<ClientRating> {
     const ratings: Array<ClientRating> = [];
 
     get(clientReviews).forEach((r: ReviewEvent) => {
@@ -85,11 +68,13 @@ export function userClientRatings(source: Hexpubkey, target: Hexpubkey):
         }
     });
 
-    return ratings
+    return ratings;
 }
 
-export function userFreelancerRatings(source: Hexpubkey, target: Hexpubkey):
-    Array<FreelancerRating> {
+export function userFreelancerRatings(
+    source: Hexpubkey,
+    target: Hexpubkey
+): Array<FreelancerRating> {
     const ratings: Array<FreelancerRating> = [];
 
     get(freelancerReviews).forEach((r: ReviewEvent) => {
@@ -98,48 +83,45 @@ export function userFreelancerRatings(source: Hexpubkey, target: Hexpubkey):
         }
     });
 
-    return ratings
+    return ratings;
 }
 
 export interface AggregatedClientRatings {
-    type: 'client',
-    thumbsUp: number,
-    thumbsDown: number,
-    availability: number,
-    communication: number,
-    average: number,
+    type: 'client';
+    thumbsUp: number;
+    thumbsDown: number;
+    availability: number;
+    communication: number;
+    average: number;
 }
 
 export interface AggregatedFreelancerRatings {
-    type: 'freelancer',
-    success: number,
-    failure: number,
-    expertise: number,
-    availability: number,
-    communication: number,
-    average: number,
+    type: 'freelancer';
+    success: number;
+    failure: number;
+    expertise: number;
+    availability: number;
+    communication: number;
+    average: number;
 }
 
-// We only return the first review that actually refers to a ticket
-function filterDuplicateReviewsOnSameDeal(reviews: ReviewEvent[])
-    : ReviewEvent[] {
+// We only return the first review that actually refers to a job
+function filterDuplicateReviewsOnSameDeal(reviews: ReviewEvent[]): ReviewEvent[] {
     const filteredReviews = Array.from(
-        reviews.reduce(
-            (map: Map<string, ReviewEvent>, r: ReviewEvent) => {
+        reviews
+            .reduce((map: Map<string, ReviewEvent>, r: ReviewEvent) => {
                 if (r.reviewedEventAddress) {
-                    map.set(r.reviewedEventAddress, r)
+                    map.set(r.reviewedEventAddress, r);
                 }
                 return map;
-            }
-            , new Map<string, ReviewEvent>()
-        ).values()
+            }, new Map<string, ReviewEvent>())
+            .values()
     );
 
     return filteredReviews;
 }
 
-export function aggregateClientRatings(target: Hexpubkey)
-    : AggregatedClientRatings {
+export function aggregateClientRatings(target: Hexpubkey): AggregatedClientRatings {
     const reviewsOnClient = get(clientReviews).filter((r: ReviewEvent) => {
         return r.reviewedPerson === target;
     });
@@ -190,8 +172,7 @@ export function aggregateClientRatings(target: Hexpubkey)
     return aggregateClientRatings;
 }
 
-export function aggregateFreelancerRatings(target: Hexpubkey)
-    : AggregatedFreelancerRatings {
+export function aggregateFreelancerRatings(target: Hexpubkey): AggregatedFreelancerRatings {
     const reviewsOnFreelancer = get(freelancerReviews).filter((r: ReviewEvent) => {
         return r.reviewedPerson === target;
     });

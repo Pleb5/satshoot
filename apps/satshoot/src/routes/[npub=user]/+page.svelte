@@ -7,7 +7,7 @@
     import Card from '$lib/components/UI/Card.svelte';
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import { jobFilter, offerFilter, scrollToMyJobsAndMyOffers } from '$lib/stores/gui';
     import ndk from '$lib/stores/session';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
@@ -38,9 +38,9 @@
     };
 
     const allJobsFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceTicket],
+        kinds: [NDKKind.FreelanceJob],
     };
-    const allJobsOfUser = $ndk.storeSubscribe<TicketEvent>(allJobsFilter, subOptions, TicketEvent);
+    const allJobsOfUser = $ndk.storeSubscribe<JobEvent>(allJobsFilter, subOptions, JobEvent);
 
     const allOffersFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceOffer],
@@ -52,14 +52,14 @@
     );
 
     const dTagOfJobs = $derived(
-        $allOffersOfUser.map((offer) => offer.referencedTicketAddress.split(':')[2])
+        $allOffersOfUser.map((offer) => offer.referencedJobAddress.split(':')[2])
     );
 
     // jobs on which user has made offers
     const appliedJobsFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceTicket],
+        kinds: [NDKKind.FreelanceJob],
     };
-    const appliedJobs = $ndk.storeSubscribe<TicketEvent>(
+    const appliedJobs = $ndk.storeSubscribe<JobEvent>(
         appliedJobsFilter,
         {
             autoStart: false,
@@ -67,11 +67,11 @@
             groupable: true,
             groupableDelay: 1000,
         },
-        TicketEvent
+        JobEvent
     );
 
     // Track debounced jobs
-    let debouncedUserJobs = $state<TicketEvent[]>([]);
+    let debouncedUserJobs = $state<JobEvent[]>([]);
     let debouncedJobsTimer: NodeJS.Timeout | null = null; // Not reactive state
 
     // Track debounced jobs
@@ -131,9 +131,9 @@
             const { status } = job;
 
             return (
-                (isNew && status === TicketStatus.New) ||
-                (inProgress && status === TicketStatus.InProgress) ||
-                (closed && (status === TicketStatus.Resolved || status === TicketStatus.Failed))
+                (isNew && status === JobStatus.New) ||
+                (inProgress && status === JobStatus.InProgress) ||
+                (closed && (status === JobStatus.Resolved || status === JobStatus.Failed))
             );
         });
 
@@ -145,7 +145,7 @@
     });
 
     // filter based on search terms
-    function filterJobs(jobs: TicketEvent[], searchTerm: string): TicketEvent[] {
+    function filterJobs(jobs: JobEvent[], searchTerm: string): JobEvent[] {
         const fuse = new Fuse(jobs, {
             isCaseSensitive: false,
             shouldSort: true, // Whether to sort the result list, by score
@@ -182,9 +182,7 @@
         orderEventsChronologically(copied);
 
         copied = copied.filter((offer) => {
-            const job = $appliedJobs?.find(
-                (job) => job.ticketAddress === offer.referencedTicketAddress
-            );
+            const job = $appliedJobs?.find((job) => job.jobAddress === offer.referencedJobAddress);
 
             const offerStatus = job
                 ? job.acceptedOfferAddress

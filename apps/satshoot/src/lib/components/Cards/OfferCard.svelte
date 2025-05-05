@@ -1,14 +1,20 @@
 <script lang="ts">
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk from '$lib/stores/session';
     import { createPaymentFilters, createPaymentStore, paymentDetail } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import { NDKKind, NDKSubscriptionCacheUsage, NDKUser, type NDKFilter, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import {
+        NDKKind,
+        NDKSubscriptionCacheUsage,
+        NDKUser,
+        type NDKFilter,
+        type NDKUserProfile,
+    } from '@nostr-dev-kit/ndk';
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import { nip19 } from 'nostr-tools';
     import { onDestroy } from 'svelte';
@@ -56,15 +62,15 @@
 
     let freelancerPaid = $derived(freelancerPaymentStore.totalPaid);
     let satshootPaid = $derived.by(() => {
-        console.log('total paid: ', satshootPaymentStore.totalPaid)
+        console.log('total paid: ', satshootPaymentStore.totalPaid);
         return satshootPaymentStore.totalPaid;
     });
 
-    const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
-        kinds: [NDKKind.FreelanceTicket],
-        '#d': [offer.referencedTicketAddress.split(':')[2]],
+    const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
+        kinds: [NDKKind.FreelanceJob],
+        '#d': [offer.referencedJobAddress.split(':')[2]],
     };
-    const jobStore = $ndk.storeSubscribe<TicketEvent>(
+    const jobStore = $ndk.storeSubscribe<JobEvent>(
         jobFilter,
         {
             autoStart: false,
@@ -72,17 +78,14 @@
             groupable: true,
             groupableDelay: 1000,
         },
-        TicketEvent
+        JobEvent
     );
 
     const job = $derived.by(() => {
         return $jobStore[0] ?? null;
     });
 
-    const winner = $derived(
-        !!job
-        && job.acceptedOfferAddress === offer.offerAddress
-    );
+    const winner = $derived(!!job && job.acceptedOfferAddress === offer.offerAddress);
 
     const { status, statusColor } = $derived.by(() => {
         if (!job)
@@ -108,11 +111,7 @@
         return '';
     });
 
-    const myJob = $derived(
-        !!$currentUser
-        && !!job 
-        && $currentUser.pubkey === job.pubkey
-    );
+    const myJob = $derived(!!$currentUser && !!job && $currentUser.pubkey === job.pubkey);
 
     const showPaymentButton = $derived(myJob && winner);
 
@@ -128,33 +127,34 @@
     let jobPosterProfile = $state<NDKUserProfile | null>(null);
 
     const fetchJobPosterProfile = async (poster: NDKUser) => {
-        const profile = await poster.fetchProfile(
-            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
-        );
+        const profile = await poster.fetchProfile({
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+        });
         jobPosterProfile = profile;
-    }
+    };
 
     const jobPoster = $derived.by(() => {
         if (!job) return null;
 
-        const user = $ndk.getUser({ pubkey: job.pubkey })
+        const user = $ndk.getUser({ pubkey: job.pubkey });
         fetchJobPosterProfile(user);
         return user;
     });
 
     let jobPosterImage = $derived.by(() => {
-        if (!jobPosterProfile) return ''
+        if (!jobPosterProfile) return '';
 
-        return jobPosterProfile?.picture
-            ?? jobPosterProfile?.image
-            ?? getRoboHashPicture(jobPoster!.pubkey);
+        return (
+            jobPosterProfile?.picture ??
+            jobPosterProfile?.image ??
+            getRoboHashPicture(jobPoster!.pubkey)
+        );
     });
 
     let jobPosterName = $derived.by(() => {
         if (!jobPosterProfile) return '?';
 
-        return jobPosterProfile?.name
-            ?? jobPoster!.npub.substring(0, 8);
+        return jobPosterProfile?.name ?? jobPoster!.npub.substring(0, 8);
     });
 
     $effect(() => {
@@ -184,7 +184,7 @@
     function handlePay() {
         // TODO: this should be a prop once skeleton is migrated
         $paymentDetail = {
-            ticket: job!,
+            job: job!,
             offer,
         };
 
@@ -297,7 +297,7 @@
     <div
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
     >
-        {#if myJob && job && job.status === TicketStatus.New}
+        {#if myJob && job && job.status === JobStatus.New}
             <Button onClick={takeOffer}>Take offer</Button>
         {/if}
 

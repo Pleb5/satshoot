@@ -9,7 +9,7 @@
 
     // Data models
     import { OfferEvent } from '$lib/events/OfferEvent';
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
 
     // Store imports
     import ndk, { sessionInitialized } from '$lib/stores/session';
@@ -22,7 +22,7 @@
     // Types and interfaces
     interface ConversationData {
         users: NDKUser[];
-        jobs: TicketEvent[];
+        jobs: JobEvent[];
         loading: boolean;
         error: string | null;
     }
@@ -80,7 +80,7 @@
     async function fetchClientConversations() {
         const jobEvents = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceTicket],
+                kinds: [NDKKind.FreelanceJob],
                 authors: [$currentUser!.pubkey],
             },
             defaultFetchOptions
@@ -93,10 +93,10 @@
         }
 
         const users: NDKUser[] = [];
-        const jobs: TicketEvent[] = [];
+        const jobs: JobEvent[] = [];
 
         jobEvents.forEach((jobEvent: NDKEvent) => {
-            const job = TicketEvent.from(jobEvent);
+            const job = JobEvent.from(jobEvent);
             if (job.acceptedOfferAddress && job.winnerFreelancer) {
                 const user = $ndk.getUser({ pubkey: job.winnerFreelancer });
                 users.push(user);
@@ -130,14 +130,14 @@
             return;
         }
 
-        // Collect ticket DTags to fetch all related jobs in one request
+        // Collect job DTags to fetch all related jobs in one request
         const jobsToFetch: string[] = [];
         const offerMap = new Map<string, OfferEvent>();
 
         for (const offerEvent of offers) {
             const offer = OfferEvent.from(offerEvent);
-            if (offer.referencedTicketDTag) {
-                jobsToFetch.push(offer.referencedTicketDTag);
+            if (offer.referencedJobDTag) {
+                jobsToFetch.push(offer.referencedJobDTag);
                 offerMap.set(offer.offerAddress, offer);
             }
         }
@@ -145,17 +145,17 @@
         // Fetch all related jobs
         const jobEvents = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceTicket],
+                kinds: [NDKKind.FreelanceJob],
                 '#d': jobsToFetch,
             },
             { ...defaultFetchOptions, groupableDelay: 800 }
         );
 
         const users: NDKUser[] = [];
-        const jobs: TicketEvent[] = [];
+        const jobs: JobEvent[] = [];
 
         jobEvents.forEach((jobEvent: NDKEvent) => {
-            const job = TicketEvent.from(jobEvent);
+            const job = JobEvent.from(jobEvent);
             if (job.acceptedOfferAddress && offerMap.has(job.acceptedOfferAddress)) {
                 const user = $ndk.getUser({ pubkey: job.pubkey });
                 users.push(user);
@@ -210,7 +210,7 @@
                                             <ChatHead
                                                 {searchQuery}
                                                 {user}
-                                                ticket={conversationData.jobs[i]}
+                                                job={conversationData.jobs[i]}
                                             />
                                         {/each}
                                     {:else if noConversations}
@@ -237,7 +237,7 @@
                                             <ChatHead
                                                 {searchQuery}
                                                 {user}
-                                                ticket={conversationData.jobs[i]}
+                                                job={conversationData.jobs[i]}
                                             />
                                         {/each}
                                     {:else if noConversations}

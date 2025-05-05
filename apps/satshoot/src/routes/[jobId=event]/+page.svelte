@@ -8,7 +8,7 @@
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
     import currentUser, { loggedIn } from '$lib/stores/user';
@@ -40,7 +40,7 @@
 
     // Component state
     let jobSubscription = $state<NDKSubscription>();
-    let jobPost = $state<TicketEvent>();
+    let jobPost = $state<JobEvent>();
 
     const offersFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceOffer],
@@ -84,9 +84,7 @@
 
     let showLoginModal = $state(false);
     let showCreateOfferModal = $state(false);
-    let createOfferModalProps = $state<{ ticket: TicketEvent; offerToEdit?: OfferEvent } | null>(
-        null
-    );
+    let createOfferModalProps = $state<{ job: JobEvent; offerToEdit?: OfferEvent } | null>(null);
 
     const myJob = $derived(!!$currentUser && !!jobPost && $currentUser.pubkey === jobPost.pubkey);
 
@@ -97,7 +95,7 @@
                 disallowCreateOfferReason: '',
             };
 
-        if (jobPost.status === TicketStatus.New) {
+        if (jobPost.status === JobStatus.New) {
             return {
                 allowCreateOffer: true,
                 disallowCreateOfferReason: '',
@@ -145,12 +143,12 @@
     const btnActionText = $derived(offerToEdit ? 'Edit Your Offer' : 'Create Offer');
 
     const pendingOffers = $derived.by(() => {
-        if (!filteredOffers.length || !jobPost || jobPost.status !== TicketStatus.New) return [];
+        if (!filteredOffers.length || !jobPost || jobPost.status !== JobStatus.New) return [];
         return filteredOffers;
     });
 
     const lostOffers = $derived.by(() => {
-        if (!filteredOffers.length || !jobPost || jobPost.status === TicketStatus.New) return [];
+        if (!filteredOffers.length || !jobPost || jobPost.status === JobStatus.New) return [];
         return filteredOffers.filter(
             (offer) => offer.offerAddress !== jobPost?.acceptedOfferAddress
         );
@@ -172,32 +170,32 @@
                 }
             });
 
-            // Subscribe to ticket events
+            // Subscribe to job events
             const dTag = idFromNaddr(naddr).split(':')[2];
-            const ticketFilter: NDKFilter = {
-                kinds: [NDKKind.FreelanceTicket],
+            const jobFilter: NDKFilter = {
+                kinds: [NDKKind.FreelanceJob],
                 '#d': [dTag],
             };
 
-            jobSubscription = $ndk.subscribe(ticketFilter, jobSubOptions);
-            jobSubscription.on('event', handleTicketEvent);
+            jobSubscription = $ndk.subscribe(jobFilter, jobSubOptions);
+            jobSubscription.on('event', handleJobEvent);
         }
     });
 
-    function handleTicketEvent(event: NDKEvent) {
-        const arrivedTicket = TicketEvent.from(event);
+    function handleJobEvent(event: NDKEvent) {
+        const arrivedJob = JobEvent.from(event);
 
         if (!alreadySubscribedToOffers) {
             alreadySubscribedToOffers = true;
-            offersFilter['#a'] = [arrivedTicket.ticketAddress];
+            offersFilter['#a'] = [arrivedJob.jobAddress];
             offerStore.startSubscription();
         }
-        // Skip older tickets
-        if (jobPost && arrivedTicket.created_at! < jobPost.created_at!) {
+        // Skip older jobs
+        if (jobPost && arrivedJob.created_at! < jobPost.created_at!) {
             return;
         }
 
-        jobPost = arrivedTicket;
+        jobPost = arrivedJob;
     }
 
     let pageTop = $state<HTMLDivElement>();
@@ -224,7 +222,7 @@
         }
 
         createOfferModalProps = {
-            ticket: jobPost,
+            job: jobPost,
             offerToEdit: offer,
         };
         showCreateOfferModal = true;

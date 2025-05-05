@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewEvent, type FreelancerRating } from '$lib/events/ReviewEvent';
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import { paymentDetail } from '$lib/stores/payment';
 
@@ -17,7 +17,7 @@
 
     interface Props {
         isOpen: boolean;
-        job: TicketEvent;
+        job: JobEvent;
         offer?: OfferEvent | null;
     }
 
@@ -42,11 +42,11 @@
 
     async function closeJob() {
         if (job) {
-            const jobToPublish = new TicketEvent($ndk);
+            const jobToPublish = new JobEvent($ndk);
             jobToPublish.tags = job.tags;
             jobToPublish.description = job.description;
             // Important part! This also sets status to in progress
-            jobToPublish.status = isIssueResolved ? TicketStatus.Resolved : TicketStatus.Failed;
+            jobToPublish.status = isIssueResolved ? JobStatus.Resolved : JobStatus.Failed;
 
             try {
                 closing = true;
@@ -82,7 +82,7 @@
 
                 if (offer) {
                     $paymentDetail = {
-                        ticket: job,
+                        job: job,
                         offer,
                     };
 

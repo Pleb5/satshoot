@@ -19,7 +19,7 @@
     import { nip19 } from 'nostr-tools';
     import ReputationCard from './ReputationCard.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
-    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import type { JobEvent } from '$lib/events/JobEvent';
     import { selectedPerson } from '$lib/stores/messages';
     import ShareModal from '../Modals/ShareModal.svelte';
     import Card from '../UI/Card.svelte';
@@ -42,7 +42,7 @@
 
     interface Props {
         user: NDKUser;
-        job?: TicketEvent | undefined;
+        job?: JobEvent | undefined;
     }
 
     let { user, job = undefined }: Props = $props();
@@ -126,7 +126,7 @@
             const deleteEvent = new NDKEvent($ndk);
             deleteEvent.kind = NDKKind.EventDeletion;
             deleteEvent.tag(['e', followEvent.id]);
-            deleteEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
+            deleteEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
             deleteEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
             deleteEvent.publish();
         }
@@ -136,7 +136,7 @@
         newFollowEvent.kind ??= NDKKind.KindScopedFollow;
         newFollowEvent.tags = followEvent ? followEvent.tags : [];
         newFollowEvent.tag(['p', user.pubkey]);
-        newFollowEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
+        newFollowEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
         newFollowEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
 
         await newFollowEvent
@@ -174,7 +174,7 @@
         const deleteEvent = new NDKEvent($ndk);
         deleteEvent.kind = NDKKind.EventDeletion;
         deleteEvent.tag(['e', followEvent.id]);
-        deleteEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
+        deleteEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
         deleteEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
         deleteEvent.publish();
 
@@ -236,7 +236,7 @@
     }
 
     function selectChatPartner() {
-        $selectedPerson = job!.pubkey + '$' + job!.ticketAddress;
+        $selectedPerson = job!.pubkey + '$' + job!.jobAddress;
     }
 
     function handleShare() {
