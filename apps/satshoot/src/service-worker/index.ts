@@ -58,7 +58,7 @@ async function openNotificationWindow(tag: string) {
     const urlToVisit = '/notifications/';
 
     const jobNotification = tag === NDKKind.FreelanceJob.toString();
-    const offerNotification = tag === NDKKind.FreelanceOffer.toString();
+    const bidNotification = tag === NDKKind.FreelanceBid.toString();
     const messageNotification = tag === NDKKind.EncryptedDirectMessage.toString();
     const reviewNotification = tag === NDKKind.Review.toString();
     const receivedZapNotification = tag === NDKKind.Zap.toString();
@@ -66,7 +66,7 @@ async function openNotificationWindow(tag: string) {
 
     if (
         !jobNotification &&
-        !offerNotification &&
+        !bidNotification &&
         !messageNotification &&
         !reviewNotification &&
         !receivedZapNotification &&

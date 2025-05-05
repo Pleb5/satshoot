@@ -186,12 +186,12 @@ export class ReviewEvent extends NDKEvent {
 
     set reviewedEventAddress(eventAddress: string) {
         const eventKind = parseInt(eventAddress.split(':')[0] as string);
-        if (eventKind === NDKKind.FreelanceOffer && this.type === ReviewType.Client) {
+        if (eventKind === NDKKind.FreelanceBid && this.type === ReviewType.Client) {
             throw new Error('Client reviews can only be given on Job events');
         }
 
         if (eventKind === NDKKind.FreelanceJob && this.type === ReviewType.Freelancer) {
-            throw new Error('Freelancer reviews can only be given on Offer events');
+            throw new Error('Freelancer reviews can only be given on Bid events');
         }
 
         this.removeTag('a');
@@ -203,7 +203,7 @@ export class ReviewEvent extends NDKEvent {
         if (!aTag) return this.kind;
         if (((aTag as string).split(':')[0] as number) === NDKKind.FreelanceJob) {
             return NDKKind.FreelanceJob;
-        } else return NDKKind.FreelanceOffer;
+        } else return NDKKind.FreelanceBid;
     }
 
     // Handle udnefined everywhere !!!

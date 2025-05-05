@@ -2,7 +2,7 @@
     import { page } from '$app/state';
     import { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
-    import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
+    import { bidMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { onDestroy, onMount } from 'svelte';
     import { Accordion } from '@skeletonlabs/skeleton-svelte';
     import { Avatar } from '@skeletonlabs/skeleton-svelte';
@@ -44,7 +44,7 @@
     const winnerPubkey = $derived(contactService.winnerPubkey);
     const job = $derived(jobService.job);
     const myJob = $derived(jobService.isOwner);
-    const offers = $derived(jobService.offers);
+    const bids = $derived(jobService.bids);
     // UI state - direct access to service properties
     const contactsOpen = $derived(uiService.contactsOpen);
     const disablePrompt = $derived(uiService.disablePrompt);
@@ -99,16 +99,16 @@
             contactService.addInitialContacts(
                 job.pubkey,
                 $currentUser.pubkey,
-                $offerMakerToSelect,
+                $bidMakerToSelect,
                 $selectedPerson
             );
         }
     });
 
     $effect(() => {
-        if (myJob && offers) {
-            const offerPubkeys = offers.map((offer: any) => offer.pubkey);
-            contactService.addPeopleFromPubkeys(offerPubkeys);
+        if (myJob && bids) {
+            const bidPubkeys = bids.map((bid: any) => bid.pubkey);
+            contactService.addPeopleFromPubkeys(bidPubkeys);
         }
     });
 
@@ -174,7 +174,7 @@
     onDestroy(() => {
         messageService.unsubscribe();
         jobService.unsubscribe();
-        offerMakerToSelect.set('');
+        bidMakerToSelect.set('');
     });
 
     // Function to navigate back

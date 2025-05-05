@@ -1,7 +1,7 @@
 <script lang="ts">
     import UserProfile from './UI/Display/UserProfile.svelte';
     import type { JobEvent } from '$lib/events/JobEvent';
-    import { offerMakerToSelect } from '$lib/stores/messages';
+    import { bidMakerToSelect } from '$lib/stores/messages';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { loggedIn } from '$lib/stores/user';
@@ -88,8 +88,8 @@
     $effect(() => {
         if (navigating) {
             if (navigating.to?.url.pathname === '/messages/' + naddr) {
-                if (job.acceptedOfferAddress) {
-                    $offerMakerToSelect = job.winnerFreelancer as string;
+                if (job.acceptedBidAddress) {
+                    $bidMakerToSelect = job.winnerFreelancer as string;
                 }
             }
         }

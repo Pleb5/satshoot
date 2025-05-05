@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
@@ -61,7 +61,7 @@
 
     // Pledges
     const involvedJobEvents: JobEvent[] = [];
-    const involvedOffers: OfferEvent[] = [];
+    const involvedBids: BidEvent[] = [];
 
     const allPledgesFilter: NDKFilter = {
         kinds: [NDKKind.Zap, NDKKind.Nutzap],
@@ -71,7 +71,7 @@
         cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
     });
     let allPledges = $derived(
-        calculatePledges($allPledgesStore, involvedJobEvents, involvedOffers, user)
+        calculatePledges($allPledgesStore, involvedJobEvents, involvedBids, user)
     );
 
     // Init
@@ -91,14 +91,14 @@
             cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
         };
 
-        const winningOffersOfUser: string[] = [];
-        const winningOffersForUser: string[] = [];
+        const winningBidsOfUser: string[] = [];
+        const winningBidsForUser: string[] = [];
         const involvedJobs: string[] = [];
 
         // Earnings of target user, Clients filtered by CURRENT users wot
-        const userOffers = await $ndk.fetchEvents(
+        const userBids = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceOffer],
+                kinds: [NDKKind.FreelanceBid],
                 authors: [user],
             },
             subOptions
@@ -107,7 +107,7 @@
         const allJobsUserWon = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceJob],
-                '#a': Array.from(userOffers).map((o) => o.tagAddress()),
+                '#a': Array.from(userBids).map((o) => o.tagAddress()),
             },
             subOptions
         );
@@ -115,22 +115,22 @@
         for (const wonJob of allJobsUserWon) {
             const jobEvent = JobEvent.from(wonJob);
             if ($wot.has(jobEvent.pubkey)) {
-                const offerOfJob = Array.from(userOffers).find(
-                    (o) => o.tagAddress() === jobEvent.acceptedOfferAddress
+                const bidOfJob = Array.from(userBids).find(
+                    (o) => o.tagAddress() === jobEvent.acceptedBidAddress
                 );
-                if (offerOfJob) {
+                if (bidOfJob) {
                     involvedJobs.push(jobEvent.jobAddress);
-                    winningOffersOfUser.push(offerOfJob.id);
+                    winningBidsOfUser.push(bidOfJob.id);
 
                     involvedJobEvents.push(jobEvent);
-                    involvedOffers.push(OfferEvent.from(offerOfJob));
+                    involvedBids.push(BidEvent.from(bidOfJob));
                 } else {
-                    console.error('BUG: Offer for this job SHOULD be found');
+                    console.error('BUG: Bid for this job SHOULD be found');
                 }
             }
         }
 
-        (allEarningsFilter['#p'] = [user]), (allEarningsFilter['#e'] = winningOffersOfUser);
+        (allEarningsFilter['#p'] = [user]), (allEarningsFilter['#e'] = winningBidsOfUser);
         allEarningsStore.startSubscription();
 
         // Payments of target user, Freelancers filtered by CURRENT users wot
@@ -142,33 +142,33 @@
             subOptions
         );
 
-        const allWinningOffersOnUserJobs = await $ndk.fetchEvents(
+        const allWinningBidsOnUserJobs = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceOffer],
+                kinds: [NDKKind.FreelanceBid],
                 '#a': Array.from(userJobs).map((t) => t.tagAddress()),
             },
             subOptions
         );
 
-        for (const offer of allWinningOffersOnUserJobs) {
-            const offerEvent = OfferEvent.from(offer);
-            if ($wot.has(offerEvent.pubkey)) {
-                const jobOfOffer = Array.from(userJobs).find(
-                    (t) => t.tagAddress() === offerEvent.referencedJobAddress
+        for (const bid of allWinningBidsOnUserJobs) {
+            const bidEvent = BidEvent.from(bid);
+            if ($wot.has(bidEvent.pubkey)) {
+                const jobOfBid = Array.from(userJobs).find(
+                    (t) => t.tagAddress() === bidEvent.referencedJobAddress
                 );
-                if (jobOfOffer) {
-                    involvedJobs.push(jobOfOffer.tagAddress());
-                    winningOffersForUser.push(offerEvent.id);
+                if (jobOfBid) {
+                    involvedJobs.push(jobOfBid.tagAddress());
+                    winningBidsForUser.push(bidEvent.id);
 
-                    involvedJobEvents.push(JobEvent.from(jobOfOffer));
-                    involvedOffers.push(offerEvent);
+                    involvedJobEvents.push(JobEvent.from(jobOfBid));
+                    involvedBids.push(bidEvent);
                 } else {
-                    console.error('BUG: Job for this offer SHOULD be found');
+                    console.error('BUG: Job for this bid SHOULD be found');
                 }
             }
         }
 
-        allPaymentsFilter['#e'] = winningOffersForUser;
+        allPaymentsFilter['#e'] = winningBidsForUser;
         allPaymentsStore.startSubscription();
 
         // Pledges of target user, both as a Freelancer and as a Client,
@@ -247,29 +247,29 @@
 
     /**
      * Calculates the total pledges for a user by processing a list of NDK events (zaps or nutzaps).
-     * It sums up the user's share of pledges based on their role (client or freelancer) in the associated jobs and offers.
+     * It sums up the user's share of pledges based on their role (client or freelancer) in the associated jobs and bids.
      *
      * @param events - An array of NDKEvent objects representing zaps or nutzaps.
      * @param jobs - An array of JobEvent objects representing jobs.
-     * @param offers - An array of OfferEvent objects representing offers.
+     * @param bids - An array of BidEvent objects representing bids.
      * @param user - The hexpubkey of the user for whom the pledges are being calculated.
      * @returns The total amount of pledges (in sats) that the user is entitled to.
      */
     function calculatePledges(
         events: NDKEvent[],
         jobs: JobEvent[],
-        offers: OfferEvent[],
+        bids: BidEvent[],
         user: Hexpubkey
     ): number {
         return events.reduce((total, zap) => {
             // Calculate the total amount of the zap/nutzap in sats
             const pledgeSum = calculatePledgeSum(zap);
             if (pledgeSum > 0) {
-                // Find the associated job and offer for the zap/nutzap
-                const { job, offer } = getJobAndOffer(zap, jobs, offers);
-                if (job && offer) {
+                // Find the associated job and bid for the zap/nutzap
+                const { job, bid } = getJobAndBid(zap, jobs, bids);
+                if (job && bid) {
                     // Calculate the user's share of the pledge based on their role
-                    const userShare = calculateUserShare(pledgeSum, job, offer, user);
+                    const userShare = calculateUserShare(pledgeSum, job, bid, user);
                     return total + userShare;
                 }
             }
@@ -297,23 +297,23 @@
     }
 
     /**
-     * Finds the job and offer associated with a zap/nutzap event.
+     * Finds the job and bid associated with a zap/nutzap event.
      *
      * @param zap - An NDKEvent object representing a zap or nutzap.
      * @param jobs - An array of JobEvent objects representing jobs.
-     * @param offers - An array of OfferEvent objects representing offers.
-     * @returns An object containing the associated job and offer, or undefined if not found.
+     * @param bids - An array of BidEvent objects representing bids.
+     * @returns An object containing the associated job and bid, or undefined if not found.
      */
-    function getJobAndOffer(
+    function getJobAndBid(
         zap: NDKEvent,
         jobs: JobEvent[],
-        offers: OfferEvent[]
-    ): { job: JobEvent | undefined; offer: OfferEvent | undefined } {
+        bids: BidEvent[]
+    ): { job: JobEvent | undefined; bid: BidEvent | undefined } {
         // Find the job associated with the zap/nutzap using the 'a' tag
         const job = jobs.find((t) => t.jobAddress === zap.tagValue('a'));
-        // Find the offer associated with the job's accepted offer address
-        const offer = offers.find((o) => o.offerAddress === job?.acceptedOfferAddress);
-        return { job, offer };
+        // Find the bid associated with the job's accepted bid address
+        const bid = bids.find((o) => o.bidAddress === job?.acceptedBidAddress);
+        return { job, bid };
     }
 
     /**
@@ -321,18 +321,18 @@
      *
      * @param pledgeSum - The total amount of the pledge in sats.
      * @param job - The JobEvent object associated with the pledge.
-     * @param offer - The OfferEvent object associated with the pledge.
+     * @param bid - The BidEvent object associated with the pledge.
      * @param user - The hexpubkey of the user for whom the share is being calculated.
      * @returns The user's share of the pledge in sats.
      */
     function calculateUserShare(
         pledgeSum: number,
         job: JobEvent,
-        offer: OfferEvent,
+        bid: BidEvent,
         user: Hexpubkey
     ): number {
-        // Calculate the absolute pledge split based on the offer's pledgeSplit percentage
-        const absolutePledgeSplit = Math.round((offer.pledgeSplit / 100) * pledgeSum);
+        // Calculate the absolute pledge split based on the bid's pledgeSplit percentage
+        const absolutePledgeSplit = Math.round((bid.pledgeSplit / 100) * pledgeSum);
         // If the user is the client, they get the remaining amount after the freelancer's split
         // If the user is the freelancer, they get the pledge split
         return job.pubkey === user ? pledgeSum - absolutePledgeSplit : absolutePledgeSplit;

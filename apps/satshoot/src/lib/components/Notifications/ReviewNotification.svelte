@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import { ReviewType, type ReviewEvent } from '$lib/events/ReviewEvent';
     import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
@@ -50,8 +50,8 @@
                 if (notification.type === ReviewType.Client) {
                     job = JobEvent.from(reviewedEvent);
                 } else {
-                    const offer = OfferEvent.from(reviewedEvent);
-                    const jobEvent = await $ndk.fetchEvent(offer.referencedJobAddress, {
+                    const bid = BidEvent.from(reviewedEvent);
+                    const jobEvent = await $ndk.fetchEvent(bid.referencedJobAddress, {
                         groupable: true,
                         groupableDelay: 1000,
                         cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,

@@ -30,19 +30,19 @@ export class JobEvent extends NDKEvent {
 
     // this.generateTags() will take care of setting d-tag
 
-    get acceptedOfferAddress(): string | undefined {
+    get acceptedBidAddress(): string | undefined {
         return this.tagValue('a');
     }
 
-    set acceptedOfferAddress(offerAddress: string) {
-        // Can only have exactly one accepted offer tag
+    set acceptedBidAddress(bidAddress: string) {
+        // Can only have exactly one accepted bid tag
         this.removeTag('a');
-        this.tags.push(['a', offerAddress]);
+        this.tags.push(['a', bidAddress]);
         this.status = JobStatus.InProgress;
     }
 
     get winnerFreelancer(): string | undefined {
-        return this.acceptedOfferAddress?.split(':')[1];
+        return this.acceptedBidAddress?.split(':')[1];
     }
 
     get title(): string {

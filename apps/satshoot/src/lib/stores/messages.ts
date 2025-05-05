@@ -55,5 +55,5 @@ export const wotFilteredMessageFeed = derived([messageStore, wot], ([$messageSto
     return feed;
 });
 
-export const offerMakerToSelect = writable<string>('');
+export const bidMakerToSelect = writable<string>('');
 export const selectedPerson = writable<string>('');

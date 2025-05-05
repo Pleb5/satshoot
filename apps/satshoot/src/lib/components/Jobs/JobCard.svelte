@@ -7,42 +7,42 @@
     import Author from './Author.svelte';
     import JobActions from './JobActions.svelte';
     import JobDetails from './JobDetails.svelte';
-    import JobOffers from './JobOffers.svelte';
+    import JobBids from './JobBids.svelte';
 
     enum Tabs {
         JobDescription,
         Author,
-        Offers,
+        Bids,
         Actions,
     }
 
     interface Props {
         job: JobEvent;
-        showOffersDetail?: boolean;
+        showBidsDetail?: boolean;
     }
 
-    let { job, showOffersDetail = false }: Props = $props();
+    let { job, showBidsDetail = false }: Props = $props();
 
     // Reactive state
-    let highlightOffersTab = $state(false);
+    let highlightBidsTab = $state(false);
     let selectedTab = $state(Tabs.JobDescription);
 
     // Derived state
     const bech32ID = $derived(job.encode());
 
-    // Effect to check for offers when needed
+    // Effect to check for bids when needed
     $effect(() => {
-        if (!showOffersDetail || job?.status !== JobStatus.New) return;
+        if (!showBidsDetail || job?.status !== JobStatus.New) return;
 
-        const offersFilter: NDKFilter = {
-            kinds: [NDKKind.FreelanceOffer],
+        const bidsFilter: NDKFilter = {
+            kinds: [NDKKind.FreelanceBid],
             '#a': [job.jobAddress],
         };
 
-        $ndk.fetchEvents(offersFilter, {
+        $ndk.fetchEvents(bidsFilter, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-        }).then((offers) => {
-            highlightOffersTab = offers.size > 0;
+        }).then((bids) => {
+            highlightBidsTab = bids.size > 0;
         });
     });
 
@@ -51,10 +51,10 @@
             icon: 'bxs-card',
             name: Tabs.JobDescription,
         },
-        showOffersDetail
+        showBidsDetail
             ? {
                   icon: 'bxs-info-circle',
-                  name: Tabs.Offers,
+                  name: Tabs.Bids,
               }
             : {
                   icon: 'bxs-user',
@@ -75,8 +75,8 @@
             <JobDetails title={job.title} description={job.description} {bech32ID} />
         {:else if selectedTab === Tabs.Author}
             <Author user={job.pubkey} />
-        {:else if selectedTab === Tabs.Offers}
-            <JobOffers {job} />
+        {:else if selectedTab === Tabs.Bids}
+            <JobBids {job} />
         {:else if selectedTab === Tabs.Actions}
             <JobActions {job} />
         {/if}
@@ -92,7 +92,7 @@
                     onClick={() => (selectedTab = tab.name)}
                 >
                     <i class={`bx ${tab.icon}`}></i>
-                    {#if tab.name === Tabs.Offers && highlightOffersTab}
+                    {#if tab.name === Tabs.Bids && highlightBidsTab}
                         <div
                             class="h-[4px] w-full max-w-[35px] rounded-[10px] absolute bottom-[2px] bg-red-400"
                         ></div>

@@ -13,7 +13,7 @@
     import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import { beforeNavigate } from '$app/navigation';
 
     interface Props {
@@ -54,8 +54,8 @@
                 if (review.type === ReviewType.Client) {
                     job = JobEvent.from(reviewedEvent);
                 } else {
-                    const offer = OfferEvent.from(reviewedEvent);
-                    const jobEvent = await $ndk.fetchEvent(offer.referencedJobAddress, {
+                    const bid = BidEvent.from(reviewedEvent);
+                    const jobEvent = await $ndk.fetchEvent(bid.referencedJobAddress, {
                         groupable: true,
                         groupableDelay: 1000,
                         cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { OfferEvent, Pricing } from '$lib/events/OfferEvent';
+    import { BidEvent, Pricing } from '$lib/events/BidEvent';
     import { JobStatus, type JobEvent } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import {
@@ -32,12 +32,12 @@
     const statusString = $derived(getJobStatusString(job.status));
     const statusColor = $derived(getJobStatusColor(job.status));
 
-    let offers = $state<OfferEvent[]>([]);
-    let winningOffer = $state<OfferEvent | null>(null);
+    let bids = $state<BidEvent[]>([]);
+    let winningBid = $state<BidEvent | null>(null);
 
     const pricing = $derived.by(() => {
-        if (winningOffer) {
-            switch (winningOffer.pricing) {
+        if (winningBid) {
+            switch (winningBid.pricing) {
                 case Pricing.Absolute:
                     return 'sats';
                 case Pricing.SatsPerMin:
@@ -80,36 +80,36 @@
         return freelancerPaymentStore.totalPaid;
     });
 
-    // Effect to fetch winning offer
+    // Effect to fetch winning bid
     $effect(() => {
         if ($sessionInitialized) init();
     });
 
     const init = async () => {
-        if (job.acceptedOfferAddress) {
-            const offer = await $ndk.fetchEvent(job.acceptedOfferAddress, {
+        if (job.acceptedBidAddress) {
+            const bid = await $ndk.fetchEvent(job.acceptedBidAddress, {
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             });
 
-            console.log('Winning offer:', offer);
-            if (offer) {
-                winningOffer = OfferEvent.from(offer);
-                const freelancerFilters = createPaymentFilters(winningOffer, 'freelancer');
+            console.log('Winning bid:', bid);
+            if (bid) {
+                winningBid = BidEvent.from(bid);
+                const freelancerFilters = createPaymentFilters(winningBid, 'freelancer');
                 freelancerPaymentStore = createPaymentStore(freelancerFilters);
                 freelancerPaymentStore.paymentStore.startSubscription();
             }
         }
 
-        const offersFilter: NDKFilter = {
-            kinds: [NDKKind.FreelanceOffer],
+        const bidsFilter: NDKFilter = {
+            kinds: [NDKKind.FreelanceBid],
             '#a': [job.jobAddress],
         };
 
-        const events = await $ndk.fetchEvents(offersFilter, {
+        const events = await $ndk.fetchEvents(bidsFilter, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         });
 
-        offers = Array.from(events).map((event) => OfferEvent.from(event));
+        bids = Array.from(events).map((event) => BidEvent.from(event));
     };
 
     onDestroy(() => {
@@ -129,9 +129,9 @@
             <p class="line-clamp-1 overflow-hidden {statusColor}">{statusString}</p>
         </div>
         <div class={boxWrapperClasses}>
-            <p class="font-[600]">{job.status === JobStatus.New ? 'Pending ' : ''} Offers:</p>
+            <p class="font-[600]">{job.status === JobStatus.New ? 'Pending ' : ''} Bids:</p>
             <p class="line-clamp-1 overflow-hidden">
-                {insertThousandSeparator(offers.length)}
+                {insertThousandSeparator(bids.length)}
             </p>
         </div>
         {#if jobWinner}
@@ -146,7 +146,7 @@
             </div>
         {/if}
 
-        {#if winningOffer}
+        {#if winningBid}
             <div class={boxWrapperClasses}>
                 <p class="font-[600]">
                     Payments
@@ -178,7 +178,7 @@
                     </span>
                     <span>/</span>
                     <span>
-                        {`${abbreviateNumber(winningOffer.amount)} ${pricing}`}
+                        {`${abbreviateNumber(winningBid.amount)} ${pricing}`}
                     </span>
                 </p>
             </div>

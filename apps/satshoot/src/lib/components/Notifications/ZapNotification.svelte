@@ -1,7 +1,7 @@
 <script lang="ts">
     import { run } from 'svelte/legacy';
 
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import ndk from '$lib/stores/session';
     import {
         NDKKind,
@@ -41,12 +41,12 @@
 
     let amount: number | null = $state(null);
 
-    let zappedOffer: OfferEvent | null = $state(null);
+    let zappedBid: BidEvent | null = $state(null);
     let job: JobEvent | null = $state(null);
 
     $effect(() => {
-        if (zappedOffer) {
-            const dTagOfJob = zappedOffer.referencedJobAddress.split(':')[2];
+        if (zappedBid) {
+            const dTagOfJob = zappedBid.referencedJobAddress.split(':')[2];
             const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
                 kinds: [NDKKind.FreelanceJob],
                 '#d': [dTagOfJob],
@@ -80,14 +80,14 @@
         if (zapInvoice) {
             // LN zap
             if (zapInvoice.zappedEvent) {
-                const offerEvent = await $ndk.fetchEvent(zapInvoice.zappedEvent, {
+                const bidEvent = await $ndk.fetchEvent(zapInvoice.zappedEvent, {
                     groupable: true,
                     groupableDelay: 1000,
                     cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
                 });
 
-                if (offerEvent) {
-                    zappedOffer = OfferEvent.from(offerEvent);
+                if (bidEvent) {
+                    zappedBid = BidEvent.from(bidEvent);
                 }
             }
 
@@ -100,15 +100,15 @@
             if (nutZapAmount) {
                 amount = Math.round(parseInt(nutZapAmount) / 1000);
             }
-            const zappedOfferID = notification.tagValue('e');
-            if (zappedOfferID) {
-                const offerEvent = await $ndk.fetchEvent(zappedOfferID, {
+            const zappedBidID = notification.tagValue('e');
+            if (zappedBidID) {
+                const bidEvent = await $ndk.fetchEvent(zappedBidID, {
                     groupable: true,
                     groupableDelay: 1000,
                     cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
                 });
-                if (offerEvent) {
-                    zappedOffer = OfferEvent.from(offerEvent);
+                if (bidEvent) {
+                    zappedBid = BidEvent.from(bidEvent);
                 }
             }
         }

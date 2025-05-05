@@ -36,8 +36,8 @@
   , these actions include:
 </p>
 <ul class="pl-5 list-disc text-sm">
-  <li>Posting a Job or an Offer</li>
-  <li>Taking Offers</li>
+  <li>Posting a Job or an Bid</li>
+  <li>Taking Bids</li>
   <li>Sending messages</li>
   <li>Creating reviews</li>
 </ul>

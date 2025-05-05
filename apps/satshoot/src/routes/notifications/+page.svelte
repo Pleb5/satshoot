@@ -1,11 +1,9 @@
 <script lang="ts">
-    import { run } from 'svelte/legacy';
-
     import FollowNotification from '$lib/components/Notifications/FollowNotification.svelte';
     import JobNotification from '$lib/components/Notifications/JobNotification.svelte';
     import MessageNotification from '$lib/components/Notifications/MessageNotification.svelte';
     import NotificationsList from '$lib/components/Notifications/NotificationsList.svelte';
-    import OfferNotification from '$lib/components/Notifications/OfferNotification.svelte';
+    import BidNotification from '$lib/components/Notifications/BidNotification.svelte';
     import ReviewNotification from '$lib/components/Notifications/ReviewNotification.svelte';
     import ZapNotification from '$lib/components/Notifications/ZapNotification.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
@@ -13,7 +11,7 @@
         followNotifications,
         messageNotifications,
         browserNotificationsEnabled,
-        offerNotifications,
+        bidNotifications,
         readNotifications,
         receivedZapsNotifications,
         reviewNotifications,
@@ -27,7 +25,7 @@
         Follows,
         Zaps,
         Jobs,
-        Offers,
+        Bids,
         Messages,
         Reviews,
     }
@@ -68,9 +66,9 @@
                     return notifications;
                 });
                 break;
-            case Tab.Offers:
+            case Tab.Bids:
                 readNotifications.update((notifications) => {
-                    $offerNotifications.forEach((notificationEvent) => {
+                    $bidNotifications.forEach((notificationEvent) => {
                         notifications.add(notificationEvent.id);
                     });
                     return notifications;
@@ -123,10 +121,10 @@
             ).length,
         },
         {
-            id: Tab.Offers,
-            label: 'Offers',
+            id: Tab.Bids,
+            label: 'Bids',
             icon: 'file',
-            notificationCount: $offerNotifications.filter(
+            notificationCount: $bidNotifications.filter(
                 (notification) => !$readNotifications.has(notification.id)
             ).length,
         },
@@ -173,10 +171,10 @@
                                 notifications={$jobNotifications}
                                 NotificationComponent={JobNotification}
                             />
-                        {:else if selectedTab === Tab.Offers}
+                        {:else if selectedTab === Tab.Bids}
                             <NotificationsList
-                                notifications={$offerNotifications}
-                                NotificationComponent={OfferNotification}
+                                notifications={$bidNotifications}
+                                NotificationComponent={BidNotification}
                             />
                         {:else if selectedTab === Tab.Messages}
                             <NotificationsList

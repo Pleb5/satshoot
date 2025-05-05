@@ -48,7 +48,7 @@ export class ContactService {
     addInitialContacts(
         jobPubkey: string,
         currentUserPubkey: string,
-        offerMakerToSelect: string,
+        bidMakerToSelect: string,
         selectedPersonString: string
     ) {
         const ndkInstance = get(ndk);
@@ -59,8 +59,8 @@ export class ContactService {
         }
 
         // If we have a specific person to select
-        if (offerMakerToSelect && offerMakerToSelect !== currentUserPubkey) {
-            const person = ndkInstance.getUser({ pubkey: offerMakerToSelect });
+        if (bidMakerToSelect && bidMakerToSelect !== currentUserPubkey) {
+            const person = ndkInstance.getUser({ pubkey: bidMakerToSelect });
             this.addPerson(person, true);
             this.currentPerson = person;
         } else if (selectedPersonString && selectedPersonString.split('$')[1] === this.jobAddress) {

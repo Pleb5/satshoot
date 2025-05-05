@@ -5,7 +5,7 @@ import { getSetSerializer } from '$lib//utils/misc';
 import { get } from 'svelte/store';
 import { type NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
 import { JobEvent } from '$lib/events/JobEvent';
-import { OfferEvent } from '$lib/events/OfferEvent';
+import { BidEvent } from '$lib/events/BidEvent';
 import { ReviewEvent } from '$lib/events/ReviewEvent';
 import currentUser from './user';
 
@@ -49,19 +49,19 @@ export const jobNotifications = derived([notifications], ([$notifications]) => {
     return jobs;
 });
 
-export const offerNotifications = derived([notifications], ([$notifications]) => {
+export const bidNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-        return notification.kind === NDKKind.FreelanceOffer;
+        return notification.kind === NDKKind.FreelanceBid;
     });
 
-    const offers: OfferEvent[] = [];
+    const bids: BidEvent[] = [];
     filteredEvents.forEach((o: NDKEvent) => {
-        offers.push(OfferEvent.from(o));
+        bids.push(BidEvent.from(o));
     });
 
-    orderEventsChronologically(offers);
+    orderEventsChronologically(bids);
 
-    return offers;
+    return bids;
 });
 
 export const messageNotifications = derived(
@@ -98,7 +98,7 @@ export const reviewNotifications = derived([notifications], ([$notifications]) =
 });
 
 export const receivedZapsNotifications = derived([notifications], ([$notifications]) => {
-    // Check for zap kinds and if zap has an 'a' tag referring to an Offer
+    // Check for zap kinds and if zap has an 'a' tag referring to an Bid
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
         return notification.kind === NDKKind.Zap || notification.kind === NDKKind.Nutzap;
     });
@@ -138,16 +138,16 @@ export async function sendNotification(event: NDKEvent) {
         let tag = '';
         const icon = '/satshoot.svg';
 
-        // The Job of our _Offer_ was updated
+        // The Job of our _Bid_ was updated
         if (event.kind === NDKKind.FreelanceJob) {
             title = 'Update!';
             body = '🔔 Check your Notifications!';
             tag = NDKKind.FreelanceJob.toString();
-            // The Offer on our _Job_ was updated
-        } else if (event.kind === NDKKind.FreelanceOffer) {
+            // The Bid on our _Job_ was updated
+        } else if (event.kind === NDKKind.FreelanceBid) {
             title = 'Update!';
             body = '🔔 Check your Notifications!';
-            tag = NDKKind.FreelanceOffer.toString();
+            tag = NDKKind.FreelanceBid.toString();
         } else if (event.kind === NDKKind.EncryptedDirectMessage) {
             title = 'New Message!';
             body = '🔔 Check your Notifications!';

@@ -1,13 +1,13 @@
 <script lang="ts">
     import { page } from '$app/state';
     import JobCard from '$lib/components/Cards/JobCard.svelte';
-    import OfferCard from '$lib/components/Cards/OfferCard.svelte';
+    import BidCard from '$lib/components/Cards/BidCard.svelte';
     import UserCard from '$lib/components/Cards/UserCard.svelte';
-    import CreateOfferModal from '$lib/components/Modals/CreateOfferModal.svelte';
+    import CreateBidModal from '$lib/components/Modals/CreateBidModal.svelte';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
@@ -28,7 +28,7 @@
     import { onDestroy, onMount } from 'svelte';
     import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
 
-    enum OfferTab {
+    enum BidTab {
         Pending,
         Won,
         Lost,
@@ -42,70 +42,69 @@
     let jobSubscription = $state<NDKSubscription>();
     let jobPost = $state<JobEvent>();
 
-    const offersFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceOffer],
+    const bidsFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceBid],
     };
-    const offerSubOptions: NDKSubscribeOptions = {
+    const bidSubOptions: NDKSubscribeOptions = {
         closeOnEose: false,
         autoStart: false,
     };
 
-    const offerStore = $ndk.storeSubscribe<OfferEvent>(offersFilter, offerSubOptions, OfferEvent);
+    const bidStore = $ndk.storeSubscribe<BidEvent>(bidsFilter, bidSubOptions, BidEvent);
 
-    let alreadySubscribedToOffers = $state(false);
-    let winningOffer = $derived.by(() => {
-        if (!jobPost?.acceptedOfferAddress || !filteredOffers.length) {
+    let alreadySubscribedToBids = $state(false);
+    let winningBid = $derived.by(() => {
+        if (!jobPost?.acceptedBidAddress || !filteredBids.length) {
             return null;
         }
 
-        // First check in filtered offers
-        const found = filteredOffers.find((o) => o.offerAddress === jobPost?.acceptedOfferAddress);
+        // First check in filtered bids
+        const found = filteredBids.find((o) => o.bidAddress === jobPost?.acceptedBidAddress);
         if (found) {
             return found;
         }
 
         // If not found, fetch it
-        $ndk.fetchEvent(jobPost.acceptedOfferAddress, {
+        $ndk.fetchEvent(jobPost.acceptedBidAddress, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         }).then((event) => {
             if (event) {
-                winningOffer = OfferEvent.from(event);
+                winningBid = BidEvent.from(event);
             }
         });
     });
 
-    let selectedOffersTab = $derived.by(() => {
-        if (winningOffer) {
-            return OfferTab.Won;
+    let selectedBidsTab = $derived.by(() => {
+        if (winningBid) {
+            return BidTab.Won;
         }
 
-        return OfferTab.Pending;
+        return BidTab.Pending;
     });
 
     let showLoginModal = $state(false);
-    let showCreateOfferModal = $state(false);
-    let createOfferModalProps = $state<{ job: JobEvent; offerToEdit?: OfferEvent } | null>(null);
+    let showCreateBidModal = $state(false);
+    let createBidModalProps = $state<{ job: JobEvent; bidToEdit?: BidEvent } | null>(null);
 
     const myJob = $derived(!!$currentUser && !!jobPost && $currentUser.pubkey === jobPost.pubkey);
 
-    const { allowCreateOffer, disallowCreateOfferReason } = $derived.by(() => {
+    const { allowCreateBid, disallowCreateBidReason } = $derived.by(() => {
         if (!jobPost)
             return {
-                allowCreateOffer: false,
-                disallowCreateOfferReason: '',
+                allowCreateBid: false,
+                disallowCreateBidReason: '',
             };
 
         if (jobPost.status === JobStatus.New) {
             return {
-                allowCreateOffer: true,
-                disallowCreateOfferReason: '',
+                allowCreateBid: true,
+                disallowCreateBidReason: '',
             };
         }
 
         return {
-            allowCreateOffer: false,
-            disallowCreateOfferReason:
-                "Job status not 'New' anymore!" + ' Cannot Create/Edit Offer!',
+            allowCreateBid: false,
+            disallowCreateBidReason: "Job status not 'New' anymore!" + ' Cannot Create/Edit Bid!',
         };
     });
 
@@ -115,43 +114,40 @@
         }
     });
 
-    // Derived offer data
-    const filteredOffers = $derived.by(() => {
-        if (!$offerStore) return [];
+    // Derived bid data
+    const filteredBids = $derived.by(() => {
+        if (!$bidStore) return [];
 
-        let offers: OfferEvent[] = [...$offerStore];
+        let bids: BidEvent[] = [...$bidStore];
 
-        // Filtering out offers not in the web of Trust
-        offers = offers.filter((offer: OfferEvent) => {
+        // Filtering out bids not in the web of Trust
+        bids = bids.filter((bid: BidEvent) => {
             return (
-                $wot.has(offer.pubkey) ||
-                (jobPost?.acceptedOfferAddress &&
-                    jobPost.acceptedOfferAddress === offer.offerAddress)
+                $wot.has(bid.pubkey) ||
+                (jobPost?.acceptedBidAddress && jobPost.acceptedBidAddress === bid.bidAddress)
             );
         });
-        orderEventsChronologically(offers);
+        orderEventsChronologically(bids);
 
-        return offers;
+        return bids;
     });
 
-    const offerToEdit = $derived.by(() => {
-        if (!filteredOffers.length || !$currentUser) return undefined;
+    const bidToEdit = $derived.by(() => {
+        if (!filteredBids.length || !$currentUser) return undefined;
 
-        return filteredOffers.find((offer) => offer.pubkey === $currentUser.pubkey);
+        return filteredBids.find((bid) => bid.pubkey === $currentUser.pubkey);
     });
 
-    const btnActionText = $derived(offerToEdit ? 'Edit Your Offer' : 'Create Offer');
+    const btnActionText = $derived(bidToEdit ? 'Edit Your Bid' : 'Create Bid');
 
-    const pendingOffers = $derived.by(() => {
-        if (!filteredOffers.length || !jobPost || jobPost.status !== JobStatus.New) return [];
-        return filteredOffers;
+    const pendingBids = $derived.by(() => {
+        if (!filteredBids.length || !jobPost || jobPost.status !== JobStatus.New) return [];
+        return filteredBids;
     });
 
-    const lostOffers = $derived.by(() => {
-        if (!filteredOffers.length || !jobPost || jobPost.status === JobStatus.New) return [];
-        return filteredOffers.filter(
-            (offer) => offer.offerAddress !== jobPost?.acceptedOfferAddress
-        );
+    const lostBids = $derived.by(() => {
+        if (!filteredBids.length || !jobPost || jobPost.status === JobStatus.New) return [];
+        return filteredBids.filter((bid) => bid.bidAddress !== jobPost?.acceptedBidAddress);
     });
 
     let initialized = $state(false);
@@ -185,10 +181,10 @@
     function handleJobEvent(event: NDKEvent) {
         const arrivedJob = JobEvent.from(event);
 
-        if (!alreadySubscribedToOffers) {
-            alreadySubscribedToOffers = true;
-            offersFilter['#a'] = [arrivedJob.jobAddress];
-            offerStore.startSubscription();
+        if (!alreadySubscribedToBids) {
+            alreadySubscribedToBids = true;
+            bidsFilter['#a'] = [arrivedJob.jobAddress];
+            bidStore.startSubscription();
         }
         // Skip older jobs
         if (jobPost && arrivedJob.created_at! < jobPost.created_at!) {
@@ -208,10 +204,10 @@
 
     onDestroy(() => {
         jobSubscription?.stop();
-        offerStore?.empty();
+        bidStore?.empty();
     });
 
-    async function createOffer(offer: OfferEvent | undefined) {
+    async function createBid(bid: BidEvent | undefined) {
         if (!jobPost) {
             toaster.error({
                 title: 'Job is not loaded yet!',
@@ -221,11 +217,11 @@
             return;
         }
 
-        createOfferModalProps = {
+        createBidModalProps = {
             job: jobPost,
-            offerToEdit: offer,
+            bidToEdit: bid,
         };
-        showCreateOfferModal = true;
+        showCreateBidModal = true;
     }
 
     function triggerLogin() {
@@ -233,9 +229,9 @@
     }
 
     const tabs = [
-        { id: OfferTab.Pending, label: 'Pending' },
-        { id: OfferTab.Won, label: 'Won' },
-        { id: OfferTab.Lost, label: 'Lost' },
+        { id: BidTab.Pending, label: 'Pending' },
+        { id: BidTab.Won, label: 'Won' },
+        { id: BidTab.Lost, label: 'Lost' },
     ];
 </script>
 
@@ -263,15 +259,15 @@
                                         </div>
                                     {/if}
 
-                                    {#if offerToEdit}
-                                        <OfferCard offer={offerToEdit} />
+                                    {#if bidToEdit}
+                                        <BidCard bid={bidToEdit} />
                                     {/if}
 
-                                    {#if allowCreateOffer}
+                                    {#if allowCreateBid}
                                         {#if $loggedIn}
                                             <div class="flex flex-row justify-center">
                                                 <Button
-                                                    onClick={() => createOffer(offerToEdit)}
+                                                    onClick={() => createBid(bidToEdit)}
                                                     classes="max-[768px]:grow-1"
                                                 >
                                                     {btnActionText}
@@ -283,7 +279,7 @@
                                                     onClick={triggerLogin}
                                                     classes="max-[768px]:grow-1"
                                                 >
-                                                    Login to make offer
+                                                    Login to make bid
                                                 </Button>
                                             </div>
                                         {/if}
@@ -294,7 +290,7 @@
                                             <p
                                                 class="font-[600] text-[18px] text-black-300 dark:text-white-300"
                                             >
-                                                {disallowCreateOfferReason}
+                                                {disallowCreateBidReason}
                                             </p>
                                         </div>
                                     {/if}
@@ -308,46 +304,41 @@
                                     <p
                                         class="font-[600] text-[24px] flex flex-row gap-[5px] items-center"
                                     >
-                                        Offers
+                                        Bids
                                         <span class="font-[400] text-[16px]"
-                                            >({insertThousandSeparator(
-                                                filteredOffers.length
-                                            )})</span
+                                            >({insertThousandSeparator(filteredBids.length)})</span
                                         >
                                     </p>
                                 </div>
 
                                 <!-- tabs start-->
                                 <div class="w-full flex flex-col gap-[10px]">
-                                    <TabSelector {tabs} bind:selectedTab={selectedOffersTab} />
+                                    <TabSelector {tabs} bind:selectedTab={selectedBidsTab} />
                                     <!-- tabs content start-->
                                     <div class="w-full flex flex-col">
-                                        {#if selectedOffersTab === OfferTab.Pending}
+                                        {#if selectedBidsTab === BidTab.Pending}
                                             <div class="w-full flex flex-col">
                                                 <div class="w-full flex flex-col gap-[15px]">
-                                                    <!-- Offer post start-->
-                                                    {#each pendingOffers as offer}
-                                                        <OfferCard {offer} />
+                                                    <!-- Bid post start-->
+                                                    {#each pendingBids as bid}
+                                                        <BidCard {bid} />
                                                     {/each}
                                                 </div>
                                             </div>
-                                        {:else if selectedOffersTab === OfferTab.Won}
-                                            {#if winningOffer}
+                                        {:else if selectedBidsTab === BidTab.Won}
+                                            {#if winningBid}
                                                 <div class="w-full flex flex-col">
                                                     <div class="w-full flex flex-col gap-[15px]">
-                                                        <OfferCard
-                                                            offer={winningOffer}
-                                                            showPayments
-                                                        />
+                                                        <BidCard bid={winningBid} showPayments />
                                                     </div>
                                                 </div>
                                             {/if}
                                         {:else}
                                             <div class="w-full flex flex-col">
                                                 <div class="w-full flex flex-col gap-[15px]">
-                                                    <!-- Offer post start-->
-                                                    {#each lostOffers as offer}
-                                                        <OfferCard {offer} />
+                                                    <!-- Bid post start-->
+                                                    {#each lostBids as bid}
+                                                        <BidCard {bid} />
                                                     {/each}
                                                 </div>
                                             </div>
@@ -397,6 +388,6 @@
 
 <LoginModal bind:isOpen={showLoginModal} />
 
-{#if createOfferModalProps}
-    <CreateOfferModal bind:isOpen={showCreateOfferModal} {...createOfferModalProps} />
+{#if createBidModalProps}
+    <CreateBidModal bind:isOpen={showCreateBidModal} {...createBidModalProps} />
 {/if}

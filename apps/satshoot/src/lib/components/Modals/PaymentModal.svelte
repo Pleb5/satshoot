@@ -2,7 +2,7 @@
     import { Popover } from '@skeletonlabs/skeleton-svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { JobEvent } from '$lib/events/JobEvent';
-    import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
+    import { Pricing, type BidEvent } from '$lib/events/BidEvent';
     import {
         createPaymentFilters,
         createPaymentStore,
@@ -83,11 +83,11 @@
 
     // TODO: As soon as Modals can take Props this needs to stop
     let job: JobEvent | undefined = $derived($paymentDetail?.job);
-    let offer: OfferEvent | undefined = $derived($paymentDetail?.offer);
+    let bid: BidEvent | undefined = $derived($paymentDetail?.bid);
 
     let paying = $state(false);
     let amount = $state(0);
-    let satshootShare = $derived(Math.floor((amount * (offer?.pledgeSplit ?? 0)) / 100));
+    let satshootShare = $derived(Math.floor((amount * (bid?.pledgeSplit ?? 0)) / 100));
 
     let freelancerShare = $derived(amount - satshootShare);
     let pledgedAmount = $state(0);
@@ -141,10 +141,10 @@
     let pricing = $state('');
 
     $effect(() => {
-        if (offer && $currentUser) {
-            fetchFreelancerCashuInfo(offer.pubkey);
+        if (bid && $currentUser) {
+            fetchFreelancerCashuInfo(bid.pubkey);
 
-            switch (offer.pricing) {
+            switch (bid.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';
                     break;
@@ -153,8 +153,8 @@
                     break;
             }
 
-            const freelancerFilters = createPaymentFilters(offer, 'freelancer');
-            const satshootFilters = createPaymentFilters(offer, 'satshoot');
+            const freelancerFilters = createPaymentFilters(bid, 'freelancer');
+            const satshootFilters = createPaymentFilters(bid, 'satshoot');
 
             freelancerPaymentStore = createPaymentStore(freelancerFilters);
             satshootPaymentStore = createPaymentStore(satshootFilters);
@@ -192,11 +192,11 @@
             if (freelancerShare > 0) {
                 await fetchPaymentInfo(
                     UserEnum.Freelancer,
-                    offer!.pubkey,
+                    bid!.pubkey,
                     freelancerShareMillisats,
                     zapRequestRelays,
                     invoices,
-                    offer!
+                    bid!
                 ).catch((err) => {
                     handleToast(
                         `An error occurred in fetching Freelancer's payment info: ${err.message || err}`,
@@ -308,7 +308,7 @@
 
             const freelancerPaymentPromise = processCashuPayment(
                 UserEnum.Freelancer,
-                offer!.pubkey,
+                bid!.pubkey,
                 freelancerShareMillisats
             );
 
@@ -388,7 +388,7 @@
             throw new Error(`No Mint with enough balance to complete the payment!`);
         }
 
-        // TODO: Could offer payment with multiple Mints with enough balance here
+        // TODO: Could bid payment with multiple Mints with enough balance here
         const mintPromises = freelancerCashuInfo.mints.map(async (mintUrl) => {
             const mint = new CashuMint(mintUrl);
             return mint
@@ -427,7 +427,7 @@
             .cashuPay({
                 ...freelancerCashuInfo,
                 mints,
-                target: userEnum === UserEnum.Freelancer ? offer! : job!,
+                target: userEnum === UserEnum.Freelancer ? bid! : job!,
                 recipientPubkey: pubkey,
                 amount: amountMillisats,
                 unit: 'msat',
@@ -448,14 +448,14 @@
         // NOTE: set target is not properly implemented in NDKNutzap,
         // so manually add reference tag
         // nutzapEvent.target = userEnum === UserEnum.Freelancer
-        //                  ? offer! : job;
+        //                  ? bid! : job;
 
         nutzapEvent.tags.push([
             'a',
-            userEnum === UserEnum.Freelancer ? offer!.offerAddress : job!.jobAddress,
+            userEnum === UserEnum.Freelancer ? bid!.bidAddress : job!.jobAddress,
         ]);
 
-        nutzapEvent.tags.push(['e', userEnum === UserEnum.Freelancer ? offer!.id : job!.id]);
+        nutzapEvent.tags.push(['e', userEnum === UserEnum.Freelancer ? bid!.id : job!.id]);
 
         nutzapEvent.recipientPubkey = pubkey;
 
@@ -523,9 +523,9 @@
     };
 
     async function initializePayment() {
-        if (!job || !offer) {
+        if (!job || !bid) {
             paying = false;
-            handleToast('Error: Could not find Job or Offer!', ToastType.Error);
+            handleToast('Error: Could not find Job or Bid!', ToastType.Error);
             return null;
         }
 
@@ -550,11 +550,11 @@
         amountMillisats: number,
         zapRequestRelays: Map<UserEnum, string[]>,
         invoices: Map<UserEnum, InvoiceDetails>,
-        event: JobEvent | OfferEvent
+        event: JobEvent | BidEvent
     ) {
         const zapConfig = await getZapConfiguration(pubkey);
         if (zapConfig) {
-            // Pledges zap the Job rather than the Offer
+            // Pledges zap the Job rather than the Bid
             const invoice = await generateInvoice(
                 event,
                 amountMillisats,
@@ -593,7 +593,7 @@
         // LN zapping (for now). LN payments are NOT handled by NDK we just use it
         // to fetch invoices and zap receipts
         const zapper = new NDKZapper(target, amount, 'msat', opts);
-        // const zapper = $ndk.zap(offer!, amount, opts);
+        // const zapper = $ndk.zap(bid!, amount, opts);
         const relays = await zapper.relays(receiver);
 
         const zapRequest = await generateZapRequest(
@@ -655,29 +655,29 @@
 </script>
 
 <ModalWrapper bind:isOpen title="Pay Freelancer">
-    {#if job && offer}
+    {#if job && bid}
         <div class="w-full flex flex-col">
             <!-- popups Share Job Post start -->
             <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
                 <div
                     class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 dark:border-white-100 p-[10px]"
                 >
-                    <UserProfile pubkey={offer.pubkey} />
+                    <UserProfile pubkey={bid.pubkey} />
                     <div
                         class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                     >
                         <div class="grow-1">
                             <p class="font-[500]">
-                                Offer cost:
+                                Bid cost:
                                 <span class="font-[300]">
-                                    {insertThousandSeparator(offer.amount) + ' ' + pricing}
+                                    {insertThousandSeparator(bid.amount) + ' ' + pricing}
                                 </span>
                             </p>
                         </div>
                         <div class="grow-1">
                             <p class="font-[500]">
                                 Pledge split:
-                                <span class="font-[300]"> {offer.pledgeSplit} %</span>
+                                <span class="font-[300]"> {bid.pledgeSplit} %</span>
                             </p>
                         </div>
                     </div>
@@ -839,6 +839,6 @@
             <!-- popups Share Job Post end -->
         </div>
     {:else}
-        <h2 class="h2 font-bold text-center text-error-300-600">Error: Job & Offer is missing!</h2>
+        <h2 class="h2 font-bold text-center text-error-300-600">Error: Job & Bid is missing!</h2>
     {/if}
 </ModalWrapper>
