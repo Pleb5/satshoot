@@ -1,135 +1,192 @@
 <script lang="ts">
+    // Core imports
+    import { onMount } from 'svelte';
+    import { page } from '$app/state';
+
+    // Component imports
     import ChatHead from '$lib/components/ChatHead.svelte';
+    import Card from '$lib/components/UI/Card.svelte';
+
+    // Data models
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { TicketEvent } from '$lib/events/TicketEvent';
-    import ndk from '$lib/stores/session';
-    import { checkRelayConnections } from '$lib/utils/helpers';
-    import currentUser, { loggedIn } from '$lib/stores/user';
-    import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from '@nostr-dev-kit/ndk';
-    import { onMount } from 'svelte';
-    import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
-    import Card from '$lib/components/UI/Card.svelte';
-    import { page } from '$app/stores';
-    import { sessionInitialized } from '$lib/stores/session';
 
-    enum ConversationType {
-        Freelancer = 0,
-        Client = 1,
+    // Store imports
+    import ndk, { sessionInitialized } from '$lib/stores/session';
+    import currentUser, { loggedIn, userMode, UserMode } from '$lib/stores/user';
+
+    // Utilities
+    import { checkRelayConnections } from '$lib/utils/helpers';
+    import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from '@nostr-dev-kit/ndk';
+
+    // Types and interfaces
+    interface ConversationData {
+        users: NDKUser[];
+        jobs: TicketEvent[];
+        loading: boolean;
+        error: string | null;
     }
 
-    let searchQuery = $derived($page.url.searchParams.get('searchQuery'));
-
-    let freelancers = $state<NDKUser[]>([]);
-    let ticketsWithFreelancers = $state<TicketEvent[]>([]);
-    let clients = $state<NDKUser[]>([]);
-    let ticketsWithClients = $state<TicketEvent[]>([]);
-    let conversationType = $state(ConversationType.Freelancer);
+    // Component state
+    let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
+    let pageTop = $state<HTMLDivElement>();
     let mounted = $state(false);
-    let noTicketsWithFreelancers = $state(false);
-    let noTicketsWithClients = $state(false);
-
     let initialized = $state(false);
+
+    // Conversation state
+    let conversationData = $state<ConversationData>({
+        users: [],
+        jobs: [],
+        loading: true,
+        error: null,
+    });
+    let noConversations = $state(false);
+
+    // Standard fetch options to reduce duplication
+    const defaultFetchOptions = {
+        groupable: true,
+        groupableDelay: 500,
+        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+    };
+
     $effect(() => {
         if ($loggedIn && $sessionInitialized && mounted && !initialized) {
             initialized = true;
             init();
-
             checkRelayConnections();
         }
     });
 
+    /**
+     * Initialize the messages view based on user mode
+     */
     async function init() {
-        const tickets = await $ndk.fetchEvents(
+        try {
+            if ($userMode === UserMode.Client) {
+                await fetchClientConversations();
+            } else if ($userMode === UserMode.Freelancer) {
+                await fetchFreelancerConversations();
+            }
+        } catch (error) {
+            conversationData.error =
+                error instanceof Error ? error.message : 'Failed to load conversations';
+            conversationData.loading = false;
+        }
+    }
+
+    /**
+     * Fetch conversations for a client user
+     */
+    async function fetchClientConversations() {
+        const jobEvents = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceTicket],
                 authors: [$currentUser!.pubkey],
             },
-            {
-                groupable: true,
-                groupableDelay: 500,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            }
+            defaultFetchOptions
         );
 
-        if (tickets.size === 0) noTicketsWithFreelancers = true;
+        if (jobEvents.size === 0) {
+            noConversations = true;
+            conversationData.loading = false;
+            return;
+        }
 
-        tickets.forEach((ticketEvent: NDKEvent) => {
-            const ticket = TicketEvent.from(ticketEvent);
-            if (ticket.acceptedOfferAddress) {
-                const pubkey = ticket.acceptedOfferAddress.split(':')[1];
-                if (pubkey) {
-                    const user = $ndk.getUser({ pubkey: pubkey });
-                    freelancers.push(user);
-                    ticketsWithFreelancers.push(ticket);
-                }
+        const users: NDKUser[] = [];
+        const jobs: TicketEvent[] = [];
+
+        jobEvents.forEach((jobEvent: NDKEvent) => {
+            const job = TicketEvent.from(jobEvent);
+            if (job.acceptedOfferAddress && job.winnerFreelancer) {
+                const user = $ndk.getUser({ pubkey: job.winnerFreelancer });
+                users.push(user);
+                jobs.push(job);
             }
         });
 
+        conversationData = {
+            users,
+            jobs,
+            loading: false,
+            error: null,
+        };
+    }
+
+    /**
+     * Fetch conversations for a freelancer user
+     */
+    async function fetchFreelancerConversations() {
         const offers = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceOffer],
                 authors: [$currentUser!.pubkey],
             },
-            {
-                groupable: true,
-                groupableDelay: 500,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            }
+            defaultFetchOptions
         );
 
-        if (offers.size === 0) noTicketsWithClients = true;
+        if (offers.size === 0) {
+            noConversations = true;
+            conversationData.loading = false;
+            return;
+        }
 
-        // Batching tickets to fetch
-        const ticketsToFetch: string[] = [];
+        // Collect ticket DTags to fetch all related jobs in one request
+        const jobsToFetch: string[] = [];
+        const offerMap = new Map<string, OfferEvent>();
+
         for (const offerEvent of offers) {
             const offer = OfferEvent.from(offerEvent);
             if (offer.referencedTicketDTag) {
-                ticketsToFetch.push(offer.referencedTicketDTag);
+                jobsToFetch.push(offer.referencedTicketDTag);
+                offerMap.set(offer.offerAddress, offer);
             }
         }
 
-        const ticketEvents = await $ndk.fetchEvents(
+        // Fetch all related jobs
+        const jobEvents = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceTicket],
-                '#d': ticketsToFetch,
+                '#d': jobsToFetch,
             },
-            {
-                groupable: true,
-                groupableDelay: 800,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            }
+            { ...defaultFetchOptions, groupableDelay: 800 }
         );
-        ticketEvents.forEach((t: NDKEvent) => {
-            const ticket = TicketEvent.from(t);
-            offers.forEach((o: NDKEvent) => {
-                const offer = OfferEvent.from(o);
-                if (ticket.acceptedOfferAddress === offer.offerAddress) {
-                    const user = $ndk.getUser({ pubkey: ticket.pubkey });
-                    clients.push(user);
-                    ticketsWithClients.push(ticket);
-                }
-            });
+
+        const users: NDKUser[] = [];
+        const jobs: TicketEvent[] = [];
+
+        jobEvents.forEach((jobEvent: NDKEvent) => {
+            const job = TicketEvent.from(jobEvent);
+            if (job.acceptedOfferAddress && offerMap.has(job.acceptedOfferAddress)) {
+                const user = $ndk.getUser({ pubkey: job.pubkey });
+                users.push(user);
+                jobs.push(job);
+            }
         });
+
+        conversationData = {
+            users,
+            jobs,
+            loading: false,
+            error: null,
+        };
     }
 
-    let pageTop = $state<HTMLDivElement>();
+    /**
+     * Renders loading skeleton UI elements
+     */
+    function LoadingSkeleton() {
+        return {
+            length: 6,
+        };
+    }
 
     onMount(() => {
-        // Scroll to top as soon as ticket arrives
+        // Scroll to top when component mounts
         if (pageTop) {
             pageTop.scrollIntoView(true);
         }
-
         mounted = true;
     });
-
-    const tabs = [
-        {
-            id: ConversationType.Freelancer,
-            label: 'Freelancer',
-        },
-        { id: ConversationType.Client, label: 'Client' },
-    ];
 </script>
 
 {#if $currentUser}
@@ -141,25 +198,27 @@
                 <div class="w-full h-full flex flex-col gap-[15px]">
                     <div class="w-full h-full flex gap-[15px] max-h-[calc(100vh-160px)]">
                         <Card classes="gap-[10px]">
-                            <TabSelector {tabs} bind:selectedTab={conversationType} />
-
                             <!-- Tab Content -->
                             <div class="w-full flex flex-col gap-[10px] p-[5px] overflow-y-auto">
-                                {#if conversationType === ConversationType.Freelancer}
-                                    {#if freelancers?.length > 0}
-                                        {#each freelancers as freelancer, i}
+                                {#if conversationData.error}
+                                    <div class="h4 text-center col-start-2 text-error">
+                                        {conversationData.error}
+                                    </div>
+                                {:else if $userMode === UserMode.Client}
+                                    {#if conversationData.users.length > 0}
+                                        {#each conversationData.users as user, i}
                                             <ChatHead
                                                 {searchQuery}
-                                                user={freelancer}
-                                                ticket={ticketsWithFreelancers[i]}
+                                                {user}
+                                                ticket={conversationData.jobs[i]}
                                             />
                                         {/each}
-                                    {:else if noTicketsWithFreelancers}
+                                    {:else if noConversations}
                                         <div class="h4 text-center col-start-2">
                                             No Conversations!
                                         </div>
-                                    {:else}
-                                        {#each { length: 6 } as _}
+                                    {:else if conversationData.loading}
+                                        {#each LoadingSkeleton() as _}
                                             <div class="w-full card flex gap-2 h-28 p-4">
                                                 <div
                                                     class="w-20 placeholder-circle animate-pulse"
@@ -172,29 +231,33 @@
                                             </div>
                                         {/each}
                                     {/if}
-                                {:else if clients.length > 0}
-                                    {#each clients as client, i}
-                                        <ChatHead
-                                            {searchQuery}
-                                            user={client}
-                                            ticket={ticketsWithClients[i]}
-                                        />
-                                    {/each}
-                                {:else if noTicketsWithClients}
-                                    <div class="h4 text-center col-start-2">No Conversations!</div>
-                                {:else}
-                                    {#each { length: 6 } as _}
-                                        <div class="w-full card flex gap-2 h-28 p-4">
-                                            <div
-                                                class="w-20 placeholder-circle animate-pulse"
-                                            ></div>
-                                            <div class="w-28 grid grid-rows-3 gap-2">
-                                                <div class="placeholder animate-pulse"></div>
-                                                <div class="placeholder animate-pulse"></div>
-                                                <div class="placeholder animate-pulse"></div>
-                                            </div>
+                                {:else if $userMode === UserMode.Freelancer}
+                                    {#if conversationData.users.length > 0}
+                                        {#each conversationData.users as user, i}
+                                            <ChatHead
+                                                {searchQuery}
+                                                {user}
+                                                ticket={conversationData.jobs[i]}
+                                            />
+                                        {/each}
+                                    {:else if noConversations}
+                                        <div class="h4 text-center col-start-2">
+                                            No Conversations!
                                         </div>
-                                    {/each}
+                                    {:else if conversationData.loading}
+                                        {#each LoadingSkeleton() as _}
+                                            <div class="w-full card flex gap-2 h-28 p-4">
+                                                <div
+                                                    class="w-20 placeholder-circle animate-pulse"
+                                                ></div>
+                                                <div class="w-28 grid grid-rows-3 gap-2">
+                                                    <div class="placeholder animate-pulse"></div>
+                                                    <div class="placeholder animate-pulse"></div>
+                                                    <div class="placeholder animate-pulse"></div>
+                                                </div>
+                                            </div>
+                                        {/each}
+                                    {/if}
                                 {/if}
                             </div>
                         </Card>
