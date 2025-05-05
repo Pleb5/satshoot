@@ -91,7 +91,7 @@
             initializeUser($ndk);
 
             toaster.success({
-                title: '<strong>Nostr Keypair Created!</strong>',
+                title: 'Nostr Keypair Created!',
             });
 
             handleRedirection();
