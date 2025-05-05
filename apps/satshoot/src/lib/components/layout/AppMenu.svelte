@@ -111,7 +111,7 @@
 <Modal
     open={isOpen}
     onInteractOutside={() => (isOpen = false)}
-    contentBase="flex flex-col gap-[20px] p-[20px] bg-white dark:bg-brightGray w-[50vw] sm:w-[40vw] md:w-[30vw] h-screen"
+    contentBase="flex flex-col gap-[20px] p-[20px] bg-white dark:bg-brightGray w-[50vw] sm:w-[40vw] md:w-[30vw] h-full"
     positionerJustify="justify-end"
     positionerPadding="p-0"
 >
