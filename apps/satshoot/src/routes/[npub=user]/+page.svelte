@@ -249,10 +249,17 @@
     });
 
     let myJobsAndMyOffersElement = $state<HTMLDivElement>();
-    onMount(() => {
+    $effect(() => {
         if (myJobsAndMyOffersElement && $scrollToMyJobsAndMyOffers) {
             $scrollToMyJobsAndMyOffers = false;
-            myJobsAndMyOffersElement.scrollIntoView(true);
+            setTimeout(() => {
+                if (myJobsAndMyOffersElement) {
+                    myJobsAndMyOffersElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }, 600)
         }
     });
 
@@ -286,7 +293,9 @@
                     >
                         <div class="w-full flex flex-col gap-[10px]">
                             <TabSelector {tabs} bind:selectedTab={$profileTabStore} />
-                            <div class="w-full flex flex-col">
+                            <div 
+                                class="w-full flex flex-col"
+                            >
                                 {#if $profileTabStore === ProfilePageTabs.Jobs}
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
