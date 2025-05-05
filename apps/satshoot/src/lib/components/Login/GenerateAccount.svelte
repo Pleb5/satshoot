@@ -66,8 +66,7 @@
 
             localStorage.setItem('nostr-seedwords', encryptedSeed);
             localStorage.setItem('nostr-npub', generatedNpub);
-            $loginMethod = LoginMethod.Local;
-            localStorage.setItem('login-method', $loginMethod);
+            loginMethod.set(LoginMethod.Local);
 
             // assign ndk signer
             $ndk.signer = new NDKPrivateKeySigner(generatedNsec);

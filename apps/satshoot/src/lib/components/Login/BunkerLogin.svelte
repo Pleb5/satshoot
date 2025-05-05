@@ -87,8 +87,8 @@
                 $ndk.signer = remoteSigner;
                 console.log('user logged in');
 
-                $loginMethod = LoginMethod.Bunker;
-                localStorage.setItem('login-method', $loginMethod);
+                loginMethod.set(LoginMethod.Bunker);
+                bunkerUrl.searchParams.delete('secret');
                 localStorage.setItem('bunkerUrl', bunkerUrl.toString());
                 localStorage.setItem('bunkerLocalSignerPK', localSigner.privateKey as string);
                 localStorage.setItem('bunkerRelayURLs', relayURLs.join(','));

@@ -54,6 +54,7 @@ const ndkSvelte = new NDKSvelte({
 });
 
 export const bunkerNDK = writable(new NDK({ enableOutboxModel: false }));
+export const bunkerRelayConnected = writable(false);
 
 // Create a singleton instance that is the default export
 const ndk = writable(ndkSvelte);

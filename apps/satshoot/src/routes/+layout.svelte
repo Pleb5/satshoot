@@ -7,7 +7,7 @@
     import '@fortawesome/fontawesome-free/css/regular.css';
     import '@fortawesome/fontawesome-free/css/solid.css';
 
-    import ndk, { bunkerNDK, sessionInitialized, sessionPK } from '$lib/stores/session';
+    import ndk, { bunkerNDK, bunkerRelayConnected, sessionInitialized, sessionPK } from '$lib/stores/session';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
 
     import { Dexie } from 'dexie';
@@ -41,6 +41,7 @@
         NDKNip07Signer,
         NDKNip46Signer,
         NDKPrivateKeySigner,
+        NDKRelay,
         NDKSubscription,
         type NDKEvent,
     } from '@nostr-dev-kit/ndk';
@@ -137,11 +138,6 @@
         $loggingIn = true;
         await tick();
 
-        migrateLoginMethod();
-
-        // Try to get saved Login method from localStorage and login that way
-        $loginMethod = (localStorage.getItem('login-method') as LoginMethod) ?? null;
-
         if (!$loginMethod) {
             $loggingIn = false;
             return;
@@ -157,14 +153,6 @@
             case LoginMethod.Nip07:
                 await handleNip07Login();
                 break;
-        }
-    }
-
-    function migrateLoginMethod() {
-        // Migration to login-method = 'local'  instead of 'ephemeral'
-        let method = localStorage.getItem('login-method');
-        if (method === 'ephemeral') {
-            localStorage.setItem('login-method', 'local');
         }
     }
 
@@ -242,27 +230,41 @@
 
         const bunkerRelayURLs = bunkerRelayURLsString.split(',');
 
-        // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
-        bunkerRelayURLs.forEach((url) => $bunkerNDK.addExplicitRelay(url));
-
-        await $bunkerNDK.connect();
-        console.log('ndk connected to specified bunker relays', $bunkerNDK.pool.connectedRelays());
-
         setupBunkerTimeout();
 
-        try {
-            const localSigner = new NDKPrivateKeySigner(localBunkerKey);
-            const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerUrl, localSigner);
+        console.log('bunker relays:', bunkerRelayURLs)
+        console.log('bunkerndk connected relays', $bunkerNDK.pool);
+        // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
+        bunkerRelayURLs.forEach((url) => {
+            const relay = $bunkerNDK.addExplicitRelay(url)
+            $bunkerNDK.pool.on('relay:ready', async (r: NDKRelay) => {
+                if ($bunkerRelayConnected) {
+                    console.info(
+                        'A bunker relay already connected, init bunker NOT necessary'
+                    );
+                    return;
+                }
+                $bunkerRelayConnected = true;
+                console.info(`Bunker relay ${r.url} READY, connect Bunker...`)
+                try {
+                    const localSigner = new NDKPrivateKeySigner(localBunkerKey);
+                    const remoteSigner = new NDKNip46Signer(
+                        $bunkerNDK, bunkerUrl, localSigner
+                    );
 
-            const returnedUser = await remoteSigner.blockUntilReady();
-            if (returnedUser.npub) {
-                $ndk.signer = remoteSigner;
-                await initializeUser($ndk);
-                $loggingIn = false;
-            }
-        } catch (e) {
-            showBunkerConnectionError(e);
-        }
+                    const returnedUser = await remoteSigner.blockUntilReady();
+                    console.info('Bunker connected! Logging in...')
+                    if (returnedUser.npub) {
+                        $ndk.signer = remoteSigner;
+                        await initializeUser($ndk);
+                        $loggingIn = false;
+                    }
+                } catch (e) {
+                    showBunkerConnectionError(e);
+                }
+            })
+        });
+        $bunkerNDK.connect();
     }
 
     function setupBunkerTimeout() {
@@ -273,7 +275,7 @@
                     description: 'Fix or Remove Bunker Connection!',
                     duration: 60000, // 1 min
                     action: {
-                        label: 'Delete Bunker Connection',
+                        label: 'Logout',
                         onClick: () => {
                             $loggingIn = false;
                             logout();

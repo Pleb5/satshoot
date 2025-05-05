@@ -159,8 +159,7 @@
             const encryptedSecret = encryptSecret(secret, passphrase, npub);
             localStorage.setItem(storageKey, encryptedSecret);
             localStorage.setItem('nostr-npub', npub);
-            $loginMethod = LoginMethod.Local;
-            localStorage.setItem('login-method', $loginMethod);
+            loginMethod.set(LoginMethod.Local);
 
             $sessionPK = privateKey;
 

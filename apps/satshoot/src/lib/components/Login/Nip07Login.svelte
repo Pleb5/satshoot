@@ -32,9 +32,8 @@
                 const returnedUser = await nip07Signer.blockUntilReady();
 
                 if (returnedUser.npub) {
-                    $loginMethod = LoginMethod.Nip07;
+                    loginMethod.set(LoginMethod.Nip07);
                     $ndk.signer = nip07Signer;
-                    localStorage.setItem('login-method', $loginMethod);
                     initializeUser($ndk);
                     handleRedirection();
                     askingForNip07Permission = false;

@@ -191,9 +191,9 @@ export async function fetchAndInitWallet(
 export function logout() {
     console.log('logout');
 
-    loggedIn.set(false);
-
     loginMethod.set(null);
+
+    loggedIn.set(false);
 
     followsUpdated.set(0);
     networkWoTScores.set(new Map());
@@ -212,12 +212,12 @@ export function logout() {
     localStorage.removeItem('networkWoTScores');
     localStorage.removeItem('seenIDs');
     localStorage.removeItem('nostr-seedwords');
-    localStorage.removeItem('login-method');
     localStorage.removeItem('nostr-npub');
     localStorage.removeItem('nostr-nsec');
     localStorage.removeItem('pk');
     localStorage.removeItem('bunkerLocalSignerPK');
     localStorage.removeItem('bunkerTargetNpub');
+    localStorage.removeItem('bunkerUrl');
     localStorage.removeItem('bunkerRelayURLs');
     localStorage.removeItem('readNotifications');
     localStorage.removeItem('jobFilter');

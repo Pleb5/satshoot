@@ -17,7 +17,7 @@ export const loginAlert = writable(true);
 export const mounted = writable(false);
 export const loggingIn = writable(false);
 export const loggedIn = writable(false);
-export const loginMethod = writable<LoginMethod | null>(null);
+export const loginMethod: Writable<LoginMethod | null> = persisted('login-method', null);
 
 export const followsUpdated: Writable<number> = persisted('followsUpdated', 0);
 
