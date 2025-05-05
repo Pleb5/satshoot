@@ -7,6 +7,7 @@
     import LocalKeyLogin from '../Login/LocalKeyLogin.svelte';
     import GenerateAccount from '../Login/GenerateAccount.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import { UserMode, userMode } from '$lib/stores/user';
 
     interface Props {
         isOpen: boolean;
@@ -72,17 +73,36 @@
         <div class="w-full flex flex-col gap-[10px] pt-[10px]">
             {#if !selectedLoginMethod}
                 <div class="w-full flex flex-col gap-[10px]">
+                    <div
+                        class="flex flex-row outline-[1px] outline-black-100 dark:outline-white-100 rounded-[6px]"
+                    >
+                        <Button
+                            variant={$userMode === UserMode.Freelancer ? 'contained' : 'text'}
+                            onClick={() => ($userMode = UserMode.Freelancer)}
+                            classes="grow "
+                        >
+                            Freelancer
+                        </Button>
+                        <Button
+                            variant={$userMode === UserMode.Client ? 'contained' : 'text'}
+                            onClick={() => ($userMode = UserMode.Client)}
+                            classes="grow "
+                        >
+                            Client
+                        </Button>
+                    </div>
+
                     <h3 class="text-[18px]">Choose your login method</h3>
                     <Card classes="gap-[10px]">
-                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Nip07)}
-                            >Extension</Button
-                        >
-                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Bunker)}
-                            >Bunker</Button
-                        >
-                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Local)}
-                            >Local Key</Button
-                        >
+                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Nip07)}>
+                            Extension
+                        </Button>
+                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Bunker)}>
+                            Bunker
+                        </Button>
+                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Local)}>
+                            Local Key
+                        </Button>
                     </Card>
                     <div class="h-[1px] w-full bg-black-200 my-[10px]"></div>
                     <h3 class="text-[18px]">Or, if you're new to Nostr</h3>
