@@ -3,7 +3,7 @@
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
     import LogoutModal from '../Modals/LogoutModal.svelte';
     import currentUser, { loggedIn } from '$lib/stores/user';
-    import TicketIcon from '../Icons/TicketIcon.svelte';
+    import JobIcon from '../Icons/JobIcon.svelte';
     import { scrollToMyJobsAndMyOffers } from '$lib/stores/gui';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
@@ -55,7 +55,7 @@
         {
             label: 'My Jobs',
             icon: {
-                component: TicketIcon,
+                component: JobIcon,
                 props: { sizeClass: '' },
             },
             onClick: () => {

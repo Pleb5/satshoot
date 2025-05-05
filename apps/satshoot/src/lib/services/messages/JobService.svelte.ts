@@ -7,7 +7,7 @@ import {
     NDKSubscriptionCacheUsage,
     type NDKFilter,
 } from '@nostr-dev-kit/ndk';
-import { TicketEvent } from '$lib/events/TicketEvent';
+import { JobEvent } from '$lib/events/JobEvent';
 import { OfferEvent } from '$lib/events/OfferEvent';
 import ndk from '$lib/stores/session';
 import currentUserStore from '$lib/stores/user';
@@ -19,7 +19,7 @@ import type { ContactService } from './ContactService.svelte';
  */
 export class JobService {
     // Public state for direct access
-    job = $state<TicketEvent | null>(null);
+    job = $state<JobEvent | null>(null);
     offers = $state<OfferEvent[]>([]);
     isOwner = $state<boolean>(false);
 
@@ -110,7 +110,7 @@ export class JobService {
      * Handle job event update
      */
     private handleJobEvent(event: NDKEvent) {
-        const jobEvent = TicketEvent.from(event);
+        const jobEvent = JobEvent.from(event);
         this.job = jobEvent;
 
         // Check if current user is the job owner

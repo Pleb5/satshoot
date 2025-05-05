@@ -1,7 +1,7 @@
 <script lang="ts">
     import Button from '../UI/Buttons/Button.svelte';
     import ShareJobModal from '../Modals/ShareJobModal.svelte';
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import currentUser from '$lib/stores/user';
     import { clientReviews } from '$lib/stores/reviews';
     import { OfferEvent } from '$lib/events/OfferEvent';
@@ -17,7 +17,7 @@
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     interface Props {
-        job: TicketEvent;
+        job: JobEvent;
     }
 
     let { job }: Props = $props();
@@ -38,7 +38,7 @@
     );
 
     const review = $derived(
-        $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress)
+        $clientReviews.find((review) => review.reviewedEventAddress === job.jobAddress)
     );
 
     const canReviewClient = $derived.by(() => {
@@ -81,7 +81,7 @@
         if (!winnerOffer) return;
 
         $paymentDetail = {
-            ticket: job,
+            job: job,
             offer: winnerOffer,
         };
 
@@ -95,7 +95,7 @@
         } else if (job.winnerFreelancer) {
             url.searchParams.append(SELECTED_QUERY_PARAM, job.winnerFreelancer);
         }
-        goto(url.toString())
+        goto(url.toString());
     }
 
     function handleReviewClient() {
@@ -117,21 +117,21 @@
             Share
         </Button>
 
-        {#if myJob && job.status === TicketStatus.New}
+        {#if myJob && job.status === JobStatus.New}
             <Button variant="outlined" classes={btnClasses} fullWidth onClick={handleEdit}>
                 <i class="bx bxs-edit-alt text-[20px]"></i>
                 <p class="">Edit</p>
             </Button>
         {/if}
 
-        {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
+        {#if myJob && (job.status === JobStatus.New || job.status === JobStatus.InProgress)}
             <Button variant="outlined" classes={btnClasses} fullWidth onClick={handleCloseJob}>
                 <i class="bx bxs-lock text-[20px]"></i>
                 <p class="">Close Job</p>
             </Button>
         {/if}
 
-        {#if myJob && job.status !== TicketStatus.New && winnerOffer}
+        {#if myJob && job.status !== JobStatus.New && winnerOffer}
             <Button variant="outlined" classes={btnClasses} fullWidth onClick={handlePay}>
                 <i class="bx bxs-bolt text-[20px]"></i>
                 <p class="">Pay</p>
@@ -139,12 +139,7 @@
         {/if}
 
         {#if showMessageButton && bech32ID}
-            <Button
-                onClick={goToChat}
-                variant="outlined"
-                classes={btnClasses}
-                fullWidth
-            >
+            <Button onClick={goToChat} variant="outlined" classes={btnClasses} fullWidth>
                 <i class="bx bxs-conversation"></i>
                 <p class="">Message</p>
             </Button>
@@ -168,7 +163,7 @@
 
 <CloseJobModal bind:isOpen={showCloseJobModal} {job} offer={winnerOffer} />
 
-<ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.ticketAddress} />
+<ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
 
 <PaymentModal bind:isOpen={showPaymentModal} />
 

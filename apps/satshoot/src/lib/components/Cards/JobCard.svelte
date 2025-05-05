@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
     import { formatDate } from 'date-fns';
     import JobPostMenu from '../Modals/JobPostMenu.svelte';
@@ -8,7 +8,7 @@
     import Markdown from './Markdown.svelte';
 
     interface Props {
-        job: TicketEvent;
+        job: JobEvent;
         tagCallback?: ((tag: string) => void) | null;
     }
 

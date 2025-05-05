@@ -1,4 +1,4 @@
-import { TicketEvent } from '$lib/events/TicketEvent';
+import { JobEvent } from '$lib/events/JobEvent';
 import { writable } from 'svelte/store';
 
-export const jobToEdit = writable<TicketEvent | null>(null);
+export const jobToEdit = writable<JobEvent | null>(null);

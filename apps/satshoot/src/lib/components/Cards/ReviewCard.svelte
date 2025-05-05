@@ -10,7 +10,7 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import { OfferEvent } from '$lib/events/OfferEvent';
@@ -29,7 +29,7 @@
     let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let job = $state<TicketEvent | null>(null);
+    let job = $state<JobEvent | null>(null);
 
     let elemPage: HTMLElement;
     onMount(async () => {
@@ -54,16 +54,16 @@
 
             if (reviewedEvent) {
                 if (review.type === ReviewType.Client) {
-                    job = TicketEvent.from(reviewedEvent);
+                    job = JobEvent.from(reviewedEvent);
                 } else {
                     const offer = OfferEvent.from(reviewedEvent);
-                    const jobEvent = await $ndk.fetchEvent(offer.referencedTicketAddress, {
+                    const jobEvent = await $ndk.fetchEvent(offer.referencedJobAddress, {
                         groupable: true,
                         groupableDelay: 1000,
                         cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
                     });
                     if (jobEvent) {
-                        job = TicketEvent.from(jobEvent);
+                        job = JobEvent.from(jobEvent);
                     }
                 }
             }

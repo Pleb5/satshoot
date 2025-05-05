@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import type { JobEvent } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { loggedIn } from '$lib/stores/user';
@@ -18,16 +18,18 @@
     interface Props {
         searchQuery?: string | null;
         user: NDKUser;
-        ticket: TicketEvent;
+        job: JobEvent;
     }
 
-    let { searchQuery = null, user, ticket }: Props = $props();
-    const naddr = ticket.encode();
+    let { searchQuery = null, user, job }: Props = $props();
+    job.encode();
+
+    const naddr = job.encode();
 
     const messageLink = $derived.by(() => {
         const url = new URL('/messages/' + naddr, window.location.origin);
-        if (ticket.winnerFreelancer) {
-            url.searchParams.append(SELECTED_QUERY_PARAM, ticket.winnerFreelancer)
+        if (job.winnerFreelancer) {
+            url.searchParams.append(SELECTED_QUERY_PARAM, job.winnerFreelancer);
         }
         return url.toString();
     });
@@ -48,11 +50,11 @@
     }
 
     async function fetchLatestMessage() {
-        const ticketMessages = await $ndk.fetchEvents(
+        const jobMessages = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.EncryptedDirectMessage],
                 authors: [user.pubkey, $currentUser!.pubkey],
-                '#t': [ticket.ticketAddress],
+                '#t': [job.jobAddress],
             },
             {
                 groupable: true,
@@ -60,11 +62,11 @@
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             }
         );
-        if (ticketMessages.size > 0) {
-            const ticketMessagesArr = Array.from(ticketMessages);
-            let encryptedMessage = ticketMessagesArr[0];
+        if (jobMessages.size > 0) {
+            const jobMessagesArr = Array.from(jobMessages);
+            let encryptedMessage = jobMessagesArr[0];
             // Get the latest message event
-            for (const msg of ticketMessagesArr) {
+            for (const msg of jobMessagesArr) {
                 if (msg.created_at! > encryptedMessage.created_at!) {
                     encryptedMessage = msg;
                 }
@@ -128,11 +130,7 @@
     });
 </script>
 
-<Button
-    variant="outlined"
-    classes="justify-start {display ? '' : 'hidden'}"
-    href={messageLink}
->
+<Button variant="outlined" classes="justify-start {display ? '' : 'hidden'}" href={messageLink}>
     <div class="flex gap-x-2">
         <div>
             <Avatar
@@ -146,7 +144,7 @@
                 {userProfile?.name ?? userProfile?.displayName ?? user.npub.substring(0, 15)}
             </div>
             <div class="sm:text-lg">
-                {ticket.title.length > 20 ? ticket.title.substring(0, 20) + '...' : ticket.title}
+                {job.title.length > 20 ? job.title.substring(0, 20) + '...' : job.title}
             </div>
             <!-- Latest message -->
             {#if latestMessage}

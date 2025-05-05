@@ -11,20 +11,20 @@ const sw = self as unknown as ServiceWorkerGlobalScope;
 let openAllowed = true;
 
 const ASSETS = [
-    ...build, // the app itself	
-    ...files  // everything in `static`
+    ...build, // the app itself
+    ...files, // everything in `static`
 ];
 
-console.log(sw)
+console.log(sw);
 
 sw.oninstall = () => {
     sw.skipWaiting();
-}
+};
 
 sw.onactivate = (event: ExtendableEvent) => {
     event.waitUntil(sw.clients.claim());
-    console.log('Service Worker activated')
-}
+    console.log('Service Worker activated');
+};
 
 sw.onmessage = (m) => {
     const title = m.data['title'];
@@ -32,57 +32,51 @@ sw.onmessage = (m) => {
     const tag = m.data['tag'];
     if (m.data['notification'] && title && body && tag) {
         const granted = Notification.permission === 'granted';
-        if(granted) {
-            const options = { 
+        if (granted) {
+            const options = {
                 icon: '/satshoot.svg',
                 badge: '/satshoot.svg',
                 image: '/satshoot.svg',
                 body: body,
                 tag: tag,
-            }
+            };
 
             sw.registration.showNotification(title, options);
         } else {
-            console.log('Notification not permitted! Dont try to show updates!')
+            console.log('Notification not permitted! Dont try to show updates!');
         }
     } else {
         console.log('Unexpected message in Service Worker: ', m);
-        console.log('title', m.data['title'])
-        console.log('body', m.data['body'])
-        console.log('tag', m.data['tag'])
-        console.log('notification', m.data['notification'])
+        console.log('title', m.data['title']);
+        console.log('body', m.data['body']);
+        console.log('tag', m.data['tag']);
+        console.log('notification', m.data['notification']);
     }
 };
 
 async function openNotificationWindow(tag: string) {
     const urlToVisit = '/notifications/';
 
-    const ticketNotification = 
-        (tag === NDKKind.FreelanceTicket.toString());
-    const offerNotification = 
-        (tag === NDKKind.FreelanceOffer.toString());
-    const messageNotification = 
-        (tag === NDKKind.EncryptedDirectMessage.toString());
-    const reviewNotification = 
-        (tag === NDKKind.Review.toString());
-    const receivedZapNotification = 
-        (tag === NDKKind.Zap.toString());
-    const followNotification = 
-        (tag === NDKKind.KindScopedFollow.toString());
+    const jobNotification = tag === NDKKind.FreelanceJob.toString();
+    const offerNotification = tag === NDKKind.FreelanceOffer.toString();
+    const messageNotification = tag === NDKKind.EncryptedDirectMessage.toString();
+    const reviewNotification = tag === NDKKind.Review.toString();
+    const receivedZapNotification = tag === NDKKind.Zap.toString();
+    const followNotification = tag === NDKKind.KindScopedFollow.toString();
 
-    if(
-        !ticketNotification 
-        && !offerNotification
-        && !messageNotification 
-        && !reviewNotification
-        && !receivedZapNotification
-        && !followNotification
+    if (
+        !jobNotification &&
+        !offerNotification &&
+        !messageNotification &&
+        !reviewNotification &&
+        !receivedZapNotification &&
+        !followNotification
     ) {
-        console.log('This type of notification is not implemented yet!')
+        console.log('This type of notification is not implemented yet!');
         return;
     }
 
-    const allClients = await sw.clients.matchAll({type: "window"});
+    const allClients = await sw.clients.matchAll({ type: 'window' });
     if (allClients.length === 0) {
         await sw.clients.openWindow(urlToVisit);
     } else {
@@ -97,13 +91,12 @@ sw.onnotificationclick = (event: NotificationEvent) => {
         event.waitUntil(openNotificationWindow(event.notification.tag));
         openAllowed = true;
     }
-}
+};
 
 sw.onmessageerror = (me) => {
     console.log('Message error:', me);
 };
 
 sw.onerror = (e) => {
-    console.log("Error happened in Service Worker:", e.message)
+    console.log('Error happened in Service Worker:', e.message);
 };
-

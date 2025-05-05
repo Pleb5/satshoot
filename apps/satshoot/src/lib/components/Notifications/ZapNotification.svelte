@@ -15,7 +15,7 @@
 
     import { onMount } from 'svelte';
 
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
@@ -42,13 +42,13 @@
     let amount: number | null = $state(null);
 
     let zappedOffer: OfferEvent | null = $state(null);
-    let job: TicketEvent | null = $state(null);
+    let job: JobEvent | null = $state(null);
 
     $effect(() => {
         if (zappedOffer) {
-            const dTagOfJob = zappedOffer.referencedTicketAddress.split(':')[2];
-            const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
-                kinds: [NDKKind.FreelanceTicket],
+            const dTagOfJob = zappedOffer.referencedJobAddress.split(':')[2];
+            const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
+                kinds: [NDKKind.FreelanceJob],
                 '#d': [dTagOfJob],
             };
 
@@ -59,7 +59,7 @@
             })
                 .then((jobEvent) => {
                     if (jobEvent) {
-                        job = TicketEvent.from(jobEvent);
+                        job = JobEvent.from(jobEvent);
                     }
                 })
                 .catch(() => {});

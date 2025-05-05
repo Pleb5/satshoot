@@ -1,7 +1,7 @@
 <script lang="ts">
     import { OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewType, type ReviewEvent } from '$lib/events/ReviewEvent';
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
@@ -24,7 +24,7 @@
     let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let job = $state<TicketEvent | null>();
+    let job = $state<JobEvent | null>();
 
     let showReviewModal = $state(false);
 
@@ -48,16 +48,16 @@
 
             if (reviewedEvent) {
                 if (notification.type === ReviewType.Client) {
-                    job = TicketEvent.from(reviewedEvent);
+                    job = JobEvent.from(reviewedEvent);
                 } else {
                     const offer = OfferEvent.from(reviewedEvent);
-                    const jobEvent = await $ndk.fetchEvent(offer.referencedTicketAddress, {
+                    const jobEvent = await $ndk.fetchEvent(offer.referencedJobAddress, {
                         groupable: true,
                         groupableDelay: 1000,
                         cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
                     });
                     if (jobEvent) {
-                        job = TicketEvent.from(jobEvent);
+                        job = JobEvent.from(jobEvent);
                     }
                 }
             }

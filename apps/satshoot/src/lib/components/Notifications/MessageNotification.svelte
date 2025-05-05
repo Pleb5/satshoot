@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
@@ -31,7 +31,7 @@
     let userProfile: NDKUserProfile | null;
     let decryptedDM = $state<string>();
     let messageLink = $state('');
-    const ticketAddress = notification.tagValue('t');
+    const jobAddress = notification.tagValue('t');
 
     onMount(async () => {
         userProfile = await user.fetchProfile();
@@ -56,33 +56,30 @@
             console.trace(e);
         }
 
-        if (ticketAddress) {
-            const event = await $ndk.fetchEvent(ticketAddress, {
+        if (jobAddress) {
+            const event = await $ndk.fetchEvent(jobAddress, {
                 groupable: true,
                 groupableDelay: 1000,
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             });
             if (event) {
-                const ticketEvent = TicketEvent.from(event);
-                messageLink = '/messages/' + ticketEvent.encode();
+                const jobEvent = JobEvent.from(event);
+                messageLink = '/messages/' + jobEvent.encode();
             }
         }
     });
 
     const goToChat = () => {
         if (!$readNotifications.has(notification.id)) {
-            console.log('putting this notif into read ones...', notification.id)
-            readNotifications.update(
-                (notifications) => notifications.add(notification.id)
-            );
+            console.log('putting this notif into read ones...', notification.id);
+            readNotifications.update((notifications) => notifications.add(notification.id));
         }
-        if (!messageLink) throw new Error(
-            'Error: Message link undefined, trying to navigate to undefined URL!'
-        )
+        if (!messageLink)
+            throw new Error('Error: Message link undefined, trying to navigate to undefined URL!');
         const url = new URL(messageLink, window.location.origin);
         url.searchParams.append(SELECTED_QUERY_PARAM, notification.pubkey);
         goto(url);
-    }
+    };
 </script>
 
 <Card

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import ndk from '$lib/stores/session';
     import { tick } from 'svelte';
@@ -11,7 +11,7 @@
 
     interface Props {
         isOpen: boolean;
-        job: TicketEvent;
+        job: JobEvent;
         offer: OfferEvent;
     }
 
@@ -22,7 +22,7 @@
     async function takeOffer() {
         if (job && offer) {
             // User chose to take offer
-            let jobToPublish = new TicketEvent($ndk);
+            let jobToPublish = new JobEvent($ndk);
             jobToPublish.tags = job.tags;
             jobToPublish.description = job.description;
             // Important part! This also sets status to in progress

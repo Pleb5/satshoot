@@ -75,7 +75,7 @@
         } else {
             posting = false;
             toaster.error({
-                title: 'Error: Could could not find ticket to close!',
+                title: 'Error: Could could not find job to close!',
             });
         }
     }

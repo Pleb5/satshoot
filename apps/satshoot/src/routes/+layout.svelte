@@ -18,11 +18,11 @@
 
     import {
         allOffers,
-        allTickets,
+        allJobs,
         myOffers,
-        myTickets,
+        myJobs,
         wotFilteredOffers,
-        wotFilteredTickets,
+        wotFilteredJobs,
     } from '$lib/stores/freelance-eventstores';
 
     import { messageStore, wotFilteredMessageFeed } from '$lib/stores/messages';
@@ -63,7 +63,7 @@
     import Header from '$lib/components/layout/Header.svelte';
     import type { OfferEvent } from '$lib/events/OfferEvent';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
-    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import type { JobEvent } from '$lib/events/JobEvent';
 
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
@@ -388,9 +388,9 @@
 
         if (followSubscription) followSubscription.stop();
 
-        if (allTickets) allTickets.empty();
+        if (allJobs) allJobs.empty();
         if (allOffers) allOffers.empty();
-        if (myTickets) myTickets.empty();
+        if (myJobs) myJobs.empty();
         if (myOffers) myOffers.empty();
 
         if (messageStore) messageStore.empty();
@@ -448,12 +448,12 @@
 
     // ----- Notifications ------ //
     $effect(() => {
-        if ($wotFilteredTickets && $myOffers) {
-            // console.log('all tickets change:', $wotFilteredTickets)
-            $wotFilteredTickets.forEach((t: TicketEvent) => {
+        if ($wotFilteredJobs && $myOffers) {
+            // console.log('all jobs change:', $wotFilteredJobs)
+            $wotFilteredJobs.forEach((t: JobEvent) => {
                 $myOffers.forEach((o: OfferEvent) => {
-                    if (o.referencedTicketDTag === t.dTag) {
-                        // If users offer won send that else just send relevant ticket
+                    if (o.referencedJobDTag === t.dTag) {
+                        // If users offer won send that else just send relevant job
                         if (t.acceptedOfferAddress === o.offerAddress) {
                             sendNotification(o);
                         } else {
@@ -466,11 +466,11 @@
     });
 
     $effect(() => {
-        if ($wotFilteredOffers && $myTickets) {
+        if ($wotFilteredOffers && $myJobs) {
             // console.log('all offers change:', $wotFilteredOffers)
             $wotFilteredOffers.forEach((o: OfferEvent) => {
-                $myTickets.forEach((t: TicketEvent) => {
-                    if (o.referencedTicketDTag === t.dTag) {
+                $myJobs.forEach((t: JobEvent) => {
+                    if (o.referencedJobDTag === t.dTag) {
                         sendNotification(o);
                     }
                 });
@@ -494,8 +494,8 @@
     $effect(() => {
         if ($clientReviews) {
             $clientReviews.forEach((r: ReviewEvent) => {
-                $myTickets.forEach((t: TicketEvent) => {
-                    if (t.ticketAddress === r.reviewedEventAddress) {
+                $myJobs.forEach((t: JobEvent) => {
+                    if (t.jobAddress === r.reviewedEventAddress) {
                         sendNotification(r);
                     }
                 });
@@ -529,10 +529,7 @@
                 followSubscription = $ndk.subscribe(
                     {
                         kinds: [NDKKind.KindScopedFollow],
-                        '#k': [
-                            NDKKind.FreelanceTicket.toString(),
-                            NDKKind.FreelanceOffer.toString(),
-                        ],
+                        '#k': [NDKKind.FreelanceJob.toString(), NDKKind.FreelanceOffer.toString()],
                         '#p': [$currentUser.pubkey],
                     },
                     {

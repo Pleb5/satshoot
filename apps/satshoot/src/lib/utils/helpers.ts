@@ -13,61 +13,40 @@ import {
     serializeProfile,
     NDKUser,
 } from '@nostr-dev-kit/ndk';
-import ndk,
-    { 
-        blastrUrl,
-        BOOTSTRAPOUTBOXRELAYS, 
-        DEFAULTRELAYURLS,
-        sessionPK
-    } from '$lib/stores/session';
+import ndk, {
+    blastrUrl,
+    BOOTSTRAPOUTBOXRELAYS,
+    DEFAULTRELAYURLS,
+    sessionPK,
+} from '$lib/stores/session';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import currentUser from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
 import { loadWot, networkWoTScores } from '../stores/wot';
 import { allReviews } from '$lib/stores/reviews';
-import { 
-    allReceivedZapsFilter, 
-    allReceivedZaps 
-} from '$lib/stores/zaps';
+import { allReceivedZapsFilter, allReceivedZaps } from '$lib/stores/zaps';
+import { messageStore, sentMessageFilter, receivedMessageFilter } from '$lib/stores/messages';
 import {
-    messageStore,
-    sentMessageFilter,
-    receivedMessageFilter 
-} from '$lib/stores/messages';
-import {
-    allTickets,
+    allJobs,
     allOffers,
-    myTicketFilter,
+    myJobFilter,
     myOfferFilter,
-    myTickets,
+    myJobs,
     myOffers,
 } from '$lib/stores/freelance-eventstores';
-import { notifications,
-    seenIDs,
-    serviceWorkerRegistrationFailed 
-} from '../stores/notifications';
+import { notifications, seenIDs, serviceWorkerRegistrationFailed } from '../stores/notifications';
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { dev } from '$app/environment';
 import { connected } from '../stores/network';
-import { 
-    retriesLeft,
-    retryDelay,
-    maxRetryAttempts 
-} from '../stores/network';
-import {
-    ndkNutzapMonitor,
-    wallet,
-    walletInit,
-    walletStatus 
-} from '$lib/wallet/wallet';
+import { retriesLeft, retryDelay, maxRetryAttempts } from '../stores/network';
+import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
 import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
 import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
 import { toaster } from '$lib/stores/toaster';
 
-export async function initializeUser(ndk: NDKSvelte ) {
-    
+export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init');
     try {
         loggingIn.set(false);
@@ -79,7 +58,7 @@ export async function initializeUser(ndk: NDKSvelte ) {
 
         currentUser.set(user);
 
-        myTicketFilter.authors! = [user.pubkey];
+        myJobFilter.authors! = [user.pubkey];
         myOfferFilter.authors! = [user.pubkey];
 
         const $onboardingStep = get(onboardingStep);
@@ -107,15 +86,15 @@ export async function initializeUser(ndk: NDKSvelte ) {
                         },
                     },
                 });
-             }
+            }
 
             await loadWot(ndk, user);
         }
 
-        myTickets.startSubscription();
+        myJobs.startSubscription();
         myOffers.startSubscription();
 
-        allTickets.startSubscription();
+        allJobs.startSubscription();
         allOffers.startSubscription();
 
         receivedMessageFilter['#p']! = [user.pubkey];
@@ -205,7 +184,7 @@ export function logout() {
     localStorage.removeItem('walletBackup');
     localStorage.removeItem('followsUpdated');
     localStorage.removeItem('tabStore');
-    localStorage.removeItem('ticketTabStore');
+    localStorage.removeItem('jobTabStore');
     localStorage.removeItem('offerTabStore');
     localStorage.removeItem('notificationsEnabled');
     localStorage.removeItem('serviceWorkerRegFailed');
@@ -229,12 +208,12 @@ export function logout() {
     sessionPK.set('');
 
     seenIDs.set(new Set());
-    myTickets.empty();
+    myJobs.empty();
     myOffers.empty();
-    myTicketFilter.authors = [];
+    myJobFilter.authors = [];
     myOfferFilter.authors = [];
 
-    allTickets.empty();
+    allJobs.empty();
     allOffers.empty();
 
     messageStore.empty();
@@ -349,7 +328,7 @@ export async function broadcastRelayList(
 
 export async function broadcastUserProfile(ndk: NDKSvelte, user: NDKUser) {
     if (!user.profile) {
-        console.error('BUG: Cannot broadcast undefined profile!')
+        console.error('BUG: Cannot broadcast undefined profile!');
         return;
     }
     const ndkEvent = new NDKEvent(ndk);
@@ -411,8 +390,8 @@ export async function checkRelayConnections() {
     const $ndk = get(ndk);
 
     const anyConnectedRelays = $ndk.pool.stats().connected !== 0;
-    console.log('Checking relay connections')
-    console.log(`Connected relays: ${$ndk.pool.stats().connected}`)
+    console.log('Checking relay connections');
+    console.log(`Connected relays: ${$ndk.pool.stats().connected}`);
 
     if (!anyConnectedRelays) {
         connected.set(false);

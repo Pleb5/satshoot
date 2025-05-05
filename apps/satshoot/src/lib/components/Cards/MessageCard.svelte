@@ -9,7 +9,7 @@
     } from '@nostr-dev-kit/ndk';
     import Fuse from 'fuse.js';
     import { onMount } from 'svelte';
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import Markdown from './Markdown.svelte';
@@ -35,7 +35,7 @@
     const messageDate = new Date((message.created_at as number) * 1000);
     // Time is shown in local time zone
     const timestamp = messageDate.toLocaleString();
-    const ticketAddress = message.tagValue('t');
+    const jobAddress = message.tagValue('t');
     let messageLink = $state<URL>();
 
     let extraClasses = $state('preset-soft-primary rounded-tr-none');
@@ -91,20 +91,16 @@
             console.log('no profile');
         }
 
-        if (ticketAddress) {
-            const event = await $ndk.fetchEvent(ticketAddress, {
+        if (jobAddress) {
+            const event = await $ndk.fetchEvent(jobAddress, {
                 groupable: true,
                 groupableDelay: 800,
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             });
             if (event) {
-                const ticketEvent = TicketEvent.from(event);
-                messageLink = new URL(
-                    '/messages/' + ticketEvent.encode(), window.location.origin
-                );
-                messageLink.searchParams.append(
-                    SELECTED_QUERY_PARAM, senderUser.pubkey
-                );
+                const jobEvent = JobEvent.from(event);
+                messageLink = new URL('/messages/' + jobEvent.encode(), window.location.origin);
+                messageLink.searchParams.append(SELECTED_QUERY_PARAM, senderUser.pubkey);
             }
         }
     });

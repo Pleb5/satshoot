@@ -1,12 +1,12 @@
-import { 
+import {
     NDKEvent,
     type NDKTag,
     type NostrEvent,
-    NDKKind, 
-    type Hexpubkey 
-} from "@nostr-dev-kit/ndk";
+    NDKKind,
+    type Hexpubkey,
+} from '@nostr-dev-kit/ndk';
 
-import NDK from "@nostr-dev-kit/ndk"
+import NDK from '@nostr-dev-kit/ndk';
 
 enum FreelancerRatings {
     success = '0.5',
@@ -50,7 +50,6 @@ export interface FreelancerRating {
     reviewText: string;
 }
 
-
 // In the future perhaps make the two types of reviews extend a common ReviewEvent
 // this way it would use two different event stores and use common ancestor functions
 // and would not need lots of type checking. More elegant solution overall
@@ -59,11 +58,11 @@ export class ReviewEvent extends NDKEvent {
         super(ndk, rawEvent);
         this.kind ??= NDKKind.Review;
         if (!this.tagValue('L')) {
-            this.tags.push(["L", 'qts/freelancing']);
+            this.tags.push(['L', 'qts/freelancing']);
         }
     }
 
-    static from(event:NDKEvent){
+    static from(event: NDKEvent) {
         return new ReviewEvent(event.ndk, event.rawEvent());
     }
 
@@ -74,7 +73,7 @@ export class ReviewEvent extends NDKEvent {
 
         if (typeString === ReviewType.Client) {
             return ReviewType.Client;
-        } 
+        }
         return ReviewType.Freelancer;
     }
 
@@ -113,25 +112,21 @@ export class ReviewEvent extends NDKEvent {
             availability: false,
             communication: false,
             reviewText: this.content,
-        }
+        };
         this.tags.forEach((tag: NDKTag) => {
             const rating = parseFloat(tag[1]);
             if (isNaN(rating)) return;
 
-            if (tag.includes('rating')
-                && tag.includes('thumb') && rating > 0) {
+            if (tag.includes('rating') && tag.includes('thumb') && rating > 0) {
                 clientRating.thumb = true;
-            } else if (tag.includes('rating')
-                && tag.includes('availability') && rating > 0) {
+            } else if (tag.includes('rating') && tag.includes('availability') && rating > 0) {
                 clientRating.availability = true;
-            } else if (tag.includes('rating')
-                && tag.includes('communication') && rating > 0) {
+            } else if (tag.includes('rating') && tag.includes('communication') && rating > 0) {
                 clientRating.communication = true;
             }
         });
         return clientRating;
-    } 
-
+    }
 
     set freelancerRatings(r: FreelancerRating) {
         if (this.type === ReviewType.Client) {
@@ -159,7 +154,7 @@ export class ReviewEvent extends NDKEvent {
 
     get freelancerRatings(): FreelancerRating {
         if (this.type !== ReviewType.Freelancer) {
-            throw new Error('Requested Freelancer ratings but review type is NOT Freelancer!')
+            throw new Error('Requested Freelancer ratings but review type is NOT Freelancer!');
         }
         const freelancerRating: FreelancerRating = {
             success: false,
@@ -167,39 +162,35 @@ export class ReviewEvent extends NDKEvent {
             availability: false,
             communication: false,
             reviewText: this.content,
-        }
+        };
         this.tags.forEach((tag: NDKTag) => {
             const rating = parseFloat(tag[1]);
             if (isNaN(rating)) return;
 
-            if (tag.includes('rating')
-                && tag.includes('success') && rating > 0) {
+            if (tag.includes('rating') && tag.includes('success') && rating > 0) {
                 freelancerRating.success = true;
-            } else if (tag.includes('rating')
-                && tag.includes('expertise') && rating > 0) {
+            } else if (tag.includes('rating') && tag.includes('expertise') && rating > 0) {
                 freelancerRating.expertise = true;
-            } else if (tag.includes('rating')
-                && tag.includes('availability') && rating > 0) {
+            } else if (tag.includes('rating') && tag.includes('availability') && rating > 0) {
                 freelancerRating.availability = true;
-            } else if (tag.includes('rating')
-                && tag.includes('communication') && rating > 0) {
+            } else if (tag.includes('rating') && tag.includes('communication') && rating > 0) {
                 freelancerRating.communication = true;
             }
         });
         return freelancerRating;
     }
 
-    get reviewedEventAddress(): string | undefined{
-        return this.tagValue("a");
+    get reviewedEventAddress(): string | undefined {
+        return this.tagValue('a');
     }
 
     set reviewedEventAddress(eventAddress: string) {
         const eventKind = parseInt(eventAddress.split(':')[0] as string);
         if (eventKind === NDKKind.FreelanceOffer && this.type === ReviewType.Client) {
-            throw new Error('Client reviews can only be given on Ticket events');
+            throw new Error('Client reviews can only be given on Job events');
         }
 
-        if (eventKind === NDKKind.FreelanceTicket && this.type === ReviewType.Freelancer) {
+        if (eventKind === NDKKind.FreelanceJob && this.type === ReviewType.Freelancer) {
             throw new Error('Freelancer reviews can only be given on Offer events');
         }
 
@@ -210,14 +201,13 @@ export class ReviewEvent extends NDKEvent {
     get reviewedEventKind(): NDKKind | number {
         const aTag = this.tagValue('a');
         if (!aTag) return this.kind;
-        if ( ((aTag as string).split(':')[0] as number)
-            === NDKKind.FreelanceTicket ) {
-            return NDKKind.FreelanceTicket;
+        if (((aTag as string).split(':')[0] as number) === NDKKind.FreelanceJob) {
+            return NDKKind.FreelanceJob;
         } else return NDKKind.FreelanceOffer;
     }
 
     // Handle udnefined everywhere !!!
-    get reviewedPerson(): Hexpubkey | undefined{
+    get reviewedPerson(): Hexpubkey | undefined {
         const id = this.tagValue('a');
 
         if (!id) return undefined;
@@ -230,7 +220,7 @@ export class ReviewEvent extends NDKEvent {
         return id.split(':')[2] as string;
     }
 
-    get overallRating(): number | undefined{
+    get overallRating(): number | undefined {
         let sum = 0;
         if (this.type === ReviewType.Client) {
             this.tags.forEach((tag: NDKTag) => {
@@ -266,7 +256,7 @@ export class ReviewEvent extends NDKEvent {
         }
         return undefined;
     }
-    
+
     get reviewText(): string {
         return this.content;
     }

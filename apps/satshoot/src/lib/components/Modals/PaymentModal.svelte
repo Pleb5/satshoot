@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Popover } from '@skeletonlabs/skeleton-svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
     import {
         createPaymentFilters,
@@ -82,7 +82,7 @@
     let cashuPopoverState = $state(false);
 
     // TODO: As soon as Modals can take Props this needs to stop
-    let ticket: TicketEvent | undefined = $derived($paymentDetail?.ticket);
+    let job: JobEvent | undefined = $derived($paymentDetail?.job);
     let offer: OfferEvent | undefined = $derived($paymentDetail?.offer);
 
     let paying = $state(false);
@@ -212,7 +212,7 @@
                     satshootSumMillisats,
                     zapRequestRelays,
                     invoices,
-                    ticket!
+                    job!
                 ).catch((err) => {
                     handleToast(
                         `An error occurred in fetching satshoot's payment info: ${err.message || err}`,
@@ -427,7 +427,7 @@
             .cashuPay({
                 ...freelancerCashuInfo,
                 mints,
-                target: userEnum === UserEnum.Freelancer ? offer! : ticket!,
+                target: userEnum === UserEnum.Freelancer ? offer! : job!,
                 recipientPubkey: pubkey,
                 amount: amountMillisats,
                 unit: 'msat',
@@ -448,14 +448,14 @@
         // NOTE: set target is not properly implemented in NDKNutzap,
         // so manually add reference tag
         // nutzapEvent.target = userEnum === UserEnum.Freelancer
-        //                  ? offer! : ticket;
+        //                  ? offer! : job;
 
         nutzapEvent.tags.push([
             'a',
-            userEnum === UserEnum.Freelancer ? offer!.offerAddress : ticket!.ticketAddress,
+            userEnum === UserEnum.Freelancer ? offer!.offerAddress : job!.jobAddress,
         ]);
 
-        nutzapEvent.tags.push(['e', userEnum === UserEnum.Freelancer ? offer!.id : ticket!.id]);
+        nutzapEvent.tags.push(['e', userEnum === UserEnum.Freelancer ? offer!.id : job!.id]);
 
         nutzapEvent.recipientPubkey = pubkey;
 
@@ -523,7 +523,7 @@
     };
 
     async function initializePayment() {
-        if (!ticket || !offer) {
+        if (!job || !offer) {
             paying = false;
             handleToast('Error: Could not find Job or Offer!', ToastType.Error);
             return null;
@@ -550,7 +550,7 @@
         amountMillisats: number,
         zapRequestRelays: Map<UserEnum, string[]>,
         invoices: Map<UserEnum, InvoiceDetails>,
-        event: TicketEvent | OfferEvent
+        event: JobEvent | OfferEvent
     ) {
         const zapConfig = await getZapConfiguration(pubkey);
         if (zapConfig) {
@@ -655,7 +655,7 @@
 </script>
 
 <ModalWrapper bind:isOpen title="Pay Freelancer">
-    {#if ticket && offer}
+    {#if job && offer}
         <div class="w-full flex flex-col">
             <!-- popups Share Job Post start -->
             <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
@@ -686,25 +686,19 @@
                     >
                         <div class="grow-1">
                             <p class="font-[500]">
-                                Freelancer Paid: 
+                                Freelancer Paid:
                                 <span class="font-[300]">
-                                    {
-                                        $freelancerPaid
+                                    {$freelancerPaid
                                         ? insertThousandSeparator($freelancerPaid)
-                                        : '?'
-                                    } sats
+                                        : '?'} sats
                                 </span>
                             </p>
                         </div>
                         <div class="grow-1">
                             <p class="font-[500]">
-                                SatShoot Paid: 
+                                SatShoot Paid:
                                 <span class="font-[300]">
-                                    {
-                                        $satshootPaid
-                                        ? insertThousandSeparator($satshootPaid)
-                                        : '?'
-                                    } sats
+                                    {$satshootPaid ? insertThousandSeparator($satshootPaid) : '?'} sats
                                 </span>
                             </p>
                         </div>
@@ -714,7 +708,7 @@
                     class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
                 >
                     <p class="">Compensation for:</p>
-                    <p class="">{ticket.title}</p>
+                    <p class="">{job.title}</p>
                 </div>
                 <div
                     class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
@@ -845,8 +839,6 @@
             <!-- popups Share Job Post end -->
         </div>
     {:else}
-        <h2 class="h2 font-bold text-center text-error-300-600">
-            Error: Ticket & Offer is missing!
-        </h2>
+        <h2 class="h2 font-bold text-center text-error-300-600">Error: Job & Offer is missing!</h2>
     {/if}
 </ModalWrapper>

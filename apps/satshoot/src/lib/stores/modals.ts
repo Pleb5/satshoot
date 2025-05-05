@@ -1,10 +1,10 @@
-import type { TicketEvent } from '$lib/events/TicketEvent';
+import type { JobEvent } from '$lib/events/JobEvent';
 import { writable } from 'svelte/store';
 
 // Interface for job post success state
 interface JobPostSuccessState {
     showModal: boolean;
-    jobData: TicketEvent | null;
+    jobData: JobEvent | null;
 }
 
 // Create a store that will survive page navigations

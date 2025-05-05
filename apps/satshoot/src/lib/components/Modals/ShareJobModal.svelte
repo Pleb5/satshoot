@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
@@ -13,7 +13,7 @@
 
     interface Props {
         isOpen: boolean;
-        job: TicketEvent;
+        job: JobEvent;
     }
 
     let { isOpen = $bindable(), job }: Props = $props();

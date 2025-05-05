@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
@@ -10,24 +10,24 @@
 
     // State
     const newJobs = $ndk.storeSubscribe(
-                {
-                    kinds: [NDKKind.FreelanceTicket],
-                },
-                {
-                    autoStart: false,
-                    closeOnEose: false,
-                    groupable: false,
-                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-                },
-                TicketEvent
-            );
+        {
+            kinds: [NDKKind.FreelanceJob],
+        },
+        {
+            autoStart: false,
+            closeOnEose: false,
+            groupable: false,
+            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+        },
+        JobEvent
+    );
 
     let jobList = $derived.by(() => {
-        const copiedJobs = [...$newJobs]
+        const copiedJobs = [...$newJobs];
         orderEventsChronologically(copiedJobs);
 
-        const newJobList = copiedJobs.filter((t: TicketEvent) => {
-            const newJob = t.status === TicketStatus.New;
+        const newJobList = copiedJobs.filter((t: JobEvent) => {
+            const newJob = t.status === JobStatus.New;
             const partOfWot = $wot.has(t.pubkey);
 
             return newJob && partOfWot;
@@ -47,7 +47,7 @@
 
     onDestroy(() => {
         newJobs.empty();
-    })
+    });
 
     const viewMoreBtnClasses =
         'transform scale-100 w-full max-w-[200px] hover:max-w-[225px] dark:text-white dark:border-white-100 ';

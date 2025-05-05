@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TicketStatus, type TicketEvent } from '$lib/events/TicketEvent';
+    import { JobStatus, type JobEvent } from '$lib/events/JobEvent';
     import currentUser from '$lib/stores/user';
     import ShareJobModal from './ShareJobModal.svelte';
     import CloseJobModal from './CloseJobModal.svelte';
@@ -19,7 +19,7 @@
 
     interface Props {
         isOpen: boolean;
-        job: TicketEvent;
+        job: JobEvent;
     }
 
     let { isOpen = $bindable(), job }: Props = $props();
@@ -39,7 +39,7 @@
     );
 
     const review = $derived(
-        $clientReviews.find((review) => review.reviewedEventAddress === job.ticketAddress)
+        $clientReviews.find((review) => review.reviewedEventAddress === job.jobAddress)
     );
 
     const canReviewClient = $derived.by(() => {
@@ -97,7 +97,7 @@
         if (!winnerOffer) return;
 
         $paymentDetail = {
-            ticket: job,
+            job: job,
             offer: winnerOffer,
         };
 
@@ -129,14 +129,14 @@
                 <p class="">Share</p>
             </Button>
 
-            {#if myJob && job.status === TicketStatus.New}
+            {#if myJob && job.status === JobStatus.New}
                 <Button variant="outlined" classes="justify-start" fullWidth onClick={handleEdit}>
                     <i class="bx bxs-edit-alt text-[20px]"></i>
                     <p class="">Edit</p>
                 </Button>
             {/if}
 
-            {#if myJob && (job.status === TicketStatus.New || job.status === TicketStatus.InProgress)}
+            {#if myJob && (job.status === JobStatus.New || job.status === JobStatus.InProgress)}
                 <Button
                     variant="outlined"
                     classes="justify-start"
@@ -148,7 +148,7 @@
                 </Button>
             {/if}
 
-            {#if myJob && job.status !== TicketStatus.New && winnerOffer}
+            {#if myJob && job.status !== JobStatus.New && winnerOffer}
                 <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
                     <i class="bx bxs-bolt text-[20px]"></i>
                     <p class="">Pay</p>
@@ -156,12 +156,7 @@
             {/if}
 
             {#if showMessageButton && bech32ID}
-                <Button
-                    onClick={goToChat}
-                    variant="outlined"
-                    classes="justify-start"
-                    fullWidth
-                >
+                <Button onClick={goToChat} variant="outlined" classes="justify-start" fullWidth>
                     <i class="bx bxs-conversation"></i>
                     <p class="">Message</p>
                 </Button>
@@ -197,7 +192,7 @@
 
 <CloseJobModal bind:isOpen={showCloseJobModal} {job} offer={winnerOffer} />
 
-<ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.ticketAddress} />
+<ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
 
 <PaymentModal bind:isOpen={showPaymentModal} />
 

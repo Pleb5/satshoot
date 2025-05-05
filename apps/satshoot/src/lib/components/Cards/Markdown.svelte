@@ -120,7 +120,7 @@
                 case 'naddr':
                     try {
                         const data = nip19.decode(content).data as AddressPointer;
-                        if (data.kind === NDKKind.FreelanceTicket) {
+                        if (data.kind === NDKKind.FreelanceJob) {
                             url = `/${tagType}${content}`;
                         } else {
                             external = true;

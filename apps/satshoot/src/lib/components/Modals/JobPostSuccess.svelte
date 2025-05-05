@@ -1,12 +1,12 @@
 <script lang="ts">
     import Button from '../UI/Buttons/Button.svelte';
-    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import type { JobEvent } from '$lib/events/JobEvent';
     import ShareJobModal from './ShareJobModal.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
 
     interface Props {
         isOpen: boolean;
-        job: TicketEvent;
+        job: JobEvent;
     }
 
     let { isOpen = $bindable(), job }: Props = $props();

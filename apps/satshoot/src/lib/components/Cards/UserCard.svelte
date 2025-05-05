@@ -19,7 +19,7 @@
     import { nip19 } from 'nostr-tools';
     import ReputationCard from './ReputationCard.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
-    import type { TicketEvent } from '$lib/events/TicketEvent';
+    import type { JobEvent } from '$lib/events/JobEvent';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -41,7 +41,7 @@
 
     interface Props {
         user: NDKUser;
-        job?: TicketEvent | undefined;
+        job?: JobEvent | undefined;
     }
 
     let { user, job = undefined }: Props = $props();
@@ -131,7 +131,7 @@
             const deleteEvent = new NDKEvent($ndk);
             deleteEvent.kind = NDKKind.EventDeletion;
             deleteEvent.tag(['e', followEvent.id]);
-            deleteEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
+            deleteEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
             deleteEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
             deleteEvent.publish();
         }
@@ -141,7 +141,7 @@
         newFollowEvent.kind ??= NDKKind.KindScopedFollow;
         newFollowEvent.tags = followEvent ? followEvent.tags : [];
         newFollowEvent.tag(['p', user.pubkey]);
-        newFollowEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
+        newFollowEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
         newFollowEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
 
         await newFollowEvent
@@ -179,7 +179,7 @@
         const deleteEvent = new NDKEvent($ndk);
         deleteEvent.kind = NDKKind.EventDeletion;
         deleteEvent.tag(['e', followEvent.id]);
-        deleteEvent.tag(['k', NDKKind.FreelanceTicket.toString()]);
+        deleteEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
         deleteEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
         deleteEvent.publish();
 
@@ -241,10 +241,10 @@
     }
 
     function chatWithJobCreator() {
-        if (!job) throw new Error('Error: Job missing, cannot go to chat')
+        if (!job) throw new Error('Error: Job missing, cannot go to chat');
         const url = new URL(`/messages/${bech32ID}`, window.location.origin);
-        url.searchParams.append(SELECTED_QUERY_PARAM, job.pubkey)
-        goto(url)
+        url.searchParams.append(SELECTED_QUERY_PARAM, job.pubkey);
+        goto(url);
     }
 
     function handleShare() {
@@ -315,7 +315,9 @@
 
                 {#each userInfoItems as { text, href, isExternal, title }}
                     {#if text}
-                        <div class="grid grid-cols-[1fr_auto] border-[1px] border-black-100 dark:border-white-100">
+                        <div
+                            class="grid grid-cols-[1fr_auto] border-[1px] border-black-100 dark:border-white-100"
+                        >
                             <div class="overflow-x-auto whitespace-nowrap bg-black-50">
                                 {#if href}
                                     <a
@@ -326,9 +328,7 @@
                                         {text}
                                     </a>
                                 {:else}
-                                    <div
-                                        class="px-[10px] py-[5px] text-start"
-                                    >
+                                    <div class="px-[10px] py-[5px] text-start">
                                         {text}
                                     </div>
                                 {/if}

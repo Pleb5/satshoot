@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
+    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
 
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
@@ -16,12 +16,12 @@
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
     // Track debounced jobs
-    let debouncedNewJobs = $state<TicketEvent[]>([]);
+    let debouncedNewJobs = $state<JobEvent[]>([]);
     let debounceTimer: NodeJS.Timeout | null = null; // Not reactive state
 
     let newJobs = $ndk.storeSubscribe(
         {
-            kinds: [NDKKind.FreelanceTicket],
+            kinds: [NDKKind.FreelanceJob],
         },
         {
             autoStart: false,
@@ -29,7 +29,7 @@
             groupable: false,
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         },
-        TicketEvent
+        JobEvent
     );
 
     // Debounce the new jobs updates
@@ -50,8 +50,8 @@
 
     let jobList = $derived.by(() => {
         let copiedJobs = [...debouncedNewJobs];
-        copiedJobs = copiedJobs.filter((t: TicketEvent) => {
-            const newJob = t.status === TicketStatus.New;
+        copiedJobs = copiedJobs.filter((t: JobEvent) => {
+            const newJob = t.status === JobStatus.New;
             const partOfWot = $wot.has(t.pubkey);
 
             return newJob && partOfWot;
@@ -74,7 +74,7 @@
     // We can avoid $effect by reacting to filterList length but can set this regardless
     let currentPage = $derived(searchQuery && searchQuery.length > 0 ? 1 : 1);
 
-    function filterJobs(jobListToFilter: TicketEvent[], searchTerm: string): TicketEvent[] {
+    function filterJobs(jobListToFilter: JobEvent[], searchTerm: string): JobEvent[] {
         const fuse = new Fuse(jobListToFilter, {
             isCaseSensitive: false,
             shouldSort: true, // Whether to sort the result list, by score

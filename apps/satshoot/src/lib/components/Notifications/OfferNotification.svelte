@@ -10,7 +10,7 @@
 
     import { onMount } from 'svelte';
 
-    import { TicketEvent } from '$lib/events/TicketEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import currentUser from '$lib/stores/user';
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
@@ -30,7 +30,7 @@
     let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let job = $state<TicketEvent | null>(null);
+    let job = $state<JobEvent | null>(null);
 
     onMount(async () => {
         userProfile = await user.fetchProfile();
@@ -43,9 +43,9 @@
             }
         }
 
-        const dTagOfJob = notification.referencedTicketAddress.split(':')[2];
-        const jobFilter: NDKFilter<NDKKind.FreelanceTicket> = {
-            kinds: [NDKKind.FreelanceTicket],
+        const dTagOfJob = notification.referencedJobAddress.split(':')[2];
+        const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
+            kinds: [NDKKind.FreelanceJob],
             '#d': [dTagOfJob],
         };
 
@@ -56,7 +56,7 @@
         });
 
         if (jobEvent) {
-            job = TicketEvent.from(jobEvent);
+            job = JobEvent.from(jobEvent);
         }
     });
 </script>

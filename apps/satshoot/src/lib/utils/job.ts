@@ -1,31 +1,31 @@
-import { TicketStatus } from '$lib/events/TicketEvent';
+import { JobStatus } from '$lib/events/JobEvent';
 
-export function getJobStatusString(status: TicketStatus) {
-    if (status === TicketStatus.New) {
+export function getJobStatusString(status: JobStatus) {
+    if (status === JobStatus.New) {
         return 'New';
     }
 
-    if (status === TicketStatus.InProgress) {
+    if (status === JobStatus.InProgress) {
         return 'In Progress';
     }
 
-    if (status === TicketStatus.Resolved) {
+    if (status === JobStatus.Resolved) {
         return 'Resolved';
     }
 
     return 'Failed';
 }
 
-export function getJobStatusColor(status: TicketStatus) {
-    if (status === TicketStatus.New) {
+export function getJobStatusColor(status: JobStatus) {
+    if (status === JobStatus.New) {
         return 'text-primary-400-500';
     }
 
-    if (status === TicketStatus.InProgress) {
+    if (status === JobStatus.InProgress) {
         return 'text-success-500';
     }
 
-    if (status === TicketStatus.Resolved) {
+    if (status === JobStatus.Resolved) {
         return 'text-tertiary-500';
     }
 

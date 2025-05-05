@@ -42,8 +42,8 @@ export const sessionPK: Writable<string> = persisted('pk', '', { storage: 'sessi
 export const sessionInitialized = writable(false);
 
 // Client-side caching. Used for performance enhancement as well as a solution to identify
-// new data and serve push notifications. Notify user when 'tickets of interest' change,
-// that is, my tickets and tickets I bid on, as well as new messages
+// new data and serve push notifications. Notify user when 'jobs of interest' change,
+// that is, my jobs and jobs I bid on, as well as new messages
 const ndkSvelte = new NDKSvelte({
     enableOutboxModel: true,
     outboxRelayUrls: BOOTSTRAPOUTBOXRELAYS,
