@@ -225,7 +225,9 @@
     });
 </script>
 
-<div class="markdown">{@html sanitizedContent}</div>
+<div class="markdown max-w-full wrap-anywhere overflow-hidden ">
+    {@html sanitizedContent}
+</div>
 
 <style>
     .markdown {

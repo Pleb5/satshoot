@@ -38,7 +38,9 @@
 
 <Card classes="gap-[15px]">
     <div class="w-full flex flex-col gap-[5px]">
-        <h1 class="w-full text-center font-[700] text-[32px]">{job.title || 'No Title!'}</h1>
+        <h1 class="w-full text-center font-[700] text-[32px] wrap-normal overflow-hidden">
+            <Markdown content={job.title || 'No Title!'} />
+        </h1>
     </div>
     <div class={statusRowWrapperClasses}>
         <p title="Job Status" class="{statusRowItemClasses} {statusColor}">
@@ -65,7 +67,7 @@
         </Button>
     </div>
     <div class="w-full flex flex-col gap-[10px]">
-        <div class="w-full break-words break-all overflow-hidden overflow-wrap-anywhere">
+        <div class="w-full wrap-anywhere">
             <Markdown content={job.description} />
         </div>
     </div>

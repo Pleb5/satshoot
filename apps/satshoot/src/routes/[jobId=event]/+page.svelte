@@ -371,8 +371,8 @@
                         {/if}
                     </div>
                 {:else}
-                    <div class="w-[90vw] p-4 space-y-4">
-                        <div class="sm:grid sm:grid-cols-[70%_1fr] sm:gap-x-4">
+                    <div class="w-full p-4 space-y-4">
+                        <div class="sm:grid sm:grid-cols-[90%_1fr] sm:gap-x-4">
                             <div class="space-y-6">
                                 <div class="w-full h-[50vh] card p-8 flex justify-center">
                                     <div class="w-[50%] card placeholder animate-pulse"></div>
