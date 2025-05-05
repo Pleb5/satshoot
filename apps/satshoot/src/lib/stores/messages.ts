@@ -54,4 +54,3 @@ export const wotFilteredMessageFeed = derived([messageStore, wot], ([$messageSto
 
     return feed;
 });
-

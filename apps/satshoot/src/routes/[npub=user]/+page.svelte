@@ -1,14 +1,14 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import OfferCard from '$lib/components/Cards/OfferCard.svelte';
+    import BidCard from '$lib/components/Cards/BidCard.svelte';
     import UserCard from '$lib/components/Cards/UserCard.svelte';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
-    import { jobFilter, offerFilter, scrollToMyJobsAndMyOffers } from '$lib/stores/gui';
+    import { jobFilter, bidFilter, scrollToMyJobsAndMyBids } from '$lib/stores/gui';
     import ndk from '$lib/stores/session';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import currentUser from '$lib/stores/user';
@@ -21,7 +21,7 @@
     import { debounce } from '$lib/utils/misc';
     import Fuse from 'fuse.js';
 
-    enum OfferStatus {
+    enum BidStatus {
         Unknown,
         Pending,
         Won,
@@ -42,20 +42,16 @@
     };
     const allJobsOfUser = $ndk.storeSubscribe<JobEvent>(allJobsFilter, subOptions, JobEvent);
 
-    const allOffersFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceOffer],
+    const allBidsFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceBid],
     };
-    const allOffersOfUser = $ndk.storeSubscribe<OfferEvent>(
-        allOffersFilter,
-        subOptions,
-        OfferEvent
-    );
+    const allBidsOfUser = $ndk.storeSubscribe<BidEvent>(allBidsFilter, subOptions, BidEvent);
 
     const dTagOfJobs = $derived(
-        $allOffersOfUser.map((offer) => offer.referencedJobAddress.split(':')[2])
+        $allBidsOfUser.map((bid) => bid.referencedJobAddress.split(':')[2])
     );
 
-    // jobs on which user has made offers
+    // jobs on which user has made bids
     const appliedJobsFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceJob],
     };
@@ -75,8 +71,8 @@
     let debouncedJobsTimer: NodeJS.Timeout | null = null; // Not reactive state
 
     // Track debounced jobs
-    let debouncedUserOffers = $state<OfferEvent[]>([]);
-    let debouncedOffersTimer: NodeJS.Timeout | null = null; // Not reactive state
+    let debouncedUserBids = $state<BidEvent[]>([]);
+    let debouncedBidsTimer: NodeJS.Timeout | null = null; // Not reactive state
 
     // Debounce the user jobs updates
     $effect(() => {
@@ -94,19 +90,19 @@
         };
     });
 
-    // Debounce the user offer updates
+    // Debounce the user bid updates
     $effect(() => {
-        // Only react to $allOffersOfUser changes
-        const userOffers = $allOffersOfUser;
+        // Only react to $allBidsOfUser changes
+        const userBids = $allBidsOfUser;
 
-        if (debouncedOffersTimer) clearTimeout(debouncedOffersTimer);
+        if (debouncedBidsTimer) clearTimeout(debouncedBidsTimer);
 
-        debouncedOffersTimer = setTimeout(() => {
-            debouncedUserOffers = [...userOffers];
+        debouncedBidsTimer = setTimeout(() => {
+            debouncedUserBids = [...userBids];
         }, 300); // 300ms debounce delay
 
         return () => {
-            if (debouncedOffersTimer) clearTimeout(debouncedOffersTimer);
+            if (debouncedBidsTimer) clearTimeout(debouncedBidsTimer);
         };
     });
 
@@ -175,41 +171,41 @@
         return filteredJobList;
     }
 
-    const { pending, success, lost } = $derived($offerFilter);
+    const { pending, success, lost } = $derived($bidFilter);
 
-    const filteredOffers = $derived.by(() => {
-        let copied = [...$allOffersOfUser];
+    const filteredBids = $derived.by(() => {
+        let copied = [...$allBidsOfUser];
         orderEventsChronologically(copied);
 
-        copied = copied.filter((offer) => {
-            const job = $appliedJobs?.find((job) => job.jobAddress === offer.referencedJobAddress);
+        copied = copied.filter((bid) => {
+            const job = $appliedJobs?.find((job) => job.jobAddress === bid.referencedJobAddress);
 
-            const offerStatus = job
-                ? job.acceptedOfferAddress
-                    ? job.acceptedOfferAddress === offer.offerAddress
-                        ? OfferStatus.Won
-                        : OfferStatus.Lost
-                    : OfferStatus.Pending
-                : OfferStatus.Unknown;
+            const bidStatus = job
+                ? job.acceptedBidAddress
+                    ? job.acceptedBidAddress === bid.bidAddress
+                        ? BidStatus.Won
+                        : BidStatus.Lost
+                    : BidStatus.Pending
+                : BidStatus.Unknown;
 
             return (
-                (pending && offerStatus === OfferStatus.Pending) ||
-                (success && offerStatus === OfferStatus.Won) ||
-                (lost && offerStatus === OfferStatus.Lost) ||
-                offerStatus === OfferStatus.Unknown
+                (pending && bidStatus === BidStatus.Pending) ||
+                (success && bidStatus === BidStatus.Won) ||
+                (lost && bidStatus === BidStatus.Lost) ||
+                bidStatus === BidStatus.Unknown
             );
         });
 
         if (searchQuery && searchQuery.length > 0) {
-            return filterOffers(copied, searchQuery);
+            return filterBids(copied, searchQuery);
         }
 
         return copied;
     });
 
     // filter based on search terms
-    function filterOffers(offers: OfferEvent[], searchTerm: string): OfferEvent[] {
-        const fuse = new Fuse(offers, {
+    function filterBids(bids: BidEvent[], searchTerm: string): BidEvent[] {
+        const fuse = new Fuse(bids, {
             isCaseSensitive: false,
             shouldSort: true,
             ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
@@ -229,9 +225,9 @@
 
         const searchResult = fuse.search(searchTerm);
 
-        const filteredOfferList = searchResult.map(({ item }) => item);
+        const filteredBidList = searchResult.map(({ item }) => item);
 
-        return filteredOfferList;
+        return filteredBidList;
     }
 
     let initialized = $state(false);
@@ -239,41 +235,41 @@
         if (pubkey && $sessionInitialized && !initialized) {
             initialized = true;
             allJobsFilter.authors = [pubkey];
-            allOffersFilter.authors = [pubkey];
+            allBidsFilter.authors = [pubkey];
 
             allJobsOfUser.startSubscription();
-            allOffersOfUser.startSubscription();
+            allBidsOfUser.startSubscription();
         }
     });
 
-    let myJobsAndMyOffersElement = $state<HTMLDivElement>();
+    let myJobsAndMyBidsElement = $state<HTMLDivElement>();
     $effect(() => {
-        if (myJobsAndMyOffersElement && $scrollToMyJobsAndMyOffers) {
-            $scrollToMyJobsAndMyOffers = false;
+        if (myJobsAndMyBidsElement && $scrollToMyJobsAndMyBids) {
+            $scrollToMyJobsAndMyBids = false;
             setTimeout(() => {
-                if (myJobsAndMyOffersElement) {
-                    myJobsAndMyOffersElement.scrollIntoView({
+                if (myJobsAndMyBidsElement) {
+                    myJobsAndMyBidsElement.scrollIntoView({
                         behavior: 'smooth',
-                        block: 'start'
+                        block: 'start',
                     });
                 }
-            }, 600)
+            }, 600);
         }
     });
 
     onDestroy(() => {
         if (allJobsOfUser) allJobsOfUser.empty();
-        if (allOffersOfUser) allOffersOfUser.empty();
+        if (allBidsOfUser) allBidsOfUser.empty();
         if (appliedJobs) appliedJobs.empty();
         if (debouncedJobsTimer) clearTimeout(debouncedJobsTimer);
-        if (debouncedOffersTimer) clearTimeout(debouncedOffersTimer);
+        if (debouncedBidsTimer) clearTimeout(debouncedBidsTimer);
     });
 
     let isOwnProfile = $derived($currentUser && $currentUser?.pubkey === pubkey);
 
     let tabs = $derived([
         { id: ProfilePageTabs.Jobs, label: `${isOwnProfile ? 'My' : ''} Jobs` },
-        { id: ProfilePageTabs.Offers, label: `${isOwnProfile ? 'My' : ''} Offers` },
+        { id: ProfilePageTabs.Bids, label: `${isOwnProfile ? 'My' : ''} Bids` },
     ]);
 </script>
 
@@ -285,15 +281,13 @@
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col max-[768px]:gap-0">
                     <UserCard {user} />
                     <div
-                        id="job-and-offers"
+                        id="job-and-bids"
                         class="w-full flex flex-col gap-[15px] relative"
-                        bind:this={myJobsAndMyOffersElement}
+                        bind:this={myJobsAndMyBidsElement}
                     >
                         <div class="w-full flex flex-col gap-[10px]">
                             <TabSelector {tabs} bind:selectedTab={$profileTabStore} />
-                            <div 
-                                class="w-full flex flex-col"
-                            >
+                            <div class="w-full flex flex-col">
                                 {#if $profileTabStore === ProfilePageTabs.Jobs}
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
@@ -318,7 +312,7 @@
                                                 class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
                                             >
                                                 {#each filteredJobs as job (job.id)}
-                                                    <JobCard {job} showOffersDetail />
+                                                    <JobCard {job} showBidsDetail />
                                                 {/each}
                                             </div>
                                             <!-- Pagination -->
@@ -328,26 +322,26 @@
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
                                             <Checkbox
-                                                id="pending-offers"
+                                                id="pending-bids"
                                                 label="Pending"
-                                                bind:checked={$offerFilter.pending}
+                                                bind:checked={$bidFilter.pending}
                                             />
                                             <Checkbox
-                                                id="success-offers"
+                                                id="success-bids"
                                                 label="Success"
-                                                bind:checked={$offerFilter.success}
+                                                bind:checked={$bidFilter.success}
                                             />
                                             <Checkbox
-                                                id="lost-offers"
+                                                id="lost-bids"
                                                 label="Lost"
-                                                bind:checked={$offerFilter.lost}
+                                                bind:checked={$bidFilter.lost}
                                             />
                                         </Card>
                                         <div class="w-full flex flex-col gap-[15px]">
                                             <div class="w-full flex flex-col gap-[15px]">
-                                                {#each filteredOffers as offer (offer.id)}
-                                                    <OfferCard
-                                                        {offer}
+                                                {#each filteredBids as bid (bid.id)}
+                                                    <BidCard
+                                                        {bid}
                                                         skipUserProfile
                                                         skipReputation
                                                         showJobDetail

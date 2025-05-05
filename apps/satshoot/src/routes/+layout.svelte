@@ -17,11 +17,11 @@
     import currentUser, { loggedIn, loggingIn, loginMethod, mounted } from '$lib/stores/user';
 
     import {
-        allOffers,
+        allBids,
         allJobs,
-        myOffers,
+        myBids,
         myJobs,
-        wotFilteredOffers,
+        wotFilteredBids,
         wotFilteredJobs,
     } from '$lib/stores/freelance-eventstores';
 
@@ -61,7 +61,7 @@
     import { goto } from '$app/navigation';
     import Footer from '$lib/components/layout/Footer.svelte';
     import Header from '$lib/components/layout/Header.svelte';
-    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import type { BidEvent } from '$lib/events/BidEvent';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import type { JobEvent } from '$lib/events/JobEvent';
 
@@ -72,9 +72,9 @@
         getModeUserPrefers,
         setModeUserPrefers,
     } from '$lib/utils/lightSwitch';
-    import { jobPostSuccessState, offerTakenState } from '$lib/stores/modals';
+    import { jobPostSuccessState, bidTakenState } from '$lib/stores/modals';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
-    import OfferTakenModal from '$lib/components/Modals/OfferTakenModal.svelte';
+    import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -389,16 +389,16 @@
         if (followSubscription) followSubscription.stop();
 
         if (allJobs) allJobs.empty();
-        if (allOffers) allOffers.empty();
+        if (allBids) allBids.empty();
         if (myJobs) myJobs.empty();
-        if (myOffers) myOffers.empty();
+        if (myBids) myBids.empty();
 
         if (messageStore) messageStore.empty();
         if (allReceivedZaps) allReceivedZaps.empty();
         if (allReviews) allReviews.empty();
     });
 
-    // Check for app updates and offer reload option to user in a Toast
+    // Check for app updates and bid reload option to user in a Toast
     $effect(() => {
         if ($updated) {
             toaster.info({
@@ -448,13 +448,13 @@
 
     // ----- Notifications ------ //
     $effect(() => {
-        if ($wotFilteredJobs && $myOffers) {
+        if ($wotFilteredJobs && $myBids) {
             // console.log('all jobs change:', $wotFilteredJobs)
             $wotFilteredJobs.forEach((t: JobEvent) => {
-                $myOffers.forEach((o: OfferEvent) => {
+                $myBids.forEach((o: BidEvent) => {
                     if (o.referencedJobDTag === t.dTag) {
-                        // If users offer won send that else just send relevant job
-                        if (t.acceptedOfferAddress === o.offerAddress) {
+                        // If users bid won send that else just send relevant job
+                        if (t.acceptedBidAddress === o.bidAddress) {
                             sendNotification(o);
                         } else {
                             sendNotification(t);
@@ -466,9 +466,9 @@
     });
 
     $effect(() => {
-        if ($wotFilteredOffers && $myJobs) {
-            // console.log('all offers change:', $wotFilteredOffers)
-            $wotFilteredOffers.forEach((o: OfferEvent) => {
+        if ($wotFilteredBids && $myJobs) {
+            // console.log('all bids change:', $wotFilteredBids)
+            $wotFilteredBids.forEach((o: BidEvent) => {
                 $myJobs.forEach((t: JobEvent) => {
                     if (o.referencedJobDTag === t.dTag) {
                         sendNotification(o);
@@ -506,8 +506,8 @@
     $effect(() => {
         if ($freelancerReviews) {
             $freelancerReviews.forEach((r: ReviewEvent) => {
-                $myOffers.forEach((o: OfferEvent) => {
-                    if (o.offerAddress === r.reviewedEventAddress) {
+                $myBids.forEach((o: BidEvent) => {
+                    if (o.bidAddress === r.reviewedEventAddress) {
                         sendNotification(r);
                     }
                 });
@@ -529,7 +529,7 @@
                 followSubscription = $ndk.subscribe(
                     {
                         kinds: [NDKKind.KindScopedFollow],
-                        '#k': [NDKKind.FreelanceJob.toString(), NDKKind.FreelanceOffer.toString()],
+                        '#k': [NDKKind.FreelanceJob.toString(), NDKKind.FreelanceBid.toString()],
                         '#p': [$currentUser.pubkey],
                     },
                     {
@@ -599,7 +599,7 @@
     />
 {/if}
 
-<!-- Modal to display after offer is accepted -->
-{#if $offerTakenState.showModal && $offerTakenState.jobId}
-    <OfferTakenModal bind:isOpen={$offerTakenState.showModal} jobId={$offerTakenState.jobId} />
+<!-- Modal to display after bid is accepted -->
+{#if $bidTakenState.showModal && $bidTakenState.jobId}
+    <BidTakenModal bind:isOpen={$bidTakenState.showModal} jobId={$bidTakenState.jobId} />
 {/if}

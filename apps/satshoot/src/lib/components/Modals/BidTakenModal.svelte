@@ -11,7 +11,7 @@
     let { isOpen = $bindable(), jobId }: Props = $props();
 </script>
 
-<ModalWrapper bind:isOpen title="You accepted the Offer!">
+<ModalWrapper bind:isOpen title="You accepted the Bid!">
     <strong class="text-error-500">
         It is strongly recommended you use specialized E2EE(e.g. SimpleX chat) messaging software
         for highly sensitive information!

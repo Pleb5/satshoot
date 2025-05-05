@@ -13,12 +13,11 @@
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
     import { browser } from '$app/environment';
 
-    import SELECTED_QUERY_PARAM,
-    { 
+    import SELECTED_QUERY_PARAM, {
         MessageService,
         ContactService,
         JobService,
-        UIService 
+        UIService,
     } from '$lib/services/messages';
 
     let initialized = $state(false);
@@ -49,7 +48,7 @@
     const winnerPubkey = $derived(contactService.winnerPubkey);
     const job = $derived(jobService.job);
     const myJob = $derived(jobService.isOwner);
-    const offers = $derived(jobService.offers);
+    const bids = $derived(jobService.bids);
     // UI state - direct access to service properties
     const disablePrompt = $derived(uiService.disablePrompt);
     const mounted = $derived(uiService.mounted);
@@ -98,21 +97,17 @@
     $effect(() => {
         if (job && $currentUser && !initialContactsAdded) {
             initialContactsAdded = true;
-            console.log('Adding initial contacts')
+            console.log('Adding initial contacts');
             const pubkeyToSelect = page.url.searchParams.get(SELECTED_QUERY_PARAM) ?? '';
 
-            contactService.addInitialContacts(
-                job.pubkey,
-                $currentUser.pubkey,
-                pubkeyToSelect
-            );
+            contactService.addInitialContacts(job.pubkey, $currentUser.pubkey, pubkeyToSelect);
         }
     });
 
     $effect(() => {
-        if (myJob && offers) {
-            const offerPubkeys = offers.map((offer: any) => offer.pubkey);
-            contactService.addPeopleFromPubkeys(offerPubkeys);
+        if (myJob && bids) {
+            const bidPubkeys = bids.map((bid: any) => bid.pubkey);
+            contactService.addPeopleFromPubkeys(bidPubkeys);
         }
     });
 
@@ -224,9 +219,11 @@
                             <div class="flex flex-col gap-[10px] overflow-y-auto grow">
                                 {#each contacts as contact}
                                     {@const image =
-                                        contact.profile?.image ?? getRoboHashPicture(contact.person.pubkey)}
+                                        contact.profile?.image ??
+                                        getRoboHashPicture(contact.person.pubkey)}
                                     {@const name =
-                                        contact.profile?.name ?? contact.person.npub.substring(0, 10)}
+                                        contact.profile?.name ??
+                                        contact.person.npub.substring(0, 10)}
                                     <Button
                                         variant={contact.selected ? 'contained' : 'text'}
                                         onClick={() => selectCurrentContact(contact)}
@@ -258,14 +255,19 @@
                                         {#snippet lead()}
                                             {#if currentContact}
                                                 {@const profileImage =
-                                                    currentContact.profile?.image ?? 
-                                                        getRoboHashPicture(currentContact.person.pubkey)}
+                                                    currentContact.profile?.image ??
+                                                    getRoboHashPicture(
+                                                        currentContact.person.pubkey
+                                                    )}
                                                 <a href={'/' + currentContact.person.npub}>
                                                     <Avatar
                                                         src={profileImage}
                                                         size="size-8"
                                                         name={currentContact.profile?.name ??
-                                                            currentContact.person.npub.substring(0, 15)}
+                                                            currentContact.person.npub.substring(
+                                                                0,
+                                                                15
+                                                            )}
                                                     />
                                                 </a>
                                             {/if}
@@ -274,7 +276,8 @@
                                             {#if currentContact}
                                                 <span
                                                     class="flex-1 text-start
-                                                        {currentContact.person.pubkey === winnerPubkey
+                                                        {currentContact.person.pubkey ===
+                                                    winnerPubkey
                                                         ? 'text-warning-400 font-bold'
                                                         : ''}"
                                                 >

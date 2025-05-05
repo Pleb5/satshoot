@@ -1,6 +1,6 @@
 <script lang="ts">
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
-    import { OfferEvent, OfferStatus, Pricing } from '$lib/events/OfferEvent';
+    import { BidEvent, BidStatus, Pricing } from '$lib/events/BidEvent';
     import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ndk from '$lib/stores/session';
@@ -19,10 +19,10 @@
     interface Props {
         isOpen: boolean;
         job: JobEvent;
-        offerToEdit?: OfferEvent | undefined;
+        bidToEdit?: BidEvent | undefined;
     }
 
-    let { isOpen = $bindable(), job, offerToEdit = undefined }: Props = $props();
+    let { isOpen = $bindable(), job, bidToEdit = undefined }: Props = $props();
 
     const jobAddress = job.jobAddress;
 
@@ -51,40 +51,40 @@
     });
 
     onMount(() => {
-        if (offerToEdit) {
-            pricingMethod = offerToEdit.pricing;
-            amount = offerToEdit.amount;
-            pledgeSplit = offerToEdit.pledgeSplit;
-            description = offerToEdit.description;
+        if (bidToEdit) {
+            pricingMethod = bidToEdit.pricing;
+            amount = bidToEdit.amount;
+            pledgeSplit = bidToEdit.pledgeSplit;
+            description = bidToEdit.description;
         }
     });
 
-    async function postOffer() {
+    async function postBid() {
         if (!validate()) {
             return;
         }
         posting = true;
-        const offer = new OfferEvent($ndk);
+        const bid = new BidEvent($ndk);
 
-        offer.pricing = pricingMethod;
-        offer.amount = amount;
-        offer.setPledgeSplit(pledgeSplit, $currentUser!.pubkey);
-        offer.description = description;
+        bid.pricing = pricingMethod;
+        bid.amount = amount;
+        bid.setPledgeSplit(pledgeSplit, $currentUser!.pubkey);
+        bid.description = description;
 
-        offer.referencedJobAddress = jobAddress as string;
+        bid.referencedJobAddress = jobAddress as string;
 
         // Only generate new d-tag if we are not editing an existing one
-        if (!offerToEdit) {
+        if (!bidToEdit) {
             // generate unique d-tag
-            offer.generateTags();
+            bid.generateTags();
         } else {
-            offer.removeTag('d');
-            offer.tags.push(['d', offerToEdit.tagValue('d') as string]);
+            bid.removeTag('d');
+            bid.tags.push(['d', bidToEdit.tagValue('d') as string]);
         }
 
         try {
-            console.log('offer', offer);
-            const relaysPublished = await offer.publish();
+            console.log('bid', bid);
+            const relaysPublished = await bid.publish();
 
             if (sendDm) {
                 const dm = new NDKEvent($ndk);
@@ -100,9 +100,9 @@
                 dm.tags.push(['p', jobHolder]);
 
                 const content =
-                    `SatShoot Offer update on Job: ${job.title} | \n\n` +
-                    `Amount: ${offer.amount}${offer.pricing === Pricing.Absolute ? 'sats' : 'sats/min'} | \n` +
-                    `Description: ${offer.description}`;
+                    `SatShoot Bid update on Job: ${job.title} | \n\n` +
+                    `Amount: ${bid.amount}${bid.pricing === Pricing.Absolute ? 'sats' : 'sats/min'} | \n` +
+                    `Description: ${bid.description}`;
                 dm.content = await ($ndk.signer as NDKSigner).encrypt(jobHolderUser, content);
 
                 await dm.publish();
@@ -110,7 +110,7 @@
 
             posting = false;
 
-            toaster.success({ title: 'Offer Posted!' });
+            toaster.success({ title: 'Bid Posted!' });
 
             if (!$currentUser?.profile?.lud16) {
                 console.log($currentUser?.profile);
@@ -138,11 +138,11 @@
 
             isOpen = false;
 
-            $profileTabStore = ProfilePageTabs.Offers;
+            $profileTabStore = ProfilePageTabs.Bids;
             goto('/' + $currentUser?.npub + '/');
         } catch (e) {
             posting = false;
-            const errorMessage = 'Error happened while publishing Offer:' + e;
+            const errorMessage = 'Error happened while publishing Bid:' + e;
 
             toaster.error({
                 title: errorMessage,
@@ -177,7 +177,7 @@
         'bg-white dark:bg-brightGray transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
 </script>
 
-<ModalWrapper bind:isOpen title="Create Offer">
+<ModalWrapper bind:isOpen title="Create Bid">
     <div class="w-full flex flex-col gap-[15px]">
         <div
             class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
@@ -275,17 +275,17 @@
         </div>
         <Checkbox
             id="dm-checkbox"
-            label="Send offer as a Direct Message (DM) to the job poster"
+            label="Send bid as a Direct Message (DM) to the job poster"
             bind:checked={sendDm}
         />
         <div class="w-full flex flex-row justify-center">
-            <Button onClick={postOffer} disabled={posting || !validPledgePercent}>
+            <Button onClick={postBid} disabled={posting || !validPledgePercent}>
                 {#if posting}
                     <span>
                         <ProgressRing />
                     </span>
                 {:else}
-                    Publish offer
+                    Publish bid
                 {/if}
             </Button>
         </div>

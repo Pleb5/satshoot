@@ -28,11 +28,11 @@ import { allReceivedZapsFilter, allReceivedZaps } from '$lib/stores/zaps';
 import { messageStore, sentMessageFilter, receivedMessageFilter } from '$lib/stores/messages';
 import {
     allJobs,
-    allOffers,
+    allBids,
     myJobFilter,
-    myOfferFilter,
+    myBidFilter,
     myJobs,
-    myOffers,
+    myBids,
 } from '$lib/stores/freelance-eventstores';
 import { notifications, seenIDs, serviceWorkerRegistrationFailed } from '../stores/notifications';
 import { goto } from '$app/navigation';
@@ -59,7 +59,7 @@ export async function initializeUser(ndk: NDKSvelte) {
         currentUser.set(user);
 
         myJobFilter.authors! = [user.pubkey];
-        myOfferFilter.authors! = [user.pubkey];
+        myBidFilter.authors! = [user.pubkey];
 
         const $onboardingStep = get(onboardingStep);
         if ($onboardingStep !== OnboardingStep.Account_Created) {
@@ -92,10 +92,10 @@ export async function initializeUser(ndk: NDKSvelte) {
         }
 
         myJobs.startSubscription();
-        myOffers.startSubscription();
+        myBids.startSubscription();
 
         allJobs.startSubscription();
-        allOffers.startSubscription();
+        allBids.startSubscription();
 
         receivedMessageFilter['#p']! = [user.pubkey];
         sentMessageFilter['authors'] = [user.pubkey];
@@ -185,7 +185,7 @@ export function logout() {
     localStorage.removeItem('followsUpdated');
     localStorage.removeItem('tabStore');
     localStorage.removeItem('jobTabStore');
-    localStorage.removeItem('offerTabStore');
+    localStorage.removeItem('bidTabStore');
     localStorage.removeItem('notificationsEnabled');
     localStorage.removeItem('serviceWorkerRegFailed');
     localStorage.removeItem('useSatShootWoT');
@@ -201,7 +201,7 @@ export function logout() {
     localStorage.removeItem('bunkerRelayURLs');
     localStorage.removeItem('readNotifications');
     localStorage.removeItem('jobFilter');
-    localStorage.removeItem('offerFilter');
+    localStorage.removeItem('bidFilter');
 
     sessionStorage.clear();
 
@@ -209,12 +209,12 @@ export function logout() {
 
     seenIDs.set(new Set());
     myJobs.empty();
-    myOffers.empty();
+    myBids.empty();
     myJobFilter.authors = [];
-    myOfferFilter.authors = [];
+    myBidFilter.authors = [];
 
     allJobs.empty();
-    allOffers.empty();
+    allBids.empty();
 
     messageStore.empty();
     allReviews.empty();

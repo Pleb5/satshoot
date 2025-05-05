@@ -8,7 +8,7 @@
     import Card from '$lib/components/UI/Card.svelte';
 
     // Data models
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import { JobEvent } from '$lib/events/JobEvent';
 
     // Store imports
@@ -97,7 +97,7 @@
 
         jobEvents.forEach((jobEvent: NDKEvent) => {
             const job = JobEvent.from(jobEvent);
-            if (job.acceptedOfferAddress && job.winnerFreelancer) {
+            if (job.acceptedBidAddress && job.winnerFreelancer) {
                 const user = $ndk.getUser({ pubkey: job.winnerFreelancer });
                 users.push(user);
                 jobs.push(job);
@@ -116,15 +116,15 @@
      * Fetch conversations for a freelancer user
      */
     async function fetchFreelancerConversations() {
-        const offers = await $ndk.fetchEvents(
+        const bids = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceOffer],
+                kinds: [NDKKind.FreelanceBid],
                 authors: [$currentUser!.pubkey],
             },
             defaultFetchOptions
         );
 
-        if (offers.size === 0) {
+        if (bids.size === 0) {
             noConversations = true;
             conversationData.loading = false;
             return;
@@ -132,13 +132,13 @@
 
         // Collect job DTags to fetch all related jobs in one request
         const jobsToFetch: string[] = [];
-        const offerMap = new Map<string, OfferEvent>();
+        const bidMap = new Map<string, BidEvent>();
 
-        for (const offerEvent of offers) {
-            const offer = OfferEvent.from(offerEvent);
-            if (offer.referencedJobDTag) {
-                jobsToFetch.push(offer.referencedJobDTag);
-                offerMap.set(offer.offerAddress, offer);
+        for (const bidEvent of bids) {
+            const bid = BidEvent.from(bidEvent);
+            if (bid.referencedJobDTag) {
+                jobsToFetch.push(bid.referencedJobDTag);
+                bidMap.set(bid.bidAddress, bid);
             }
         }
 
@@ -156,7 +156,7 @@
 
         jobEvents.forEach((jobEvent: NDKEvent) => {
             const job = JobEvent.from(jobEvent);
-            if (job.acceptedOfferAddress && offerMap.has(job.acceptedOfferAddress)) {
+            if (job.acceptedBidAddress && bidMap.has(job.acceptedBidAddress)) {
                 const user = $ndk.getUser({ pubkey: job.pubkey });
                 users.push(user);
                 jobs.push(job);

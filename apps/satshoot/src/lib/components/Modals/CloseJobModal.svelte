@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { OfferEvent } from '$lib/events/OfferEvent';
+    import type { BidEvent } from '$lib/events/BidEvent';
     import { ReviewEvent, type FreelancerRating } from '$lib/events/ReviewEvent';
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
@@ -18,10 +18,10 @@
     interface Props {
         isOpen: boolean;
         job: JobEvent;
-        offer?: OfferEvent | null;
+        bid?: BidEvent | null;
     }
 
-    let { isOpen = $bindable(), job, offer = null }: Props = $props();
+    let { isOpen = $bindable(), job, bid = null }: Props = $props();
 
     let showPaymentModal = $state(false);
 
@@ -58,9 +58,9 @@
                 console.log('published relays', relays);
 
                 // Post review data if applicable
-                if (job.acceptedOfferAddress) {
+                if (job.acceptedBidAddress) {
                     const reviewEvent = new ReviewEvent($ndk);
-                    reviewEvent.reviewedEventAddress = job.acceptedOfferAddress;
+                    reviewEvent.reviewedEventAddress = job.acceptedBidAddress;
 
                     const rating: FreelancerRating = {
                         success: isIssueResolved,
@@ -80,10 +80,10 @@
                 // Close this modal and Open payment modal
                 isOpen = false;
 
-                if (offer) {
+                if (bid) {
                     $paymentDetail = {
                         job: job,
-                        offer,
+                        bid,
                     };
 
                     isOpen = false;
@@ -112,7 +112,7 @@
                 trueLabel="Yes"
                 falseLabel="No"
             />
-            {#if job.acceptedOfferAddress}
+            {#if job.acceptedBidAddress}
                 {#if isIssueResolved}
                     <div class="w-full flex flex-col gap-[5px]">
                         <div class="w-full max-h-[50vh] overflow-auto">
@@ -162,7 +162,7 @@
                         </span>
                     {:else}
                         <span class="font-bold">
-                            {'Close job' + (offer ? ' and Pay' : '')}
+                            {'Close job' + (bid ? ' and Pay' : '')}
                         </span>
                     {/if}
                 </Button>

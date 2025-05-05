@@ -8,7 +8,7 @@ import {
     type NDKFilter,
 } from '@nostr-dev-kit/ndk';
 import { JobEvent } from '$lib/events/JobEvent';
-import { OfferEvent } from '$lib/events/OfferEvent';
+import { BidEvent } from '$lib/events/BidEvent';
 import ndk from '$lib/stores/session';
 import currentUserStore from '$lib/stores/user';
 import { checkRelayConnections } from '$lib/utils/helpers';
@@ -20,13 +20,13 @@ import type { ContactService } from './ContactService.svelte';
 export class JobService {
     // Public state for direct access
     job = $state<JobEvent | null>(null);
-    offers = $state<OfferEvent[]>([]);
+    bids = $state<BidEvent[]>([]);
     isOwner = $state<boolean>(false);
 
     // Private properties
     private jobAddress: string;
     private relays: string[];
-    private offerSubscription: NDKSubscription | null = null;
+    private bidSubscription: NDKSubscription | null = null;
     private contactService: ContactService | null = null;
 
     constructor(jobAddress: string, relays: string[]) {
@@ -79,30 +79,30 @@ export class JobService {
                 console.warn('Job could not be fetched in chat page!');
             }
 
-            this.initializeOffersSubscription();
+            this.initializeBidsSubscription();
         } catch (error) {
             console.error('Error fetching job details:', error);
         }
     }
 
     /**
-     * Initialize subscription to offers for this job
+     * Initialize subscription to bids for this job
      */
-    private initializeOffersSubscription() {
+    private initializeBidsSubscription() {
         const ndkInstance = get(ndk);
 
         try {
-            const offerFilter: NDKFilter = {
-                kinds: [NDKKind.FreelanceOffer],
+            const bidFilter: NDKFilter = {
+                kinds: [NDKKind.FreelanceBid],
                 '#a': [this.jobAddress],
             };
 
-            this.offerSubscription = ndkInstance.subscribe(offerFilter, { closeOnEose: false });
-            this.offerSubscription.on('event', (event: NDKEvent) => {
-                this.handleOfferEvent(event);
+            this.bidSubscription = ndkInstance.subscribe(bidFilter, { closeOnEose: false });
+            this.bidSubscription.on('event', (event: NDKEvent) => {
+                this.handleBidEvent(event);
             });
         } catch (error) {
-            console.error('Error setting up offer subscription:', error);
+            console.error('Error setting up bid subscription:', error);
         }
     }
 
@@ -129,21 +129,21 @@ export class JobService {
     }
 
     /**
-     * Handle offer event update
+     * Handle bid event update
      */
-    private handleOfferEvent(event: NDKEvent) {
-        const offerEvent = OfferEvent.from(event);
+    private handleBidEvent(event: NDKEvent) {
+        const bidEvent = BidEvent.from(event);
 
-        // Add to offers if not already present
-        const existingIndex = this.offers.findIndex((o) => o.id === offerEvent.id);
+        // Add to bids if not already present
+        const existingIndex = this.bids.findIndex((o) => o.id === bidEvent.id);
         if (existingIndex >= 0) {
-            // Create a new array with the updated offer
-            const updatedOffers = [...this.offers];
-            updatedOffers[existingIndex] = offerEvent;
-            this.offers = updatedOffers;
+            // Create a new array with the updated bid
+            const updatedBids = [...this.bids];
+            updatedBids[existingIndex] = bidEvent;
+            this.bids = updatedBids;
         } else {
-            // Add new offer
-            this.offers = [...this.offers, offerEvent];
+            // Add new bid
+            this.bids = [...this.bids, bidEvent];
         }
     }
 
@@ -151,9 +151,9 @@ export class JobService {
      * Unsubscribe from all subscriptions
      */
     unsubscribe() {
-        if (this.offerSubscription) {
-            this.offerSubscription.stop();
-            this.offerSubscription = null;
+        if (this.bidSubscription) {
+            this.bidSubscription.stop();
+            this.bidSubscription = null;
         }
     }
 }

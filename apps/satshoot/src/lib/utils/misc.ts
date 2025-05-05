@@ -30,7 +30,7 @@ export const bunkerPerms = [
     'nip44_encrypt',
     'nip44_decrypt',
     `sign_event:${NDKKind.FreelanceJob}`,
-    `sign_event:${NDKKind.FreelanceOffer}`,
+    `sign_event:${NDKKind.FreelanceBid}`,
     `sign_event:${NDKKind.Metadata}`,
     `sign_event:${NDKKind.Text}`,
     `sign_event:${NDKKind.EncryptedDirectMessage}`,

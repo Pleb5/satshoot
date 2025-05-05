@@ -4,7 +4,7 @@
     import LogoutModal from '../Modals/LogoutModal.svelte';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import JobIcon from '../Icons/JobIcon.svelte';
-    import { scrollToMyJobsAndMyOffers } from '$lib/stores/gui';
+    import { scrollToMyJobsAndMyBids } from '$lib/stores/gui';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import WalletIcon from '../Icons/WalletIcon.svelte';
@@ -59,21 +59,21 @@
                 props: { sizeClass: '' },
             },
             onClick: () => {
-                $scrollToMyJobsAndMyOffers = true;
+                $scrollToMyJobsAndMyBids = true;
                 $profileTabStore = ProfilePageTabs.Jobs;
                 goto(profileHref);
                 isOpen = false;
             },
         },
         {
-            label: 'My Offers',
+            label: 'My Bids',
             icon: {
                 component: BitcoinIcon,
                 props: { extraClasses: 'text-lg' },
             },
             onClick: () => {
-                $scrollToMyJobsAndMyOffers = true;
-                $profileTabStore = ProfilePageTabs.Offers;
+                $scrollToMyJobsAndMyBids = true;
+                $profileTabStore = ProfilePageTabs.Bids;
                 goto(profileHref);
                 isOpen = false;
             },

@@ -68,7 +68,7 @@
             message = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
             message += `## ${job.title}\n\n`;
             message += `${job.description}\n\n`;
-            message += `Make an offer on this URL:\n\n`;
+            message += `Make an bid on this URL:\n\n`;
             message += `${shareURL}\n\n`;
             message += `#satshoot #asknostr`;
             job.tTags.forEach((tag: NDKTag) => {

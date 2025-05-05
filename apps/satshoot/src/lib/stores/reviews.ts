@@ -31,7 +31,7 @@ export const allReviewsFilter: NDKFilter<NDKKind.Review> = {
 //     '#a': [],
 // };
 
-// export const reviewsOnMyOffersFilter: NDKFilter<NDKKind.Review> = {
+// export const reviewsOnMyBidsFilter: NDKFilter<NDKKind.Review> = {
 //     kinds: [NDKKind.Review],
 //     '#L': ['qts/freelancing'],
 //     authors: [],

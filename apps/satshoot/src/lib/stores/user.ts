@@ -47,7 +47,7 @@ export const fetchFreelanceFollowEvent = async (pubkey: Hexpubkey): Promise<NDKE
     const followEvent = await fetchEventFromRelaysFirst(
         {
             kinds: [NDKKind.KindScopedFollow],
-            '#k': [NDKKind.FreelanceJob.toString(), NDKKind.FreelanceOffer.toString()],
+            '#k': [NDKKind.FreelanceJob.toString(), NDKKind.FreelanceBid.toString()],
             authors: [pubkey],
         },
         {

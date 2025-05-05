@@ -4,7 +4,7 @@
     import ShareJobModal from './ShareJobModal.svelte';
     import CloseJobModal from './CloseJobModal.svelte';
     import ndk from '$lib/stores/session';
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import ReviewClientModal from './ReviewClientModal.svelte';
     import { clientReviews } from '$lib/stores/reviews';
     import { paymentDetail } from '$lib/stores/payment';
@@ -50,17 +50,17 @@
     });
 
     // Reactive states
-    let winnerOffer = $state<OfferEvent | null>(null);
+    let winnerBid = $state<BidEvent | null>(null);
 
-    // Effect to fetch winner offer
+    // Effect to fetch winner bid
     $effect(() => {
-        if (!job.acceptedOfferAddress) return;
+        if (!job.acceptedBidAddress) return;
 
-        $ndk.fetchEvent(job.acceptedOfferAddress, {
+        $ndk.fetchEvent(job.acceptedBidAddress, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         }).then((event) => {
             if (event) {
-                winnerOffer = OfferEvent.from(event);
+                winnerBid = BidEvent.from(event);
             }
         });
     });
@@ -94,11 +94,11 @@
     }
 
     function handlePay() {
-        if (!winnerOffer) return;
+        if (!winnerBid) return;
 
         $paymentDetail = {
             job: job,
-            offer: winnerOffer,
+            bid: winnerBid,
         };
 
         isOpen = false;
@@ -148,7 +148,7 @@
                 </Button>
             {/if}
 
-            {#if myJob && job.status !== JobStatus.New && winnerOffer}
+            {#if myJob && job.status !== JobStatus.New && winnerBid}
                 <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
                     <i class="bx bxs-bolt text-[20px]"></i>
                     <p class="">Pay</p>
@@ -190,7 +190,7 @@
 
 <ShareJobModal bind:isOpen={showShareModal} {job} />
 
-<CloseJobModal bind:isOpen={showCloseJobModal} {job} offer={winnerOffer} />
+<CloseJobModal bind:isOpen={showCloseJobModal} {job} bid={winnerBid} />
 
 <ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
 

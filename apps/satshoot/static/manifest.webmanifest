@@ -27,7 +27,7 @@
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "satshoot_create_offer"
+            "label": "satshoot_create_bid"
         },
         {
             "src": "/screenshots/desktop/app_screenshot_3_desktop.png",
@@ -55,7 +55,7 @@
             "sizes": "723x1452",
             "type": "image/jpeg",
             "form_factor": "narrow",
-            "label": "satshoot_create_offer"
+            "label": "satshoot_create_bid"
         },
         {
             "src": "/screenshots/mobile/app_screenshot_3.jpg",

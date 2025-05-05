@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import ndk from '$lib/stores/session';
     import {
         NDKKind,
@@ -20,7 +20,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     interface Props {
-        notification: OfferEvent;
+        notification: BidEvent;
     }
 
     let { notification }: Props = $props();
@@ -80,17 +80,17 @@
                 <p>{userName}</p>
                 <div class="flex flex-row gap-[5px] flex-wrap">
                     {#if notification.pubkey === $currentUser?.pubkey}
-                        {#if job.acceptedOfferAddress === notification.offerAddress}
+                        {#if job.acceptedBidAddress === notification.bidAddress}
                             <p>
-                                You have <span class="text-warning-500">Won</span> the offer on the job:
+                                You have <span class="text-warning-500">Won</span> the bid on the job:
                             </p>
-                        {:else if job.acceptedOfferAddress || job.isClosed()}
+                        {:else if job.acceptedBidAddress || job.isClosed()}
                             <p>
-                                You have <span class="text-error-500">Lost</span> the offer on the job:
+                                You have <span class="text-error-500">Lost</span> the bid on the job:
                             </p>
                         {/if}
                     {:else}
-                        <p>Has submitted an offer on the job:</p>
+                        <p>Has submitted an bid on the job:</p>
                     {/if}
 
                     <a

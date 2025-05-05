@@ -4,7 +4,7 @@
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import currentUser from '$lib/stores/user';
     import { clientReviews } from '$lib/stores/reviews';
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { jobToEdit } from '$lib/stores/job-to-edit';
@@ -23,7 +23,7 @@
     let { job }: Props = $props();
 
     // Reactive states
-    let winnerOffer = $state<OfferEvent | null>(null);
+    let winnerBid = $state<BidEvent | null>(null);
     let showShareModal = $state(false);
     let showCloseJobModal = $state(false);
     let showReviewClientModal = $state(false);
@@ -48,15 +48,15 @@
         return false;
     });
 
-    // Effect to fetch winner offer
+    // Effect to fetch winner bid
     $effect(() => {
-        if (!job.acceptedOfferAddress) return;
+        if (!job.acceptedBidAddress) return;
 
-        $ndk.fetchEvent(job.acceptedOfferAddress, {
+        $ndk.fetchEvent(job.acceptedBidAddress, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
         }).then((event) => {
             if (event) {
-                winnerOffer = OfferEvent.from(event);
+                winnerBid = BidEvent.from(event);
             }
         });
     });
@@ -78,11 +78,11 @@
     }
 
     function handlePay() {
-        if (!winnerOffer) return;
+        if (!winnerBid) return;
 
         $paymentDetail = {
             job: job,
-            offer: winnerOffer,
+            bid: winnerBid,
         };
 
         showPaymentModal = true;
@@ -131,7 +131,7 @@
             </Button>
         {/if}
 
-        {#if myJob && job.status !== JobStatus.New && winnerOffer}
+        {#if myJob && job.status !== JobStatus.New && winnerBid}
             <Button variant="outlined" classes={btnClasses} fullWidth onClick={handlePay}>
                 <i class="bx bxs-bolt text-[20px]"></i>
                 <p class="">Pay</p>
@@ -161,7 +161,7 @@
 
 <ShareJobModal bind:isOpen={showShareModal} {job} />
 
-<CloseJobModal bind:isOpen={showCloseJobModal} {job} offer={winnerOffer} />
+<CloseJobModal bind:isOpen={showCloseJobModal} {job} bid={winnerBid} />
 
 <ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
 

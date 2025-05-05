@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
+    import { Pricing, type BidEvent } from '$lib/events/BidEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
@@ -18,7 +18,7 @@
     import { nip19 } from 'nostr-tools';
     import { onDestroy } from 'svelte';
     import PaymentModal from '../Modals/PaymentModal.svelte';
-    import TakeOfferModal from '../Modals/TakeOfferModal.svelte';
+    import TakeBidModal from '../Modals/TakeBidModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
@@ -32,7 +32,7 @@
     import { goto } from '$app/navigation';
 
     interface Props {
-        offer: OfferEvent;
+        bid: BidEvent;
         skipUserProfile?: boolean;
         skipReputation?: boolean;
         showJobDetail?: boolean;
@@ -40,24 +40,24 @@
     }
 
     let {
-        offer,
+        bid,
         skipUserProfile = false,
         skipReputation = false,
         showJobDetail = false,
         showPayments = false,
     }: Props = $props();
 
-    let showTakeOfferModal = $state(false);
+    let showTakeBidModal = $state(false);
     let showPaymentModal = $state(false);
     let showReviewModal = $state(false);
 
     const freelancerPaymentStore = $derived.by(() => {
-        const freelancerFilters = createPaymentFilters(offer, 'freelancer');
+        const freelancerFilters = createPaymentFilters(bid, 'freelancer');
         return createPaymentStore(freelancerFilters);
     });
 
     const satshootPaymentStore = $derived.by(() => {
-        const satshootFilters = createPaymentFilters(offer, 'satshoot');
+        const satshootFilters = createPaymentFilters(bid, 'satshoot');
         return createPaymentStore(satshootFilters);
     });
 
@@ -68,7 +68,7 @@
 
     const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
         kinds: [NDKKind.FreelanceJob],
-        '#d': [offer.referencedJobAddress.split(':')[2]],
+        '#d': [bid.referencedJobAddress.split(':')[2]],
     };
     const jobStore = $ndk.storeSubscribe<JobEvent>(
         jobFilter,
@@ -85,7 +85,7 @@
         return $jobStore[0] ?? null;
     });
 
-    const winner = $derived(!!job && job.acceptedOfferAddress === offer.offerAddress);
+    const winner = $derived(!!job && job.acceptedBidAddress === bid.bidAddress);
 
     const { status, statusColor } = $derived.by(() => {
         if (!job)
@@ -94,8 +94,8 @@
                 statusColor: 'text-primary-400-500',
             };
 
-        const winnerId = job.acceptedOfferAddress;
-        if (winnerId === offer!.offerAddress) {
+        const winnerId = job.acceptedBidAddress;
+        if (winnerId === bid!.bidAddress) {
             return { status: 'Won', statusColor: 'text-warning-500' };
         } else if (winnerId || job.isClosed()) {
             return { status: 'Lost', statusColor: 'text-error-500' };
@@ -105,8 +105,8 @@
     });
 
     const pricing = $derived.by(() => {
-        if (offer.pricing === Pricing.Absolute) return 'sats';
-        if (offer.pricing === Pricing.SatsPerMin) return 'sats/min';
+        if (bid.pricing === Pricing.Absolute) return 'sats';
+        if (bid.pricing === Pricing.SatsPerMin) return 'sats/min';
 
         return '';
     });
@@ -118,7 +118,7 @@
     const review = $derived.by(() => {
         if ($freelancerReviews) {
             return $freelancerReviews.find(
-                (review) => review.reviewedEventAddress === offer.offerAddress
+                (review) => review.reviewedEventAddress === bid.bidAddress
             );
         }
         return undefined;
@@ -169,7 +169,7 @@
 
     function goToChat() {
         const url = new URL('/messages/' + job.encode(), window.location.origin);
-        url.searchParams.append(SELECTED_QUERY_PARAM, offer.pubkey);
+        url.searchParams.append(SELECTED_QUERY_PARAM, bid.pubkey);
         goto(url.toString());
     }
 
@@ -179,9 +179,9 @@
         if (satshootPaymentStore) satshootPaymentStore.paymentStore.empty();
     });
 
-    function takeOffer() {
+    function takeBid() {
         if (job) {
-            showTakeOfferModal = true;
+            showTakeBidModal = true;
         }
     }
 
@@ -189,7 +189,7 @@
         // TODO: this should be a prop once skeleton is migrated
         $paymentDetail = {
             job: job!,
-            offer,
+            bid,
         };
 
         showPaymentModal = true;
@@ -202,30 +202,30 @@
 
 <Card classes="flex-wrap gap-[15px]">
     {#if !skipUserProfile}
-        <UserProfile pubkey={offer.pubkey} />
+        <UserProfile pubkey={bid.pubkey} />
     {/if}
     {#if !skipReputation}
-        <ReputationCard user={offer.pubkey} type={ReviewType.Freelancer} />
+        <ReputationCard user={bid.pubkey} type={ReviewType.Freelancer} />
     {/if}
     <div
         class="w-full border-[1px] border-black-100 dark:border-white-100 rounded-[4px] bg-black-50"
     >
-        <ExpandableText text={offer.description} maxCharacters={200} renderAsMarkdown />
+        <ExpandableText text={bid.description} maxCharacters={200} renderAsMarkdown />
         <div
             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100"
         >
             <div class="grow-1">
                 <p class="font-[500]">
-                    Offer cost:
+                    Bid cost:
                     <span class="font-[300]">
-                        {insertThousandSeparator(offer.amount) + ' ' + pricing}
+                        {insertThousandSeparator(bid.amount) + ' ' + pricing}
                     </span>
                 </p>
             </div>
             <div class="grow-1">
                 <p class="font-[500]">
                     Pledge split:
-                    <span class="font-[300]"> {offer.pledgeSplit + ' %'} </span>
+                    <span class="font-[300]"> {bid.pledgeSplit + ' %'} </span>
                 </p>
             </div>
             {#if showPayments}
@@ -251,19 +251,19 @@
     <div
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
     >
-        {#if offer.created_at}
+        {#if bid.created_at}
             <p class="font-[500] grow-1 flex flex-row flex-wrap">
-                Offer published on:
+                Bid published on:
                 <span class="font-[300]">
-                    {formatDate(offer.created_at * 1000, 'dd-MMM-yyyy, h:m a') +
+                    {formatDate(bid.created_at * 1000, 'dd-MMM-yyyy, h:m a') +
                         ', ' +
-                        formatDistanceToNow(offer.created_at * 1000) +
+                        formatDistanceToNow(bid.created_at * 1000) +
                         ' Ago'}
                 </span>
             </p>
         {/if}
         <p class="font-[500] grow-1 flex flex-row flex-wrap">
-            Offer Status:
+            Bid Status:
             <span class="ml-[5px] font-[300] {statusColor}"> {status} </span>
         </p>
     </div>
@@ -302,7 +302,7 @@
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
     >
         {#if myJob && job && job.status === JobStatus.New}
-            <Button onClick={takeOffer}>Take offer</Button>
+            <Button onClick={takeBid}>Take bid</Button>
         {/if}
 
         {#if showPaymentButton}
@@ -322,7 +322,7 @@
 <PaymentModal bind:isOpen={showPaymentModal} />
 
 {#if job}
-    <TakeOfferModal bind:isOpen={showTakeOfferModal} {job} {offer} />
+    <TakeBidModal bind:isOpen={showTakeBidModal} {job} {bid} />
 {/if}
 
 {#if review}

@@ -132,7 +132,7 @@
             deleteEvent.kind = NDKKind.EventDeletion;
             deleteEvent.tag(['e', followEvent.id]);
             deleteEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
-            deleteEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
+            deleteEvent.tag(['k', NDKKind.FreelanceBid.toString()]);
             deleteEvent.publish();
         }
 
@@ -142,7 +142,7 @@
         newFollowEvent.tags = followEvent ? followEvent.tags : [];
         newFollowEvent.tag(['p', user.pubkey]);
         newFollowEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
-        newFollowEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
+        newFollowEvent.tag(['k', NDKKind.FreelanceBid.toString()]);
 
         await newFollowEvent
             .publish()
@@ -180,7 +180,7 @@
         deleteEvent.kind = NDKKind.EventDeletion;
         deleteEvent.tag(['e', followEvent.id]);
         deleteEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
-        deleteEvent.tag(['k', NDKKind.FreelanceOffer.toString()]);
+        deleteEvent.tag(['k', NDKKind.FreelanceBid.toString()]);
         deleteEvent.publish();
 
         // create and publish a new follow event

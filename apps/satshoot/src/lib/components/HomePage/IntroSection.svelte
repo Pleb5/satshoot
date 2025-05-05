@@ -37,7 +37,7 @@
                             <h2 class="text-center font-[800] text-[32px]">Find Skilled People</h2>
                             <p class="text-center">
                                 Have a technical issue? Need a hand in development? Create Job Post
-                                and start getting Offers from Freelancers!
+                                and start getting Bids from Freelancers!
                             </p>
                             <Button
                                 classes="max-w-[75%] max-[576px]:max-w-[100%]"
@@ -53,7 +53,7 @@
                             <h2 class="text-center font-[800] text-[32px]">Look For Work</h2>
                             <p class="text-center">
                                 See available Jobs that match your expertise. Work out your
-                                conditions and make your Offer
+                                conditions and make your Bid
                             </p>
                             <Button
                                 classes="max-w-[75%] max-[576px]:max-w-[100%]"

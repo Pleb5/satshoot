@@ -1,4 +1,4 @@
-import type { OfferEvent } from '$lib/events/OfferEvent';
+import type { BidEvent } from '$lib/events/BidEvent';
 import { JobEvent } from '$lib/events/JobEvent';
 import { derived, get, writable, type Readable } from 'svelte/store';
 import ndk from '$lib/stores/session';
@@ -20,29 +20,29 @@ export interface PaymentStore {
 
 export const paymentDetail = writable<{
     job: JobEvent;
-    offer: OfferEvent;
+    bid: BidEvent;
 } | null>(null);
 
 export const createPaymentFilters = (
-    offer: OfferEvent,
+    bid: BidEvent,
     type: 'freelancer' | 'satshoot'
 ): NDKFilter[] => {
     if (type === 'freelancer') {
         return [
-            { kinds: [NDKKind.Zap], '#e': [offer.id] },
-            { kinds: [NDKKind.Nutzap], '#a': [offer.offerAddress] },
+            { kinds: [NDKKind.Zap], '#e': [bid.id] },
+            { kinds: [NDKKind.Nutzap], '#a': [bid.bidAddress] },
         ];
     } else {
         return [
             {
                 kinds: [NDKKind.Zap],
                 '#p': [SatShootPubkey],
-                '#a': [offer.referencedJobAddress],
+                '#a': [bid.referencedJobAddress],
             },
             {
                 kinds: [NDKKind.Nutzap],
                 '#p': [SatShootPubkey],
-                '#a': [offer.referencedJobAddress],
+                '#a': [bid.referencedJobAddress],
             },
         ];
     }

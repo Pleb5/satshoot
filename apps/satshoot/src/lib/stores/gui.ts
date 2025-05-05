@@ -4,7 +4,7 @@ import { writable } from 'svelte/store';
 // This is used to display warning about experimental feature of ecash in wallet page
 export const displayEcashWarning = writable(true);
 
-export const scrollToMyJobsAndMyOffers = writable(false)
+export const scrollToMyJobsAndMyBids = writable(false);
 export const redirectAfterLogin = writable(true);
 
 export enum OnboardingStep {
@@ -21,7 +21,7 @@ export const jobFilter = persisted('jobFilter', {
     closed: false,
 });
 
-export const offerFilter = persisted('offerFilter', {
+export const bidFilter = persisted('bidFilter', {
     pending: true,
     success: false,
     lost: false,

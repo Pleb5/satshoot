@@ -13,13 +13,13 @@
     import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
-    import { OfferEvent } from '$lib/events/OfferEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import { beforeNavigate, goto } from '$app/navigation';
     import { page } from '$app/state';
 
     interface Props {
         review: ReviewEvent;
-        isOpen: boolean
+        isOpen: boolean;
     }
 
     let { review, isOpen = $bindable() }: Props = $props();
@@ -56,8 +56,8 @@
                 if (review.type === ReviewType.Client) {
                     job = JobEvent.from(reviewedEvent);
                 } else {
-                    const offer = OfferEvent.from(reviewedEvent);
-                    const jobEvent = await $ndk.fetchEvent(offer.referencedJobAddress, {
+                    const bid = BidEvent.from(reviewedEvent);
+                    const jobEvent = await $ndk.fetchEvent(bid.referencedJobAddress, {
                         groupable: true,
                         groupableDelay: 1000,
                         cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
@@ -105,7 +105,7 @@
             // Check if we're on the same route (but with different params)
             if (currentPath !== targetPath) {
                 // Same route with different params - force reload
-                await goto(url, { replaceState: true});
+                await goto(url, { replaceState: true });
                 window.location.reload();
             }
             isOpen = false;
