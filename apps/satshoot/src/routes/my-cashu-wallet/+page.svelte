@@ -3,7 +3,7 @@
     import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
     import ndk, { DEFAULTRELAYURLS } from '$lib/stores/session';
-    import currentUser from '$lib/stores/user';
+    import currentUser, { loggedIn } from '$lib/stores/user';
     import { userCashuInfo, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
     import {
         arraysAreEqual,
@@ -79,6 +79,10 @@
     const walletRelays = $derived($userCashuInfo?.relays ?? []);
 
     $effect(() => {
+        if (!$wallet) {
+            tryLoadWallet();
+            return;
+        }
         if ($wallet && $userCashuInfo) {
             checkLegacyWallet();
 
@@ -106,6 +110,7 @@
             toastTriggered = true;
             toaster.warning({
                 title: 'You are using a legacy Nostr Wallet. Migrate to new?',
+                duration: 60_000,
                 action: {
                     label: 'Migrate',
                     onClick: () => {
@@ -316,7 +321,7 @@
                     title: `Could not load wallet!`,
                 });
             }
-        } else {
+        } else if ($loggedIn) {
             toaster.error({
                 title: `Error: User not found!`,
             });
