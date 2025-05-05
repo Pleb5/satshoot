@@ -5,11 +5,10 @@
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
-    import { NDKKind, NDKSubscriptionCacheUsage, type NDKTag } from '@nostr-dev-kit/ndk';
+    import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import Fuse from 'fuse.js';
     import { page } from '$app/state';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
-    import Announcement from '$lib/components/Modals/Announcement.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
     import { onDestroy } from 'svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
@@ -74,8 +73,6 @@
     });
     // We can avoid $effect by reacting to filterList length but can set this regardless
     let currentPage = $derived(searchQuery && searchQuery.length > 0 ? 1 : 1);
-
-    let showAnnouncementModal = $state(false);
 
     function filterJobs(jobListToFilter: TicketEvent[], searchTerm: string): TicketEvent[] {
         const fuse = new Fuse(jobListToFilter, {
@@ -197,4 +194,3 @@
         </div>
     </div>
 </div>
-<Announcement bind:isOpen={showAnnouncementModal} />
