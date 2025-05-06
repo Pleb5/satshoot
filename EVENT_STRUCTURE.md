@@ -29,8 +29,8 @@
         // Pricing Strategy: Absolute or Time-based. Mandatory
         ["pricing", <'0'(sats) | '1'(sats/minute)>],
 
-        // Amount of the price. Refers to the absolute price OR sats/minute. Mandatory
-        ["amount", <'0' | '1'>]
+        // Price of service. Refers to the absolute price OR sats/minute. Mandatory
+        ["amount", <100>]
 
         // Status. Deactivation indicates that this Service is not offered anymore
         // while preserves its history. Mandatory
@@ -129,8 +129,8 @@
         // Pricing Strategy: Absolute or Time-based. Mandatory
         ["pricing", <'0'(sats) | '1'(sats/minute)>],
 
-        // Amount of the price. Refers to the absolute price OR sats/minute. Mandatory
-        ["amount", <'0' | '1'>]
+        // Price of bid. Refers to the absolute price OR sats/minute. Mandatory
+        ["amount", <500>]
 
         Freelancer MUST set this tag when bidding on a Job. Mandatory
         ["a", "32767:<hex pubkey of Client>:<Job d-tag of a Job>">],
