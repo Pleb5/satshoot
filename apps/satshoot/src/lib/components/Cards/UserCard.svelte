@@ -116,7 +116,7 @@
     });
 
     $effect(() => {
-        if (page.params['npub'] !== npub) {
+        if (page.params['npub'] && page.params['npub'] !== npub) {
             window.location.reload();
         }
     });
