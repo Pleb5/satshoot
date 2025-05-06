@@ -10,6 +10,8 @@ import { BidEvent } from '$lib/events/BidEvent';
 import { wot } from '$lib/stores/wot';
 
 import { get, derived } from 'svelte/store';
+import { ServiceEvent } from '$lib/events/ServiceEvent';
+import { OrderEvent } from '$lib/events/OrderEvent';
 
 // Export necessary when restarting a subscription with a new filter
 export const subOptions: NDKSubscribeOptions = {
@@ -26,6 +28,14 @@ export const allBidsFilter: NDKFilter = {
     kinds: [NDKKind.FreelanceBid],
 };
 
+export const allServicesFilter: NDKFilter = {
+    kinds: [NDKKind.FreelanceService],
+};
+
+export const allOrdersFilter: NDKFilter = {
+    kinds: [NDKKind.FreelanceOrder],
+};
+
 // The filter's pubkey part will be filled in when user logs in
 export const myJobFilter: NDKFilter = {
     kinds: [NDKKind.FreelanceJob],
@@ -35,6 +45,17 @@ export const myJobFilter: NDKFilter = {
 export const myBidFilter: NDKFilter = {
     kinds: [NDKKind.FreelanceBid],
 };
+
+// The filter's pubkey part will be filled in when user logs in
+export const myServiceFilter: NDKFilter = {
+    kinds: [NDKKind.FreelanceService],
+};
+
+// The filter's pubkey part will be filled in when user logs in
+export const myOrderFilter: NDKFilter = {
+    kinds: [NDKKind.FreelanceOrder],
+};
+
 export const allJobs: NDKEventStore<ExtendedBaseType<JobEvent>> = get(ndk).storeSubscribe<JobEvent>(
     allJobsFilter,
     subOptions,
@@ -47,34 +68,28 @@ export const allBids: NDKEventStore<ExtendedBaseType<BidEvent>> = get(ndk).store
     BidEvent
 );
 
+export const allServices: NDKEventStore<ExtendedBaseType<ServiceEvent>> = get(
+    ndk
+).storeSubscribe<ServiceEvent>(allServicesFilter, subOptions, ServiceEvent);
+
+export const allOrders: NDKEventStore<ExtendedBaseType<OrderEvent>> = get(
+    ndk
+).storeSubscribe<OrderEvent>(allOrdersFilter, subOptions, OrderEvent);
+
 export const wotFilteredJobs = derived([allJobs, wot], ([$allJobs, $wot]) => {
-    const jobs = $allJobs.filter((job: JobEvent) => {
-        if (
-            // Filter messages if they are in the web of trust
-            $wot.has(job.pubkey)
-        ) {
-            return true;
-        }
-
-        return false;
-    });
-
-    return jobs;
+    return $allJobs.filter((job: JobEvent) => $wot.has(job.pubkey));
 });
 
 export const wotFilteredBids = derived([allBids, wot], ([$allBids, $wot]) => {
-    const bids = $allBids.filter((bid: BidEvent) => {
-        if (
-            // Filter messages if they are in the web of trust
-            $wot.has(bid.pubkey)
-        ) {
-            return true;
-        }
+    return $allBids.filter((bid: BidEvent) => $wot.has(bid.pubkey));
+});
 
-        return false;
-    });
+export const wotFilteredServices = derived([allServices, wot], ([$allServices, $wot]) => {
+    return $allServices.filter((service: ServiceEvent) => $wot.has(service.pubkey));
+});
 
-    return bids;
+export const wotFilteredOrders = derived([allOrders, wot], ([$allOrders, $wot]) => {
+    return $allOrders.filter((order: OrderEvent) => $wot.has(order.pubkey));
 });
 
 export const myJobs: NDKEventStore<ExtendedBaseType<JobEvent>> = get(ndk).storeSubscribe<JobEvent>(
@@ -88,3 +103,11 @@ export const myBids: NDKEventStore<ExtendedBaseType<BidEvent>> = get(ndk).storeS
     subOptions,
     BidEvent
 );
+
+export const myServices: NDKEventStore<ExtendedBaseType<ServiceEvent>> = get(
+    ndk
+).storeSubscribe<ServiceEvent>(myServiceFilter, subOptions, ServiceEvent);
+
+export const myOrders: NDKEventStore<ExtendedBaseType<OrderEvent>> = get(
+    ndk
+).storeSubscribe<OrderEvent>(myOrderFilter, subOptions, OrderEvent);

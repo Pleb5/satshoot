@@ -2,7 +2,7 @@
     import { Popover } from '@skeletonlabs/skeleton-svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { JobEvent } from '$lib/events/JobEvent';
-    import { Pricing, type BidEvent } from '$lib/events/BidEvent';
+    import { type BidEvent } from '$lib/events/BidEvent';
     import {
         createPaymentFilters,
         createPaymentStore,
@@ -36,6 +36,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import { Pricing } from '$lib/events/types';
 
     enum ToastType {
         Success = 'success',
