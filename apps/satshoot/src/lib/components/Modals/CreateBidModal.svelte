@@ -1,6 +1,6 @@
 <script lang="ts">
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
-    import { BidEvent, BidStatus, Pricing } from '$lib/events/BidEvent';
+    import { BidEvent, BidStatus } from '$lib/events/BidEvent';
     import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ndk from '$lib/stores/session';
@@ -15,6 +15,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import { Pricing } from '$lib/events/types';
 
     interface Props {
         isOpen: boolean;

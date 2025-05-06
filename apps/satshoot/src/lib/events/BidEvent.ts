@@ -6,6 +6,7 @@ import { BOOTSTRAPOUTBOXRELAYS } from '$lib/stores/session';
 
 import { nip19 } from 'nostr-tools';
 import { NDKKind } from '@nostr-dev-kit/ndk';
+import { Pricing } from './types';
 
 // Bid Status is implicitly set by the JobEvent referenced by this bid's 'a' tag.
 // When job updates its 'a' tag, ALL bids statuses change that referenced this job
@@ -13,13 +14,6 @@ export enum BidStatus {
     Pending = 0, // No 'a' tag present in JobEvent
     Won = 1, // JobEvent references this event in its 'a' tag
     Lost = 2, // JobEvent references a different BidEvent
-}
-
-export enum Pricing {
-    Absolute = 0,
-    SatsPerMin = 1,
-    // This has been postponed
-    // MilestoneBased = 2,
 }
 
 export class BidEvent extends NDKEvent {

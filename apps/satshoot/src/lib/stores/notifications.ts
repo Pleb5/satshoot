@@ -121,72 +121,62 @@ export const followNotifications = derived([notifications], ([$notifications]) =
 export async function sendNotification(event: NDKEvent) {
     const $seenIDs = get(seenIDs);
     const $notifications = get(notifications);
-    if (!$seenIDs.has(event.id)) {
-        $seenIDs.add(event.id);
-        seenIDs.set($seenIDs);
-        $notifications.push(event);
-        notifications.set($notifications);
 
-        const $readNotifications = get(readNotifications);
-        // Browser notifications are disabled or the notification is already read
-        if (!get(browserNotificationsEnabled) || $readNotifications.has(event.id)) {
-            return;
-        }
+    if ($seenIDs.has(event.id)) return;
 
-        let title = '';
-        let body = '';
-        let tag = '';
-        const icon = '/satshoot.svg';
+    $seenIDs.add(event.id);
+    seenIDs.set($seenIDs);
 
-        // The Job of our _Bid_ was updated
-        if (event.kind === NDKKind.FreelanceJob) {
+    $notifications.push(event);
+    notifications.set($notifications);
+
+    const $readNotifications = get(readNotifications);
+    if (!get(browserNotificationsEnabled) || $readNotifications.has(event.id)) return;
+
+    const icon = '/satshoot.svg';
+
+    let title = '';
+    let body = '';
+    let tag = '';
+
+    switch (event.kind) {
+        case NDKKind.FreelanceJob:
+        case NDKKind.FreelanceBid:
+        case NDKKind.FreelanceService:
+        case NDKKind.FreelanceOrder:
             title = 'Update!';
             body = '🔔 Check your Notifications!';
-            tag = NDKKind.FreelanceJob.toString();
-            // The Bid on our _Job_ was updated
-        } else if (event.kind === NDKKind.FreelanceBid) {
-            title = 'Update!';
-            body = '🔔 Check your Notifications!';
-            tag = NDKKind.FreelanceBid.toString();
-        } else if (event.kind === NDKKind.EncryptedDirectMessage) {
+            tag = event.kind.toString();
+            break;
+        case NDKKind.EncryptedDirectMessage:
             title = 'New Message!';
             body = '🔔 Check your Notifications!';
             tag = NDKKind.EncryptedDirectMessage.toString();
-        } else if (event.kind === NDKKind.Review) {
+            break;
+        case NDKKind.Review:
             title = 'Someone left a Review!';
             body = '🔔 Check your Notifications!';
             tag = NDKKind.Review.toString();
-        } else if (event.kind === NDKKind.Zap) {
+            break;
+        case NDKKind.Zap:
             title = 'Payment arrived!';
             body = '🔔 Check your Notifications!';
             tag = NDKKind.Zap.toString();
-        } else if (event.kind === NDKKind.KindScopedFollow) {
+            break;
+        case NDKKind.KindScopedFollow:
             title = 'Someone has followed you!';
             body = '🔔 Check your Notifications!';
             tag = NDKKind.KindScopedFollow.toString();
-        }
+            break;
+    }
 
-        const activeSW = await getActiveServiceWorker();
-        if (activeSW) {
-            activeSW.postMessage({
-                notification: 'true',
-                title: title,
-                body: body,
-                tag: tag,
-            });
-        } else {
-            const options = {
-                icon: icon,
-                badge: icon,
-                image: icon,
-                body: body,
-                tag: tag,
-            };
-            const notification = new Notification(title, options);
-            notification.onclick = (e) => {
-                goto('/notifications/');
-            };
-        }
+    const activeSW = await getActiveServiceWorker();
+    if (activeSW) {
+        activeSW.postMessage({ notification: 'true', title, body, tag });
+    } else {
+        const options = { icon, badge: icon, image: icon, body, tag };
+        const notification = new Notification(title, options);
+        notification.onclick = () => goto('/notifications/');
     }
 }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Pricing, type BidEvent } from '$lib/events/BidEvent';
+    import { type BidEvent } from '$lib/events/BidEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
@@ -30,6 +30,7 @@
     import { sessionInitialized } from '$lib/stores/session';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { goto } from '$app/navigation';
+    import { Pricing } from '$lib/events/types';
 
     interface Props {
         bid: BidEvent;

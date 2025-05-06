@@ -33,6 +33,12 @@ import {
     myBidFilter,
     myJobs,
     myBids,
+    myServiceFilter,
+    myOrderFilter,
+    allServices,
+    allOrders,
+    myServices,
+    myOrders,
 } from '$lib/stores/freelance-eventstores';
 import { notifications, seenIDs, serviceWorkerRegistrationFailed } from '../stores/notifications';
 import { goto } from '$app/navigation';
@@ -58,8 +64,10 @@ export async function initializeUser(ndk: NDKSvelte) {
 
         currentUser.set(user);
 
-        myJobFilter.authors! = [user.pubkey];
-        myBidFilter.authors! = [user.pubkey];
+        myJobFilter.authors = [user.pubkey];
+        myBidFilter.authors = [user.pubkey];
+        myServiceFilter.authors = [user.pubkey];
+        myOrderFilter.authors = [user.pubkey];
 
         const $onboardingStep = get(onboardingStep);
         if ($onboardingStep !== OnboardingStep.Account_Created) {
@@ -93,9 +101,13 @@ export async function initializeUser(ndk: NDKSvelte) {
 
         myJobs.startSubscription();
         myBids.startSubscription();
+        myServices.startSubscription();
+        myOrders.startSubscription();
 
         allJobs.startSubscription();
         allBids.startSubscription();
+        allServices.startSubscription();
+        allOrders.startSubscription();
 
         receivedMessageFilter['#p']! = [user.pubkey];
         sentMessageFilter['authors'] = [user.pubkey];
@@ -208,13 +220,21 @@ export function logout() {
     sessionPK.set('');
 
     seenIDs.set(new Set());
+
     myJobs.empty();
     myBids.empty();
+    myServices.empty();
+    myOrders.empty();
+
     myJobFilter.authors = [];
     myBidFilter.authors = [];
+    myServiceFilter.authors = [];
+    myOrderFilter.authors = [];
 
     allJobs.empty();
     allBids.empty();
+    allServices.empty();
+    allOrders.empty();
 
     messageStore.empty();
     allReviews.empty();

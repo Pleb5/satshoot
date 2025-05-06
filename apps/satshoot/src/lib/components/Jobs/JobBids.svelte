@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { BidEvent, Pricing } from '$lib/events/BidEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import { JobStatus, type JobEvent } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import {
@@ -20,6 +20,7 @@
     import Card from '../UI/Card.svelte';
     import { Popover } from '@skeletonlabs/skeleton-svelte';
     import { onDestroy } from 'svelte';
+    import { Pricing } from '$lib/events/types';
 
     interface Props {
         job: JobEvent;

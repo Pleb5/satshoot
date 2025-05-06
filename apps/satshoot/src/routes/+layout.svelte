@@ -19,10 +19,16 @@
     import {
         allBids,
         allJobs,
+        allOrders,
+        allServices,
         myBids,
         myJobs,
+        myOrders,
+        myServices,
         wotFilteredBids,
         wotFilteredJobs,
+        wotFilteredOrders,
+        wotFilteredServices,
     } from '$lib/stores/freelance-eventstores';
 
     import { messageStore, wotFilteredMessageFeed } from '$lib/stores/messages';
@@ -75,6 +81,8 @@
     import { jobPostSuccessState, bidTakenState } from '$lib/stores/modals';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
+    import type { ServiceEvent } from '$lib/events/ServiceEvent';
+    import type { OrderEvent } from '$lib/events/OrderEvent';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -390,8 +398,13 @@
 
         if (allJobs) allJobs.empty();
         if (allBids) allBids.empty();
+        if (allServices) allServices.empty();
+        if (allOrders) allOrders.empty();
+
         if (myJobs) myJobs.empty();
         if (myBids) myBids.empty();
+        if (myServices) myServices.empty();
+        if (myOrders) myOrders.empty();
 
         if (messageStore) messageStore.empty();
         if (allReceivedZaps) allReceivedZaps.empty();
@@ -471,6 +484,35 @@
             $wotFilteredBids.forEach((o: BidEvent) => {
                 $myJobs.forEach((t: JobEvent) => {
                     if (o.referencedJobDTag === t.dTag) {
+                        sendNotification(o);
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($wotFilteredServices && $myOrders) {
+            $wotFilteredServices.forEach((s: ServiceEvent) => {
+                $myOrders.forEach((o: OrderEvent) => {
+                    if (o.referencedServiceAddress === s.serviceAddress) {
+                        // If users order is accepted send that else just send relevant service
+                        if (s.acceptedOrders.includes(o.orderAddress)) {
+                            sendNotification(o);
+                        } else {
+                            sendNotification(s);
+                        }
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($wotFilteredOrders && $myServices) {
+            $wotFilteredOrders.forEach((o: OrderEvent) => {
+                $myServices.forEach((s: ServiceEvent) => {
+                    if (o.referencedServiceAddress === s.serviceAddress) {
                         sendNotification(o);
                     }
                 });
