@@ -63,6 +63,7 @@
         }
         return getRoboHashPicture(user.pubkey);
     });
+
     const bech32ID = $derived(job ? job.encode() : '');
     const canEditProfile = $derived($currentUser && $currentUser?.pubkey === user.pubkey);
     const showMessageButton = $derived(!!job && job.pubkey !== $currentUser?.pubkey);
@@ -111,6 +112,12 @@
             if (user.pubkey !== $currentUser?.pubkey) {
                 fetchFreelanceFollowEvent(user.pubkey);
             }
+        }
+    });
+
+    $effect(() => {
+        if (page.params['npub'] !== npub) {
+            window.location.reload();
         }
     });
 
@@ -308,24 +315,24 @@
                 {#each userInfoItems as { text, href, isExternal, title }}
                     {#if text}
                         <div
-                            class="w-full flex flex-row overflow-hidden rounded-[4px] border-[1px] border-black-100 dark:border-white-100"
+                            class="w-full flex flex-row rounded-[4px] border-[1px] border-black-100 dark:border-white-100"
                         >
                             <div class="w-full flex flex-row">
-                                <div class="w-full flex flex-row bg-black-50 overflow-auto">
+                                <div class="w-full flex overflow-auto bg-black-50">
                                     {#if href}
-                                        <a
-                                            {href}
-                                            target={isExternal ? '_blank' : '_self'}
-                                            class="anchor grow-1 px-[10px] py-[5px] whitespace-nowrap"
+                                        <!-- <a -->
+                                        <!--     {href} -->
+                                        <!--     target={isExternal ? '_blank' : '_self'} -->
+                                        <!--     class="anchor grow-[1] px-[10px] py-[5px]" -->
+                                        <!-- > -->
+                                        <!--     {text} -->
+                                        <!-- </a> -->
+                                    <!-- {:else} -->
+                                        <div
+                                            class="grow-[1] px-[10px] py-[5px] text-start"
                                         >
                                             {text}
-                                        </a>
-                                    {:else}
-                                        <p
-                                            class="grow-1 px-[10px] py-[5px] text-start whitespace-nowrap"
-                                        >
-                                            {text}
-                                        </p>
+                                        </div>
                                     {/if}
                                 </div>
                                 <CopyButton
