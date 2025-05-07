@@ -376,7 +376,7 @@
     async function handleRemoveMint(mint: string) {
         if (!$wallet) return;
 
-        updateMints($wallet.mints.filter((m) => m !== mint));
+        await updateMints($wallet.mints.filter((m) => m !== mint));
     }
 
     function addRelay() {
