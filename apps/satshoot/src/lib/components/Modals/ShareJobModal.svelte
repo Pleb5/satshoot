@@ -51,24 +51,12 @@
         }
     }
 
-    let urlCopied = $state(false);
     function onCopyURL(): void {
-        navigator.clipboard.writeText(shareURL).then(() => {
-            urlCopied = true;
-            setTimeout(() => {
-                urlCopied = false;
-            }, 1000);
-        });
+        navigator.clipboard.writeText(shareURL);
     }
 
-    let naddrCopied = $state(false);
     function onCopyNaddr(): void {
-        navigator.clipboard.writeText(shareNaddr).then(() => {
-            naddrCopied = true;
-            setTimeout(() => {
-                naddrCopied = false;
-            }, 1000);
-        });
+        navigator.clipboard.writeText(shareNaddr);
     }
 
     onMount(() => {
@@ -88,10 +76,6 @@
             });
         }
     });
-
-    const textAreaClasses =
-        'transition ease duration-[0.3s] w-full min-h-[100px] bg-black-50 border-[2px] border-black-100 dark:border-white-100 rounded-[6px] ' +
-        'px-[10px] py-[5px] outline-[0px] outline-blue-0 focus:border-blue-500 focus:bg-black-100';
 </script>
 
 <ModalWrapper bind:isOpen title="Share">
@@ -124,12 +108,12 @@
                 {/if}
                 <Button grow onClick={onCopyURL}>
                     <span class="w-full h-full">
-                        {urlCopied ? 'Copied!' : 'Copy Job URL'}
+                        {'Copy Job URL'}
                     </span>
                 </Button>
                 <Button grow onClick={onCopyNaddr}>
                     <span class="w-full h-full">
-                        {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
+                        {'Copy Job Nostr Address'}
                     </span>
                 </Button>
             </div>
