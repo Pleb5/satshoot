@@ -314,33 +314,29 @@
 
                 {#each userInfoItems as { text, href, isExternal, title }}
                     {#if text}
-                        <div
-                            class="w-full flex flex-row rounded-[4px] border-[1px] border-black-100 dark:border-white-100"
-                        >
-                            <div class="w-full flex flex-row">
-                                <div class="w-full flex overflow-auto bg-black-50">
-                                    {#if href}
-                                        <!-- <a -->
-                                        <!--     {href} -->
-                                        <!--     target={isExternal ? '_blank' : '_self'} -->
-                                        <!--     class="anchor grow-[1] px-[10px] py-[5px]" -->
-                                        <!-- > -->
-                                        <!--     {text} -->
-                                        <!-- </a> -->
-                                    <!-- {:else} -->
-                                        <div
-                                            class="grow-[1] px-[10px] py-[5px] text-start"
-                                        >
-                                            {text}
-                                        </div>
-                                    {/if}
-                                </div>
-                                <CopyButton
-                                    {text}
-                                    feedbackMessage={title + ' copied!'}
-                                    classes="rounded-[0] border-l-[1px]"
-                                />
+                        <div class="grid grid-cols-[1fr_auto] border-[1px] border-black-100 dark:border-white-100">
+                            <div class="overflow-x-auto whitespace-nowrap bg-black-50">
+                                {#if href}
+                                    <a
+                                        {href}
+                                        target={isExternal ? '_blank' : '_self'}
+                                        class="anchor px-[10px] py-[5px]"
+                                    >
+                                        {text}
+                                    </a>
+                                {:else}
+                                    <div
+                                        class="px-[10px] py-[5px] text-start"
+                                    >
+                                        {text}
+                                    </div>
+                                {/if}
                             </div>
+                            <CopyButton
+                                {text}
+                                feedbackMessage={title + ' copied!'}
+                                classes="rounded-[0] border-l-[1px]"
+                            />
                         </div>
                     {/if}
                 {/each}
