@@ -4,7 +4,7 @@
     import LoginModal from '../Modals/LoginModal.svelte';
     import currentUser, { loggedIn, loggingIn, loginMethod } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { getRoboHashPicture, logout } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { NDKKind, NDKRelaySet, profileFromEvent } from '@nostr-dev-kit/ndk';
     import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
@@ -14,6 +14,7 @@
     import { page } from '$app/state';
     import { beforeNavigate, goto } from '$app/navigation';
     import { onDestroy, onMount } from 'svelte';
+    import LogoutModal from '../Modals/LogoutModal.svelte';
 
     interface Props {
         onRestoreLogin: () => void;
@@ -22,6 +23,7 @@
     let { onRestoreLogin }: Props = $props();
 
     let showLoginModal = $state(false);
+    let showLogoutModal = $state(false);
     let showAppMenu = $state(false);
 
     let profilePicture = $state('');
@@ -31,6 +33,9 @@
     let displaySearchInput = $state(false); // for mobile view
 
     let debounceTimer = $state<NodeJS.Timeout | null>(null);
+
+    const extraClassesForLogoutBtn =
+        'bg-red-500 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-800 px-4 py-2 justify-center';
 
     function handleSearch() {
         // Clear any existing timer
@@ -199,6 +204,12 @@
                                 </button>
                             {:else if $loggingIn}
                                 <div class="flex items-center gap-x-2">
+                                    <Button 
+                                        classes={extraClassesForLogoutBtn} 
+                                        onClick={() => showLogoutModal = true}
+                                    >
+                                        Logout
+                                    </Button>
                                     <h3 class="h6 md:h3 font-bold">Logging in...</h3>
                                     <ProgressRing color="primary" size={12} />
                                 </div>
@@ -244,3 +255,4 @@
 <AppMenu bind:isOpen={showAppMenu} />
 
 <LoginModal bind:isOpen={showLoginModal} />
+<LogoutModal bind:isOpen={showLogoutModal} />

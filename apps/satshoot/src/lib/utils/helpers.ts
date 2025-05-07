@@ -194,6 +194,7 @@ export function logout() {
     loginMethod.set(null);
 
     loggedIn.set(false);
+    loggingIn.set(false);
 
     followsUpdated.set(0);
     networkWoTScores.set(new Map());
