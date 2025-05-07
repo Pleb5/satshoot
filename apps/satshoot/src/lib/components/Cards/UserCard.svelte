@@ -21,7 +21,6 @@
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
     import type { TicketEvent } from '$lib/events/TicketEvent';
     import { selectedPerson } from '$lib/stores/messages';
-    import ShareModal from '../Modals/ShareModal.svelte';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -50,7 +49,6 @@
     // State
     let userProfile = $state<NDKUserProfile | null>(null);
     let processingFollowEvent = $state(false);
-    let showShareModal = $state(false);
     let showNpubQR = $state(false);
     let showNProfileQR = $state(false);
 
@@ -445,8 +443,6 @@
         <ReputationCard user={user.pubkey} forUserCard />
     </div>
 </div>
-
-<ShareModal bind:isOpen={showShareModal} />
 
 <QrCodeModal bind:isOpen={showNpubQR} title="User's Npub" data={user.npub} />
 
