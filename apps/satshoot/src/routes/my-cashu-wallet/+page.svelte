@@ -769,7 +769,7 @@
 
 {#if mintToRemove}
     <RemoveMintModal
-        bind:isOpen={showRelayRemovalConfirmation}
+        bind:isOpen={showMintRemovalConfirmation}
         mint={mintToRemove}
         onConfirm={async () => {
             await handleRemoveMint(mintToRemove!);
