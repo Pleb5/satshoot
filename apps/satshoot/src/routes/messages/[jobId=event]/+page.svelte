@@ -39,17 +39,13 @@
     // Service state values
     const wotFilteredMessages = $derived(messageService.messages);
     const contacts = $derived(contactService.contacts);
-    const profiles = $derived(contactService.profiles);
-    const currentPerson = $derived(contactService.currentPerson);
+    const currentContact = $derived(contactService.currentContact);
     const winnerPubkey = $derived(contactService.winnerPubkey);
     const job = $derived(jobService.job);
     const myJob = $derived(jobService.isOwner);
     const offers = $derived(jobService.offers);
     // UI state - direct access to service properties
-    const contactsOpen = $derived(uiService.contactsOpen);
     const disablePrompt = $derived(uiService.disablePrompt);
-    const hideChat = $derived(uiService.hideChat);
-    const hideSearchIcon = $derived(uiService.hideSearchIcon);
     const mounted = $derived(uiService.mounted);
     const chatHeight = $derived(uiService.chatHeight);
 
@@ -57,20 +53,19 @@
     let currentMessage = $state('');
 
     // Accordion state
-    let accordionState = $derived([currentPerson?.pubkey ?? '']);
+    let accordionState = $derived([currentContact?.person.pubkey ?? '']);
 
     // Effect to update UI service with DOM elements
     $effect(() => {
         if (headerElem) uiService.setHeaderElement(headerElem);
         if (chatElem) uiService.setChatElement(chatElem);
         if (inputElem) uiService.setInputElement(inputElem);
-        if (contactsMobileViewElem) uiService.setContactsMobileViewElement(contactsMobileViewElem);
     });
 
     // Current person messages
     const currentPersonMessages = $derived.by(() => {
-        if (!currentPerson || !wotFilteredMessages.length) return [];
-        return messageService.getPersonMessages(currentPerson, wotFilteredMessages);
+        if (!currentContact || !wotFilteredMessages.length) return [];
+        return messageService.getPersonMessages(currentContact.person, wotFilteredMessages);
     });
 
     // Ordered messages
@@ -96,12 +91,14 @@
 
     $effect(() => {
         if (job && $currentUser) {
+            console.log('Adding initial contacts')
             contactService.addInitialContacts(
                 job.pubkey,
                 $currentUser.pubkey,
                 $offerMakerToSelect,
                 $selectedPerson
             );
+            $offerMakerToSelect = '';
         }
     });
 
@@ -115,7 +112,7 @@
     $effect(() => {
         if (wotFilteredMessages && $currentUser) {
             wotFilteredMessages.forEach((message: any) => {
-                contactService.addPersonFromMessage(message, $currentUser.pubkey);
+                contactService.addContactFromMessage(message, $currentUser.pubkey);
             });
         }
     });
@@ -145,15 +142,15 @@
 
     // Send message
     async function sendMessage() {
-        if (currentMessage && currentPerson) {
-            messageService.sendMessage(currentPerson as unknown as NDKUser, currentMessage);
+        if (currentMessage && currentContact) {
+            messageService.sendMessage(currentContact as unknown as NDKUser, currentMessage);
             currentMessage = '';
         }
     }
 
     // Select contact
-    function selectCurrentPerson(contact: any) {
-        contactService.selectCurrentPerson(contact);
+    function selectCurrentContact(contact: any) {
+        contactService.selectCurrentContact(contact);
         uiService.setContactsOpen(false);
     }
 
@@ -220,16 +217,13 @@
                             </div>
                             <div class="flex flex-col gap-[10px] overflow-y-auto grow">
                                 {#each contacts as contact}
-                                    {@const profile = profiles.find(
-                                        (p) => p.person === contact.person
-                                    )}
                                     {@const image =
-                                        profile?.image ?? getRoboHashPicture(contact.person.pubkey)}
+                                        contact.profile?.image ?? getRoboHashPicture(contact.person.pubkey)}
                                     {@const name =
-                                        profile?.name ?? contact.person.npub.substring(0, 10)}
+                                        contact.profile?.name ?? contact.person.npub.substring(0, 10)}
                                     <Button
                                         variant={contact.selected ? 'contained' : 'text'}
-                                        onClick={() => selectCurrentPerson(contact)}
+                                        onClick={() => selectCurrentContact(contact)}
                                     >
                                         <Avatar src={image} size="size-12" {name} />
                                         <span
@@ -256,31 +250,30 @@
                                 >
                                     <Accordion.Item value="contacts">
                                         {#snippet lead()}
-                                            {#if currentPerson}
+                                            {#if currentContact}
                                                 {@const profileImage =
-                                                    currentPerson.profile?.picture ??
-                                                    currentPerson.profile?.image ??
-                                                    getRoboHashPicture(currentPerson.pubkey)}
-                                                <a href={'/' + currentPerson.npub}>
+                                                    currentContact.profile?.image ??                                                   
+                                                        getRoboHashPicture(currentContact.person.pubkey)}
+                                                <a href={'/' + currentContact.person.npub}>
                                                     <Avatar
                                                         src={profileImage}
                                                         size="size-8"
-                                                        name={currentPerson.profile?.name ??
-                                                            currentPerson.npub.substring(0, 15)}
+                                                        name={currentContact.profile?.name ??
+                                                            currentContact.person.npub.substring(0, 15)}
                                                     />
                                                 </a>
                                             {/if}
                                         {/snippet}
                                         {#snippet control()}
-                                            {#if currentPerson}
+                                            {#if currentContact}
                                                 <span
                                                     class="flex-1 text-start
-                                                        {currentPerson.pubkey === winnerPubkey
+                                                        {currentContact.person.pubkey === winnerPubkey
                                                         ? 'text-warning-400 font-bold'
                                                         : ''}"
                                                 >
-                                                    {currentPerson.profile?.name ??
-                                                        currentPerson.npub.substring(0, 15)}
+                                                    {currentContact.profile?.name ??
+                                                        currentContact.person.npub.substring(0, 15)}
                                                 </span>
                                             {:else if contacts.length > 0}
                                                 <div class="">Select Contact</div>
@@ -301,8 +294,7 @@
                                                     >
                                                         {#each contacts as contact}
                                                             {@const profileImage =
-                                                                contact.person.profile?.picture ??
-                                                                contact.person.profile?.image ??
+                                                                contact.profile?.image ??
                                                                 getRoboHashPicture(
                                                                     contact.person.pubkey
                                                                 )}
@@ -313,7 +305,7 @@
                                                                     ? 'preset-filled-primary'
                                                                     : 'bg-surface-hover'}"
                                                                 onclick={() =>
-                                                                    selectCurrentPerson(contact)}
+                                                                    selectCurrentContact(contact)}
                                                             >
                                                                 <Avatar
                                                                     src={profileImage}

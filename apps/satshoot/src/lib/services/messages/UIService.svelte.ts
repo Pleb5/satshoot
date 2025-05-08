@@ -14,7 +14,6 @@ export class UIService {
     private headerElement = $state<HTMLElement | null>(null);
     private chatElement = $state<HTMLElement | null>(null);
     private inputElement = $state<HTMLElement | null>(null);
-    private contactsMobileViewElement = $state<HTMLElement | null>(null);
     private pageElement = $state<HTMLElement | null>(null);
 
     constructor() {
@@ -43,13 +42,6 @@ export class UIService {
     setInputElement(element: HTMLElement) {
         this.inputElement = element;
         this.updateChatHeight();
-    }
-
-    /**
-     * Set the contacts mobile view element reference
-     */
-    setContactsMobileViewElement(element: HTMLElement) {
-        this.contactsMobileViewElement = element;
     }
 
     /**

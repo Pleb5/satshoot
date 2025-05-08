@@ -3,20 +3,20 @@ import { NDKEvent, type NDKUser } from '@nostr-dev-kit/ndk';
 import ndk from '$lib/stores/session';
 
 /**
+ * Interface for Profile data
+ */
+interface Profile {
+    name?: string;
+    image?: string;
+}
+
+/**
  * Interface for Contact data
  */
 interface Contact {
     person: NDKUser;
+    profile?: Profile;
     selected: boolean;
-}
-
-/**
- * Interface for Profile data
- */
-interface Profile {
-    person: NDKUser;
-    name?: string;
-    image?: string;
 }
 
 /**
@@ -25,8 +25,10 @@ interface Profile {
 export class ContactService {
     // Public state exposed for direct access
     contacts = $state<Contact[]>([]);
-    profiles = $state<Profile[]>([]);
-    currentPerson = $state<NDKUser | undefined>(undefined);
+    currentContact = $derived(
+        this.contacts.find((c) => c.selected === true)
+        || undefined
+    );
     winnerPubkey = $state<string>('');
 
     private jobAddress: string;
@@ -55,49 +57,40 @@ export class ContactService {
 
         // Add job owner
         if (jobPubkey && jobPubkey !== currentUserPubkey) {
-            this.addPerson(ndkInstance.getUser({ pubkey: jobPubkey }), false);
+            const person = ndkInstance.getUser({ pubkey: jobPubkey });
+            this.addContact({person, selected: false});
         }
 
         // If we have a specific person to select
         if (offerMakerToSelect && offerMakerToSelect !== currentUserPubkey) {
             const person = ndkInstance.getUser({ pubkey: offerMakerToSelect });
-            this.addPerson(person, true);
-            this.currentPerson = person;
+            const contact = {person, selected: false}
+            this.addContact(contact);
+            this.selectCurrentContact(contact)
         } else if (selectedPersonString && selectedPersonString.split('$')[1] === this.jobAddress) {
             const pubkey = selectedPersonString.split('$')[0];
             const person = ndkInstance.getUser({ pubkey });
-            this.addPerson(person, true);
-            this.currentPerson = person;
+            const contact = {person, selected: false};
+            this.addContact(contact);
+            this.selectCurrentContact(contact);
         }
     }
 
     /**
      * Add a new person to contacts
      */
-    addPerson(person: NDKUser, selected: boolean = false) {
+    addContact(contact: Contact) {
         // Check if person already exists
-        const existingIndex = this.contacts.findIndex((c) => c.person.pubkey === person.pubkey);
+        const contactAlreadyAdded = this.contacts.some(
+            (c) => c.person.pubkey === contact.person.pubkey
+        );
 
-        if (existingIndex >= 0) {
-            // Update existing contact if needed
-            if (selected && !this.contacts[existingIndex].selected) {
-                // Create a new array with the updated contact
-                const updatedContacts = [...this.contacts];
-                updatedContacts[existingIndex] = {
-                    ...updatedContacts[existingIndex],
-                    selected: true,
-                };
-                this.contacts = updatedContacts;
-            }
-        } else {
-            // Add new contact
-            this.contacts = [...this.contacts, { person, selected }];
-        }
+        if (contactAlreadyAdded) return;
 
+        // Add new contact
+        this.contacts = [...this.contacts, contact];
         // Also fetch and add profile
-        this.fetchAndAddProfile(person);
-
-        return person;
+        this.fetchAndAddProfile(contact);
     }
 
     /**
@@ -108,21 +101,26 @@ export class ContactService {
         if (!ndkInstance) return;
 
         pubkeys.forEach((pubkey) => {
-            this.addPerson(ndkInstance.getUser({ pubkey }), false);
+            const person = ndkInstance.getUser({ pubkey })
+            this.addContact({person, selected: false});
         });
     }
 
     /**
      * Add a person from a message
      */
-    addPersonFromMessage(message: NDKEvent, currentUserPubkey: string) {
+    addContactFromMessage(message: NDKEvent, currentUserPubkey: string) {
         const ndkInstance = get(ndk);
         if (!ndkInstance) return;
 
         // Get the peer pubkey (either sender or recipient)
-        const pPubkey = this.getPeerPubkeyFromMessage(message, currentUserPubkey);
+        const pPubkey = this.getPeerPubkeyFromMessage(
+            message, currentUserPubkey
+        );
+
         if (pPubkey && pPubkey !== currentUserPubkey) {
-            this.addPerson(ndkInstance.getUser({ pubkey: pPubkey }), false);
+            const person = ndkInstance.getUser({ pubkey: pPubkey });
+            this.addContact({person, selected: false});
         }
     }
 
@@ -146,20 +144,22 @@ export class ContactService {
     /**
      * Fetch and add profile for a person
      */
-    private async fetchAndAddProfile(person: NDKUser) {
-        if (this.profiles.some((profile) => profile.person.pubkey === person.pubkey)) return;
+    private async fetchAndAddProfile(contact: Contact) {
+        if (contact.profile) return;
 
         try {
-            await person.fetchProfile();
+            await contact.person.fetchProfile();
 
             const newProfile: Profile = {
-                person,
-                name: (person.profile?.name as string) || (person.profile?.display_name as string),
-                image: (person.profile?.picture as string) || (person.profile?.image as string),
+                name: (contact.person.profile?.name as string) 
+                    || (contact.person.profile?.display_name as string),
+                image: (contact.person.profile?.picture as string) 
+                    || (contact.person.profile?.image as string),
             };
 
             // Add new profile
-            this.profiles = [...this.profiles, newProfile];
+            contact.profile = newProfile;
+            console.log('added new profile!', contact)
         } catch (error) {
             console.error('Failed to fetch profile:', error);
         }
@@ -168,11 +168,13 @@ export class ContactService {
     /**
      * Select a person by pubkey
      */
-    selectPersonByPubkey(pubkey: string) {
-        const contact = this.contacts.find((c) => c.person.pubkey === pubkey);
+    selectContactByPubkey(pubkey: string) {
+        const contact = this.contacts.find(
+            (c) => c.person.pubkey === pubkey
+        );
 
         if (contact) {
-            this.selectCurrentPerson(contact);
+            this.selectCurrentContact(contact);
             return true;
         }
 
@@ -182,14 +184,12 @@ export class ContactService {
     /**
      * Select a person as the current contact
      */
-    selectCurrentPerson(contact: Contact) {
-        // Update current person
-        this.currentPerson = contact.person;
-
+    selectCurrentContact(contact: Contact) {
         // Update selected state in contacts
         this.contacts = this.contacts.map((c) => ({
             ...c,
             selected: c.person.pubkey === contact.person.pubkey,
         }));
+        console.log('selected current person:', this.currentContact)
     }
 }
