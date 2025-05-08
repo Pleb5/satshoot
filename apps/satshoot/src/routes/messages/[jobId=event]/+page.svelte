@@ -99,6 +99,7 @@
                 $selectedPerson
             );
             $offerMakerToSelect = '';
+            $selectedPerson = '';
         }
     });
 
