@@ -571,10 +571,12 @@
         <!-- Main Content  -->
         <main class="sm:ml-[96px] flex-1" aria-label="Main content">
             {@render children?.()}
-            <div
-                style={`height: ${footerHeight}px;`}
-            >
-            </div>
+            {#if !(page.url.pathname.includes('messages/naddr'))}
+                <div
+                    style={`height: ${footerHeight}px;`}
+                >
+                </div>
+            {/if}
         </main>
     </div>
 
