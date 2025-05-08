@@ -143,7 +143,7 @@
     // Send message
     async function sendMessage() {
         if (currentMessage && currentContact) {
-            messageService.sendMessage(currentContact as unknown as NDKUser, currentMessage);
+            messageService.sendMessage(currentContact.person, currentMessage);
             currentMessage = '';
         }
     }
