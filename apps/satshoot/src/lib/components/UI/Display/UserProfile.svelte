@@ -43,13 +43,19 @@
         </a>
     </div>
     <div class="flex flex-col">
-        <a href={profileLink} class="font-[600]">
-            {userProfile?.name ??
-                userProfile?.displayName ??
-                shortenTextWithEllipsesInMiddle(npub, 15)}
-        </a>
-        {#if userProfile?.nip05}
-            <a href={profileLink} class=""> {userProfile.nip05} </a>
-        {/if}
+        <div class="grid grid-cols-1">
+            <a href={profileLink} class="font-[600]">
+                {
+                    userProfile?.name ??
+                    userProfile?.displayName ??
+                    shortenTextWithEllipsesInMiddle(npub, 15)
+                }
+            </a>
+        </div>
+        <div class="grid grid-cols-1">
+            {#if userProfile?.nip05}
+                <a href={profileLink}> {userProfile.nip05} </a>
+            {/if}
+        </div>
     </div>
 </div>
