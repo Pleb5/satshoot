@@ -16,6 +16,8 @@ import ndk from '$lib/stores/session';
 
 export const JobsPerPage = 9;
 
+export const NostrBuildBlossomServer = 'https://blossom.band';
+
 export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
 
 if (typeof NDKKind === 'undefined') {

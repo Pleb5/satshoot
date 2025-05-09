@@ -6,7 +6,7 @@ import { nip19 } from 'nostr-tools';
 export function match(param: string) {
     if (/^(naddr1)[a-zA-Z0-9]*/.test(param)) {
         const { type, data } = nip19.decode(param);
-        if (type === 'naddr' && data.kind === NDKKind.FreelanceJob) return true;
+        if (type === 'naddr' && data.kind === NDKKind.FreelanceService) return true;
     }
 
     return false;
