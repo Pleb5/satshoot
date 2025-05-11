@@ -4,11 +4,21 @@
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
     import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk from '$lib/stores/session';
-    import { createPaymentFilters, createPaymentStore, paymentDetail } from '$lib/stores/payment';
+    import {
+        createPaymentFilters,
+        createPaymentStore,
+        paymentDetail 
+    } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
-    import { NDKKind, NDKSubscriptionCacheUsage, NDKUser, type NDKFilter, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import {
+        NDKKind,
+        NDKSubscriptionCacheUsage,
+        NDKUser,
+        type NDKFilter,
+        type NDKUserProfile 
+    } from '@nostr-dev-kit/ndk';
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import { nip19 } from 'nostr-tools';
     import { onDestroy } from 'svelte';
@@ -56,7 +66,6 @@
 
     let freelancerPaid = $derived(freelancerPaymentStore.totalPaid);
     let satshootPaid = $derived.by(() => {
-        console.log('total paid: ', satshootPaymentStore.totalPaid)
         return satshootPaymentStore.totalPaid;
     });
 
@@ -127,21 +136,6 @@
 
     let jobPosterProfile = $state<NDKUserProfile | null>(null);
 
-    const fetchJobPosterProfile = async (poster: NDKUser) => {
-        const profile = await poster.fetchProfile(
-            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
-        );
-        jobPosterProfile = profile;
-    }
-
-    const jobPoster = $derived.by(() => {
-        if (!job) return null;
-
-        const user = $ndk.getUser({ pubkey: job.pubkey })
-        fetchJobPosterProfile(user);
-        return user;
-    });
-
     let jobPosterImage = $derived.by(() => {
         if (!jobPosterProfile) return ''
 
@@ -157,13 +151,30 @@
             ?? jobPoster!.npub.substring(0, 8);
     });
 
+    let initialized = $state(false);
     $effect(() => {
-        if ($sessionInitialized) {
+        if ($sessionInitialized && !initialized) {
+            initialized = true;
             freelancerPaymentStore.paymentStore.startSubscription();
             satshootPaymentStore.paymentStore.startSubscription();
             jobStore.startSubscription();
         }
     });
+
+    let jobPoster = $state<NDKUser|null>(null)
+
+    $effect(() => {
+        if (job){
+            setupJobPoster($ndk.getUser({ pubkey: job.pubkey }));
+        }
+    });
+
+    const setupJobPoster = async (poster: NDKUser) => {
+        jobPoster = poster;
+        jobPosterProfile = await poster.fetchProfile(
+            { cacheUsage: NDKSubscriptionCacheUsage.PARALLEL }
+        );
+    }
 
     function setChatPartner() {
         $offerMakerToSelect = offer.pubkey;
