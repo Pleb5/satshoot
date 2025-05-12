@@ -16,7 +16,7 @@
     import { goto } from '$app/navigation';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
-    import { selectedPerson } from '$lib/stores/messages';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     interface Props {
         notification: NDKEvent;
@@ -66,21 +66,29 @@
                 const ticketEvent = TicketEvent.from(event);
                 messageLink = '/messages/' + ticketEvent.encode();
             }
-            console.log('message link', messageLink);
         }
     });
+
+    const goToChat = () => {
+        if (!$readNotifications.has(notification.id)) {
+            console.log('putting this notif into read ones...', notification.id)
+            readNotifications.update(
+                (notifications) => notifications.add(notification.id)
+            );
+        }
+        if (!messageLink) throw new Error(
+            'Error: Message link undefined, trying to navigate to undefined URL!'
+        )
+        const url = new URL(messageLink, window.location.origin);
+        url.searchParams.append(SELECTED_QUERY_PARAM, notification.pubkey);
+        goto(url);
+    }
 </script>
 
 <Card
     classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
     actAsButton
-    onClick={() => {
-        if (!$readNotifications.has(notification.id)) {
-            readNotifications.update((notifications) => notifications.add(notification.id));
-        }
-        $selectedPerson = notification.pubkey + '$' + ticketAddress;
-        goto(messageLink);
-    }}
+    onClick={goToChat}
 >
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
@@ -88,14 +96,10 @@
             <ProfileImage src={userImage} />
         </a>
         <div class="flex flex-col">
-            <a href={'/' + user.npub}>
-                <p>{userName}</p>
-            </a>
+            <p>{userName}</p>
             {#if decryptedDM}
                 <div class="flex flex-row gap-[5px] flex-wrap">
-                    <a href={messageLink}>
-                        {decryptedDM.slice(0, 90)}{decryptedDM.length > 90 ? '...' : ''}
-                    </a>
+                    {decryptedDM.slice(0, 90)}{decryptedDM.length > 90 ? '...' : ''}
                 </div>
             {:else}
                 <ProgressRing color="primary" />

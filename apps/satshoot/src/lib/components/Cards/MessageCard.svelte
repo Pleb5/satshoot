@@ -12,10 +12,10 @@
     import { TicketEvent } from '$lib/events/TicketEvent';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
-    import { selectedPerson } from '$lib/stores/messages';
     import Markdown from './Markdown.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { Avatar } from '@skeletonlabs/skeleton-svelte';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     interface Props {
         avatarRight?: boolean;
@@ -36,7 +36,7 @@
     // Time is shown in local time zone
     const timestamp = messageDate.toLocaleString();
     const ticketAddress = message.tagValue('t');
-    let messageLink = $state('');
+    let messageLink = $state<URL>();
 
     let extraClasses = $state('preset-soft-primary rounded-tr-none');
     let templateColumn = $state('grid-cols-[auto_1fr]');
@@ -99,7 +99,12 @@
             });
             if (event) {
                 const ticketEvent = TicketEvent.from(event);
-                messageLink = '/messages/' + ticketEvent.encode();
+                messageLink = new URL(
+                    '/messages/' + ticketEvent.encode(), window.location.origin
+                );
+                messageLink.searchParams.append(
+                    SELECTED_QUERY_PARAM, senderUser.pubkey
+                );
             }
         }
     });
@@ -150,8 +155,9 @@
                             type="button"
                             class="btn btn-icon-lg p-2 text-primary-400-500"
                             onclick={() => {
-                                $selectedPerson = message.pubkey + '$' + ticketAddress;
-                                goto(messageLink);
+                                if (messageLink) {
+                                    goto(messageLink);
+                                }
                             }}
                         >
                             <span>Reply</span>

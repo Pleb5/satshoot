@@ -130,9 +130,7 @@
             <ProfileImage src={zapperImage} />
         </a>
         <div class="flex flex-col">
-            <a href={'/' + zapper.npub}>
-                <p>{zapperName}</p>
-            </a>
+            <p>{zapperName}</p>
             <div class="flex flex-row gap-[5px] flex-wrap">
                 <p>
                     Has zapped you {(amount ? insertThousandSeparator(amount) : '?') + ' sats'}

@@ -12,9 +12,9 @@
     import CloseJobModal from '../Modals/CloseJobModal.svelte';
     import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from '../Modals/PaymentModal.svelte';
-    import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     interface Props {
         job: TicketEvent;
@@ -88,12 +88,14 @@
         showPaymentModal = true;
     }
 
-    function selectChatPartner() {
+    function goToChat() {
+        const url = new URL('/messages/' + bech32ID, window.location.origin);
         if ($currentUser && $currentUser.pubkey !== job.pubkey) {
-            $selectedPerson = job.pubkey + '$' + job.ticketAddress;
+            url.searchParams.append(SELECTED_QUERY_PARAM, job.pubkey);
         } else if (job.winnerFreelancer) {
-            $offerMakerToSelect = job.winnerFreelancer;
+            url.searchParams.append(SELECTED_QUERY_PARAM, job.winnerFreelancer);
         }
+        goto(url.toString())
     }
 
     function handleReviewClient() {
@@ -138,8 +140,7 @@
 
         {#if showMessageButton && bech32ID}
             <Button
-                href={'/messages/' + bech32ID}
-                onClick={selectChatPartner}
+                onClick={goToChat}
                 variant="outlined"
                 classes={btnClasses}
                 fullWidth

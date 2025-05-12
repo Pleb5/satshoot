@@ -20,7 +20,6 @@
     import ReputationCard from './ReputationCard.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
     import type { TicketEvent } from '$lib/events/TicketEvent';
-    import { selectedPerson } from '$lib/stores/messages';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -32,6 +31,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import { toaster } from '$lib/stores/toaster';
     import { sessionInitialized } from '$lib/stores/session';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     enum FollowStatus {
         isFollowing,
@@ -240,8 +240,11 @@
         }
     }
 
-    function selectChatPartner() {
-        $selectedPerson = job!.pubkey + '$' + job!.ticketAddress;
+    function chatWithJobCreator() {
+        if (!job) throw new Error('Error: Job missing, cannot go to chat')
+        const url = new URL(`/messages/${bech32ID}`, window.location.origin);
+        url.searchParams.append(SELECTED_QUERY_PARAM, job.pubkey)
+        goto(url)
     }
 
     function handleShare() {
@@ -364,9 +367,8 @@
                         variant="outlined"
                         classes="bg-white dark:bg-brightGray"
                         fullWidth
-                        href={'/messages/' + bech32ID}
                         title="Message (DM) user"
-                        onClick={selectChatPartner}
+                        onClick={chatWithJobCreator}
                     >
                         <i class="bx bxs-conversation"></i>
                     </Button>

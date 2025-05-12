@@ -60,5 +60,3 @@ export const wotFilteredMessageFeed = derived(
     }
 );
 
-export const offerMakerToSelect = writable<string>('');
-export const selectedPerson = writable<string>('');

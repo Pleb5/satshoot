@@ -84,9 +84,7 @@
             <ProfileImage src={userImage} />
         </a>
         <div class="flex flex-col grow-1 items-start">
-            <a href={'/' + user.npub}>
-                <p>{userName}</p>
-            </a>
+            <p>{userName}</p>
             <div class="flex flex-row gap-[5px] flex-wrap">
                 <p>Has left a review for job:</p>
                 {#if job}

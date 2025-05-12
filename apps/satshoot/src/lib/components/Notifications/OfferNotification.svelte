@@ -77,9 +77,7 @@
                 <ProfileImage src={userImage} />
             </a>
             <div class="flex flex-col items-start">
-                <a href={'/' + user.npub}>
-                    <p>{userName}</p>
-                </a>
+                <p>{userName}</p>
                 <div class="flex flex-row gap-[5px] flex-wrap">
                     {#if notification.pubkey === $currentUser?.pubkey}
                         {#if job.acceptedOfferAddress === notification.offerAddress}

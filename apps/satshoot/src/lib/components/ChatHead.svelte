@@ -1,7 +1,5 @@
 <script lang="ts">
-    import UserProfile from './UI/Display/UserProfile.svelte';
     import type { TicketEvent } from '$lib/events/TicketEvent';
-    import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { loggedIn } from '$lib/stores/user';
@@ -12,10 +10,10 @@
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
     import Fuse from 'fuse.js';
-    import { navigating } from '$app/state';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import Button from './UI/Buttons/Button.svelte';
     import { Avatar } from '@skeletonlabs/skeleton-svelte';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     interface Props {
         searchQuery?: string | null;
@@ -25,6 +23,14 @@
 
     let { searchQuery = null, user, ticket }: Props = $props();
     const naddr = ticket.encode();
+
+    const messageLink = $derived.by(() => {
+        const url = new URL('/messages/' + naddr, window.location.origin);
+        if (ticket.winnerFreelancer) {
+            url.searchParams.append(SELECTED_QUERY_PARAM, ticket.winnerFreelancer)
+        }
+        return url.toString();
+    });
 
     let userProfile = $state<NDKUserProfile | null>(null);
     let latestMessage = $state('');
@@ -85,16 +91,6 @@
         }
     });
 
-    $effect(() => {
-        if (navigating) {
-            if (navigating.to?.url.pathname === '/messages/' + naddr) {
-                if (ticket.acceptedOfferAddress) {
-                    $offerMakerToSelect = ticket.winnerFreelancer as string;
-                }
-            }
-        }
-    });
-
     const display = $derived.by(() => {
         if (searchQuery && searchQuery.length > 0) {
             const dataToSearch = [
@@ -135,7 +131,7 @@
 <Button
     variant="outlined"
     classes="justify-start {display ? '' : 'hidden'}"
-    href={'/messages/' + naddr}
+    href={messageLink}
 >
     <div class="flex gap-x-2">
         <div>

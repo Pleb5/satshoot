@@ -31,12 +31,6 @@ export class ContactService {
     );
     winnerPubkey = $state<string>('');
 
-    private jobAddress: string;
-
-    constructor(jobAddress: string) {
-        this.jobAddress = jobAddress;
-    }
-
     /**
      * Set the winner pubkey
      */
@@ -50,29 +44,28 @@ export class ContactService {
     addInitialContacts(
         jobPubkey: string,
         currentUserPubkey: string,
-        offerMakerToSelect: string,
-        selectedPersonString: string
+        contactPubkeyToSelect: string,
     ) {
         const ndkInstance = get(ndk);
 
-        // Add job owner
+        // Add client, don't add anyone else
         if (jobPubkey && jobPubkey !== currentUserPubkey) {
             const person = ndkInstance.getUser({ pubkey: jobPubkey });
-            this.addContact({person, selected: false});
+            const contact = {person, selected: true};
+            this.addContact(contact);
+            this.selectCurrentContact(contact);
+            return;
         }
 
-        // If we have a specific person to select
-        if (offerMakerToSelect && offerMakerToSelect !== currentUserPubkey) {
-            const person = ndkInstance.getUser({ pubkey: offerMakerToSelect });
+        // If we have a specific contact to select
+        if (
+            contactPubkeyToSelect &&
+            contactPubkeyToSelect !== currentUserPubkey
+        ) {
+            const person = ndkInstance.getUser({ pubkey: contactPubkeyToSelect });
             const contact = {person, selected: false}
             this.addContact(contact);
             this.selectCurrentContact(contact)
-        } else if (selectedPersonString && selectedPersonString.split('$')[1] === this.jobAddress) {
-            const pubkey = selectedPersonString.split('$')[0];
-            const person = ndkInstance.getUser({ pubkey });
-            const contact = {person, selected: false};
-            this.addContact(contact);
-            this.selectCurrentContact(contact);
         }
     }
 
@@ -88,7 +81,7 @@ export class ContactService {
         if (contactAlreadyAdded) return;
 
         // Add new contact
-        this.contacts = [...this.contacts, contact];
+        this.contacts.push(contact);
         // Also fetch and add profile
         this.fetchAndAddProfile(contact);
     }
@@ -158,8 +151,10 @@ export class ContactService {
             };
 
             // Add new profile
-            contact.profile = newProfile;
-            console.log('added new profile!', contact)
+            const contactInArray = this.contacts.find(c => c.person.pubkey === contact.person.pubkey);
+            if (contactInArray) {
+                contactInArray.profile = newProfile;
+            }
         } catch (error) {
             console.error('Failed to fetch profile:', error);
         }
@@ -186,10 +181,13 @@ export class ContactService {
      */
     selectCurrentContact(contact: Contact) {
         // Update selected state in contacts
-        this.contacts = this.contacts.map((c) => ({
-            ...c,
-            selected: c.person.pubkey === contact.person.pubkey,
-        }));
-        console.log('selected current person:', this.currentContact)
+        this.contacts.forEach((c) => {
+            if (c.person.pubkey === contact.person.pubkey) {
+                c.selected = true;
+            } else {
+                c.selected = false;
+            }
+        })
+        $state.snapshot(`selected current person: ${this.currentContact}`)
     }
 }

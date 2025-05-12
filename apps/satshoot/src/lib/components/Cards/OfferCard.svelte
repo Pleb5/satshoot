@@ -2,7 +2,6 @@
     import { Pricing, type OfferEvent } from '$lib/events/OfferEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { TicketEvent, TicketStatus } from '$lib/events/TicketEvent';
-    import { offerMakerToSelect } from '$lib/stores/messages';
     import ndk from '$lib/stores/session';
     import {
         createPaymentFilters,
@@ -33,6 +32,8 @@
     import ReputationCard from './ReputationCard.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { sessionInitialized } from '$lib/stores/session';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
+    import { goto } from '$app/navigation';
 
     interface Props {
         offer: OfferEvent;
@@ -176,8 +177,10 @@
         );
     }
 
-    function setChatPartner() {
-        $offerMakerToSelect = offer.pubkey;
+    function goToChat() {
+        const url = new URL('/messages/' + job.encode(), window.location.origin);
+        url.searchParams.append(SELECTED_QUERY_PARAM, offer.pubkey);
+        goto(url.toString())
     }
 
     onDestroy(() => {
@@ -317,7 +320,7 @@
         {/if}
 
         {#if job && myJob}
-            <Button onClick={setChatPartner} href={'/messages/' + job.encode()}>Message</Button>
+            <Button onClick={goToChat}>Message</Button>
         {/if}
 
         {#if review}

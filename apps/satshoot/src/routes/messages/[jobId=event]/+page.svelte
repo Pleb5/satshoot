@@ -2,11 +2,10 @@
     import { page } from '$app/state';
     import { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
-    import { offerMakerToSelect, selectedPerson } from '$lib/stores/messages';
     import { onDestroy, onMount } from 'svelte';
     import { Accordion } from '@skeletonlabs/skeleton-svelte';
     import { Avatar } from '@skeletonlabs/skeleton-svelte';
-    import { NDKEvent, type NDKUser } from '@nostr-dev-kit/ndk';
+    import { NDKEvent } from '@nostr-dev-kit/ndk';
     import MessageCard from '$lib/components/Cards/MessageCard.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Card from '$lib/components/UI/Card.svelte';
@@ -14,9 +13,16 @@
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
     import { browser } from '$app/environment';
 
-    import { MessageService, ContactService, JobService, UIService } from '$lib/services/messages';
+    import SELECTED_QUERY_PARAM,
+    { 
+        MessageService,
+        ContactService,
+        JobService,
+        UIService 
+    } from '$lib/services/messages';
 
     let initialized = $state(false);
+    let initialContactsAdded = $state(false);
 
     // Parse URL parameters
     const searchQuery = $derived(page.url.searchParams.get('searchQuery'));
@@ -26,7 +32,7 @@
 
     // Initialize services
     const messageService = $state(new MessageService(jobAddress));
-    const contactService = $state(new ContactService(jobAddress));
+    const contactService = $state(new ContactService());
     const jobService = $state(new JobService(jobAddress, relaysFromURL));
     const uiService = $state(new UIService());
 
@@ -53,7 +59,7 @@
     let currentMessage = $state('');
 
     // Accordion state
-    let accordionState = $derived([currentContact?.person.pubkey ?? '']);
+    let accordionState = $derived([currentContact ?? '']);
 
     // Effect to update UI service with DOM elements
     $effect(() => {
@@ -90,16 +96,16 @@
     });
 
     $effect(() => {
-        if (job && $currentUser) {
+        if (job && $currentUser && !initialContactsAdded) {
+            initialContactsAdded = true;
             console.log('Adding initial contacts')
+            const pubkeyToSelect = page.url.searchParams.get(SELECTED_QUERY_PARAM) ?? '';
+
             contactService.addInitialContacts(
                 job.pubkey,
                 $currentUser.pubkey,
-                $offerMakerToSelect,
-                $selectedPerson
+                pubkeyToSelect
             );
-            $offerMakerToSelect = '';
-            $selectedPerson = '';
         }
     });
 
@@ -172,7 +178,6 @@
     onDestroy(() => {
         messageService.unsubscribe();
         jobService.unsubscribe();
-        offerMakerToSelect.set('');
     });
 
     // Function to navigate back
@@ -253,7 +258,7 @@
                                         {#snippet lead()}
                                             {#if currentContact}
                                                 {@const profileImage =
-                                                    currentContact.profile?.image ??                                                   
+                                                    currentContact.profile?.image ?? 
                                                         getRoboHashPicture(currentContact.person.pubkey)}
                                                 <a href={'/' + currentContact.person.npub}>
                                                     <Avatar
