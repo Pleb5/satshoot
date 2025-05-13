@@ -9,6 +9,8 @@
     import Carousel from '../UI/Display/Carousel.svelte';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { Pricing } from '$lib/events/types';
+    import QuestionIcon from '../Icons/QuestionIcon.svelte';
+    import { wot } from '$lib/stores/wot';
 
     interface Props {
         service: ServiceEvent;
@@ -26,6 +28,17 @@
         if (service.pricing === Pricing.SatsPerMin) return 'sats/min';
 
         return '';
+    });
+
+    const ordersCount = $derived.by(() => {
+        let count = 0;
+
+        service.orders.filter((orderAddress) => {
+            const pubkey = orderAddress.split(':')[1];
+            if (pubkey && $wot.has(pubkey)) count++;
+        });
+
+        return count;
     });
 
     function handleOptionClick() {
@@ -103,10 +116,23 @@
                 </span>
             </p>
         </div>
+
         <div class="grow-1">
             <p class="font-[500]">
                 Pledge split:
                 <span class="font-[300]"> {service.pledgeSplit + ' %'} </span>
+            </p>
+        </div>
+
+        <div class="grow-1">
+            <p class="font-[500]">
+                <QuestionIcon
+                    extraClasses="text-[14px] p-[3px]"
+                    placement="bottom-start"
+                    popUpText="Number of times service was taken by logged in user's WOT."
+                />
+                <span>Orders: </span>
+                <span class="font-[300]">{ordersCount}</span>
             </p>
         </div>
     </div>

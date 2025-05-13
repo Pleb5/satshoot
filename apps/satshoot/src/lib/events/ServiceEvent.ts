@@ -152,6 +152,10 @@ export class ServiceEvent extends NDKEvent {
             }));
     }
 
+    get orders(): string[] {
+        return this.tags.filter((tag: NDKTag) => tag[0] === 'a').map((tag) => tag[1]);
+    }
+
     public addOrder(orderAddress: string) {
         this.tags.push(['a', orderAddress]);
     }
