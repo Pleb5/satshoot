@@ -11,6 +11,9 @@
     import { Pricing } from '$lib/events/types';
     import QuestionIcon from '../Icons/QuestionIcon.svelte';
     import { wot } from '$lib/stores/wot';
+    import ReputationCard from './ReputationCard.svelte';
+    import { ReviewType } from '$lib/events/ReviewEvent';
+    import UserProfile from '../UI/Display/UserProfile.svelte';
 
     interface Props {
         service: ServiceEvent;
@@ -136,6 +139,11 @@
             </p>
         </div>
     </div>
+</Card>
+
+<Card classes="flex flex-col gap-[10px]">
+    <UserProfile pubkey={service.pubkey} />
+    <ReputationCard user={service.pubkey} type={ReviewType.Freelancer} />
 </Card>
 
 <!-- <ServicePostMenu bind:isOpen={showServicePostMenu} {service} /> -->

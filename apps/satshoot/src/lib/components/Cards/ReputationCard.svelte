@@ -28,14 +28,16 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import RatingBlock from '../UI/Display/RatingBlock.svelte';
+    import UserProfile from '../UI/Display/UserProfile.svelte';
 
     interface Props {
         user: Hexpubkey;
         type?: ReviewType;
+        skipUserProfile?: boolean;
         forUserCard?: boolean;
     }
 
-    let { user, type = undefined, forUserCard = false }: Props = $props();
+    let { user, type = undefined, skipUserProfile = false, forUserCard = false }: Props = $props();
 
     let initInProgress = $state(true);
 
@@ -376,69 +378,32 @@
 </script>
 
 {#if !forUserCard}
-    <div class="w-full flex flex-row flex-wrap items-center gap-[10px] px-[5px]">
-        {#if reviewType === ReviewType.Freelancer}
-            <Button
-                variant="outlined"
-                classes="justify-start"
-                grow
-                onClick={showFreelancerReviewBreakdown}
-            >
-                <p class="font-[500]">
-                    Freelancer Reputation:
-                    <span class="badge px-4 {ratingColor}">{asFreelancerRatingConsensus}</span>
-                </p>
-            </Button>
-            <div class="flex flex-row grow-[1] px-[20px] gap-x-1">
-                <div class="font-bold">Total Earnings:</div>
-                {#if initInProgress}
-                    <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-                {:else}
+    <div class="flex flex-row items-center gap-[10px]">
+        <div>
+            {#if reviewType === ReviewType.Freelancer}
+                <Button
+                    variant="outlined"
+                    classes="justify-start"
+                    grow
+                    onClick={showFreelancerReviewBreakdown}
+                >
                     <p class="font-[500]">
-                        <span class="font-[300]">
-                            {abbreviateNumber(allEarnings) + ' sats'}
-                        </span>
+                        Freelancer Reputation:
+                        <span class="badge px-4 {ratingColor}">{asFreelancerRatingConsensus}</span>
                     </p>
-                {/if}
-            </div>
-        {/if}
-
-        {#if reviewType === ReviewType.Client}
-            <Button
-                variant="outlined"
-                classes="justify-start"
-                grow
-                onClick={showClientReviewBreakdown}
-            >
-                <p class="font-[500]">
-                    Client Reputation:
-                    <span class="badge px-4 {ratingColor}">{asClientRatingConsensus}</span>
-                </p>
-            </Button>
-            <div class="flex flex-row grow-[1] px-[20px] gap-x-1">
-                <div class="font-bold">Total Payments:</div>
-                {#if initInProgress}
-                    <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-                {:else}
+                </Button>
+            {:else if reviewType === ReviewType.Client}
+                <Button
+                    variant="outlined"
+                    classes="justify-start"
+                    grow
+                    onClick={showClientReviewBreakdown}
+                >
                     <p class="font-[500]">
-                        <span class="font-[300]">
-                            {abbreviateNumber(allPayments) + ' sats'}
-                        </span>
+                        Client Reputation:
+                        <span class="badge px-4 {ratingColor}">{asClientRatingConsensus}</span>
                     </p>
-                {/if}
-            </div>
-        {/if}
-
-        <div class="flex flex-row grow-[1] px-[20px] gap-x-1">
-            <div class="font-bold">Total Pledges:</div>
-            {#if initInProgress}
-                <div class="placeholder bg-primary-300-600-token animate-pulse w-12"></div>
-            {:else}
-                <p class="font-[500]">
-                    <span class="font-[300]">
-                        {abbreviateNumber(allPledges) + ' sats'}
-                    </span>
-                </p>
+                </Button>
             {/if}
         </div>
     </div>
