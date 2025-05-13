@@ -241,8 +241,17 @@
 
             for (const image of images) {
                 progressStatus = `Uploading image ${uploadedImages + 1}/${totalImages}`;
-                const imageUrl = await uploadToBlossom(image, NostrBuildBlossomServer);
-                service.tags.push(['image', imageUrl]);
+
+                try {
+                    const imageUrl = await uploadToBlossom(image, NostrBuildBlossomServer);
+                    service.tags.push(['image', imageUrl]);
+                } catch (error) {
+                    console.error(error);
+                    toaster.error({
+                        title: `Failed to upload ${image.name}`,
+                    });
+                }
+
                 uploadedImages++;
             }
 
