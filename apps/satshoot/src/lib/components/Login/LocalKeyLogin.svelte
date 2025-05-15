@@ -7,7 +7,7 @@
     import { privateKeyFromSeedWords, validateWords } from 'nostr-tools/nip06';
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
     import { encryptSecret } from '$lib/utils/crypto';
-    import { loginMethod } from '$lib/stores/user';
+    import { loginMethod, UserMode, userMode } from '$lib/stores/user';
     import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
     import { initializeUser } from '$lib/utils/helpers';
     import { redirectAfterLogin } from '$lib/stores/gui';
@@ -187,7 +187,11 @@
     function handleRedirection() {
         // redirect to jobs page
         if ($redirectAfterLogin) {
-            goto('/jobs');
+            if ($userMode === UserMode.Client) {
+                goto('/services');
+            } else {
+                goto('/jobs');
+            }
         } else {
             $redirectAfterLogin = true;
         }

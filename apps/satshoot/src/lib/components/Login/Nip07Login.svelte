@@ -3,7 +3,7 @@
     import { goto } from '$app/navigation';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import ndk, { LoginMethod } from '$lib/stores/session';
-    import { loginMethod } from '$lib/stores/user';
+    import { loginMethod, UserMode, userMode } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
     import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
 
@@ -58,7 +58,11 @@
     function handleRedirection() {
         // redirect to jobs page
         if ($redirectAfterLogin) {
-            goto('/jobs');
+            if ($userMode === UserMode.Client) {
+                goto('/services');
+            } else {
+                goto('/jobs');
+            }
         } else {
             $redirectAfterLogin = true;
         }
