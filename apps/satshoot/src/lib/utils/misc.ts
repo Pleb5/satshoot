@@ -15,6 +15,7 @@ import { get } from 'svelte/store';
 import ndk from '$lib/stores/session';
 
 export const JobsPerPage = 9;
+export const ServicesPerPage = 9;
 
 export const NostrBuildBlossomServer = 'https://blossom.band';
 
