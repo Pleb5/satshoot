@@ -1,7 +1,7 @@
 <script lang="ts">
     import Button from '../UI/Buttons/Button.svelte';
     import type { JobEvent } from '$lib/events/JobEvent';
-    import ShareJobModal from './ShareJobModal.svelte';
+    import ShareEventModal from './ShareEventModal.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
 
     interface Props {
@@ -36,4 +36,4 @@
     </div>
 </ModalWrapper>
 
-<ShareJobModal bind:isOpen={showShareJobModal} {job} />
+<ShareEventModal bind:isOpen={showShareJobModal} eventObj={job} />

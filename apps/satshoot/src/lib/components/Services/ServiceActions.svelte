@@ -1,9 +1,7 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
-    import { BidEvent } from '$lib/events/BidEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
-    import { serviceToEdit } from '$lib/stores/service-to-edit';
     import currentUser from '$lib/stores/user';
+    import ShareEventModal from '../Modals/ShareEventModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
 
     interface Props {
@@ -13,15 +11,10 @@
     let { service }: Props = $props();
 
     // Reactive states
-    let winnerBid = $state<BidEvent | null>(null);
     let showShareModal = $state(false);
-    let showCloseServiceModal = $state(false);
-    let showReviewClientModal = $state(false);
-    let showPaymentModal = $state(false);
-    let showReviewModal = $state(false);
 
     // Derived states
-    const bech32ID = $derived(service.encode());
+
     const myService = $derived($currentUser?.pubkey === service.pubkey);
 
     function handleShare() {
@@ -54,3 +47,5 @@
         {/if}
     </div>
 </div>
+
+<ShareEventModal bind:isOpen={showShareModal} eventObj={service} />

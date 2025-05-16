@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { JobEvent } from '$lib/events/JobEvent';
+    // Generic modal for sharing a Service or a Job (event)
     import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
@@ -10,20 +10,34 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import { ServiceEvent } from '$lib/events/ServiceEvent';
+    import type { JobEvent } from '$lib/events/JobEvent';
+
+    enum EventType {
+        Job,
+        Service,
+    }
 
     interface Props {
         isOpen: boolean;
-        job: JobEvent;
+        eventObj: JobEvent | ServiceEvent;
     }
 
-    let { isOpen = $bindable(), job }: Props = $props();
+    let { isOpen = $bindable(), eventObj }: Props = $props();
 
     let shareURL = $state('');
     let shareNaddr = $state('');
-
     let message: string = $state('');
     let posting = $state(false);
-    async function postJob() {
+
+    const type = $derived.by(() => {
+        if (eventObj instanceof ServiceEvent) return EventType.Service;
+
+        return EventType.Job;
+    });
+
+    // Post to Nostr
+    async function postEvent() {
         posting = true;
         await tick();
 
@@ -34,23 +48,24 @@
         kind1Event.generateTags();
 
         try {
-            let relays = await kind1Event.publish();
+            await kind1Event.publish();
             posting = false;
             toaster.success({
-                title: 'Job Posted as Text Note!',
+                title: (type === EventType.Service ? 'Service' : 'Job') + ' Posted as Text Note!',
             });
 
             isOpen = false;
         } catch (e) {
             posting = false;
             toaster.error({
-                title: 'Error happened while publishing note!',
+                title: 'Error occurred while publishing note!',
             });
 
             isOpen = false;
         }
     }
 
+    // Copy helpers
     let urlCopied = $state(false);
     function onCopyURL(): void {
         navigator.clipboard.writeText(shareURL).then(() => {
@@ -71,36 +86,56 @@
         });
     }
 
-    onMount(() => {
-        if (job) {
-            const naddr = job.encode();
-            shareNaddr = 'nostr:' + naddr;
-            shareURL = `https://satshoot.com/${naddr}`;
-            // Set default text
-            message = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
-            message += `## ${job.title}\n\n`;
-            message += `${job.description}\n\n`;
-            message += `Make an bid on this URL:\n\n`;
-            message += `${shareURL}\n\n`;
-            message += `#satshoot #asknostr`;
-            job.tTags.forEach((tag: NDKTag) => {
-                message += ` #${(tag as string[])[1]}`;
+    // Default message generator
+    function buildDefaultMessage() {
+        if (!eventObj) return '';
+        let msg = '';
+        if (type === EventType.Service) {
+            msg = `Check out this service I'm offering on Satshoot! ⚡\n\n`;
+            msg += `## ${eventObj.title}\n\n`;
+            msg += `${eventObj.description}\n\n`;
+            msg += `You can learn more, contact me, or place an order here:\n\n`;
+            msg += `${shareURL}\n\n`;
+            msg += `#satshoot #nostrservice`;
+        } else {
+            msg = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
+            msg += `## ${eventObj.title}\n\n`;
+            msg += `${eventObj.description}\n\n`;
+            msg += `Make a bid on this URL:\n\n`;
+            msg += `${shareURL}\n\n`;
+            msg += `#satshoot #asknostr`;
+        }
+        if (eventObj.tTags) {
+            eventObj.tTags.forEach((tag: NDKTag) => {
+                msg += ` #${(tag as string[])[1]}`;
             });
         }
-    });
+        return msg;
+    }
 
-    const textAreaClasses =
-        'transition ease duration-[0.3s] w-full min-h-[100px] bg-black-50 border-[2px] border-black-100 dark:border-white-100 rounded-[6px] ' +
-        'px-[10px] py-[5px] outline-[0px] outline-blue-0 focus:border-blue-500 focus:bg-black-100';
+    onMount(() => {
+        if (eventObj) {
+            const naddr = eventObj.encode();
+            shareNaddr = 'nostr:' + naddr;
+            shareURL = `https://satshoot.com/${naddr}`;
+            message = buildDefaultMessage();
+        }
+    });
 </script>
 
 <ModalWrapper bind:isOpen title="Share">
     <div class="w-full flex flex-col">
-        <!-- popups Share Job Post start -->
+        <!-- popups Share Event Post start -->
         <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
             <div class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px]">
-                <p class="">Share your job post with others</p>
-                {#if job.pubkey === $currentUser?.pubkey}
+                <p class="">
+                    {#if type === EventType.Service}
+                        Share your service post with others
+                    {:else}
+                        Share your job post with others
+                    {/if}
+                </p>
+                {#if eventObj.pubkey === $currentUser?.pubkey}
                     <Input
                         bind:value={message}
                         classes="min-h-[100px]"
@@ -111,8 +146,8 @@
                 {/if}
             </div>
             <div class="w-full flex flex-wrap gap-[5px]">
-                {#if job.pubkey === $currentUser?.pubkey}
-                    <Button grow onClick={postJob} disabled={posting}>
+                {#if eventObj.pubkey === $currentUser?.pubkey}
+                    <Button grow onClick={postEvent} disabled={posting}>
                         {#if posting}
                             <span>
                                 <ProgressRing />
@@ -124,16 +159,24 @@
                 {/if}
                 <Button grow onClick={onCopyURL}>
                     <span class="w-full h-full">
-                        {urlCopied ? 'Copied!' : 'Copy Job URL'}
+                        {#if type === EventType.Service}
+                            {urlCopied ? 'Copied!' : 'Copy Service URL'}
+                        {:else}
+                            {urlCopied ? 'Copied!' : 'Copy Job URL'}
+                        {/if}
                     </span>
                 </Button>
                 <Button grow onClick={onCopyNaddr}>
                     <span class="w-full h-full">
-                        {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
+                        {#if type === EventType.Service}
+                            {naddrCopied ? 'Copied!' : 'Copy Service Nostr Address'}
+                        {:else}
+                            {naddrCopied ? 'Copied!' : 'Copy Job Nostr Address'}
+                        {/if}
                     </span>
                 </Button>
             </div>
         </div>
-        <!-- popups Share Job Post end -->
+        <!-- popups Share Event Post end -->
     </div>
 </ModalWrapper>
