@@ -30,7 +30,7 @@
             name: Tabs.ServiceDescription,
         },
         {
-            icon: 'bxs-user',
+            icon: 'bxs-info-circle',
             name: Tabs.ServiceDetails,
         },
         {
