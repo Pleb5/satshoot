@@ -141,9 +141,13 @@
     </div>
 </Card>
 
-<Card classes="flex flex-col gap-[10px]">
-    <UserProfile pubkey={service.pubkey} />
-    <ReputationCard user={service.pubkey} type={ReviewType.Freelancer} />
+<Card classes="flex flex-row flex-wrap gap-[10px] items-center">
+    <div class="grow-1">
+        <UserProfile pubkey={service.pubkey} />
+    </div>
+    <div class="grow-1">
+        <ReputationCard user={service.pubkey} type={ReviewType.Freelancer} />
+    </div>
 </Card>
 
 <!-- <ServicePostMenu bind:isOpen={showServicePostMenu} {service} /> -->
