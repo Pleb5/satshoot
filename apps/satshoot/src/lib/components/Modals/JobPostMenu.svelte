@@ -1,7 +1,7 @@
 <script lang="ts">
     import { JobStatus, type JobEvent } from '$lib/events/JobEvent';
     import currentUser from '$lib/stores/user';
-    import ShareJobModal from './ShareJobModal.svelte';
+    import ShareEventModal from './ShareEventModal.svelte';
     import CloseJobModal from './CloseJobModal.svelte';
     import ndk from '$lib/stores/session';
     import { BidEvent } from '$lib/events/BidEvent';
@@ -188,7 +188,7 @@
     </div>
 </ModalWrapper>
 
-<ShareJobModal bind:isOpen={showShareModal} {job} />
+<ShareEventModal bind:isOpen={showShareModal} eventObj={job} />
 
 <CloseJobModal bind:isOpen={showCloseJobModal} {job} bid={winnerBid} />
 

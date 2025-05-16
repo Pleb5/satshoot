@@ -1,6 +1,6 @@
 <script lang="ts">
     import Button from '../UI/Buttons/Button.svelte';
-    import ShareJobModal from '../Modals/ShareJobModal.svelte';
+    import ShareEventModal from '../Modals/ShareEventModal.svelte';
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import currentUser from '$lib/stores/user';
     import { clientReviews } from '$lib/stores/reviews';
@@ -159,7 +159,7 @@
     </div>
 </div>
 
-<ShareJobModal bind:isOpen={showShareModal} {job} />
+<ShareEventModal bind:isOpen={showShareModal} eventObj={job} />
 
 <CloseJobModal bind:isOpen={showCloseJobModal} {job} bid={winnerBid} />
 
