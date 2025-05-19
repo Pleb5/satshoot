@@ -3,8 +3,9 @@ import NDK from '@nostr-dev-kit/ndk';
 import { NDKKind } from '@nostr-dev-kit/ndk';
 
 export enum OrderStatus {
-    InActive,
-    Active,
+    Open,
+    Fulfilled,
+    Failed,
 }
 
 export class OrderEvent extends NDKEvent {
