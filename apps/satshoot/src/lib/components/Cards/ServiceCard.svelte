@@ -2,7 +2,6 @@
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { getServiceStatusColor, getServiceStatusString } from '$lib/utils/service';
     import { formatDate } from 'date-fns';
-    // import ServicePostMenu from '../Modals/ServicePostMenu.svelte';
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Markdown from './Markdown.svelte';
@@ -14,6 +13,7 @@
     import ReputationCard from './ReputationCard.svelte';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import UserProfile from '../UI/Display/UserProfile.svelte';
+    import ServiceMenu from '../Modals/ServiceMenu.svelte';
 
     interface Props {
         service: ServiceEvent;
@@ -21,7 +21,7 @@
 
     let { service }: Props = $props();
 
-    let showServicePostMenu = $state(false);
+    let showServiceMenu = $state(false);
 
     let statusString = $derived(getServiceStatusString(service.status));
     let statusColor = $derived(getServiceStatusColor(service.status));
@@ -45,7 +45,7 @@
     });
 
     function handleOptionClick() {
-        showServicePostMenu = true;
+        showServiceMenu = true;
     }
 
     const statusRowWrapperClasses =
@@ -150,4 +150,4 @@
     </div>
 </Card>
 
-<!-- <ServicePostMenu bind:isOpen={showServicePostMenu} {service} /> -->
+<ServiceMenu bind:isOpen={showServiceMenu} {service} />
