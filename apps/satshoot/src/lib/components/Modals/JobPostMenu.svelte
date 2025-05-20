@@ -2,7 +2,6 @@
     import { JobStatus, type JobEvent } from '$lib/events/JobEvent';
     import currentUser from '$lib/stores/user';
     import ShareEventModal from './ShareEventModal.svelte';
-    import CloseJobModal from './CloseJobModal.svelte';
     import ndk from '$lib/stores/session';
     import { BidEvent } from '$lib/events/BidEvent';
     import ReviewClientModal from './ReviewClientModal.svelte';
@@ -15,6 +14,7 @@
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import CloseEntityModal from './CloseEntityModal.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     interface Props {
@@ -190,7 +190,7 @@
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={job} />
 
-<CloseJobModal bind:isOpen={showCloseJobModal} {job} bid={winnerBid} />
+<CloseEntityModal bind:isOpen={showCloseJobModal} targetEntity={job} secondaryEntity={winnerBid} />
 
 <ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
 

@@ -1,8 +1,14 @@
 <script lang="ts">
     import { ServiceEvent } from '$lib/events/ServiceEvent';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
+    import { checkRelayConnections } from '$lib/utils/helpers';
+    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
+    import CloseEntityModal from '../Modals/CloseEntityModal.svelte';
     import ShareEventModal from '../Modals/ShareEventModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
+    import { type NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
+    import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
 
     interface Props {
         service: ServiceEvent;
@@ -10,15 +16,56 @@
 
     let { service }: Props = $props();
 
+    const ordersSubOptions: NDKSubscribeOptions = {
+        closeOnEose: false,
+        autoStart: false,
+    };
+
+    const myOrdersFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceOrder],
+    };
+
+    const myOrdersStore = $ndk.storeSubscribe<OrderEvent>(
+        myOrdersFilter,
+        ordersSubOptions,
+        OrderEvent
+    );
+
     // Reactive states
     let showShareModal = $state(false);
+    let showCloseModal = $state(false);
 
     // Derived states
-
     const myService = $derived($currentUser?.pubkey === service.pubkey);
+    const activeOrder = $derived(
+        $myOrdersStore.find(
+            (order) =>
+                order.status === OrderStatus.Open && service.orders.includes(order.orderAddress)
+        )
+    );
+
+    let initialized = $state(false);
+    $effect(() => {
+        if ($sessionInitialized && !initialized) {
+            initialized = true;
+            checkRelayConnections();
+
+            // if current user is not service owner, then subscribe for
+            // user's orders on current service
+            if ($currentUser && $currentUser.pubkey !== service.pubkey) {
+                myOrdersFilter['#a'] = [service.serviceAddress];
+                myOrdersFilter.authors = [$currentUser.pubkey];
+                myOrdersStore.startSubscription();
+            }
+        }
+    });
 
     function handleShare() {
         showShareModal = true;
+    }
+
+    function handleCloseOrder() {
+        showCloseModal = true;
     }
 
     function handleEdit() {
@@ -45,7 +92,22 @@
                 <p class="">Edit</p>
             </Button>
         {/if}
+
+        {#if activeOrder}
+            <Button variant="outlined" classes="justify-start" fullWidth onClick={handleCloseOrder}>
+                <i class="bx bxs-lock text-[20px]"></i>
+                <p class="">Close Order</p>
+            </Button>
+        {/if}
     </div>
 </div>
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
+
+{#if activeOrder}
+    <CloseEntityModal
+        bind:isOpen={showCloseModal}
+        targetEntity={activeOrder}
+        secondaryEntity={service}
+    />
+{/if}

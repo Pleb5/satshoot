@@ -9,11 +9,11 @@
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';
-    import CloseJobModal from '../Modals/CloseJobModal.svelte';
     import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from '../Modals/PaymentModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
+    import CloseEntityModal from '../Modals/CloseEntityModal.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     interface Props {
@@ -161,7 +161,7 @@
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={job} />
 
-<CloseJobModal bind:isOpen={showCloseJobModal} {job} bid={winnerBid} />
+<CloseEntityModal bind:isOpen={showCloseJobModal} targetEntity={job} secondaryEntity={winnerBid} />
 
 <ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
 

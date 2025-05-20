@@ -61,6 +61,8 @@
         'rounded-[4px] font-[500] text-black-500 dark:text-white hover:bg-blue-500 hover:text-white hover:border-transparent';
 </script>
 
+<ServiceMenu bind:isOpen={showServiceMenu} {service} />
+
 <Card classes="gap-[15px]">
     <div class="w-full flex flex-col gap-[5px]">
         <h1 class="w-full text-center font-[700] text-[32px]">{service.title || 'No Title!'}</h1>
@@ -149,5 +151,3 @@
         <ReputationCard user={service.pubkey} type={ReviewType.Freelancer} />
     </div>
 </Card>
-
-<ServiceMenu bind:isOpen={showServiceMenu} {service} />
