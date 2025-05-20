@@ -19,12 +19,11 @@
     let { isOpen = $bindable(), jobAddress }: Props = $props();
 
     let thumb = $state(true);
-    let availability = $state(false);
     let communication = $state(false);
 
     $effect(() => {
         if (!thumb) {
-            availability = communication = false;
+            communication = false;
         }
     });
 
@@ -44,13 +43,11 @@
 
                 const rating: ClientRating = {
                     thumb: false,
-                    availability: false,
                     communication: false,
                     reviewText: reviewText,
                 };
 
                 rating.thumb = thumb;
-                rating.availability = availability;
                 rating.communication = communication;
 
                 reviewEvent.clientRatings = rating;
@@ -97,11 +94,6 @@
                         <p class="w-full">Select excellent qualities of the Client, if any:</p>
                     </div>
                     <div class="w-full py-[10px] px-[5px] flex flex-col gap-[10px]">
-                        <Checkbox
-                            id="availability"
-                            label="Highly available, attentive, and responsive"
-                            bind:checked={availability}
-                        />
                         <Checkbox
                             id="communication"
                             label="Especially clear and kind communication"

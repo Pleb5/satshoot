@@ -90,7 +90,6 @@ export interface AggregatedClientRatings {
     type: 'client';
     thumbsUp: number;
     thumbsDown: number;
-    availability: number;
     communication: number;
     average: number;
 }
@@ -100,7 +99,6 @@ export interface AggregatedFreelancerRatings {
     success: number;
     failure: number;
     expertise: number;
-    availability: number;
     communication: number;
     average: number;
 }
@@ -132,7 +130,6 @@ export function aggregateClientRatings(target: Hexpubkey): AggregatedClientRatin
         type: 'client',
         thumbsUp: 0,
         thumbsDown: 0,
-        availability: 0,
         communication: 0,
         average: 0,
     };
@@ -149,18 +146,18 @@ export function aggregateClientRatings(target: Hexpubkey): AggregatedClientRatin
             scoreMultiplier = 4;
             numberOfReviews += 3;
         }
+
         const sum = (clientReview.overallRating ?? 0) * scoreMultiplier;
         aggregatedAverage += sum;
 
         const rating = clientReview.clientRatings;
+
         if (rating.thumb) {
             aggregateClientRatings.thumbsUp += 1;
         } else {
             aggregateClientRatings.thumbsDown += 1;
         }
-        if (rating.availability) {
-            aggregateClientRatings.availability += 1;
-        }
+
         if (rating.communication) {
             aggregateClientRatings.communication += 1;
         }
@@ -184,7 +181,6 @@ export function aggregateFreelancerRatings(target: Hexpubkey): AggregatedFreelan
         success: 0,
         failure: 0,
         expertise: 0,
-        availability: 0,
         communication: 0,
         average: 0,
     };
@@ -205,17 +201,17 @@ export function aggregateFreelancerRatings(target: Hexpubkey): AggregatedFreelan
         aggregatedAverage += sum;
 
         const rating = freelancerReview.freelancerRatings;
+
         if (rating.success) {
             aggregateFreelancerRatings.success += 1;
         } else {
             aggregateFreelancerRatings.failure += 1;
         }
+
         if (rating.expertise) {
             aggregateFreelancerRatings.expertise += 1;
         }
-        if (rating.availability) {
-            aggregateFreelancerRatings.availability += 1;
-        }
+
         if (rating.communication) {
             aggregateFreelancerRatings.communication += 1;
         }

@@ -26,7 +26,6 @@
     let showPaymentModal = $state(false);
 
     let expertise = $state(false);
-    let availability = $state(false);
     let communication = $state(false);
 
     let isIssueResolved = $state(true);
@@ -36,7 +35,8 @@
 
     $effect(() => {
         if (!isIssueResolved) {
-            expertise = availability = communication = false;
+            expertise = false;
+            communication = false;
         }
     });
 
@@ -65,7 +65,6 @@
                     const rating: FreelancerRating = {
                         success: isIssueResolved,
                         expertise,
-                        availability,
                         communication,
                         reviewText,
                     };
@@ -125,11 +124,6 @@
                                 id="expertise"
                                 label="A skilled expert"
                                 bind:checked={expertise}
-                            />
-                            <Checkbox
-                                id="availability"
-                                label="Highly available, attentive and responsive"
-                                bind:checked={availability}
                             />
                             <Checkbox
                                 id="communication"

@@ -10,15 +10,13 @@ import NDK from '@nostr-dev-kit/ndk';
 
 enum FreelancerRatings {
     success = '0.5',
-    expertise = '0.2',
-    availability = '0.15',
-    communication = '0.15',
+    expertise = '0.3',
+    communication = '0.2',
 }
 
 enum ClientRatings {
     thumb = '0.5',
-    availability = '0.25',
-    communication = '0.25',
+    communication = '0.5',
 }
 
 export enum ReviewType {
@@ -28,14 +26,12 @@ export enum ReviewType {
 
 export interface ClientRating {
     thumb: boolean;
-    availability: boolean;
     communication: boolean;
     reviewText: string;
 }
 
 export const THUMBS_UP_TEXT = 'Positive Experience';
 export const THUMBS_DOWN_TEXT = 'Negative Experience';
-export const AVAILABILITY_TEXT = 'Availability';
 export const COMMUNICATION_TEXT = 'Communication';
 
 export const SUCCESS_TEXT = 'Successful Jobs';
@@ -45,7 +41,6 @@ export const EXPERTISE_TEXT = 'Expertise';
 export interface FreelancerRating {
     success: boolean;
     expertise: boolean;
-    availability: boolean;
     communication: boolean;
     reviewText: string;
 }
@@ -94,9 +89,6 @@ export class ReviewEvent extends NDKEvent {
         const thumb = r.thumb ? ClientRatings.thumb : '0';
         this.tags.push(['rating', thumb, 'thumb']);
 
-        const availability = r.availability ? ClientRatings.availability : '0';
-        this.tags.push(['rating', availability, 'availability']);
-
         const communication = r.communication ? ClientRatings.communication : '0';
         this.tags.push(['rating', communication, 'communication']);
 
@@ -109,7 +101,6 @@ export class ReviewEvent extends NDKEvent {
         }
         const clientRating: ClientRating = {
             thumb: false,
-            availability: false,
             communication: false,
             reviewText: this.content,
         };
@@ -119,8 +110,6 @@ export class ReviewEvent extends NDKEvent {
 
             if (tag.includes('rating') && tag.includes('thumb') && rating > 0) {
                 clientRating.thumb = true;
-            } else if (tag.includes('rating') && tag.includes('availability') && rating > 0) {
-                clientRating.availability = true;
             } else if (tag.includes('rating') && tag.includes('communication') && rating > 0) {
                 clientRating.communication = true;
             }
@@ -143,9 +132,6 @@ export class ReviewEvent extends NDKEvent {
         const expertise = r.expertise ? FreelancerRatings.expertise : '0';
         this.tags.push(['rating', expertise, 'expertise']);
 
-        const availability = r.availability ? FreelancerRatings.availability : '0';
-        this.tags.push(['rating', availability, 'availability']);
-
         const communication = r.communication ? FreelancerRatings.communication : '0';
         this.tags.push(['rating', communication, 'communication']);
 
@@ -159,7 +145,6 @@ export class ReviewEvent extends NDKEvent {
         const freelancerRating: FreelancerRating = {
             success: false,
             expertise: false,
-            availability: false,
             communication: false,
             reviewText: this.content,
         };
@@ -171,8 +156,6 @@ export class ReviewEvent extends NDKEvent {
                 freelancerRating.success = true;
             } else if (tag.includes('rating') && tag.includes('expertise') && rating > 0) {
                 freelancerRating.expertise = true;
-            } else if (tag.includes('rating') && tag.includes('availability') && rating > 0) {
-                freelancerRating.availability = true;
             } else if (tag.includes('rating') && tag.includes('communication') && rating > 0) {
                 freelancerRating.communication = true;
             }
@@ -198,15 +181,7 @@ export class ReviewEvent extends NDKEvent {
         this.tags.push(['a', eventAddress]);
     }
 
-    get reviewedEventKind(): NDKKind | number {
-        const aTag = this.tagValue('a');
-        if (!aTag) return this.kind;
-        if (((aTag as string).split(':')[0] as number) === NDKKind.FreelanceJob) {
-            return NDKKind.FreelanceJob;
-        } else return NDKKind.FreelanceBid;
-    }
-
-    // Handle udnefined everywhere !!!
+    // Handle undefined everywhere !!!
     get reviewedPerson(): Hexpubkey | undefined {
         const id = this.tagValue('a');
 
@@ -224,36 +199,38 @@ export class ReviewEvent extends NDKEvent {
         let sum = 0;
         if (this.type === ReviewType.Client) {
             this.tags.forEach((tag: NDKTag) => {
-                if (tag.includes('rating') && tag.includes('thumb')) {
-                    const value = tag[1];
-                    if (value) sum += parseFloat(value as string);
-                } else if (tag.includes('rating') && tag.includes('availability')) {
-                    const value = tag[1];
-                    if (value) sum += parseFloat(value as string);
-                } else if (tag.includes('rating') && tag.includes('communication')) {
-                    const value = tag[1];
-                    if (value) sum += parseFloat(value as string);
+                if (tag.includes('rating')) {
+                    const rating = parseFloat(tag[1]);
+                    // if rating is not a number or it's 0, just simply return
+                    if (isNaN(rating) || !rating) return;
+
+                    if (tag.includes('thumb')) {
+                        sum += parseFloat(ClientRatings.thumb);
+                    } else if (tag.includes('communication')) {
+                        sum += parseFloat(ClientRatings.communication);
+                    }
                 }
             });
             return sum;
         } else if (this.type === ReviewType.Freelancer) {
             this.tags.forEach((tag: NDKTag) => {
-                if (tag.includes('rating') && tag.includes('success')) {
-                    const value = tag[1];
-                    if (value) sum += parseFloat(value as string);
-                } else if (tag.includes('rating') && tag.includes('expertise')) {
-                    const value = tag[1];
-                    if (value) sum += parseFloat(value as string);
-                } else if (tag.includes('rating') && tag.includes('availability')) {
-                    const value = tag[1];
-                    if (value) sum += parseFloat(value as string);
-                } else if (tag.includes('rating') && tag.includes('communication')) {
-                    const value = tag[1];
-                    if (value) sum += parseFloat(value as string);
+                if (tag.includes('rating')) {
+                    const rating = parseFloat(tag[1]);
+                    // if rating is not a number or it's 0, just simply return
+                    if (isNaN(rating) || !rating) return;
+
+                    if (tag.includes('success')) {
+                        sum += parseFloat(FreelancerRatings.success);
+                    } else if (tag.includes('expertise')) {
+                        sum += parseFloat(FreelancerRatings.expertise);
+                    } else if (tag.includes('communication')) {
+                        sum += parseFloat(FreelancerRatings.communication);
+                    }
                 }
             });
             return sum;
         }
+
         return undefined;
     }
 

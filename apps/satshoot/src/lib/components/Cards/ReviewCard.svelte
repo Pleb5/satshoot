@@ -179,10 +179,6 @@
             {/if}
 
             <!-- Shared badges -->
-            <div class={getBadgeClasses(ratings.availability)}>
-                <i class="bx bxs-star"></i>
-                <p>{isFreelancerReview ? 'Availability' : 'Attentive & Responsive'}</p>
-            </div>
             <div class={getBadgeClasses(ratings.communication)}>
                 <i class="bx bxs-star"></i>
                 <p>{isFreelancerReview ? 'Communication' : 'Clear Communication'}</p>

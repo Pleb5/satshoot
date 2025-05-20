@@ -97,13 +97,6 @@
                     <div class="w-full flex flex-row flex-wrap gap-[10px]">
                         <div class={qualitiesBadgeClasses}>
                             <i class="bx bxs-star"></i>
-                            <p class="grow-1">Attentive & responsive</p>
-                            <p class="bg-black-100 py-[5px] px-[10px]">
-                                {aggregatedClientRatings.availability}
-                            </p>
-                        </div>
-                        <div class={qualitiesBadgeClasses}>
-                            <i class="bx bxs-star"></i>
                             <p class="grow-1">Clear Communication</p>
                             <p class="bg-black-100 py-[5px] px-[10px]">
                                 {aggregatedClientRatings.communication}
