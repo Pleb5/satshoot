@@ -3,7 +3,7 @@
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
-    import { createPaymentFilters, createPaymentStore, paymentDetail } from '$lib/stores/payment';
+    import { createPaymentFilters, createPaymentStore } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
@@ -187,12 +187,6 @@
     }
 
     function handlePay() {
-        // TODO: this should be a prop once skeleton is migrated
-        $paymentDetail = {
-            targetEntity: job!,
-            secondaryEntity: bid,
-        };
-
         showPaymentModal = true;
     }
 
@@ -320,7 +314,9 @@
     </div>
 </Card>
 
-<PaymentModal bind:isOpen={showPaymentModal} />
+{#if job}
+    <PaymentModal bind:isOpen={showPaymentModal} targetEntity={job} secondaryEntity={bid} />
+{/if}
 
 {#if job}
     <TakeBidModal bind:isOpen={showTakeBidModal} {job} {bid} />

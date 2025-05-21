@@ -6,7 +6,6 @@
     import {
         createPaymentFilters,
         createPaymentStore,
-        paymentDetail,
         type PaymentStore,
     } from '$lib/stores/payment';
     import currentUser from '$lib/stores/user';
@@ -38,6 +37,7 @@
     import { toaster } from '$lib/stores/toaster';
     import { Pricing } from '$lib/events/types';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
+    import type { OrderEvent } from '$lib/events/OrderEvent';
 
     enum ToastType {
         Success = 'success',
@@ -77,15 +77,13 @@
 
     interface Props {
         isOpen: boolean;
+        targetEntity: JobEvent | OrderEvent;
+        secondaryEntity: BidEvent | ServiceEvent;
     }
 
-    let { isOpen = $bindable() }: Props = $props();
+    let { isOpen = $bindable(), targetEntity, secondaryEntity }: Props = $props();
 
     let cashuPopoverState = $state(false);
-
-    // TODO: As soon as Modals can take Props this needs to stop
-    let targetEntity = $derived($paymentDetail?.targetEntity);
-    let secondaryEntity = $derived($paymentDetail?.secondaryEntity);
 
     let paying = $state(false);
     let amount = $state(0);

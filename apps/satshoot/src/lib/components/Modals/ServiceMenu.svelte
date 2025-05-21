@@ -10,7 +10,6 @@
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { checkRelayConnections } from '$lib/utils/helpers';
     import currentUser from '$lib/stores/user';
-    import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from './PaymentModal.svelte';
 
     interface Props {
@@ -70,11 +69,6 @@
     function handlePay() {
         if (!activeOrder) return;
 
-        $paymentDetail = {
-            targetEntity: activeOrder,
-            secondaryEntity: service,
-        };
-
         isOpen = false;
         showPaymentModal = true;
     }
@@ -121,7 +115,13 @@
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
 
-<PaymentModal bind:isOpen={showPaymentModal} />
+{#if activeOrder}
+    <PaymentModal
+        bind:isOpen={showPaymentModal}
+        targetEntity={activeOrder}
+        secondaryEntity={service}
+    />
+{/if}
 
 {#if activeOrder}
     <CloseEntityModal

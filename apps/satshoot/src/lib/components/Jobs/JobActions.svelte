@@ -9,7 +9,6 @@
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';
-    import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from '../Modals/PaymentModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
@@ -79,11 +78,6 @@
 
     function handlePay() {
         if (!winnerBid) return;
-
-        $paymentDetail = {
-            targetEntity: job,
-            secondaryEntity: winnerBid,
-        };
 
         showPaymentModal = true;
     }
@@ -165,6 +159,8 @@
 
 <ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
 
-<PaymentModal bind:isOpen={showPaymentModal} />
+{#if winnerBid}
+    <PaymentModal bind:isOpen={showPaymentModal} targetEntity={job} secondaryEntity={winnerBid} />
+{/if}
 
 <ReviewModal bind:isOpen={showReviewModal} review={review!} />

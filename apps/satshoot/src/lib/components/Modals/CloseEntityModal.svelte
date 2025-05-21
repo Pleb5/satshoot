@@ -1,6 +1,5 @@
 <script lang="ts">
     import ndk from '$lib/stores/session';
-    import { paymentDetail } from '$lib/stores/payment';
     import { tick } from 'svelte';
     import ReviewToggleQuestion from '../UI/Buttons/ReviewToggleQuestion.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
@@ -86,10 +85,6 @@
 
     function handlePostClosePayment() {
         if (secondaryEntity) {
-            $paymentDetail = {
-                targetEntity,
-                secondaryEntity,
-            };
             isOpen = false;
             isPaymentModalOpen = true;
         }
@@ -192,4 +187,6 @@
     </div>
 </ModalWrapper>
 
-<PaymentModal bind:isOpen={isPaymentModalOpen} />
+{#if secondaryEntity}
+    <PaymentModal bind:isOpen={isPaymentModalOpen} {targetEntity} {secondaryEntity} />
+{/if}

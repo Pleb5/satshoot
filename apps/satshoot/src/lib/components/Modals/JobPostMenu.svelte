@@ -6,7 +6,6 @@
     import { BidEvent } from '$lib/events/BidEvent';
     import ReviewClientModal from './ReviewClientModal.svelte';
     import { clientReviews } from '$lib/stores/reviews';
-    import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from './PaymentModal.svelte';
     import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';
@@ -95,11 +94,6 @@
 
     function handlePay() {
         if (!winnerBid) return;
-
-        $paymentDetail = {
-            targetEntity: job,
-            secondaryEntity: winnerBid,
-        };
 
         isOpen = false;
         showPaymentModal = true;
@@ -194,6 +188,8 @@
 
 <ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
 
-<PaymentModal bind:isOpen={showPaymentModal} />
+{#if winnerBid}
+    <PaymentModal bind:isOpen={showPaymentModal} targetEntity={job} secondaryEntity={winnerBid} />
+{/if}
 
 <ReviewModal bind:isOpen={showReviewModal} review={review!} />

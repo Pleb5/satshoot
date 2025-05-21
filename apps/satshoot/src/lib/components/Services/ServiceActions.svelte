@@ -9,7 +9,6 @@
     import Button from '../UI/Buttons/Button.svelte';
     import { type NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
-    import { paymentDetail } from '$lib/stores/payment';
     import PaymentModal from '../Modals/PaymentModal.svelte';
 
     interface Props {
@@ -70,11 +69,6 @@
     function handlePay() {
         if (!activeOrder) return;
 
-        $paymentDetail = {
-            targetEntity: activeOrder,
-            secondaryEntity: service,
-        };
-
         showPaymentModal = true;
     }
 
@@ -125,7 +119,13 @@
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
 
-<PaymentModal bind:isOpen={showPaymentModal} />
+{#if activeOrder}
+    <PaymentModal
+        bind:isOpen={showPaymentModal}
+        targetEntity={activeOrder}
+        secondaryEntity={service}
+    />
+{/if}
 
 {#if activeOrder}
     <CloseEntityModal

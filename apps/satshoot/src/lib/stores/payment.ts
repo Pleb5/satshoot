@@ -20,11 +20,6 @@ export interface PaymentStore {
     totalPaid: Readable<number>;
 }
 
-export const paymentDetail = writable<{
-    targetEntity: JobEvent | OrderEvent;
-    secondaryEntity: BidEvent | ServiceEvent;
-} | null>(null);
-
 export const createPaymentFilters = (
     event: BidEvent | ServiceEvent,
     type: 'freelancer' | 'satshoot'
@@ -56,11 +51,6 @@ export const createPaymentFilters = (
         ];
     }
 };
-
-export interface PaymentStore {
-    paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
-    totalPaid: Readable<number>;
-}
 
 export const createPaymentStore = (filters: NDKFilter[]): PaymentStore => {
     const $ndk = get(ndk);
