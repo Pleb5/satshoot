@@ -189,8 +189,8 @@
     function handlePay() {
         // TODO: this should be a prop once skeleton is migrated
         $paymentDetail = {
-            job: job!,
-            bid,
+            targetEntity: job!,
+            secondaryEntity: bid,
         };
 
         showPaymentModal = true;

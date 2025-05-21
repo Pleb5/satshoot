@@ -9,6 +9,8 @@
     import Button from '../UI/Buttons/Button.svelte';
     import { type NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
+    import { paymentDetail } from '$lib/stores/payment';
+    import PaymentModal from '../Modals/PaymentModal.svelte';
 
     interface Props {
         service: ServiceEvent;
@@ -33,6 +35,7 @@
 
     // Reactive states
     let showShareModal = $state(false);
+    let showPaymentModal = $state(false);
     let showCloseModal = $state(false);
 
     // Derived states
@@ -62,6 +65,17 @@
 
     function handleShare() {
         showShareModal = true;
+    }
+
+    function handlePay() {
+        if (!activeOrder) return;
+
+        $paymentDetail = {
+            targetEntity: activeOrder,
+            secondaryEntity: service,
+        };
+
+        showPaymentModal = true;
     }
 
     function handleCloseOrder() {
@@ -94,6 +108,13 @@
         {/if}
 
         {#if activeOrder}
+            <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
+                <i class="bx bxs-bolt text-[20px]"></i>
+                <p class="">Pay</p>
+            </Button>
+        {/if}
+
+        {#if activeOrder}
             <Button variant="outlined" classes="justify-start" fullWidth onClick={handleCloseOrder}>
                 <i class="bx bxs-lock text-[20px]"></i>
                 <p class="">Close Order</p>
@@ -103,6 +124,8 @@
 </div>
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
+
+<PaymentModal bind:isOpen={showPaymentModal} />
 
 {#if activeOrder}
     <CloseEntityModal

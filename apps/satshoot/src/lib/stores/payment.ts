@@ -1,4 +1,4 @@
-import type { BidEvent } from '$lib/events/BidEvent';
+import { BidEvent } from '$lib/events/BidEvent';
 import { JobEvent } from '$lib/events/JobEvent';
 import { derived, get, writable, type Readable } from 'svelte/store';
 import ndk from '$lib/stores/session';
@@ -12,6 +12,8 @@ import {
 import { wot } from './wot';
 import { SatShootPubkey } from '$lib/utils/misc';
 import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+import type { ServiceEvent } from '$lib/events/ServiceEvent';
+import type { OrderEvent } from '$lib/events/OrderEvent';
 
 export interface PaymentStore {
     paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
@@ -19,30 +21,37 @@ export interface PaymentStore {
 }
 
 export const paymentDetail = writable<{
-    job: JobEvent;
-    bid: BidEvent;
+    targetEntity: JobEvent | OrderEvent;
+    secondaryEntity: BidEvent | ServiceEvent;
 } | null>(null);
 
 export const createPaymentFilters = (
-    bid: BidEvent,
+    event: BidEvent | ServiceEvent,
     type: 'freelancer' | 'satshoot'
 ): NDKFilter[] => {
     if (type === 'freelancer') {
         return [
-            { kinds: [NDKKind.Zap], '#e': [bid.id] },
-            { kinds: [NDKKind.Nutzap], '#a': [bid.bidAddress] },
+            { kinds: [NDKKind.Zap], '#e': [event.id] },
+            {
+                kinds: [NDKKind.Nutzap],
+                '#a': [event instanceof BidEvent ? event.bidAddress : event.serviceAddress],
+            },
         ];
     } else {
         return [
             {
                 kinds: [NDKKind.Zap],
                 '#p': [SatShootPubkey],
-                '#a': [bid.referencedJobAddress],
+                '#a': [
+                    event instanceof BidEvent ? event.referencedJobAddress : event.serviceAddress,
+                ],
             },
             {
                 kinds: [NDKKind.Nutzap],
                 '#p': [SatShootPubkey],
-                '#a': [bid.referencedJobAddress],
+                '#a': [
+                    event instanceof BidEvent ? event.referencedJobAddress : event.serviceAddress,
+                ],
             },
         ];
     }

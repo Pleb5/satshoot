@@ -2,7 +2,7 @@
     import { Popover } from '@skeletonlabs/skeleton-svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { JobEvent } from '$lib/events/JobEvent';
-    import { type BidEvent } from '$lib/events/BidEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import {
         createPaymentFilters,
         createPaymentStore,
@@ -37,6 +37,7 @@
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
     import { Pricing } from '$lib/events/types';
+    import { ServiceEvent } from '$lib/events/ServiceEvent';
 
     enum ToastType {
         Success = 'success',
@@ -83,13 +84,21 @@
     let cashuPopoverState = $state(false);
 
     // TODO: As soon as Modals can take Props this needs to stop
-    let job: JobEvent | undefined = $derived($paymentDetail?.job);
-    let bid: BidEvent | undefined = $derived($paymentDetail?.bid);
+    let targetEntity = $derived($paymentDetail?.targetEntity);
+    let secondaryEntity = $derived($paymentDetail?.secondaryEntity);
 
     let paying = $state(false);
     let amount = $state(0);
-    let satshootShare = $derived(Math.floor((amount * (bid?.pledgeSplit ?? 0)) / 100));
 
+    const bech32ID = $derived(
+        targetEntity instanceof JobEvent
+            ? targetEntity.encode()
+            : secondaryEntity
+              ? secondaryEntity.encode()
+              : ''
+    );
+
+    let satshootShare = $derived(Math.floor((amount * (secondaryEntity?.pledgeSplit ?? 0)) / 100));
     let freelancerShare = $derived(amount - satshootShare);
     let pledgedAmount = $state(0);
 
@@ -142,10 +151,10 @@
     let pricing = $state('');
 
     $effect(() => {
-        if (bid && $currentUser) {
-            fetchFreelancerCashuInfo(bid.pubkey);
+        if (secondaryEntity && $currentUser) {
+            fetchFreelancerCashuInfo(secondaryEntity.pubkey);
 
-            switch (bid.pricing) {
+            switch (secondaryEntity.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';
                     break;
@@ -154,8 +163,8 @@
                     break;
             }
 
-            const freelancerFilters = createPaymentFilters(bid, 'freelancer');
-            const satshootFilters = createPaymentFilters(bid, 'satshoot');
+            const freelancerFilters = createPaymentFilters(secondaryEntity, 'freelancer');
+            const satshootFilters = createPaymentFilters(secondaryEntity, 'satshoot');
 
             freelancerPaymentStore = createPaymentStore(freelancerFilters);
             satshootPaymentStore = createPaymentStore(satshootFilters);
@@ -193,11 +202,11 @@
             if (freelancerShare > 0) {
                 await fetchPaymentInfo(
                     UserEnum.Freelancer,
-                    bid!.pubkey,
+                    secondaryEntity!.pubkey,
                     freelancerShareMillisats,
                     zapRequestRelays,
                     invoices,
-                    bid!
+                    secondaryEntity!
                 ).catch((err) => {
                     handleToast(
                         `An error occurred in fetching Freelancer's payment info: ${err.message || err}`,
@@ -213,7 +222,7 @@
                     satshootSumMillisats,
                     zapRequestRelays,
                     invoices,
-                    job!
+                    targetEntity instanceof JobEvent ? targetEntity! : secondaryEntity!
                 ).catch((err) => {
                     handleToast(
                         `An error occurred in fetching satshoot's payment info: ${err.message || err}`,
@@ -309,7 +318,7 @@
 
             const freelancerPaymentPromise = processCashuPayment(
                 UserEnum.Freelancer,
-                bid!.pubkey,
+                secondaryEntity!.pubkey,
                 freelancerShareMillisats
             );
 
@@ -428,7 +437,7 @@
             .cashuPay({
                 ...freelancerCashuInfo,
                 mints,
-                target: userEnum === UserEnum.Freelancer ? bid! : job!,
+                target: userEnum === UserEnum.Freelancer ? secondaryEntity! : targetEntity!,
                 recipientPubkey: pubkey,
                 amount: amountMillisats,
                 unit: 'msat',
@@ -453,10 +462,19 @@
 
         nutzapEvent.tags.push([
             'a',
-            userEnum === UserEnum.Freelancer ? bid!.bidAddress : job!.jobAddress,
+            userEnum === UserEnum.Freelancer
+                ? secondaryEntity instanceof BidEvent
+                    ? secondaryEntity!.bidAddress
+                    : secondaryEntity!.serviceAddress
+                : targetEntity instanceof JobEvent
+                  ? targetEntity.jobAddress
+                  : (secondaryEntity as ServiceEvent).serviceAddress,
         ]);
 
-        nutzapEvent.tags.push(['e', userEnum === UserEnum.Freelancer ? bid!.id : job!.id]);
+        nutzapEvent.tags.push([
+            'e',
+            userEnum === UserEnum.Freelancer ? secondaryEntity!.id : targetEntity!.id,
+        ]);
 
         nutzapEvent.recipientPubkey = pubkey;
 
@@ -524,9 +542,9 @@
     };
 
     async function initializePayment() {
-        if (!job || !bid) {
+        if (!targetEntity || !secondaryEntity) {
             paying = false;
-            handleToast('Error: Could not find Job or Bid!', ToastType.Error);
+            handleToast('Error: Could not find Job/Service or Bid/Order!', ToastType.Error);
             return null;
         }
 
@@ -551,11 +569,11 @@
         amountMillisats: number,
         zapRequestRelays: Map<UserEnum, string[]>,
         invoices: Map<UserEnum, InvoiceDetails>,
-        event: JobEvent | BidEvent
+        event: NDKEvent
     ) {
         const zapConfig = await getZapConfiguration(pubkey);
         if (zapConfig) {
-            // Pledges zap the Job rather than the Bid
+            // Pledges zap the Job rather than the Bid and service rather than order
             const invoice = await generateInvoice(
                 event,
                 amountMillisats,
@@ -656,14 +674,14 @@
 </script>
 
 <ModalWrapper bind:isOpen title="Pay Freelancer">
-    {#if job && bid}
+    {#if targetEntity && secondaryEntity}
         <div class="w-full flex flex-col">
             <!-- popups Share Job Post start -->
             <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
                 <div
                     class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 dark:border-white-100 p-[10px]"
                 >
-                    <UserProfile pubkey={bid.pubkey} />
+                    <UserProfile pubkey={secondaryEntity.pubkey} />
                     <div
                         class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                     >
@@ -671,14 +689,16 @@
                             <p class="font-[500]">
                                 Bid cost:
                                 <span class="font-[300]">
-                                    {insertThousandSeparator(bid.amount) + ' ' + pricing}
+                                    {insertThousandSeparator(secondaryEntity.amount) +
+                                        ' ' +
+                                        pricing}
                                 </span>
                             </p>
                         </div>
                         <div class="grow-1">
                             <p class="font-[500]">
                                 Pledge split:
-                                <span class="font-[300]"> {bid.pledgeSplit} %</span>
+                                <span class="font-[300]"> {secondaryEntity.pledgeSplit} %</span>
                             </p>
                         </div>
                     </div>
@@ -709,7 +729,12 @@
                     class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
                 >
                     <p class="">Compensation for:</p>
-                    <p class="">{job.title}</p>
+
+                    <a href={'/' + bech32ID + '/'} class="anchor font-[600]">
+                        {targetEntity instanceof JobEvent
+                            ? targetEntity.title
+                            : (secondaryEntity as ServiceEvent).title}
+                    </a>
                 </div>
                 <div
                     class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"

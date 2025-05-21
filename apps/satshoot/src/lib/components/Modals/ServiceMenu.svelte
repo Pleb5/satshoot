@@ -10,6 +10,8 @@
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { checkRelayConnections } from '$lib/utils/helpers';
     import currentUser from '$lib/stores/user';
+    import { paymentDetail } from '$lib/stores/payment';
+    import PaymentModal from './PaymentModal.svelte';
 
     interface Props {
         isOpen: boolean;
@@ -35,6 +37,7 @@
 
     let showShareModal = $state(false);
     let showCloseModal = $state(false);
+    let showPaymentModal = $state(false);
 
     const activeOrder = $derived(
         $myOrdersStore.find(
@@ -64,12 +67,23 @@
         showShareModal = true;
     }
 
+    function handlePay() {
+        if (!activeOrder) return;
+
+        $paymentDetail = {
+            targetEntity: activeOrder,
+            secondaryEntity: service,
+        };
+
+        isOpen = false;
+        showPaymentModal = true;
+    }
+
     function handleCloseOrder() {
         isOpen = false;
         showCloseModal = true;
     }
 
-    // todo: if user has an active order on current service allow him to pay the freelancer
     // todo: allow to message freelancer
     // todo: if my service, edit option
     // todo: review freelancer
@@ -82,6 +96,13 @@
                 <i class="bx bxs-share text-[20px]"></i>
                 <p class="">Share</p>
             </Button>
+
+            {#if activeOrder}
+                <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
+                    <i class="bx bxs-bolt text-[20px]"></i>
+                    <p class="">Pay</p>
+                </Button>
+            {/if}
 
             {#if activeOrder}
                 <Button
@@ -99,6 +120,8 @@
 </ModalWrapper>
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
+
+<PaymentModal bind:isOpen={showPaymentModal} />
 
 {#if activeOrder}
     <CloseEntityModal

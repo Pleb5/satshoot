@@ -85,10 +85,10 @@
     }
 
     function handlePostClosePayment() {
-        if (isJob(targetEntity) && secondaryEntity instanceof BidEvent) {
+        if (secondaryEntity) {
             $paymentDetail = {
-                job: targetEntity,
-                bid: secondaryEntity,
+                targetEntity,
+                secondaryEntity,
             };
             isOpen = false;
             isPaymentModalOpen = true;
@@ -182,7 +182,7 @@
                     {:else}
                         <span class="font-bold">
                             {`Close ${isJob(targetEntity) ? 'Job' : 'Order'}` +
-                                (isJob(targetEntity) ? ' and Pay' : '')}
+                                (secondaryEntity ? ' and Pay' : '')}
                         </span>
                     {/if}
                 </Button>

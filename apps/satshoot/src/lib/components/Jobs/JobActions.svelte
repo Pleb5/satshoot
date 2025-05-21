@@ -81,8 +81,8 @@
         if (!winnerBid) return;
 
         $paymentDetail = {
-            job: job,
-            bid: winnerBid,
+            targetEntity: job,
+            secondaryEntity: winnerBid,
         };
 
         showPaymentModal = true;
