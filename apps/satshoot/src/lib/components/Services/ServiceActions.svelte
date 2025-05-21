@@ -39,12 +39,7 @@
 
     // Derived states
     const myService = $derived($currentUser?.pubkey === service.pubkey);
-    const activeOrder = $derived(
-        $myOrdersStore.find(
-            (order) =>
-                order.status === OrderStatus.Open && service.orders.includes(order.orderAddress)
-        )
-    );
+    const openedOrder = $derived($myOrdersStore.find((order) => order.status === OrderStatus.Open));
 
     let initialized = $state(false);
     $effect(() => {
@@ -67,8 +62,6 @@
     }
 
     function handlePay() {
-        if (!activeOrder) return;
-
         showPaymentModal = true;
     }
 
@@ -101,14 +94,14 @@
             </Button>
         {/if}
 
-        {#if activeOrder}
+        {#if openedOrder && service.orders.includes(openedOrder.orderAddress)}
             <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
                 <i class="bx bxs-bolt text-[20px]"></i>
                 <p class="">Pay</p>
             </Button>
         {/if}
 
-        {#if activeOrder}
+        {#if openedOrder}
             <Button variant="outlined" classes="justify-start" fullWidth onClick={handleCloseOrder}>
                 <i class="bx bxs-lock text-[20px]"></i>
                 <p class="">Close Order</p>
@@ -119,18 +112,18 @@
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
 
-{#if activeOrder}
+{#if openedOrder}
     <PaymentModal
         bind:isOpen={showPaymentModal}
-        targetEntity={activeOrder}
+        targetEntity={openedOrder}
         secondaryEntity={service}
     />
 {/if}
 
-{#if activeOrder}
+{#if openedOrder}
     <CloseEntityModal
         bind:isOpen={showCloseModal}
-        targetEntity={activeOrder}
+        targetEntity={openedOrder}
         secondaryEntity={service}
     />
 {/if}

@@ -12,7 +12,7 @@
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
     import { BidEvent } from '$lib/events/BidEvent';
-    import type { ServiceEvent } from '$lib/events/ServiceEvent';
+    import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { ReviewEvent } from '$lib/events/ReviewEvent';
 
     interface Props {
@@ -30,11 +30,19 @@
     let reviewText = $state('');
     let isClosing = $state(false);
 
-    const reviewTargetAddress = $derived(
-        isJob(targetEntity)
-            ? targetEntity.acceptedBidAddress
-            : targetEntity.referencedServiceAddress
-    );
+    const reviewTargetAddress = $derived.by(() => {
+        if (isJob(targetEntity)) return targetEntity.acceptedBidAddress;
+
+        // we need to allow the user to post a review on service only when
+        // freelancer had accepted the order
+        if (
+            secondaryEntity instanceof ServiceEvent &&
+            secondaryEntity.orders.includes(targetEntity.orderAddress)
+        )
+            return targetEntity.referencedServiceAddress;
+
+        return '';
+    });
 
     $effect(() => {
         if (!isIssueResolved) {
@@ -177,7 +185,7 @@
                     {:else}
                         <span class="font-bold">
                             {`Close ${isJob(targetEntity) ? 'Job' : 'Order'}` +
-                                (secondaryEntity ? ' and Pay' : '')}
+                                (reviewTargetAddress ? ' and Pay' : '')}
                         </span>
                     {/if}
                 </Button>
