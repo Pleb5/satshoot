@@ -37,7 +37,7 @@
     import { toaster } from '$lib/stores/toaster';
     import { Pricing } from '$lib/events/types';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
-    import type { OrderEvent } from '$lib/events/OrderEvent';
+    import { OrderEvent } from '$lib/events/OrderEvent';
 
     enum ToastType {
         Success = 'success',
@@ -146,13 +146,20 @@
     let freelancerPaymentStore: PaymentStore;
     let satshootPaymentStore: PaymentStore;
 
-    let pricing = $state('');
+    const { pricing, costLabel } = $derived.by(() => {
+        let pricing = '';
+        let costLabel = '';
+        let amount = 0;
 
-    $effect(() => {
-        if (secondaryEntity && $currentUser) {
-            fetchFreelancerCashuInfo(secondaryEntity.pubkey);
+        const bidOrOrder =
+            secondaryEntity instanceof BidEvent
+                ? secondaryEntity
+                : targetEntity instanceof OrderEvent
+                  ? targetEntity
+                  : null;
 
-            switch (secondaryEntity.pricing) {
+        if (bidOrOrder) {
+            switch (bidOrOrder.pricing) {
                 case Pricing.Absolute:
                     pricing = 'sats';
                     break;
@@ -160,6 +167,17 @@
                     pricing = 'sats/min';
                     break;
             }
+
+            costLabel = bidOrOrder instanceof BidEvent ? 'Bid Cost:' : 'Service Cost:';
+            amount = bidOrOrder.amount;
+        }
+
+        return { pricing, costLabel };
+    });
+
+    $effect(() => {
+        if (secondaryEntity && $currentUser) {
+            fetchFreelancerCashuInfo(secondaryEntity.pubkey);
 
             const freelancerFilters = createPaymentFilters(secondaryEntity, 'freelancer');
             const satshootFilters = createPaymentFilters(secondaryEntity, 'satshoot');
@@ -685,11 +703,9 @@
                     >
                         <div class="grow-1">
                             <p class="font-[500]">
-                                Bid cost:
+                                {costLabel}
                                 <span class="font-[300]">
-                                    {insertThousandSeparator(secondaryEntity.amount) +
-                                        ' ' +
-                                        pricing}
+                                    {insertThousandSeparator(amount) + ' ' + pricing}
                                 </span>
                             </p>
                         </div>
