@@ -192,11 +192,11 @@
                 myOrdersFilter['#a'] = [arrivedService.serviceAddress];
                 myOrdersFilter.authors = [$currentUser.pubkey];
                 myOrdersStore.startSubscription();
-            } else {
-                // when current user is the service owner, subscribe for all orders on this service
-                allOrdersFilter['#a'] = [arrivedService.serviceAddress];
-                allOrdersStore.startSubscription();
             }
+
+            // subscribe for all orders on the service
+            allOrdersFilter['#a'] = [arrivedService.serviceAddress];
+            allOrdersStore.startSubscription();
         }
 
         // Skip older jobs
@@ -224,10 +224,14 @@
     }
 
     async function confirmOrder(note: string) {
+        if (!service) return;
+
         const orderEvent = new OrderEvent($ndk);
         orderEvent.description = note;
         orderEvent.status = OrderStatus.Open;
         orderEvent.referencedServiceAddress = service!.serviceAddress;
+        orderEvent.pricing = service.pricing;
+        orderEvent.amount = service.amount;
         orderEvent.generateTags(); // this generates d-tag
 
         try {
@@ -258,7 +262,7 @@
             <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
                 {#if service}
                     <div class="w-full flex flex-col gap-[15px]">
-                        <ServiceCard {service} />
+                        <ServiceCard {service} allOrders={wotFilteredOrders} />
                         <div class="flex flex-row justify-center">
                             {#if !myService}
                                 {#if allowMakeOrder}

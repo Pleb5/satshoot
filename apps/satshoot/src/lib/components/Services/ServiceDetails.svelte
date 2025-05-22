@@ -1,7 +1,9 @@
 <script lang="ts">
     import {
+        NDKKind,
         NDKSubscriptionCacheUsage,
         type Hexpubkey,
+        type NDKFilter,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
     import ndk from '$lib/stores/session';
@@ -15,12 +17,35 @@
     import { Pricing } from '$lib/events/types';
     import { wot } from '$lib/stores/wot';
     import QuestionIcon from '../Icons/QuestionIcon.svelte';
+    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
+    import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
+    import currentUser from '$lib/stores/user';
+    import Button from '../UI/Buttons/Button.svelte';
+    import OrdersCountBreakdown from '../Modals/OrdersCountBreakdown.svelte';
 
     interface Props {
         service: ServiceEvent;
     }
 
     let { service }: Props = $props();
+    let showOrderPriceBreakdownModal = $state(false);
+
+    const ordersSubOptions: NDKSubscribeOptions = {
+        closeOnEose: false,
+        autoStart: false,
+    };
+
+    const allOrdersFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceOrder],
+    };
+
+    const allOrdersStore = $ndk.storeSubscribe<OrderEvent>(
+        allOrdersFilter,
+        ordersSubOptions,
+        OrderEvent
+    );
+
+    let alreadySubscribedToOrders = $state(false);
 
     // Derived values
     const npub = $derived(nip19.npubEncode(service.pubkey));
@@ -37,16 +62,14 @@
         return '';
     });
 
-    const ordersCount = $derived.by(() => {
-        let count = 0;
-
-        service.orders.filter((orderAddress) => {
-            const pubkey = orderAddress.split(':')[1];
-            if (pubkey && $wot.has(pubkey)) count++;
-        });
-
-        return count;
-    });
+    const fulfilledOrders = $derived(
+        $allOrdersStore.filter(
+            (order) =>
+                $wot.has(order.pubkey) &&
+                service.orders.includes(order.orderAddress) &&
+                order.status === OrderStatus.Fulfilled
+        )
+    );
 
     // Effect to fetch user profile
     $effect(() => {
@@ -61,6 +84,15 @@
             .then((profile) => {
                 userProfile = profile;
             });
+    });
+
+    $effect(() => {
+        if ($currentUser && !alreadySubscribedToOrders) {
+            alreadySubscribedToOrders = true;
+
+            allOrdersFilter['#a'] = [service.serviceAddress];
+            allOrdersStore.startSubscription();
+        }
     });
 </script>
 
@@ -100,14 +132,15 @@
         </p>
     </div>
     <div class="grow-1">
-        <p class="font-[500]">
-            <QuestionIcon
-                extraClasses="text-[14px] p-[3px]"
-                placement="bottom-start"
-                popUpText="Number of times service was taken by logged in user's WOT."
-            />
+        <Button
+            variant="outlined"
+            classes="outline-yellow-500 dark:outline-yellow-600"
+            onClick={() => (showOrderPriceBreakdownModal = true)}
+        >
             <span>Orders: </span>
-            <span class="font-[300]">{ordersCount}</span>
-        </p>
+            <span class="font-[300]">{fulfilledOrders.length}</span>
+        </Button>
     </div>
 </div>
+
+<OrdersCountBreakdown bind:isOpen={showOrderPriceBreakdownModal} {fulfilledOrders} />

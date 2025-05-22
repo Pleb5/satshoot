@@ -1,6 +1,7 @@
 import { NDKEvent, type NostrEvent } from '@nostr-dev-kit/ndk';
 import NDK from '@nostr-dev-kit/ndk';
 import { NDKKind } from '@nostr-dev-kit/ndk';
+import { Pricing } from './types';
 
 export enum OrderStatus {
     Open,
@@ -10,11 +11,15 @@ export enum OrderStatus {
 
 export class OrderEvent extends NDKEvent {
     private _status: OrderStatus;
+    private _pricing: Pricing;
+    private _amount: number;
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
         this.kind ??= NDKKind.FreelanceOrder;
         this._status = parseInt(this.tagValue('s') as string);
+        this._pricing = parseInt(this.tagValue('pricing') ?? Pricing.Absolute.toString());
+        this._amount = parseInt(this.tagValue('amount') ?? '0');
     }
 
     static from(event: NDKEvent) {
@@ -53,5 +58,25 @@ export class OrderEvent extends NDKEvent {
         // Can only have exactly one accepted bid tag
         this.removeTag('a');
         this.tags.push(['a', referencedServiceAddress]);
+    }
+
+    get pricing(): Pricing {
+        return this._pricing;
+    }
+
+    set pricing(pricing: Pricing) {
+        this._pricing = pricing;
+        this.removeTag('pricing');
+        this.tags.push(['pricing', pricing.toString()]);
+    }
+
+    get amount(): number {
+        return this._amount;
+    }
+
+    set amount(amount: number) {
+        this._amount = amount;
+        this.removeTag('amount');
+        this.tags.push(['amount', amount.toString()]);
     }
 }

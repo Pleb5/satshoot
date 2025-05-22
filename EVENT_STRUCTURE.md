@@ -76,6 +76,12 @@
 
         [ "s", <'0' (Open) OR '1' (Fulfilled) OR '2' (Failed)> ],
 
+        // Pricing Strategy at the time order was placed (Absolute or Time-based). Mandatory
+        ["pricing", <'0'(sats) | '1'(sats/minute)>],
+
+        // Price of service at the time order was placed. Refers to the absolute price OR sats/minute. Mandatory
+        ["amount", <100>]
+
         // This tag MUST be set on creation of this event. Points to the
         // Freelance Service that the Client wants to order. Mandatory
         ["a", "32765:<hex pubkey of Freelancer>:<Freelance Service d-tag>"],

@@ -14,14 +14,18 @@
     import { ReviewType } from '$lib/events/ReviewEvent';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import ServiceMenu from '../Modals/ServiceMenu.svelte';
+    import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
+    import OrdersCountBreakdown from '../Modals/OrdersCountBreakdown.svelte';
 
     interface Props {
         service: ServiceEvent;
+        allOrders: OrderEvent[];
     }
 
-    let { service }: Props = $props();
+    let { service, allOrders }: Props = $props();
 
     let showServiceMenu = $state(false);
+    let showOrderPriceBreakdownModal = $state(false);
 
     let statusString = $derived(getServiceStatusString(service.status));
     let statusColor = $derived(getServiceStatusColor(service.status));
@@ -33,16 +37,14 @@
         return '';
     });
 
-    const ordersCount = $derived.by(() => {
-        let count = 0;
-
-        service.orders.filter((orderAddress) => {
-            const pubkey = orderAddress.split(':')[1];
-            if (pubkey && $wot.has(pubkey)) count++;
-        });
-
-        return count;
-    });
+    const fulfilledOrders = $derived(
+        allOrders.filter(
+            (order) =>
+                $wot.has(order.pubkey) &&
+                service.orders.includes(order.orderAddress) &&
+                order.status === OrderStatus.Fulfilled
+        )
+    );
 
     function handleOptionClick() {
         showServiceMenu = true;
@@ -130,15 +132,14 @@
         </div>
 
         <div class="grow-1">
-            <p class="font-[500]">
-                <QuestionIcon
-                    extraClasses="text-[14px] p-[3px]"
-                    placement="bottom-start"
-                    popUpText="Number of times service was taken by logged in user's WOT."
-                />
+            <Button
+                variant="outlined"
+                classes="outline-yellow-500 dark:outline-yellow-600"
+                onClick={() => (showOrderPriceBreakdownModal = true)}
+            >
                 <span>Orders: </span>
-                <span class="font-[300]">{ordersCount}</span>
-            </p>
+                <span class="font-[300]">{fulfilledOrders.length}</span>
+            </Button>
         </div>
     </div>
 </Card>
@@ -151,3 +152,5 @@
         <ReputationCard user={service.pubkey} type={ReviewType.Freelancer} />
     </div>
 </Card>
+
+<OrdersCountBreakdown bind:isOpen={showOrderPriceBreakdownModal} {fulfilledOrders} />
