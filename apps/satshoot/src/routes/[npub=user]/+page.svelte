@@ -1,57 +1,86 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import BidCard from '$lib/components/Cards/BidCard.svelte';
     import UserCard from '$lib/components/Cards/UserCard.svelte';
-    import JobCard from '$lib/components/Jobs/JobCard.svelte';
-    import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
-    import Card from '$lib/components/UI/Card.svelte';
-    import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
-    import { BidEvent } from '$lib/events/BidEvent';
-    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
-    import { jobFilter, bidFilter, scrollToMyJobsAndMyBids } from '$lib/stores/gui';
+    import {
+        jobFilter,
+        bidFilter,
+        scrollToMyJobsAndMyBids,
+        servicesFilter,
+        ordersFilter,
+    } from '$lib/stores/gui';
     import ndk from '$lib/stores/session';
-    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
-    import currentUser from '$lib/stores/user';
+    import currentUser, { UserMode, userMode } from '$lib/stores/user';
     import { sessionInitialized } from '$lib/stores/session';
-    import { orderEventsChronologically } from '$lib/utils/helpers';
-    import { NDKKind, type NDKFilter, type NDKTag } from '@nostr-dev-kit/ndk';
-    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
+    import { NDKKind, type NDKFilter } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { onDestroy, onMount } from 'svelte';
     import { debounce } from '$lib/utils/misc';
-    import Fuse from 'fuse.js';
-
-    enum BidStatus {
-        Unknown,
-        Pending,
-        Won,
-        Lost,
-    }
+    import ServicesAndBids from '$lib/components/ProfilePage/ServicesAndBids.svelte';
+    import OrdersAndJobs from '$lib/components/ProfilePage/OrdersAndJobs.svelte';
+    import { BidEvent } from '$lib/events/BidEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
+    import { ServiceEvent } from '$lib/events/ServiceEvent';
+    import { OrderEvent } from '$lib/events/OrderEvent';
+    import {
+        createSearchFunction,
+        getComponentOrder,
+        jobStatusFilter,
+        serviceStatusFilter,
+        createBidStatusFilter,
+        createOrderStatusFilter,
+    } from '$lib/utils/profilePage';
 
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
     let npub = page.params.npub;
     let pubkey = nip19.decode(npub).data as string;
     let user = $ndk.getUser({ npub: npub });
 
-    const subOptions: NDKSubscribeOptions = {
+    // Subscription setup
+    const subOptions = {
         autoStart: false,
     };
 
+    // Jobs subscriptions
     const allJobsFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceJob],
     };
     const allJobsOfUser = $ndk.storeSubscribe<JobEvent>(allJobsFilter, subOptions, JobEvent);
 
+    // Bids subscriptions
     const allBidsFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceBid],
     };
     const allBidsOfUser = $ndk.storeSubscribe<BidEvent>(allBidsFilter, subOptions, BidEvent);
 
+    // Services subscriptions
+    const allServicesFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceService],
+    };
+    const allServicesOfUser = $ndk.storeSubscribe<ServiceEvent>(
+        allServicesFilter,
+        subOptions,
+        ServiceEvent
+    );
+
+    // Orders subscriptions
+    const allOrdersFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceOrder],
+    };
+    const allOrdersOfUser = $ndk.storeSubscribe<OrderEvent>(
+        allOrdersFilter,
+        subOptions,
+        OrderEvent
+    );
+
+    // D-Tags for related subscriptions
     const dTagOfJobs = $derived(
         $allBidsOfUser.map((bid) => bid.referencedJobAddress.split(':')[2])
     );
+    const dTagOfServices = $derived(
+        $allOrdersOfUser.map((order) => order.referencedServiceAddress.split(':')[2])
+    );
 
-    // jobs on which user has made bids
+    // Applied jobs subscription (jobs on which user has made bids)
     const appliedJobsFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceJob],
     };
@@ -66,46 +95,87 @@
         JobEvent
     );
 
-    // Track debounced jobs
+    // Applied services subscription (services on which user has placed orders)
+    const appliedServicesFilter: NDKFilter = {
+        kinds: [NDKKind.FreelanceService],
+    };
+    const appliedServices = $ndk.storeSubscribe<ServiceEvent>(
+        appliedServicesFilter,
+        {
+            autoStart: false,
+            closeOnEose: false,
+            groupable: true,
+            groupableDelay: 1000,
+        },
+        ServiceEvent
+    );
+
     let debouncedUserJobs = $state<JobEvent[]>([]);
-    let debouncedJobsTimer: NodeJS.Timeout | null = null; // Not reactive state
-
-    // Track debounced jobs
     let debouncedUserBids = $state<BidEvent[]>([]);
-    let debouncedBidsTimer: NodeJS.Timeout | null = null; // Not reactive state
+    let debouncedUserServices = $state<ServiceEvent[]>([]);
+    let debouncedUserOrders = $state<OrderEvent[]>([]);
 
-    // Debounce the user jobs updates
     $effect(() => {
-        // Only react to $allJobsOfUser changes
-        const userJobs = $allJobsOfUser;
+        const jobs = $allJobsOfUser;
+        let timer: NodeJS.Timeout | null = null;
 
-        if (debouncedJobsTimer) clearTimeout(debouncedJobsTimer);
+        if (timer) clearTimeout(timer);
 
-        debouncedJobsTimer = setTimeout(() => {
-            debouncedUserJobs = [...userJobs];
-        }, 300); // 300ms debounce delay
+        timer = setTimeout(() => {
+            debouncedUserJobs = [...jobs];
+        }, 300);
 
         return () => {
-            if (debouncedJobsTimer) clearTimeout(debouncedJobsTimer);
+            if (timer) clearTimeout(timer);
         };
     });
 
-    // Debounce the user bid updates
     $effect(() => {
-        // Only react to $allBidsOfUser changes
-        const userBids = $allBidsOfUser;
+        const bids = $allBidsOfUser;
+        let timer: NodeJS.Timeout | null = null;
 
-        if (debouncedBidsTimer) clearTimeout(debouncedBidsTimer);
+        if (timer) clearTimeout(timer);
 
-        debouncedBidsTimer = setTimeout(() => {
-            debouncedUserBids = [...userBids];
-        }, 300); // 300ms debounce delay
+        timer = setTimeout(() => {
+            debouncedUserBids = [...bids];
+        }, 300);
 
         return () => {
-            if (debouncedBidsTimer) clearTimeout(debouncedBidsTimer);
+            if (timer) clearTimeout(timer);
         };
     });
 
+    $effect(() => {
+        const services = $allServicesOfUser;
+        let timer: NodeJS.Timeout | null = null;
+
+        if (timer) clearTimeout(timer);
+
+        timer = setTimeout(() => {
+            debouncedUserServices = [...services];
+        }, 300);
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    });
+
+    $effect(() => {
+        const orders = $allOrdersOfUser;
+        let timer: NodeJS.Timeout | null = null;
+
+        if (timer) clearTimeout(timer);
+
+        timer = setTimeout(() => {
+            debouncedUserOrders = [...orders];
+        }, 300);
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    });
+
+    // Update applied jobs filter when tag list changes
     $effect(
         debounce(() => {
             if (dTagOfJobs.length > 0) {
@@ -116,132 +186,124 @@
         }, 800)
     );
 
-    const { new: isNew, inProgress, closed } = $derived($jobFilter);
+    // Update applied services filter when tag list changes
+    $effect(
+        debounce(() => {
+            if (dTagOfServices.length > 0) {
+                appliedServices.subscription?.stop();
+                appliedServicesFilter['#d'] = dTagOfServices;
+                appliedServices.startSubscription();
+            }
+        }, 800)
+    );
 
+    // Create search functions for each data type
+    const searchJobs = createSearchFunction<JobEvent>({
+        keys: [
+            { name: 'title', weight: 0.4 },
+            { name: 'description', weight: 0.2 },
+            { name: 'tags', weight: 0.4 },
+        ],
+    });
+
+    const searchServices = createSearchFunction<ServiceEvent>({
+        keys: [
+            { name: 'title', weight: 0.4 },
+            { name: 'description', weight: 0.2 },
+            { name: 'tags', weight: 0.4 },
+        ],
+    });
+
+    const searchBids = createSearchFunction<BidEvent>({
+        keys: [
+            { name: 'description', weight: 0.3 },
+            { name: 'tags', weight: 0.7 },
+        ],
+    });
+
+    const searchOrders = createSearchFunction<OrderEvent>({
+        keys: [
+            { name: 'description', weight: 0.3 },
+            { name: 'tags', weight: 0.7 },
+        ],
+    });
+
+    // Create a bid status filter function with access to applied jobs
+    const bidStatusFilter = createBidStatusFilter($appliedJobs);
+    // Create an order status filter with access to applied services
+    const orderStatusFilter = createOrderStatusFilter($appliedServices);
+
+    // Create filtered data using our utility functions
     const filteredJobs = $derived.by(() => {
         let copied = [...debouncedUserJobs];
-        orderEventsChronologically(copied);
-
-        // filter based on status
-        copied = copied.filter((job) => {
-            const { status } = job;
-
-            return (
-                (isNew && status === JobStatus.New) ||
-                (inProgress && status === JobStatus.InProgress) ||
-                (closed && (status === JobStatus.Resolved || status === JobStatus.Failed))
-            );
-        });
+        let filtered = jobStatusFilter
+            ? copied.filter((job) => jobStatusFilter(job, $jobFilter))
+            : copied;
 
         if (searchQuery && searchQuery.length > 0) {
-            return filterJobs(copied, searchQuery);
+            filtered = searchJobs(filtered, searchQuery);
         }
 
-        return copied;
+        return filtered;
     });
 
-    // filter based on search terms
-    function filterJobs(jobs: JobEvent[], searchTerm: string): JobEvent[] {
-        const fuse = new Fuse(jobs, {
-            isCaseSensitive: false,
-            shouldSort: true, // Whether to sort the result list, by score
-            ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
-            threshold: 0.6,
-            minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
-            keys: [
-                {
-                    name: 'title',
-                    weight: 0.4,
-                },
-                {
-                    name: 'description',
-                    weight: 0.2,
-                },
-                {
-                    name: 'tags',
-                    weight: 0.4,
-                },
-            ],
-        });
+    const filteredServices = $derived.by(() => {
+        let copied = [...debouncedUserServices];
+        let filtered = serviceStatusFilter
+            ? copied.filter((service) => serviceStatusFilter(service, $servicesFilter))
+            : copied;
 
-        const searchResult = fuse.search(searchTerm);
+        if (searchQuery && searchQuery.length > 0) {
+            filtered = searchServices(filtered, searchQuery);
+        }
 
-        const filteredJobList = searchResult.map(({ item }) => item);
-
-        return filteredJobList;
-    }
-
-    const { pending, success, lost } = $derived($bidFilter);
+        return filtered;
+    });
 
     const filteredBids = $derived.by(() => {
-        let copied = [...$allBidsOfUser];
-        orderEventsChronologically(copied);
-
-        copied = copied.filter((bid) => {
-            const job = $appliedJobs?.find((job) => job.jobAddress === bid.referencedJobAddress);
-
-            const bidStatus = job
-                ? job.acceptedBidAddress
-                    ? job.acceptedBidAddress === bid.bidAddress
-                        ? BidStatus.Won
-                        : BidStatus.Lost
-                    : BidStatus.Pending
-                : BidStatus.Unknown;
-
-            return (
-                (pending && bidStatus === BidStatus.Pending) ||
-                (success && bidStatus === BidStatus.Won) ||
-                (lost && bidStatus === BidStatus.Lost) ||
-                bidStatus === BidStatus.Unknown
-            );
-        });
+        let copied = [...debouncedUserBids];
+        let filtered = bidStatusFilter
+            ? copied.filter((bid) => bidStatusFilter(bid, $bidFilter))
+            : copied;
 
         if (searchQuery && searchQuery.length > 0) {
-            return filterBids(copied, searchQuery);
+            filtered = searchBids(filtered, searchQuery);
         }
 
-        return copied;
+        return filtered;
     });
 
-    // filter based on search terms
-    function filterBids(bids: BidEvent[], searchTerm: string): BidEvent[] {
-        const fuse = new Fuse(bids, {
-            isCaseSensitive: false,
-            shouldSort: true,
-            ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
-            threshold: 0.6,
-            minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
-            keys: [
-                {
-                    name: 'description',
-                    weight: 0.3,
-                },
-                {
-                    name: 'tags',
-                    weight: 0.7,
-                },
-            ],
-        });
+    const filteredOrders = $derived.by(() => {
+        let copied = [...debouncedUserOrders];
+        let filtered = orderStatusFilter
+            ? copied.filter((order) => orderStatusFilter(order, $ordersFilter))
+            : copied;
 
-        const searchResult = fuse.search(searchTerm);
+        if (searchQuery && searchQuery.length > 0) {
+            filtered = searchOrders(filtered, searchQuery);
+        }
 
-        const filteredBidList = searchResult.map(({ item }) => item);
+        return filtered;
+    });
 
-        return filteredBidList;
-    }
-
+    // Initialization
     let initialized = $state(false);
     $effect(() => {
         if (pubkey && $sessionInitialized && !initialized) {
             initialized = true;
             allJobsFilter.authors = [pubkey];
             allBidsFilter.authors = [pubkey];
+            allServicesFilter.authors = [pubkey];
+            allOrdersFilter.authors = [pubkey];
 
             allJobsOfUser.startSubscription();
             allBidsOfUser.startSubscription();
+            allServicesOfUser.startSubscription();
+            allOrdersOfUser.startSubscription();
         }
     });
 
+    // Handle scrolling to the jobs and bids section
     let myJobsAndMyBidsElement = $state<HTMLDivElement>();
     $effect(() => {
         if (myJobsAndMyBidsElement && $scrollToMyJobsAndMyBids) {
@@ -257,20 +319,21 @@
         }
     });
 
+    // Cleanup on component destruction
     onDestroy(() => {
-        if (allJobsOfUser) allJobsOfUser.empty();
-        if (allBidsOfUser) allBidsOfUser.empty();
-        if (appliedJobs) appliedJobs.empty();
-        if (debouncedJobsTimer) clearTimeout(debouncedJobsTimer);
-        if (debouncedBidsTimer) clearTimeout(debouncedBidsTimer);
+        allJobsOfUser?.empty?.();
+        allBidsOfUser?.empty?.();
+        allServicesOfUser?.empty?.();
+        allOrdersOfUser?.empty?.();
+        appliedJobs?.empty?.();
+        appliedServices?.empty?.();
     });
 
+    // Determine if the user is viewing their own profile
     let isOwnProfile = $derived($currentUser && $currentUser?.pubkey === pubkey);
 
-    let tabs = $derived([
-        { id: ProfilePageTabs.Jobs, label: `${isOwnProfile ? 'My' : ''} Jobs` },
-        { id: ProfilePageTabs.Bids, label: `${isOwnProfile ? 'My' : ''} Bids` },
-    ]);
+    // Determine the component order based on user mode and profile ownership
+    const componentOrder = $derived(getComponentOrder(!!isOwnProfile, $userMode));
 </script>
 
 <div class="w-full flex flex-col gap-0 grow mt-0 sm:mt-5 mb-20 sm:mb-0">
@@ -286,73 +349,29 @@
                         bind:this={myJobsAndMyBidsElement}
                     >
                         <div class="w-full flex flex-col gap-[10px]">
-                            <TabSelector {tabs} bind:selectedTab={$profileTabStore} />
-                            <div class="w-full flex flex-col">
-                                {#if $profileTabStore === ProfilePageTabs.Jobs}
-                                    <div class="w-full flex flex-col gap-[10px]">
-                                        <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
-                                            <Checkbox
-                                                id="new-jobs"
-                                                label="New"
-                                                bind:checked={$jobFilter.new}
-                                            />
-                                            <Checkbox
-                                                id="inProgress-jobs"
-                                                label="In Progress"
-                                                bind:checked={$jobFilter.inProgress}
-                                            />
-                                            <Checkbox
-                                                id="closed-jobs"
-                                                label="Closed"
-                                                bind:checked={$jobFilter.closed}
-                                            />
-                                        </Card>
-                                        <div class="w-full flex flex-col gap-[15px]">
-                                            <div
-                                                class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
-                                            >
-                                                {#each filteredJobs as job (job.id)}
-                                                    <JobCard {job} showBidsDetail />
-                                                {/each}
-                                            </div>
-                                            <!-- Pagination -->
-                                        </div>
-                                    </div>
-                                {:else}
-                                    <div class="w-full flex flex-col gap-[10px]">
-                                        <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
-                                            <Checkbox
-                                                id="pending-bids"
-                                                label="Pending"
-                                                bind:checked={$bidFilter.pending}
-                                            />
-                                            <Checkbox
-                                                id="success-bids"
-                                                label="Success"
-                                                bind:checked={$bidFilter.success}
-                                            />
-                                            <Checkbox
-                                                id="lost-bids"
-                                                label="Lost"
-                                                bind:checked={$bidFilter.lost}
-                                            />
-                                        </Card>
-                                        <div class="w-full flex flex-col gap-[15px]">
-                                            <div class="w-full flex flex-col gap-[15px]">
-                                                {#each filteredBids as bid (bid.id)}
-                                                    <BidCard
-                                                        {bid}
-                                                        skipUserProfile
-                                                        skipReputation
-                                                        showJobDetail
-                                                    />
-                                                {/each}
-                                            </div>
-                                            <!-- Pagination -->
-                                        </div>
-                                    </div>
-                                {/if}
-                            </div>
+                            {#if componentOrder && componentOrder.first === 'ServicesAndBids'}
+                                <ServicesAndBids
+                                    isOwnProfile={!!isOwnProfile}
+                                    services={filteredServices}
+                                    bids={filteredBids}
+                                />
+                                <OrdersAndJobs
+                                    isOwnProfile={!!isOwnProfile}
+                                    orders={filteredOrders}
+                                    jobs={filteredJobs}
+                                />
+                            {:else}
+                                <OrdersAndJobs
+                                    isOwnProfile={!!isOwnProfile}
+                                    orders={filteredOrders}
+                                    jobs={filteredJobs}
+                                />
+                                <ServicesAndBids
+                                    isOwnProfile={!!isOwnProfile}
+                                    services={filteredServices}
+                                    bids={filteredBids}
+                                />
+                            {/if}
                         </div>
                     </div>
                 </div>

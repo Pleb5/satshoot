@@ -15,6 +15,17 @@ export enum OnboardingStep {
 
 export const onboardingStep = writable<OnboardingStep | null>(null);
 
+export const servicesFilter = persisted('servicesFilter', {
+    active: true,
+    inActive: false,
+});
+
+export const ordersFilter = persisted('ordersFilter', {
+    pending: true,
+    inProgress: false,
+    completed: false,
+});
+
 export const jobFilter = persisted('jobFilter', {
     new: true,
     inProgress: false,

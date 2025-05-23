@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { OrderEvent } from '$lib/events/OrderEvent';
+    import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { type NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
     import Button from '../UI/Buttons/Button.svelte';
@@ -14,10 +14,9 @@
 
     interface Props {
         order: OrderEvent;
-        orderStatus: 'pending' | 'in-progress' | 'completed';
     }
 
-    const { order, orderStatus }: Props = $props();
+    const { order }: Props = $props();
 
     const serviceFilter: NDKFilter<NDKKind.FreelanceService> = {
         kinds: [NDKKind.FreelanceService],
@@ -83,10 +82,10 @@
     <div
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
     >
-        {#if orderStatus === 'pending'}
+        {#if order.status === OrderStatus.Open && !service?.orders.includes(order.orderAddress)}
             <Button onClick={handleAcceptOrder}>Accept</Button>
         {/if}
-        {#if orderStatus === 'completed'}
+        {#if order.status !== OrderStatus.Open && service?.orders.includes(order.orderAddress)}
             <Button>Review</Button>
         {/if}
     </div>

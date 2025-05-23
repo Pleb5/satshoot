@@ -13,6 +13,20 @@ export enum ProfilePageTabs {
     Bids,
 }
 
+export enum FreelancerTabs {
+    Services,
+    Bids,
+}
+
+export enum ClientTabs {
+    Orders,
+    Jobs,
+}
+
 export const profileTabStore = writable<ProfilePageTabs>(ProfilePageTabs.Jobs);
+
+export const freelancerTabStore = writable<FreelancerTabs>(FreelancerTabs.Services);
+
+export const clientTabStore = writable<ClientTabs>(ClientTabs.Orders);
 
 export default tabStore;

@@ -326,10 +326,7 @@
                                                 <div class="w-full flex flex-col">
                                                     <div class="w-full flex flex-col gap-[15px]">
                                                         {#each pendingOrders as order}
-                                                            <OrderCard
-                                                                {order}
-                                                                orderStatus="pending"
-                                                            />
+                                                            <OrderCard {order} />
                                                         {/each}
                                                     </div>
                                                 </div>
@@ -337,10 +334,7 @@
                                                 <div class="w-full flex flex-col">
                                                     <div class="w-full flex flex-col gap-[15px]">
                                                         {#each inProgressOrders as order}
-                                                            <OrderCard
-                                                                {order}
-                                                                orderStatus="in-progress"
-                                                            />
+                                                            <OrderCard {order} />
                                                         {/each}
                                                     </div>
                                                 </div>
@@ -348,10 +342,7 @@
                                                 <div class="w-full flex flex-col">
                                                     <div class="w-full flex flex-col gap-[15px]">
                                                         {#each completedOrders as order}
-                                                            <OrderCard
-                                                                {order}
-                                                                orderStatus="completed"
-                                                            />
+                                                            <OrderCard {order} />
                                                         {/each}
                                                     </div>
                                                 </div>
