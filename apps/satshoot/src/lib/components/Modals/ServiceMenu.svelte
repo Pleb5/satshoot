@@ -11,6 +11,8 @@
     import { checkRelayConnections } from '$lib/utils/helpers';
     import currentUser from '$lib/stores/user';
     import PaymentModal from './PaymentModal.svelte';
+    import { serviceToEdit } from '$lib/stores/service-to-edit';
+    import { goto } from '$app/navigation';
 
     interface Props {
         isOpen: boolean;
@@ -38,6 +40,8 @@
     let showCloseModal = $state(false);
     let showPaymentModal = $state(false);
 
+    // Derived states
+    const myService = $derived($currentUser?.pubkey === service.pubkey);
     const openedOrder = $derived($myOrdersStore.find((order) => order.status === OrderStatus.Open));
 
     let initialized = $state(false);
@@ -71,8 +75,14 @@
         showCloseModal = true;
     }
 
+    function handleEdit() {
+        if (service) {
+            $serviceToEdit = service;
+            goto('/post-service');
+        }
+    }
+
     // todo: allow to message freelancer
-    // todo: if my service, edit option
     // todo: review freelancer
 </script>
 
@@ -83,6 +93,13 @@
                 <i class="bx bxs-share text-[20px]"></i>
                 <p class="">Share</p>
             </Button>
+
+            {#if myService}
+                <Button variant="outlined" classes="justify-start" fullWidth onClick={handleEdit}>
+                    <i class="bx bxs-edit-alt text-[20px]"></i>
+                    <p class="">Edit</p>
+                </Button>
+            {/if}
 
             {#if openedOrder && service.orders.includes(openedOrder.orderAddress)}
                 <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>

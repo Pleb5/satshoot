@@ -10,6 +10,8 @@
     import { type NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import PaymentModal from '../Modals/PaymentModal.svelte';
+    import { serviceToEdit } from '$lib/stores/service-to-edit';
+    import { goto } from '$app/navigation';
 
     interface Props {
         service: ServiceEvent;
@@ -70,10 +72,10 @@
     }
 
     function handleEdit() {
-        // if (service) {
-        //     $serviceToEdit = service;
-        //     goto('/post-service');
-        // }
+        if (service) {
+            $serviceToEdit = service;
+            goto('/post-service');
+        }
     }
 
     const btnClasses =

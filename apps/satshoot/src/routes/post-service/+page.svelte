@@ -18,6 +18,7 @@
     import { checkRelayConnections } from '$lib/utils/helpers';
     import { insertThousandSeparator, NostrBuildBlossomServer } from '$lib/utils/misc';
     import tagOptions from '$lib/utils/tag-options';
+    import { set } from 'date-fns';
     import { onMount } from 'svelte';
 
     // For form validation
@@ -35,6 +36,7 @@
     let pricingMethod = $state(Pricing.Absolute);
     let amount = $state(0);
     let pledgeSplit = $state(0);
+    let imageUrls = $state<string[]>([]);
 
     let pledgedShare = $derived(Math.floor(amount * (pledgeSplit / 100)));
     let freelancerShare = $derived(amount - pledgedShare);
@@ -108,6 +110,7 @@
             pricingMethod = $serviceToEdit.pricing;
             amount = $serviceToEdit.amount;
             pledgeSplit = $serviceToEdit.pledgeSplit;
+            imageUrls = $serviceToEdit.images;
         }
 
         checkRelayConnections();
@@ -222,19 +225,25 @@
             posting = true;
 
             const service = new ServiceEvent($ndk);
+
+            // if editing service, add all the tags to new instance
+            if ($serviceToEdit) {
+                service.tags = $serviceToEdit.tags;
+            } else {
+                service.status = ServiceStatus.Active;
+            }
+
             service.title = titleText;
             service.description = descriptionText;
-            service.status = ServiceStatus.Active;
             service.pricing = pricingMethod;
             service.amount = amount;
+
+            service.removeTag('t'); // if we don't remove existing 't' tags, it will cause duplication
             tagList.forEach((tag) => {
                 service.tags.push(['t', tag]);
             });
 
             service.setPledgeSplit(pledgeSplit, $currentUser!.pubkey);
-
-            // it will remove old image tags in case service is being updated
-            service.removeTag('image');
 
             const totalImages = images.length;
             let uploadedImages = 0;
@@ -244,7 +253,7 @@
 
                 try {
                     const imageUrl = await uploadToBlossom(image, NostrBuildBlossomServer);
-                    service.tags.push(['image', imageUrl]);
+                    imageUrls.push(imageUrl);
                 } catch (error) {
                     console.error(error);
                     toaster.error({
@@ -255,13 +264,11 @@
                 uploadedImages++;
             }
 
-            // Generate 'd' tag and tags from description hashtags
-            // only if we are not editing but creating a new service
-            if (!$serviceToEdit) {
+            service.images = imageUrls;
+
+            // if new service is being created, it will not have a 'd' tag
+            if (!service.hasTag('d')) {
                 service.generateTags();
-            } else {
-                service.removeTag('d');
-                service.tags.push(['d', $serviceToEdit.tagValue('d') as string]);
             }
 
             progressStatus = 'Publishing';
@@ -510,5 +517,9 @@
 <LoginModal bind:isOpen={showLoginModal} />
 
 {#if showAddImagesModal}
-    <AddImagesModal bind:isOpen={showAddImagesModal} bind:images />
+    <AddImagesModal
+        bind:isOpen={showAddImagesModal}
+        bind:images
+        bind:existingImageUrls={imageUrls}
+    />
 {/if}

@@ -4,15 +4,19 @@
     import { onDestroy, onMount } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Carousel from '../UI/Display/Carousel.svelte';
-    import { getStandardAspectRatio } from '$lib/utils/image';
     import ImagesUpload from '../UI/Inputs/ImagesUpload.svelte';
 
     interface Props {
         isOpen: boolean;
         images: File[];
+        existingImageUrls: string[];
     }
 
-    let { isOpen = $bindable(), images = $bindable() }: Props = $props();
+    let {
+        isOpen = $bindable(),
+        images = $bindable(),
+        existingImageUrls = $bindable(),
+    }: Props = $props();
 
     // Local state for uploaded images and derived URLs
     let imageUrls = $derived(images.map((file) => URL.createObjectURL(file)));
@@ -22,6 +26,20 @@
     // Apply changes and close modal
     function done() {
         isOpen = false;
+    }
+
+    function removeImage(index: number) {
+        if (!existingImageUrls.length) {
+            fileUploadApi.deleteFile(images[index]);
+            return;
+        }
+
+        if (index < existingImageUrls.length) {
+            existingImageUrls.splice(index, 1);
+        } else {
+            index -= existingImageUrls.length;
+            fileUploadApi.deleteFile(images[index]);
+        }
     }
 
     onMount(() => {
@@ -37,13 +55,8 @@
 
 <ModalWrapper bind:isOpen title="Add Images">
     <div class="flex flex-col gap-[15px] mt-4">
-        {#if imageUrls.length > 0}
-            <Carousel
-                {imageUrls}
-                removeImage={(index) => {
-                    fileUploadApi.deleteFile(images[index]);
-                }}
-            />
+        {#if [...existingImageUrls, ...imageUrls].length > 0}
+            <Carousel imageUrls={[...existingImageUrls, ...imageUrls]} {removeImage} />
         {/if}
 
         <ImagesUpload

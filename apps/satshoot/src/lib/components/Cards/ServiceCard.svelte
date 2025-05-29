@@ -8,7 +8,6 @@
     import Carousel from '../UI/Display/Carousel.svelte';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { Pricing } from '$lib/events/types';
-    import QuestionIcon from '../Icons/QuestionIcon.svelte';
     import { wot } from '$lib/stores/wot';
     import ReputationCard from './ReputationCard.svelte';
     import { ReviewType } from '$lib/events/ReviewEvent';
