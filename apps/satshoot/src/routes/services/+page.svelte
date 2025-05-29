@@ -72,8 +72,6 @@
     // We can avoid $effect by reacting to filterList length but can set this regardless
     let currentPage = $derived(searchQuery && searchQuery.length > 0 ? 1 : 1);
 
-    let showAnnouncementModal = $state(false);
-
     function filterServices(
         serviceListToFilter: ServiceEvent[],
         searchTerm: string

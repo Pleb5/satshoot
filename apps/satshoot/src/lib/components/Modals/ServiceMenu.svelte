@@ -1,6 +1,6 @@
 <script lang="ts">
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
-    import type { ServiceEvent } from '$lib/events/ServiceEvent';
+    import { ServiceStatus, type ServiceEvent } from '$lib/events/ServiceEvent';
     import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
@@ -13,6 +13,8 @@
     import PaymentModal from './PaymentModal.svelte';
     import { serviceToEdit } from '$lib/stores/service-to-edit';
     import { goto } from '$app/navigation';
+    import { toaster } from '$lib/stores/toaster';
+    import ConfirmationDialog from '../UI/ConfirmationDialog.svelte';
 
     interface Props {
         isOpen: boolean;
@@ -36,9 +38,11 @@
         OrderEvent
     );
 
+    let serviceStatus = $state(service.status);
     let showShareModal = $state(false);
     let showCloseModal = $state(false);
     let showPaymentModal = $state(false);
+    let showDeactivateConfirmationDialog = $state(false);
 
     // Derived states
     const myService = $derived($currentUser?.pubkey === service.pubkey);
@@ -82,6 +86,38 @@
         }
     }
 
+    async function handleActivate() {
+        service.status = ServiceStatus.Active;
+        try {
+            await service.publishReplaceable();
+            serviceStatus = ServiceStatus.Active;
+            toaster.success({
+                title: 'Service Activated',
+            });
+        } catch (error) {
+            console.error(error);
+            toaster.error({
+                title: `Failed to activate the service: ${error}`,
+            });
+        }
+    }
+
+    async function deactivate() {
+        service.status = ServiceStatus.InActive;
+        try {
+            await service.publishReplaceable();
+            serviceStatus = ServiceStatus.InActive;
+            toaster.success({
+                title: 'Service de-activated',
+            });
+        } catch (error) {
+            console.error(error);
+            toaster.error({
+                title: `Failed to de-activate the service: ${error}`,
+            });
+        }
+    }
+
     // todo: allow to message freelancer
     // todo: review freelancer
 </script>
@@ -98,6 +134,33 @@
                 <Button variant="outlined" classes="justify-start" fullWidth onClick={handleEdit}>
                     <i class="bx bxs-edit-alt text-[20px]"></i>
                     <p class="">Edit</p>
+                </Button>
+            {/if}
+
+            {#if myService && serviceStatus === ServiceStatus.Active}
+                <Button
+                    variant="outlined"
+                    classes="justify-start"
+                    fullWidth
+                    onClick={() => {
+                        isOpen = false;
+                        showDeactivateConfirmationDialog = true;
+                    }}
+                >
+                    <i class="bx bx-toggle-left text-[20px]"></i>
+                    <p class="">Deactivate</p>
+                </Button>
+            {/if}
+
+            {#if myService && serviceStatus === ServiceStatus.InActive}
+                <Button
+                    variant="outlined"
+                    classes="justify-start"
+                    fullWidth
+                    onClick={handleActivate}
+                >
+                    <i class="bx bx-toggle-right text-[20px]"></i>
+                    <p class="">Activate</p>
                 </Button>
             {/if}
 
@@ -139,4 +202,17 @@
         targetEntity={openedOrder}
         secondaryEntity={service}
     />
+{/if}
+
+{#if showDeactivateConfirmationDialog}
+    <ConfirmationDialog
+        bind:isOpen={showDeactivateConfirmationDialog}
+        confirmText="Yes"
+        onConfirm={deactivate}
+        onCancel={() => (showDeactivateConfirmationDialog = false)}
+    >
+        <strong class="text-primary-400-500">
+            Do you really want to de-activate the service? You won't be able to get any new order.
+        </strong>
+    </ConfirmationDialog>
 {/if}
