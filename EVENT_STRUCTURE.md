@@ -161,10 +161,21 @@ This hopefully captures users' sentiments better than 'five-star' systems and
 allows for better overall UX around this feature.
 
 Total score in either the Freelancer's or the Client's case is between [0, 1].
-One half is determined by the overall outcome / experience with the counterparty,
+Most of the score is determined by the overall outcome or experience with the counterparty,
 and excellence labels make up the other half of the score. This allows for labels
 to contribute to the overall rating consensus while this also allows for distinguishing
 Clients and Freelancers by their outstanding attributes.
+
+While the is a good framework to use, there can be opinionated implementations of this system.
+Nostr apps can determine the exact labels and the weights of the "excellence labels",
+therefore in SatShoot we have either '0' or '1' as a value in the rating tags,
+which showcases all the possible labels in each event, while only indicating if 
+the reviewed freelancer or client received that label or not, the exact scoring itself is 
+left to the implementation to decide.
+
+Important to note that if the overall experience is bad (success/thumb), every other label SHOULD be 0
+
+The scores in SatShoot are commented out.
 
 ### Freelancer Review event (posted by Client)
 
@@ -175,9 +186,12 @@ Clients and Freelancers by their outstanding attributes.
         // ALL tags are mandatory
         ["L", qts/freelancing]
         ["l", “freelancer”, “qts/freelancing”],
-        ["rating", “<0 | 0.5>”, “success”],
-        ["rating", “<0 | 0.3>”, “expertise”],
-        ["rating", “<0 | 0.2>”, “communication”],
+        // worth 0.5 in satshoot
+        ["rating", “<0 | 1>”, “success”],
+        // worth 0.3 in satshoot
+        ["rating", “<0 | 1>”, “expertise”], 
+        // worth 0.2 in satshoot
+        ["rating", “<0 | 1>”, “communication”], 
         ["a", "<32765 | 32768>:<hex pubkey of Freelancer>:<Service/Bid d-tag>"],
     ],
     "content": {
@@ -195,8 +209,10 @@ Clients and Freelancers by their outstanding attributes.
         // ALL tags are mandatory
         ["L", qts/freelancing]
         ["l", “client”, “qts/freelancing”],
-        ["rating", “<0 | 0.5>”, “thumb”],
-        ["rating", “<0 | 0.5>”, “communication”],
+        // worth 0.5 in satshoot
+        ["rating", “<0 | 1>”, “thumb”], 
+        // worth 0.5 in satshoot
+        ["rating", “<0 | 1>”, “communication”], 
         ["a", "<32766 | 32767>:<hex pubkey of the Client>:<Order/Job d-tag>"],
     ],
     "content": {
