@@ -69,10 +69,10 @@ export class CashuPaymentService {
      * Check if there's a mint with sufficient balance
      */
     checkMintBalance(totalAmount: number): boolean {
-        const $wallet = get(wallet);
-        if (!$wallet) return false;
+        const walletInstance = get(wallet);
+        if (!walletInstance) return false;
 
-        return $wallet.getMintsWithBalance(totalAmount + this.safety).length > 0;
+        return walletInstance.getMintsWithBalance(totalAmount + this.safety).length > 0;
     }
 
     /**
@@ -154,12 +154,12 @@ export class CashuPaymentService {
             throw new Error(`Could not fetch cashu payment info for ${userEnum}!`);
         }
 
-        const $wallet = get(wallet);
-        if (!$wallet) {
+        const walletInstance = get(wallet);
+        if (!walletInstance) {
             throw new Error('Wallet is not initialized!');
         }
 
-        const mintsWithBalance = $wallet.getMintsWithBalance(
+        const mintsWithBalance = walletInstance.getMintsWithBalance(
             Math.floor(amountMillisats / 1000) + this.safety
         );
 
@@ -176,7 +176,7 @@ export class CashuPaymentService {
         // Process the payment
         this.freelancerCashuInfo.allowIntramintFallback = false;
 
-        const cashuResult = await $wallet
+        const cashuResult = await walletInstance
             .cashuPay({
                 ...this.freelancerCashuInfo,
                 mints: compatibleMints,
