@@ -67,15 +67,17 @@ export const createPaymentStore = (filters: NDKFilter[]): PaymentStore => {
     const totalPaid = derived(paymentStore, ($paymentStore) => {
         let total = 0;
         $paymentStore.forEach((zap: NDKEvent) => {
-            if (zap.kind === NDKKind.Zap) {
-                const zapInvoice = zapInvoiceFromEvent(zap);
-                if (zapInvoice && $wot.has(zapInvoice.zappee)) {
-                    total += Math.round(zapInvoice.amount / 1000);
-                }
-            } else if (zap.kind === NDKKind.Nutzap) {
-                const nutzap = NDKNutzap.from(zap);
-                if (nutzap && $wot.has(nutzap.pubkey)) {
-                    total += Math.round(nutzap.amount);
+            if (zap.signatureVerified) {
+                if (zap.kind === NDKKind.Zap) {
+                    const zapInvoice = zapInvoiceFromEvent(zap);
+                    if (zapInvoice && $wot.has(zapInvoice.zappee)) {
+                        total += Math.round(zapInvoice.amount / 1000);
+                    }
+                } else if (zap.kind === NDKKind.Nutzap) {
+                    const nutzap = NDKNutzap.from(zap);
+                    if (nutzap && $wot.has(nutzap.pubkey)) {
+                        total += Math.round(nutzap.amount);
+                    }
                 }
             }
         });
