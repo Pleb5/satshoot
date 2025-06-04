@@ -1,0 +1,227 @@
+import { PaymentService } from './PaymentService.svelte';
+import { LightningPaymentService } from './LightningPaymentService.svelte';
+import { CashuPaymentService } from './CashuPaymentService.svelte';
+import { ToastService, ToastType, UserEnum } from './ToastService.svelte';
+import { createPaymentFilters, createPaymentStore, type PaymentStore } from '$lib/stores/payment';
+import currentUser from '$lib/stores/user';
+import { wallet } from '$lib/wallet/wallet';
+import { get } from 'svelte/store';
+import { onDestroy } from 'svelte';
+import type { JobEvent } from '$lib/events/JobEvent';
+import type { BidEvent } from '$lib/events/BidEvent';
+import type { ServiceEvent } from '$lib/events/ServiceEvent';
+import type { OrderEvent } from '$lib/events/OrderEvent';
+
+/**
+ * Main service that orchestrates all payment operations
+ */
+export class PaymentManagerService {
+    private paymentService: PaymentService;
+    private lightningService: LightningPaymentService;
+    private cashuService: CashuPaymentService;
+    private toastService: ToastService;
+
+    private freelancerPaymentStore: PaymentStore | null = null;
+    private satshootPaymentStore: PaymentStore | null = null;
+
+    constructor(
+        private targetEntity: JobEvent | OrderEvent,
+        private secondaryEntity: BidEvent | ServiceEvent
+    ) {
+        this.paymentService = new PaymentService(targetEntity, secondaryEntity);
+        this.lightningService = new LightningPaymentService(
+            targetEntity as JobEvent,
+            secondaryEntity
+        );
+        this.cashuService = new CashuPaymentService(targetEntity as JobEvent, secondaryEntity);
+        this.toastService = new ToastService();
+
+        this.initializePaymentStores();
+    }
+
+    /**
+     * Initialize payment tracking stores
+     */
+    private initializePaymentStores() {
+        if (this.secondaryEntity && get(currentUser)) {
+            const freelancerFilters = createPaymentFilters(this.secondaryEntity, 'freelancer');
+            const satshootFilters = createPaymentFilters(this.secondaryEntity, 'satshoot');
+
+            this.freelancerPaymentStore = createPaymentStore(freelancerFilters);
+            this.satshootPaymentStore = createPaymentStore(satshootFilters);
+
+            this.freelancerPaymentStore.paymentStore.startSubscription();
+            this.satshootPaymentStore.paymentStore.startSubscription();
+        }
+    }
+
+    /**
+     * Get payment service for direct access to amounts and calculations
+     */
+    get payment() {
+        return this.paymentService;
+    }
+
+    /**
+     * Get Cashu service for UI state checks
+     */
+    get cashu() {
+        return this.cashuService;
+    }
+
+    /**
+     * Get freelancer payment tracking data
+     */
+    get freelancerPaid() {
+        return this.freelancerPaymentStore?.totalPaid ?? null;
+    }
+
+    /**
+     * Get satshoot payment tracking data
+     */
+    get satshootPaid() {
+        return this.satshootPaymentStore?.totalPaid ?? null;
+    }
+
+    /**
+     * Get pricing information
+     */
+    get pricingInfo() {
+        return this.paymentService.pricingInfo;
+    }
+
+    /**
+     * Process Lightning Network payment
+     */
+    async payWithLightning(): Promise<void> {
+        try {
+            const paymentData = await this.paymentService.initializePayment();
+            if (!paymentData) return;
+
+            const { freelancerShareMillisats, satshootSumMillisats } = paymentData;
+
+            const paid = await this.lightningService.processPayment(
+                freelancerShareMillisats,
+                satshootSumMillisats
+            );
+
+            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats);
+        } catch (error: any) {
+            console.error(error);
+            this.toastService.handleGeneralError(`An error occurred in payment process: ${error}`);
+        } finally {
+            this.paymentService.resetPaymentState();
+        }
+    }
+
+    /**
+     * Process Cashu payment
+     */
+    async payWithCashu(): Promise<void> {
+        try {
+            const paymentData = await this.paymentService.initializePayment();
+            if (!paymentData) return;
+
+            const { freelancerShareMillisats, satshootSumMillisats } = paymentData;
+
+            const paid = await this.cashuService.processPayment(
+                freelancerShareMillisats,
+                satshootSumMillisats
+            );
+
+            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats);
+        } catch (error: any) {
+            console.error(error);
+
+            // Check if it's a payment error for specific user
+            if (error.message?.includes('Freelancer')) {
+                this.toastService.handlePaymentError(error, 'Freelancer');
+            } else if (error.message?.includes('SatShoot')) {
+                this.toastService.handlePaymentError(error, 'SatShoot');
+            } else {
+                this.toastService.handleGeneralError(error?.message || error);
+            }
+        } finally {
+            this.paymentService.resetPaymentState();
+        }
+    }
+
+    /**
+     * Handle payment results and show appropriate notifications
+     */
+    private handlePaymentResults(
+        paid: Map<UserEnum, boolean>,
+        freelancerShareMillisats: number,
+        satshootSumMillisats: number
+    ) {
+        this.toastService.handlePaymentStatus(
+            paid,
+            UserEnum.Freelancer,
+            freelancerShareMillisats,
+            'Freelancer Paid!',
+            'Freelancer Payment might have failed!'
+        );
+
+        this.toastService.handlePaymentStatus(
+            paid,
+            UserEnum.Satshoot,
+            satshootSumMillisats,
+            'SatShoot Paid!',
+            'SatShoot Payment might have failed!'
+        );
+    }
+
+    /**
+     * Check if Cashu payment is available
+     */
+    get canPayWithCashu(): boolean {
+        if (!this.cashu.hasSenderEcashSetup || !this.cashu.canPayWithEcash) {
+            return false;
+        }
+
+        const { freelancerShare, totalSatshootAmount } = this.paymentService.paymentShares;
+        return this.cashu.checkMintBalance(freelancerShare + totalSatshootAmount);
+    }
+
+    /**
+     * Get Cashu tooltip text for UI
+     */
+    get cashuTooltipText(): string {
+        if (!this.cashu.hasSenderEcashSetup) {
+            return 'Setup Wallet to pay with Cashu!';
+        }
+        if (!this.cashu.canPayWithEcash) {
+            return 'Could not find Freelancer Cashu Info';
+        }
+        if (!this.canPayWithCashu) {
+            return 'No Mint in Wallet has enough balance for this amount!';
+        }
+        return '';
+    }
+
+    /**
+     * Check if sender has ecash setup
+     */
+    get hasSenderEcashSetup(): boolean {
+        return this.cashu.hasSenderEcashSetup;
+    }
+
+    /**
+     * Validate current payment setup
+     */
+    validatePayment(): { isValid: boolean; error?: string } {
+        return this.paymentService.validatePayment();
+    }
+
+    /**
+     * Cleanup subscriptions
+     */
+    destroy() {
+        if (this.freelancerPaymentStore) {
+            this.freelancerPaymentStore.paymentStore.empty();
+        }
+        if (this.satshootPaymentStore) {
+            this.satshootPaymentStore.paymentStore.empty();
+        }
+    }
+}

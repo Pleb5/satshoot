@@ -9,13 +9,15 @@
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import ndk from '$lib/stores/session';
-    import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import { NDKKind, NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import { BidEvent } from '$lib/events/BidEvent';
     import { beforeNavigate, goto } from '$app/navigation';
     import { page } from '$app/state';
+    import { ServiceEvent } from '$lib/events/ServiceEvent';
+    import { OrderEvent } from '$lib/events/OrderEvent';
 
     interface Props {
         review: ReviewEvent;
@@ -29,7 +31,7 @@
     let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let job = $state<JobEvent | null>(null);
+    let reviewedEvent = $state<JobEvent | ServiceEvent | null>(null);
 
     let elemPage: HTMLElement;
     onMount(async () => {
@@ -46,24 +48,38 @@
         }
 
         if (review.reviewedEventAddress) {
-            const reviewedEvent = await $ndk.fetchEvent(review.reviewedEventAddress, {
+            const event = await $ndk.fetchEvent(review.reviewedEventAddress, {
                 groupable: true,
                 groupableDelay: 1000,
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             });
 
-            if (reviewedEvent) {
-                if (review.type === ReviewType.Client) {
-                    job = JobEvent.from(reviewedEvent);
-                } else {
-                    const bid = BidEvent.from(reviewedEvent);
+            const reviewedEventKind = parseInt(review.reviewedEventAddress.split(':')[0]);
+
+            if (event) {
+                if (reviewedEventKind === NDKKind.FreelanceService) {
+                    reviewedEvent = ServiceEvent.from(event);
+                } else if (reviewedEventKind === NDKKind.FreelanceJob) {
+                    reviewedEvent = JobEvent.from(event);
+                } else if (reviewedEventKind === NDKKind.FreelanceBid) {
+                    const bid = BidEvent.from(event);
                     const jobEvent = await $ndk.fetchEvent(bid.referencedJobAddress, {
                         groupable: true,
                         groupableDelay: 1000,
                         cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
                     });
                     if (jobEvent) {
-                        job = JobEvent.from(jobEvent);
+                        reviewedEvent = JobEvent.from(jobEvent);
+                    }
+                } else if (reviewedEventKind === NDKKind.FreelanceOrder) {
+                    const order = OrderEvent.from(event);
+                    const serviceEvent = await $ndk.fetchEvent(order.referencedServiceAddress, {
+                        groupable: true,
+                        groupableDelay: 1000,
+                        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                    });
+                    if (serviceEvent) {
+                        reviewedEvent = ServiceEvent.from(serviceEvent);
                     }
                 }
             }
@@ -96,9 +112,9 @@
         }
     });
 
-    const gotoJob = async () => {
-        if (job) {
-            const url = `/${job.encode()}/`;
+    const gotoReviewedEvent = async () => {
+        if (reviewedEvent) {
+            const url = `/${reviewedEvent.encode()}/`;
             const currentPath = page.url.pathname;
             const targetPath = new URL(url, window.location.origin).pathname;
 
@@ -125,13 +141,17 @@
                 <p>{userName}</p>
             </a>
             <div class="flex flex-row gap-[5px] flex-wrap">
-                <p>wrote a review for job:</p>
-                {#if job}
+                {#if reviewedEvent}
+                    <p>
+                        wrote a review for {reviewedEvent.kind === NDKKind.FreelanceJob
+                            ? 'job'
+                            : 'service'}:
+                    </p>
                     <button
-                        onclick={gotoJob}
+                        onclick={gotoReviewedEvent}
                         class="anchor transition ease duration-[0.3s] font-[600] bg-none"
                     >
-                        {job.title}
+                        {reviewedEvent.title}
                     </button>
                 {:else}
                     <div class="w-full h-4 placeholder animate-pulse bg-blue-600"></div>
@@ -178,13 +198,15 @@
                 {/if}
             {/if}
 
-            <!-- Shared badges -->
-            <div class={getBadgeClasses(ratings.communication)}>
-                <i class="bx bxs-star"></i>
-                <p>{isFreelancerReview ? 'Communication' : 'Clear Communication'}</p>
-            </div>
+            {#if ratings.communication}
+                <!-- Shared badges -->
+                <div class={getBadgeClasses(ratings.communication)}>
+                    <i class="bx bxs-star"></i>
+                    <p>{isFreelancerReview ? 'Communication' : 'Clear Communication'}</p>
+                </div>
+            {/if}
 
-            {#if isFreelancerReview && freelancerRatings?.expertise !== undefined}
+            {#if isFreelancerReview && freelancerRatings?.expertise}
                 <div class={getBadgeClasses(freelancerRatings.expertise)}>
                     <i class="bx bxs-star"></i>
                     <p>Expertise</p>
