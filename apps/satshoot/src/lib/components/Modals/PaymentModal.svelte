@@ -17,8 +17,8 @@
 
     interface Props {
         isOpen: boolean;
-        targetEntity: JobEvent | OrderEvent;
-        secondaryEntity: BidEvent | ServiceEvent;
+        targetEntity: JobEvent | ServiceEvent;
+        secondaryEntity: BidEvent | OrderEvent;
     }
 
     let { isOpen = $bindable(), targetEntity, secondaryEntity }: Props = $props();
@@ -33,13 +33,21 @@
         }
     });
 
-    const bech32ID = $derived(
-        targetEntity instanceof JobEvent
-            ? targetEntity.encode()
-            : secondaryEntity
-              ? secondaryEntity.encode()
-              : ''
+    const bech32ID = $derived(targetEntity.encode());
+
+    const freelancerPubkey = $derived(
+        secondaryEntity instanceof BidEvent ? secondaryEntity.pubkey : targetEntity.pubkey
     );
+
+    const pledgeSplit = $derived.by(() => {
+        if (secondaryEntity instanceof BidEvent) {
+            return secondaryEntity.pledgeSplit;
+        } else if (targetEntity instanceof ServiceEvent) {
+            return targetEntity.pledgeSplit;
+        }
+
+        return 0;
+    });
 
     // Derived values from payment manager
     const paymentShares = $derived(paymentManager?.payment?.paymentShares);
@@ -79,7 +87,7 @@
                 <div
                     class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 dark:border-white-100 p-[10px]"
                 >
-                    <UserProfile pubkey={secondaryEntity.pubkey} />
+                    <UserProfile pubkey={freelancerPubkey} />
                     <div
                         class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                     >
@@ -96,7 +104,7 @@
                         <div class="grow-1">
                             <p class="font-[500]">
                                 Pledge split:
-                                <span class="font-[300]"> {secondaryEntity.pledgeSplit} %</span>
+                                <span class="font-[300]"> {pledgeSplit} %</span>
                             </p>
                         </div>
                     </div>
@@ -129,9 +137,7 @@
                     <p class="">Compensation for:</p>
 
                     <a href={'/' + bech32ID + '/'} class="anchor font-[600]">
-                        {targetEntity instanceof JobEvent
-                            ? targetEntity.title
-                            : (secondaryEntity as ServiceEvent).title}
+                        {targetEntity.title}
                     </a>
                 </div>
                 <div

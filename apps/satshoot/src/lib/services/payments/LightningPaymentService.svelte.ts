@@ -1,5 +1,6 @@
 import { BidEvent } from '$lib/events/BidEvent';
 import { JobEvent } from '$lib/events/JobEvent';
+import type { OrderEvent } from '$lib/events/OrderEvent';
 import { ServiceEvent } from '$lib/events/ServiceEvent';
 import ndk from '$lib/stores/session';
 import currentUser from '$lib/stores/user';
@@ -33,10 +34,17 @@ export interface InvoiceDetails {
  * Service for Lightning Network payment operations
  */
 export class LightningPaymentService {
+    private freelancerPubkey: string;
+
     constructor(
-        private targetEntity: JobEvent,
-        private secondaryEntity: BidEvent | ServiceEvent
-    ) {}
+        private targetEntity: JobEvent | ServiceEvent,
+        private secondaryEntity: BidEvent | OrderEvent
+    ) {
+        this.freelancerPubkey =
+            this.secondaryEntity instanceof BidEvent
+                ? this.secondaryEntity.pubkey
+                : this.targetEntity.pubkey;
+    }
 
     /**
      * Process Lightning Network payment
@@ -56,7 +64,7 @@ export class LightningPaymentService {
         if (freelancerShareMillisats > 0) {
             await this.fetchPaymentInfo(
                 UserEnum.Freelancer,
-                this.secondaryEntity.pubkey,
+                this.freelancerPubkey,
                 freelancerShareMillisats,
                 zapRequestRelays,
                 invoices,
@@ -72,7 +80,7 @@ export class LightningPaymentService {
                 satshootSumMillisats,
                 zapRequestRelays,
                 invoices,
-                this.targetEntity instanceof JobEvent ? this.targetEntity : this.secondaryEntity // Pledges zap the Job rather than the Bid and service rather than order
+                this.targetEntity
             );
         }
 

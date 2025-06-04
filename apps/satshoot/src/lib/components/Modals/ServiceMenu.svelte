@@ -191,8 +191,8 @@
 {#if openedOrder}
     <PaymentModal
         bind:isOpen={showPaymentModal}
-        targetEntity={openedOrder}
-        secondaryEntity={service}
+        targetEntity={service}
+        secondaryEntity={openedOrder}
     />
 {/if}
 
