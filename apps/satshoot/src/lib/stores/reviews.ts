@@ -103,18 +103,24 @@ export interface AggregatedFreelancerRatings {
     average: number;
 }
 
-// We only return the first review that actually refers to a job
+// todo: logic for unique review on orders
 function filterDuplicateReviewsOnSameDeal(reviews: ReviewEvent[]): ReviewEvent[] {
-    const filteredReviews = Array.from(
-        reviews
-            .reduce((map: Map<string, ReviewEvent>, r: ReviewEvent) => {
-                if (r.reviewedEventAddress) {
-                    map.set(r.reviewedEventAddress, r);
-                }
-                return map;
-            }, new Map<string, ReviewEvent>())
-            .values()
-    );
+    const filteredReviews: ReviewEvent[] = [];
+    const jobReviewsSet = new Set<string>();
+    reviews.forEach((review) => {
+        if (review.reviewedEventAddress) {
+            const reviewedKind = review.reviewedEventAddress.split(':')[0];
+            if (
+                reviewedKind === NDKKind.FreelanceJob.toString() &&
+                !jobReviewsSet.has(review.reviewedEventAddress)
+            ) {
+                jobReviewsSet.add(review.reviewedEventAddress);
+                filteredReviews.push(review);
+            } else {
+                filteredReviews.push(review);
+            }
+        }
+    });
 
     return filteredReviews;
 }
