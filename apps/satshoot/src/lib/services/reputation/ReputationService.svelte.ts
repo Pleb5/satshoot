@@ -28,20 +28,12 @@ export class ReputationService {
         this.paymentsService = new PaymentsService(user);
         this.pledgesService = new PledgesService(user);
         this.jobBidService = new JobBidService(user);
-
-        // Initialize when session is ready
-        $effect(() => {
-            const sessionReady = get(sessionInitialized);
-            if (sessionReady) {
-                this.initialize();
-            }
-        });
     }
 
     /**
      * Initialize all reputation services
      */
-    private async initialize() {
+    public async initialize() {
         try {
             // Fetch job and bid context
             const context = await this.jobBidService.initialize();
@@ -62,96 +54,134 @@ export class ReputationService {
     }
 
     /**
-     * Get current earnings
+     * Get current earnings - reactive getter
      */
-    getEarnings(): number {
+    get earnings(): number {
         return this.earningsService.getEarnings();
     }
 
     /**
-     * Get current payments
+     * Get current payments - reactive getter
      */
-    getPayments(): number {
+    get payments(): number {
         return this.paymentsService.getPayments();
     }
 
     /**
-     * Get current pledges
+     * Get current pledges - reactive getter
      */
-    getPledges(): number {
+    get pledges(): number {
         return this.pledgesService.getPledges();
     }
 
     /**
-     * Get client average rating
+     * Get client average rating - reactive derived
      */
-    getClientAverage(): number {
+    get clientAverage(): number {
         return aggregateClientRatings(this.user).average;
     }
 
     /**
-     * Get freelancer average rating
+     * Get freelancer average rating - reactive derived
      */
-    getFreelancerAverage(): number {
+    get freelancerAverage(): number {
         return aggregateFreelancerRatings(this.user).average;
     }
 
     /**
-     * Calculate overall average rating
+     * Calculate overall average rating - reactive derived
      */
-    getOverallAverage(): number {
-        const clientAverage = this.getClientAverage();
-        const freelancerAverage = this.getFreelancerAverage();
+    get overallAverage(): number {
+        const clientAvg = this.clientAverage;
+        const freelancerAvg = this.freelancerAverage;
 
-        if (!isNaN(clientAverage) && !isNaN(freelancerAverage)) {
-            return (clientAverage + freelancerAverage) / 2;
-        } else if (isNaN(clientAverage) && !isNaN(freelancerAverage)) {
-            return freelancerAverage;
-        } else if (isNaN(freelancerAverage) && !isNaN(clientAverage)) {
-            return clientAverage;
+        if (!isNaN(clientAvg) && !isNaN(freelancerAvg)) {
+            return (clientAvg + freelancerAvg) / 2;
+        } else if (isNaN(clientAvg) && !isNaN(freelancerAvg)) {
+            return freelancerAvg;
+        } else if (isNaN(freelancerAvg) && !isNaN(clientAvg)) {
+            return clientAvg;
         } else {
             return NaN;
         }
     }
 
     /**
-     * Get complete reputation data
+     * Legacy method wrappers for backward compatibility
      */
-    getReputationData(): ReputationData {
+    getEarnings(): number {
+        return this.earnings;
+    }
+
+    getPayments(): number {
+        return this.payments;
+    }
+
+    getPledges(): number {
+        return this.pledges;
+    }
+
+    getClientAverage(): number {
+        return this.clientAverage;
+    }
+
+    getFreelancerAverage(): number {
+        return this.freelancerAverage;
+    }
+
+    getOverallAverage(): number {
+        return this.overallAverage;
+    }
+
+    /**
+     * Get complete reputation data - reactive
+     */
+    get reputationData(): ReputationData {
         return {
             financial: {
-                earnings: this.getEarnings(),
-                payments: this.getPayments(),
-                pledges: this.getPledges(),
+                earnings: this.earnings,
+                payments: this.payments,
+                pledges: this.pledges,
             },
-            clientAverage: this.getClientAverage(),
-            freelancerAverage: this.getFreelancerAverage(),
-            overallAverage: this.getOverallAverage(),
+            clientAverage: this.clientAverage,
+            freelancerAverage: this.freelancerAverage,
+            overallAverage: this.overallAverage,
             isInitialized: this.isInitialized,
         };
     }
 
     /**
-     * Get financial items array (for UI display)
+     * Get financial items array (for UI display) - reactive
      */
-    getFinancialItems() {
+    get financialItems() {
         return [
             {
                 title: 'The total amount of money this user has received for completing jobs',
                 label: 'Earnings',
-                amount: this.getEarnings(),
+                amount: this.earnings,
             },
             {
                 title: 'The total amount of money this user has paid freelancers that completed their jobs',
                 label: 'Payments',
-                amount: this.getPayments(),
+                amount: this.payments,
             },
             {
                 title: 'The total amount of money this user has donated to help the development & maintenance of SatShoot',
                 label: 'Pledges',
-                amount: this.getPledges(),
+                amount: this.pledges,
             },
         ];
+    }
+
+    /**
+     * Legacy method wrappers for backward compatibility
+     */
+    getReputationData(): ReputationData {
+        return this.reputationData;
+    }
+
+    getFinancialItems() {
+        return this.financialItems;
     }
 
     /**

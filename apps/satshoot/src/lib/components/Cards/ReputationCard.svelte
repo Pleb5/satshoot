@@ -1,11 +1,6 @@
 <script lang="ts">
     import { ReviewType } from '$lib/events/ReviewEvent';
-    import {
-        aggregateClientRatings,
-        aggregateFreelancerRatings,
-        clientReviews,
-        freelancerReviews,
-    } from '$lib/stores/reviews';
+    import { clientReviews, freelancerReviews } from '$lib/stores/reviews';
     import { averageToRatingText } from '$lib/utils/helpers';
     import { abbreviateNumber } from '$lib/utils/misc';
     import type { Hexpubkey } from '@nostr-dev-kit/ndk';
@@ -17,6 +12,7 @@
     import RatingBlock from '../UI/Display/RatingBlock.svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { ReputationService } from '$lib/services/reputation';
+    import { sessionInitialized } from '$lib/stores/session';
 
     interface Props {
         user: Hexpubkey;
@@ -30,9 +26,16 @@
     // Initialize reputation service
     const reputationService = new ReputationService(user);
 
+    // Initialize when session is ready
+    $effect(() => {
+        if (!reputationService.isInitialized && $sessionInitialized) {
+            reputationService.initialize();
+        }
+    });
+
     // Derived review data
-    const clientAverage = $derived(aggregateClientRatings(user).average);
-    const freelancerAverage = $derived(aggregateFreelancerRatings(user).average);
+    const clientAverage = $derived(reputationService.clientAverage);
+    const freelancerAverage = $derived(reputationService.freelancerAverage);
 
     const reviewType = $derived(
         type ??
@@ -45,10 +48,10 @@
 
     const overallAverage = $derived(
         reviewType === ReviewType.Client
-            ? clientAverage
+            ? reputationService.clientAverage
             : reviewType === ReviewType.Freelancer
-              ? freelancerAverage
-              : reputationService.getOverallAverage()
+              ? reputationService.freelancerAverage
+              : reputationService.overallAverage
     );
 
     const { ratingConsensus, ratingColor } = $derived(averageToRatingText(overallAverage));
@@ -60,24 +63,8 @@
     const { ratingConsensus: asFreelancerRatingConsensus, ratingColor: asFreelancerRatingColor } =
         $derived(averageToRatingText(freelancerAverage));
 
-    // Financial data from service
-    let financialItems = $derived([
-        {
-            title: 'The total amount of money this user has received for completing jobs',
-            label: 'Earnings',
-            amount: reputationService.getEarnings(),
-        },
-        {
-            title: 'The total amount of money this user has paid freelancers that completed their jobs',
-            label: 'Payments',
-            amount: reputationService.getPayments(),
-        },
-        {
-            title: 'The total amount of money this user has donated to help the development & maintenance of SatShoot',
-            label: 'Pledges',
-            amount: reputationService.getPledges(),
-        },
-    ]);
+    // Financial data from service - now reactive
+    let financialItems = $derived(reputationService.financialItems);
 
     let showReviewSummaryAsFreelancer = $state(false);
     let showReviewSummaryAsClient = $state(false);

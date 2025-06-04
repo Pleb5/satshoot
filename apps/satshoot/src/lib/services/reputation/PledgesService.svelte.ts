@@ -12,17 +12,21 @@ import { get } from 'svelte/store';
 import { SatShootPubkey } from '$lib/utils/misc';
 import { JobEvent } from '$lib/events/JobEvent';
 import { BidEvent } from '$lib/events/BidEvent';
+import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
 
 /**
  * Service for handling user pledges calculations
  */
 export class PledgesService {
     // Private properties
-    private pledgesStore: any = null;
+    private pledgesStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
     private user: Hexpubkey;
     private pledgesFilter: NDKFilter;
     private involvedJobEvents: JobEvent[] = [];
     private involvedBids: BidEvent[] = [];
+
+    // Reactive state
+    pledges = $state(0);
 
     constructor(user: Hexpubkey) {
         this.user = user;
@@ -34,6 +38,15 @@ export class PledgesService {
         this.pledgesStore = ndkInstance.storeSubscribe(this.pledgesFilter, {
             autoStart: false,
             cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+        });
+
+        this.pledgesStore.subscribe((ndkEvents) => {
+            this.pledges = this.calculatePledges(
+                ndkEvents,
+                this.involvedJobEvents,
+                this.involvedBids,
+                this.user
+            );
         });
     }
 
@@ -52,16 +65,10 @@ export class PledgesService {
     }
 
     /**
-     * Get current pledges using derived state
+     * Get current pledges using reactive state
      */
     getPledges(): number {
-        if (!this.pledgesStore) return 0;
-        return this.calculatePledges(
-            Array.from(this.pledgesStore),
-            this.involvedJobEvents,
-            this.involvedBids,
-            this.user
-        );
+        return this.pledges;
     }
 
     /**
@@ -163,7 +170,6 @@ export class PledgesService {
     destroy() {
         if (this.pledgesStore) {
             this.pledgesStore.empty();
-            this.pledgesStore = null;
         }
     }
 }

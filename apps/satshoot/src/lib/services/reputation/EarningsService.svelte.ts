@@ -3,19 +3,23 @@ import {
     NDKSubscriptionCacheUsage,
     type NDKFilter,
     type Hexpubkey,
+    NDKEvent,
 } from '@nostr-dev-kit/ndk';
 import ndk from '$lib/stores/session';
 import { get } from 'svelte/store';
 import { calculateTotalAmount } from './utils';
+import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
 
 /**
  * Service for handling user earnings calculations
  */
 export class EarningsService {
     // Private properties
-    private earningsStore: any = null;
+    private earningsStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
     private user: Hexpubkey;
     private earningsFilter: NDKFilter;
+
+    earnings = $state(0);
 
     constructor(user: Hexpubkey) {
         this.user = user;
@@ -27,6 +31,10 @@ export class EarningsService {
         this.earningsStore = ndkInstance.storeSubscribe(this.earningsFilter, {
             autoStart: false,
             cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+        });
+
+        this.earningsStore.subscribe((ndkEvents) => {
+            this.earnings = calculateTotalAmount(ndkEvents);
         });
     }
 
@@ -42,11 +50,10 @@ export class EarningsService {
     }
 
     /**
-     * Get current earnings using derived state
+     * Get current earnings using reactive state
      */
     getEarnings(): number {
-        if (!this.earningsStore) return 0;
-        return calculateTotalAmount(Array.from(this.earningsStore));
+        return this.earnings;
     }
 
     /**
@@ -55,7 +62,6 @@ export class EarningsService {
     destroy() {
         if (this.earningsStore) {
             this.earningsStore.empty();
-            this.earningsStore = null;
         }
     }
 }
