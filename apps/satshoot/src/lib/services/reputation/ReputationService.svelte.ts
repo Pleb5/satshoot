@@ -1,5 +1,3 @@
-import { get } from 'svelte/store';
-import { sessionInitialized } from '$lib/stores/session';
 import { aggregateClientRatings, aggregateFreelancerRatings } from '$lib/stores/reviews';
 import type { Hexpubkey } from '@nostr-dev-kit/ndk';
 import type { ReputationData } from './types';
@@ -15,6 +13,10 @@ export class ReputationService {
     // Public state
     isInitialized = $state(false);
 
+    clientAverage = $state<number>(NaN);
+    freelancerAverage = $state<number>(NaN);
+    overallAverage = $state<number>(NaN);
+
     // Private services
     private earningsService: EarningsService;
     private paymentsService: PaymentsService;
@@ -28,6 +30,24 @@ export class ReputationService {
         this.paymentsService = new PaymentsService(user);
         this.pledgesService = new PledgesService(user);
         this.jobBidService = new JobBidService(user);
+    }
+
+    /**
+     * Calculate overall average rating
+     */
+    private getOverallAverage(): number {
+        const clientAvg = this.clientAverage;
+        const freelancerAvg = this.freelancerAverage;
+
+        if (!isNaN(clientAvg) && !isNaN(freelancerAvg)) {
+            return (clientAvg + freelancerAvg) / 2;
+        } else if (isNaN(clientAvg) && !isNaN(freelancerAvg)) {
+            return freelancerAvg;
+        } else if (isNaN(freelancerAvg) && !isNaN(clientAvg)) {
+            return clientAvg;
+        } else {
+            return NaN;
+        }
     }
 
     /**
@@ -46,6 +66,10 @@ export class ReputationService {
                 context.involvedJobEvents,
                 context.involvedBids
             );
+
+            this.clientAverage = aggregateClientRatings(this.user).average;
+            this.freelancerAverage = aggregateFreelancerRatings(this.user).average;
+            this.overallAverage = this.getOverallAverage();
 
             this.isInitialized = true;
         } catch (error) {
@@ -72,65 +96,6 @@ export class ReputationService {
      */
     get pledges(): number {
         return this.pledgesService.getPledges();
-    }
-
-    /**
-     * Get client average rating - reactive derived
-     */
-    get clientAverage(): number {
-        return aggregateClientRatings(this.user).average;
-    }
-
-    /**
-     * Get freelancer average rating - reactive derived
-     */
-    get freelancerAverage(): number {
-        return aggregateFreelancerRatings(this.user).average;
-    }
-
-    /**
-     * Calculate overall average rating - reactive derived
-     */
-    get overallAverage(): number {
-        const clientAvg = this.clientAverage;
-        const freelancerAvg = this.freelancerAverage;
-
-        if (!isNaN(clientAvg) && !isNaN(freelancerAvg)) {
-            return (clientAvg + freelancerAvg) / 2;
-        } else if (isNaN(clientAvg) && !isNaN(freelancerAvg)) {
-            return freelancerAvg;
-        } else if (isNaN(freelancerAvg) && !isNaN(clientAvg)) {
-            return clientAvg;
-        } else {
-            return NaN;
-        }
-    }
-
-    /**
-     * Legacy method wrappers for backward compatibility
-     */
-    getEarnings(): number {
-        return this.earnings;
-    }
-
-    getPayments(): number {
-        return this.payments;
-    }
-
-    getPledges(): number {
-        return this.pledges;
-    }
-
-    getClientAverage(): number {
-        return this.clientAverage;
-    }
-
-    getFreelancerAverage(): number {
-        return this.freelancerAverage;
-    }
-
-    getOverallAverage(): number {
-        return this.overallAverage;
     }
 
     /**
@@ -171,17 +136,6 @@ export class ReputationService {
                 amount: this.pledges,
             },
         ];
-    }
-
-    /**
-     * Legacy method wrappers for backward compatibility
-     */
-    getReputationData(): ReputationData {
-        return this.reputationData;
-    }
-
-    getFinancialItems() {
-        return this.financialItems;
     }
 
     /**
