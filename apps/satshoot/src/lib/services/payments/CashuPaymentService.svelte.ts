@@ -185,7 +185,12 @@ export class CashuPaymentService {
             .cashuPay({
                 ...this.freelancerCashuInfo,
                 mints: compatibleMints,
-                target: userEnum === UserEnum.Freelancer ? this.secondaryEntity : this.targetEntity,
+                target:
+                    userEnum === UserEnum.Freelancer
+                        ? this.secondaryEntity
+                        : this.targetEntity instanceof ServiceEvent
+                          ? this.secondaryEntity
+                          : this.targetEntity,
                 recipientPubkey: pubkey,
                 amount: amountMillisats,
                 unit: 'msat',
@@ -255,12 +260,18 @@ export class CashuPaymentService {
             'a',
             userEnum === UserEnum.Freelancer
                 ? this.secondaryEntity.tagAddress()
-                : this.targetEntity.tagAddress(),
+                : this.targetEntity instanceof ServiceEvent
+                  ? this.secondaryEntity.tagAddress()
+                  : this.targetEntity.tagAddress(),
         ]);
 
         nutzapEvent.tags.push([
             'e',
-            userEnum === UserEnum.Freelancer ? this.secondaryEntity.id : this.targetEntity.id,
+            userEnum === UserEnum.Freelancer
+                ? this.secondaryEntity.id
+                : this.targetEntity instanceof ServiceEvent
+                  ? this.secondaryEntity.id
+                  : this.targetEntity.id,
         ]);
 
         nutzapEvent.recipientPubkey = pubkey;

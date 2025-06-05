@@ -80,7 +80,7 @@ export class LightningPaymentService {
                 satshootSumMillisats,
                 zapRequestRelays,
                 invoices,
-                this.targetEntity
+                this.targetEntity instanceof ServiceEvent ? this.secondaryEntity : this.targetEntity
             );
         }
 
