@@ -17,16 +17,21 @@ export class PaymentsService {
     // Private properties
     private paymentsStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
     private user: Hexpubkey;
-    private paymentsFilter: NDKFilter;
+    private paymentsFilter: NDKFilter[];
 
     // Reactive state
     payments = $state(0);
 
     constructor(user: Hexpubkey) {
         this.user = user;
-        this.paymentsFilter = {
-            kinds: [NDKKind.Zap, NDKKind.Nutzap],
-        };
+        this.paymentsFilter = [
+            {
+                kinds: [NDKKind.Zap, NDKKind.Nutzap],
+            },
+            {
+                kinds: [NDKKind.Zap, NDKKind.Nutzap],
+            },
+        ];
 
         const ndkInstance = get(ndk);
         this.paymentsStore = ndkInstance.storeSubscribe(this.paymentsFilter, {
@@ -42,9 +47,12 @@ export class PaymentsService {
     /**
      * Initialize payments tracking for the user
      */
-    initialize(winningBidsForUser: string[]) {
+    initialize(winningBidsForUser: string[], ordersOfUser: string[]) {
         // Update filter with winning bids for user's jobs
-        this.paymentsFilter['#e'] = winningBidsForUser;
+        this.paymentsFilter[0]['#e'] = winningBidsForUser;
+
+        // Update filter with orders of user
+        this.paymentsFilter[1]['#a'] = ordersOfUser;
 
         this.paymentsStore.startSubscription();
     }

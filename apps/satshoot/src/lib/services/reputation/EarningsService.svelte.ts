@@ -17,15 +17,20 @@ export class EarningsService {
     // Private properties
     private earningsStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
     private user: Hexpubkey;
-    private earningsFilter: NDKFilter;
+    private earningsFilter: NDKFilter[];
 
     earnings = $state(0);
 
     constructor(user: Hexpubkey) {
         this.user = user;
-        this.earningsFilter = {
-            kinds: [NDKKind.Zap, NDKKind.Nutzap],
-        };
+        this.earningsFilter = [
+            {
+                kinds: [NDKKind.Zap, NDKKind.Nutzap],
+            },
+            {
+                kinds: [NDKKind.Zap, NDKKind.Nutzap],
+            },
+        ];
 
         const ndkInstance = get(ndk);
         this.earningsStore = ndkInstance.storeSubscribe(this.earningsFilter, {
@@ -41,10 +46,14 @@ export class EarningsService {
     /**
      * Initialize earnings tracking for the user
      */
-    initialize(winningBidsOfUser: string[]) {
+    initialize(winningBidsOfUser: string[], confirmOrders: string[]) {
         // Update filter with user and winning bids
-        this.earningsFilter['#p'] = [this.user];
-        this.earningsFilter['#e'] = winningBidsOfUser;
+        this.earningsFilter[0]['#p'] = [this.user];
+        this.earningsFilter[0]['#e'] = winningBidsOfUser;
+
+        // Update filter with user and confirm orders
+        this.earningsFilter[1]['#p'] = [this.user];
+        this.earningsFilter[1]['#a'] = confirmOrders;
 
         this.earningsStore.startSubscription();
     }

@@ -5,6 +5,7 @@ import { EarningsService } from './EarningsService.svelte';
 import { PaymentsService } from './PaymentsService.svelte';
 import { PledgesService } from './PledgesService.svelte';
 import { JobBidService } from './JobBidService.svelte';
+import { ServiceOrderService } from './ServiceOrderService.svelte';
 
 /**
  * Main service for handling user reputation data including financial metrics and reviews
@@ -22,6 +23,7 @@ export class ReputationService {
     private paymentsService: PaymentsService;
     private pledgesService: PledgesService;
     private jobBidService: JobBidService;
+    private serviceOrderService: ServiceOrderService;
     private user: Hexpubkey;
 
     constructor(user: Hexpubkey) {
@@ -30,6 +32,7 @@ export class ReputationService {
         this.paymentsService = new PaymentsService(user);
         this.pledgesService = new PledgesService(user);
         this.jobBidService = new JobBidService(user);
+        this.serviceOrderService = new ServiceOrderService(user);
     }
 
     /**
@@ -56,15 +59,27 @@ export class ReputationService {
     public async initialize() {
         try {
             // Fetch job and bid context
-            const context = await this.jobBidService.initialize();
+            const jobContext = await this.jobBidService.initialize();
+
+            // Fetch service and order context
+            const serviceContext = await this.serviceOrderService.initialize();
 
             // Initialize individual services
-            this.earningsService.initialize(context.winningBidsOfUser);
-            this.paymentsService.initialize(context.winningBidsForUser);
+            this.earningsService.initialize(
+                jobContext.winningBidsOfUser,
+                serviceContext.confirmOrders
+            );
+            this.paymentsService.initialize(
+                jobContext.winningBidsForUser,
+                serviceContext.ordersOfUser
+            );
             this.pledgesService.initialize(
-                context.involvedJobs,
-                context.involvedJobEvents,
-                context.involvedBids
+                jobContext.involvedJobs,
+                jobContext.involvedJobEvents,
+                jobContext.involvedBids,
+                serviceContext.involvedOrders,
+                serviceContext.involvedServiceEvents,
+                serviceContext.involvedOrderEvents
             );
 
             this.clientAverage = aggregateClientRatings(this.user).average;
