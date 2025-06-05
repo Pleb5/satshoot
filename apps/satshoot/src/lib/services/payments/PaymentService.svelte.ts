@@ -27,24 +27,16 @@ export class PaymentService {
     pledgedAmount = $state(0);
     paying = $state(false);
 
-    private pledgeSplit = 0;
-
     constructor(
         private targetEntity: JobEvent | ServiceEvent,
         private secondaryEntity: BidEvent | OrderEvent
-    ) {
-        if (this.secondaryEntity instanceof BidEvent) {
-            this.pledgeSplit = this.secondaryEntity.pledgeSplit;
-        } else if (this.targetEntity instanceof ServiceEvent) {
-            this.pledgeSplit = this.targetEntity.pledgeSplit;
-        }
-    }
+    ) {}
 
     /**
      * Calculate payment shares based on current amounts
      */
     get paymentShares() {
-        const satshootShare = Math.floor((this.amount * this.pledgeSplit) / 100);
+        const satshootShare = Math.floor((this.amount * this.secondaryEntity.pledgeSplit) / 100);
         const freelancerShare = this.amount - satshootShare;
 
         return {

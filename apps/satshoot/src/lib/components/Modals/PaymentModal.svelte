@@ -39,16 +39,6 @@
         secondaryEntity instanceof BidEvent ? secondaryEntity.pubkey : targetEntity.pubkey
     );
 
-    const pledgeSplit = $derived.by(() => {
-        if (secondaryEntity instanceof BidEvent) {
-            return secondaryEntity.pledgeSplit;
-        } else if (targetEntity instanceof ServiceEvent) {
-            return targetEntity.pledgeSplit;
-        }
-
-        return 0;
-    });
-
     // Derived values from payment manager
     const paymentShares = $derived(paymentManager?.payment?.paymentShares);
     const pricingInfo = $derived(paymentManager?.pricingInfo);
@@ -104,7 +94,7 @@
                         <div class="grow-1">
                             <p class="font-[500]">
                                 Pledge split:
-                                <span class="font-[300]"> {pledgeSplit} %</span>
+                                <span class="font-[300]"> {secondaryEntity.pledgeSplit} %</span>
                             </p>
                         </div>
                     </div>
