@@ -19,9 +19,16 @@
         type?: ReviewType;
         skipUserProfile?: boolean;
         forUserCard?: boolean;
+        serviceAddress?: string;
     }
 
-    let { user, type = undefined, skipUserProfile = false, forUserCard = false }: Props = $props();
+    let {
+        user,
+        type = undefined,
+        skipUserProfile = false,
+        forUserCard = false,
+        serviceAddress,
+    }: Props = $props();
 
     // Initialize reputation service
     const reputationService = new ReputationService(user);
@@ -182,5 +189,9 @@
     </Card>
 {/if}
 
-<ReviewSummaryAsFreelancer bind:isOpen={showReviewSummaryAsFreelancer} userHex={user} />
+<ReviewSummaryAsFreelancer
+    bind:isOpen={showReviewSummaryAsFreelancer}
+    userHex={user}
+    {serviceAddress}
+/>
 <ReviewSummaryAsClient bind:isOpen={showReviewSummaryAsClient} userHex={user} />

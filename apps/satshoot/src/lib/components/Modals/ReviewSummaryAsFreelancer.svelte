@@ -17,11 +17,13 @@
     interface Props {
         isOpen: boolean;
         userHex: Hexpubkey;
+        serviceAddress?: string;
     }
 
-    let { isOpen = $bindable(), userHex }: Props = $props();
+    let { isOpen = $bindable(), userHex, serviceAddress }: Props = $props();
 
     let onlyShowMyReviews = $state(false);
+    let onlyShowReviewsOnCurrentService = $state(false);
 
     // Initialize reputation service
     const reputationService = new ReputationService(userHex);
@@ -54,6 +56,9 @@
     );
     const myReviews = $derived(
         reviews.filter((review) => $currentUser && review.pubkey === $currentUser.pubkey)
+    );
+    const reviewsOnCurrentService = $derived(
+        reviews.filter((review) => review.reviewedEventAddress === serviceAddress)
     );
 
     const jobFulfilledStatusClasses =
@@ -162,9 +167,20 @@
                 label="Only show my reviews"
                 bind:checked={onlyShowMyReviews}
             />
+            {#if serviceAddress}
+                <Checkbox
+                    id="service-reviews-checkbox"
+                    label="Only show reviews on current service"
+                    bind:checked={onlyShowReviewsOnCurrentService}
+                />
+            {/if}
             <div class="w-full flex flex-col gap-[15px]">
                 {#if onlyShowMyReviews}
                     {#each myReviews as review}
+                        <ReviewCard {review} bind:isOpen />
+                    {/each}
+                {:else if onlyShowReviewsOnCurrentService}
+                    {#each reviewsOnCurrentService as review}
                         <ReviewCard {review} bind:isOpen />
                     {/each}
                 {:else}
