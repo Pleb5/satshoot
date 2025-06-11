@@ -78,6 +78,13 @@ export class OrderEvent extends NDKEvent {
         this.tags.push(['a', referencedServiceAddress]);
     }
 
+    get referencedServiceDTag(): string | undefined {
+        const aTag = this.tagValue('a');
+        if (!aTag) return undefined;
+
+        return aTag.split(':')[2];
+    }
+
     get pricing(): Pricing {
         return this._pricing;
     }

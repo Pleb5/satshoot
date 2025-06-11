@@ -38,16 +38,12 @@ export class ContactService {
     /**
      * Add initial contacts
      */
-    addInitialContacts(
-        jobPubkey: string,
-        currentUserPubkey: string,
-        contactPubkeyToSelect: string
-    ) {
+    addInitialContacts(pubkey: string, currentUserPubkey: string, contactPubkeyToSelect: string) {
         const ndkInstance = get(ndk);
 
         // Add client, don't add anyone else
-        if (jobPubkey && jobPubkey !== currentUserPubkey) {
-            const person = ndkInstance.getUser({ pubkey: jobPubkey });
+        if (pubkey && pubkey !== currentUserPubkey) {
+            const person = ndkInstance.getUser({ pubkey });
             const contact = { person, selected: true };
             this.addContact(contact);
             this.selectCurrentContact(contact);

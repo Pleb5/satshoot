@@ -1,10 +1,9 @@
 <script lang="ts">
-    import type { JobEvent } from '$lib/events/JobEvent';
+    import { JobEvent } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import { loggedIn } from '$lib/stores/user';
     import {
-        NDKKind,
         NDKSubscriptionCacheUsage,
         type NDKUser,
         type NDKUserProfile,
@@ -13,32 +12,53 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import Button from './UI/Buttons/Button.svelte';
     import { Avatar } from '@skeletonlabs/skeleton-svelte';
-    import SELECTED_QUERY_PARAM from '$lib/services/messages';
+    import SELECTED_QUERY_PARAM, { MessageService } from '$lib/services/messages';
+    import type { ServiceEvent } from '$lib/events/ServiceEvent';
+    import { onDestroy } from 'svelte';
 
     interface Props {
         searchQuery?: string | null;
         user: NDKUser;
-        job: JobEvent;
+        event: JobEvent | ServiceEvent;
     }
 
-    let { searchQuery = null, user, job }: Props = $props();
-    job.encode();
+    let { searchQuery = null, user, event }: Props = $props();
 
-    const naddr = job.encode();
+    const naddr = event.encode();
 
     const messageLink = $derived.by(() => {
         const url = new URL('/messages/' + naddr, window.location.origin);
-        if (job.winnerFreelancer) {
-            url.searchParams.append(SELECTED_QUERY_PARAM, job.winnerFreelancer);
+        if (event instanceof JobEvent && event.winnerFreelancer) {
+            url.searchParams.append(SELECTED_QUERY_PARAM, event.winnerFreelancer);
         }
         return url.toString();
     });
 
-    let userProfile = $state<NDKUserProfile | null>(null);
+    let initialized = $state(false);
     let latestMessage = $state('');
+    let userProfile = $state<NDKUserProfile | null>(null);
+
+    // Initialize services
+    const messageService = $state(new MessageService(event.tagAddress()));
+    const wotFilteredMessages = $derived(messageService.messages);
+
     let avatarImage = $derived.by(() => {
         if (userProfile?.picture) return userProfile.picture;
         return getRoboHashPicture(user.pubkey);
+    });
+
+    // Initialize when session is ready
+    $effect(() => {
+        if ($sessionInitialized && $currentUser && !initialized) {
+            initialized = true;
+
+            messageService.initialize($currentUser.pubkey);
+        }
+    });
+
+    // Cleanup on destroy
+    onDestroy(() => {
+        messageService.unsubscribe();
     });
 
     async function fetchProfile() {
@@ -50,36 +70,25 @@
     }
 
     async function fetchLatestMessage() {
-        const jobMessages = await $ndk.fetchEvents(
-            {
-                kinds: [NDKKind.EncryptedDirectMessage],
-                authors: [user.pubkey, $currentUser!.pubkey],
-                '#t': [job.jobAddress],
-            },
-            {
-                groupable: true,
-                groupableDelay: 1000,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            }
-        );
-        if (jobMessages.size > 0) {
-            const jobMessagesArr = Array.from(jobMessages);
-            let encryptedMessage = jobMessagesArr[0];
-            // Get the latest message event
-            for (const msg of jobMessagesArr) {
-                if (msg.created_at! > encryptedMessage.created_at!) {
-                    encryptedMessage = msg;
-                }
-            }
+        const orderedMessages = messageService.orderMessages(wotFilteredMessages);
 
-            const decryptedMessage = await $ndk.signer?.decrypt(user, encryptedMessage.content);
-            if (decryptedMessage) {
-                latestMessage =
-                    decryptedMessage.length > 20
-                        ? decryptedMessage.substring(0, 20) + '...'
-                        : decryptedMessage;
-            } else {
-                latestMessage = 'Could not decrypt latest message!';
+        if (orderedMessages.length > 0) {
+            const encryptedMessage = orderedMessages[orderedMessages.length - 1];
+            const peerPubkey = messageService.peerFromMessage(encryptedMessage);
+            if (peerPubkey) {
+                const peerUser = $ndk.getUser({ pubkey: peerPubkey });
+                const decryptedMessage = await $ndk.signer?.decrypt(
+                    peerUser,
+                    encryptedMessage.content
+                );
+                if (decryptedMessage) {
+                    latestMessage =
+                        decryptedMessage.length > 20
+                            ? decryptedMessage.substring(0, 20) + '...'
+                            : decryptedMessage;
+                } else {
+                    latestMessage = 'Could not decrypt latest message!';
+                }
             }
         } else {
             latestMessage = 'No messages';
@@ -144,7 +153,7 @@
                 {userProfile?.name ?? userProfile?.displayName ?? user.npub.substring(0, 15)}
             </div>
             <div class="sm:text-lg">
-                {job.title.length > 20 ? job.title.substring(0, 20) + '...' : job.title}
+                {event.title.length > 20 ? event.title.substring(0, 20) + '...' : event.title}
             </div>
             <!-- Latest message -->
             {#if latestMessage}

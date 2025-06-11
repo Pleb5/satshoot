@@ -18,11 +18,13 @@
     // Utilities
     import { checkRelayConnections } from '$lib/utils/helpers';
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from '@nostr-dev-kit/ndk';
+    import { OrderEvent } from '$lib/events/OrderEvent';
+    import { ServiceEvent } from '$lib/events/ServiceEvent';
 
     // Types and interfaces
     interface ConversationData {
-        users: NDKUser[];
-        jobs: JobEvent[];
+        jobConversations: Map<JobEvent, NDKUser>;
+        serviceConversations: Map<ServiceEvent, NDKUser>;
         loading: boolean;
         error: string | null;
     }
@@ -35,8 +37,8 @@
 
     // Conversation state
     let conversationData = $state<ConversationData>({
-        users: [],
-        jobs: [],
+        jobConversations: new Map(),
+        serviceConversations: new Map(),
         loading: true,
         error: null,
     });
@@ -78,35 +80,56 @@
      * Fetch conversations for a client user
      */
     async function fetchClientConversations() {
-        const jobEvents = await $ndk.fetchEvents(
+        const events = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceJob],
+                kinds: [NDKKind.FreelanceJob, NDKKind.FreelanceOrder],
                 authors: [$currentUser!.pubkey],
             },
             defaultFetchOptions
         );
 
-        if (jobEvents.size === 0) {
-            noConversations = true;
-            conversationData.loading = false;
-            return;
-        }
+        const jobConversations = new Map<JobEvent, NDKUser>();
+        const serviceConversations = new Map<ServiceEvent, NDKUser>();
+        const servicesToFetch = new Set<string>();
 
-        const users: NDKUser[] = [];
-        const jobs: JobEvent[] = [];
-
-        jobEvents.forEach((jobEvent: NDKEvent) => {
-            const job = JobEvent.from(jobEvent);
-            if (job.acceptedBidAddress && job.winnerFreelancer) {
-                const user = $ndk.getUser({ pubkey: job.winnerFreelancer });
-                users.push(user);
-                jobs.push(job);
+        events.forEach((event) => {
+            if (event.kind === NDKKind.FreelanceJob) {
+                const job = JobEvent.from(event);
+                if (job.acceptedBidAddress && job.winnerFreelancer) {
+                    const user = $ndk.getUser({ pubkey: job.winnerFreelancer });
+                    jobConversations.set(job, user);
+                }
+            } else if (event.kind === NDKKind.FreelanceOrder) {
+                const order = OrderEvent.from(event);
+                const dTag = order.referencedServiceDTag;
+                if (dTag) {
+                    servicesToFetch.add(dTag);
+                }
             }
         });
 
+        // Fetch all related services
+        const serviceEvents = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceService],
+                '#d': Array.from(servicesToFetch),
+            },
+            { ...defaultFetchOptions, groupableDelay: 800 }
+        );
+
+        serviceEvents.forEach((event) => {
+            const service = ServiceEvent.from(event);
+            const user = $ndk.getUser({ pubkey: service.pubkey });
+            serviceConversations.set(service, user);
+        });
+
+        if (jobConversations.size === 0 && serviceConversations.size === 0) {
+            noConversations = true;
+        }
+
         conversationData = {
-            users,
-            jobs,
+            jobConversations,
+            serviceConversations,
             loading: false,
             error: null,
         };
@@ -116,29 +139,31 @@
      * Fetch conversations for a freelancer user
      */
     async function fetchFreelancerConversations() {
-        const bids = await $ndk.fetchEvents(
+        const events = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceBid],
+                kinds: [NDKKind.FreelanceBid, NDKKind.FreelanceService],
                 authors: [$currentUser!.pubkey],
             },
             defaultFetchOptions
         );
 
-        if (bids.size === 0) {
-            noConversations = true;
-            conversationData.loading = false;
-            return;
-        }
+        const jobConversations = new Map<JobEvent, NDKUser>();
+        const serviceConversations = new Map<ServiceEvent, NDKUser>();
 
         // Collect job DTags to fetch all related jobs in one request
         const jobsToFetch: string[] = [];
         const bidMap = new Map<string, BidEvent>();
 
-        for (const bidEvent of bids) {
-            const bid = BidEvent.from(bidEvent);
-            if (bid.referencedJobDTag) {
-                jobsToFetch.push(bid.referencedJobDTag);
-                bidMap.set(bid.bidAddress, bid);
+        for (const event of events) {
+            if (event.kind === NDKKind.FreelanceBid) {
+                const bid = BidEvent.from(event);
+                if (bid.referencedJobDTag) {
+                    jobsToFetch.push(bid.referencedJobDTag);
+                    bidMap.set(bid.bidAddress, bid);
+                }
+            } else if (event.kind === NDKKind.FreelanceService) {
+                const service = ServiceEvent.from(event);
+                serviceConversations.set(service, $ndk.getUser({ pubkey: service.pubkey }));
             }
         }
 
@@ -151,21 +176,21 @@
             { ...defaultFetchOptions, groupableDelay: 800 }
         );
 
-        const users: NDKUser[] = [];
-        const jobs: JobEvent[] = [];
-
         jobEvents.forEach((jobEvent: NDKEvent) => {
             const job = JobEvent.from(jobEvent);
             if (job.acceptedBidAddress && bidMap.has(job.acceptedBidAddress)) {
                 const user = $ndk.getUser({ pubkey: job.pubkey });
-                users.push(user);
-                jobs.push(job);
+                jobConversations.set(job, user);
             }
         });
 
+        if (jobConversations.size === 0 && serviceConversations.size === 0) {
+            noConversations = true;
+        }
+
         conversationData = {
-            users,
-            jobs,
+            jobConversations,
+            serviceConversations,
             loading: false,
             error: null,
         };
@@ -204,60 +229,30 @@
                                     <div class="h4 text-center col-start-2 text-error">
                                         {conversationData.error}
                                     </div>
-                                {:else if $userMode === UserMode.Client}
-                                    {#if conversationData.users.length > 0}
-                                        {#each conversationData.users as user, i}
-                                            <ChatHead
-                                                {searchQuery}
-                                                {user}
-                                                job={conversationData.jobs[i]}
-                                            />
-                                        {/each}
-                                    {:else if noConversations}
-                                        <div class="h4 text-center col-start-2">
-                                            No Conversations!
-                                        </div>
-                                    {:else if conversationData.loading}
-                                        {#each LoadingSkeleton() as _}
-                                            <div class="w-full card flex gap-2 h-28 p-4">
-                                                <div
-                                                    class="w-20 placeholder-circle animate-pulse"
-                                                ></div>
-                                                <div class="w-28 grid grid-rows-3 gap-2">
-                                                    <div class="placeholder animate-pulse"></div>
-                                                    <div class="placeholder animate-pulse"></div>
-                                                    <div class="placeholder animate-pulse"></div>
-                                                </div>
+                                {:else if conversationData.jobConversations.size > 0 || conversationData.serviceConversations.size > 0}
+                                    <!-- Display job conversations -->
+                                    {#each conversationData.jobConversations as [job, user]}
+                                        <ChatHead {searchQuery} {user} event={job} />
+                                    {/each}
+                                    <!-- Display service conversations -->
+                                    {#each conversationData.serviceConversations as [service, user]}
+                                        <ChatHead {searchQuery} {user} event={service} />
+                                    {/each}
+                                {:else if noConversations}
+                                    <div class="h4 text-center col-start-2">No Conversations!</div>
+                                {:else if conversationData.loading}
+                                    {#each LoadingSkeleton() as _}
+                                        <div class="w-full card flex gap-2 h-28 p-4">
+                                            <div
+                                                class="w-20 placeholder-circle animate-pulse"
+                                            ></div>
+                                            <div class="w-28 grid grid-rows-3 gap-2">
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
+                                                <div class="placeholder animate-pulse"></div>
                                             </div>
-                                        {/each}
-                                    {/if}
-                                {:else if $userMode === UserMode.Freelancer}
-                                    {#if conversationData.users.length > 0}
-                                        {#each conversationData.users as user, i}
-                                            <ChatHead
-                                                {searchQuery}
-                                                {user}
-                                                job={conversationData.jobs[i]}
-                                            />
-                                        {/each}
-                                    {:else if noConversations}
-                                        <div class="h4 text-center col-start-2">
-                                            No Conversations!
                                         </div>
-                                    {:else if conversationData.loading}
-                                        {#each LoadingSkeleton() as _}
-                                            <div class="w-full card flex gap-2 h-28 p-4">
-                                                <div
-                                                    class="w-20 placeholder-circle animate-pulse"
-                                                ></div>
-                                                <div class="w-28 grid grid-rows-3 gap-2">
-                                                    <div class="placeholder animate-pulse"></div>
-                                                    <div class="placeholder animate-pulse"></div>
-                                                    <div class="placeholder animate-pulse"></div>
-                                                </div>
-                                            </div>
-                                        {/each}
-                                    {/if}
+                                    {/each}
                                 {/if}
                             </div>
                         </Card>

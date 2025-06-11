@@ -7,7 +7,7 @@ import {
     type NDKSigner,
     type NDKUser,
     giftWrap,
-    giftUnwrap
+    giftUnwrap,
 } from '@nostr-dev-kit/ndk';
 import ndk from '$lib/stores/session';
 import { get } from 'svelte/store';
@@ -24,15 +24,15 @@ export class MessageService {
     messages = $state<NDKEvent[]>([]);
 
     // Private properties
-    private jobAddress: string;
+    private eventAddress: string;
     private subscription: NDKSubscription | null = null;
 
-    constructor(jobAddress: string) {
-        this.jobAddress = jobAddress;
+    constructor(eventAddress: string) {
+        this.eventAddress = eventAddress;
     }
 
     /**
-     * Initialize subscription to messages for this job
+     * Initialize subscription to messages for this event
      */
     initialize(currentUserPubkey: string) {
         const ndkInstance = get(ndk);
@@ -40,13 +40,13 @@ export class MessageService {
         const messagesFilter: NDKFilter[] = [
             {
                 kinds: [NDKKind.EncryptedDirectMessage],
-                '#t': [this.jobAddress],
+                '#a': [this.eventAddress],
                 '#p': [currentUserPubkey],
                 limit: 50,
             },
             {
                 kinds: [NDKKind.EncryptedDirectMessage],
-                '#t': [this.jobAddress],
+                '#a': [this.eventAddress],
                 authors: [currentUserPubkey],
                 limit: 50,
             },
@@ -125,45 +125,57 @@ export class MessageService {
         const ndkInstance = get(ndk);
         if (!ndkInstance) return;
 
-        const message: NDKEvent = new NDKEvent(ndkInstance);
-        message.kind = NDKKind.PrivateDirectMessage;
-        message.tags.push(['p', recipient.pubkey]);
-        message.tags.push(['a', this.jobAddress]);
-        message.content = content;
+        // const message: NDKEvent = new NDKEvent(ndkInstance);
+        // message.kind = NDKKind.PrivateDirectMessage;
+        // message.tags.push(['p', recipient.pubkey]);
+        // message.tags.push(['a', this.eventAddress]);
+        // message.content = content;
 
-        // const dm = new NDKEvent(ndkInstance);
-        // dm.kind = NDKKind.EncryptedDirectMessage;
-        // dm.content = content;
-        // dm.tags.push(['p', recipient.pubkey]);
-        // dm.content = await (ndkInstance.signer as NDKSigner).encrypt(recipient, content);
+        // try {
+        //     // NOT deniable
+        //     await message.sign();
+        //     console.log('Rumor', message);
+        //     const encryptedDMforReceiver = await giftWrap(message, recipient, ndkInstance.signer, {
+        //         stripSig: false,
+        //     });
+        //     const encryptedDMforSender = await giftWrap(
+        //         message,
+        //         get(currentUser),
+        //         ndkInstance.signer,
+        //         { stripSig: false }
+        //     );
+        //     // const decrypted = await giftUnwrap(encrypted, sendUser, receiveSigner);
+
+        //     // TODO: how does the sender open his own messages currently? it is supposed to be encrypted
+        //     // to the pubkey of the receiver... ?
+        //     // The modify subs to fetch giftwraps of current user and clients/freelancers?
+
+        //     // immediately add the dm to messages array
+        //     this.messages = [...this.messages, encryptedDMforReceiver];
+        //     // publish the dm asynchronously
+        //     console.log('message to publish', encryptedDMforReceiver);
+        //     encryptedDMforReceiver.publish();
+        // } catch (error) {
+        //     console.error('Failed to send message:', error);
+        //     throw error;
+        // }
+
+        // moving back to encrypted dm for now, it will be replaced with private DM later
+        const dm = new NDKEvent(ndkInstance);
+        dm.kind = NDKKind.EncryptedDirectMessage;
+        dm.content = content;
+        dm.tags.push(['a', this.eventAddress]);
+        dm.tags.push(['p', recipient.pubkey]);
+        dm.content = await (ndkInstance.signer as NDKSigner).encrypt(recipient, content);
 
         try {
-            // NOT deniable
-            await message.sign();
-            console.log('Rumor', message)
-            const encryptedDMforReceiver = await giftWrap(
-                message,
-                recipient,
-                ndkInstance.signer,
-                {stripSig: false}
-            );
-            const encryptedDMforSender = await giftWrap(
-                message,
-                get(currentUser),
-                ndkInstance.signer,
-                {stripSig: false}
-            );
-            // const decrypted = await giftUnwrap(encrypted, sendUser, receiveSigner);
-
-            // TODO: how does the sender open his own messages currently? it is supposed to be encrypted
-            // to the pubkey of the receiver... ?
-            // The modify subs to fetch giftwraps of current user and clients/freelancers?
+            // sign the dm
+            await dm.sign();
 
             // immediately add the dm to messages array
-            this.messages = [...this.messages, encryptedDMforReceiver];
+            this.messages = [...this.messages, dm];
             // publish the dm asynchronously
-            console.log('message to publish', encryptedDMforReceiver)
-            encryptedDMforReceiver.publish();
+            dm.publish();
         } catch (error) {
             console.error('Failed to send message:', error);
             throw error;
