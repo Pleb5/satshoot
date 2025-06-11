@@ -69,7 +69,7 @@
     });
 </script>
 
-<ModalWrapper bind:isOpen title="Pay Freelancer">
+<ModalWrapper bind:isOpen title="Make Payments">
     {#if targetEntity && secondaryEntity && paymentManager}
         <div class="w-full flex flex-col">
             <!-- popups Share Job Post start -->
@@ -146,44 +146,8 @@
                                 fullWidth
                             />
                         </div>
-                        <div class="w-full flex flex-col gap-[5px]">
-                            <label class="font-[500]" for="plattform-contribution"
-                                >Contribute to SatShoot</label
-                            >
-                            <Input
-                                id="plattform-contribution"
-                                type="number"
-                                step="1"
-                                min="0"
-                                placeholder="000,000"
-                                bind:value={paymentManager.payment.pledgedAmount}
-                                fullWidth
-                            />
-                        </div>
-                    </div>
-                    <div
-                        class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
-                    >
-                        <p class="grow-1 text-center">
-                            Freelancer gets: {insertThousandSeparator(
-                                paymentShares?.freelancerShare ?? 0
-                            )} sats
-                        </p>
-                        <p class="grow-1 text-center">
-                            SatShoot gets: {insertThousandSeparator(
-                                paymentShares?.satshootShare ?? 0
-                            ) +
-                                ' + ' +
-                                insertThousandSeparator(paymentManager.payment.pledgedAmount ?? 0) +
-                                ' = ' +
-                                insertThousandSeparator(paymentShares?.totalSatshootAmount ?? 0) +
-                                ' sats'}
-                        </p>
-                    </div>
-                </div>
-                <div class="flex flex-row justify-center">
-                    <div class="flex flex-col gap-[5px]">
-                        <div class="flex flex-row">
+                        <!-- Payment Buttons for first Payee -->
+                        <div class="flex flex-row justify-center gap-[5px]">
                             <Button
                                 grow
                                 classes="w-[200px] max-w-[200px]"
@@ -203,8 +167,6 @@
                                     <span> Pay with LN</span>
                                 {/if}
                             </Button>
-                        </div>
-                        <div class="flex flex-row items-center gap-[2px]">
                             {#if hasSenderEcashSetup}
                                 <Button
                                     grow
@@ -257,6 +219,113 @@
                                 </Popover>
                             {/if}
                         </div>
+                        <div class="w-full flex flex-col gap-[5px]">
+                            <label class="font-[500]" for="plattform-contribution"
+                                >Contribute to SatShoot</label
+                            >
+                            <Input
+                                id="plattform-contribution"
+                                type="number"
+                                step="1"
+                                min="0"
+                                placeholder="000,000"
+                                bind:value={paymentManager.payment.pledgedAmount}
+                                fullWidth
+                            />
+                        </div>
+                        <!-- Payment Buttons for second Payee -->
+                        <div class="flex flex-row justify-center gap-[5px]">
+                            <Button
+                                grow
+                                classes="w-[200px] max-w-[200px]"
+                                onClick={payWithLN}
+                                disabled={paying}
+                            >
+                                {#if paying}
+                                    <span>
+                                        <ProgressRing />
+                                    </span>
+                                {:else}
+                                    <img
+                                        class="h-[20px] w-auto"
+                                        src="/img/lightning.png"
+                                        alt="Lightning icon"
+                                    />
+                                    <span> Pay with LN</span>
+                                {/if}
+                            </Button>
+                            {#if hasSenderEcashSetup}
+                                <Button
+                                    grow
+                                    classes="w-[200px] max-w-[200px]"
+                                    onClick={payWithEcash}
+                                    disabled={paying || !canPayWithCashu}
+                                >
+                                    {#if paying}
+                                        <ProgressRing />
+                                    {:else}
+                                        <img
+                                            class="h-[20px] w-auto"
+                                            src="/img/cashu.png"
+                                            alt="Cashu icon"
+                                        />
+                                        <span>Pay with Cashu</span>
+                                    {/if}
+                                </Button>
+                            {:else}
+                                <Button grow classes="w-[200px] max-w-[200px]" onClick={setupEcash}>
+                                    {#if paying}
+                                        <span>
+                                            <ProgressRing />
+                                        </span>
+                                    {/if}
+                                    <span> Setup Nostr Wallet </span>
+                                </Button>
+                            {/if}
+
+                            {#if cashuTooltipText}
+                                <Popover
+                                    open={cashuPopoverState}
+                                    onOpenChange={(e) => (cashuPopoverState = e.open)}
+                                    positioning={{ placement: 'top' }}
+                                    triggerBase="btn preset-tonal"
+                                    contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
+                                    arrow
+                                    arrowBackground="!bg-surface-200 dark:!bg-surface-800"
+                                >
+                                    {#snippet trigger()}
+                                        <i
+                                            class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                        ></i>
+                                    {/snippet}
+                                    {#snippet content()}
+                                        <Card>
+                                            <p>{cashuTooltipText}</p>
+                                        </Card>
+                                    {/snippet}
+                                </Popover>
+                            {/if}
+                        </div>
+                    </div>
+                    <!-- Payment Summary -->
+                    <div
+                        class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
+                    >
+                        <p class="grow-1 text-center">
+                            Freelancer gets: {insertThousandSeparator(
+                                paymentShares?.freelancerShare ?? 0
+                            )} sats
+                        </p>
+                        <p class="grow-1 text-center">
+                            SatShoot gets: {insertThousandSeparator(
+                                paymentShares?.satshootShare ?? 0
+                            ) +
+                                ' + ' +
+                                insertThousandSeparator(paymentManager.payment.pledgedAmount ?? 0) +
+                                ' = ' +
+                                insertThousandSeparator(paymentShares?.totalSatshootAmount ?? 0) +
+                                ' sats'}
+                        </p>
                     </div>
                 </div>
             </div>

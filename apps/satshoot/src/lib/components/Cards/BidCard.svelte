@@ -186,8 +186,9 @@
         }
     }
 
-    function handlePay() {
-        showPaymentModal = true;
+    function goToPay() {
+        const url = new URL('/payments/' + job.encode(), window.location.origin);
+        goto(url.toString());
     }
 
     function handlePreviewReview() {
@@ -301,7 +302,7 @@
         {/if}
 
         {#if showPaymentButton}
-            <Button onClick={handlePay}>Pay</Button>
+            <Button onClick={goToPay}>Pay</Button>
         {/if}
 
         {#if job && myJob}
