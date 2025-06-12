@@ -28,10 +28,14 @@
     {#if $freelancerTabStore === FreelancerTabs.Services}
         <div class="w-full flex flex-col gap-[10px]">
             <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">
-                <Checkbox id="new-jobs" label="New" bind:checked={$servicesFilter.active} />
                 <Checkbox
-                    id="inProgress-jobs"
-                    label="In Progress"
+                    id="active-services"
+                    label="Active"
+                    bind:checked={$servicesFilter.active}
+                />
+                <Checkbox
+                    id="inactive-services"
+                    label="In-active"
                     bind:checked={$servicesFilter.inActive}
                 />
             </Card>
