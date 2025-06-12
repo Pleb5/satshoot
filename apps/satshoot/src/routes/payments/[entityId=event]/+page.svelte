@@ -130,277 +130,297 @@
     }
 </script>
 
-<div class="w-full flex flex-col gap-0 grow">
-    {#if !allowPayments}
-        <Button onClick={handleLogin}>Log in To Pay</Button>
-    {:else if targetEntity && secondaryEntity && paymentManager}
-        <div class="w-full flex flex-col">
-            <!-- Share Job Post start -->
+<div class="w-full flex flex-col justify-center items-center py-[25px]">
+    <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
+        {#if !allowPayments}
+            <Button onClick={handleLogin}>Log in To Pay</Button>
+        {:else if targetEntity && secondaryEntity && paymentManager}
             <div class="w-full flex flex-col">
-                <h1 class="w-full text-center font-[700] text-[32px] wrap-normal overflow-hidden">
-                    Make Payments
-                </h1>
-            </div>
-            <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
-                <div
-                    class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 dark:border-white-100 p-[10px]"
-                >
-                    <UserProfile pubkey={secondaryEntity.pubkey} />
-                    <div
-                        class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
+                <!-- Share Job Post start -->
+                <div class="w-full flex flex-col">
+                    <h1
+                        class="w-full text-center font-[700] text-[32px] wrap-normal overflow-hidden"
                     >
-                        <div class="grow-1">
-                            <p class="font-[500]">
-                                {pricingInfo?.costLabel}
-                                <span class="font-[300]">
-                                    {insertThousandSeparator(paymentManager.payment.amount) +
-                                        ' ' +
-                                        pricingInfo?.pricing}
-                                </span>
-                            </p>
-                        </div>
-                        <div class="grow-1">
-                            <p class="font-[500]">
-                                Pledge split:
-                                <span class="font-[300]"> {secondaryEntity.pledgeSplit} %</span>
-                            </p>
-                        </div>
-                    </div>
+                        Make Payments
+                    </h1>
+                </div>
+                <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
                     <div
-                        class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
+                        class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 dark:border-white-100 p-[10px]"
                     >
-                        <div class="grow-1">
-                            <p class="font-[500]">
-                                Freelancer Paid:
-                                <span class="font-[300]">
-                                    {$freelancerPaid
-                                        ? insertThousandSeparator($freelancerPaid)
-                                        : '?'} sats
-                                </span>
-                            </p>
-                        </div>
-                        <div class="grow-1">
-                            <p class="font-[500]">
-                                SatShoot Paid:
-                                <span class="font-[300]">
-                                    {$satshootPaid ? insertThousandSeparator($satshootPaid) : '?'} sats
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div
-                    class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
-                >
-                    <p class="">Compensation for:</p>
-
-                    <a href={'/' + bech32ID + '/'} class="anchor font-[600]">
-                        {targetEntity instanceof JobEvent
-                            ? targetEntity.title
-                            : (secondaryEntity as ServiceEvent).title}
-                    </a>
-                </div>
-                <div
-                    class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
-                >
-                    <div class="w-full flex flex-col gap-[5px]">
-                        <div class="w-full flex flex-col gap-[5px]">
-                            <label class="font-[500]" for="service-payment">Pay for service</label>
-                            <Input
-                                id="service-payment"
-                                type="number"
-                                step="1"
-                                min="0"
-                                placeholder="000,000"
-                                bind:value={paymentManager.payment.amount}
-                                fullWidth
-                            />
-                        </div>
-                        <!-- Payment Buttons for first Payee -->
-                        <div class="flex flex-row justify-center gap-[5px]">
-                            <Button
-                                grow
-                                classes="w-[200px] max-w-[200px]"
-                                onClick={payWithLN}
-                                disabled={paying}
-                            >
-                                {#if paying}
-                                    <span>
-                                        <ProgressRing />
+                        <UserProfile pubkey={secondaryEntity.pubkey} />
+                        <div
+                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
+                        >
+                            <div class="grow-1">
+                                <p class="font-[500]">
+                                    {pricingInfo?.costLabel}
+                                    <span class="font-[300]">
+                                        {insertThousandSeparator(paymentManager.payment.amount) +
+                                            ' ' +
+                                            pricingInfo?.pricing}
                                     </span>
-                                {:else}
-                                    <img
-                                        class="h-[20px] w-auto"
-                                        src="/img/lightning.png"
-                                        alt="Lightning icon"
-                                    />
-                                    <span> Pay with LN</span>
-                                {/if}
-                            </Button>
-                            {#if hasSenderEcashSetup}
+                                </p>
+                            </div>
+                            <div class="grow-1">
+                                <p class="font-[500]">
+                                    Pledge split:
+                                    <span class="font-[300]"> {secondaryEntity.pledgeSplit} %</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
+                        >
+                            <div class="grow-1">
+                                <p class="font-[500]">
+                                    Freelancer Paid:
+                                    <span class="font-[300]">
+                                        {$freelancerPaid
+                                            ? insertThousandSeparator($freelancerPaid)
+                                            : '?'} sats
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="grow-1">
+                                <p class="font-[500]">
+                                    SatShoot Paid:
+                                    <span class="font-[300]">
+                                        {$satshootPaid
+                                            ? insertThousandSeparator($satshootPaid)
+                                            : '?'} sats
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
+                    >
+                        <p class="">Compensation for:</p>
+
+                        <a href={'/' + bech32ID + '/'} class="anchor font-[600]">
+                            {targetEntity instanceof JobEvent
+                                ? targetEntity.title
+                                : (secondaryEntity as ServiceEvent).title}
+                        </a>
+                    </div>
+                    <div
+                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
+                    >
+                        <div class="w-full flex flex-col gap-[5px]">
+                            <div class="w-full flex flex-col gap-[5px]">
+                                <label class="font-[500]" for="service-payment"
+                                    >Pay for service</label
+                                >
+                                <Input
+                                    id="service-payment"
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    placeholder="000,000"
+                                    bind:value={paymentManager.payment.amount}
+                                    fullWidth
+                                />
+                            </div>
+                            <!-- Payment Buttons for first Payee -->
+                            <div class="flex flex-row justify-center gap-[5px]">
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    onClick={payWithEcash}
-                                    disabled={paying || !canPayWithCashu}
+                                    onClick={payWithLN}
+                                    disabled={paying}
                                 >
-                                    {#if paying}
-                                        <ProgressRing />
-                                    {:else}
-                                        <img
-                                            class="h-[20px] w-auto"
-                                            src="/img/cashu.png"
-                                            alt="Cashu icon"
-                                        />
-                                        <span>Pay with Cashu</span>
-                                    {/if}
-                                </Button>
-                            {:else}
-                                <Button grow classes="w-[200px] max-w-[200px]" onClick={setupEcash}>
                                     {#if paying}
                                         <span>
                                             <ProgressRing />
                                         </span>
-                                    {/if}
-                                    <span> Setup Nostr Wallet </span>
-                                </Button>
-                            {/if}
-
-                            {#if cashuTooltipText}
-                                <Popover
-                                    open={cashuPopoverState}
-                                    onOpenChange={(e) => (cashuPopoverState = e.open)}
-                                    positioning={{ placement: 'top' }}
-                                    triggerBase="btn preset-tonal"
-                                    contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
-                                    arrow
-                                    arrowBackground="!bg-surface-200 dark:!bg-surface-800"
-                                >
-                                    {#snippet trigger()}
-                                        <i
-                                            class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
-                                        ></i>
-                                    {/snippet}
-                                    {#snippet content()}
-                                        <Card>
-                                            <p>{cashuTooltipText}</p>
-                                        </Card>
-                                    {/snippet}
-                                </Popover>
-                            {/if}
-                        </div>
-                        <div class="w-full flex flex-col gap-[5px]">
-                            <label class="font-[500]" for="plattform-contribution"
-                                >Contribute to SatShoot</label
-                            >
-                            <Input
-                                id="plattform-contribution"
-                                type="number"
-                                step="1"
-                                min="0"
-                                placeholder="000,000"
-                                bind:value={paymentManager.payment.pledgedAmount}
-                                fullWidth
-                            />
-                        </div>
-                        <!-- Payment Buttons for second Payee -->
-                        <div class="flex flex-row justify-center gap-[5px]">
-                            <Button
-                                grow
-                                classes="w-[200px] max-w-[200px]"
-                                onClick={payWithLN}
-                                disabled={paying}
-                            >
-                                {#if paying}
-                                    <span>
-                                        <ProgressRing />
-                                    </span>
-                                {:else}
-                                    <img
-                                        class="h-[20px] w-auto"
-                                        src="/img/lightning.png"
-                                        alt="Lightning icon"
-                                    />
-                                    <span> Pay with LN</span>
-                                {/if}
-                            </Button>
-                            {#if hasSenderEcashSetup}
-                                <Button
-                                    grow
-                                    classes="w-[200px] max-w-[200px]"
-                                    onClick={payWithEcash}
-                                    disabled={paying || !canPayWithCashu}
-                                >
-                                    {#if paying}
-                                        <ProgressRing />
                                     {:else}
                                         <img
                                             class="h-[20px] w-auto"
-                                            src="/img/cashu.png"
-                                            alt="Cashu icon"
+                                            src="/img/lightning.png"
+                                            alt="Lightning icon"
                                         />
-                                        <span>Pay with Cashu</span>
+                                        <span> Pay with LN</span>
                                     {/if}
                                 </Button>
-                            {:else}
-                                <Button grow classes="w-[200px] max-w-[200px]" onClick={setupEcash}>
+                                {#if hasSenderEcashSetup}
+                                    <Button
+                                        grow
+                                        classes="w-[200px] max-w-[200px]"
+                                        onClick={payWithEcash}
+                                        disabled={paying || !canPayWithCashu}
+                                    >
+                                        {#if paying}
+                                            <ProgressRing />
+                                        {:else}
+                                            <img
+                                                class="h-[20px] w-auto"
+                                                src="/img/cashu.png"
+                                                alt="Cashu icon"
+                                            />
+                                            <span>Pay with Cashu</span>
+                                        {/if}
+                                    </Button>
+                                {:else}
+                                    <Button
+                                        grow
+                                        classes="w-[200px] max-w-[200px]"
+                                        onClick={setupEcash}
+                                    >
+                                        {#if paying}
+                                            <span>
+                                                <ProgressRing />
+                                            </span>
+                                        {/if}
+                                        <span> Setup Nostr Wallet </span>
+                                    </Button>
+                                {/if}
+
+                                {#if cashuTooltipText}
+                                    <Popover
+                                        open={cashuPopoverState}
+                                        onOpenChange={(e) => (cashuPopoverState = e.open)}
+                                        positioning={{ placement: 'top' }}
+                                        triggerBase="btn preset-tonal"
+                                        contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
+                                        arrow
+                                        arrowBackground="!bg-surface-200 dark:!bg-surface-800"
+                                    >
+                                        {#snippet trigger()}
+                                            <i
+                                                class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                            ></i>
+                                        {/snippet}
+                                        {#snippet content()}
+                                            <Card>
+                                                <p>{cashuTooltipText}</p>
+                                            </Card>
+                                        {/snippet}
+                                    </Popover>
+                                {/if}
+                            </div>
+                            <div class="w-full flex flex-col gap-[5px]">
+                                <label class="font-[500]" for="plattform-contribution"
+                                    >Contribute to SatShoot</label
+                                >
+                                <Input
+                                    id="plattform-contribution"
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    placeholder="000,000"
+                                    bind:value={paymentManager.payment.pledgedAmount}
+                                    fullWidth
+                                />
+                            </div>
+                            <!-- Payment Buttons for second Payee -->
+                            <div class="flex flex-row justify-center gap-[5px]">
+                                <Button
+                                    grow
+                                    classes="w-[200px] max-w-[200px]"
+                                    onClick={payWithLN}
+                                    disabled={paying}
+                                >
                                     {#if paying}
                                         <span>
                                             <ProgressRing />
                                         </span>
+                                    {:else}
+                                        <img
+                                            class="h-[20px] w-auto"
+                                            src="/img/lightning.png"
+                                            alt="Lightning icon"
+                                        />
+                                        <span> Pay with LN</span>
                                     {/if}
-                                    <span> Setup Nostr Wallet </span>
                                 </Button>
-                            {/if}
+                                {#if hasSenderEcashSetup}
+                                    <Button
+                                        grow
+                                        classes="w-[200px] max-w-[200px]"
+                                        onClick={payWithEcash}
+                                        disabled={paying || !canPayWithCashu}
+                                    >
+                                        {#if paying}
+                                            <ProgressRing />
+                                        {:else}
+                                            <img
+                                                class="h-[20px] w-auto"
+                                                src="/img/cashu.png"
+                                                alt="Cashu icon"
+                                            />
+                                            <span>Pay with Cashu</span>
+                                        {/if}
+                                    </Button>
+                                {:else}
+                                    <Button
+                                        grow
+                                        classes="w-[200px] max-w-[200px]"
+                                        onClick={setupEcash}
+                                    >
+                                        {#if paying}
+                                            <span>
+                                                <ProgressRing />
+                                            </span>
+                                        {/if}
+                                        <span> Setup Nostr Wallet </span>
+                                    </Button>
+                                {/if}
 
-                            {#if cashuTooltipText}
-                                <Popover
-                                    open={cashuPopoverState}
-                                    onOpenChange={(e) => (cashuPopoverState = e.open)}
-                                    positioning={{ placement: 'top' }}
-                                    triggerBase="btn preset-tonal"
-                                    contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
-                                    arrow
-                                    arrowBackground="!bg-surface-200 dark:!bg-surface-800"
-                                >
-                                    {#snippet trigger()}
-                                        <i
-                                            class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
-                                        ></i>
-                                    {/snippet}
-                                    {#snippet content()}
-                                        <Card>
-                                            <p>{cashuTooltipText}</p>
-                                        </Card>
-                                    {/snippet}
-                                </Popover>
-                            {/if}
+                                {#if cashuTooltipText}
+                                    <Popover
+                                        open={cashuPopoverState}
+                                        onOpenChange={(e) => (cashuPopoverState = e.open)}
+                                        positioning={{ placement: 'top' }}
+                                        triggerBase="btn preset-tonal"
+                                        contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
+                                        arrow
+                                        arrowBackground="!bg-surface-200 dark:!bg-surface-800"
+                                    >
+                                        {#snippet trigger()}
+                                            <i
+                                                class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                            ></i>
+                                        {/snippet}
+                                        {#snippet content()}
+                                            <Card>
+                                                <p>{cashuTooltipText}</p>
+                                            </Card>
+                                        {/snippet}
+                                    </Popover>
+                                {/if}
+                            </div>
                         </div>
-                    </div>
-                    <!-- Payment Summary -->
-                    <div
-                        class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
-                    >
-                        <p class="grow-1 text-center">
-                            Freelancer gets: {insertThousandSeparator(
-                                paymentShares?.freelancerShare ?? 0
-                            )} sats
-                        </p>
-                        <p class="grow-1 text-center">
-                            SatShoot gets: {insertThousandSeparator(
-                                paymentShares?.satshootShare ?? 0
-                            ) +
-                                ' + ' +
-                                insertThousandSeparator(paymentManager.payment.pledgedAmount ?? 0) +
-                                ' = ' +
-                                insertThousandSeparator(paymentShares?.totalSatshootAmount ?? 0) +
-                                ' sats'}
-                        </p>
+                        <!-- Payment Summary -->
+                        <div
+                            class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
+                        >
+                            <p class="grow-1 text-center">
+                                Freelancer gets: {insertThousandSeparator(
+                                    paymentShares?.freelancerShare ?? 0
+                                )} sats
+                            </p>
+                            <p class="grow-1 text-center">
+                                SatShoot gets: {insertThousandSeparator(
+                                    paymentShares?.satshootShare ?? 0
+                                ) +
+                                    ' + ' +
+                                    insertThousandSeparator(
+                                        paymentManager.payment.pledgedAmount ?? 0
+                                    ) +
+                                    ' = ' +
+                                    insertThousandSeparator(
+                                        paymentShares?.totalSatshootAmount ?? 0
+                                    ) +
+                                    ' sats'}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    {/if}
+        {/if}
+    </div>
 </div>
 
 <LoginModal bind:isOpen={showLoginModal} />
