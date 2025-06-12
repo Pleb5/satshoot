@@ -229,7 +229,7 @@
                                     grow
                                     classes="w-[200px] max-w-[200px]"
                                     onClick={payWithLN}
-                                    disabled={paying}
+                                    disabled={paying || !paymentManager.payment.amount}
                                 >
                                     {#if paying}
                                         <span>
@@ -249,7 +249,7 @@
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={payWithEcash}
-                                        disabled={paying || !canPayWithCashu}
+                                        disabled={paying || !canPayWithCashu || !paymentManager.payment.amount}
                                     >
                                         {#if paying}
                                             <ProgressRing />
@@ -320,7 +320,7 @@
                                     grow
                                     classes="w-[200px] max-w-[200px]"
                                     onClick={payWithLN}
-                                    disabled={paying}
+                                    disabled={paying || !paymentManager.payment.pledgedAmount}
                                 >
                                     {#if paying}
                                         <span>
@@ -340,7 +340,7 @@
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={payWithEcash}
-                                        disabled={paying || !canPayWithCashu}
+                                        disabled={paying || !canPayWithCashu || !paymentManager.payment.pledgedAmount}
                                     >
                                         {#if paying}
                                             <ProgressRing />
