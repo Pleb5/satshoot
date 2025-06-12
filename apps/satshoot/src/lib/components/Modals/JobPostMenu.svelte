@@ -186,7 +186,7 @@
 
 <CloseEntityModal bind:isOpen={showCloseJobModal} targetEntity={job} secondaryEntity={winnerBid} />
 
-<ReviewClientModal bind:isOpen={showReviewClientModal} jobAddress={job.jobAddress} />
+<ReviewClientModal bind:isOpen={showReviewClientModal} eventAddress={job.jobAddress} />
 
 {#if winnerBid}
     <PaymentModal bind:isOpen={showPaymentModal} targetEntity={job} secondaryEntity={winnerBid} />
