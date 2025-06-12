@@ -208,6 +208,28 @@
                     <div
                         class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
                     >
+                        {#if cashuTooltipText}
+                            <Popover
+                                open={cashuPopoverState}
+                                onOpenChange={(e) => (cashuPopoverState = e.open)}
+                                positioning={{ placement: 'top' }}
+                                triggerBase="btn preset-tonal"
+                                contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
+                                arrow
+                                arrowBackground="!bg-surface-200 dark:!bg-surface-800"
+                            >
+                                {#snippet trigger()}
+                                    <i
+                                        class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                    ></i>
+                                {/snippet}
+                                {#snippet content()}
+                                    <Card>
+                                        <p>{cashuTooltipText}</p>
+                                    </Card>
+                                {/snippet}
+                            </Popover>
+                        {/if}
                         <div class="w-full flex flex-col gap-[5px]">
                             <div class="w-full flex flex-col gap-[5px]">
                                 <label class="font-[500]" for="service-payment"
@@ -249,7 +271,9 @@
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={payWithEcash}
-                                        disabled={paying || !canPayWithCashu || !paymentManager.payment.amount}
+                                        disabled={paying ||
+                                            !canPayWithCashu ||
+                                            !paymentManager.payment.amount}
                                     >
                                         {#if paying}
                                             <ProgressRing />
@@ -275,29 +299,6 @@
                                         {/if}
                                         <span> Setup Nostr Wallet </span>
                                     </Button>
-                                {/if}
-
-                                {#if cashuTooltipText}
-                                    <Popover
-                                        open={cashuPopoverState}
-                                        onOpenChange={(e) => (cashuPopoverState = e.open)}
-                                        positioning={{ placement: 'top' }}
-                                        triggerBase="btn preset-tonal"
-                                        contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
-                                        arrow
-                                        arrowBackground="!bg-surface-200 dark:!bg-surface-800"
-                                    >
-                                        {#snippet trigger()}
-                                            <i
-                                                class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
-                                            ></i>
-                                        {/snippet}
-                                        {#snippet content()}
-                                            <Card>
-                                                <p>{cashuTooltipText}</p>
-                                            </Card>
-                                        {/snippet}
-                                    </Popover>
                                 {/if}
                             </div>
                             <div class="w-full flex flex-col gap-[5px]">
@@ -340,7 +341,9 @@
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={payWithEcash}
-                                        disabled={paying || !canPayWithCashu || !paymentManager.payment.pledgedAmount}
+                                        disabled={paying ||
+                                            !canPayWithCashu ||
+                                            !paymentManager.payment.pledgedAmount}
                                     >
                                         {#if paying}
                                             <ProgressRing />
@@ -366,29 +369,6 @@
                                         {/if}
                                         <span> Setup Nostr Wallet </span>
                                     </Button>
-                                {/if}
-
-                                {#if cashuTooltipText}
-                                    <Popover
-                                        open={cashuPopoverState}
-                                        onOpenChange={(e) => (cashuPopoverState = e.open)}
-                                        positioning={{ placement: 'top' }}
-                                        triggerBase="btn preset-tonal"
-                                        contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
-                                        arrow
-                                        arrowBackground="!bg-surface-200 dark:!bg-surface-800"
-                                    >
-                                        {#snippet trigger()}
-                                            <i
-                                                class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
-                                            ></i>
-                                        {/snippet}
-                                        {#snippet content()}
-                                            <Card>
-                                                <p>{cashuTooltipText}</p>
-                                            </Card>
-                                        {/snippet}
-                                    </Popover>
                                 {/if}
                             </div>
                         </div>
