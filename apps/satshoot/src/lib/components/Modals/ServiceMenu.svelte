@@ -125,8 +125,6 @@
 
         goto(url.toString());
     }
-
-    // todo: review freelancer
 </script>
 
 <ModalWrapper bind:isOpen title="Service Menu">

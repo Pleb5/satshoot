@@ -153,60 +153,62 @@
     }
 </script>
 
-<Card classes="flex-wrap gap-[15px]">
-    <UserProfile pubkey={order.pubkey} />
-    <ReputationCard user={order.pubkey} type={ReviewType.Client} />
-    <div
-        class="w-full border-[1px] border-black-100 dark:border-white-100 rounded-[4px] bg-black-50"
-    >
-        <ExpandableText text={order.description} maxCharacters={200} renderAsMarkdown />
-    </div>
-    {#if showServiceDetail && service}
+<div>
+    <Card classes="flex-wrap gap-[15px]">
+        <UserProfile pubkey={order.pubkey} />
+        <ReputationCard user={order.pubkey} type={ReviewType.Client} />
         <div
-            class="w-full flex flex-row flex-wrap items-center gap-[10px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
+            class="w-full border-[1px] border-black-100 dark:border-white-100 rounded-[4px] bg-black-50"
         >
-            <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
-                <p>Service Title:</p>
-                <a
-                    href={'/' + service.encode() + '/'}
-                    class="text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                    <h4 class="font-semibold text-[18px] overflow-hidden line-clamp-2">
-                        {service.title}
-                    </h4>
-                </a>
-            </div>
-
-            <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
-                <p>Service Posted By:</p>
-                <a
-                    href={'/' + nip19.npubEncode(service.pubkey)}
-                    class="flex flex-row items-center grow-1 gap-[10px]"
-                >
-                    {#if servicePosterImage}
-                        <ProfileImage src={servicePosterImage} size="xs" />
-                    {/if}
-                    <span>{servicePosterName}</span>
-                </a>
-            </div>
+            <ExpandableText text={order.description} maxCharacters={200} renderAsMarkdown />
         </div>
+        {#if showServiceDetail && service}
+            <div
+                class="w-full flex flex-row flex-wrap items-center gap-[10px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
+            >
+                <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
+                    <p>Service Title:</p>
+                    <a
+                        href={'/' + service.encode() + '/'}
+                        class="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                        <h4 class="font-semibold text-[18px] overflow-hidden line-clamp-2">
+                            {service.title}
+                        </h4>
+                    </a>
+                </div>
+
+                <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
+                    <p>Service Posted By:</p>
+                    <a
+                        href={'/' + nip19.npubEncode(service.pubkey)}
+                        class="flex flex-row items-center grow-1 gap-[10px]"
+                    >
+                        {#if servicePosterImage}
+                            <ProfileImage src={servicePosterImage} size="xs" />
+                        {/if}
+                        <span>{servicePosterName}</span>
+                    </a>
+                </div>
+            </div>
+        {/if}
+        <div
+            class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
+        >
+            {#if myService && order.status === OrderStatus.Open && service && !service.orders.includes(order.orderAddress)}
+                <Button onClick={handleAcceptOrder}>Accept</Button>
+            {/if}
+            {#if canReviewClient}
+                <Button onClick={handleReviewClient}>Review</Button>
+            {:else if review}
+                <Button onClick={handlePreviewReview}>Preview Review</Button>
+            {/if}
+        </div>
+    </Card>
+
+    <ReviewClientModal bind:isOpen={showReviewClientModal} eventAddress={order.orderAddress} />
+
+    {#if review}
+        <ReviewModal bind:isOpen={showReviewModal} {review} />
     {/if}
-    <div
-        class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
-    >
-        {#if myService && order.status === OrderStatus.Open && service && !service.orders.includes(order.orderAddress)}
-            <Button onClick={handleAcceptOrder}>Accept</Button>
-        {/if}
-        {#if canReviewClient}
-            <Button onClick={handleReviewClient}>Review</Button>
-        {:else if review}
-            <Button onClick={handlePreviewReview}>Preview Review</Button>
-        {/if}
-    </div>
-</Card>
-
-<ReviewClientModal bind:isOpen={showReviewClientModal} eventAddress={order.orderAddress} />
-
-{#if review}
-    <ReviewModal bind:isOpen={showReviewModal} {review} />
-{/if}
+</div>
