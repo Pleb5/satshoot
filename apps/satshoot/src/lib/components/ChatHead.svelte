@@ -150,10 +150,10 @@
         </div>
         <div class="flex flex-col items-start">
             <div class="h5 sm:h4 text-center font-bold text-lg sm:text-2xl">
-                {userProfile?.name ?? userProfile?.displayName ?? user.npub.substring(0, 15)}
+                {event.title.length > 20 ? event.title.substring(0, 20) + '...' : event.title}
             </div>
             <div class="sm:text-lg">
-                {event.title.length > 20 ? event.title.substring(0, 20) + '...' : event.title}
+                {userProfile?.name ?? userProfile?.displayName ?? user.npub.substring(0, 15)}
             </div>
             <!-- Latest message -->
             {#if latestMessage}
