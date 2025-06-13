@@ -12,7 +12,6 @@ import {
 import ndk from '$lib/stores/session';
 import { get } from 'svelte/store';
 import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
-import { wot as wotStore } from '$lib/stores/wot';
 import currentUserStore from '$lib/stores/user';
 import SELECTED_QUERY_PARAM from '.';
 
@@ -71,12 +70,7 @@ export class MessageService {
         // so, before adding recevived message check whether it's already added.
         if (this.messages.some((m) => m.id === message.id)) return;
 
-        const wot = get(wotStore);
-        const peer = this.peerFromMessage(message);
-
-        if (peer && wot.has(peer)) {
-            this.messages = [...this.messages, message];
-        }
+        this.messages = [...this.messages, message];
     }
 
     peerFromMessage(message: NDKEvent): string | undefined {

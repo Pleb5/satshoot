@@ -90,18 +90,7 @@
             initialized = true;
 
             serviceService.initialize();
-
-            // when user directly opens the chat with direct url
-            // he will be presented with login modal
-            // on login current user will be initialized and
-            // this block will be executed but it possible that
-            // wot is not loaded yet, so we may not see any messages
-            // therefor, it's better to initialize the messages service with
-            // some timeout which will allow the wot to be loaded
-
-            setTimeout(() => {
-                messageService.initialize($currentUser.pubkey);
-            }, 10_000);
+            messageService.initialize($currentUser.pubkey);
         }
     });
 
