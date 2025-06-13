@@ -14,7 +14,7 @@ import { get } from 'svelte/store';
 import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
 import { wot as wotStore } from '$lib/stores/wot';
 import currentUserStore from '$lib/stores/user';
-import currentUser from '$lib/stores/user';
+import SELECTED_QUERY_PARAM from '.';
 
 /**
  * Service for handling message-related functionality
@@ -24,11 +24,13 @@ export class MessageService {
     messages = $state<NDKEvent[]>([]);
 
     // Private properties
+    private encodedAddress?: string;
     private eventAddress: string;
     private subscription: NDKSubscription | null = null;
 
-    constructor(eventAddress: string) {
+    constructor(eventAddress: string, encodedAddress?: string) {
         this.eventAddress = eventAddress;
+        if (encodedAddress) this.encodedAddress = encodedAddress;
     }
 
     /**
@@ -161,9 +163,18 @@ export class MessageService {
         // }
 
         // moving back to encrypted dm for now, it will be replaced with private DM later
+
+        const currentUser = get(currentUserStore);
+
+        if (this.encodedAddress && currentUser) {
+            const url = new URL('/messages/' + this.encodedAddress, window.location.origin);
+            url.searchParams.append(SELECTED_QUERY_PARAM, currentUser.pubkey);
+
+            content += `\nReply to this message in SatShoot: ${url.toString()}`;
+        }
+
         const dm = new NDKEvent(ndkInstance);
         dm.kind = NDKKind.EncryptedDirectMessage;
-        dm.content = content;
         dm.tags.push(['a', this.eventAddress]);
         dm.tags.push(['p', recipient.pubkey]);
         dm.content = await (ndkInstance.signer as NDKSigner).encrypt(recipient, content);

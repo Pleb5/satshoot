@@ -72,7 +72,12 @@
                     ? message.pubkey
                     : message.tagValue('p');
             const peerUser = $ndk.getUser({ pubkey: peerPubkey });
-            decryptedDM = await ($ndk.signer as NDKSigner).decrypt(peerUser, message.content);
+            const decrypted = await ($ndk.signer as NDKSigner).decrypt(peerUser, message.content);
+
+            decryptedDM = decrypted
+                .split('\n')
+                .filter((line) => !line.startsWith('Reply to this message in SatShoot'))
+                .join('\n');
         } catch (e) {
             console.trace(e);
         }
