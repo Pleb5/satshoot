@@ -29,7 +29,7 @@
     // Component state
     let initialized = $state(false);
     let showLoginModal = $state(false);
-    let allowPayments = $derived(!!$currentUser && $loggedIn);
+    let isUserLoggedIn = $derived(!!$currentUser && $loggedIn);
     let targetEntity = $state<JobEvent>();
     let secondaryEntity = $state<BidEvent | ServiceEvent>();
     let cashuPopoverState = $state(false);
@@ -132,7 +132,7 @@
 
 <div class="w-full flex flex-col justify-center items-center py-[25px]">
     <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
-        {#if !allowPayments}
+        {#if !isUserLoggedIn}
             <Button onClick={handleLogin}>Log in To Pay</Button>
         {:else if targetEntity && secondaryEntity && paymentManager}
             <div class="w-full flex flex-col">
