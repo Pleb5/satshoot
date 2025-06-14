@@ -320,7 +320,7 @@
                                             <div class="w-full flex flex-col">
                                                 <div class="w-full flex flex-col gap-[15px]">
                                                     <!-- Bid post start-->
-                                                    {#each pendingBids as bid}
+                                                    {#each pendingBids as bid (bid.id)}
                                                         <BidCard {bid} />
                                                     {/each}
                                                 </div>
@@ -337,7 +337,7 @@
                                             <div class="w-full flex flex-col">
                                                 <div class="w-full flex flex-col gap-[15px]">
                                                     <!-- Bid post start-->
-                                                    {#each lostBids as bid}
+                                                    {#each lostBids as bid (bid.id)}
                                                         <BidCard {bid} />
                                                     {/each}
                                                 </div>
