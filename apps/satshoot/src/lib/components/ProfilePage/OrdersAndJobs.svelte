@@ -49,7 +49,7 @@
                     class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
                 >
                     {#each orders as order (order.id)}
-                        <OrderCard {order} />
+                        <OrderCard {order} showServiceDetail />
                     {/each}
                 </div>
                 <!-- Pagination -->

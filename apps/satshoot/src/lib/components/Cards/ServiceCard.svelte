@@ -148,7 +148,11 @@
         <UserProfile pubkey={service.pubkey} />
     </div>
     <div class="grow-1">
-        <ReputationCard user={service.pubkey} type={ReviewType.Freelancer} />
+        <ReputationCard
+            user={service.pubkey}
+            type={ReviewType.Freelancer}
+            serviceAddress={service.serviceAddress}
+        />
     </div>
 </Card>
 

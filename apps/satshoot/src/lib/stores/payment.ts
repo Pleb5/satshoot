@@ -12,7 +12,6 @@ import {
 import { wot } from './wot';
 import { SatShootPubkey } from '$lib/utils/misc';
 import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
-import type { ServiceEvent } from '$lib/events/ServiceEvent';
 import type { OrderEvent } from '$lib/events/OrderEvent';
 
 export interface PaymentStore {
@@ -21,7 +20,7 @@ export interface PaymentStore {
 }
 
 export const createPaymentFilters = (
-    event: BidEvent | ServiceEvent,
+    event: BidEvent | OrderEvent,
     type: 'freelancer' | 'satshoot'
 ): NDKFilter[] => {
     if (type === 'freelancer') {
@@ -29,23 +28,18 @@ export const createPaymentFilters = (
             { kinds: [NDKKind.Zap], '#e': [event.id] },
             {
                 kinds: [NDKKind.Nutzap],
-                '#a': [event instanceof BidEvent ? event.bidAddress : event.serviceAddress],
+                '#a': [event.tagAddress()],
             },
         ];
     } else {
         return [
             {
-                kinds: [NDKKind.Zap],
+                kinds: [NDKKind.Zap, NDKKind.Nutzap],
                 '#p': [SatShootPubkey],
                 '#a': [
-                    event instanceof BidEvent ? event.referencedJobAddress : event.serviceAddress,
-                ],
-            },
-            {
-                kinds: [NDKKind.Nutzap],
-                '#p': [SatShootPubkey],
-                '#a': [
-                    event instanceof BidEvent ? event.referencedJobAddress : event.serviceAddress,
+                    event instanceof BidEvent
+                        ? event.referencedJobAddress
+                        : event.referencedServiceAddress,
                 ],
             },
         ];
@@ -67,15 +61,17 @@ export const createPaymentStore = (filters: NDKFilter[]): PaymentStore => {
     const totalPaid = derived(paymentStore, ($paymentStore) => {
         let total = 0;
         $paymentStore.forEach((zap: NDKEvent) => {
-            if (zap.kind === NDKKind.Zap) {
-                const zapInvoice = zapInvoiceFromEvent(zap);
-                if (zapInvoice && $wot.has(zapInvoice.zappee)) {
-                    total += Math.round(zapInvoice.amount / 1000);
-                }
-            } else if (zap.kind === NDKKind.Nutzap) {
-                const nutzap = NDKNutzap.from(zap);
-                if (nutzap && $wot.has(nutzap.pubkey)) {
-                    total += Math.round(nutzap.amount);
+            if (zap.signatureVerified) {
+                if (zap.kind === NDKKind.Zap) {
+                    const zapInvoice = zapInvoiceFromEvent(zap);
+                    if (zapInvoice && $wot.has(zapInvoice.zappee)) {
+                        total += Math.round(zapInvoice.amount / 1000);
+                    }
+                } else if (zap.kind === NDKKind.Nutzap) {
+                    const nutzap = NDKNutzap.from(zap);
+                    if (nutzap && $wot.has(nutzap.pubkey)) {
+                        total += Math.round(nutzap.amount);
+                    }
                 }
             }
         });

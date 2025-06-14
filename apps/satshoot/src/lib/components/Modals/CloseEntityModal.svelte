@@ -10,7 +10,7 @@
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
-    import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
+    import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import { BidEvent } from '$lib/events/BidEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { ReviewEvent } from '$lib/events/ReviewEvent';
@@ -42,6 +42,16 @@
             return targetEntity.referencedServiceAddress;
 
         return '';
+    });
+
+    const jobOrService = $derived.by(() => {
+        if (targetEntity instanceof JobEvent) return targetEntity;
+        else if (secondaryEntity instanceof ServiceEvent) return secondaryEntity;
+    });
+
+    const bidOrOrder = $derived.by(() => {
+        if (targetEntity instanceof OrderEvent) return targetEntity;
+        else if (secondaryEntity instanceof BidEvent) return secondaryEntity;
     });
 
     $effect(() => {
@@ -195,6 +205,10 @@
     </div>
 </ModalWrapper>
 
-{#if secondaryEntity}
-    <PaymentModal bind:isOpen={isPaymentModalOpen} {targetEntity} {secondaryEntity} />
+{#if jobOrService && bidOrOrder}
+    <PaymentModal
+        bind:isOpen={isPaymentModalOpen}
+        targetEntity={jobOrService}
+        secondaryEntity={bidOrOrder}
+    />
 {/if}

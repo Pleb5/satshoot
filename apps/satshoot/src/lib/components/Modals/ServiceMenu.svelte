@@ -15,6 +15,7 @@
     import { goto } from '$app/navigation';
     import { toaster } from '$lib/stores/toaster';
     import ConfirmationDialog from '../UI/ConfirmationDialog.svelte';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     interface Props {
         isOpen: boolean;
@@ -118,8 +119,12 @@
         }
     }
 
-    // todo: allow to message freelancer
-    // todo: review freelancer
+    function goToChat() {
+        const url = new URL('/messages/' + service.encode(), window.location.origin);
+        url.searchParams.append(SELECTED_QUERY_PARAM, service.pubkey);
+
+        goto(url.toString());
+    }
 </script>
 
 <ModalWrapper bind:isOpen title="Service Menu">
@@ -182,6 +187,13 @@
                     <p class="">Close Order</p>
                 </Button>
             {/if}
+
+            {#if $currentUser && $currentUser.pubkey !== service.pubkey}
+                <Button onClick={goToChat} variant="outlined" classes="justify-start" fullWidth>
+                    <i class="bx bxs-conversation text-[20px]"></i>
+                    <p class="">Message</p>
+                </Button>
+            {/if}
         </div>
     </div>
 </ModalWrapper>
@@ -191,8 +203,8 @@
 {#if openedOrder}
     <PaymentModal
         bind:isOpen={showPaymentModal}
-        targetEntity={openedOrder}
-        secondaryEntity={service}
+        targetEntity={service}
+        secondaryEntity={openedOrder}
     />
 {/if}
 

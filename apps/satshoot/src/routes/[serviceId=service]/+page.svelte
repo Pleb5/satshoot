@@ -232,6 +232,7 @@
         orderEvent.referencedServiceAddress = service!.serviceAddress;
         orderEvent.pricing = service.pricing;
         orderEvent.amount = service.amount;
+        orderEvent.setPledgeSplit(service.pledgeSplit, service.pubkey);
         orderEvent.generateTags(); // this generates d-tag
 
         try {

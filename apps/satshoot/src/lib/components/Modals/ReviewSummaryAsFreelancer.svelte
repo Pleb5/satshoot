@@ -1,19 +1,39 @@
 <script lang="ts">
     import { aggregateFreelancerRatings, freelancerReviews } from '$lib/stores/reviews';
-    import type { Hexpubkey } from '@nostr-dev-kit/ndk';
+    import {
+        NDKKind,
+        NDKSubscriptionCacheUsage,
+        type Hexpubkey,
+        type NDKFilter,
+    } from '@nostr-dev-kit/ndk';
     import ReviewCard from '../Cards/ReviewCard.svelte';
     import currentUser from '$lib/stores/user';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import ReputationService from '$lib/services/reputation';
+    import { sessionInitialized } from '$lib/stores/session';
+    import { abbreviateNumber } from '$lib/utils/misc';
 
     interface Props {
         isOpen: boolean;
         userHex: Hexpubkey;
+        serviceAddress?: string;
     }
 
-    let { isOpen = $bindable(), userHex }: Props = $props();
+    let { isOpen = $bindable(), userHex, serviceAddress }: Props = $props();
 
     let onlyShowMyReviews = $state(false);
+    let onlyShowReviewsOnCurrentService = $state(false);
+
+    // Initialize reputation service
+    const reputationService = new ReputationService(userHex);
+
+    // Initialize when session is ready
+    $effect(() => {
+        if (!reputationService.isInitialized && $sessionInitialized) {
+            reputationService.initialize();
+        }
+    });
 
     const aggregatedFreelancerRatings = $derived(aggregateFreelancerRatings(userHex));
     const { numberOfPositiveOutcome, numberOfNegativeOutcome } = $derived({
@@ -36,6 +56,9 @@
     );
     const myReviews = $derived(
         reviews.filter((review) => $currentUser && review.pubkey === $currentUser.pubkey)
+    );
+    const reviewsOnCurrentService = $derived(
+        reviews.filter((review) => review.reviewedEventAddress === serviceAddress)
     );
 
     const jobFulfilledStatusClasses =
@@ -113,20 +136,56 @@
                         </div>
                     </div>
                 </div>
+                <div
+                    class="w-full flex flex-col bg-black-50 gap-[10px] rounded-[6px] px-[10px] py-[15px] border-[1px] border-black-100 dark:border-white-100"
+                >
+                    <p
+                        class="w-full pb-[5px] mb-[5px] border-b-[1px] border-black-100 dark:border-white-100 text-center font-[600]"
+                    >
+                        Payments
+                    </p>
+                    <div class="w-full flex flex-row flex-wrap gap-[10px]">
+                        <div class={qualitiesBadgeClasses}>
+                            <i class="bx bxs-bolt text-yellow-200"></i>
+                            <p class="grow-1">Earnings</p>
+                            <p class="bg-black-100 py-[5px] px-[10px]">
+                                {abbreviateNumber(reputationService.earnings) + ' sats'}
+                            </p>
+                        </div>
+                        <div class={qualitiesBadgeClasses}>
+                            <i class="bx bxs-bolt text-yellow-200"></i>
+                            <p class="grow-1">Pledges</p>
+                            <p class="bg-black-100 py-[5px] px-[10px]">
+                                {abbreviateNumber(reputationService.pledges) + ' sats'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
             <Checkbox
                 id="my-reviews-checkbox"
                 label="Only show my reviews"
                 bind:checked={onlyShowMyReviews}
             />
+            {#if serviceAddress}
+                <Checkbox
+                    id="service-reviews-checkbox"
+                    label="Only show reviews on current service"
+                    bind:checked={onlyShowReviewsOnCurrentService}
+                />
+            {/if}
             <div class="w-full flex flex-col gap-[15px]">
                 {#if onlyShowMyReviews}
                     {#each myReviews as review}
-                        <ReviewCard {review} bind:isOpen={isOpen} />
+                        <ReviewCard {review} bind:isOpen />
+                    {/each}
+                {:else if onlyShowReviewsOnCurrentService}
+                    {#each reviewsOnCurrentService as review}
+                        <ReviewCard {review} bind:isOpen />
                     {/each}
                 {:else}
                     {#each reviews as review}
-                        <ReviewCard {review} bind:isOpen={isOpen} />
+                        <ReviewCard {review} bind:isOpen />
                     {/each}
                 {/if}
             </div>

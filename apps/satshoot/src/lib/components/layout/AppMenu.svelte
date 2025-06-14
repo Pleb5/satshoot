@@ -3,10 +3,6 @@
     import FeedbackModal from '../Modals/FeedbackModal.svelte';
     import LogoutModal from '../Modals/LogoutModal.svelte';
     import currentUser, { loggedIn } from '$lib/stores/user';
-    import JobIcon from '../Icons/JobIcon.svelte';
-    import { scrollToMyJobsAndMyBids } from '$lib/stores/gui';
-    import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
-    import BitcoinIcon from '../Icons/BitcoinIcon.svelte';
     import WalletIcon from '../Icons/WalletIcon.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import TowerBroadcastIcon from '../Icons/TowerBroadcastIcon.svelte';
@@ -53,32 +49,6 @@
             },
         },
         {
-            label: 'My Jobs',
-            icon: {
-                component: JobIcon,
-                props: { sizeClass: '' },
-            },
-            onClick: () => {
-                $scrollToMyJobsAndMyBids = true;
-                $profileTabStore = ProfilePageTabs.Jobs;
-                goto(profileHref);
-                isOpen = false;
-            },
-        },
-        {
-            label: 'My Bids',
-            icon: {
-                component: BitcoinIcon,
-                props: { extraClasses: 'text-lg' },
-            },
-            onClick: () => {
-                $scrollToMyJobsAndMyBids = true;
-                $profileTabStore = ProfilePageTabs.Bids;
-                goto(profileHref);
-                isOpen = false;
-            },
-        },
-        {
             label: 'Wallet',
             icon: {
                 component: WalletIcon,
@@ -119,10 +89,10 @@
         {#each profileMenuItems as { label, icon, onClick }}
             <Button variant="text" classes={profileMenuItemClass} {onClick} fullWidth>
                 <span class="w-6 text-center">
-                    {#if !icon.component}
-                        <i {...icon.props}></i>
+                    {#if icon.component}
+                        <icon.component />
                     {:else}
-                        <icon.component {...icon.props} />
+                        <i {...icon.props}></i>
                     {/if}
                 </span>
                 <span>{label}</span>

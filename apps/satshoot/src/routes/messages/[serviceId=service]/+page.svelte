@@ -16,7 +16,7 @@
     import SELECTED_QUERY_PARAM, {
         MessageService,
         ContactService,
-        JobService,
+        ServiceService,
         UIService,
     } from '$lib/services/messages';
 
@@ -25,14 +25,14 @@
 
     // Parse URL parameters
     const searchQuery = $derived(page.url.searchParams.get('searchQuery'));
-    const jobAddress = idFromNaddr(page.params.jobId);
-    const relaysFromURL = relaysFromNaddr(page.params.jobId).split(',');
-    const titleLink = '/' + page.params.jobId;
+    const serviceAddress = idFromNaddr(page.params.serviceId);
+    const relaysFromURL = relaysFromNaddr(page.params.serviceId).split(',');
+    const titleLink = '/' + page.params.serviceId;
 
     // Initialize services
-    const messageService = $state(new MessageService(jobAddress, page.params.jobId));
+    const messageService = $state(new MessageService(serviceAddress, page.params.serviceId));
     const contactService = $state(new ContactService());
-    const jobService = $state(new JobService(jobAddress, relaysFromURL));
+    const serviceService = $state(new ServiceService(serviceAddress, relaysFromURL));
     const uiService = $state(new UIService());
 
     // DOM element references
@@ -46,9 +46,9 @@
     const contacts = $derived(contactService.contacts);
     const currentContact = $derived(contactService.currentContact);
     const winnerPubkey = $derived(contactService.winnerPubkey);
-    const job = $derived(jobService.job);
-    const myJob = $derived(jobService.isOwner);
-    const bids = $derived(jobService.bids);
+    const service = $derived(serviceService.service);
+    const myService = $derived(serviceService.isOwner);
+    const orders = $derived(serviceService.orders);
     // UI state - direct access to service properties
     const disablePrompt = $derived(uiService.disablePrompt);
     const mounted = $derived(uiService.mounted);
@@ -78,10 +78,10 @@
         return messageService.orderMessages(currentPersonMessages);
     });
 
-    const jobTitle = $derived.by(() => {
-        if (!job || !job.title) return '?';
+    const serviceTitle = $derived.by(() => {
+        if (!service || !service.title) return '?';
 
-        return job.title.length < 21 ? job.title : job.title.substring(0, 20) + '...';
+        return service.title.length < 21 ? service.title : service.title.substring(0, 20) + '...';
     });
 
     // Initialize when session is ready
@@ -89,25 +89,25 @@
         if ($sessionInitialized && $currentUser && !initialized) {
             initialized = true;
 
-            jobService.initialize(contactService);
+            serviceService.initialize();
             messageService.initialize($currentUser.pubkey);
         }
     });
 
     $effect(() => {
-        if (job && $currentUser && !initialContactsAdded) {
+        if (service && $currentUser && !initialContactsAdded) {
             initialContactsAdded = true;
             console.log('Adding initial contacts');
             const pubkeyToSelect = page.url.searchParams.get(SELECTED_QUERY_PARAM) ?? '';
 
-            contactService.addInitialContacts(job.pubkey, $currentUser.pubkey, pubkeyToSelect);
+            contactService.addInitialContacts(service.pubkey, $currentUser.pubkey, pubkeyToSelect);
         }
     });
 
     $effect(() => {
-        if (myJob && bids) {
-            const bidPubkeys = bids.map((bid: any) => bid.pubkey);
-            contactService.addPeopleFromPubkeys(bidPubkeys);
+        if (myService && orders) {
+            const orderPubkeys = orders.map((order: any) => order.pubkey);
+            contactService.addPeopleFromPubkeys(orderPubkeys);
         }
     });
 
@@ -172,7 +172,7 @@
     // Cleanup on destroy
     onDestroy(() => {
         messageService.unsubscribe();
-        jobService.unsubscribe();
+        serviceService.unsubscribe();
     });
 
     // Function to navigate back
@@ -181,7 +181,7 @@
     }
 </script>
 
-{#if $currentUser && job}
+{#if $currentUser && service}
     <div class="w-full flex flex-col gap-0 grow h-full">
         <div class="w-full h-full flex flex-col justify-center items-center pt-[15px]">
             <div
@@ -198,7 +198,7 @@
                                 class="anchor font-[700] sm:text-[24px] text-center flex-grow"
                                 href={titleLink}
                             >
-                                {'Job: ' + jobTitle}
+                                {'Service: ' + serviceTitle}
                             </a>
                         </Card>
                     </div>

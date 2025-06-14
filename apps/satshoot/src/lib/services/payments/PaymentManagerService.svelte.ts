@@ -25,15 +25,12 @@ export class PaymentManagerService {
     private satshootPaymentStore: PaymentStore | null = null;
 
     constructor(
-        private targetEntity: JobEvent | OrderEvent,
-        private secondaryEntity: BidEvent | ServiceEvent
+        private targetEntity: JobEvent | ServiceEvent,
+        private secondaryEntity: BidEvent | OrderEvent
     ) {
         this.paymentService = new PaymentService(targetEntity, secondaryEntity);
-        this.lightningService = new LightningPaymentService(
-            targetEntity as JobEvent,
-            secondaryEntity
-        );
-        this.cashuService = new CashuPaymentService(targetEntity as JobEvent, secondaryEntity);
+        this.lightningService = new LightningPaymentService(targetEntity, secondaryEntity);
+        this.cashuService = new CashuPaymentService(targetEntity, secondaryEntity);
         this.toastService = new ToastService();
 
         this.initializePaymentStores();

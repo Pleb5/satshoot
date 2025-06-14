@@ -14,6 +14,7 @@
     import { goto } from '$app/navigation';
     import { toaster } from '$lib/stores/toaster';
     import ConfirmationDialog from '../UI/ConfirmationDialog.svelte';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
 
     interface Props {
         service: ServiceEvent;
@@ -114,6 +115,13 @@
         }
     }
 
+    function goToChat() {
+        const url = new URL('/messages/' + service.encode(), window.location.origin);
+        url.searchParams.append(SELECTED_QUERY_PARAM, service.pubkey);
+
+        goto(url.toString());
+    }
+
     const btnClasses =
         'bg-black-100 text-black-500 dark:text-white dark:bg-white-100 scale-100 w-auto grow justify-start';
 </script>
@@ -164,6 +172,13 @@
                 <p class="">Close Order</p>
             </Button>
         {/if}
+
+        {#if $currentUser && $currentUser.pubkey !== service.pubkey}
+            <Button onClick={goToChat} variant="outlined" classes="justify-start" fullWidth>
+                <i class="bx bxs-conversation text-[20px]"></i>
+                <p class="">Message</p>
+            </Button>
+        {/if}
     </div>
 </div>
 
@@ -172,8 +187,8 @@
 {#if openedOrder}
     <PaymentModal
         bind:isOpen={showPaymentModal}
-        targetEntity={openedOrder}
-        secondaryEntity={service}
+        targetEntity={service}
+        secondaryEntity={openedOrder}
     />
 {/if}
 

@@ -13,10 +13,10 @@
 
     interface Props {
         isOpen: boolean;
-        jobAddress: string;
+        eventAddress: string;
     }
 
-    let { isOpen = $bindable(), jobAddress }: Props = $props();
+    let { isOpen = $bindable(), eventAddress }: Props = $props();
 
     let thumb = $state(true);
     let communication = $state(false);
@@ -32,14 +32,14 @@
     let posting = $state(false);
 
     async function postClientReview() {
-        if (jobAddress) {
+        if (eventAddress) {
             try {
                 posting = true;
                 await tick();
 
                 // Post review data if applicable
                 const reviewEvent = new ReviewEvent($ndk);
-                reviewEvent.reviewedEventAddress = jobAddress;
+                reviewEvent.reviewedEventAddress = eventAddress;
 
                 const rating: ClientRating = {
                     thumb: false,
@@ -69,18 +69,12 @@
                 });
                 isOpen = false;
             }
-        } else {
-            posting = false;
-            toaster.error({
-                title: 'Error: Could could not find job to close!',
-            });
         }
     }
 </script>
 
 <ModalWrapper bind:isOpen title="Review Client">
     <div class="w-full flex flex-col">
-        <!-- popups Job-Close start -->
         <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
             <ReviewToggleQuestion
                 question="Were you satisfied with the work?"
@@ -127,6 +121,5 @@
                 </Button>
             </div>
         </div>
-        <!-- popups Job-Close end -->
     </div>
 </ModalWrapper>

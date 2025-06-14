@@ -2,6 +2,7 @@
 export * from './MessageService.svelte';
 export * from './ContactService.svelte';
 export * from './JobService.svelte';
+export * from './ServiceService.svelte';
 export * from './UIService.svelte';
 
 const SELECTED_QUERY_PARAM = 'selected';

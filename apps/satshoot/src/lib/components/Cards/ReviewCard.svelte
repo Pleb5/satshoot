@@ -32,6 +32,7 @@
 
     let userProfile: NDKUserProfile | null;
     let reviewedEvent = $state<JobEvent | ServiceEvent | null>(null);
+    let label = $state('');
 
     let elemPage: HTMLElement;
     onMount(async () => {
@@ -59,8 +60,10 @@
             if (event) {
                 if (reviewedEventKind === NDKKind.FreelanceService) {
                     reviewedEvent = ServiceEvent.from(event);
+                    label = 'has reviewed service:';
                 } else if (reviewedEventKind === NDKKind.FreelanceJob) {
                     reviewedEvent = JobEvent.from(event);
+                    label = 'has reviewed job:';
                 } else if (reviewedEventKind === NDKKind.FreelanceBid) {
                     const bid = BidEvent.from(event);
                     const jobEvent = await $ndk.fetchEvent(bid.referencedJobAddress, {
@@ -70,6 +73,7 @@
                     });
                     if (jobEvent) {
                         reviewedEvent = JobEvent.from(jobEvent);
+                        label = 'has reviewed a bid on job:';
                     }
                 } else if (reviewedEventKind === NDKKind.FreelanceOrder) {
                     const order = OrderEvent.from(event);
@@ -80,6 +84,7 @@
                     });
                     if (serviceEvent) {
                         reviewedEvent = ServiceEvent.from(serviceEvent);
+                        label = 'has reviewed an order on service:';
                     }
                 }
             }
@@ -143,9 +148,7 @@
             <div class="flex flex-row gap-[5px] flex-wrap">
                 {#if reviewedEvent}
                     <p>
-                        wrote a review for {reviewedEvent.kind === NDKKind.FreelanceJob
-                            ? 'job'
-                            : 'service'}:
+                        {label}
                     </p>
                     <button
                         onclick={gotoReviewedEvent}

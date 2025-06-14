@@ -9,6 +9,7 @@ import { get } from 'svelte/store';
 import { BidEvent } from '$lib/events/BidEvent';
 import { ServiceEvent } from '$lib/events/ServiceEvent';
 import { JobEvent } from '$lib/events/JobEvent';
+import { OrderEvent } from '$lib/events/OrderEvent';
 
 export enum UserEnum {
     Satshoot = 'satshoot',
@@ -39,11 +40,17 @@ export class NutZapError extends Error {
 export class CashuPaymentService {
     private freelancerCashuInfo: CashuPaymentInfo | null = $state(null);
     private readonly safety = 3; // 3 sats safety for balance calculations
+    private freelancerPubkey: string;
 
     constructor(
-        private targetEntity: JobEvent,
-        private secondaryEntity: BidEvent | ServiceEvent
+        private targetEntity: JobEvent | ServiceEvent,
+        private secondaryEntity: BidEvent | OrderEvent
     ) {
+        this.freelancerPubkey =
+            this.secondaryEntity instanceof BidEvent
+                ? this.secondaryEntity.pubkey
+                : this.targetEntity.pubkey;
+
         this.initializeCashuInfo();
     }
 
@@ -51,11 +58,9 @@ export class CashuPaymentService {
      * Initialize Cashu payment info for the freelancer
      */
     private async initializeCashuInfo() {
-        if (this.secondaryEntity) {
-            this.freelancerCashuInfo = (await getCashuPaymentInfo(
-                this.secondaryEntity.pubkey
-            )) as CashuPaymentInfo | null;
-        }
+        this.freelancerCashuInfo = (await getCashuPaymentInfo(
+            this.freelancerPubkey
+        )) as CashuPaymentInfo | null;
     }
 
     /**
@@ -109,7 +114,7 @@ export class CashuPaymentService {
 
         const freelancerPaymentPromise = this.processCashuPayment(
             UserEnum.Freelancer,
-            this.secondaryEntity.pubkey,
+            this.freelancerPubkey,
             freelancerShareMillisats
         );
 
@@ -180,7 +185,12 @@ export class CashuPaymentService {
             .cashuPay({
                 ...this.freelancerCashuInfo,
                 mints: compatibleMints,
-                target: userEnum === UserEnum.Freelancer ? this.secondaryEntity : this.targetEntity,
+                target:
+                    userEnum === UserEnum.Freelancer
+                        ? this.secondaryEntity
+                        : this.targetEntity instanceof ServiceEvent
+                          ? this.secondaryEntity
+                          : this.targetEntity,
                 recipientPubkey: pubkey,
                 amount: amountMillisats,
                 unit: 'msat',
@@ -249,17 +259,19 @@ export class CashuPaymentService {
         nutzapEvent.tags.push([
             'a',
             userEnum === UserEnum.Freelancer
-                ? this.secondaryEntity instanceof BidEvent
-                    ? this.secondaryEntity.bidAddress
-                    : this.secondaryEntity.serviceAddress
-                : this.targetEntity instanceof JobEvent
-                  ? this.targetEntity.jobAddress
-                  : (this.secondaryEntity as ServiceEvent).serviceAddress,
+                ? this.secondaryEntity.tagAddress()
+                : this.targetEntity instanceof ServiceEvent
+                  ? this.secondaryEntity.tagAddress()
+                  : this.targetEntity.tagAddress(),
         ]);
 
         nutzapEvent.tags.push([
             'e',
-            userEnum === UserEnum.Freelancer ? this.secondaryEntity.id : this.targetEntity.id,
+            userEnum === UserEnum.Freelancer
+                ? this.secondaryEntity.id
+                : this.targetEntity instanceof ServiceEvent
+                  ? this.secondaryEntity.id
+                  : this.targetEntity.id,
         ]);
 
         nutzapEvent.recipientPubkey = pubkey;
@@ -294,17 +306,6 @@ export class CashuPaymentService {
             };
             const message = `Copy the minted NutZap Proofs and save somewhere safe then try to send to recipient manually`;
             throw new NutZapError(message, rawNutzap);
-        }
-    }
-
-    /**
-     * Refresh freelancer Cashu info
-     */
-    async refreshFreelancerCashuInfo(): Promise<void> {
-        if (this.secondaryEntity) {
-            this.freelancerCashuInfo = (await getCashuPaymentInfo(
-                this.secondaryEntity.pubkey
-            )) as CashuPaymentInfo | null;
         }
     }
 }
