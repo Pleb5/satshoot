@@ -10,11 +10,7 @@ import { BidEvent } from '$lib/events/BidEvent';
 import { ServiceEvent } from '$lib/events/ServiceEvent';
 import { JobEvent } from '$lib/events/JobEvent';
 import { OrderEvent } from '$lib/events/OrderEvent';
-
-export enum UserEnum {
-    Satshoot = 'satshoot',
-    Freelancer = 'freelancer',
-}
+import { UserEnum } from './UserEnum';
 
 export type NutZapErrorData = {
     mint: string;
@@ -101,6 +97,23 @@ export class CashuPaymentService {
     }
 
     /**
+     * Processes a Lightning Network payment for one payee.
+     * 
+     * @param userEnum the user type
+     * @param millisats the amount to pay
+     * @returns true is successful, otherwise false
+     */
+    async processSinglePayment(userEnum: UserEnum, millisats: number): Promise<boolean> {
+        switch (userEnum) {
+            case UserEnum.Freelancer:
+                return (await this.processPayment(millisats, 0)).get(UserEnum.Freelancer) ?? false;
+
+            case UserEnum.Satshoot:
+                return (await this.processPayment(0, millisats)).get(UserEnum.Satshoot) ?? false;
+        }
+    }
+
+    /**
      * Process Cashu payment for both freelancer and satshoot
      */
     async processPayment(
@@ -112,17 +125,17 @@ export class CashuPaymentService {
             [UserEnum.Satshoot, false],
         ]);
 
-        const freelancerPaymentPromise = this.processCashuPayment(
+        const freelancerPaymentPromise = freelancerShareMillisats ? this.processCashuPayment(
             UserEnum.Freelancer,
             this.freelancerPubkey,
             freelancerShareMillisats
-        );
+        ) : undefined;
 
-        const satshootPaymentPromise = this.processCashuPayment(
+        const satshootPaymentPromise = satshootSumMillisats ? this.processCashuPayment(
             UserEnum.Satshoot,
             SatShootPubkey,
             satshootSumMillisats
-        );
+        ) : undefined;
 
         const results = await Promise.allSettled([
             freelancerPaymentPromise,
@@ -189,8 +202,8 @@ export class CashuPaymentService {
                     userEnum === UserEnum.Freelancer
                         ? this.secondaryEntity
                         : this.targetEntity instanceof ServiceEvent
-                          ? this.secondaryEntity
-                          : this.targetEntity,
+                            ? this.secondaryEntity
+                            : this.targetEntity,
                 recipientPubkey: pubkey,
                 amount: amountMillisats,
                 unit: 'msat',
@@ -261,8 +274,8 @@ export class CashuPaymentService {
             userEnum === UserEnum.Freelancer
                 ? this.secondaryEntity.tagAddress()
                 : this.targetEntity instanceof ServiceEvent
-                  ? this.secondaryEntity.tagAddress()
-                  : this.targetEntity.tagAddress(),
+                    ? this.secondaryEntity.tagAddress()
+                    : this.targetEntity.tagAddress(),
         ]);
 
         nutzapEvent.tags.push([
@@ -270,8 +283,8 @@ export class CashuPaymentService {
             userEnum === UserEnum.Freelancer
                 ? this.secondaryEntity.id
                 : this.targetEntity instanceof ServiceEvent
-                  ? this.secondaryEntity.id
-                  : this.targetEntity.id,
+                    ? this.secondaryEntity.id
+                    : this.targetEntity.id,
         ]);
 
         nutzapEvent.recipientPubkey = pubkey;

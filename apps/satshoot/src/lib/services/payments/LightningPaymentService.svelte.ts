@@ -17,11 +17,7 @@ import {
     type NDKZapperOptions,
 } from '@nostr-dev-kit/ndk';
 import { get } from 'svelte/store';
-
-export enum UserEnum {
-    Satshoot = 'satshoot',
-    Freelancer = 'freelancer',
-}
+import { UserEnum } from './UserEnum';
 
 export interface InvoiceDetails {
     paymentRequest: string;
@@ -44,6 +40,24 @@ export class LightningPaymentService {
             this.secondaryEntity instanceof BidEvent
                 ? this.secondaryEntity.pubkey
                 : this.targetEntity.pubkey;
+    }
+
+
+    /**
+     * Processes a Lightning Network payment for one payee.
+     * 
+     * @param userEnum the user type
+     * @param millisats the amount to pay
+     * @returns true is successful, otherwise false
+     */
+    async processSinglePayment(userEnum: UserEnum, millisats: number): Promise<boolean> {
+        switch (userEnum) {
+            case UserEnum.Freelancer:
+                return (await this.processPayment(millisats, 0)).get(UserEnum.Freelancer) ?? false;
+
+            case UserEnum.Satshoot:
+                return (await this.processPayment(0, millisats)).get(UserEnum.Satshoot) ?? false;
+        }
     }
 
     /**
