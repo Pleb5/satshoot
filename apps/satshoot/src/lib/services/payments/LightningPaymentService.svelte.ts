@@ -44,23 +44,6 @@ export class LightningPaymentService {
 
 
     /**
-     * Processes a Lightning Network payment for one payee.
-     * 
-     * @param userEnum the user type
-     * @param millisats the amount to pay
-     * @returns true is successful, otherwise false
-     */
-    async processSinglePayment(userEnum: UserEnum, millisats: number): Promise<boolean> {
-        switch (userEnum) {
-            case UserEnum.Freelancer:
-                return (await this.processPayment(millisats, 0)).get(UserEnum.Freelancer) ?? false;
-
-            case UserEnum.Satshoot:
-                return (await this.processPayment(0, millisats)).get(UserEnum.Satshoot) ?? false;
-        }
-    }
-
-    /**
      * Process Lightning Network payment
      */
     async processPayment(

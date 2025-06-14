@@ -1,4 +1,4 @@
-import { NDKEvent, NDKNutzap, type CashuPaymentInfo, type Hexpubkey } from '@nostr-dev-kit/ndk';
+import { NDKNutzap, type CashuPaymentInfo } from '@nostr-dev-kit/ndk';
 import { type Proof } from '@cashu/cashu-ts';
 import ndk from '$lib/stores/session';
 import { wallet } from '$lib/wallet/wallet';
@@ -94,23 +94,6 @@ export class CashuPaymentService {
             return 'Could not find Freelancer Cashu Info';
         }
         return '';
-    }
-
-    /**
-     * Processes a Lightning Network payment for one payee.
-     * 
-     * @param userEnum the user type
-     * @param millisats the amount to pay
-     * @returns true is successful, otherwise false
-     */
-    async processSinglePayment(userEnum: UserEnum, millisats: number): Promise<boolean> {
-        switch (userEnum) {
-            case UserEnum.Freelancer:
-                return (await this.processPayment(millisats, 0)).get(UserEnum.Freelancer) ?? false;
-
-            case UserEnum.Satshoot:
-                return (await this.processPayment(0, millisats)).get(UserEnum.Satshoot) ?? false;
-        }
     }
 
     /**
@@ -318,6 +301,7 @@ export class CashuPaymentService {
                 proofs: nutzapEvent.proofs,
             };
             const message = `Copy the minted NutZap Proofs and save somewhere safe then try to send to recipient manually`;
+            console.log("Mint and Proofs: \n" + rawNutzap);
             throw new NutZapError(message, rawNutzap);
         }
     }

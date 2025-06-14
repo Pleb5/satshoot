@@ -10,7 +10,7 @@
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { BidEvent } from '$lib/events/BidEvent';
     import { checkRelayConnections } from '$lib/utils/helpers';
-    import { PaymentManagerService } from '$lib/services/payments';
+    import { PaymentManagerService, UserEnum } from '$lib/services/payments';
     import { goto } from '$app/navigation';
     import { onDestroy } from 'svelte';
     import UserProfile from '$lib/components/UI/Display/UserProfile.svelte';
@@ -106,14 +106,30 @@
     const cashuTooltipText = $derived(paymentManager?.cashuTooltipText ?? '');
 
     // Payment functions
-    async function payWithLN() {
+    async function payWithLN(payeeType: UserEnum) {
         if (!paymentManager) return;
-        await paymentManager.payWithLightning();
+        await paymentManager.payWithLightning(payeeType);
     }
 
-    async function payWithEcash() {
+    async function payFreelancerWithLN() {
+        await payWithLN(UserEnum.Freelancer);
+    }
+
+    async function paySatshootWithLN() {
+        await payWithLN(UserEnum.Satshoot);
+    }
+
+    async function payWithEcash(payeeType: UserEnum) {
         if (!paymentManager) return;
-        await paymentManager.payWithCashu();
+        await paymentManager.payWithCashu(payeeType);
+    }
+
+    async function payFreelancerWithCashu() {
+        await payWithEcash(UserEnum.Freelancer);
+    }
+
+    async function paySatshootWithCashu() {
+        await payWithEcash(UserEnum.Satshoot);
     }
 
     function setupEcash() {
@@ -250,7 +266,7 @@
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    onClick={payWithLN}
+                                    onClick={payFreelancerWithLN}
                                     disabled={paying || !paymentManager.payment.amount}
                                 >
                                     {#if paying}
@@ -270,7 +286,7 @@
                                     <Button
                                         grow
                                         classes="w-[200px] max-w-[200px]"
-                                        onClick={payWithEcash}
+                                        onClick={payFreelancerWithCashu}
                                         disabled={paying ||
                                             !canPayWithCashu ||
                                             !paymentManager.payment.amount}
@@ -320,7 +336,7 @@
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    onClick={payWithLN}
+                                    onClick={paySatshootWithLN}
                                     disabled={paying || !paymentManager.payment.pledgedAmount}
                                 >
                                     {#if paying}
@@ -340,7 +356,7 @@
                                     <Button
                                         grow
                                         classes="w-[200px] max-w-[200px]"
-                                        onClick={payWithEcash}
+                                        onClick={paySatshootWithCashu}
                                         disabled={paying ||
                                             !canPayWithCashu ||
                                             !paymentManager.payment.pledgedAmount}

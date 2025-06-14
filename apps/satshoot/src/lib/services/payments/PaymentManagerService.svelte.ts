@@ -1,12 +1,10 @@
 import { PaymentService } from './PaymentService.svelte';
 import { LightningPaymentService } from './LightningPaymentService.svelte';
 import { CashuPaymentService } from './CashuPaymentService.svelte';
-import { ToastService, ToastType, UserEnum } from './ToastService.svelte';
+import { ToastService, UserEnum } from './ToastService.svelte';
 import { createPaymentFilters, createPaymentStore, type PaymentStore } from '$lib/stores/payment';
 import currentUser from '$lib/stores/user';
-import { wallet } from '$lib/wallet/wallet';
 import { get } from 'svelte/store';
-import { onDestroy } from 'svelte';
 import type { JobEvent } from '$lib/events/JobEvent';
 import type { BidEvent } from '$lib/events/BidEvent';
 import type { ServiceEvent } from '$lib/events/ServiceEvent';
@@ -90,12 +88,21 @@ export class PaymentManagerService {
     /**
      * Process Lightning Network payment
      */
-    async payWithLightning(): Promise<void> {
+    async payWithLightning(payeeType: UserEnum | void): Promise<void> {
         try {
             const paymentData = await this.paymentService.initializePayment();
             if (!paymentData) return;
 
-            const { freelancerShareMillisats, satshootSumMillisats } = paymentData;
+            let { freelancerShareMillisats, satshootSumMillisats } = paymentData;
+
+            switch (payeeType) {
+                case UserEnum.Freelancer:
+                    satshootSumMillisats = 0;
+                    break;
+                case UserEnum.Satshoot:
+                    freelancerShareMillisats = 0;
+                    break;
+            }
 
             const paid = await this.lightningService.processPayment(
                 freelancerShareMillisats,
@@ -114,12 +121,21 @@ export class PaymentManagerService {
     /**
      * Process Cashu payment
      */
-    async payWithCashu(): Promise<void> {
+    async payWithCashu(payeeType: UserEnum | void): Promise<void> {
         try {
             const paymentData = await this.paymentService.initializePayment();
             if (!paymentData) return;
 
-            const { freelancerShareMillisats, satshootSumMillisats } = paymentData;
+            let { freelancerShareMillisats, satshootSumMillisats } = paymentData;
+
+            switch (payeeType) {
+                case UserEnum.Freelancer:
+                    satshootSumMillisats = 0;
+                    break;
+                case UserEnum.Satshoot:
+                    freelancerShareMillisats = 0;
+                    break;
+            }
 
             const paid = await this.cashuService.processPayment(
                 freelancerShareMillisats,
@@ -151,21 +167,25 @@ export class PaymentManagerService {
         freelancerShareMillisats: number,
         satshootSumMillisats: number
     ) {
-        this.toastService.handlePaymentStatus(
-            paid,
-            UserEnum.Freelancer,
-            freelancerShareMillisats,
-            'Freelancer Paid!',
-            'Freelancer Payment might have failed!'
-        );
+        if (freelancerShareMillisats) {
+            this.toastService.handlePaymentStatus(
+                paid,
+                UserEnum.Freelancer,
+                freelancerShareMillisats,
+                'Freelancer Paid!',
+                'Freelancer Payment might have failed!'
+            );
+        }
 
-        this.toastService.handlePaymentStatus(
-            paid,
-            UserEnum.Satshoot,
-            satshootSumMillisats,
-            'SatShoot Paid!',
-            'SatShoot Payment might have failed!'
-        );
+        if (satshootSumMillisats) {
+            this.toastService.handlePaymentStatus(
+                paid,
+                UserEnum.Satshoot,
+                satshootSumMillisats,
+                'SatShoot Paid!',
+                'SatShoot Payment might have failed!'
+            );
+        }
     }
 
     /**
