@@ -162,7 +162,7 @@
                 </div>
                 <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
                     <div
-                        class="w-full flex flex-col gap-[10px] rounded-[4px] border-[1px] border-black-100 dark:border-white-100 p-[10px]"
+                        class="w-full flex flex-col rounded-[8px] p-[15px] shadow-subtle bg-white dark:bg-brightGray gap-[15px]"
                     >
                         <UserProfile pubkey={secondaryEntity.pubkey} />
                         <div
@@ -211,7 +211,7 @@
                         </div>
                     </div>
                     <div
-                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
+                        class="w-full flex flex-col rounded-[8px] p-[15px] shadow-subtle bg-white dark:bg-brightGray gap-[15px]"
                     >
                         <p class="">Compensation for:</p>
 
@@ -222,7 +222,7 @@
                         </a>
                     </div>
                     <div
-                        class="w-full max-h-[50vh] overflow-auto flex flex-col gap-[5px] border-[1px] border-black-100 dark:border-white-100 rounded-[4px] px-[10px] py-[10px]"
+                        class="w-full flex flex-col rounded-[8px] p-[15px] shadow-subtle bg-white dark:bg-brightGray gap-[15px]"
                     >
                         {#if cashuTooltipText}
                             <Popover
@@ -317,6 +317,28 @@
                                     </Button>
                                 {/if}
                             </div>
+                            {#if cashuTooltipText}
+                                <Popover
+                                    open={cashuPopoverState}
+                                    onOpenChange={(e) => (cashuPopoverState = e.open)}
+                                    positioning={{ placement: 'top' }}
+                                    triggerBase="btn preset-tonal"
+                                    contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
+                                    arrow
+                                    arrowBackground="!bg-surface-200 dark:!bg-surface-800"
+                                >
+                                    {#snippet trigger()}
+                                        <i
+                                            class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                        ></i>
+                                    {/snippet}
+                                    {#snippet content()}
+                                        <Card>
+                                            <p>{cashuTooltipText}</p>
+                                        </Card>
+                                    {/snippet}
+                                </Popover>
+                            {/if}
                             <div class="w-full flex flex-col gap-[5px]">
                                 <label class="font-[500]" for="plattform-contribution"
                                     >Contribute to SatShoot</label
