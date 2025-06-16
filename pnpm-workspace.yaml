@@ -1,8 +1,9 @@
 packages:
   - 'apps/*'
-  - 'packages/ndk/ndk'
+  - 'packages/ndk/ndk-core'
   - 'packages/ndk/ndk-cache-dexie'
   - 'packages/ndk/ndk-svelte'
   - 'packages/ndk/ndk-wallet'
   - 'packages/ndk/ndk-svelte-components'
+  - 'packages/ndk/ndk-test-utils'
   - 'packages/ndk/packages/*'
