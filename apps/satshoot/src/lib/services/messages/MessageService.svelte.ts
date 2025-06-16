@@ -6,8 +6,6 @@ import {
     type NDKFilter,
     type NDKSigner,
     type NDKUser,
-    giftWrap,
-    giftUnwrap,
 } from '@nostr-dev-kit/ndk';
 import ndk from '$lib/stores/session';
 import { get } from 'svelte/store';
@@ -15,14 +13,9 @@ import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
 import currentUserStore from '$lib/stores/user';
 import SELECTED_QUERY_PARAM from '.';
 
-/**
- * Service for handling message-related functionality
- */
 export class MessageService {
-    // Public state for direct access
     messages = $state<NDKEvent[]>([]);
 
-    // Private properties
     private encodedAddress?: string;
     private eventAddress: string;
     private subscription: NDKSubscription | null = null;
@@ -32,11 +25,10 @@ export class MessageService {
         if (encodedAddress) this.encodedAddress = encodedAddress;
     }
 
-    /**
-     * Initialize subscription to messages for this event
-     */
+
     initialize(currentUserPubkey: string) {
         const ndkInstance = get(ndk);
+
 
         const messagesFilter: NDKFilter[] = [
             {
@@ -61,14 +53,21 @@ export class MessageService {
         };
 
         this.subscription = ndkInstance.subscribe(messagesFilter, messageSubOptions);
-        // Use arrow function to preserve 'this' context
-        this.subscription.on('event', (event) => this.handleMessageEvent(event));
+        this.subscription.on('event', async (event) => {
+            // This is a temporary NDK fix: Somehow the cache
+            // returns one additional invalid event that is
+            // the copy of one of the messages subscribed to
+            //  but its ID is EMPTY string and the signature 
+            //  has the real ID of the message event.
+            //  Also, the corrupted event is NOT verified yet.
+            if (event.id === "") return;
+
+            this.handleMessageEvent(event)
+        });
     }
 
     handleMessageEvent(message: NDKEvent) {
-        // after sending message we add it to message event to messages array.
-        // so, before adding recevived message check whether it's already added.
-        if (this.messages.some((m) => m.id === message.id)) return;
+        if (this.messages.some((m) => m.id === message.id)){console.log('message already there, returning...', message); return}
 
         this.messages = [...this.messages, message];
     }
@@ -81,9 +80,6 @@ export class MessageService {
         return peerPubkey;
     }
 
-    /**
-     * Get messages from/to a specific person
-     */
     getPersonMessages(person: NDKUser, messages: NDKEvent[]) {
         return messages.filter((message) => {
             // Check if message is from or to the person
@@ -92,9 +88,6 @@ export class MessageService {
         });
     }
 
-    /**
-     * Check if a person is a peer in a message
-     */
     private isPeerInMessage(person: NDKUser, message: NDKEvent): boolean {
         // Message is either from the person or to the person
         return (
@@ -114,49 +107,9 @@ export class MessageService {
         });
     }
 
-    /**
-     * Send a message to a person
-     */
     async sendMessage(recipient: NDKUser, content: string) {
         const ndkInstance = get(ndk);
         if (!ndkInstance) return;
-
-        // const message: NDKEvent = new NDKEvent(ndkInstance);
-        // message.kind = NDKKind.PrivateDirectMessage;
-        // message.tags.push(['p', recipient.pubkey]);
-        // message.tags.push(['a', this.eventAddress]);
-        // message.content = content;
-
-        // try {
-        //     // NOT deniable
-        //     await message.sign();
-        //     console.log('Rumor', message);
-        //     const encryptedDMforReceiver = await giftWrap(message, recipient, ndkInstance.signer, {
-        //         stripSig: false,
-        //     });
-        //     const encryptedDMforSender = await giftWrap(
-        //         message,
-        //         get(currentUser),
-        //         ndkInstance.signer,
-        //         { stripSig: false }
-        //     );
-        //     // const decrypted = await giftUnwrap(encrypted, sendUser, receiveSigner);
-
-        //     // TODO: how does the sender open his own messages currently? it is supposed to be encrypted
-        //     // to the pubkey of the receiver... ?
-        //     // The modify subs to fetch giftwraps of current user and clients/freelancers?
-
-        //     // immediately add the dm to messages array
-        //     this.messages = [...this.messages, encryptedDMforReceiver];
-        //     // publish the dm asynchronously
-        //     console.log('message to publish', encryptedDMforReceiver);
-        //     encryptedDMforReceiver.publish();
-        // } catch (error) {
-        //     console.error('Failed to send message:', error);
-        //     throw error;
-        // }
-
-        // moving back to encrypted dm for now, it will be replaced with private DM later
 
         const currentUser = get(currentUserStore);
 
@@ -174,12 +127,9 @@ export class MessageService {
         dm.content = await (ndkInstance.signer as NDKSigner).encrypt(recipient, content);
 
         try {
-            // sign the dm
             await dm.sign();
 
-            // immediately add the dm to messages array
             this.messages = [...this.messages, dm];
-            // publish the dm asynchronously
             dm.publish();
         } catch (error) {
             console.error('Failed to send message:', error);
@@ -187,9 +137,6 @@ export class MessageService {
         }
     }
 
-    /**
-     * Check if a message is the first of the day (for date separators)
-     */
     isFirstMessageOfDay(messages: NDKEvent[], index: number): boolean {
         if (index === 0) return true;
 
@@ -206,9 +153,6 @@ export class MessageService {
         return currentDate.toDateString() !== previousDate.toDateString();
     }
 
-    /**
-     * Unsubscribe from messages
-     */
     unsubscribe() {
         if (this.subscription) {
             this.subscription.stop();
