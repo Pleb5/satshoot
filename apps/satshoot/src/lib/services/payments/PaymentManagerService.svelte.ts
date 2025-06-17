@@ -86,7 +86,9 @@ export class PaymentManagerService {
     }
 
     /**
-     * Process Lightning Network payment
+     * Process Lightning Network payment.
+     * 
+     * @payeeType if specified, the payment goes only to the given payee type. Otherwise all parties get paid.
      */
     async payWithLightning(payeeType: UserEnum | void): Promise<void> {
         try {
@@ -119,7 +121,9 @@ export class PaymentManagerService {
     }
 
     /**
-     * Process Cashu payment
+     * Process Cashu payment.
+     * 
+     * @payeeType if specified, the payment goes only to the given payee type. Otherwise all parties get paid.
      */
     async payWithCashu(payeeType: UserEnum | void): Promise<void> {
         try {
