@@ -21,6 +21,7 @@
     import { Popover } from '@skeletonlabs/skeleton-svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import type { OrderEvent } from '$lib/events/OrderEvent';
 
     // Parse URL parameters
     const primaryEntityAddress = idFromNaddr(page.params.entityId);
@@ -30,8 +31,8 @@
     let initialized = $state(false);
     let showLoginModal = $state(false);
     let isUserLoggedIn = $derived(!!$currentUser && $loggedIn);
-    let targetEntity = $state<JobEvent>();
-    let secondaryEntity = $state<BidEvent | ServiceEvent>();
+    let targetEntity = $state<JobEvent | ServiceEvent>();
+    let secondaryEntity = $state<BidEvent | OrderEvent>();
     let cashuPopoverState = $state(false);
     let paymentManager = $state<PaymentManagerService | undefined>(undefined);
 
@@ -218,7 +219,7 @@
                         <a href={'/' + bech32ID + '/'} class="anchor font-[600]">
                             {targetEntity instanceof JobEvent
                                 ? targetEntity.title
-                                : (secondaryEntity as ServiceEvent).title}
+                                : (targetEntity as ServiceEvent).title}
                         </a>
                     </div>
                     <div
