@@ -11,6 +11,7 @@ import currentUser from './user';
 
 import { getActiveServiceWorker, orderEventsChronologically } from '$lib/utils/helpers';
 import { goto } from '$app/navigation';
+import { OrderEvent } from '$lib/events/OrderEvent';
 
 export const browserNotificationsEnabled: Writable<boolean> = persisted(
     'browserNotificationsEnabled',
@@ -62,6 +63,21 @@ export const bidNotifications = derived([notifications], ([$notifications]) => {
     orderEventsChronologically(bids);
 
     return bids;
+});
+
+export const orderNotifications = derived([notifications], ([$notifications]) => {
+    const filteredEvents = $notifications.filter(
+        (notification: NDKEvent) => notification.kind === NDKKind.FreelanceOrder
+    );
+
+    const orders: OrderEvent[] = [];
+    filteredEvents.forEach((o: NDKEvent) => {
+        orders.push(OrderEvent.from(o));
+    });
+
+    orderEventsChronologically(orders);
+
+    return orders;
 });
 
 export const messageNotifications = derived(

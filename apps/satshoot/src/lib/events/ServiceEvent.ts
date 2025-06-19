@@ -117,10 +117,6 @@ export class ServiceEvent extends NDKEvent {
         this._pledgeSplit = pledgeSplit;
     }
 
-    get acceptedOrders(): string[] {
-        return this.tags.filter((tag: NDKTag) => tag[0] === 'a').map((tag) => tag[1]);
-    }
-
     get status(): ServiceStatus {
         return this._status;
     }

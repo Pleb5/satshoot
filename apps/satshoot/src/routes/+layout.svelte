@@ -7,7 +7,12 @@
     import '@fortawesome/fontawesome-free/css/regular.css';
     import '@fortawesome/fontawesome-free/css/solid.css';
 
-    import ndk, { bunkerNDK, bunkerRelayConnected, sessionInitialized, sessionPK } from '$lib/stores/session';
+    import ndk, {
+        bunkerNDK,
+        bunkerRelayConnected,
+        sessionInitialized,
+        sessionPK,
+    } from '$lib/stores/session';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
 
     import { Dexie } from 'dexie';
@@ -82,7 +87,7 @@
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
     import type { ServiceEvent } from '$lib/events/ServiceEvent';
-    import type { OrderEvent } from '$lib/events/OrderEvent';
+    import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -240,28 +245,24 @@
 
         setupBunkerTimeout();
 
-        console.log('bunker relays:', bunkerRelayURLs)
+        console.log('bunker relays:', bunkerRelayURLs);
         console.log('bunkerndk connected relays', $bunkerNDK.pool);
         // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
         bunkerRelayURLs.forEach((url) => {
-            const relay = $bunkerNDK.addExplicitRelay(url)
+            const relay = $bunkerNDK.addExplicitRelay(url);
             $bunkerNDK.pool.on('relay:ready', async (r: NDKRelay) => {
                 if ($bunkerRelayConnected) {
-                    console.info(
-                        'A bunker relay already connected, init bunker NOT necessary'
-                    );
+                    console.info('A bunker relay already connected, init bunker NOT necessary');
                     return;
                 }
                 $bunkerRelayConnected = true;
-                console.info(`Bunker relay ${r.url} READY, connect Bunker...`)
+                console.info(`Bunker relay ${r.url} READY, connect Bunker...`);
                 try {
                     const localSigner = new NDKPrivateKeySigner(localBunkerKey);
-                    const remoteSigner = new NDKNip46Signer(
-                        $bunkerNDK, bunkerUrl, localSigner
-                    );
+                    const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerUrl, localSigner);
 
                     const returnedUser = await remoteSigner.blockUntilReady();
-                    console.info('Bunker connected! Logging in...')
+                    console.info('Bunker connected! Logging in...');
                     if (returnedUser.npub) {
                         $ndk.signer = remoteSigner;
                         await initializeUser($ndk);
@@ -270,7 +271,7 @@
                 } catch (e) {
                     showBunkerConnectionError(e);
                 }
-            })
+            });
         });
         $bunkerNDK.connect();
     }
@@ -491,28 +492,50 @@
         }
     });
 
+    // when my order is accepted
     $effect(() => {
         if ($wotFilteredServices && $myOrders) {
             $wotFilteredServices.forEach((s: ServiceEvent) => {
                 $myOrders.forEach((o: OrderEvent) => {
-                    if (o.referencedServiceAddress === s.serviceAddress) {
-                        // If users order is accepted send that else just send relevant service
-                        if (s.acceptedOrders.includes(o.orderAddress)) {
-                            sendNotification(o);
-                        } else {
-                            sendNotification(s);
-                        }
+                    if (
+                        o.referencedServiceAddress === s.serviceAddress &&
+                        o.status === OrderStatus.Open &&
+                        s.orders.includes(o.orderAddress)
+                    ) {
+                        sendNotification(o);
                     }
                 });
             });
         }
     });
 
+    // when order is placed on my service
     $effect(() => {
         if ($wotFilteredOrders && $myServices) {
             $wotFilteredOrders.forEach((o: OrderEvent) => {
                 $myServices.forEach((s: ServiceEvent) => {
-                    if (o.referencedServiceAddress === s.serviceAddress) {
+                    if (
+                        o.referencedServiceAddress === s.serviceAddress &&
+                        o.status === OrderStatus.Open &&
+                        !s.orders.includes(o.orderAddress)
+                    ) {
+                        sendNotification(o);
+                    }
+                });
+            });
+        }
+    });
+
+    // when order is closed associated with my service
+    $effect(() => {
+        if ($wotFilteredOrders && $myServices) {
+            $wotFilteredOrders.forEach((o: OrderEvent) => {
+                $myServices.forEach((s: ServiceEvent) => {
+                    if (
+                        o.referencedServiceAddress === s.serviceAddress &&
+                        o.status !== OrderStatus.Open &&
+                        s.orders.includes(o.orderAddress)
+                    ) {
                         sendNotification(o);
                     }
                 });
@@ -590,9 +613,7 @@
 <Toaster classes="z-1100" {toaster}></Toaster>
 
 <!-- layout structure -->
-<div
-    class="w-full h-full flex flex-col"
->
+<div class="w-full h-full flex flex-col">
     <header
         class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
         aria-label="Main header"
@@ -610,11 +631,8 @@
         <!-- Main Content  -->
         <main class="sm:ml-[96px] flex-1" aria-label="Main content">
             {@render children?.()}
-            {#if !(page.url.pathname.includes('messages/naddr'))}
-                <div
-                    style={`height: ${footerHeight}px;`}
-                >
-                </div>
+            {#if !page.url.pathname.includes('messages/naddr')}
+                <div style={`height: ${footerHeight}px;`}></div>
             {/if}
         </main>
     </div>
