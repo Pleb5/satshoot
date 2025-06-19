@@ -5,7 +5,6 @@
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import PaymentModal from './PaymentModal.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
@@ -14,16 +13,16 @@
     import { BidEvent } from '$lib/events/BidEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { ReviewEvent } from '$lib/events/ReviewEvent';
+    import { goto } from '$app/navigation';
 
     interface Props {
         isOpen: boolean;
-        targetEntity: JobEvent | OrderEvent;
-        secondaryEntity?: BidEvent | ServiceEvent | null;
+        targetEntity: JobEvent | ServiceEvent;
+        secondaryEntity?: BidEvent | OrderEvent | null;
     }
 
     let { isOpen = $bindable(), targetEntity, secondaryEntity = null }: Props = $props();
 
-    let isPaymentModalOpen = $state(false);
     let hasExpertise = $state(false);
     let hasCommunicationClarity = $state(false);
     let isIssueResolved = $state(true);
@@ -36,22 +35,12 @@
         // we need to allow the user to post a review on service only when
         // freelancer had accepted the order
         if (
-            secondaryEntity instanceof ServiceEvent &&
-            secondaryEntity.orders.includes(targetEntity.orderAddress)
+            targetEntity instanceof ServiceEvent &&
+            targetEntity.orders.includes((secondaryEntity as OrderEvent)?.orderAddress)
         )
-            return targetEntity.referencedServiceAddress;
+            return targetEntity.serviceAddress;
 
         return '';
-    });
-
-    const jobOrService = $derived.by(() => {
-        if (targetEntity instanceof JobEvent) return targetEntity;
-        else if (secondaryEntity instanceof ServiceEvent) return secondaryEntity;
-    });
-
-    const bidOrOrder = $derived.by(() => {
-        if (targetEntity instanceof OrderEvent) return targetEntity;
-        else if (secondaryEntity instanceof BidEvent) return secondaryEntity;
     });
 
     $effect(() => {
@@ -61,19 +50,20 @@
         }
     });
 
-    function isJob(entity: JobEvent | OrderEvent): entity is JobEvent {
+    function isJob(entity: JobEvent | ServiceEvent): entity is JobEvent {
         return targetEntity instanceof JobEvent;
     }
 
     function updateTargetEntityStatus() {
         if (!targetEntity) return;
-        targetEntity.status = isIssueResolved
-            ? isJob(targetEntity)
-                ? JobStatus.Resolved
-                : OrderStatus.Fulfilled
-            : isJob(targetEntity)
-              ? JobStatus.Failed
-              : OrderStatus.Failed;
+
+        if (isIssueResolved) {
+            if (isJob(targetEntity)) targetEntity.status = JobStatus.Resolved;
+            else (secondaryEntity as OrderEvent).status = OrderStatus.Fulfilled;
+        } else {
+            if (isJob(targetEntity)) targetEntity.status = JobStatus.Failed;
+            else (secondaryEntity as OrderEvent).status = OrderStatus.Failed;
+        }
     }
 
     async function publishReplacementEvent() {
@@ -105,20 +95,11 @@
         return relaysReview;
     }
 
-    function handlePostClosePayment() {
-        if (!secondaryEntity) return;
-
-        if (secondaryEntity instanceof BidEvent) {
-            isPaymentModalOpen = true;
-            return;
-        }
-
-        if (
-            targetEntity instanceof OrderEvent &&
-            secondaryEntity.orders.includes(targetEntity.orderAddress)
-        ) {
-            isPaymentModalOpen = true;
-            return;
+    function goToPay() {
+        if (secondaryEntity) {
+            isOpen = false;
+            const url = new URL('/payments/' + secondaryEntity.encode(), window.location.origin);
+            goto(url.toString());
         }
     }
 
@@ -148,7 +129,7 @@
             await publishReplacementEvent();
             await publishReviewIfNeeded();
             isOpen = false;
-            handlePostClosePayment();
+            goToPay();
         } catch (err) {
             handleCloseEntityError(err);
         }
@@ -218,11 +199,3 @@
         <!-- popups Entity-Close end -->
     </div>
 </ModalWrapper>
-
-{#if jobOrService && bidOrOrder}
-    <PaymentModal
-        bind:isOpen={isPaymentModalOpen}
-        targetEntity={jobOrService}
-        secondaryEntity={bidOrOrder}
-    />
-{/if}

@@ -6,7 +6,6 @@
     import { BidEvent } from '$lib/events/BidEvent';
     import ReviewClientModal from './ReviewClientModal.svelte';
     import { clientReviews } from '$lib/stores/reviews';
-    import PaymentModal from './PaymentModal.svelte';
     import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';
     import Button from '../UI/Buttons/Button.svelte';
@@ -26,7 +25,6 @@
     let showShareModal = $state(false);
     let showCloseJobModal = $state(false);
     let showReviewClientModal = $state(false);
-    let showPaymentModal = $state(false);
     let showReviewModal = $state(false);
 
     const bech32ID = $derived(job.encode());
@@ -92,11 +90,12 @@
         isOpen = false;
     }
 
-    function handlePay() {
-        if (!winnerBid) return;
-
-        isOpen = false;
-        showPaymentModal = true;
+    function goToPay() {
+        if (winnerBid) {
+            isOpen = false;
+            const url = new URL('/payments/' + winnerBid.encode(), window.location.origin);
+            goto(url.toString());
+        }
     }
 
     function handleEdit() {
@@ -143,7 +142,7 @@
             {/if}
 
             {#if myJob && job.status !== JobStatus.New && winnerBid}
-                <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
+                <Button variant="outlined" classes="justify-start" fullWidth onClick={goToPay}>
                     <i class="bx bxs-bolt text-[20px]"></i>
                     <p class="">Pay</p>
                 </Button>
@@ -187,9 +186,5 @@
 <CloseEntityModal bind:isOpen={showCloseJobModal} targetEntity={job} secondaryEntity={winnerBid} />
 
 <ReviewClientModal bind:isOpen={showReviewClientModal} eventAddress={job.jobAddress} />
-
-{#if winnerBid}
-    <PaymentModal bind:isOpen={showPaymentModal} targetEntity={job} secondaryEntity={winnerBid} />
-{/if}
 
 <ReviewModal bind:isOpen={showReviewModal} review={review!} />

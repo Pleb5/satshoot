@@ -9,7 +9,6 @@
     import Button from '../UI/Buttons/Button.svelte';
     import { type NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
-    import PaymentModal from '../Modals/PaymentModal.svelte';
     import { serviceToEdit } from '$lib/stores/service-to-edit';
     import { goto } from '$app/navigation';
     import { toaster } from '$lib/stores/toaster';
@@ -40,7 +39,6 @@
     // Reactive states
     let serviceStatus = $state(service.status);
     let showShareModal = $state(false);
-    let showPaymentModal = $state(false);
     let showCloseModal = $state(false);
     let showDeactivateConfirmationDialog = $state(false);
 
@@ -68,8 +66,11 @@
         showShareModal = true;
     }
 
-    function handlePay() {
-        showPaymentModal = true;
+    function goToPay() {
+        if (openedOrder) {
+            const url = new URL('/payments/' + openedOrder.encode(), window.location.origin);
+            goto(url.toString());
+        }
     }
 
     function handleCloseOrder() {
@@ -160,7 +161,7 @@
         {/if}
 
         {#if openedOrder && service.orders.includes(openedOrder.orderAddress)}
-            <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
+            <Button variant="outlined" classes="justify-start" fullWidth onClick={goToPay}>
                 <i class="bx bxs-bolt text-[20px]"></i>
                 <p class="">Pay</p>
             </Button>
@@ -185,18 +186,10 @@
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
 
 {#if openedOrder}
-    <PaymentModal
-        bind:isOpen={showPaymentModal}
-        targetEntity={service}
-        secondaryEntity={openedOrder}
-    />
-{/if}
-
-{#if openedOrder}
     <CloseEntityModal
         bind:isOpen={showCloseModal}
-        targetEntity={openedOrder}
-        secondaryEntity={service}
+        targetEntity={service}
+        secondaryEntity={openedOrder}
     />
 {/if}
 

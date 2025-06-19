@@ -17,7 +17,6 @@
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import { nip19 } from 'nostr-tools';
     import { onDestroy } from 'svelte';
-    import PaymentModal from '../Modals/PaymentModal.svelte';
     import TakeBidModal from '../Modals/TakeBidModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
@@ -49,7 +48,6 @@
     }: Props = $props();
 
     let showTakeBidModal = $state(false);
-    let showPaymentModal = $state(false);
     let showReviewModal = $state(false);
 
     const freelancerPaymentStore = $derived.by(() => {
@@ -187,7 +185,7 @@
     }
 
     function goToPay() {
-        const url = new URL('/payments/' + job.encode(), window.location.origin);
+        const url = new URL('/payments/' + bid.encode(), window.location.origin);
         goto(url.toString());
     }
 
@@ -311,10 +309,6 @@
         {/if}
     </div>
 </Card>
-
-{#if job}
-    <PaymentModal bind:isOpen={showPaymentModal} targetEntity={job} secondaryEntity={bid} />
-{/if}
 
 {#if job}
     <TakeBidModal bind:isOpen={showTakeBidModal} {job} {bid} />

@@ -5,7 +5,7 @@
     import { redirectAfterLogin } from '$lib/stores/gui';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
-    import { NDKRelay, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKKind, NDKRelay, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { JobEvent } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { BidEvent } from '$lib/events/BidEvent';
@@ -21,11 +21,7 @@
     import { Popover } from '@skeletonlabs/skeleton-svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import { toaster } from '$lib/stores/toaster';
-    import type { OrderEvent } from '$lib/events/OrderEvent';
-
-    // Parse URL parameters
-    const primaryEntityAddress = idFromNaddr(page.params.entityId);
-    const relaysFromPrimary = relaysFromNaddr(page.params.entityId).split(',');
+    import { OrderEvent } from '$lib/events/OrderEvent';
 
     // Component state
     let initialized = $state(false);
@@ -42,6 +38,7 @@
 
             const naddr = page.params.entityId;
             const relaysFromURL = relaysFromNaddr(naddr).split(',');
+            const decodedAddr = idFromNaddr(naddr);
 
             // Add relays from URL
             relaysFromURL.forEach((relayURL: string) => {
@@ -50,23 +47,47 @@
                 }
             });
 
-            $ndk.fetchEvent(primaryEntityAddress, {
+            $ndk.fetchEvent(decodedAddr, {
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             })
                 .then((event) => {
                     if (event) {
-                        targetEntity = JobEvent.from(event);
-                        return targetEntity.acceptedBidAddress;
+                        switch (event.kind) {
+                            case NDKKind.FreelanceBid:
+                                secondaryEntity = BidEvent.from(event);
+                                return secondaryEntity.referencedJobAddress;
+                            case NDKKind.FreelanceOrder:
+                                secondaryEntity = OrderEvent.from(event);
+                                return secondaryEntity.referencedServiceAddress;
+                            default:
+                                toaster.error({
+                                    title: 'Unexpected entity to be paid. Entities not loaded!',
+                                    duration: 60000, // 1 min
+                                });
+                        }
                     }
                 })
-                .then((bidNaddr) => {
-                    if (bidNaddr) {
-                        $ndk.fetchEvent(bidNaddr, {
+                .then((primaryNaddr) => {
+                    if (primaryNaddr) {
+                        $ndk.fetchEvent(primaryNaddr, {
                             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
                         }).then((event) => {
                             if (event) {
-                                secondaryEntity = BidEvent.from(event);
-                                initialized = true;
+                                switch (event.kind) {
+                                    case NDKKind.FreelanceJob:
+                                        targetEntity = JobEvent.from(event);
+                                        initialized = true;
+                                        break;
+                                    case NDKKind.FreelanceService:
+                                        targetEntity = ServiceEvent.from(event);
+                                        initialized = true;
+                                        break;
+                                    default:
+                                        toaster.error({
+                                            title: 'Unexpected entity as target. Entities not loaded!',
+                                            duration: 60000, // 1 min
+                                        });
+                                }
                             }
                         });
                     }
@@ -88,13 +109,7 @@
         }
     });
 
-    const bech32ID = $derived(
-        targetEntity instanceof JobEvent
-            ? targetEntity.encode()
-            : secondaryEntity
-              ? secondaryEntity.encode()
-              : ''
-    );
+    const bech32ID = $derived(targetEntity?.encode());
 
     // Derived values from payment manager
     const paymentShares = $derived(paymentManager?.payment?.paymentShares);
