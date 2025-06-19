@@ -39,7 +39,7 @@
                 class="w-full py-[5px] px-[10px] rounded-[6px] border-[2px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
             >
                 <p>
-                    Do yor really want to create an order on service
+                    Do you really want to create an order on service
                     <span class="font-bold">"{service.title}"</span>
                     <span>?</span>
                 </p>
