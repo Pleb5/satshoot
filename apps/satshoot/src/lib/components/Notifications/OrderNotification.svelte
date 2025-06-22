@@ -100,7 +100,7 @@
                 return 'Order Placed';
             }
 
-            if (order.status !== OrderStatus.Open && service.orders.includes(order.orderAddress)) {
+            if (order.status !== OrderStatus.Open) {
                 return 'Order Closed';
             }
         }

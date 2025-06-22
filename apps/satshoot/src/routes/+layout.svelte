@@ -533,8 +533,7 @@
                 $myServices.forEach((s: ServiceEvent) => {
                     if (
                         o.referencedServiceAddress === s.serviceAddress &&
-                        o.status !== OrderStatus.Open &&
-                        s.orders.includes(o.orderAddress)
+                        o.status !== OrderStatus.Open
                     ) {
                         sendNotification(o);
                     }
