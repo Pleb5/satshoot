@@ -7,6 +7,7 @@
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
+    import { myOrders } from '$lib/stores/freelance-eventstores';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
     import currentUser, { loggedIn } from '$lib/stores/user';
@@ -39,19 +40,10 @@
         autoStart: false,
     };
 
-    const myOrdersFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceOrder],
-    };
-
     const allOrdersFilter: NDKFilter = {
         kinds: [NDKKind.FreelanceOrder],
     };
 
-    const myOrdersStore = $ndk.storeSubscribe<OrderEvent>(
-        myOrdersFilter,
-        ordersSubOptions,
-        OrderEvent
-    );
     const allOrdersStore = $ndk.storeSubscribe<OrderEvent>(
         allOrdersFilter,
         ordersSubOptions,
@@ -70,6 +62,14 @@
     const myService = $derived(
         !!$currentUser && !!service && $currentUser.pubkey === service.pubkey
     );
+
+    const myOrdersOnCurrentService = $derived.by(() => {
+        if (!service || myService) return [];
+
+        return $myOrders.filter(
+            (order) => order.referencedServiceAddress === service?.serviceAddress
+        );
+    });
 
     const wotFilteredOrders = $derived.by(() => {
         if (!$allOrdersStore) return [];
@@ -127,12 +127,12 @@
         let btnActionText = 'Order';
 
         // check if user has already made an order
-        if ($myOrdersStore.length) {
+        if (myOrdersOnCurrentService.length) {
             btnActionText = 'Order Again';
         }
 
         // check if order is already in progress
-        if ($myOrdersStore.some((order) => order.status === OrderStatus.Open)) {
+        if (myOrdersOnCurrentService.some((order) => order.status === OrderStatus.Open)) {
             return {
                 allowMakeOrder: false,
                 disallowMakeOrderReason: 'An order is already in progress',
@@ -186,13 +186,6 @@
 
         if ($currentUser && arrivedService && !alreadySubscribedToOrders) {
             alreadySubscribedToOrders = true;
-
-            // when current user is not service owner, subscribe for current user's orders on this service
-            if ($currentUser.pubkey !== arrivedService.pubkey) {
-                myOrdersFilter['#a'] = [arrivedService.serviceAddress];
-                myOrdersFilter.authors = [$currentUser.pubkey];
-                myOrdersStore.startSubscription();
-            }
 
             // subscribe for all orders on the service
             allOrdersFilter['#a'] = [arrivedService.serviceAddress];

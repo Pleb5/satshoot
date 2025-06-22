@@ -80,7 +80,10 @@
         if (!targetEntity) return;
         console.log('connected relays before closing entity:', $ndk.pool.connectedRelays());
         await tick();
-        const relays = await targetEntity.publishReplaceable();
+
+        const newEvent = isJob(targetEntity) ? new JobEvent($ndk) : new OrderEvent($ndk);
+        newEvent.tags = targetEntity.tags;
+        const relays = await newEvent.publish();
         console.log('published relays', relays);
         return relays;
     }

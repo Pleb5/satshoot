@@ -1,7 +1,6 @@
 <script lang="ts">
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import { ServiceStatus, type ServiceEvent } from '$lib/events/ServiceEvent';
-    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import CloseEntityModal from './CloseEntityModal.svelte';
@@ -16,6 +15,7 @@
     import { toaster } from '$lib/stores/toaster';
     import ConfirmationDialog from '../UI/ConfirmationDialog.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
+    import { myOrders } from '$lib/stores/freelance-eventstores';
 
     interface Props {
         isOpen: boolean;
@@ -24,44 +24,33 @@
 
     let { isOpen = $bindable(), service }: Props = $props();
 
-    const ordersSubOptions: NDKSubscribeOptions = {
-        closeOnEose: false,
-        autoStart: false,
-    };
-
-    const myOrdersFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceOrder],
-    };
-
-    const myOrdersStore = $ndk.storeSubscribe<OrderEvent>(
-        myOrdersFilter,
-        ordersSubOptions,
-        OrderEvent
-    );
-
     let serviceStatus = $state(service.status);
     let showShareModal = $state(false);
     let showCloseModal = $state(false);
     let showPaymentModal = $state(false);
     let showDeactivateConfirmationDialog = $state(false);
+    let order = $state<OrderEvent | null>(null);
 
     // Derived states
     const myService = $derived($currentUser?.pubkey === service.pubkey);
-    const openedOrder = $derived($myOrdersStore.find((order) => order.status === OrderStatus.Open));
 
     let initialized = $state(false);
     $effect(() => {
         if ($sessionInitialized && !initialized) {
             initialized = true;
             checkRelayConnections();
+        }
+    });
 
-            // if current user is not service owner, then subscribe for
-            // user's orders on current service
-            if ($currentUser && $currentUser.pubkey !== service.pubkey) {
-                myOrdersFilter['#a'] = [service.serviceAddress];
-                myOrdersFilter.authors = [$currentUser.pubkey];
-                myOrdersStore.startSubscription();
-            }
+    $effect(() => {
+        const openOrder = $myOrders.find(
+            (order) =>
+                order.referencedServiceAddress === service.serviceAddress &&
+                order.status === OrderStatus.Open
+        );
+
+        if (openOrder) {
+            order = openOrder;
         }
     });
 
@@ -169,14 +158,7 @@
                 </Button>
             {/if}
 
-            {#if openedOrder && service.orders.includes(openedOrder.orderAddress)}
-                <Button variant="outlined" classes="justify-start" fullWidth onClick={handlePay}>
-                    <i class="bx bxs-bolt text-[20px]"></i>
-                    <p class="">Pay</p>
-                </Button>
-            {/if}
-
-            {#if openedOrder}
+            {#if order?.status === OrderStatus.Open}
                 <Button
                     variant="outlined"
                     classes="justify-start"
@@ -186,6 +168,17 @@
                     <i class="bx bxs-lock text-[20px]"></i>
                     <p class="">Close Order</p>
                 </Button>
+                {#if service?.orders.includes(order.orderAddress)}
+                    <Button
+                        variant="outlined"
+                        classes="justify-start"
+                        fullWidth
+                        onClick={handlePay}
+                    >
+                        <i class="bx bxs-bolt text-[20px]"></i>
+                        <p class="">Pay</p>
+                    </Button>
+                {/if}
             {/if}
 
             {#if $currentUser && $currentUser.pubkey !== service.pubkey}
@@ -200,20 +193,12 @@
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
 
-{#if openedOrder}
-    <PaymentModal
-        bind:isOpen={showPaymentModal}
-        targetEntity={service}
-        secondaryEntity={openedOrder}
-    />
+{#if order}
+    <PaymentModal bind:isOpen={showPaymentModal} targetEntity={service} secondaryEntity={order} />
 {/if}
 
-{#if openedOrder}
-    <CloseEntityModal
-        bind:isOpen={showCloseModal}
-        targetEntity={openedOrder}
-        secondaryEntity={service}
-    />
+{#if order}
+    <CloseEntityModal bind:isOpen={showCloseModal} targetEntity={order} secondaryEntity={service} />
 {/if}
 
 {#if showDeactivateConfirmationDialog}
