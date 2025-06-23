@@ -24,6 +24,7 @@
     import { clientReviews } from '$lib/stores/reviews';
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
+    import PaymentModal from '../Modals/PaymentModal.svelte';
 
     interface Props {
         order: OrderEvent;
@@ -34,6 +35,7 @@
 
     let showReviewClientModal = $state(false);
     let showReviewModal = $state(false);
+    let showPaymentModal = $state(false);
 
     let servicePoster = $state<NDKUser | null>(null);
     let servicePosterProfile = $state<NDKUserProfile | null>(null);
@@ -80,22 +82,20 @@
 
     const myService = $derived(!!service && service.pubkey === $currentUser?.pubkey);
 
+    const myOrder = $derived(order.pubkey === $currentUser?.pubkey);
+
     const review = $derived(
         $clientReviews.find((review) => review.reviewedEventAddress === order.orderAddress)
     );
 
-    const canReviewClient = $derived.by(() => {
-        if (
-            !review &&
+    const canReviewClient = $derived(
+        !review &&
             myService &&
             order.status !== OrderStatus.Open &&
             service?.orders.includes(order.orderAddress)
-        ) {
-            return true;
-        }
+    );
 
-        return false;
-    });
+    const canPay = $derived(myOrder && service?.orders.includes(order.orderAddress));
 
     let initialized = $state(false);
     $effect(() => {
@@ -151,6 +151,10 @@
     function handlePreviewReview() {
         showReviewModal = true;
     }
+
+    function handlePay() {
+        showPaymentModal = true;
+    }
 </script>
 
 <div>
@@ -198,10 +202,14 @@
             {#if myService && order.status === OrderStatus.Open && service && !service.orders.includes(order.orderAddress)}
                 <Button onClick={handleAcceptOrder}>Accept</Button>
             {/if}
+
             {#if canReviewClient}
                 <Button onClick={handleReviewClient}>Review</Button>
             {:else if review}
                 <Button onClick={handlePreviewReview}>Preview Review</Button>
+            {/if}
+            {#if canPay}
+                <Button onClick={handlePay}>Pay</Button>
             {/if}
         </div>
     </Card>
@@ -210,5 +218,13 @@
 
     {#if review}
         <ReviewModal bind:isOpen={showReviewModal} {review} />
+    {/if}
+
+    {#if service}
+        <PaymentModal
+            bind:isOpen={showPaymentModal}
+            targetEntity={service}
+            secondaryEntity={order}
+        />
     {/if}
 </div>
