@@ -105,9 +105,19 @@
     }
 
     function handlePostClosePayment() {
-        if (secondaryEntity) {
-            isOpen = false;
+        if (!secondaryEntity) return;
+
+        if (secondaryEntity instanceof BidEvent) {
             isPaymentModalOpen = true;
+            return;
+        }
+
+        if (
+            targetEntity instanceof OrderEvent &&
+            secondaryEntity.orders.includes(targetEntity.orderAddress)
+        ) {
+            isPaymentModalOpen = true;
+            return;
         }
     }
 
