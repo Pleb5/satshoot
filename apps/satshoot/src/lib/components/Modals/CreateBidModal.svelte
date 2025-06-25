@@ -27,13 +27,20 @@
 
     const jobAddress = job.jobAddress;
 
-    let validPledgePercent = $state(true);
+    let validInputs = $state(true);
     let pricingMethod: Pricing = $state(Pricing.Absolute);
     let amount = $state(0);
     let pledgeSplit = $state(0);
+    let sponsoredNpub = $state('');
+    let sponsoringSplit = $state(0);
+    let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
 
     let pledgedShare = $derived(Math.floor(amount * (pledgeSplit / 100)));
     let freelancerShare = $derived(amount - pledgedShare);
+    let sponsoredShare = $derived(
+        validSponsoredNpub ? Math.floor(pledgedShare * (sponsoringSplit / 100)) : 0
+    );
+    let satshootShare = $derived(pledgedShare - sponsoredShare);
 
     let description = $state('');
     let sendDm = $state(true);
@@ -42,12 +49,11 @@
     let posting = $state(false);
 
     $effect(() => {
-        if (pledgeSplit >= 0 && pledgeSplit <= 100) {
-            validPledgePercent = true;
+        if (validate()) {
+            validInputs = true;
             errorText = '';
         } else {
-            validPledgePercent = false;
-            errorText = 'Set a valid Pledge Split percent!';
+            validInputs = false;
         }
     });
 
@@ -156,16 +162,27 @@
         errorText = '';
         if (amount < 0) {
             valid = false;
-            errorText = 'Amount below 0!';
+            errorText = 'Price below 0!';
         } else if (amount > 100_000_000) {
             valid = false;
-            errorText = 'Amount cannot exceed 100M sats!';
+            errorText = 'Price cannot exceed 100M sats!';
         } else if (pledgeSplit < 0) {
             valid = false;
             errorText = 'Pledge split below 0!';
         } else if (pledgeSplit > 100) {
             valid = false;
             errorText = 'Pledge split above 100% !';
+        } else if (sponsoredNpub) {
+            if (!validSponsoredNpub) {
+                valid = false;
+                errorText = 'Invalid npub!';
+            } else if (sponsoringSplit < 0) {
+                valid = false;
+                errorText = 'Sponsoring split below 0!';
+            } else if (sponsoringSplit > 100) {
+                valid = false;
+                errorText = 'Sponsoring split above 100% !';
+            }
         }
         return valid;
     }
@@ -184,6 +201,20 @@
             class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
         >
             <div class="w-full flex flex-col gap-[10px] p-[10px]">
+                {#if errorText}
+                    <div
+                        class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-[1px] border-red-500"
+                    >
+                        <div class="grow-1">
+                            <p class="font-[500]">
+                                Invalid inputs:
+                                <span class="font-[400]">
+                                    {errorText}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                {/if}
                 <div class="flex flex-col gap-[5px] grow-1">
                     <div class="">
                         <label class="font-[600]" for=""> Pricing method </label>
@@ -238,27 +269,90 @@
                         </span>
                     </div>
                 </div>
-            </div>
-            <div
-                class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-black-200"
-            >
-                <div class="grow-1">
-                    <p class="font-[500]">
-                        You'd get:
-                        <span class="font-[400]">
-                            {insertThousandSeparator(freelancerShare) +
-                                (pricingMethod ? 'sats/min' : 'sats')}
-                        </span>
-                    </p>
+                <div
+                    class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-black-200"
+                >
+                    <div class="grow-1">
+                        <p class="font-[500]">
+                            You'd get:
+                            <span class="font-[400]">
+                                {insertThousandSeparator(freelancerShare) +
+                                    (pricingMethod ? ' sats/min' : ' sats')}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="grow-1">
+                        <p class="font-[500]">
+                            Your pledge:
+                            <span class="font-[400]">
+                                {insertThousandSeparator(pledgedShare) +
+                                    (pricingMethod ? ' sats/min' : ' sats')}
+                            </span>
+                        </p>
+                    </div>
                 </div>
-                <div class="grow-1">
-                    <p class="font-[500]">
-                        Your pledge:
-                        <span class="font-[400]">
-                            {insertThousandSeparator(pledgedShare) +
-                                (pricingMethod ? 'sats/min' : 'sats')}
+            </div>
+        </div>
+        <div
+            class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
+        >
+            <div class="w-full flex flex-col gap-[10px] p-[10px]">
+                <div class="flex flex-col gap-[5px] grow-1">
+                    <div class="">
+                        <label class="font-[600]" for=""> Sponsored npub </label>
+                    </div>
+                    <div class="w-full flex flex-row items-center relative">
+                        <Input
+                            type="text"
+                            placeholder="npub to sponsored"
+                            bind:value={sponsoredNpub}
+                            fullWidth
+                        />
+                    </div>
+                </div>
+                <div class="flex flex-col gap-[5px] grow-1">
+                    <div class="">
+                        <label class="font-[600]" for=""> Sponsoring split </label>
+                    </div>
+                    <div class="w-full flex flex-row items-center relative">
+                        <Input
+                            type="number"
+                            step="1"
+                            min="0"
+                            max="100"
+                            placeholder="Percentage"
+                            bind:value={sponsoringSplit}
+                            disabled={!validSponsoredNpub}
+                            fullWidth
+                        />
+                        <span
+                            class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
+                        >
+                            %
                         </span>
-                    </p>
+                    </div>
+                </div>
+                <div
+                    class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-black-200"
+                >
+                    <div class="grow-1">
+                        <p class="font-[500]">
+                            Satshoot'd get:
+                            <span class="font-[400]">
+                                {insertThousandSeparator(satshootShare) +
+                                    (pricingMethod ? ' sats/min' : ' sats')}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="grow-1">
+                        <p class="font-[500]">
+                            Sponsored npub'd get:
+                            <span class="font-[400]">
+                                {insertThousandSeparator(sponsoredShare) +
+                                    (pricingMethod ? ' sats/min' : ' sats')}
+                            </span>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -280,7 +374,7 @@
             bind:checked={sendDm}
         />
         <div class="w-full flex flex-row justify-center">
-            <Button onClick={postBid} disabled={posting || !validPledgePercent}>
+            <Button onClick={postBid} disabled={posting || !validInputs}>
                 {#if posting}
                     <span>
                         <ProgressRing />
