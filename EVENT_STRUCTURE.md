@@ -43,8 +43,9 @@
 
         // Tag if Freelancer wants to share public payments (zaps) on this Service
         // These can be percentage ratios adding up to 100%. Optional
-        ["zap", "<Freelancer pubkey>", "<relay hint>", "95"]
-        ["zap", "<Supported pubkey (e.g. app dev)>", "<relay hint>", "5"]
+        ["zap", "<Freelancer pubkey>", "<relay hint>", "96"]
+        ["zap", "<Supported pubkey (e.g. app dev)>", "<relay hint>", "2"]
+        ["zap", "<Sponsored pubkey (optional e.g. partner of the freelancer)>", "<relay hint>", "2"]
     ],
     "content": {
         <detailed description of the Service. Mandatory>
@@ -141,10 +142,11 @@
         Freelancer MUST set this tag when bidding on a Job. Mandatory
         ["a", "32767:<hex pubkey of Client>:<Job d-tag of a Job>">],
 
-        // Tag if Freelancer wants to share public payments (zaps) on this Service
+        // Tag if Freelancer wants to share public payments (zaps) on this Bid
         // These can be percentage ratios adding up to 100%. Optional
-        ["zap", "<Freelancer pubkey>", "<relay hint>", "95"]
-        ["zap", "<Supported pubkey (e.g. app dev)>", "<relay hint>", "5"]
+        ["zap", "<Freelancer pubkey>", "<relay hint>", "96"]
+        ["zap", "<Supported pubkey (e.g. app dev)>", "<relay hint>", "2"]
+        ["zap", "<Sponsored pubkey (optional e.g. partner of the freelancer)>", "<relay hint>", "2"]
     ],
     "content": {
         <Pitch explaining why Freelancer is the right fit for the Job. Optional>,

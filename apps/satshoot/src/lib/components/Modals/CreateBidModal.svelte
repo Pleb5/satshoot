@@ -15,7 +15,8 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
-    import { Pricing } from '$lib/events/types';
+    import { Pricing, type ZapSplit } from '$lib/events/types';
+    import { nip19 } from 'nostr-tools';
 
     interface Props {
         isOpen: boolean;
@@ -66,6 +67,18 @@
         }
     });
 
+    function buildSponsoredZapSplit(npub: string, percentage: number): ZapSplit {
+        const decodedData = nip19.decode(npub);
+        let sponsoredPubkey = "";
+        if (decodedData.type  === "npub") {
+            sponsoredPubkey = decodedData.data;
+        } else {
+            const errorMessage = 'Error happened while decoding sponsored npub:' + sponsoredNpub;
+            throw Error(errorMessage);
+        }
+        return { pubkey: sponsoredPubkey, percentage: percentage };
+    }
+
     async function postBid() {
         if (!validate()) {
             return;
@@ -75,7 +88,8 @@
 
         bid.pricing = pricingMethod;
         bid.amount = amount;
-        bid.setPledgeSplit(pledgeSplit, $currentUser!.pubkey);
+        const sponsoredZapSplit = sponsoredNpub ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit) : undefined;
+        bid.setZapSplits(pledgeSplit, $currentUser!.pubkey, sponsoredZapSplit);
         bid.description = description;
 
         bid.referencedJobAddress = jobAddress as string;
