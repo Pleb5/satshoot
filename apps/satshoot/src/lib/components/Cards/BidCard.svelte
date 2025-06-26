@@ -60,10 +60,16 @@
         return createPaymentStore(satshootFilters);
     });
 
+    const sponsoredNpubPaymentStore = $derived.by(() => {
+        const sponsoredNpubFilters = createPaymentFilters(bid, 'sponsored');
+        return createPaymentStore(sponsoredNpubFilters);
+    });
+
     let freelancerPaid = $derived(freelancerPaymentStore.totalPaid);
     let satshootPaid = $derived.by(() => {
         return satshootPaymentStore.totalPaid;
     });
+    let sponsoredNpubPaid = $derived(sponsoredNpubPaymentStore.totalPaid);
 
     const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
         kinds: [NDKKind.FreelanceJob],
@@ -222,7 +228,7 @@
                     <span class="font-[300]"> {bid.pledgeSplit + ' %'} </span>
                 </p>
             </div>
-            {#if bid.sponsoringSplit}
+            {#if bid.sponsoringSplit && bid.sponsoredNpub}
                 <div class="grow-1">
                     <p class="font-[500]">
                         Sponsoring split:
@@ -247,6 +253,16 @@
                         </span>
                     </p>
                 </div>
+                {#if bid.sponsoringSplit && bid.sponsoredNpub}
+                    <div class="grow-1">
+                    <p class="font-[500]">
+                        Sponsored Paid:
+                        <span class="font-[300]">
+                            {insertThousandSeparator($sponsoredNpubPaid)} sats
+                        </span>
+                    </p>
+                </div>
+                {/if}
             {/if}
         </div>
     </div>

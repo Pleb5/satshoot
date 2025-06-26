@@ -13,6 +13,7 @@ import { wot } from './wot';
 import { SatShootPubkey } from '$lib/utils/misc';
 import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
 import type { OrderEvent } from '$lib/events/OrderEvent';
+import { nip19 } from 'nostr-tools';
 
 export interface PaymentStore {
     paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
@@ -21,7 +22,7 @@ export interface PaymentStore {
 
 export const createPaymentFilters = (
     event: BidEvent | OrderEvent,
-    type: 'freelancer' | 'satshoot'
+    type: 'freelancer' | 'satshoot' | 'sponsored'
 ): NDKFilter[] => {
     if (type === 'freelancer') {
         return [
@@ -31,7 +32,7 @@ export const createPaymentFilters = (
                 '#a': [event.tagAddress()],
             },
         ];
-    } else {
+    } else if (type == 'satshoot') {
         return [
             {
                 kinds: [NDKKind.Zap, NDKKind.Nutzap],
@@ -43,6 +44,25 @@ export const createPaymentFilters = (
                 ],
             },
         ];
+    } else {
+        const bidEvent = event as BidEvent;
+        if (bidEvent) {
+            const decodedNpubResult = nip19.decode(bidEvent.sponsoredNpub);
+            const sponsoredPubkey = decodedNpubResult.type == 'npub' ? decodedNpubResult.data : undefined;
+            if (sponsoredPubkey) {
+                return [
+                    {
+                        kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                        '#p': [sponsoredPubkey],
+                        '#a': [bidEvent.referencedJobAddress],
+                    },
+                ];
+            } else 
+                return [];
+        } else {
+            //TODO (rodant): handle the OrderEvent case
+            return [];
+        }
     }
 };
 
