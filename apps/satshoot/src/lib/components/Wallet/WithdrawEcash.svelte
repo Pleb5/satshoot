@@ -200,14 +200,14 @@
 
     <Button
         variant="text"
-        classes="bg-black-100 text-black-50 dark:text-white border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
+        classes="bg-black-100 border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
         onClick={withdraw}
         disabled={withdrawing || !pr}
     >
         Withdraw
         {#if withdrawing}
             <span>
-                <ProgressRing color="error" />
+                <ProgressRing color="primary" />
             </span>
         {/if}
     </Button>

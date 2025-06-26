@@ -91,13 +91,13 @@
     </div>
     <Button
         variant="text"
-        classes="bg-black-100 text-black-50 dark:text-white border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
+        classes="bg-black-100 border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
         onClick={deposit}
         disabled={depositing || !amount || !selectedMint}
     >
         Deposit
         {#if depositing}
-            <ProgressRing color="error" />
+            <ProgressRing color="primary" />
         {/if}
     </Button>
 </div>

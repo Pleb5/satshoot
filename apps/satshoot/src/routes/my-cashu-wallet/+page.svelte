@@ -508,7 +508,7 @@
         'group-hover:bg-white-200 group-hover:text-white dark:text-white';
 
     const deleteIconClasses =
-        'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex h-full justify-center items-center hover:bg-red-400';
+        'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex! h-full justify-center items-center hover:bg-red-400';
 </script>
 
 <div class="w-full flex flex-col gap-0 grow">
