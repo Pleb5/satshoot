@@ -9,7 +9,7 @@
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import { goto } from '$app/navigation';
     import { wallet } from '$lib/wallet/wallet';
-    import { insertThousandSeparator } from '$lib/utils/misc';
+    import { insertThousandSeparator, PablosNpub } from '$lib/utils/misc';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
@@ -32,8 +32,8 @@
     let pricingMethod: Pricing = $state(Pricing.Absolute);
     let amount = $state(0);
     let pledgeSplit = $state(0);
-    let sponsoredNpub = $state('');
-    let sponsoringSplit = $state(0);
+    let sponsoredNpub = $state(PablosNpub);
+    let sponsoringSplit = $state(50);
     let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
 
     let pledgedShare = $derived(Math.floor(amount * (pledgeSplit / 100)));
@@ -63,6 +63,8 @@
             pricingMethod = bidToEdit.pricing;
             amount = bidToEdit.amount;
             pledgeSplit = bidToEdit.pledgeSplit;
+            sponsoredNpub = bidToEdit.sponsoredNpub;
+            sponsoringSplit = bidToEdit.sponsoringSplit;
             description = bidToEdit.description;
         }
     });
@@ -88,22 +90,22 @@
 
         bid.pricing = pricingMethod;
         bid.amount = amount;
-        const sponsoredZapSplit = sponsoredNpub ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit) : undefined;
-        bid.setZapSplits(pledgeSplit, $currentUser!.pubkey, sponsoredZapSplit);
-        bid.description = description;
-
-        bid.referencedJobAddress = jobAddress as string;
-
-        // Only generate new d-tag if we are not editing an existing one
-        if (!bidToEdit) {
-            // generate unique d-tag
-            bid.generateTags();
-        } else {
-            bid.removeTag('d');
-            bid.tags.push(['d', bidToEdit.tagValue('d') as string]);
-        }
-
         try {
+            const sponsoredZapSplit = sponsoredNpub && pledgeSplit ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit) : undefined;
+            bid.setZapSplits(pledgeSplit, $currentUser!.pubkey, sponsoredZapSplit);
+            bid.description = description;
+
+            bid.referencedJobAddress = jobAddress as string;
+
+            // Only generate new d-tag if we are not editing an existing one
+            if (!bidToEdit) {
+                // generate unique d-tag
+                bid.generateTags();
+            } else {
+                bid.removeTag('d');
+                bid.tags.push(['d', bidToEdit.tagValue('d') as string]);
+            }
+
             console.log('bid', bid);
             const relaysPublished = await bid.publish();
 

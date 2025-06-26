@@ -21,7 +21,8 @@ export class BidEvent extends NDKEvent {
     private _amount: number;
     // number between [0 : 100] inclusively
     private _pledgeSplit: number = 0;
-    private _sponsoredSplit: number = 0;
+    private _sponsoringSplit: number = 0;
+    private _sponsoredNpub: string = '';
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
@@ -32,7 +33,8 @@ export class BidEvent extends NDKEvent {
         let sponsoredPercentage = 0;
         this.tags.forEach((tag: NDKTag) => {
             if (tag[0] === 'zap') {
-                // console.log('bid zap tag:', tag)
+                //console.log('Bid description: ', this.content);
+                //console.log('bid zap tag: ', tag);
                 if (tag[1] === SatShootPubkey) {
                     satshootPercentage = parseInt(tag[3] ?? '0');
                     // console.log('bid pledge split:', this._pledgeSplit)
@@ -41,6 +43,9 @@ export class BidEvent extends NDKEvent {
                         satshootPercentage = 0;
                     }
                 } else if (tag[1] !== this.pubkey) {
+                    //console.log('Sponsored pubkey: ', tag[1]);
+                    //console.log('this.pubkey: ', this.pubkey);
+                    this._sponsoredNpub = nip19.npubEncode(tag[1]);
                     sponsoredPercentage = parseInt(tag[3] ?? '0');
                     if (sponsoredPercentage < 0 || sponsoredPercentage > 100) {
                         sponsoredPercentage = 0;
@@ -52,7 +57,7 @@ export class BidEvent extends NDKEvent {
         if (this._pledgeSplit < 0 || this._pledgeSplit > 100) {
             this._pledgeSplit = 0;
         }
-        this._sponsoredSplit = this._pledgeSplit ? Math.floor(sponsoredPercentage / this._pledgeSplit * 100) : 0;
+        this._sponsoringSplit = this._pledgeSplit ? Math.floor(sponsoredPercentage / this._pledgeSplit * 100) : 0;
     }
 
     static from(event: NDKEvent) {
@@ -118,7 +123,7 @@ export class BidEvent extends NDKEvent {
                 throw new Error(`Trying to set invalid zap split percentage for sponsored npub: ${sponsoredZapSplit.percentage} !`);
             }
             try {
-                nip19.npubEncode(sponsoredZapSplit.pubkey);
+                this._sponsoredNpub = nip19.npubEncode(sponsoredZapSplit.pubkey);
             } catch {
                 throw new Error(`Invalid sponsored pubkey: ${sponsoredZapSplit.pubkey}, cannot set zap splits!`);
             }
@@ -133,7 +138,8 @@ export class BidEvent extends NDKEvent {
         const sponsoredPercentage = sponsoredZapSplit ? Math.floor(pledgeSplit * sponsoredZapSplit.percentage / 100) : 0;
         const satshootPercentage = pledgeSplit - sponsoredPercentage;
         this.tags.push(['zap', SatShootPubkey, BOOTSTRAPOUTBOXRELAYS[0], satshootPercentage.toString()]);
-        if (sponsoredZapSplit) {
+        if (sponsoredZapSplit && sponsoredPercentage) {
+            this._sponsoringSplit = sponsoredZapSplit.percentage;
             this.tags.push(['zap', sponsoredZapSplit.pubkey, BOOTSTRAPOUTBOXRELAYS[0], sponsoredPercentage.toString()]);
         }
         this.tags.push([
@@ -145,8 +151,12 @@ export class BidEvent extends NDKEvent {
         this._pledgeSplit = pledgeSplit;
     }
 
-    get sponsoredSplit(): number {
-        return this._sponsoredSplit;
+    get sponsoringSplit(): number {
+        return this._sponsoringSplit;
+    }
+
+    get sponsoredNpub(): string {
+        return this._sponsoredNpub;
     }
 
     get description(): string {

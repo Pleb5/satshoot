@@ -22,6 +22,8 @@ export const NostrBuildBlossomServer = 'https://blossom.band';
 
 export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';
 
+export const PablosNpub = 'npub1l2vyh47mk2p0qlsku7hg0vn29faehy9hy34ygaclpn66ukqp3afqutajft';
+
 if (typeof NDKKind === 'undefined') {
     throw new Error('NDKKind is undefined. Check your imports.');
 }
