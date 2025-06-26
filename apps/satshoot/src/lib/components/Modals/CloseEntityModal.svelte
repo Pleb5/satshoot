@@ -83,6 +83,7 @@
 
         const newEvent = isJob(targetEntity) ? new JobEvent($ndk) : new OrderEvent($ndk);
         newEvent.tags = targetEntity.tags;
+        newEvent.description = targetEntity.description;
         const relays = await newEvent.publish();
         console.log('published relays', relays);
         return relays;
