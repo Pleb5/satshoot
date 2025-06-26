@@ -222,6 +222,14 @@
                     <span class="font-[300]"> {bid.pledgeSplit + ' %'} </span>
                 </p>
             </div>
+            {#if bid.sponsoringSplit}
+                <div class="grow-1">
+                    <p class="font-[500]">
+                        Sponsoring split:
+                        <span class="font-[300]"> {bid.sponsoringSplit + ' %'} </span>
+                    </p>
+                </div>
+            {/if}
             {#if showPayments}
                 <div class="grow-1">
                     <p class="font-[500]">
