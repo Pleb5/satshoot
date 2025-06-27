@@ -27,10 +27,11 @@
     let initialized = $state(false);
     let showLoginModal = $state(false);
     let isUserLoggedIn = $derived(!!$currentUser && $loggedIn);
-    let targetEntity = $state<JobEvent | ServiceEvent>();
+    let primaryEntity = $state<JobEvent | ServiceEvent>();
     let secondaryEntity = $state<BidEvent | OrderEvent>();
     let cashuPopoverState = $state(false);
     let paymentManager = $state<PaymentManagerService | undefined>(undefined);
+    let isSponsoring = $state(false);
 
     $effect(() => {
         if ($sessionInitialized && !initialized) {
@@ -75,11 +76,11 @@
                             if (event) {
                                 switch (event.kind) {
                                     case NDKKind.FreelanceJob:
-                                        targetEntity = JobEvent.from(event);
+                                        primaryEntity = JobEvent.from(event);
                                         initialized = true;
                                         break;
                                     case NDKKind.FreelanceService:
-                                        targetEntity = ServiceEvent.from(event);
+                                        primaryEntity = ServiceEvent.from(event);
                                         initialized = true;
                                         break;
                                     default:
@@ -104,18 +105,20 @@
 
     // Initialize payment manager when entities are available
     $effect(() => {
-        if (initialized && !!targetEntity && !!secondaryEntity) {
-            paymentManager = new PaymentManagerService(targetEntity, secondaryEntity);
+        if (initialized && !!primaryEntity && !!secondaryEntity) {
+            paymentManager = new PaymentManagerService(primaryEntity, secondaryEntity);
+            isSponsoring = secondaryEntity instanceof BidEvent && !!secondaryEntity.sponsoredNpub;
         }
     });
 
-    const bech32ID = $derived(targetEntity?.encode());
+    const bech32ID = $derived(primaryEntity?.encode());
 
     // Derived values from payment manager
     const paymentShares = $derived(paymentManager?.payment?.paymentShares);
     const pricingInfo = $derived(paymentManager?.pricingInfo);
     const freelancerPaid = $derived(paymentManager?.freelancerPaid);
     const satshootPaid = $derived(paymentManager?.satshootPaid);
+    const sponsoredPaid = $derived(paymentManager?.sponsoredPaid);
     const paying = $derived(paymentManager?.payment?.paying ?? false);
     const hasSenderEcashSetup = $derived(paymentManager?.hasSenderEcashSetup ?? false);
     const canPayWithCashu = $derived(paymentManager?.canPayWithCashu ?? false);
@@ -135,6 +138,10 @@
         await payWithLN(UserEnum.Satshoot);
     }
 
+    async function paySponsoredWithLN() {
+        await payWithLN(UserEnum.Sponsored);
+    }
+
     async function payWithEcash(payeeType: UserEnum) {
         if (!paymentManager) return;
         await paymentManager.payWithCashu(payeeType);
@@ -146,6 +153,10 @@
 
     async function paySatshootWithCashu() {
         await payWithEcash(UserEnum.Satshoot);
+    }
+
+    async function paySponsoredWithCashu() {
+        await payWithEcash(UserEnum.Sponsored);
     }
 
     function setupEcash() {
@@ -166,7 +177,7 @@
     <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
         {#if !isUserLoggedIn}
             <Button onClick={handleLogin}>Log in To Pay</Button>
-        {:else if targetEntity && secondaryEntity && paymentManager}
+        {:else if primaryEntity && secondaryEntity && paymentManager}
             <div class="w-full flex flex-col">
                 <!-- Share Job Post start -->
                 <div class="w-full flex flex-col">
@@ -200,6 +211,16 @@
                                     <span class="font-[300]"> {secondaryEntity.pledgeSplit} %</span>
                                 </p>
                             </div>
+                            {#if isSponsoring}
+                                <div class="grow-1">
+                                    <p class="font-[500]">
+                                        Sponsoring split:
+                                        <span class="font-[300]">
+                                            {secondaryEntity.sponsoringSplit} %</span
+                                        >
+                                    </p>
+                                </div>
+                            {/if}
                         </div>
                         <div
                             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
@@ -224,6 +245,18 @@
                                     </span>
                                 </p>
                             </div>
+                            {#if isSponsoring}
+                                <div class="grow-1">
+                                    <p class="font-[500]">
+                                        Sponsored npub Paid:
+                                        <span class="font-[300]">
+                                            {$sponsoredPaid
+                                                ? insertThousandSeparator($sponsoredPaid)
+                                                : '?'} sats
+                                        </span>
+                                    </p>
+                                </div>
+                            {/if}
                         </div>
                     </div>
                     <div
@@ -232,9 +265,9 @@
                         <p class="">Compensation for:</p>
 
                         <a href={'/' + bech32ID + '/'} class="anchor font-[600]">
-                            {targetEntity instanceof JobEvent
-                                ? targetEntity.title
-                                : (targetEntity as ServiceEvent).title}
+                            {primaryEntity instanceof JobEvent
+                                ? primaryEntity.title
+                                : (primaryEntity as ServiceEvent).title}
                         </a>
                     </div>
                     <div
@@ -365,7 +398,7 @@
                                     step="1"
                                     min="0"
                                     placeholder="000,000"
-                                    bind:value={paymentManager.payment.pledgedAmount}
+                                    bind:value={paymentManager.payment.satshootAmount}
                                     fullWidth
                                 />
                             </div>
@@ -375,7 +408,7 @@
                                     grow
                                     classes="w-[200px] max-w-[200px]"
                                     onClick={paySatshootWithLN}
-                                    disabled={paying || !paymentManager.payment.pledgedAmount}
+                                    disabled={paying || !paymentManager.payment.satshootAmount}
                                 >
                                     {#if paying}
                                         <span>
@@ -397,7 +430,7 @@
                                         onClick={paySatshootWithCashu}
                                         disabled={paying ||
                                             !canPayWithCashu ||
-                                            !paymentManager.payment.pledgedAmount}
+                                            !paymentManager.payment.satshootAmount}
                                     >
                                         {#if paying}
                                             <ProgressRing />
@@ -425,6 +458,78 @@
                                     </Button>
                                 {/if}
                             </div>
+                            {#if isSponsoring}
+                                <div class="w-full flex flex-col gap-[5px]">
+                                    <label class="font-[500]" for="plattform-contribution"
+                                        >Sponsor npub</label
+                                    >
+                                    <Input
+                                        id="plattform-contribution"
+                                        type="number"
+                                        step="1"
+                                        min="0"
+                                        placeholder="000,000"
+                                        bind:value={paymentManager.payment.sponsoredAmount}
+                                        fullWidth
+                                    />
+                                </div>
+                                <!-- Payment Buttons for third Payee -->
+                                <div class="flex flex-row justify-center gap-[5px]">
+                                    <Button
+                                        grow
+                                        classes="w-[200px] max-w-[200px]"
+                                        onClick={paySponsoredWithLN}
+                                        disabled={paying || !paymentManager.payment.sponsoredAmount}
+                                    >
+                                        {#if paying}
+                                            <span>
+                                                <ProgressRing />
+                                            </span>
+                                        {:else}
+                                            <img
+                                                class="h-[20px] w-auto"
+                                                src="/img/lightning.png"
+                                                alt="Lightning icon"
+                                            />
+                                            <span> Pay with LN</span>
+                                        {/if}
+                                    </Button>
+                                    {#if hasSenderEcashSetup}
+                                        <Button
+                                            grow
+                                            classes="w-[200px] max-w-[200px]"
+                                            onClick={paySponsoredWithCashu}
+                                            disabled={paying ||
+                                                !canPayWithCashu ||
+                                                !paymentManager.payment.sponsoredAmount}
+                                        >
+                                            {#if paying}
+                                                <ProgressRing />
+                                            {:else}
+                                                <img
+                                                    class="h-[20px] w-auto"
+                                                    src="/img/cashu.png"
+                                                    alt="Cashu icon"
+                                                />
+                                                <span>Pay with Cashu</span>
+                                            {/if}
+                                        </Button>
+                                    {:else}
+                                        <Button
+                                            grow
+                                            classes="w-[200px] max-w-[200px]"
+                                            onClick={setupEcash}
+                                        >
+                                            {#if paying}
+                                                <span>
+                                                    <ProgressRing />
+                                                </span>
+                                            {/if}
+                                            <span> Setup Nostr Wallet </span>
+                                        </Button>
+                                    {/if}
+                                </div>
+                            {/if}
                         </div>
                         <!-- Payment Summary -->
                         <div
@@ -441,7 +546,7 @@
                                 ) +
                                     ' + ' +
                                     insertThousandSeparator(
-                                        paymentManager.payment.pledgedAmount ?? 0
+                                        paymentManager.payment.satshootAmount ?? 0
                                     ) +
                                     ' = ' +
                                     insertThousandSeparator(
@@ -449,6 +554,22 @@
                                     ) +
                                     ' sats'}
                             </p>
+                            {#if isSponsoring}
+                                <p class="grow-1 text-center">
+                                    Sponsored npub gets: {insertThousandSeparator(
+                                        paymentShares?.sponsoredShare ?? 0
+                                    ) +
+                                        ' + ' +
+                                        insertThousandSeparator(
+                                            paymentManager.payment.sponsoredAmount ?? 0
+                                        ) +
+                                        ' = ' +
+                                        insertThousandSeparator(
+                                            paymentShares?.totalSponsoredAmount ?? 0
+                                        ) +
+                                        ' sats'}
+                                </p>
+                            {/if}
                         </div>
                     </div>
                 </div>

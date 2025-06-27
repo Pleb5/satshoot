@@ -1,7 +1,7 @@
 import { PaymentService } from './PaymentService.svelte';
 import { LightningPaymentService } from './LightningPaymentService.svelte';
 import { CashuPaymentService } from './CashuPaymentService.svelte';
-import { ToastService, UserEnum } from './ToastService.svelte';
+import { ToastService } from './ToastService.svelte';
 import { createPaymentFilters, createPaymentStore, type PaymentStore } from '$lib/stores/payment';
 import currentUser from '$lib/stores/user';
 import { get } from 'svelte/store';
@@ -9,6 +9,7 @@ import type { JobEvent } from '$lib/events/JobEvent';
 import type { BidEvent } from '$lib/events/BidEvent';
 import type { ServiceEvent } from '$lib/events/ServiceEvent';
 import type { OrderEvent } from '$lib/events/OrderEvent';
+import { UserEnum } from './UserEnum';
 
 /**
  * Main service that orchestrates all payment operations
@@ -21,6 +22,7 @@ export class PaymentManagerService {
 
     private freelancerPaymentStore: PaymentStore | null = null;
     private satshootPaymentStore: PaymentStore | null = null;
+    private sponsoredPaymentStore: PaymentStore | null = null;
 
     constructor(
         private targetEntity: JobEvent | ServiceEvent,
@@ -41,12 +43,15 @@ export class PaymentManagerService {
         if (this.secondaryEntity && get(currentUser)) {
             const freelancerFilters = createPaymentFilters(this.secondaryEntity, 'freelancer');
             const satshootFilters = createPaymentFilters(this.secondaryEntity, 'satshoot');
+            const sponsoredFilters = createPaymentFilters(this.secondaryEntity, 'sponsored');
 
             this.freelancerPaymentStore = createPaymentStore(freelancerFilters);
             this.satshootPaymentStore = createPaymentStore(satshootFilters);
+            this.sponsoredPaymentStore = createPaymentStore(sponsoredFilters);
 
             this.freelancerPaymentStore.paymentStore.startSubscription();
             this.satshootPaymentStore.paymentStore.startSubscription();
+            this.sponsoredPaymentStore.paymentStore.startSubscription();
         }
     }
 
@@ -76,6 +81,13 @@ export class PaymentManagerService {
      */
     get satshootPaid() {
         return this.satshootPaymentStore?.totalPaid ?? null;
+    }
+
+    /**
+     * Get sponsored npub payment tracking data
+     */
+    get sponsoredPaid() {
+        return this.sponsoredPaymentStore?.totalPaid ?? null;
     }
 
     /**
@@ -200,8 +212,8 @@ export class PaymentManagerService {
             return false;
         }
 
-        const { freelancerShare, totalSatshootAmount } = this.paymentService.paymentShares;
-        return this.cashu.checkMintBalance(freelancerShare + totalSatshootAmount);
+        const { freelancerShare, totalSatshootAmount, totalSponsoredAmount } = this.paymentService.paymentShares;
+        return this.cashu.checkMintBalance(freelancerShare + totalSatshootAmount + totalSponsoredAmount);
     }
 
     /**
@@ -243,6 +255,9 @@ export class PaymentManagerService {
         }
         if (this.satshootPaymentStore) {
             this.satshootPaymentStore.paymentStore.empty();
+        }
+        if (this.sponsoredPaymentStore) {
+            this.sponsoredPaymentStore.paymentStore.empty();
         }
     }
 }

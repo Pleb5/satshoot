@@ -10,6 +10,7 @@ import { tick } from 'svelte';
 export interface PaymentCalculation {
     freelancerShareMillisats: number;
     satshootSumMillisats: number;
+    sponsoredSumMillisats: number;
 }
 
 export interface PaymentData {
@@ -24,7 +25,8 @@ export interface PaymentData {
 export class PaymentService {
     // State
     amount = $state(0);
-    pledgedAmount = $state(0);
+    satshootAmount = $state(0);
+    sponsoredAmount = $state(0);
     paying = $state(false);
 
     constructor(
@@ -36,13 +38,24 @@ export class PaymentService {
      * Calculate payment shares based on current amounts
      */
     get paymentShares() {
-        const satshootShare = Math.floor((this.amount * this.secondaryEntity.pledgeSplit) / 100);
-        const freelancerShare = this.amount - satshootShare;
+        let sponsoredPercentage = 0;
+        let satshootPercentage = 0;
+        if (this.secondaryEntity instanceof BidEvent) {
+            const bidEvent = this.secondaryEntity;
+            sponsoredPercentage = bidEvent.sponsoredNpub ? Math.floor(bidEvent.pledgeSplit * bidEvent.sponsoringSplit / 100): 0;
+        }
+        satshootPercentage = this.secondaryEntity.pledgeSplit - sponsoredPercentage;
+
+        const sponsoredShare = Math.floor((this.amount * sponsoredPercentage) / 100); 
+        const satshootShare = Math.floor((this.amount * satshootPercentage) / 100);
+        const freelancerShare = this.amount - satshootShare - sponsoredShare;
 
         return {
             satshootShare,
             freelancerShare,
-            totalSatshootAmount: satshootShare + this.pledgedAmount,
+            sponsoredShare,
+            totalSatshootAmount: satshootShare + this.satshootAmount,
+            totalSponsoredAmount: this.sponsoredAmount + this.sponsoredAmount
         };
     }
 
@@ -81,16 +94,17 @@ export class PaymentService {
         this.paying = true;
         await tick();
 
-        const { freelancerShare, totalSatshootAmount } = this.paymentShares;
+        const { freelancerShare, totalSatshootAmount, totalSponsoredAmount } = this.paymentShares;
         const freelancerShareMillisats = freelancerShare * 1000;
         const satshootSumMillisats = totalSatshootAmount * 1000;
+        const sponsoredSumMillisats = totalSponsoredAmount * 1000;
 
-        if (freelancerShareMillisats + satshootSumMillisats === 0) {
+        if (freelancerShareMillisats + satshootSumMillisats + sponsoredSumMillisats === 0) {
             this.paying = false;
             throw new Error('Cannot pay 0 sats!');
         }
 
-        return { freelancerShareMillisats, satshootSumMillisats };
+        return { freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats };
     }
 
     /**

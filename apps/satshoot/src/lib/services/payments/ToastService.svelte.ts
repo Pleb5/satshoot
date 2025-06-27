@@ -1,9 +1,5 @@
 import { toaster } from '$lib/stores/toaster';
-
-export enum UserEnum {
-    Satshoot = 'satshoot',
-    Freelancer = 'freelancer',
-}
+import type { UserEnum } from './UserEnum';
 
 export type NutZapErrorData = {
     mint: string;
