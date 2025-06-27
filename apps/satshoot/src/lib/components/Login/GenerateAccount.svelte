@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { OnboardingStep, onboardingStep, redirectAfterLogin } from '$lib/stores/gui';
-    import ndk, { LoginMethod } from '$lib/stores/session';
+    import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
     import { loginMethod } from '$lib/stores/user';
     import { encryptSecret } from '$lib/utils/crypto';
     import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
@@ -70,6 +70,8 @@
 
             // assign ndk signer
             $ndk.signer = new NDKPrivateKeySigner(generatedNsec);
+
+            $sessionPK = privateKey;
 
             // broadcast profile
             const user = await $ndk.signer.user();
