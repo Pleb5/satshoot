@@ -35,6 +35,7 @@ export class NutZapError extends Error {
  */
 export class CashuPaymentService {
     private freelancerCashuInfo: CashuPaymentInfo | null = $state(null);
+    private satshootCashuInfo: CashuPaymentInfo | null = $state(null);
     private readonly safety = 3; // 3 sats safety for balance calculations
     private freelancerPubkey: string;
 
@@ -56,6 +57,10 @@ export class CashuPaymentService {
     private async initializeCashuInfo() {
         this.freelancerCashuInfo = (await getCashuPaymentInfo(
             this.freelancerPubkey
+        )) as CashuPaymentInfo | null;
+
+        this.satshootCashuInfo = (await getCashuPaymentInfo(
+            SatShootPubkey
         )) as CashuPaymentInfo | null;
     }
 
@@ -108,17 +113,17 @@ export class CashuPaymentService {
             [UserEnum.Satshoot, false],
         ]);
 
-        const freelancerPaymentPromise = freelancerShareMillisats ? this.processCashuPayment(
-            UserEnum.Freelancer,
-            this.freelancerPubkey,
-            freelancerShareMillisats
-        ) : undefined;
+        const freelancerPaymentPromise = freelancerShareMillisats
+            ? this.processCashuPayment(
+                  UserEnum.Freelancer,
+                  this.freelancerPubkey,
+                  freelancerShareMillisats
+              )
+            : undefined;
 
-        const satshootPaymentPromise = satshootSumMillisats ? this.processCashuPayment(
-            UserEnum.Satshoot,
-            SatShootPubkey,
-            satshootSumMillisats
-        ) : undefined;
+        const satshootPaymentPromise = satshootSumMillisats
+            ? this.processCashuPayment(UserEnum.Satshoot, SatShootPubkey, satshootSumMillisats)
+            : undefined;
 
         const results = await Promise.allSettled([
             freelancerPaymentPromise,
@@ -151,7 +156,10 @@ export class CashuPaymentService {
     ): Promise<void> {
         if (amountMillisats === 0) return;
 
-        if (!this.freelancerCashuInfo || !this.freelancerCashuInfo.mints) {
+        const cashuInfo =
+            userEnum === UserEnum.Freelancer ? this.freelancerCashuInfo : this.satshootCashuInfo;
+
+        if (!cashuInfo || !cashuInfo.mints) {
             throw new Error(`Could not fetch cashu payment info for ${userEnum}!`);
         }
 
@@ -175,18 +183,20 @@ export class CashuPaymentService {
         }
 
         // Process the payment
-        this.freelancerCashuInfo.allowIntramintFallback = false;
+        cashuInfo.allowIntramintFallback = false;
+
+        const target =
+            userEnum === UserEnum.Freelancer
+                ? this.secondaryEntity
+                : this.targetEntity instanceof ServiceEvent
+                  ? this.secondaryEntity
+                  : this.targetEntity;
 
         const cashuResult = await walletInstance
             .cashuPay({
-                ...this.freelancerCashuInfo,
+                ...cashuInfo,
                 mints: compatibleMints,
-                target:
-                    userEnum === UserEnum.Freelancer
-                        ? this.secondaryEntity
-                        : this.targetEntity instanceof ServiceEvent
-                            ? this.secondaryEntity
-                            : this.targetEntity,
+                target: target,
                 recipientPubkey: pubkey,
                 amount: amountMillisats,
                 unit: 'msat',
@@ -257,8 +267,8 @@ export class CashuPaymentService {
             userEnum === UserEnum.Freelancer
                 ? this.secondaryEntity.tagAddress()
                 : this.targetEntity instanceof ServiceEvent
-                    ? this.secondaryEntity.tagAddress()
-                    : this.targetEntity.tagAddress(),
+                  ? this.secondaryEntity.tagAddress()
+                  : this.targetEntity.tagAddress(),
         ]);
 
         nutzapEvent.tags.push([
@@ -266,13 +276,16 @@ export class CashuPaymentService {
             userEnum === UserEnum.Freelancer
                 ? this.secondaryEntity.id
                 : this.targetEntity instanceof ServiceEvent
-                    ? this.secondaryEntity.id
-                    : this.targetEntity.id,
+                  ? this.secondaryEntity.id
+                  : this.targetEntity.id,
         ]);
 
         nutzapEvent.recipientPubkey = pubkey;
 
-        const explicitRelays = [...(this.freelancerCashuInfo?.relays ?? [])];
+        const cashuInfo =
+            userEnum === UserEnum.Freelancer ? this.freelancerCashuInfo : this.satshootCashuInfo;
+
+        const explicitRelays = [...(cashuInfo?.relays ?? [])];
 
         await this.trySignAndPublishNutZap(nutzapEvent, explicitRelays);
     }
@@ -301,7 +314,7 @@ export class CashuPaymentService {
                 proofs: nutzapEvent.proofs,
             };
             const message = `Copy the minted NutZap Proofs and save somewhere safe then try to send to recipient manually`;
-            console.log("Mint and Proofs: \n" + rawNutzap);
+            console.log('Mint and Proofs: \n' + JSON.stringify(rawNutzap));
             throw new NutZapError(message, rawNutzap);
         }
     }
