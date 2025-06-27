@@ -4,8 +4,6 @@
 
     import { onDestroy, onMount } from 'svelte';
 
-    import { JobEvent, JobStatus } from '$lib/events/JobEvent';
-    import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
     import Card from '../UI/Card.svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
@@ -138,12 +136,6 @@
 
     onDestroy(() => {
         if (serviceStore) serviceStore.empty();
-    });
-
-    $effect(() => {
-        console.log('service', service);
-        console.log('user', user);
-        console.log('orderState', orderState);
     });
 </script>
 

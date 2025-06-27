@@ -19,7 +19,15 @@
 
     import { updated, pollUpdated } from '$lib/stores/app-updated';
     import { online, retriesLeft } from '$lib/stores/network';
-    import currentUser, { loggedIn, loggingIn, loginMethod, mounted } from '$lib/stores/user';
+    import currentUser, {
+        currentUserFreelanceFollows,
+        loggedIn,
+        loggingIn,
+        loginMethod,
+        mounted,
+        UserMode,
+        userMode,
+    } from '$lib/stores/user';
 
     import {
         allBids,
@@ -74,7 +82,7 @@
     import Header from '$lib/components/layout/Header.svelte';
     import type { BidEvent } from '$lib/events/BidEvent';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
-    import type { JobEvent } from '$lib/events/JobEvent';
+    import { JobStatus, type JobEvent } from '$lib/events/JobEvent';
 
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
@@ -461,30 +469,73 @@
     });
 
     // ----- Notifications ------ //
+
+    // when a job is posted by a user whom current user is freelance following
+    $effect(() => {
+        if ($currentUser && $userMode === UserMode.Freelancer) {
+            $wotFilteredJobs.forEach((job: JobEvent) => {
+                if (job.status === JobStatus.New && $currentUserFreelanceFollows.has(job.pubkey)) {
+                    sendNotification(job);
+                }
+            });
+        }
+    });
+
+    // when user have won or lost the bid on the job
     $effect(() => {
         if ($wotFilteredJobs && $myBids) {
-            // console.log('all jobs change:', $wotFilteredJobs)
-            $wotFilteredJobs.forEach((t: JobEvent) => {
-                $myBids.forEach((o: BidEvent) => {
-                    if (o.referencedJobDTag === t.dTag) {
-                        // If users bid won send that else just send relevant job
-                        if (t.acceptedBidAddress === o.bidAddress) {
-                            sendNotification(o);
-                        } else {
-                            sendNotification(t);
+            $wotFilteredJobs.forEach((job: JobEvent) => {
+                if (job.status === JobStatus.InProgress) {
+                    $myBids.forEach((bid) => {
+                        if (bid.referencedJobDTag === job.dTag) {
+                            sendNotification(bid);
                         }
+                    });
+                }
+            });
+        }
+    });
+
+    // when the job is completed (resolved or failed)
+    $effect(() => {
+        if ($wotFilteredJobs && $myBids && $currentUser) {
+            $wotFilteredJobs.forEach((job: JobEvent) => {
+                if (job.isClosed() && job.winnerFreelancer === $currentUser.pubkey) {
+                    $myBids.forEach((bid) => {
+                        if (bid.referencedJobDTag === job.dTag) {
+                            sendNotification(bid);
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+    // when a bid is placed on current user's job which is in new state
+    $effect(() => {
+        if ($wotFilteredBids && $myJobs) {
+            $myJobs.forEach((job: JobEvent) => {
+                if (job.status !== JobStatus.New) return;
+
+                $wotFilteredBids.forEach((bid: BidEvent) => {
+                    if (bid.referencedJobDTag === job.dTag) {
+                        sendNotification(bid);
                     }
                 });
             });
         }
     });
 
+    // when order is placed on my service
     $effect(() => {
-        if ($wotFilteredBids && $myJobs) {
-            // console.log('all bids change:', $wotFilteredBids)
-            $wotFilteredBids.forEach((o: BidEvent) => {
-                $myJobs.forEach((t: JobEvent) => {
-                    if (o.referencedJobDTag === t.dTag) {
+        if ($wotFilteredOrders && $myServices) {
+            $wotFilteredOrders.forEach((o: OrderEvent) => {
+                $myServices.forEach((s: ServiceEvent) => {
+                    if (
+                        o.referencedServiceAddress === s.serviceAddress &&
+                        o.status === OrderStatus.Open &&
+                        !s.orders.includes(o.orderAddress)
+                    ) {
                         sendNotification(o);
                     }
                 });
@@ -501,23 +552,6 @@
                         o.referencedServiceAddress === s.serviceAddress &&
                         o.status === OrderStatus.Open &&
                         s.orders.includes(o.orderAddress)
-                    ) {
-                        sendNotification(o);
-                    }
-                });
-            });
-        }
-    });
-
-    // when order is placed on my service
-    $effect(() => {
-        if ($wotFilteredOrders && $myServices) {
-            $wotFilteredOrders.forEach((o: OrderEvent) => {
-                $myServices.forEach((s: ServiceEvent) => {
-                    if (
-                        o.referencedServiceAddress === s.serviceAddress &&
-                        o.status === OrderStatus.Open &&
-                        !s.orders.includes(o.orderAddress)
                     ) {
                         sendNotification(o);
                     }

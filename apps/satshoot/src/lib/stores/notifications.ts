@@ -37,35 +37,23 @@ export const unReadNotifications = derived(
 
 export const jobNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-        return notification.kind === NDKKind.FreelanceJob;
+        return (
+            notification.kind === NDKKind.FreelanceJob || notification.kind === NDKKind.FreelanceBid
+        );
     });
 
-    const jobs: JobEvent[] = [];
-    filteredEvents.forEach((t: NDKEvent) => {
-        jobs.push(JobEvent.from(t));
+    const events: (JobEvent | BidEvent)[] = [];
+    filteredEvents.forEach((e: NDKEvent) => {
+        const event = e.kind === NDKKind.FreelanceJob ? JobEvent.from(e) : BidEvent.from(e);
+        events.push(event);
     });
 
-    orderEventsChronologically(jobs);
+    orderEventsChronologically(events);
 
-    return jobs;
+    return events;
 });
 
-export const bidNotifications = derived([notifications], ([$notifications]) => {
-    const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-        return notification.kind === NDKKind.FreelanceBid;
-    });
-
-    const bids: BidEvent[] = [];
-    filteredEvents.forEach((o: NDKEvent) => {
-        bids.push(BidEvent.from(o));
-    });
-
-    orderEventsChronologically(bids);
-
-    return bids;
-});
-
-export const orderNotifications = derived([notifications], ([$notifications]) => {
+export const serviceNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter(
         (notification: NDKEvent) => notification.kind === NDKKind.FreelanceOrder
     );
@@ -158,7 +146,6 @@ export async function sendNotification(event: NDKEvent) {
     switch (event.kind) {
         case NDKKind.FreelanceJob:
         case NDKKind.FreelanceBid:
-        case NDKKind.FreelanceService:
         case NDKKind.FreelanceOrder:
             title = 'Update!';
             body = '🔔 Check your Notifications!';

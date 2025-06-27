@@ -3,7 +3,6 @@
     import JobNotification from '$lib/components/Notifications/JobNotification.svelte';
     import MessageNotification from '$lib/components/Notifications/MessageNotification.svelte';
     import NotificationsList from '$lib/components/Notifications/NotificationsList.svelte';
-    import BidNotification from '$lib/components/Notifications/BidNotification.svelte';
     import ReviewNotification from '$lib/components/Notifications/ReviewNotification.svelte';
     import ZapNotification from '$lib/components/Notifications/ZapNotification.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
@@ -11,25 +10,22 @@
         followNotifications,
         messageNotifications,
         browserNotificationsEnabled,
-        bidNotifications,
         readNotifications,
         receivedZapsNotifications,
         reviewNotifications,
         jobNotifications,
-        orderNotifications,
+        serviceNotifications,
     } from '$lib/stores/notifications';
     import currentUser, { UserMode, userMode } from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
     import { onMount } from 'svelte';
-    import OrderNotification from '$lib/components/Notifications/OrderNotification.svelte';
+    import ServiceNotification from '$lib/components/Notifications/ServiceNotification.svelte';
 
     enum Tab {
         Follows,
         Zaps,
         Jobs,
-        Bids,
         Services,
-        Orders,
         Messages,
         Reviews,
     }
@@ -70,9 +66,9 @@
                     return notifications;
                 });
                 break;
-            case Tab.Bids:
+            case Tab.Services:
                 readNotifications.update((notifications) => {
-                    $bidNotifications.forEach((notificationEvent) => {
+                    $serviceNotifications.forEach((notificationEvent) => {
                         notifications.add(notificationEvent.id);
                     });
                     return notifications;
@@ -116,43 +112,22 @@
                 (notification) => !$readNotifications.has(notification.id)
             ).length,
         },
-        ...($userMode === UserMode.Client
-            ? [
-                  {
-                      id: Tab.Jobs,
-                      label: 'Jobs',
-                      icon: 'briefcase',
-                      notificationCount: $jobNotifications.filter(
-                          (notification) => !$readNotifications.has(notification.id)
-                      ).length,
-                  },
-                  {
-                      id: Tab.Orders,
-                      label: 'Orders',
-                      icon: 'file',
-                      notificationCount: $orderNotifications.filter(
-                          (notification) => !$readNotifications.has(notification.id)
-                      ).length,
-                  },
-              ]
-            : [
-                  {
-                      id: Tab.Services,
-                      label: 'Services',
-                      icon: 'briefcase',
-                      notificationCount: $orderNotifications.filter(
-                          (notification) => !$readNotifications.has(notification.id)
-                      ).length,
-                  },
-                  {
-                      id: Tab.Bids,
-                      label: 'Bids',
-                      icon: 'file',
-                      notificationCount: $bidNotifications.filter(
-                          (notification) => !$readNotifications.has(notification.id)
-                      ).length,
-                  },
-              ]),
+        {
+            id: Tab.Jobs,
+            label: 'Jobs',
+            icon: 'briefcase',
+            notificationCount: $jobNotifications.filter(
+                (notification) => !$readNotifications.has(notification.id)
+            ).length,
+        },
+        {
+            id: Tab.Services,
+            label: 'Services',
+            icon: 'briefcase',
+            notificationCount: $serviceNotifications.filter(
+                (notification) => !$readNotifications.has(notification.id)
+            ).length,
+        },
         {
             id: Tab.Messages,
             label: 'Messages',
@@ -196,15 +171,10 @@
                                 notifications={$jobNotifications}
                                 NotificationComponent={JobNotification}
                             />
-                        {:else if selectedTab === Tab.Bids}
+                        {:else if selectedTab === Tab.Services}
                             <NotificationsList
-                                notifications={$bidNotifications}
-                                NotificationComponent={BidNotification}
-                            />
-                        {:else if selectedTab === Tab.Services || selectedTab === Tab.Orders}
-                            <NotificationsList
-                                notifications={$orderNotifications}
-                                NotificationComponent={OrderNotification}
+                                notifications={$serviceNotifications}
+                                NotificationComponent={ServiceNotification}
                             />
                         {:else if selectedTab === Tab.Messages}
                             <NotificationsList
