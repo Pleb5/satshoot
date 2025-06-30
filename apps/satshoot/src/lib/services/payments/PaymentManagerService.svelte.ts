@@ -1,4 +1,4 @@
-import { PaymentService } from './PaymentService.svelte';
+import { PaymentService, type PaymentCalculation } from './PaymentService.svelte';
 import { LightningPaymentService } from './LightningPaymentService.svelte';
 import { CashuPaymentService } from './CashuPaymentService.svelte';
 import { ToastService } from './ToastService.svelte';
@@ -107,20 +107,26 @@ export class PaymentManagerService {
             const paymentData = await this.paymentService.initializePayment();
             if (!paymentData) return;
 
-            let { freelancerShareMillisats, satshootSumMillisats } = paymentData;
+            let { freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats } = paymentData;
 
             switch (payeeType) {
                 case UserEnum.Freelancer:
                     satshootSumMillisats = 0;
+                    sponsoredSumMillisats = 0;
                     break;
                 case UserEnum.Satshoot:
                     freelancerShareMillisats = 0;
+                    sponsoredSumMillisats = 0;
                     break;
+                case UserEnum.Sponsored:
+                    freelancerShareMillisats = 0;
+                    satshootSumMillisats = 0;
             }
 
             const paid = await this.lightningService.processPayment(
                 freelancerShareMillisats,
-                satshootSumMillisats
+                satshootSumMillisats,
+                sponsoredSumMillisats
             );
 
             this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats);

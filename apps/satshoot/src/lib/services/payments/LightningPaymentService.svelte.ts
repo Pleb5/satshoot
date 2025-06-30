@@ -18,6 +18,7 @@ import {
 } from '@nostr-dev-kit/ndk';
 import { get } from 'svelte/store';
 import { UserEnum } from './UserEnum';
+import { nip19 } from 'nostr-tools';
 
 export interface InvoiceDetails {
     paymentRequest: string;
@@ -33,13 +34,13 @@ export class LightningPaymentService {
     private freelancerPubkey: string;
 
     constructor(
-        private targetEntity: JobEvent | ServiceEvent,
+        private primaryEntity: JobEvent | ServiceEvent,
         private secondaryEntity: BidEvent | OrderEvent
     ) {
         this.freelancerPubkey =
             this.secondaryEntity instanceof BidEvent
                 ? this.secondaryEntity.pubkey
-                : this.targetEntity.pubkey;
+                : this.primaryEntity.pubkey;
     }
 
 
@@ -48,7 +49,8 @@ export class LightningPaymentService {
      */
     async processPayment(
         freelancerShareMillisats: number,
-        satshootSumMillisats: number
+        satshootSumMillisats: number,
+        sponsoredSumMillisats: number
     ): Promise<Map<UserEnum, boolean>> {
         const zapRequestRelays = new Map<UserEnum, string[]>();
         const invoices = new Map<UserEnum, InvoiceDetails>();
@@ -77,8 +79,26 @@ export class LightningPaymentService {
                 satshootSumMillisats,
                 zapRequestRelays,
                 invoices,
-                this.targetEntity instanceof ServiceEvent ? this.secondaryEntity : this.targetEntity
+                this.primaryEntity instanceof ServiceEvent ? this.secondaryEntity : this.primaryEntity
             );
+        }
+
+        // Fetch payment info for the sponsored npub
+        if (sponsoredSumMillisats > 0) {
+            let sponsoredPubkey = undefined;
+            if (this.secondaryEntity instanceof BidEvent) {
+                if (nip19.decode(this.secondaryEntity.sponsoredNpub).type === "npub") {
+                    sponsoredPubkey = nip19.decode(this.secondaryEntity.sponsoredNpub).data as string;
+                    await this.fetchPaymentInfo(
+                        UserEnum.Sponsored,
+                        sponsoredPubkey,
+                        sponsoredSumMillisats,
+                        zapRequestRelays,
+                        invoices,
+                        this.primaryEntity instanceof ServiceEvent ? this.secondaryEntity : this.primaryEntity
+                    );
+                }
+            }
         }
 
         // Launch payment modals and process payments
@@ -120,13 +140,24 @@ export class LightningPaymentService {
                     const unsub = onModalClosed(() => {
                         subscription.stop();
                         resolve();
-                        unsub();
+                        unsub();// TODO (rodant): weird recursion, is this correct?
                     });
                 });
             } catch (error) {
                 console.error('An error occurred in payment process', error);
+                let payee;
+                switch(key) {
+                    case UserEnum.Freelancer:
+                        payee = "Freelancer's";
+                        break;
+                    case UserEnum.Satshoot:
+                        payee = "Satshoot's";
+                        break;
+                    default:
+                        payee = "Sponsored Npub's";
+                }
                 throw new Error(
-                    `Could not fetch ${key === UserEnum.Freelancer ? "Freelancer's" : "SatShoot's"} zap receipt: ${error}`
+                    `Could not fetch ${payee} zap receipt: ${error}`
                 );
             }
         }
@@ -165,7 +196,7 @@ export class LightningPaymentService {
                 paymentRequest: invoice,
                 receiver: pubkey,
                 eventId: event.id,
-                zapper: zapConfig.nostrPubkey,
+                zapper: zapConfig.nostrPubkey,// TODO (rodant): not the current user?
             });
         } else {
             throw new Error(`Could not fetch ${userEnum}'s zap config!`);
