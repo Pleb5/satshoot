@@ -80,7 +80,7 @@
     }
 
     function goToChat() {
-        const url = new URL('/messages/' + bech32ID);
+        const url = new URL('/messages/' + bech32ID, window.location.origin);
         if ($currentUser && $currentUser.pubkey !== job.pubkey) {
             url.searchParams.append(SELECTED_QUERY_PARAM, job.pubkey);
         } else if (job.winnerFreelancer) {

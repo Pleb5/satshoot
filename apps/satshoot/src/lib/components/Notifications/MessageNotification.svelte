@@ -31,7 +31,7 @@
     let userProfile: NDKUserProfile | null;
     let decryptedDM = $state<string>();
     let messageLink = $state('');
-    const jobAddress = notification.tagValue('t');
+    const eventAddress = notification.tagValue('a');
 
     onMount(async () => {
         userProfile = await user.fetchProfile();
@@ -56,15 +56,15 @@
             console.trace(e);
         }
 
-        if (jobAddress) {
-            const event = await $ndk.fetchEvent(jobAddress, {
+        if (eventAddress) {
+            const event = await $ndk.fetchEvent(eventAddress, {
                 groupable: true,
                 groupableDelay: 1000,
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             });
+
             if (event) {
-                const jobEvent = JobEvent.from(event);
-                messageLink = '/messages/' + jobEvent.encode();
+                messageLink = '/messages/' + event.encode();
             }
         }
     });
@@ -74,8 +74,10 @@
             console.log('putting this notif into read ones...', notification.id);
             readNotifications.update((notifications) => notifications.add(notification.id));
         }
+
         if (!messageLink)
             throw new Error('Error: Message link undefined, trying to navigate to undefined URL!');
+
         const url = new URL(messageLink, window.location.origin);
         url.searchParams.append(SELECTED_QUERY_PARAM, notification.pubkey);
         goto(url);
