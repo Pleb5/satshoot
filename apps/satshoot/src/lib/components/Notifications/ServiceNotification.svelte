@@ -160,7 +160,7 @@
                 </a>
                 <div class="flex flex-row gap-[5px] flex-wrap">
                     {#if orderState === 'Order Placed'}
-                        <p>Has placed an other on:</p>
+                        <p>Has placed an order on:</p>
                     {:else if orderState === 'Order Accepted'}
                         <p>Has accepted your order on:</p>
                     {:else if orderState === 'Order Closed'}

@@ -38,14 +38,17 @@ export const messageStore = get(ndk).storeSubscribe(
 export const wotFilteredMessageFeed = derived([messageStore, wot], ([$messageStore, $wot]) => {
     // console.log('wotFilteredMessageFeed', wotFilteredMessageFeed)
     const feed = $messageStore.filter((message: NDKEvent) => {
-        let relatedToJob = false;
+        let relatedToFreelance = false;
         message.tags.forEach((tag: NDKTag) => {
-            if (tag[0] === 't' && tag[1].includes(NDKKind.FreelanceJob.toString())) {
-                relatedToJob = true;
+            if (
+                tag[0] === 'a' &&
+                tag[1].includes(NDKKind.FreelanceJob.toString() || NDKKind.FreelanceJob.toString())
+            ) {
+                relatedToFreelance = true;
             }
         });
 
-        if (!relatedToJob) return false;
+        if (!relatedToFreelance) return false;
 
         if (!$wot.has(message.pubkey)) return false;
 
