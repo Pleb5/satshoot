@@ -46,8 +46,8 @@ export class PaymentService {
         }
         satshootPercentage = this.secondaryEntity.pledgeSplit - sponsoredPercentage;
 
-        const sponsoredShare = Math.floor((this.amount * sponsoredPercentage) / 100); 
-        const satshootShare = Math.floor((this.amount * satshootPercentage) / 100);
+        const sponsoredShare = Math.floor(this.amount * sponsoredPercentage / 100); 
+        const satshootShare = Math.floor(this.amount * satshootPercentage / 100);
         const freelancerShare = this.amount - satshootShare - sponsoredShare;
 
         return {
@@ -55,7 +55,7 @@ export class PaymentService {
             freelancerShare,
             sponsoredShare,
             totalSatshootAmount: satshootShare + this.satshootAmount,
-            totalSponsoredAmount: this.sponsoredAmount + this.sponsoredAmount
+            totalSponsoredAmount: sponsoredShare + this.sponsoredAmount
         };
     }
 
