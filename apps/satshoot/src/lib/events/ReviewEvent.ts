@@ -9,14 +9,14 @@ import {
 import NDK from '@nostr-dev-kit/ndk';
 
 enum FreelancerRatings {
-    success = '0.5',
-    expertise = '0.3',
-    communication = '0.2',
+    success = 0.5,
+    expertise = 0.3,
+    communication = 0.2,
 }
 
 enum ClientRatings {
-    thumb = '0.5',
-    communication = '0.5',
+    thumb = 0.5,
+    communication = 0.5,
 }
 
 export enum ReviewType {
@@ -86,10 +86,10 @@ export class ReviewEvent extends NDKEvent {
 
         this.removeTag('rating');
 
-        const thumb = r.thumb ? ClientRatings.thumb : '0';
+        const thumb = r.thumb ? '1' : '0';
         this.tags.push(['rating', thumb, 'thumb']);
 
-        const communication = r.communication ? ClientRatings.communication : '0';
+        const communication = r.communication ? '1' : '0';
         this.tags.push(['rating', communication, 'communication']);
 
         this.content = r.reviewText;
@@ -126,13 +126,13 @@ export class ReviewEvent extends NDKEvent {
 
         this.removeTag('rating');
 
-        const success = r.success ? FreelancerRatings.success : '0';
+        const success = r.success ? '1' : '0';
         this.tags.push(['rating', success, 'success']);
 
-        const expertise = r.expertise ? FreelancerRatings.expertise : '0';
+        const expertise = r.expertise ? '1' : '0';
         this.tags.push(['rating', expertise, 'expertise']);
 
-        const communication = r.communication ? FreelancerRatings.communication : '0';
+        const communication = r.communication ? '1' : '0';
         this.tags.push(['rating', communication, 'communication']);
 
         this.content = r.reviewText;
@@ -169,12 +169,18 @@ export class ReviewEvent extends NDKEvent {
 
     set reviewedEventAddress(eventAddress: string) {
         const eventKind = parseInt(eventAddress.split(':')[0] as string);
-        if (eventKind === NDKKind.FreelanceBid && this.type === ReviewType.Client) {
-            throw new Error('Client reviews can only be given on Job events');
+        if (
+            this.type === ReviewType.Client &&
+            (eventKind === NDKKind.FreelanceBid || eventKind === NDKKind.FreelanceService)
+        ) {
+            throw new Error('Client reviews can only be given on Job/Order events');
         }
 
-        if (eventKind === NDKKind.FreelanceJob && this.type === ReviewType.Freelancer) {
-            throw new Error('Freelancer reviews can only be given on Bid events');
+        if (
+            this.type === ReviewType.Freelancer &&
+            (eventKind === NDKKind.FreelanceJob || eventKind === NDKKind.FreelanceOrder)
+        ) {
+            throw new Error('Freelancer reviews can only be given on Bid/service events');
         }
 
         this.removeTag('a');
@@ -205,9 +211,9 @@ export class ReviewEvent extends NDKEvent {
                     if (isNaN(rating) || !rating) return;
 
                     if (tag.includes('thumb')) {
-                        sum += parseFloat(ClientRatings.thumb);
+                        sum += ClientRatings.thumb;
                     } else if (tag.includes('communication')) {
-                        sum += parseFloat(ClientRatings.communication);
+                        sum += ClientRatings.communication;
                     }
                 }
             });
@@ -220,11 +226,11 @@ export class ReviewEvent extends NDKEvent {
                     if (isNaN(rating) || !rating) return;
 
                     if (tag.includes('success')) {
-                        sum += parseFloat(FreelancerRatings.success);
+                        sum += FreelancerRatings.success;
                     } else if (tag.includes('expertise')) {
-                        sum += parseFloat(FreelancerRatings.expertise);
+                        sum += FreelancerRatings.expertise;
                     } else if (tag.includes('communication')) {
-                        sum += parseFloat(FreelancerRatings.communication);
+                        sum += FreelancerRatings.communication;
                     }
                 }
             });

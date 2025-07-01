@@ -3,7 +3,7 @@
     import { ReviewType, type ReviewEvent } from '$lib/events/ReviewEvent';
     import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
-    import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import { NDKKind, NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
@@ -14,6 +14,8 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
+    import { ServiceEvent } from '$lib/events/ServiceEvent';
+    import { OrderEvent } from '$lib/events/OrderEvent';
 
     interface Props {
         notification: ReviewEvent;
@@ -28,7 +30,8 @@
     let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
-    let job = $state<JobEvent | null>();
+    let jobOrService = $state<JobEvent | ServiceEvent>();
+    let label = $state('');
 
     let showReviewModal = $state(false);
 
@@ -50,10 +53,16 @@
                 cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             });
 
+            const reviewedEventKind = parseInt(notification.reviewedEventAddress.split(':')[0]);
+
             if (reviewedEvent) {
-                if (notification.type === ReviewType.Client) {
-                    job = JobEvent.from(reviewedEvent);
-                } else {
+                if (reviewedEventKind === NDKKind.FreelanceService) {
+                    jobOrService = ServiceEvent.from(reviewedEvent);
+                    label = 'has reviewed service:';
+                } else if (reviewedEventKind === NDKKind.FreelanceJob) {
+                    jobOrService = JobEvent.from(reviewedEvent);
+                    label = 'has reviewed job:';
+                } else if (reviewedEventKind === NDKKind.FreelanceBid) {
                     const bid = BidEvent.from(reviewedEvent);
                     const jobEvent = await $ndk.fetchEvent(bid.referencedJobAddress, {
                         groupable: true,
@@ -61,7 +70,19 @@
                         cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
                     });
                     if (jobEvent) {
-                        job = JobEvent.from(jobEvent);
+                        jobOrService = JobEvent.from(jobEvent);
+                        label = 'has reviewed a bid on job:';
+                    }
+                } else if (reviewedEventKind === NDKKind.FreelanceOrder) {
+                    const order = OrderEvent.from(reviewedEvent);
+                    const serviceEvent = await $ndk.fetchEvent(order.referencedServiceAddress, {
+                        groupable: true,
+                        groupableDelay: 1000,
+                        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                    });
+                    if (serviceEvent) {
+                        jobOrService = ServiceEvent.from(serviceEvent);
+                        label = 'has reviewed an order on service:';
                     }
                 }
             }
@@ -78,7 +99,7 @@
                 {
                     npub: user.npub,
                     name: userName,
-                    job: job?.title,
+                    job: jobOrService?.title,
                 },
             ];
 
@@ -136,13 +157,13 @@
         <div class="flex flex-col grow-1 items-start">
             <p>{userName}</p>
             <div class="flex flex-row gap-[5px] flex-wrap">
-                <p>Has left a review for job:</p>
-                {#if job}
+                <p>{label}</p>
+                {#if jobOrService}
                     <a
-                        href={'/' + job.encode() + '/'}
+                        href={'/' + jobOrService.encode() + '/'}
                         class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
                     >
-                        "{job.title}"
+                        "{jobOrService.title}"
                     </a>
                 {:else}
                     <div class="w-32 placeholder animate-pulse bg-blue-600"></div>
