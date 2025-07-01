@@ -75,20 +75,23 @@
         if (orderedMessages.length > 0) {
             const encryptedMessage = orderedMessages[orderedMessages.length - 1];
             const peerPubkey = messageService.peerFromMessage(encryptedMessage);
-            if (peerPubkey) {
-                const peerUser = $ndk.getUser({ pubkey: peerPubkey });
-                const decryptedMessage = await $ndk.signer?.decrypt(
-                    peerUser,
-                    encryptedMessage.content
-                );
-                if (decryptedMessage) {
-                    latestMessage =
-                        decryptedMessage.length > 20
-                            ? decryptedMessage.substring(0, 20) + '...'
-                            : decryptedMessage;
-                } else {
-                    latestMessage = 'Could not decrypt latest message!';
-                }
+
+            if (!peerPubkey) return;
+
+            const peerUser = $ndk.getUser({ pubkey: peerPubkey });
+            let decryptedMessage = await $ndk.signer?.decrypt(peerUser, encryptedMessage.content);
+            if (decryptedMessage) {
+                decryptedMessage = decryptedMessage
+                    .split('\n')
+                    .filter((line) => !line.startsWith('Reply to this message in SatShoot'))
+                    .join('\n');
+
+                latestMessage =
+                    decryptedMessage.length > 20
+                        ? decryptedMessage.substring(0, 20) + '...'
+                        : decryptedMessage;
+            } else {
+                latestMessage = 'Could not decrypt latest message!';
             }
         } else {
             latestMessage = 'No messages';
