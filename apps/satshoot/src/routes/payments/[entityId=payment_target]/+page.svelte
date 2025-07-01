@@ -29,7 +29,9 @@
     let isUserLoggedIn = $derived(!!$currentUser && $loggedIn);
     let primaryEntity = $state<JobEvent | ServiceEvent>();
     let secondaryEntity = $state<BidEvent | OrderEvent>();
-    let cashuPopoverState = $state(false);
+    let cashuPopoverStateFreelancer = $state(false);
+    let cashuPopoverStateSatshoot = $state(false);
+    let cashuPopoverStateSponsored = $state(false);
     let paymentManager = $state<PaymentManagerService | undefined>(undefined);
     let isSponsoring = $state(false);
 
@@ -273,10 +275,10 @@
                     <div
                         class="w-full flex flex-col rounded-[8px] p-[15px] shadow-subtle bg-white dark:bg-brightGray gap-[15px]"
                     >
-                        {#if cashuTooltipText}
+                        {#if cashuTooltipText && paymentManager.payment.amount}
                             <Popover
-                                open={cashuPopoverState}
-                                onOpenChange={(e) => (cashuPopoverState = e.open)}
+                                open={cashuPopoverStateFreelancer}
+                                onOpenChange={(e) => (cashuPopoverStateFreelancer = e.open)}
                                 positioning={{ placement: 'top' }}
                                 triggerBase="btn preset-tonal"
                                 contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
@@ -366,10 +368,10 @@
                                     </Button>
                                 {/if}
                             </div>
-                            {#if cashuTooltipText}
+                            {#if cashuTooltipText && paymentManager.payment.satshootAmount}
                                 <Popover
-                                    open={cashuPopoverState}
-                                    onOpenChange={(e) => (cashuPopoverState = e.open)}
+                                    open={cashuPopoverStateSatshoot}
+                                    onOpenChange={(e) => (cashuPopoverStateSatshoot = e.open)}
                                     positioning={{ placement: 'top' }}
                                     triggerBase="btn preset-tonal"
                                     contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
@@ -459,6 +461,28 @@
                                 {/if}
                             </div>
                             {#if isSponsoring}
+                                {#if cashuTooltipText && paymentManager.payment.sponsoredAmount}
+                                    <Popover
+                                        open={cashuPopoverStateSponsored}
+                                        onOpenChange={(e) => (cashuPopoverStateSponsored = e.open)}
+                                        positioning={{ placement: 'top' }}
+                                        triggerBase="btn preset-tonal"
+                                        contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[320px]"
+                                        arrow
+                                        arrowBackground="!bg-surface-200 dark:!bg-surface-800"
+                                    >
+                                        {#snippet trigger()}
+                                            <i
+                                                class="bx bx-question-mark bg-[red] text-white p-[3px] rounded-[50%]"
+                                            ></i>
+                                        {/snippet}
+                                        {#snippet content()}
+                                            <Card>
+                                                <p>{cashuTooltipText}</p>
+                                            </Card>
+                                        {/snippet}
+                                    </Popover>
+                                {/if}
                                 <div class="w-full flex flex-col gap-[5px]">
                                     <label class="font-[500]" for="plattform-contribution"
                                         >Sponsor npub</label
