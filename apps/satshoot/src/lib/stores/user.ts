@@ -1,4 +1,4 @@
-import { type NDKUser, type Hexpubkey, type NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
+import { type NDKUser, type Hexpubkey, type NDKEvent, NDKKind, NDKList } from '@nostr-dev-kit/ndk';
 import { derived, writable } from 'svelte/store';
 import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
@@ -25,17 +25,17 @@ export const followsUpdated: Writable<number> = persisted('followsUpdated', 0);
 
 const currentUser = writable<NDKUser | null>(null);
 
-export const freelanceFollowEvents = writable(new Map<Hexpubkey, NDKEvent>());
+export const freelanceFollowSets = writable(new Map<Hexpubkey, NDKList>());
 
 export const currentUserFreelanceFollows = derived(
-    [freelanceFollowEvents, currentUser],
+    [freelanceFollowSets, currentUser],
     ([$freelanceFollowsEvents, $currentUser]) => {
         const pubKeySet: Set<Hexpubkey> = new Set();
 
         if ($currentUser) {
-            const currentUserFollowEvent = $freelanceFollowsEvents.get($currentUser.pubkey);
-            if (currentUserFollowEvent) {
-                const follows = filterValidPTags(currentUserFollowEvent.tags);
+            const currentUserFollowSet = $freelanceFollowsEvents.get($currentUser.pubkey);
+            if (currentUserFollowSet) {
+                const follows = filterValidPTags(currentUserFollowSet.tags);
                 follows.forEach((f) => pubKeySet.add(f));
             }
         }
@@ -43,12 +43,12 @@ export const currentUserFreelanceFollows = derived(
     }
 );
 
-export const fetchFreelanceFollowEvent = async (pubkey: Hexpubkey): Promise<NDKEvent | null> => {
-    const followEvent = await fetchEventFromRelaysFirst(
+export const fetchFreelanceFollowSet = async (pubkey: Hexpubkey): Promise<NDKEvent | null> => {
+    const followSet = await fetchEventFromRelaysFirst(
         {
-            kinds: [NDKKind.KindScopedFollow],
-            '#k': [NDKKind.FreelanceJob.toString(), NDKKind.FreelanceBid.toString()],
+            kinds: [NDKKind.FollowSet],
             authors: [pubkey],
+            '#d': ['freelance'],
         },
         {
             fallbackToCache: true,
@@ -56,14 +56,15 @@ export const fetchFreelanceFollowEvent = async (pubkey: Hexpubkey): Promise<NDKE
         }
     );
 
-    if (followEvent) {
-        freelanceFollowEvents.update((map) => {
-            map.set(pubkey, followEvent);
+    if (followSet) {
+        freelanceFollowSets.update((map) => {
+            const followList = NDKList.from(followSet);
+            map.set(pubkey, followList);
             return map;
         });
     }
 
-    return followEvent;
+    return followSet;
 };
 
 export default currentUser;

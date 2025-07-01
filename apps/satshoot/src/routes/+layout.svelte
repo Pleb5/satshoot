@@ -626,9 +626,9 @@
             if (!followSubscription) {
                 followSubscription = $ndk.subscribe(
                     {
-                        kinds: [NDKKind.KindScopedFollow],
-                        '#k': [NDKKind.FreelanceJob.toString(), NDKKind.FreelanceBid.toString()],
+                        kinds: [NDKKind.FollowSet],
                         '#p': [$currentUser.pubkey],
+                        '#d': ['freelance'],
                     },
                     {
                         closeOnEose: false,

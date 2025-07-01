@@ -11,8 +11,8 @@ import { NDKSubscriptionCacheUsage, NDKKind } from '@nostr-dev-kit/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import { tick } from 'svelte';
 
-import currentUser, { currentUserFreelanceFollows, fetchFreelanceFollowEvent } from '../stores/user';
-import {followsUpdated } from '../stores/user';
+import currentUser, { currentUserFreelanceFollows, fetchFreelanceFollowSet } from '../stores/user';
+import { followsUpdated } from '../stores/user';
 
 import satShootWoT from './satshoot-wot';
 
@@ -43,22 +43,8 @@ export const wotUpdateNoResults = writable(false);
 
 let saveSatShootWoT = false;
 export const wot = derived(
-    [
-        networkWoTScores,
-        minWot,
-        currentUser,
-        currentUserFreelanceFollows,
-        useSatShootWoT
-    ],
-    (
-        [
-            $networkWoTScores,
-            $minWot,
-            $currentUser,
-            $currentUserFreelanceFollows,
-            $useSatShootWoT
-        ]
-    ) => {
+    [networkWoTScores, minWot, currentUser, currentUserFreelanceFollows, useSatShootWoT],
+    ([$networkWoTScores, $minWot, $currentUser, $currentUserFreelanceFollows, $useSatShootWoT]) => {
         const initialWoT: Array<Hexpubkey> = [];
         if ($useSatShootWoT) {
             initialWoT.push(SatShootPubkey);
@@ -90,7 +76,7 @@ export const wot = derived(
 
 export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
     // This should not take more than 15 sec
-    console.log('Start Loading WOT')
+    console.log('Start Loading WOT');
     setTimeout(() => {
         if (get(wotUpdating)) {
             wotUpdateFailed.set(true);
@@ -103,7 +89,7 @@ export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
         await tick();
 
         // fetch the freelance follow event of current user
-        const freelanceFollows = await fetchFreelanceFollowEvent(user.pubkey);
+        const freelanceFollows = await fetchFreelanceFollowSet(user.pubkey);
 
         if (updateNecessary()) {
             const primaryWoTEventsFilter: NDKFilter = {
@@ -111,14 +97,11 @@ export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
                 authors: [user.pubkey],
             };
 
-            const primaryWoTEvents = await ndk.fetchEvents(
-                primaryWoTEventsFilter,
-                {
-                    groupable: false,
-                    closeOnEose: true,
-                    cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-                }
-            );
+            const primaryWoTEvents = await ndk.fetchEvents(primaryWoTEventsFilter, {
+                groupable: false,
+                closeOnEose: true,
+                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+            });
 
             if (primaryWoTEvents.size > 0) {
                 await updateSocialWoT(primaryWoTEvents, ndk);
@@ -146,27 +129,17 @@ function updateNecessary(): boolean {
 
     const $networkWoTScores = get(networkWoTScores);
 
-    if (
-        $followsUpdated < updateDelay ||
-            $networkWoTScores.size === 0
-    ) {
+    if ($followsUpdated < updateDelay || $networkWoTScores.size === 0) {
         return true;
     }
     return false;
 }
 
-async function updateSocialWoT(
-    primaryWoTEvents: Set<NDKEvent>, 
-    ndk: NDKSvelte
-) {
+async function updateSocialWoT(primaryWoTEvents: Set<NDKEvent>, ndk: NDKSvelte) {
     const newWoTScores = new Map<Hexpubkey, number>();
 
     // first order scores. Authors for the second order wot score are recorded
-    const authors: Set<Hexpubkey> = updateWotScores(
-        primaryWoTEvents,
-        newWoTScores,
-        true
-    );
+    const authors: Set<Hexpubkey> = updateWotScores(primaryWoTEvents, newWoTScores, true);
     // Get a common relay set for the user's network
 
     // Now get ALL second order follows, mutes and reports
@@ -175,12 +148,7 @@ async function updateSocialWoT(
     await ndk.outboxTracker!.trackUsers(authorsArray);
 
     const networkFilter = {
-        kinds: [
-            NDKKind.Contacts,
-            NDKKind.MuteList,
-            NDKKind.Report,
-            NDKKind.Metadata
-        ],
+        kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report, NDKKind.Metadata],
         authors: authorsArray,
     };
 
@@ -191,9 +159,7 @@ async function updateSocialWoT(
     });
 
     if (networkEvents.size === 0) {
-        throw new Error(
-            'Could not fetch events to build trust network from INDIRECT follows!'
-        );
+        throw new Error('Could not fetch events to build trust network from INDIRECT follows!');
     }
 
     // Second order scores

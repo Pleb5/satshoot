@@ -114,7 +114,7 @@ export const receivedZapsNotifications = derived([notifications], ([$notificatio
 
 export const followNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-        return notification.kind === NDKKind.KindScopedFollow;
+        return notification.kind === NDKKind.FollowSet;
     });
 
     orderEventsChronologically(filteredEvents);
@@ -166,10 +166,10 @@ export async function sendNotification(event: NDKEvent) {
             body = '🔔 Check your Notifications!';
             tag = NDKKind.Zap.toString();
             break;
-        case NDKKind.KindScopedFollow:
+        case NDKKind.FollowSet:
             title = 'Someone has followed you!';
             body = '🔔 Check your Notifications!';
-            tag = NDKKind.KindScopedFollow.toString();
+            tag = NDKKind.FollowSet.toString();
             break;
     }
 

@@ -62,7 +62,7 @@ async function openNotificationWindow(tag: string) {
     const messageNotification = tag === NDKKind.EncryptedDirectMessage.toString();
     const reviewNotification = tag === NDKKind.Review.toString();
     const receivedZapNotification = tag === NDKKind.Zap.toString();
-    const followNotification = tag === NDKKind.KindScopedFollow.toString();
+    const followNotification = tag === NDKKind.FollowSet.toString();
 
     if (
         !jobNotification &&

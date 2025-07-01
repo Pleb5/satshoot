@@ -2,8 +2,8 @@
     import ndk from '$lib/stores/session';
     import currentUser, {
         currentUserFreelanceFollows,
-        fetchFreelanceFollowEvent,
-        freelanceFollowEvents,
+        fetchFreelanceFollowSet,
+        freelanceFollowSets,
     } from '$lib/stores/user';
     import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
@@ -11,6 +11,7 @@
     import {
         NDKEvent,
         NDKKind,
+        NDKList,
         profileFromEvent,
         type NDKUser,
         type NDKUserProfile,
@@ -48,9 +49,10 @@
 
     // State
     let userProfile = $state<NDKUserProfile | null>(null);
-    let processingFollowEvent = $state(false);
+    let processingFollowSet = $state(false);
     let showNpubQR = $state(false);
     let showNProfileQR = $state(false);
+    let hasLoadedFollowSet = $state(false);
 
     // Derived state
     const npub = $derived(user.npub);
@@ -67,7 +69,7 @@
     const showMessageButton = $derived(!!job && job.pubkey !== $currentUser?.pubkey);
 
     const followStatus = $derived.by(() => {
-        if (!$currentUserFreelanceFollows || !$freelanceFollowEvents || !$currentUser) {
+        if (!$currentUserFreelanceFollows || !$freelanceFollowSets || !$currentUser) {
             return FollowStatus.none;
         }
 
@@ -78,10 +80,10 @@
         }
 
         // Check if this user is following current user
-        const targetUserFollowEvent = $freelanceFollowEvents.get(user.pubkey);
-        if (targetUserFollowEvent) {
+        const targetUserFollowSet = $freelanceFollowSets.get(user.pubkey);
+        if (targetUserFollowSet) {
             // list of all users whom target user is following
-            const follows = filterValidPTags(targetUserFollowEvent.tags);
+            const follows = filterValidPTags(targetUserFollowSet.tags);
             // Update the status if target user is following current user
             // but current user is not following target user
             if (follows.includes($currentUser.pubkey)) {
@@ -105,10 +107,30 @@
     });
 
     $effect(() => {
+        if (!$currentUser) return;
+
+        if ($freelanceFollowSets.get($currentUser.pubkey)) {
+            hasLoadedFollowSet = true;
+            return;
+        }
+
+        fetchFreelanceFollowSet($currentUser.pubkey)
+            .then(() => {
+                hasLoadedFollowSet = true;
+            })
+            .catch((err) => {
+                toaster.error({
+                    title: 'Error in fetching follows set',
+                    description: err.message || '',
+                });
+            });
+    });
+
+    $effect(() => {
         if ($sessionInitialized) {
             setProfile();
             if (user.pubkey !== $currentUser?.pubkey) {
-                fetchFreelanceFollowEvent(user.pubkey);
+                fetchFreelanceFollowSet(user.pubkey);
             }
         }
     });
@@ -122,94 +144,71 @@
     async function follow() {
         if (!$currentUser) return;
 
-        processingFollowEvent = true;
+        processingFollowSet = true;
 
-        const followEvent = $freelanceFollowEvents.get($currentUser.pubkey);
+        let followSet = $freelanceFollowSets.get($currentUser.pubkey);
 
-        if (followEvent) {
-            // publish delete event with reference to previous follow event
-            const deleteEvent = new NDKEvent($ndk);
-            deleteEvent.kind = NDKKind.EventDeletion;
-            deleteEvent.tag(['e', followEvent.id]);
-            deleteEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
-            deleteEvent.tag(['k', NDKKind.FreelanceBid.toString()]);
-            deleteEvent.publish();
+        if (!followSet) {
+            followSet = new NDKList($ndk);
+            followSet.kind = NDKKind.FollowSet;
+            followSet.tag(['d', 'freelance']);
         }
 
-        // create and publish a new follow event
-        const newFollowEvent = new NDKEvent($ndk);
-        newFollowEvent.kind ??= NDKKind.KindScopedFollow;
-        newFollowEvent.tags = followEvent ? followEvent.tags : [];
-        newFollowEvent.tag(['p', user.pubkey]);
-        newFollowEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
-        newFollowEvent.tag(['k', NDKKind.FreelanceBid.toString()]);
+        followSet.tag(['p', user.pubkey]);
 
-        await newFollowEvent
-            .publish()
+        await followSet
+            .publishReplaceable()
             .then(() => {
                 toaster.success({
                     title: 'Followed!',
                 });
 
-                freelanceFollowEvents.update((map) => {
-                    map.set($currentUser.pubkey, newFollowEvent);
+                freelanceFollowSets.update((map) => {
+                    map.set($currentUser.pubkey, followSet);
                     return map;
                 });
             })
             .catch((err) => {
                 console.error(err);
                 toaster.error({
-                    title: 'Failed to publish follow event',
+                    title: 'Failed to publish follow set',
                 });
             })
             .finally(() => {
-                processingFollowEvent = false;
+                processingFollowSet = false;
             });
     }
 
     async function unFollow() {
         if (!$currentUser) return;
-        const followEvent = $freelanceFollowEvents.get($currentUser.pubkey);
+        const followSet = $freelanceFollowSets.get($currentUser.pubkey);
 
-        if (!followEvent) return;
+        if (!followSet) return;
 
-        processingFollowEvent = true;
+        processingFollowSet = true;
 
-        // publish delete event with reference to previous follow event
-        const deleteEvent = new NDKEvent($ndk);
-        deleteEvent.kind = NDKKind.EventDeletion;
-        deleteEvent.tag(['e', followEvent.id]);
-        deleteEvent.tag(['k', NDKKind.FreelanceJob.toString()]);
-        deleteEvent.tag(['k', NDKKind.FreelanceBid.toString()]);
-        deleteEvent.publish();
+        followSet.removeItemByValue(user.pubkey);
 
-        // create and publish a new follow event
-        const newFollowEvent = new NDKEvent($ndk);
-        newFollowEvent.kind ??= NDKKind.KindScopedFollow;
-        newFollowEvent.tags = followEvent.tags.filter(
-            (tag) => tag[0] !== 'p' || tag[1] !== user.pubkey
-        );
-
-        await newFollowEvent
-            .publish()
+        await followSet
+            .publishReplaceable()
             .then(() => {
                 toaster.success({
                     title: 'Un-followed!',
                 });
 
-                freelanceFollowEvents.update((map) => {
-                    map.set($currentUser.pubkey, newFollowEvent);
+                freelanceFollowSets.update((map) => {
+                    map.set($currentUser.pubkey, followSet);
                     return map;
                 });
             })
             .catch((err) => {
                 console.error(err);
                 toaster.error({
-                    title: 'Failed to publish follow event',
+                    title: 'Failed to publish follow set',
                 });
             })
             .finally(() => {
-                processingFollowEvent = false;
+                processingFollowSet = false;
             });
     }
 
@@ -429,10 +428,10 @@
                     />
                 </div>
             </div>
-            {#if $currentUser && $currentUser.npub !== npub}
+            {#if $currentUser && $currentUser.npub !== npub && hasLoadedFollowSet}
                 <div class="flex flex-col gap-[10px]">
                     <Button onClick={followStatus === FollowStatus.isFollowing ? unFollow : follow}>
-                        {#if processingFollowEvent}
+                        {#if processingFollowSet}
                             <ProgressRing />
                         {:else}
                             {followBtnText}
