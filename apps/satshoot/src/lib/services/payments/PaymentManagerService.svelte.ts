@@ -6,7 +6,7 @@ import { createPaymentFilters, createPaymentStore, type PaymentStore } from '$li
 import currentUser from '$lib/stores/user';
 import { get } from 'svelte/store';
 import type { JobEvent } from '$lib/events/JobEvent';
-import type { BidEvent } from '$lib/events/BidEvent';
+import { BidEvent } from '$lib/events/BidEvent';
 import type { ServiceEvent } from '$lib/events/ServiceEvent';
 import type { OrderEvent } from '$lib/events/OrderEvent';
 import { UserEnum } from './UserEnum';
@@ -43,15 +43,18 @@ export class PaymentManagerService {
         if (this.secondaryEntity && get(currentUser)) {
             const freelancerFilters = createPaymentFilters(this.secondaryEntity, 'freelancer');
             const satshootFilters = createPaymentFilters(this.secondaryEntity, 'satshoot');
-            const sponsoredFilters = createPaymentFilters(this.secondaryEntity, 'sponsored');
-
+            
             this.freelancerPaymentStore = createPaymentStore(freelancerFilters);
             this.satshootPaymentStore = createPaymentStore(satshootFilters);
-            this.sponsoredPaymentStore = createPaymentStore(sponsoredFilters);
-
+            
             this.freelancerPaymentStore.paymentStore.startSubscription();
             this.satshootPaymentStore.paymentStore.startSubscription();
-            this.sponsoredPaymentStore.paymentStore.startSubscription();
+            
+            if (this.secondaryEntity instanceof BidEvent && !!this.secondaryEntity.sponsoredNpub) {
+                const sponsoredFilters = createPaymentFilters(this.secondaryEntity, 'sponsored');
+                this.sponsoredPaymentStore = createPaymentStore(sponsoredFilters);
+                this.sponsoredPaymentStore.paymentStore.startSubscription();
+            }
         }
     }
 
