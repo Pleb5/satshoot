@@ -25,6 +25,8 @@
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import PaymentModal from '../Modals/PaymentModal.svelte';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
+    import { goto } from '$app/navigation';
 
     interface Props {
         order: OrderEvent;
@@ -155,6 +157,14 @@
     function handlePay() {
         showPaymentModal = true;
     }
+
+    function goToChat() {
+        if (!service) return;
+
+        const url = new URL('/messages/' + service.encode(), window.location.origin);
+        url.searchParams.append(SELECTED_QUERY_PARAM, order.pubkey);
+        goto(url.toString());
+    }
 </script>
 
 <div>
@@ -210,6 +220,9 @@
             {/if}
             {#if canPay}
                 <Button onClick={handlePay}>Pay</Button>
+            {/if}
+            {#if myService}
+                <Button onClick={goToChat}>Message</Button>
             {/if}
         </div>
     </Card>
