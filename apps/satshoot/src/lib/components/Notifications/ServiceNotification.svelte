@@ -13,12 +13,16 @@
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import currentUser from '$lib/stores/user';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { page } from '$app/state';
+    import Fuse from 'fuse.js';
 
     interface Props {
         notification: OrderEvent;
     }
 
     let { notification: order }: Props = $props();
+
+    let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
     let orderPublisher = $ndk.getUser({ pubkey: order.pubkey });
     let orderPublisherName = $state(orderPublisher.npub.substring(0, 8));
@@ -137,10 +141,56 @@
     onDestroy(() => {
         if (serviceStore) serviceStore.empty();
     });
+
+    const display = $derived.by(() => {
+        if (searchQuery && searchQuery.length > 0) {
+            const dataToSearch = [
+                {
+                    npub: user?.npub,
+                    name: userName,
+                    service: service?.title,
+                },
+            ];
+
+            const fuse = new Fuse(dataToSearch, {
+                isCaseSensitive: false,
+                ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+                threshold: 0.6,
+                minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+                keys: [
+                    {
+                        name: 'npub',
+                        weight: 0.3,
+                    },
+                    {
+                        name: 'name',
+                        weight: 0.3,
+                    },
+                    {
+                        name: 'service',
+                        weight: 0.4,
+                    },
+                ],
+            });
+            const searchResult = fuse.search(searchQuery);
+            return searchResult.length > 0;
+        }
+
+        return true;
+    });
+
+    const classes = $derived.by(() => {
+        let classes = $readNotifications.has(order.id) ? 'bg-black-50' : 'font-bold';
+        if (!display) {
+            classes += ' hidden';
+        }
+
+        return classes;
+    });
 </script>
 
 <Card
-    classes={$readNotifications.has(order.id) ? 'bg-black-50' : 'font-bold'}
+    {classes}
     actAsButton
     onClick={() => {
         if (!$readNotifications.has(order.id)) {

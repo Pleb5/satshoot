@@ -17,6 +17,8 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
+    import { page } from '$app/state';
+    import Fuse from 'fuse.js';
 
     interface Props {
         notification: NDKEvent;
@@ -24,7 +26,9 @@
 
     let { notification }: Props = $props();
 
-    let user = $ndk.getUser({ pubkey: notification.pubkey });
+    let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
+
+    let user = $state($ndk.getUser({ pubkey: notification.pubkey }));
     let userName = $state(user.npub.substring(0, 8));
     let userImage = $state(getRoboHashPicture(user.pubkey));
 
@@ -52,6 +56,10 @@
 
             const peerUser = $ndk.getUser({ pubkey: peerPubkey });
             decryptedDM = await ($ndk.signer as NDKSigner).decrypt(peerUser, notification.content);
+            decryptedDM = decryptedDM
+                .split('\n')
+                .filter((line) => !line.startsWith('Reply to this message in SatShoot'))
+                .join('\n');
         } catch (e) {
             console.trace(e);
         }
@@ -82,13 +90,55 @@
         url.searchParams.append(SELECTED_QUERY_PARAM, notification.pubkey);
         goto(url);
     };
+
+    const display = $derived.by(() => {
+        if (searchQuery && searchQuery.length > 0) {
+            const dataToSearch = [
+                {
+                    npub: user.npub,
+                    name: userProfile?.name || userName,
+                    displayName: userProfile?.displayName || '',
+                },
+            ];
+
+            const fuse = new Fuse(dataToSearch, {
+                isCaseSensitive: false,
+                ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+                threshold: 0.6,
+                minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+                keys: [
+                    {
+                        name: 'npub',
+                        weight: 0.4,
+                    },
+                    {
+                        name: 'name',
+                        weight: 0.3,
+                    },
+                    {
+                        name: 'displayName',
+                        weight: 0.3,
+                    },
+                ],
+            });
+            const searchResult = fuse.search(searchQuery);
+            return searchResult.length > 0;
+        }
+
+        return true;
+    });
+
+    const classes = $derived.by(() => {
+        let classes = $readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold';
+        if (!display) {
+            classes += ' hidden';
+        }
+
+        return classes;
+    });
 </script>
 
-<Card
-    classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
-    actAsButton
-    onClick={goToChat}
->
+<Card {classes} actAsButton onClick={goToChat}>
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + user.npub}>

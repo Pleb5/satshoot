@@ -12,6 +12,8 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { BidEvent } from '$lib/events/BidEvent';
     import currentUser from '$lib/stores/user';
+    import { page } from '$app/state';
+    import Fuse from 'fuse.js';
 
     interface Props {
         notification: JobEvent | BidEvent;
@@ -19,12 +21,66 @@
 
     let { notification }: Props = $props();
 
+    let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
+
     let user = $ndk.getUser({ pubkey: notification.pubkey });
     let userName = $state(user.npub.substring(0, 8));
     let userImage = $state(getRoboHashPicture(user.pubkey));
     let npub = $state(user.npub);
 
     let job = $state<JobEvent | null>(null);
+
+    const userLink = $derived('/' + npub);
+    const jobLink = $derived(job ? '/' + job.encode() + '/' : '/');
+
+    const notificationMessage = $derived.by(() => {
+        if (notification instanceof JobEvent && notification.status === JobStatus.New) {
+            return {
+                prefix: 'Has posted a new job:',
+                title: notification.title,
+                link: '/' + notification.encode() + '/',
+            };
+        } else if (job) {
+            const isClient = job.pubkey === $currentUser?.pubkey;
+            const bidEvent = notification as BidEvent;
+
+            if (isClient && job.status === JobStatus.New) {
+                return {
+                    prefix: 'Has submitted a bid on the job:',
+                    title: job.title,
+                    link: jobLink,
+                };
+            }
+
+            if (!isClient && job.status === JobStatus.InProgress) {
+                if (job.acceptedBidAddress === bidEvent.bidAddress) {
+                    return {
+                        prefix: 'has Accepted your bid on the job:',
+                        prefixClass: 'text-warning-500',
+                        title: job.title,
+                        link: jobLink,
+                    };
+                } else if (job.acceptedBidAddress) {
+                    return {
+                        prefix: 'has Rejected your bid on the job:',
+                        prefixClass: 'text-error-500',
+                        title: job.title,
+                        link: jobLink,
+                    };
+                }
+            }
+
+            if (job.isClosed()) {
+                return {
+                    prefix: 'has closed the job:',
+                    title: job.title,
+                    link: jobLink,
+                };
+            }
+        }
+
+        return null;
+    });
 
     const loadUserProfile = async (userToLoad = user) => {
         const userProfile = await userToLoad.fetchProfile();
@@ -71,63 +127,83 @@
             readNotifications.update((notifications) => notifications.add(notification.id));
         }
     };
+
+    const display = $derived.by(() => {
+        if (searchQuery && searchQuery.length > 0) {
+            const dataToSearch = [
+                {
+                    npub: npub,
+                    name: userName,
+                    job: notificationMessage?.title,
+                    prefix: notificationMessage?.prefix,
+                },
+            ];
+
+            const fuse = new Fuse(dataToSearch, {
+                isCaseSensitive: false,
+                ignoreLocation: true, // When true, search will ignore location and distance, so it won't matter where in the string the pattern appears
+                threshold: 0.6,
+                minMatchCharLength: 2, // Only the matches whose length exceeds this value will be returned
+                keys: [
+                    {
+                        name: 'npub',
+                        weight: 0.3,
+                    },
+                    {
+                        name: 'name',
+                        weight: 0.3,
+                    },
+                    {
+                        name: 'job',
+                        weight: 0.3,
+                    },
+                    {
+                        name: 'prefix',
+                        weight: 0.1,
+                    },
+                ],
+            });
+            const searchResult = fuse.search(searchQuery);
+            return searchResult.length > 0;
+        }
+
+        return true;
+    });
+
+    const classes = $derived.by(() => {
+        let classes = $readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold';
+        if (!display) {
+            classes += ' hidden';
+        }
+
+        return classes;
+    });
 </script>
 
-<Card
-    classes={$readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold'}
-    actAsButton
-    onClick={markAsRead}
->
+<Card {classes} actAsButton onClick={markAsRead}>
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
-        <a href={'/' + npub}>
+        <a href={userLink}>
             <ProfileImage src={userImage} />
         </a>
         <div class="min-w-[50%] flex flex-col items-start overflow-hidden">
-            <a href={'/' + npub}>
+            <a href={userLink}>
                 <p>{userName}</p>
             </a>
 
-            {#if notification instanceof JobEvent && notification.status === JobStatus.New}
+            {#if notificationMessage}
                 <div class="flex flex-row gap-[5px] flex-wrap">
-                    <p>Has posted a new job:</p>
+                    <p>
+                        <span class={notificationMessage.prefixClass ?? ''}>
+                            {notificationMessage.prefix}
+                        </span>
+                    </p>
                     <a
-                        href={'/' + notification.encode() + '/'}
+                        href={notificationMessage.link}
                         class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
                     >
-                        "{notification.title}"
+                        "{notificationMessage.title}"
                     </a>
-                </div>
-            {:else if job}
-                <div class="flex flex-col gap-[5px]">
-                    <div class="flex flex-row gap-[5px] flex-wrap">
-                        {#if job.pubkey === $currentUser?.pubkey}
-                            {#if job.status === JobStatus.New}
-                                <p>Has submitted a bid on the job:</p>
-                            {/if}
-                        {:else if job.status === JobStatus.InProgress}
-                            {#if job.acceptedBidAddress === (notification as BidEvent).bidAddress}
-                                <p>
-                                    has <span class="text-warning-500">Accepted</span> your bid on the
-                                    job:
-                                </p>
-                            {:else if job.acceptedBidAddress}
-                                <p>
-                                    has <span class="text-error-500">Rejected</span> your bid on the
-                                    job:
-                                </p>
-                            {/if}
-                        {:else if job.isClosed()}
-                            <p>has closed the job:</p>
-                        {/if}
-
-                        <a
-                            href={'/' + job.encode() + '/'}
-                            class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                            "{job.title}"
-                        </a>
-                    </div>
                 </div>
             {:else}
                 <div class="p-4 space-y-4 w-full">
