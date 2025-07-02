@@ -145,7 +145,7 @@ export class PaymentManagerService {
                 sponsoredSumMillisats
             );
 
-            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats);
+            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats);
         } catch (error: any) {
             console.error(error);
             this.toastService.handleGeneralError(`An error occurred in payment process: ${error}`);
@@ -180,7 +180,7 @@ export class PaymentManagerService {
                 satshootSumMillisats
             );
 
-            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats);
+            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats, 0);
         } catch (error: any) {
             console.error(error);
 
@@ -203,7 +203,8 @@ export class PaymentManagerService {
     private handlePaymentResults(
         paid: Map<UserEnum, boolean>,
         freelancerShareMillisats: number,
-        satshootSumMillisats: number
+        satshootSumMillisats: number,
+        sponsoredSumMillisats: number
     ) {
         if (freelancerShareMillisats) {
             this.toastService.handlePaymentStatus(
@@ -222,6 +223,16 @@ export class PaymentManagerService {
                 satshootSumMillisats,
                 'SatShoot Paid!',
                 'SatShoot Payment might have failed!'
+            );
+        }
+
+        if (sponsoredSumMillisats) {
+            this.toastService.handlePaymentStatus(
+                paid,
+                UserEnum.Sponsored,
+                sponsoredSumMillisats,
+                'Sponsored Npub Paid!',
+                'Sponsored Npub Payment might have failed!'
             );
         }
     }
