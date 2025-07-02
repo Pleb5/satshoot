@@ -276,7 +276,7 @@
                         class="w-full flex flex-col rounded-[8px] p-[15px] shadow-subtle bg-white dark:bg-brightGray gap-[15px]"
                     >
                         {#if cashuTooltipText && paymentManager.payment.amount}
-                            <Popover
+                            <!--Popover TODO (rodant): switched off for up coming release
                                 open={cashuPopoverStateFreelancer}
                                 onOpenChange={(e) => (cashuPopoverStateFreelancer = e.open)}
                                 positioning={{ placement: 'top' }}
@@ -295,7 +295,7 @@
                                         <p>{cashuTooltipText}</p>
                                     </Card>
                                 {/snippet}
-                            </Popover>
+                            </Popover-->
                         {/if}
                         <div class="w-full flex flex-col gap-[5px]">
                             <div class="w-full flex flex-col gap-[5px]">
@@ -313,7 +313,7 @@
                                 />
                             </div>
                             <!-- Payment Buttons for first Payee -->
-                            <div class="flex flex-row justify-center gap-[5px]">
+                            <div class="flex flex-row justify-center gap-[5px] py-[10px]">
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
@@ -334,13 +334,13 @@
                                     {/if}
                                 </Button>
                                 {#if hasSenderEcashSetup}
-                                    <Button
+                                    <!--Button TODO (rodant): switched off for up coming release
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={payFreelancerWithCashu}
                                         disabled={paying ||
                                             !canPayWithCashu ||
-                                            !paymentManager.payment.amount}
+                                            !paymentManager?.payment.amount}
                                     >
                                         {#if paying}
                                             <ProgressRing />
@@ -352,9 +352,9 @@
                                             />
                                             <span>Pay with Cashu</span>
                                         {/if}
-                                    </Button>
+                                    </Button-->
                                 {:else}
-                                    <Button
+                                    <!--Button TODO (rodant): switched off for up coming release
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={setupEcash}
@@ -365,11 +365,11 @@
                                             </span>
                                         {/if}
                                         <span> Setup Nostr Wallet </span>
-                                    </Button>
+                                    </Button-->
                                 {/if}
                             </div>
                             {#if cashuTooltipText && paymentManager.payment.satshootAmount}
-                                <Popover
+                                <!--Popover TODO (rodant): switched off for up coming release
                                     open={cashuPopoverStateSatshoot}
                                     onOpenChange={(e) => (cashuPopoverStateSatshoot = e.open)}
                                     positioning={{ placement: 'top' }}
@@ -388,7 +388,7 @@
                                             <p>{cashuTooltipText}</p>
                                         </Card>
                                     {/snippet}
-                                </Popover>
+                                </Popover-->
                             {/if}
                             <div class="w-full flex flex-col gap-[5px]">
                                 <label class="font-[500]" for="plattform-contribution"
@@ -405,7 +405,7 @@
                                 />
                             </div>
                             <!-- Payment Buttons for second Payee -->
-                            <div class="flex flex-row justify-center gap-[5px]">
+                            <div class="flex flex-row justify-center gap-[5px] py-[10px]">
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
@@ -426,7 +426,7 @@
                                     {/if}
                                 </Button>
                                 {#if hasSenderEcashSetup}
-                                    <Button
+                                    <!--Button TODO (rodant): switched off for up coming release
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={paySatshootWithCashu}
@@ -444,9 +444,9 @@
                                             />
                                             <span>Pay with Cashu</span>
                                         {/if}
-                                    </Button>
+                                    </Button-->
                                 {:else}
-                                    <Button
+                                    <!--Button TODO (rodant): switched off for up coming release
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={setupEcash}
@@ -457,12 +457,12 @@
                                             </span>
                                         {/if}
                                         <span> Setup Nostr Wallet </span>
-                                    </Button>
+                                    </Button-->
                                 {/if}
                             </div>
                             {#if isSponsoring}
                                 {#if cashuTooltipText && paymentManager.payment.sponsoredAmount}
-                                    <Popover
+                                    <!--Popover TODO (rodant): switched off for up coming release
                                         open={cashuPopoverStateSponsored}
                                         onOpenChange={(e) => (cashuPopoverStateSponsored = e.open)}
                                         positioning={{ placement: 'top' }}
@@ -481,7 +481,7 @@
                                                 <p>{cashuTooltipText}</p>
                                             </Card>
                                         {/snippet}
-                                    </Popover>
+                                    </Popover-->
                                 {/if}
                                 <div class="w-full flex flex-col gap-[5px]">
                                     <label class="font-[500]" for="plattform-contribution"
@@ -498,7 +498,7 @@
                                     />
                                 </div>
                                 <!-- Payment Buttons for third Payee -->
-                                <div class="flex flex-row justify-center gap-[5px]">
+                                <div class="flex flex-row justify-center gap-[5px] py-[10px]">
                                     <Button
                                         grow
                                         classes="w-[200px] max-w-[200px]"
@@ -519,7 +519,7 @@
                                         {/if}
                                     </Button>
                                     {#if hasSenderEcashSetup}
-                                        <Button
+                                        <!--Button TODO (rodant): switched off for up coming release
                                             grow
                                             classes="w-[200px] max-w-[200px]"
                                             onClick={paySponsoredWithCashu}
@@ -537,9 +537,9 @@
                                                 />
                                                 <span>Pay with Cashu</span>
                                             {/if}
-                                        </Button>
+                                        </Button-->
                                     {:else}
-                                        <Button
+                                        <!--Button TODO (rodant): switched off for up coming release
                                             grow
                                             classes="w-[200px] max-w-[200px]"
                                             onClick={setupEcash}
@@ -550,7 +550,7 @@
                                                 </span>
                                             {/if}
                                             <span> Setup Nostr Wallet </span>
-                                        </Button>
+                                        </Button-->
                                     {/if}
                                 </div>
                             {/if}
