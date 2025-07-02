@@ -201,7 +201,7 @@
                                 <p class="font-[500]">
                                     {pricingInfo?.costLabel}
                                     <span class="font-[300]">
-                                        {insertThousandSeparator(paymentManager.payment.amount) +
+                                        {insertThousandSeparator(secondaryEntity.amount) +
                                             ' ' +
                                             pricingInfo?.pricing}
                                     </span>
@@ -560,38 +560,14 @@
                             class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                         >
                             <p class="grow-1 text-center">
-                                Freelancer gets: {insertThousandSeparator(
-                                    paymentShares?.freelancerShare ?? 0
-                                )} sats
+                                Freelancer gets: {insertThousandSeparator(paymentManager.payment.amount ?? 0)} sats
                             </p>
                             <p class="grow-1 text-center">
-                                SatShoot gets: {insertThousandSeparator(
-                                    paymentShares?.satshootShare ?? 0
-                                ) +
-                                    ' + ' +
-                                    insertThousandSeparator(
-                                        paymentManager.payment.satshootAmount ?? 0
-                                    ) +
-                                    ' = ' +
-                                    insertThousandSeparator(
-                                        paymentShares?.totalSatshootAmount ?? 0
-                                    ) +
-                                    ' sats'}
+                                SatShoot gets: {insertThousandSeparator(paymentManager.payment.satshootAmount ?? 0)} sats
                             </p>
                             {#if isSponsoring}
                                 <p class="grow-1 text-center">
-                                    Sponsored npub gets: {insertThousandSeparator(
-                                        paymentShares?.sponsoredShare ?? 0
-                                    ) +
-                                        ' + ' +
-                                        insertThousandSeparator(
-                                            paymentManager.payment.sponsoredAmount ?? 0
-                                        ) +
-                                        ' = ' +
-                                        insertThousandSeparator(
-                                            paymentShares?.totalSponsoredAmount ?? 0
-                                        ) +
-                                        ' sats'}
+                                    Sponsored npub gets: {insertThousandSeparator(paymentManager.payment.sponsoredAmount ?? 0)} sats
                                 </p>
                             {/if}
                         </div>

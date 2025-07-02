@@ -48,14 +48,12 @@ export class PaymentService {
 
         const sponsoredShare = Math.floor(this.amount * sponsoredPercentage / 100); 
         const satshootShare = Math.floor(this.amount * satshootPercentage / 100);
-        const freelancerShare = this.amount - satshootShare - sponsoredShare;
+        const freelancerShare = this.amount;
 
         return {
             satshootShare,
             freelancerShare,
-            sponsoredShare,
-            totalSatshootAmount: satshootShare + this.satshootAmount,
-            totalSponsoredAmount: sponsoredShare + this.sponsoredAmount
+            sponsoredShare
         };
     }
 
@@ -94,10 +92,9 @@ export class PaymentService {
         this.paying = true;
         await tick();
 
-        const { freelancerShare, totalSatshootAmount, totalSponsoredAmount } = this.paymentShares;
-        const freelancerShareMillisats = freelancerShare * 1000;
-        const satshootSumMillisats = totalSatshootAmount * 1000;
-        const sponsoredSumMillisats = totalSponsoredAmount * 1000;
+        const freelancerShareMillisats = this.amount * 1000;
+        const satshootSumMillisats = this.satshootAmount * 1000;
+        const sponsoredSumMillisats = this.sponsoredAmount * 1000;
 
         if (freelancerShareMillisats + satshootSumMillisats + sponsoredSumMillisats === 0) {
             this.paying = false;

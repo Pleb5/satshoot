@@ -221,8 +221,7 @@ export class PaymentManagerService {
             return false;
         }
 
-        const { freelancerShare, totalSatshootAmount, totalSponsoredAmount } = this.paymentService.paymentShares;
-        return this.cashu.checkMintBalance(freelancerShare + totalSatshootAmount + totalSponsoredAmount);
+        return this.cashu.checkMintBalance(this.paymentService.amount + this.paymentService.satshootAmount + this.paymentService.sponsoredAmount);
     }
 
     /**
