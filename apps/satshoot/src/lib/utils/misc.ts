@@ -13,6 +13,7 @@ import normalizeUrl from 'normalize-url';
 import type { RelayFirstFetchOpts } from './helpers';
 import { get } from 'svelte/store';
 import ndk from '$lib/stores/session';
+import { marked, type Token, type Tokens } from 'marked';
 
 export const JobsPerPage = 9;
 export const ServicesPerPage = 9;
@@ -217,6 +218,90 @@ export function clipText(text: string, maxLength: number) {
     }
 
     return clippedText + ' ...';
+}
+
+
+export function clipMarkdownText(
+    text: string, 
+    maxLength: number
+): string {
+    if (text.length <= maxLength) return text;
+
+    // Pre-process to identify special patterns and their rendered lengths
+    const specialPatterns = [
+        {
+            regex: /(nostr:)?n(event|ote|pub|profile|addr)([a-zA-Z0-9]{10,1000})/g,
+            getRenderedLength: (match: string) => 20,
+        },
+        {
+            regex: /[^\s@]+@[^\s@]+\.[^\s@]+/g,
+            getRenderedLength: (match: string) => Math.min(match.length, 30),
+        },
+        {
+            regex: /https?:\/\/[^\s]+/g,
+            getRenderedLength: (match: string) => Math.min(match.length, 40), 
+        }
+    ];
+
+    // Calculate positions and rendered lengths
+    let positions: Array<{start: number, end: number, renderedLength: number}> = [];
+    
+    for (const pattern of specialPatterns) {
+        const matches = Array.from(text.matchAll(pattern.regex));
+        for (const match of matches) {
+            positions.push({
+                start: match.index!,
+                end: match.index! + match[0].length,
+                renderedLength: pattern.getRenderedLength(match[0])
+            });
+        }
+    }
+
+    // Sort positions by start index
+    positions.sort((a, b) => a.start - b.start);
+
+    // Calculate where to clip based on rendered length
+    let currentPos = 0;
+    let renderedLength = 0;
+    let clipIndex = text.length;
+
+    for (let i = 0; i < text.length; i++) {
+        // Check if we're at the start of a special pattern
+        const pattern = positions.find(p => p.start === i);
+        
+        if (pattern) {
+            if (renderedLength + pattern.renderedLength > maxLength) {
+                // Clip before this pattern
+                clipIndex = i;
+                break;
+            }
+            // Skip to end of pattern
+            renderedLength += pattern.renderedLength;
+            i = pattern.end - 1;
+        } else {
+            // Regular character
+            const isInsidePattern = positions.some(p => i >= p.start && i < p.end);
+            if (!isInsidePattern) {
+                renderedLength++;
+                if (renderedLength >= maxLength) {
+                    clipIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Find word boundary
+    if (clipIndex < text.length) {
+        const beforeClip = text.slice(0, clipIndex);
+        const lastSpaceIndex = beforeClip.lastIndexOf(' ');
+        
+        if (lastSpaceIndex > maxLength * 0.7) {
+            clipIndex = lastSpaceIndex;
+        }
+    }
+
+    return text.slice(0, clipIndex) + (clipIndex < text.length ? ' ...' : '');
 }
 
 // Url normalization based on the idea of Coracle.social

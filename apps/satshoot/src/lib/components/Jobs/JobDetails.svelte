@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { clipText } from '$lib/utils/misc';
+    import { clipMarkdownText, clipText } from '$lib/utils/misc';
     import Markdown from '../Cards/Markdown.svelte';
 
     interface Props {
@@ -12,7 +12,7 @@
 
     const processedTitle = $derived(title || 'No title');
     const processedDescription = $derived(
-        description ? clipText(description, 100) : 'No description!'
+        description ? clipMarkdownText(description, 100) : 'No description!'
     );
 </script>
 

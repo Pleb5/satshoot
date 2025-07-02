@@ -23,14 +23,11 @@
 
     let { job, showBidsDetail = false }: Props = $props();
 
-    // Reactive state
     let highlightBidsTab = $state(false);
     let selectedTab = $state(Tabs.JobDescription);
 
-    // Derived state
     const bech32ID = $derived(job.encode());
 
-    // Effect to check for bids when needed
     $effect(() => {
         if (!showBidsDetail || job?.status !== JobStatus.New) return;
 
