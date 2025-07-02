@@ -173,6 +173,10 @@
         $redirectAfterLogin = false;
         showLoginModal = true;
     }
+
+    function setDefaultShare(userEnum: UserEnum) {
+        return () => paymentManager?.setDefaultShare(userEnum);
+    }
 </script>
 
 <div class="w-full flex flex-col justify-center items-center py-[25px]">
@@ -392,8 +396,14 @@
                             {/if}
                             <div class="w-full flex flex-col gap-[5px]">
                                 <label class="font-[500]" for="plattform-contribution"
-                                    >Contribute to SatShoot</label
-                                >
+                                    >Contribute to SatShoot
+                                    <button
+                                        type="button"
+                                        class="bx bx-check bg-[green] text-white p-[3px] rounded-[50%]"
+                                        onclick={setDefaultShare(UserEnum.Satshoot)}
+                                        aria-label="Set amount to the corresponding shares"
+                                    ></button>
+                                </label>
                                 <Input
                                     id="plattform-contribution"
                                     type="number"
@@ -484,11 +494,17 @@
                                     </Popover-->
                                 {/if}
                                 <div class="w-full flex flex-col gap-[5px]">
-                                    <label class="font-[500]" for="plattform-contribution"
-                                        >Sponsor npub</label
-                                    >
+                                    <label class="font-[500]" for="sponsored-contribution"
+                                        >Sponsor npub
+                                        <button
+                                            type="button"
+                                            class="bx bx-check bg-[green] text-white p-[3px] rounded-[50%]"
+                                            onclick={setDefaultShare(UserEnum.Sponsored)}
+                                            aria-label="Set amount to the corresponding shares"
+                                        ></button>
+                                    </label>
                                     <Input
-                                        id="plattform-contribution"
+                                        id="sponsored-contribution"
                                         type="number"
                                         step="1"
                                         min="0"
@@ -560,14 +576,20 @@
                             class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                         >
                             <p class="grow-1 text-center">
-                                Freelancer gets: {insertThousandSeparator(paymentManager.payment.amount ?? 0)} sats
+                                Freelancer gets: {insertThousandSeparator(
+                                    paymentManager.payment.amount ?? 0
+                                )} sats
                             </p>
                             <p class="grow-1 text-center">
-                                SatShoot gets: {insertThousandSeparator(paymentManager.payment.satshootAmount ?? 0)} sats
+                                SatShoot gets: {insertThousandSeparator(
+                                    paymentManager.payment.satshootAmount ?? 0
+                                )} sats
                             </p>
                             {#if isSponsoring}
                                 <p class="grow-1 text-center">
-                                    Sponsored npub gets: {insertThousandSeparator(paymentManager.payment.sponsoredAmount ?? 0)} sats
+                                    Sponsored npub gets: {insertThousandSeparator(
+                                        paymentManager.payment.sponsoredAmount ?? 0
+                                    )} sats
                                 </p>
                             {/if}
                         </div>

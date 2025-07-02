@@ -100,6 +100,19 @@ export class PaymentManagerService {
         return this.paymentService.pricingInfo;
     }
 
+    setDefaultShare(userEnum: UserEnum) {
+        switch (userEnum) {
+                case UserEnum.Satshoot:
+                    this.payment.satshootAmount = this.payment.paymentShares.satshootShare;
+                    return;
+                case UserEnum.Sponsored:
+                    this.payment.sponsoredAmount = this.payment.paymentShares.sponsoredShare;
+                    return;
+                case UserEnum.Freelancer:
+                    return;
+            }
+    }
+
     /**
      * Process Lightning Network payment.
      * 
