@@ -29,8 +29,9 @@
     --color-black: rgba(0, 0, 0);
 
     --color-blue-0: rgba(59, 115, 246, 0);
-    --color-blue-500: rgba(59, 115, 246, 1);
-    --color-blue-600: rgba(59, 130, 246, 1);
+    --color-blue-500: rgba(84, 69, 255, 1);
+    --color-blue-600: rgba(99, 106, 255, 1);
+
 
     --color-purple-0: rgba(128, 0, 128, 0);
     --color-purple-600: rgba(138, 71, 210, 1);

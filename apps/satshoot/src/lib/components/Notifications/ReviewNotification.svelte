@@ -161,7 +161,7 @@
                 {#if jobOrService}
                     <a
                         href={'/' + jobOrService.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] text-blue-600 hover:text-blue-800 hover:underline"
+                        class="transition ease duration-[0.3s] font-[600] text-blue-500 hover:text-blue-600 hover:underline"
                     >
                         "{jobOrService.title}"
                     </a>

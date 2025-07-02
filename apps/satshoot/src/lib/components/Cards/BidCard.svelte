@@ -271,7 +271,7 @@
                 <p>Job Title:</p>
                 <a
                     href={'/' + job.encode() + '/'}
-                    class="text-blue-600 hover:text-blue-800 hover:underline"
+                    class="text-blue-500 hover:text-blue-600 hover:underline"
                 >
                     <h4 class="font-semibold text-[18px] overflow-hidden line-clamp-2">
                         {job.title}
