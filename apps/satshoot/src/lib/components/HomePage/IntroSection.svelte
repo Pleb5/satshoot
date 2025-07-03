@@ -13,7 +13,7 @@
             <div
                 class="w-full h-[250px] max-[992px]:h-[160px] rounded-[8px] shadow-soft flex flex-col items-center justify-center gap-5"
             >
-                <img src="/img/banner-light.svg" alt="banner" />
+                <img src="/img/banner.svg" alt="banner" />
                 <p class="font-[Inter] text-2xl font-medium">Jobs. Services. Reputation.</p>
             </div>
             <div
