@@ -57,6 +57,7 @@ export class LightningPaymentService {
         const paid = new Map<UserEnum, boolean>([
             [UserEnum.Freelancer, false],
             [UserEnum.Satshoot, false],
+            [UserEnum.Sponsored, false],
         ]);
 
         // Fetch payment info for freelancer
@@ -79,6 +80,7 @@ export class LightningPaymentService {
                 satshootSumMillisats,
                 zapRequestRelays,
                 invoices,
+                // TODO (rodant): check this, the payment stores always use the primaryEntity
                 this.primaryEntity instanceof ServiceEvent ? this.secondaryEntity : this.primaryEntity
             );
         }
@@ -95,6 +97,7 @@ export class LightningPaymentService {
                         sponsoredSumMillisats,
                         zapRequestRelays,
                         invoices,
+                        // TODO (rodant): check this, the payment stores always use the primaryEntity
                         this.primaryEntity instanceof ServiceEvent ? this.secondaryEntity : this.primaryEntity
                     );
                 }
@@ -112,14 +115,17 @@ export class LightningPaymentService {
 
             launchPaymentModal({
                 invoice: invoice.paymentRequest,
-                onPaid: () => paid.set(key, true),
+                onPaid: () => {
+                    paid.set(key, true);
+                    closeModal();// Don't wait necessarily on the zap event
+                },
             });
 
             const filter = {
                 kinds: [NDKKind.Zap],
-                since: Math.floor(Date.now() / 1000),
+                limit: 0,
                 '#p': [invoice.receiver],
-                authors: invoice.zapper ? [invoice.zapper] : undefined,
+                '#P': [get(currentUser)!.pubkey]
             };
 
             try {
@@ -140,7 +146,7 @@ export class LightningPaymentService {
                     const unsub = onModalClosed(() => {
                         subscription.stop();
                         resolve();
-                        unsub();// TODO (rodant): weird recursion, is this correct?
+                        unsub();
                     });
                 });
             } catch (error) {
@@ -178,6 +184,7 @@ export class LightningPaymentService {
     ) {
         const zapConfig = await getZapConfiguration(pubkey);
         if (zapConfig) {
+            const payerPubkey = get(currentUser)!.pubkey;
             const invoice = await this.generateInvoice(
                 event,
                 amountMillisats,
@@ -186,7 +193,7 @@ export class LightningPaymentService {
                 {
                     nutzapAsFallback: false,
                     comment: 'satshoot',
-                    tags: [['P', get(currentUser)!.pubkey]],
+                    tags: [['P', payerPubkey]],
                 },
                 userEnum,
                 zapRequestRelays
@@ -196,7 +203,7 @@ export class LightningPaymentService {
                 paymentRequest: invoice,
                 receiver: pubkey,
                 eventId: event.id,
-                zapper: zapConfig.nostrPubkey,// TODO (rodant): not the current user?
+                zapper: payerPubkey,
             });
         } else {
             throw new Error(`Could not fetch ${userEnum}'s zap config!`);
