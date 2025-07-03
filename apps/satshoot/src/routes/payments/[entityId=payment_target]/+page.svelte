@@ -399,10 +399,11 @@
                                     >Contribute to SatShoot
                                     <button
                                         type="button"
-                                        class="bx bx-check bg-[green] text-white p-[3px] rounded-[50%]"
+                                        class="bx bx-check bg-[green] text-white p-[3px] ml-[5px] rounded-[50%]"
                                         onclick={setDefaultShare(UserEnum.Satshoot)}
                                         aria-label="Set amount to the corresponding shares"
                                     ></button>
+                                    (use split)
                                 </label>
                                 <Input
                                     id="plattform-contribution"
@@ -498,10 +499,11 @@
                                         >Sponsor npub
                                         <button
                                             type="button"
-                                            class="bx bx-check bg-[green] text-white p-[3px] rounded-[50%]"
+                                            class="bx bx-check bg-[green] text-white p-[3px] ml-[5px] rounded-[50%]"
                                             onclick={setDefaultShare(UserEnum.Sponsored)}
                                             aria-label="Set amount to the corresponding shares"
                                         ></button>
+                                        (use split)
                                     </label>
                                     <Input
                                         id="sponsored-contribution"
