@@ -229,9 +229,9 @@
     });
 
     // Create a bid status filter function with access to applied jobs
-    const bidStatusFilter = createBidStatusFilter($appliedJobs);
+    const bidStatusFilter = $derived(createBidStatusFilter($appliedJobs));
     // Create an order status filter with access to applied services
-    const orderStatusFilter = createOrderStatusFilter($appliedServices);
+    const orderStatusFilter = $derived(createOrderStatusFilter($appliedServices));
 
     // Create filtered data using our utility functions
     const filteredJobs = $derived.by(() => {
