@@ -317,7 +317,7 @@
                         <div
                             class="grid grid-cols-[1fr_auto] border-[1px] border-black-100 dark:border-white-100"
                         >
-                            <div class="overflow-x-auto whitespace-nowrap bg-black-50">
+                            <div class="overflow-x-auto scrollbar-hide whitespace-nowrap bg-black-50">
                                 {#if href}
                                     <a
                                         {href}
@@ -452,3 +452,16 @@
     title="User's Profile Address"
     data={nip19.nprofileEncode({ pubkey: user.pubkey })}
 />
+
+<style>
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+</style>
