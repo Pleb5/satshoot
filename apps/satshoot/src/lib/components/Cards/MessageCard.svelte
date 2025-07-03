@@ -38,27 +38,26 @@
     const jobAddress = message.tagValue('t');
     let messageLink = $state<URL>();
 
-    let extraClasses = $state('preset-soft-primary rounded-tr-none');
-    let templateColumn = $state('grid-cols-[auto_1fr]');
-
     function formatDate(date: Date): string {
         const now = new Date();
-        const diffTime = Math.abs(now.getTime() - date.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays <= 7) {
-            return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
-        } else {
-            return date.toLocaleDateString();
-        }
+        // Strip time from both dates
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const inputDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+        const diffTime = today.getTime() - inputDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) return 'Today';
+
+        if (diffDays === 1) return 'Yesterday';
+
+        if (diffDays < 7 && diffDays > 1) return `${diffDays} days ago`;
+
+        return date.toLocaleDateString();
     }
 
     onMount(async () => {
-        if (avatarRight) {
-            extraClasses = 'preset-soft rounded-tl-none';
-            templateColumn = 'grid-cols-[1fr_auto]';
-        }
-
         // Decrypt message
         // ECDH DEMANDS THAT DECRYPTION ALWAYS USES THE PUBKEY OF THE OTHER PARTY
         // BE IT THE SENDER OR THE RECIPIENT OF THE ACTUAL MESSAGE
@@ -138,13 +137,17 @@
         </div>
     {/if}
     {#if decryptedDM}
-        <div class="grid {templateColumn} gap-x-2">
+        <div class="grid {avatarRight ? 'grid-cols-[1fr_auto]' : 'grid-cols-[auto_1fr]'} gap-x-2">
             {#if !avatarRight}
                 <a href={'/' + senderUser.npub}>
                     <Avatar src={avatarImage} size="size-12" {name} />
                 </a>
             {/if}
-            <div class="card p-4 space-y-2 {extraClasses}">
+            <div
+                class="card p-4 space-y-2 {avatarRight
+                    ? 'preset-tonal rounded-tl-none'
+                    : 'preset-tonal-surface rounded-tr-none'}"
+            >
                 <header class="flex justify-between items-center gap-x-4">
                     <p class="font-bold text-sm md:text-lg">{name}</p>
                     <small class="opacity-50">{timestamp}</small>
@@ -197,7 +200,7 @@
         margin: 1rem 0;
     }
     .date-separator hr {
-        grow: 1;
+        flex-grow: 1;
         border: none;
         border-top: 1px solid #ccc;
     }
