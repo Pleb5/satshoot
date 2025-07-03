@@ -22,6 +22,7 @@
     import Card from '$lib/components/UI/Card.svelte';
     import { toaster } from '$lib/stores/toaster';
     import { OrderEvent } from '$lib/events/OrderEvent';
+    import { FreelancerTabs } from '$lib/stores/tab-store';
 
     // Component state
     let initialized = $state(false);
@@ -127,38 +128,18 @@
     const cashuTooltipText = $derived(paymentManager?.cashuTooltipText ?? '');
 
     // Payment functions
-    async function payWithLN(payeeType: UserEnum) {
-        if (!paymentManager) return;
-        await paymentManager.payWithLightning(payeeType);
+    function payWithLN(payeeType: UserEnum) {
+        return async () => {
+            if (!paymentManager) return;
+            await paymentManager.payWithLightning(payeeType);
+        };
     }
 
-    async function payFreelancerWithLN() {
-        await payWithLN(UserEnum.Freelancer);
-    }
-
-    async function paySatshootWithLN() {
-        await payWithLN(UserEnum.Satshoot);
-    }
-
-    async function paySponsoredWithLN() {
-        await payWithLN(UserEnum.Sponsored);
-    }
-
-    async function payWithEcash(payeeType: UserEnum) {
-        if (!paymentManager) return;
-        await paymentManager.payWithCashu(payeeType);
-    }
-
-    async function payFreelancerWithCashu() {
-        await payWithEcash(UserEnum.Freelancer);
-    }
-
-    async function paySatshootWithCashu() {
-        await payWithEcash(UserEnum.Satshoot);
-    }
-
-    async function paySponsoredWithCashu() {
-        await payWithEcash(UserEnum.Sponsored);
+    function payWithEcash(payeeType: UserEnum) {
+        return async () => {
+            if (!paymentManager) return;
+            await paymentManager.payWithCashu(payeeType);
+        }
     }
 
     function setupEcash() {
@@ -321,7 +302,7 @@
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    onClick={payFreelancerWithLN}
+                                    onClick={payWithLN(UserEnum.Freelancer)}
                                     disabled={paying || !paymentManager.payment.amount}
                                 >
                                     {#if paying}
@@ -341,7 +322,7 @@
                                     <!--Button TODO (rodant): switched off for up coming release
                                         grow
                                         classes="w-[200px] max-w-[200px]"
-                                        onClick={payFreelancerWithCashu}
+                                        onClick={payWithCashu(UserEnum.Freelancer)}
                                         disabled={paying ||
                                             !canPayWithCashu ||
                                             !paymentManager?.payment.amount}
@@ -420,7 +401,7 @@
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    onClick={paySatshootWithLN}
+                                    onClick={payWithLN(UserEnum.Satshoot)}
                                     disabled={paying || !paymentManager.payment.satshootAmount}
                                 >
                                     {#if paying}
@@ -440,7 +421,7 @@
                                     <!--Button TODO (rodant): switched off for up coming release
                                         grow
                                         classes="w-[200px] max-w-[200px]"
-                                        onClick={paySatshootWithCashu}
+                                        onClick={payWithCashu(UserEnum.Satshoot)}
                                         disabled={paying ||
                                             !canPayWithCashu ||
                                             !paymentManager.payment.satshootAmount}
@@ -520,7 +501,7 @@
                                     <Button
                                         grow
                                         classes="w-[200px] max-w-[200px]"
-                                        onClick={paySponsoredWithLN}
+                                        onClick={payWithLN(UserEnum.Sponsored)}
                                         disabled={paying || !paymentManager.payment.sponsoredAmount}
                                     >
                                         {#if paying}
@@ -540,7 +521,7 @@
                                         <!--Button TODO (rodant): switched off for up coming release
                                             grow
                                             classes="w-[200px] max-w-[200px]"
-                                            onClick={paySponsoredWithCashu}
+                                            onClick={payWithCashu(UserEnum.Sponsored)}
                                             disabled={paying ||
                                                 !canPayWithCashu ||
                                                 !paymentManager.payment.sponsoredAmount}
