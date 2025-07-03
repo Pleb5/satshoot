@@ -18,7 +18,7 @@
 
 <div class="flex-grow-1 flex flex-col gap-[10px] p-[0px]">
     <div class="w-full flex flex-col gap-[10px] p-[5px]">
-        <a class="w-full" href={'/' + bech32ID}>
+        <a class="w-full text-blue-500 hover:text-blue-600" href={'/' + bech32ID}>
             <h4 class="font-semibold text-[18px] overflow-hidden line-clamp-2">
                 {processedTitle}
             </h4>

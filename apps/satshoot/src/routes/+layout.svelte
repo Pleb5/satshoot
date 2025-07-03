@@ -592,8 +592,8 @@
     $effect(() => {
         if ($clientReviews) {
             $clientReviews.forEach((r: ReviewEvent) => {
-                $myJobs.forEach((t: JobEvent) => {
-                    if (t.jobAddress === r.reviewedEventAddress) {
+                $myJobs.forEach((job: JobEvent) => {
+                    if (job.jobAddress === r.reviewedEventAddress) {
                         sendNotification(r);
                     }
                 });
@@ -604,8 +604,32 @@
     $effect(() => {
         if ($freelancerReviews) {
             $freelancerReviews.forEach((r: ReviewEvent) => {
-                $myBids.forEach((o: BidEvent) => {
-                    if (o.bidAddress === r.reviewedEventAddress) {
+                $myBids.forEach((bid: BidEvent) => {
+                    if (bid.bidAddress === r.reviewedEventAddress) {
+                        sendNotification(r);
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($clientReviews) {
+            $clientReviews.forEach((r: ReviewEvent) => {
+                $myOrders.forEach((order) => {
+                    if (order.orderAddress === r.reviewedEventAddress) {
+                        sendNotification(r);
+                    }
+                });
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($freelancerReviews) {
+            $freelancerReviews.forEach((r: ReviewEvent) => {
+                $myServices.forEach((service) => {
+                    if (service.serviceAddress === r.reviewedEventAddress) {
                         sendNotification(r);
                     }
                 });

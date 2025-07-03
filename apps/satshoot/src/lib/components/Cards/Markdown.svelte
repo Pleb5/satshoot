@@ -133,7 +133,7 @@
             }
             const externalAttributes = external ? 'target="_blank" rel="noopener noreferrer"' : '';
             return `<a href="${url}" ${externalAttributes} 
-                    class="text-blue-600 hover:text-blue-800 hover:underline">${linkText}
+                    class="text-blue-500 hover:text-blue-600 hover:underline">${linkText}
                     </a>`;
         },
     };
@@ -165,9 +165,9 @@
                 const { tagType, content, userName } = token;
                 let url = `/${content}`;
                 let linkText = userName ? `@${userName}` : token.text;
-                return `<a href="${url}" class="text-blue-600 hover:text-blue-800 hover:underline">${linkText}</a>`;
+                return `<a href="${url}" class="text-blue-500 hover:text-blue-600 hover:underline">${linkText}</a>`;
             } else {
-                return `<a href="${token.href}" class="text-blue-600 hover:text-blue-800 hover:underline">${token.text}</a>`;
+                return `<a href="${token.href}" class="text-blue-500 hover:text-blue600 hover:underline">${token.text}</a>`;
             }
         },
     };
@@ -184,7 +184,7 @@
             link(token) {
                 const { href, text } = token;
 
-                return `<a href="${href}" class="text-blue-600 hover:text-blue-800 hover:underline">${text}</a>`;
+                return `<a href="${href}" class="text-blue-500 hover:text-blue-600 hover:underline">${text}</a>`;
             },
             list(token) {
                 const listItems = token.items
@@ -225,7 +225,7 @@
     });
 </script>
 
-<div class="markdown max-w-full wrap-anywhere overflow-hidden ">
+<div class="markdown max-w-full wrap-anywhere overflow-hidden">
     {@html sanitizedContent}
 </div>
 
