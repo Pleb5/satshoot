@@ -72,6 +72,8 @@
         setTimeout(() => {
             urlCopied = false;
         }, 1000);
+
+        navigator.clipboard.writeText(shareURL);
     }
 
     let naddrCopied = $state(false);
@@ -80,6 +82,8 @@
         setTimeout(() => {
             naddrCopied = false;
         }, 1000);
+
+        navigator.clipboard.writeText(shareNaddr);
     }
 
     // Default message generator
