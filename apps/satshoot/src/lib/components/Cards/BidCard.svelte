@@ -97,7 +97,7 @@
 
         const winnerId = job.acceptedBidAddress;
         if (winnerId === bid!.bidAddress) {
-            return { status: 'Won', statusColor: 'text-warning-500' };
+            return { status: 'Won', statusColor: 'text-yellow-500' };
         } else if (winnerId || job.isClosed()) {
             return { status: 'Lost', statusColor: 'text-error-500' };
         } else {

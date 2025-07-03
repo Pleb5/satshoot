@@ -6,6 +6,6 @@
     let { extraClasses = 'text-lg' }: Props = $props();
 </script>
 
-<span class="text-warning-500">
+<span class="text-yellow-500">
     <i class="fa-solid fa-bolt {extraClasses}"></i>
 </span>

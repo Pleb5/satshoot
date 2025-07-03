@@ -146,14 +146,14 @@
                     </p>
                     <div class="w-full flex flex-row flex-wrap gap-[10px]">
                         <div class={qualitiesBadgeClasses}>
-                            <i class="bx bxs-bolt text-yellow-200"></i>
+                            <i class="bx bxs-bolt text-yellow-500"></i>
                             <p class="grow-1">Earnings</p>
                             <p class="bg-black-100 py-[5px] px-[10px]">
                                 {abbreviateNumber(reputationService.earnings) + ' sats'}
                             </p>
                         </div>
                         <div class={qualitiesBadgeClasses}>
-                            <i class="bx bxs-bolt text-yellow-200"></i>
+                            <i class="bx bxs-bolt text-yellow-500"></i>
                             <p class="grow-1">Pledges</p>
                             <p class="bg-black-100 py-[5px] px-[10px]">
                                 {abbreviateNumber(reputationService.pledges) + ' sats'}

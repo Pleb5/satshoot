@@ -56,7 +56,7 @@
                 if (job.acceptedBidAddress === bidEvent.bidAddress) {
                     return {
                         prefix: 'has Accepted your bid on the job:',
-                        prefixClass: 'text-warning-500',
+                        prefixClass: 'text-yellow-500',
                         title: job.title,
                         link: jobLink,
                     };
