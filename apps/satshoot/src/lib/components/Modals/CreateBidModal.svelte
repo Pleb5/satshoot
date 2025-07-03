@@ -17,6 +17,7 @@
     import { toaster } from '$lib/stores/toaster';
     import { Pricing, type ZapSplit } from '$lib/events/types';
     import { nip19 } from 'nostr-tools';
+    import UserProfile from '../UI/Display/UserProfile.svelte';
 
     interface Props {
         isOpen: boolean;
@@ -33,6 +34,7 @@
     let amount = $state(0);
     let pledgeSplit = $state(0);
     let sponsoredNpub = $state(PablosNpub);
+    let sponsoredPubkey = $state(nip19.decode(PablosNpub).data as string);
     let sponsoringSplit = $state(50);
     let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
 
@@ -51,8 +53,28 @@
 
     $effect(() => {
         if (validate()) {
-            validInputs = true;
-            errorText = '';
+            if (sponsoredNpub) {
+                try {
+                    const decodeResult = nip19.decode(sponsoredNpub);
+                    switch (decodeResult.type) {
+                        case "npub":
+                            sponsoredPubkey = decodeResult.data;
+                            validInputs = true;
+                            errorText = '';
+                            break;
+                        default:
+                            sponsoredPubkey = '';
+                            validInputs = false;
+                            errorText = 'Expecting an npub but got a different nip-19 entity.';
+                    }
+                } catch(error) {
+                    sponsoredPubkey = '';
+                    validInputs = false;
+                    errorText = 'Invalid npub.';
+                }
+            } else {
+                sponsoredPubkey = '';
+            }
         } else {
             validInputs = false;
         }
@@ -64,6 +86,7 @@
             amount = bidToEdit.amount;
             pledgeSplit = bidToEdit.pledgeSplit;
             sponsoredNpub = bidToEdit.sponsoredNpub;
+            sponsoredPubkey = bidToEdit.sponsoredNpub ? nip19.decode(bidToEdit.sponsoredNpub).data as string : '';
             sponsoringSplit = bidToEdit.sponsoringSplit;
             description = bidToEdit.description;
         }
@@ -317,6 +340,9 @@
                     <div class="">
                         <label class="font-[600]" for=""> Sponsored npub </label>
                     </div>
+                    {#if sponsoredPubkey}
+                        <UserProfile pubkey={sponsoredPubkey} />
+                    {/if}
                     <div class="w-full flex flex-row items-center relative">
                         <Input
                             type="text"
