@@ -11,8 +11,11 @@
     <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
         <div class="w-full flex flex-col gap-[25px]">
             <div
-                class="w-full h-[250px] max-[992px]:h-[160px] rounded-[8px] shadow-soft outline-[8px] outline-[white] bg-[url('/img/satshoot-banner.png')] bg-center bg-cover bg-no-repeat dark:outline-brightGray"
-            ></div>
+                class="w-full h-[250px] max-[992px]:h-[160px] rounded-[8px] shadow-soft flex flex-col items-center justify-center gap-5"
+            >
+                <img src="/img/banner-light.svg" alt="banner" />
+                <p class="font-[Inter] text-2xl font-medium">Jobs. Services. Reputation.</p>
+            </div>
             <div
                 class="w-full flex flex-row justify-center items-center gap-[25px] max-[992px]:flex-col"
             >
