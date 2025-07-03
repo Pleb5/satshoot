@@ -49,7 +49,7 @@
 
     --color-green-100: rgba(225, 255, 225, 0.1);
     --color-green-500: rgba(225, 255, 225, 0.75);
-    --color-green-600: rgba(95, 255, 95, 1);
+    --color-green-600: rgba(95, 255, 95, 0.75);
 
     --color-orange-500: rgba(255, 99, 71, 0.75);
     --color-orange-600: rgba(255, 99, 71, 1);
