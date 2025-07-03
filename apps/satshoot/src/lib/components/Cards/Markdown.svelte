@@ -133,7 +133,7 @@
             }
             const externalAttributes = external ? 'target="_blank" rel="noopener noreferrer"' : '';
             return `<a href="${url}" ${externalAttributes} 
-                    class="text-blue-500 hover:text-blue-600 hover:underline">${linkText}
+                    class="link">${linkText}
                     </a>`;
         },
     };
@@ -165,9 +165,9 @@
                 const { tagType, content, userName } = token;
                 let url = `/${content}`;
                 let linkText = userName ? `@${userName}` : token.text;
-                return `<a href="${url}" class="text-blue-500 hover:text-blue-600 hover:underline">${linkText}</a>`;
+                return `<a href="${url}" class="link">${linkText}</a>`;
             } else {
-                return `<a href="${token.href}" class="text-blue-500 hover:text-blue600 hover:underline">${token.text}</a>`;
+                return `<a href="${token.href}" class="link">${token.text}</a>`;
             }
         },
     };
@@ -184,7 +184,7 @@
             link(token) {
                 const { href, text } = token;
 
-                return `<a href="${href}" class="text-blue-500 hover:text-blue-600 hover:underline">${text}</a>`;
+                return `<a href="${href}" class="link">${text}</a>`;
             },
             list(token) {
                 const listItems = token.items

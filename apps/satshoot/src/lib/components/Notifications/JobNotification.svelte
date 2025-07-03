@@ -200,7 +200,7 @@
                     </p>
                     <a
                         href={notificationMessage.link}
-                        class="transition ease duration-[0.3s] font-[600] text-blue-500 hover:text-blue-600 hover:underline"
+                        class="transition ease duration-[0.3s] font-[600] link"
                     >
                         "{notificationMessage.title}"
                     </a>

@@ -188,7 +188,7 @@
                 {#if job}
                     <a
                         href={'/' + job.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] text-blue-500 hover:text-blue-600 hover:underline"
+                        class="transition ease duration-[0.3s] font-[600] link"
                     >
                         for the job: "{job.title}"
                     </a>

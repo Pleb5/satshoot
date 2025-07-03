@@ -19,7 +19,7 @@
 
 <a
     href={url}
-    class="text-blue-500 hover:text-blue-600 hover:underline"
+    class="link"
     onclick={handleClick}
     rel={external ? 'noopener noreferrer' : ''}
     target={external ? '_blank' : ''}

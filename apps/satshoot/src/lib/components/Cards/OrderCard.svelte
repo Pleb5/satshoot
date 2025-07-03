@@ -182,10 +182,7 @@
             >
                 <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
                     <p>Service Title:</p>
-                    <a
-                        href={'/' + service.encode() + '/'}
-                        class="text-blue-500 hover:text-blue-600 hover:underline"
-                    >
+                    <a href={'/' + service.encode() + '/'} class="link">
                         <h4 class="font-semibold text-[18px] overflow-hidden line-clamp-2">
                             {service.title}
                         </h4>

@@ -269,10 +269,7 @@
         >
             <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
                 <p>Job Title:</p>
-                <a
-                    href={'/' + job.encode() + '/'}
-                    class="text-blue-500 hover:text-blue-600 hover:underline"
-                >
+                <a href={'/' + job.encode() + '/'} class="link">
                     <h4 class="font-semibold text-[18px] overflow-hidden line-clamp-2">
                         {job.title}
                     </h4>
