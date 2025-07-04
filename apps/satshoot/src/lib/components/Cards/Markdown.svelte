@@ -5,7 +5,7 @@
     import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import hljs from 'highlight.js';
-    import 'highlight.js/styles/github-dark.css'; // Choose your preferred style
+    import 'highlight.js/styles/github-dark.css';
     import type { AddressPointer } from 'nostr-tools/nip19';
 
     interface Props {
@@ -15,6 +15,52 @@
     let { content = '' }: Props = $props();
 
     let sanitizedContent = $state('');
+
+    // Helper function to shorten URLs
+    function shortenUrl(url: string, text?: string): string {
+        // If custom text is provided and it's not the same as URL, use it
+        if (text && text !== url) {
+            return text;
+        }
+
+        try {
+            const urlObj = new URL(url);
+            const domain = urlObj.hostname.replace('www.', '');
+            const pathname = urlObj.pathname;
+            
+            // Option 1: Domain + shortened path (recommended)
+            if (pathname && pathname !== '/') {
+                const pathParts = pathname.split('/').filter(Boolean);
+                if (pathParts.length > 0) {
+                    // Show first part of path, truncate if too long
+                    const firstPath = pathParts[0];
+                    if (firstPath.length > 20) {
+                        return `${domain}/${firstPath.substring(0, 15)}...`;
+                    }
+                    return `${domain}/${firstPath}${pathParts.length > 1 ? '/...' : ''}`;
+                }
+            }
+            return domain;
+            
+            // Option 2: First/Last characters (uncomment to use)
+            // const fullUrl = url.length > 40 ? `${url.substring(0, 20)}...${url.substring(url.length - 15)}` : url;
+            // return fullUrl;
+            
+            // Option 3: Just domain (uncomment to use)
+            // return domain;
+            
+        } catch (e) {
+            // Fallback for invalid URLs
+            return url.length > 40 ? `${url.substring(0, 20)}...${url.substring(url.length - 15)}` : url;
+        }
+    }
+
+    // Helper function to shorten Nostr URIs
+    function shortenNostrUri(tagType: string, content: string): string {
+        const fullUri = `${tagType}${content}`;
+        // Show first 8 and last 8 characters
+        return `${fullUri.slice(0, 8)}:${fullUri.slice(-8)}`;
+    }
 
     const getPub = async (token: Token) => {
         if (token.type === 'nostr') {
@@ -104,7 +150,8 @@
             let external = false;
             let linkText = userName
                 ? `@${userName}`
-                : `${(tagType + content).slice(0, 10)}:${(tagType + content).slice(-10)}`;
+                : shortenNostrUri(tagType, content);
+            
             switch (tagType) {
                 case 'nevent':
                 case 'note':
@@ -120,7 +167,9 @@
                 case 'naddr':
                     try {
                         const data = nip19.decode(content).data as AddressPointer;
-                        if (data.kind === NDKKind.FreelanceJob) {
+                        if (data.kind === NDKKind.FreelanceJob
+                            || data.kind === NDKKind.FreelanceService
+                        ) {
                             url = `/${tagType}${content}`;
                         } else {
                             external = true;
@@ -133,10 +182,11 @@
             }
             const externalAttributes = external ? 'target="_blank" rel="noopener noreferrer"' : '';
             return `<a href="${url}" ${externalAttributes} 
-                    class="link">${linkText}
+                    class="link" title="${tagType}${content}">${linkText}
                     </a>`;
         },
     };
+    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+/;
     const emailTokenizer: TokenizerAndRendererExtension = {
         name: 'email',
@@ -183,8 +233,8 @@
             },
             link(token) {
                 const { href, text } = token;
-
-                return `<a href="${href}" class="link">${text}</a>`;
+                const displayText = shortenUrl(href, text);
+                return `<a href="${href}" class="link" title="${href}" target="_blank" rel="noopener noreferrer">${displayText}</a>`;
             },
             list(token) {
                 const listItems = token.items
@@ -219,7 +269,9 @@
         if (content) {
             (async () => {
                 const parsed = await marked(content);
-                sanitizedContent = DOMPurify.sanitize(parsed, { ADD_ATTR: ['target'] });
+                sanitizedContent = DOMPurify.sanitize(parsed, { 
+                    ADD_ATTR: ['target', 'title']
+                });
             })();
         }
     });
@@ -232,5 +284,14 @@
 <style>
     .markdown {
         padding: 1em;
+    }
+    
+    .markdown :global(.link) {
+        word-break: break-word;
+    }
+    
+    .markdown :global(.link:hover) {
+        text-decoration: underline;
+        cursor: pointer;
     }
 </style>
