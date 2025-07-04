@@ -53,11 +53,11 @@
         'transform scale-100 w-full max-w-[200px] hover:max-w-[225px] dark:text-white dark:border-white-100 ';
 </script>
 
-<div class="w-full flex flex-col justify-center items-center py-[50px]">
+<div class="w-full flex flex-col justify-center items-center py-8">
     <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
         <div class="w-full flex flex-col gap-[50px] max-[576px]:gap-[25px]">
             <div class="w-full flex flex-col gap-[15px]">
-                <h2 class="text-[40px] font-[500]">Latest Job Listings</h2>
+                <h2 class="max-sm:text-2xl sm:text-[40px] font-[500] text-center">Latest Job Listings</h2>
             </div>
             <div
                 class="w-full grid grid-cols-4 gap-[25px] max-[1200px]:grid-cols-3 max-[992px]:grid-cols-2 max-[768px]:grid-cols-1"

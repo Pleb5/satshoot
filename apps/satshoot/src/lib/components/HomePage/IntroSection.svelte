@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { UserMode, userMode } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
 
     function handleLearnMore() {
@@ -14,7 +15,7 @@
                 class="w-full h-[250px] max-[992px]:h-[160px] rounded-[8px] shadow-soft flex flex-col items-center justify-center gap-5"
             >
                 <img src="/img/banner.svg" alt="banner" />
-                <p class="font-[Inter] text-2xl font-medium">Jobs. Services. Reputation.</p>
+                <p class="font-[Inter] max-sm:text-xl sm:text-2xl font-medium">Jobs. Services. Reputation.</p>
             </div>
             <div
                 class="w-full flex flex-row justify-center items-center gap-[25px] max-[992px]:flex-col"
@@ -24,28 +25,52 @@
                 >
                     <h2 class="text-center font-[800] text-[32px]">Find Skilled People</h2>
                     <p class="text-center">
-                        Have a technical issue? Need a hand in development? Create Job Post and
-                        start getting Bids from Freelancers!
+                        Create a Job Post or browse existing Services to get 
+                        your ideal Freelancer!
                     </p>
-                    <Button
-                        classes="max-w-[75%] max-[576px]:max-w-[100%]"
-                        fullWidth
-                        href="/post-job/"
-                    >
-                        Create Job Listing
-                    </Button>
+                    <div class="w-full flex flex-wrap gap-2 justify-center">
+                        <Button
+                            classes="max-w-[75%] max-[576px]:max-w-[100%]"
+                            fullWidth
+                            href="/post-job/"
+                            onClick={() => ($userMode = UserMode.Client)}
+                        >
+                            Create Job Listing
+                        </Button>
+                        <Button
+                            classes="max-w-[75%] max-[576px]:max-w-[100%]"
+                            fullWidth
+                            href="/services/"
+                            onClick={() => ($userMode = UserMode.Client)}
+                        >
+                            Browse Services
+                        </Button>
+                    </div>
                 </div>
                 <div
                     class="w-full bg-white-700 rounded-[6px] shadow-soft backdrop-blur-[20px] p-[25px] flex flex-col gap-[20px] justify-center items-center dark:bg-brightGray-700"
                 >
                     <h2 class="text-center font-[800] text-[32px]">Look For Work</h2>
                     <p class="text-center">
-                        See available Jobs that match your expertise. Work out your conditions and
-                        make your Bid
+                        Bid on Jobs matching your expertise or create Services 
+                        and start taking Orders!
                     </p>
-                    <Button classes="max-w-[75%] max-[576px]:max-w-[100%]" fullWidth href="/jobs/">
-                        Discover Opportunities
-                    </Button>
+                    <div class="w-full flex flex-wrap gap-2 justify-center">
+                        <Button 
+                            classes="max-w-[75%] max-[576px]:max-w-[100%]"
+                            fullWidth href="/jobs/"
+                            onClick={() => ($userMode = UserMode.Freelancer)}
+                        >
+                            Browse Jobs
+                        </Button>
+                        <Button 
+                            classes="max-w-[75%] max-[576px]:max-w-[100%]" 
+                            fullWidth href="/post-service/"
+                            onClick={() => ($userMode = UserMode.Freelancer)}
+                        >
+                            Create Service
+                        </Button>
+                    </div>
                 </div>
             </div>
             <div class="w-full flex flex-row justify-center items-center">
