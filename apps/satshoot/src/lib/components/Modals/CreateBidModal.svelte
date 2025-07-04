@@ -34,7 +34,7 @@
     let amount = $state(0);
     let pledgeSplit = $state(0);
     let sponsoredNpub = $state(PablosNpub);
-    let sponsoredPubkey = $state(nip19.decode(PablosNpub).data as string);
+    let sponsoredPubkey = $state('');
     let sponsoringSplit = $state(50);
     let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
 
