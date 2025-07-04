@@ -115,21 +115,15 @@
     let footerHeight = $state(0);
     let followSubscription = $state<NDKSubscription>();
 
-    let currentTheme: string | null = $derived.by(() => {
-        console.log('setting them mode')
-        if (browser) {
-            return document.documentElement.getAttribute('data-mode')
-        }
-        return null
-    });
+    let currentMode: string | null = null;
     $effect(() => {
-        if (page.url.pathname==='/' && browser) {
+        if (page.url.pathname==='/') {
             console.log('setting dark mode for LP')
-            currentTheme = document.documentElement.getAttribute('data-mode');
+            currentMode = document.documentElement.getAttribute('data-mode');
             document.documentElement.setAttribute('data-mode', 'dark');
-        } else if (currentTheme) {
+        } else if (currentMode) {
             console.log('setting back mode to original')
-            document.documentElement.setAttribute('data-mode', currentTheme);
+            document.documentElement.setAttribute('data-mode', currentMode);
         }
     })
 
@@ -348,7 +342,8 @@
 
     function configureBasics() {
         localStorage.debug = '*';
-        const mode = getModeUserPrefers();
+        const mode = getModeUserPrefers()
+            || document.documentElement.getAttribute('data-mode');
         if (!mode) {
             setModeUserPrefers('dark');
             document.documentElement.setAttribute('data-mode', 'dark');
