@@ -96,6 +96,7 @@
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
     import type { ServiceEvent } from '$lib/events/ServiceEvent';
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
+    import { browser } from '$app/environment';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -111,12 +112,20 @@
     let footerHeight = $state(0);
     let followSubscription = $state<NDKSubscription>();
 
-    let currentTheme: string | null = document.documentElement.getAttribute('data-mode');
+    let currentTheme: string | null = $derived.by(() => {
+        console.log('setting them mode')
+        if (browser) {
+            return document.documentElement.getAttribute('data-mode')
+        }
+        return null
+    });
     $effect(() => {
-        if (page.url.pathname==='/') {
+        if (page.url.pathname==='/' && browser) {
+            console.log('setting dark mode for LP')
             currentTheme = document.documentElement.getAttribute('data-mode');
             document.documentElement.setAttribute('data-mode', 'dark');
         } else if (currentTheme) {
+            console.log('setting back mode to original')
             document.documentElement.setAttribute('data-mode', currentTheme);
         }
     })
@@ -341,7 +350,7 @@
             const modeAutoPrefers = getModeOsPrefers();
             setModeUserPrefers(modeAutoPrefers);
             document.documentElement.setAttribute('data-mode', modeAutoPrefers);
-        } else {
+        } else if (page.url.pathname !== '/') {
             document.documentElement.setAttribute('data-mode', mode);
         }
 
