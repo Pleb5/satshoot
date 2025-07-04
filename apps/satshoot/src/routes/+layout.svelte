@@ -111,6 +111,16 @@
     let footerHeight = $state(0);
     let followSubscription = $state<NDKSubscription>();
 
+    let currentTheme: string | null = document.documentElement.getAttribute('data-mode');
+    $effect(() => {
+        if (page.url.pathname==='/') {
+            currentTheme = document.documentElement.getAttribute('data-mode');
+            document.documentElement.setAttribute('data-mode', 'dark');
+        } else if (currentTheme) {
+            document.documentElement.setAttribute('data-mode', currentTheme);
+        }
+    })
+
     $effect(() => {
         if ($retriesLeft === 0) {
             toaster.warning({
