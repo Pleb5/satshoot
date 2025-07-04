@@ -232,7 +232,7 @@
                                         <span
                                             class="flex-1 text-start {contact.person.pubkey ===
                                             winnerPubkey
-                                                ? 'text-warning-500 font-bold'
+                                                ? 'text-yellow-500 font-bold'
                                                 : ''}"
                                         >
                                             {name}

@@ -139,7 +139,7 @@
 
     const satShootLogoClass =
         'flex flex-row justify-start items-center relative gap-4 text-[20px] ' +
-        'text-blue-600 font-[800] hover:text-blue-500 hover:no-underline ' +
+        'font-[800] text-blue-500 hover:text-blue-600 hover:no-underline ' +
         'transition ease-in-out duration-[0.3s] w-full ';
 </script>
 
@@ -214,9 +214,9 @@
                                 </button>
                             {:else if $loggingIn}
                                 <div class="flex items-center gap-x-2">
-                                    <Button 
-                                        classes={extraClassesForLogoutBtn} 
-                                        onClick={() => showLogoutModal = true}
+                                    <Button
+                                        classes={extraClassesForLogoutBtn}
+                                        onClick={() => (showLogoutModal = true)}
                                     >
                                         Logout
                                     </Button>

@@ -97,7 +97,7 @@
 
         const winnerId = job.acceptedBidAddress;
         if (winnerId === bid!.bidAddress) {
-            return { status: 'Won', statusColor: 'text-warning-500' };
+            return { status: 'Won', statusColor: 'text-yellow-500' };
         } else if (winnerId || job.isClosed()) {
             return { status: 'Lost', statusColor: 'text-error-500' };
         } else {
@@ -269,10 +269,7 @@
         >
             <div class="font-[500] grow-1 flex flex-row items-center flex-wrap gap-[10px]">
                 <p>Job Title:</p>
-                <a
-                    href={'/' + job.encode() + '/'}
-                    class="text-blue-500 hover:text-blue-600 hover:underline"
-                >
+                <a href={'/' + job.encode() + '/'} class="link">
                     <h4 class="font-semibold text-[18px] overflow-hidden line-clamp-2">
                         {job.title}
                     </h4>

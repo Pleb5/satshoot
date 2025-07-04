@@ -169,7 +169,7 @@
                     <div {title} class={satsWrapperClasses}>
                         <p class={boltIconWrapperClasses}>
                             <i
-                                class="bx bxs-bolt text-black-500 dark:text-white-500 group-hover:text-yellow-200"
+                                class="bx bxs-bolt text-black-500 dark:text-white-500 group-hover:text-yellow-500"
                             ></i>
                             {label}
                         </p>

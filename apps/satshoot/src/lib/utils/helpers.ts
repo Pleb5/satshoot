@@ -588,7 +588,7 @@ export function averageToRatingText(average: number): RatingConsensus {
         ratingColor = 'bg-surface-500';
     } else {
         ratingConsensus = 'Excellent';
-        ratingColor = 'bg-warning-500';
+        ratingColor = 'bg-yellow-500';
         if (average < 0.9) {
             ratingConsensus = 'Great';
             ratingColor = 'bg-tertiary-500';

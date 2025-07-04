@@ -56,7 +56,7 @@
                 if (job.acceptedBidAddress === bidEvent.bidAddress) {
                     return {
                         prefix: 'has Accepted your bid on the job:',
-                        prefixClass: 'text-warning-500',
+                        prefixClass: 'text-yellow-500',
                         title: job.title,
                         link: jobLink,
                     };
@@ -200,7 +200,7 @@
                     </p>
                     <a
                         href={notificationMessage.link}
-                        class="transition ease duration-[0.3s] font-[600] text-blue-500 hover:text-blue-600 hover:underline"
+                        class="transition ease duration-[0.3s] font-[600] link"
                     >
                         "{notificationMessage.title}"
                     </a>
