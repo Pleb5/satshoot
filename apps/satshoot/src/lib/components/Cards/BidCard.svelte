@@ -212,7 +212,7 @@
         >
             <div class="grow-1">
                 <p class="font-[500]">
-                    Bid cost:
+                    Price:
                     <span class="font-[300]">
                         {insertThousandSeparator(bid.amount) + ' ' + pricing}
                     </span>

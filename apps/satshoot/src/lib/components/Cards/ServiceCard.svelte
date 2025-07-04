@@ -116,7 +116,7 @@
     <div class="w-full flex flex-row flex-wrap gap-[10px]">
         <div class="grow-1">
             <p class="font-[500]">
-                Service cost:
+                Price:
                 <span class="font-[300]">
                     {insertThousandSeparator(service.amount) + ' ' + pricing}
                 </span>

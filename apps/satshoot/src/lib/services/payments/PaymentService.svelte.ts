@@ -63,7 +63,7 @@ export class PaymentService {
                 break;
         }
 
-        costLabel = this.secondaryEntity instanceof BidEvent ? 'Bid Cost:' : 'Service Cost:';
+        costLabel = 'Price:';
         amount = this.secondaryEntity.amount;
 
         return { pricing, costLabel, amount };

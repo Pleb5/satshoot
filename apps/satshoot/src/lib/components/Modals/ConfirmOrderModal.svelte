@@ -46,7 +46,7 @@
             </div>
             <Input
                 bind:value={noteText}
-                placeholder="A note for freelancer (Optional"
+                placeholder="Note for Freelancer (Optional)"
                 classes="min-h-[100px]"
                 fullWidth
                 textarea

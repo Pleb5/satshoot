@@ -208,7 +208,7 @@
         onCancel={() => (showDeactivateConfirmationDialog = false)}
     >
         <strong class="text-primary-400-500">
-            Do you really want to de-activate the service? You won't be able to get any new order.
+            Do you really want to de-activate the service? You won't be able to get any new orders.
         </strong>
     </ConfirmationDialog>
 {/if}
