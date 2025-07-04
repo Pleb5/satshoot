@@ -121,7 +121,7 @@
                     duration: 60000, // 1 min
                     action: {
                         label: 'Go to Profile',
-                        onClick: () => goto('/' + $currentUser!.npub),
+                        onClick: () => goto('/settings/profile'),
                     },
                 });
             }
