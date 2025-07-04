@@ -98,6 +98,8 @@
                 if (job.acceptedBidAddress && job.winnerFreelancer) {
                     const user = $ndk.getUser({ pubkey: job.winnerFreelancer });
                     jobConversations.set(job, user);
+                } else {
+                    jobConversations.set(job, $ndk.getUser({ pubkey: job.pubkey }));
                 }
             } else if (event.kind === NDKKind.FreelanceOrder) {
                 const order = OrderEvent.from(event);
@@ -178,10 +180,8 @@
 
         jobEvents.forEach((jobEvent: NDKEvent) => {
             const job = JobEvent.from(jobEvent);
-            if (job.acceptedBidAddress && bidMap.has(job.acceptedBidAddress)) {
-                const user = $ndk.getUser({ pubkey: job.pubkey });
-                jobConversations.set(job, user);
-            }
+            const user = $ndk.getUser({ pubkey: job.pubkey });
+            jobConversations.set(job, user);
         });
 
         if (jobConversations.size === 0 && serviceConversations.size === 0) {
