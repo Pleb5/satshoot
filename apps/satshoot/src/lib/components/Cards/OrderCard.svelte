@@ -24,7 +24,6 @@
     import { clientReviews } from '$lib/stores/reviews';
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
-    import PaymentModal from '../Modals/PaymentModal.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { goto } from '$app/navigation';
 
@@ -37,7 +36,6 @@
 
     let showReviewClientModal = $state(false);
     let showReviewModal = $state(false);
-    let showPaymentModal = $state(false);
 
     let servicePoster = $state<NDKUser | null>(null);
     let servicePosterProfile = $state<NDKUserProfile | null>(null);
@@ -154,8 +152,13 @@
         showReviewModal = true;
     }
 
-    function handlePay() {
-        showPaymentModal = true;
+    function goToPay() {
+        if (order) {
+            const url = new URL('/payments/' + order.encode(), window.location.origin);
+            goto(url.toString());
+        } else {
+            throw new Error('Cannot pay, Order not found!')
+        }
     }
 
     function goToChat() {
@@ -216,7 +219,7 @@
                 <Button onClick={handlePreviewReview}>Preview Review</Button>
             {/if}
             {#if canPay}
-                <Button onClick={handlePay}>Pay</Button>
+                <Button onClick={goToPay}>Pay</Button>
             {/if}
             {#if myService}
                 <Button onClick={goToChat}>Message</Button>
@@ -228,13 +231,5 @@
 
     {#if review}
         <ReviewModal bind:isOpen={showReviewModal} {review} />
-    {/if}
-
-    {#if service}
-        <PaymentModal
-            bind:isOpen={showPaymentModal}
-            targetEntity={service}
-            secondaryEntity={order}
-        />
     {/if}
 </div>
