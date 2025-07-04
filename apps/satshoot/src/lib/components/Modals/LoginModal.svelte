@@ -113,7 +113,7 @@
                     >
                     <div class="flex justify-center">
                         <a class="anchor" href="https://github.com/Pleb5/satshoot" target="_blank">
-                            <span>Running v0.3.0</span>
+                            <span>Running v0.9.0</span>
                         </a>
                     </div>
                 </div>
