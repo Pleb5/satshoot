@@ -133,7 +133,7 @@
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-col gap-[15px] justify-start">
-                    <h2 class="text-[40px] font-[500]">Latest Job Listings</h2>
+                    <h2 class="max-sm:text-2xl sm:text-[40px] font-[500]">Latest Job Listings</h2>
                 </div>
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <div class="w-full flex flex-col gap-[25px]">
