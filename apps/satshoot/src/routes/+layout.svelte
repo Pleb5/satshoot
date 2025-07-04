@@ -107,7 +107,10 @@
     let showDecryptSecretModal = $state(false);
 
     const displayNav = $derived($loggedIn);
-    const hideBottomNav = $derived(page.route.id === '/messages/[jobId=event]');
+    const hideBottomNav = $derived(
+        page.route.id === '/messages/[jobId=event]' ||
+            page.route.id === '/messages/[serviceId=service]'
+    );
     const displayFooter = $derived(displayNav && !hideBottomNav);
     let footerHeight = $state(0);
     let followSubscription = $state<NDKSubscription>();
