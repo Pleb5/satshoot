@@ -14,6 +14,7 @@ export const DEFAULTRELAYURLS = [
 
 export const BOOTSTRAPOUTBOXRELAYS = [
     'wss://purplepag.es/',
+    'wss://indexer.coracle.social/',
     'wss://relay.damus.io/',
     // "wss://relay.nostr.band/",
     // "wss://nos.lol/",
