@@ -14,7 +14,7 @@
     import { goto } from '$app/navigation';
     import { onDestroy } from 'svelte';
     import UserProfile from '$lib/components/UI/Display/UserProfile.svelte';
-    import { insertThousandSeparator } from '$lib/utils/misc';
+    import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
@@ -23,6 +23,8 @@
     import { toaster } from '$lib/stores/toaster';
     import { OrderEvent } from '$lib/events/OrderEvent';
     import { FreelancerTabs } from '$lib/stores/tab-store';
+    import ConfirmPaymentModal from '$lib/components/Modals/ConfirmPaymentModal.svelte';
+    import { nip19 } from 'nostr-tools';
 
     // Component state
     let initialized = $state(false);
@@ -35,6 +37,11 @@
     let cashuPopoverStateSponsored = $state(false);
     let paymentManager = $state<PaymentManagerService | undefined>(undefined);
     let isSponsoring = $state(false);
+    // pay confirm model props
+    let showPayConfirm = $state(false);
+    let payConfirmPubkey = $state('');
+    let payAmount = $state(0);
+    let payFunc = $state(async () => {});
 
     $effect(() => {
         if ($sessionInitialized && !initialized) {
@@ -128,6 +135,27 @@
     const cashuTooltipText = $derived(paymentManager?.cashuTooltipText ?? '');
 
     // Payment functions
+    function openConfirmPayWithLN(payeeType: UserEnum) {
+        return () => {
+            switch (payeeType) {
+                case UserEnum.Freelancer:
+                    payConfirmPubkey = secondaryEntity!.pubkey;
+                    payAmount = paymentManager!.payment.amount;
+                    break;
+                case UserEnum.Satshoot:
+                    payConfirmPubkey = SatShootPubkey;
+                    payAmount = paymentManager!.payment.satshootAmount;
+                    break;
+                case UserEnum.Sponsored:
+                    payConfirmPubkey = nip19.decode((secondaryEntity as BidEvent).sponsoredNpub).data as string;
+                    payAmount = paymentManager!.payment.sponsoredAmount;
+                    break;
+            }
+            payFunc = payWithLN(payeeType);
+            showPayConfirm = true;
+        };
+    }
+
     function payWithLN(payeeType: UserEnum) {
         return async () => {
             if (!paymentManager) return;
@@ -139,7 +167,7 @@
         return async () => {
             if (!paymentManager) return;
             await paymentManager.payWithCashu(payeeType);
-        }
+        };
     }
 
     function setupEcash() {
@@ -302,7 +330,7 @@
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    onClick={payWithLN(UserEnum.Freelancer)}
+                                    onClick={openConfirmPayWithLN(UserEnum.Freelancer)}
                                     disabled={paying || !paymentManager.payment.amount}
                                 >
                                     {#if paying}
@@ -401,7 +429,7 @@
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    onClick={payWithLN(UserEnum.Satshoot)}
+                                    onClick={openConfirmPayWithLN(UserEnum.Satshoot)}
                                     disabled={paying || !paymentManager.payment.satshootAmount}
                                 >
                                     {#if paying}
@@ -501,7 +529,7 @@
                                     <Button
                                         grow
                                         classes="w-[200px] max-w-[200px]"
-                                        onClick={payWithLN(UserEnum.Sponsored)}
+                                        onClick={openConfirmPayWithLN(UserEnum.Sponsored)}
                                         disabled={paying || !paymentManager.payment.sponsoredAmount}
                                     >
                                         {#if paying}
@@ -584,3 +612,10 @@
 </div>
 
 <LoginModal bind:isOpen={showLoginModal} />
+
+<ConfirmPaymentModal
+    bind:isOpen={showPayConfirm}
+    bind:payeePubkey={payConfirmPubkey}
+    bind:amount={payAmount}
+    bind:onConfirm={payFunc}
+/>
