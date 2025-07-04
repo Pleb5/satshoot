@@ -350,9 +350,8 @@
         localStorage.debug = '*';
         const mode = getModeUserPrefers();
         if (!mode) {
-            const modeAutoPrefers = getModeOsPrefers();
-            setModeUserPrefers(modeAutoPrefers);
-            document.documentElement.setAttribute('data-mode', modeAutoPrefers);
+            setModeUserPrefers('dark');
+            document.documentElement.setAttribute('data-mode', 'dark');
         } else if (page.url.pathname !== '/') {
             document.documentElement.setAttribute('data-mode', mode);
         }
