@@ -71,6 +71,7 @@
                 updating = true;
 
                 userProfile.name = userProfile.displayName;
+                userProfile.image = userProfile.picture;
 
                 $currentUser.profile = userProfile;
                 await broadcastUserProfile($ndk, $currentUser);
