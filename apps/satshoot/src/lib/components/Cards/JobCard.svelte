@@ -38,7 +38,7 @@
 
 <Card classes="gap-[15px]">
     <div class="w-full flex flex-col gap-[5px]">
-        <h1 class="w-full text-center font-[700] text-[32px] wrap-normal overflow-hidden">
+        <h1 class="w-full text-center font-[700] max-sm:text-lg sm:text-[32px] wrap-normal overflow-hidden">
             <Markdown content={job.title || 'No Title!'} />
         </h1>
     </div>
