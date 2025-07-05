@@ -16,60 +16,53 @@
 
     "screenshots": [
         {
-            "src": "/screenshots/desktop/app_screenshot_1_desktop.png",
+            "src": "/screenshots/desktop/Screenshot_desktop_1.png",
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "satshoot_jobs"
+            "label": "satshoot"
         },
         {
-            "src": "/screenshots/desktop/app_screenshot_2_desktop.png",
+            "src": "/screenshots/desktop/Screenshot_desktop_2.png",
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "satshoot_create_bid"
+            "label": "satshoot"
         },
         {
-            "src": "/screenshots/desktop/app_screenshot_3_desktop.png",
+            "src": "/screenshots/desktop/Screenshot_desktop_3.png",
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "satshoot_chat"
+            "label": "satshoot"
         },
         {
-            "src": "/screenshots/desktop/app_screenshot_4_desktop.png",
-            "sizes": "1920x1080",
+            "src": "/screenshots/mobile/Screenshot_mobile_1.png",
+            "sizes": "388x864",
             "type": "image/png",
-            "form_factor": "wide",
-            "label": "satshoot_post_job"
+            "form_factor": "narrow",
+            "label": "satshoot"
         },
         {
-            "src": "/screenshots/mobile/app_screenshot_1.jpg",
-            "sizes": "723x1452",
-            "type": "image/jpeg",
+            "src": "/screenshots/mobile/Screenshot_mobile_2.png",
+            "sizes": "388x864",
+            "type": "image/png",
             "form_factor": "narrow",
-            "label": "satshoot_jobs"
+            "label": "satshoot"
         },
         {
-            "src": "/screenshots/mobile/app_screenshot_2.jpg",
-            "sizes": "723x1452",
-            "type": "image/jpeg",
+            "src": "/screenshots/mobile/Screenshot_mobile_3.png",
+            "sizes": "388x864",
+            "type": "image/png",
             "form_factor": "narrow",
-            "label": "satshoot_create_bid"
+            "label": "satshoot"
         },
         {
-            "src": "/screenshots/mobile/app_screenshot_3.jpg",
-            "sizes": "723x1452",
-            "type": "image/jpeg",
+            "src": "/screenshots/mobile/Screenshot_mobile_4.png",
+            "sizes": "388x864",
+            "type": "image/png",
             "form_factor": "narrow",
-            "label": "satshoot_chat"
-        },
-        {
-            "src": "/screenshots/mobile/app_screenshot_4.jpg",
-            "sizes": "723x1452",
-            "type": "image/jpeg",
-            "form_factor": "narrow",
-            "label": "satshoot_post_job"
+            "label": "satshoot"
         }
     ]
 }
