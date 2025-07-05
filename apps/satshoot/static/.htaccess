@@ -10,10 +10,23 @@
 </IfModule>
 
 <If "%{REQUEST_URI} =~ m#^/.well-known/#">
+    # CORS headers
     Header always set Access-Control-Allow-Origin "*"
-    Header always set Access-Control-Allow-Headers "*" 
-    Header always set Access-Control-Allow-Methods "GET" 
-</If> 
+    Header always set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept"
+    Header always set Access-Control-Allow-Methods "GET, OPTIONS"
+    
+    # Handle preflight
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
+        RewriteCond %{REQUEST_METHOD} OPTIONS
+        RewriteRule ^.*$ - [R=200,L]
+    </IfModule>
+</If>
+
+# Ensure correct content-type for JSON files
+<FilesMatch "\.json$">
+    Header set Content-Type "application/json"
+</FilesMatch>
 
 <IfModule mod_headers.c>
     Header set Cache-Control "max-age=0, must-revalidate"
