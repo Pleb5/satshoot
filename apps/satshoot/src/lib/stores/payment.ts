@@ -26,10 +26,8 @@ export const createPaymentFilters = (
 ): NDKFilter[] => {
     if (type === 'freelancer') {
         return [
-            { kinds: [NDKKind.Zap], '#e': [event.id] },
-            {
-                kinds: [NDKKind.Nutzap],
-                '#a': [event.tagAddress()],
+            { kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                '#a': [event.tagAddress()] 
             },
         ];
     } else if (type == 'satshoot') {

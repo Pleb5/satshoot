@@ -50,25 +50,17 @@
     let showTakeBidModal = $state(false);
     let showReviewModal = $state(false);
 
-    const freelancerPaymentStore = $derived.by(() => {
-        const freelancerFilters = createPaymentFilters(bid, 'freelancer');
-        return createPaymentStore(freelancerFilters);
-    });
+    const freelancerFilters = createPaymentFilters(bid, 'freelancer');
+    const freelancerPaymentStore = createPaymentStore(freelancerFilters);
 
-    const satshootPaymentStore = $derived.by(() => {
-        const satshootFilters = createPaymentFilters(bid, 'satshoot');
-        return createPaymentStore(satshootFilters);
-    });
+    const satshootFilters = createPaymentFilters(bid, 'satshoot');
+    const satshootPaymentStore = createPaymentStore(satshootFilters);
 
-    const sponsoredNpubPaymentStore = $derived.by(() => {
-        const sponsoredNpubFilters = createPaymentFilters(bid, 'sponsored');
-        return createPaymentStore(sponsoredNpubFilters);
-    });
+    const sponsoredNpubFilters = createPaymentFilters(bid, 'sponsored');
+    const sponsoredNpubPaymentStore = createPaymentStore(sponsoredNpubFilters);
 
     let freelancerPaid = $derived(freelancerPaymentStore.totalPaid);
-    let satshootPaid = $derived.by(() => {
-        return satshootPaymentStore.totalPaid;
-    });
+    let satshootPaid = $derived(satshootPaymentStore.totalPaid);
     let sponsoredNpubPaid = $derived(sponsoredNpubPaymentStore.totalPaid);
 
     const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
@@ -153,6 +145,7 @@
             initialized = true;
             freelancerPaymentStore.paymentStore.startSubscription();
             satshootPaymentStore.paymentStore.startSubscription();
+            sponsoredNpubPaymentStore.paymentStore.startSubscription();
             jobStore.startSubscription();
         }
     });
@@ -179,9 +172,11 @@
     }
 
     onDestroy(() => {
-        if (jobStore) jobStore.empty();
-        if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.empty();
-        if (satshootPaymentStore) satshootPaymentStore.paymentStore.empty();
+        if (jobStore) jobStore.unsubscribe();
+        if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.unsubscribe();
+        if (satshootPaymentStore) satshootPaymentStore.paymentStore.unsubscribe();
+        if (sponsoredNpubPaymentStore) sponsoredNpubPaymentStore.paymentStore.unsubscribe();
+        initialized = false;
     });
 
     function takeBid() {
@@ -255,13 +250,13 @@
                 </div>
                 {#if bid.sponsoringSplit && bid.sponsoredNpub}
                     <div class="grow-1">
-                    <p class="font-[500]">
-                        Sponsored Paid:
-                        <span class="font-[300]">
-                            {insertThousandSeparator($sponsoredNpubPaid)} sats
-                        </span>
-                    </p>
-                </div>
+                        <p class="font-[500]">
+                            Sponsored Paid:
+                            <span class="font-[300]">
+                                {insertThousandSeparator($sponsoredNpubPaid)} sats
+                            </span>
+                        </p>
+                    </div>
                 {/if}
             {/if}
         </div>
