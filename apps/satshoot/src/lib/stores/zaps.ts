@@ -21,11 +21,11 @@ export const filteredReceivedZaps = derived(
     [allReceivedZaps, myBids],
     ([$allReceivedZaps, $myBids]) => {
         // filter zaps that arrived on my bids
-        return $allReceivedZaps.filter((z: NDKEvent) => {
+        return $allReceivedZaps.filter((zap: NDKEvent) => {
             let myBidZapped = false;
             for (const bid of $myBids as BidEvent[]) {
-                const eventId = z.tagValue('e');
-                if (eventId === bid.id) {
+                const eventPayee = zap.tagValue('p');
+                if (eventPayee === bid.pubkey) {
                     myBidZapped = true;
                     break;
                 }
