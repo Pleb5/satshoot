@@ -1,6 +1,5 @@
 import { BidEvent } from '$lib/events/BidEvent';
-import { JobEvent } from '$lib/events/JobEvent';
-import { derived, get, writable, type Readable } from 'svelte/store';
+import { derived, get, type Readable } from 'svelte/store';
 import ndk from '$lib/stores/session';
 import {
     NDKKind,
@@ -26,10 +25,8 @@ export const createPaymentFilters = (
 ): NDKFilter[] => {
     if (type === 'freelancer') {
         return [
-            { kinds: [NDKKind.Zap], '#e': [event.id] },
-            {
-                kinds: [NDKKind.Nutzap],
-                '#a': [event.tagAddress()],
+            { kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                '#a': [event.tagAddress()] 
             },
         ];
     } else if (type == 'satshoot') {
@@ -47,18 +44,22 @@ export const createPaymentFilters = (
     } else {
         const bidEvent = event as BidEvent;
         if (bidEvent) {
-            const decodedNpubResult = nip19.decode(bidEvent.sponsoredNpub);
-            const sponsoredPubkey = decodedNpubResult.type == 'npub' ? decodedNpubResult.data : undefined;
-            if (sponsoredPubkey) {
-                return [
-                    {
-                        kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                        '#p': [sponsoredPubkey],
-                        '#a': [bidEvent.referencedJobAddress],
-                    },
-                ];
-            } else 
+            try {
+                const decodedNpubResult = nip19.decode(bidEvent.sponsoredNpub);
+                const sponsoredPubkey = decodedNpubResult.type == 'npub' ? decodedNpubResult.data : undefined;
+                if (sponsoredPubkey) {
+                    return [
+                        {
+                            kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                            '#p': [sponsoredPubkey],
+                            '#a': [bidEvent.referencedJobAddress],
+                        },
+                    ];
+                } else 
+                    return [];
+            } catch(error) {
                 return [];
+            }
         } else {
             //TODO (rodant): handle the OrderEvent case
             return [];
