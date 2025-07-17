@@ -80,8 +80,7 @@ export class LightningPaymentService {
                 satshootSumMillisats,
                 zapRequestRelays,
                 invoices,
-                // TODO (rodant): check this, the payment stores always use the primaryEntity
-                this.primaryEntity instanceof ServiceEvent ? this.secondaryEntity : this.primaryEntity
+                this.secondaryEntity
             );
         }
 
@@ -97,8 +96,7 @@ export class LightningPaymentService {
                         sponsoredSumMillisats,
                         zapRequestRelays,
                         invoices,
-                        // TODO (rodant): check this, the payment stores always use the primaryEntity
-                        this.primaryEntity instanceof ServiceEvent ? this.secondaryEntity : this.primaryEntity
+                        this.secondaryEntity
                     );
                 }
             }
