@@ -454,7 +454,7 @@
     });
 
     // Install App promotion
-    let deferredInstallPrompt = $state<BeforeInstallPromptEvent>();
+    let deferredInstallPrompt = $state<any>(); // BeforeInstallPromptEvent is not available in TypeScript by default
     let showAppInstallPromotion = $state(false);
     $effect(() => {
         if (showAppInstallPromotion) {

@@ -13,7 +13,6 @@ import normalizeUrl from 'normalize-url';
 import type { RelayFirstFetchOpts } from './helpers';
 import { get } from 'svelte/store';
 import ndk from '$lib/stores/session';
-import { marked, type Token, type Tokens } from 'marked';
 
 export const JobsPerPage = 9;
 export const ServicesPerPage = 9;
