@@ -35,9 +35,15 @@
 
     const zapInvoice: NDKZapInvoice | null = zapInvoiceFromEvent(notification);
 
+    // TODO: this pubkey could be derived from the tagged event in the zap
+    // as a last resort: get the 'a' tag and get the corresponding Order pubkey or
+    // Job pubkey, from the Bid a-tag of the Bid event
+    const zapperPubkey: string | undefined = notification.tagValue('P') ??
+        zapInvoice?.zappee ?? notification.pubkey
+
     const zapper =
         notification.kind === NDKKind.Zap
-            ? $ndk.getUser({ pubkey: notification.tagValue('P') })
+            ? $ndk.getUser({ pubkey:  zapperPubkey})
             : $ndk.getUser({ pubkey: notification.pubkey });
 
     let zapperName = $state(zapper.npub.substring(0, 8));
