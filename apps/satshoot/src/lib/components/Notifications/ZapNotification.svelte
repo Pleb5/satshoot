@@ -20,7 +20,6 @@
     import Fuse from 'fuse.js';
     import { OrderEvent } from '$lib/events/OrderEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
-    import { myBids, myServices } from '$lib/stores/freelance-eventstores';
 
     interface Props {
         notification: NDKEvent;
@@ -32,15 +31,13 @@
 
     const zapInvoice: NDKZapInvoice | null = zapInvoiceFromEvent(notification);
 
-    // TODO: this pubkey could be derived from the tagged event in the zap
-    // as a last resort: get the 'a' tag and get the corresponding Order pubkey or
-    // Job pubkey, from the Bid a-tag of the Bid event
-    const zapperPubkey: string | undefined = notification.tagValue('P') ??
+    // This could be derived from the deal pubkey that the zap refers to as well
+    const lnZapperPubkey: string | undefined = notification.tagValue('P') ??
         zapInvoice?.zappee ?? notification.pubkey
 
     const zapper =
         notification.kind === NDKKind.Zap
-            ? $ndk.getUser({ pubkey:  zapperPubkey})
+            ? $ndk.getUser({ pubkey:  lnZapperPubkey})
             : $ndk.getUser({ pubkey: notification.pubkey });
 
     let zapperName = $state(zapper.npub.substring(0, 8));
