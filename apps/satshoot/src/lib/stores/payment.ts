@@ -24,21 +24,25 @@ export const createPaymentFilters = (
     type: 'freelancer' | 'satshoot' | 'sponsored'
 ): NDKFilter[] => {
     if (type === 'freelancer') {
+        let taggedFreelancerPubkey: string | undefined = event.author.pubkey;
+        if (event.kind === NDKKind.FreelanceOrder) {
+            taggedFreelancerPubkey = (event as OrderEvent).referencedServiceProvider
+            if (!taggedFreelancerPubkey) throw new Error(
+                'Error: Cannot get Freelancer pubkey from Bid or Order get payments for freelancer'
+            )
+        }
         return [
             { kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                '#a': [event.tagAddress()] 
+                '#a': [event.tagAddress()],
+                '#p': [taggedFreelancerPubkey]
             },
         ];
     } else if (type == 'satshoot') {
         return [
             {
                 kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                '#a': [event.tagAddress()],
                 '#p': [SatShootPubkey],
-                '#a': [
-                    event instanceof BidEvent
-                        ? event.referencedJobAddress
-                        : event.referencedServiceAddress,
-                ],
             },
         ];
     } else {
