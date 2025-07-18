@@ -1,20 +1,14 @@
 <script lang="ts">
-    import { run } from 'svelte/legacy';
-
     import { BidEvent } from '$lib/events/BidEvent';
     import ndk from '$lib/stores/session';
     import {
         NDKKind,
-        NDKSubscriptionCacheUsage,
         zapInvoiceFromEvent,
         type NDKEvent,
         type NDKFilter,
-        type NDKUserProfile,
         type NDKZapInvoice,
     } from '@nostr-dev-kit/ndk';
-
     import { onMount } from 'svelte';
-
     import { JobEvent } from '$lib/events/JobEvent';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import Card from '../UI/Card.svelte';
@@ -24,6 +18,9 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
+    import { OrderEvent } from '$lib/events/OrderEvent';
+    import { ServiceEvent } from '$lib/events/ServiceEvent';
+    import { myBids, myServices } from '$lib/stores/freelance-eventstores';
 
     interface Props {
         notification: NDKEvent;
@@ -52,31 +49,12 @@
     let amount: number | null = $state(null);
 
     let zappedBid: BidEvent | null = $state(null);
+    let zappedOrder: OrderEvent | null = $state(null);
     let job: JobEvent | null = $state(null);
-
-    $effect(() => {
-        if (zappedBid) {
-            const dTagOfJob = zappedBid.referencedJobAddress.split(':')[2];
-            const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
-                kinds: [NDKKind.FreelanceJob],
-                '#d': [dTagOfJob],
-            };
-
-            $ndk.fetchEvent(jobFilter, {
-                groupable: true,
-                groupableDelay: 400,
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            })
-                .then((jobEvent) => {
-                    if (jobEvent) {
-                        job = JobEvent.from(jobEvent);
-                    }
-                })
-                .catch(() => {});
-        }
-    });
+    let service: ServiceEvent | null = $state(null);
 
     onMount(async () => {
+        //Profile
         const zapperProfile = await zapper.fetchProfile();
         if (zapperProfile) {
             if (zapperProfile.name) {
@@ -87,38 +65,60 @@
             }
         }
 
-        if (zapInvoice) {
-            // LN zap
-            if (zapInvoice.zappedEvent) {
-                const bidEvent = await $ndk.fetchEvent(zapInvoice.zappedEvent, {
-                    groupable: true,
-                    groupableDelay: 1000,
-                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-                });
-
-                if (bidEvent) {
-                    zappedBid = BidEvent.from(bidEvent);
-                }
-            }
-
-            if (zapInvoice.amount) {
-                amount = Math.round(zapInvoice.amount / 1000);
-            }
+        // Amount
+        if (notification.kind === NDKKind.Zap && zapInvoice?.amount) {
+            amount = Math.round(zapInvoice.amount / 1000);
         } else if (notification.kind === NDKKind.Nutzap) {
-            // Nutzap
             const nutZapAmount = notification.tagValue('amount');
             if (nutZapAmount) {
                 amount = Math.round(parseInt(nutZapAmount) / 1000);
             }
-            const zappedBidID = notification.tagValue('e');
-            if (zappedBidID) {
-                const bidEvent = await $ndk.fetchEvent(zappedBidID, {
-                    groupable: true,
-                    groupableDelay: 1000,
-                    cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-                });
-                if (bidEvent) {
-                    zappedBid = BidEvent.from(bidEvent);
+        }
+
+        // Event
+        let dTag: string | undefined;
+        let zappedKind: number = -1;
+
+        const atag = notification.tagValue('a');
+        if (atag) {
+            dTag = atag.split(':')[2];
+            zappedKind = parseInt(atag.split(':')[0]);
+        } 
+
+        if (zappedKind && dTag) {
+            const filter: NDKFilter = {
+                kinds: [zappedKind],
+                '#d': [dTag]
+            }
+            if (zappedKind === NDKKind.FreelanceBid) {
+                const event = await $ndk.fetchEvent(filter)
+                if (event) {
+                    zappedBid = BidEvent.from(event)
+                    const jobDtag = zappedBid.referencedJobDTag;
+                    if (jobDtag) {
+                        const jobEvent = await $ndk.fetchEvent({
+                            kinds: [NDKKind.FreelanceJob],
+                            '#d': [jobDtag]
+                        })
+                        if (jobEvent) {
+                            job = JobEvent.from(jobEvent)
+                        }
+                    }
+                }
+            } else if (zappedKind === NDKKind.FreelanceOrder) {
+                const event = await $ndk.fetchEvent(filter)
+                if (event) {
+                    zappedOrder = OrderEvent.from(event)
+                    const serviceDtag = zappedOrder.referencedServiceDTag;
+                    if (serviceDtag) {
+                        const serviceEvent = await $ndk.fetchEvent({
+                            kinds: [NDKKind.FreelanceService],
+                            '#d': [serviceDtag]
+                        })
+                        if (serviceEvent) {
+                            service = ServiceEvent.from(serviceEvent)
+                        }
+                    }
                 }
             }
         }
@@ -196,7 +196,14 @@
                         href={'/' + job.encode() + '/'}
                         class="transition ease duration-[0.3s] font-[600] link"
                     >
-                        for the job: "{job.title}"
+                        for the Job: "{job.title}"
+                    </a>
+                {:else if service}
+                    <a
+                        href={'/' + service.encode() + '/'}
+                        class="transition ease duration-[0.3s] font-[600] link"
+                    >
+                        for the Service: "{service.title}"
                     </a>
                 {:else}
                     <div class="w-32 placeholder animate-pulse bg-blue-600"></div>

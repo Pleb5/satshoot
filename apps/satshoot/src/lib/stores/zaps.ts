@@ -2,8 +2,6 @@ import { get, derived } from 'svelte/store';
 import ndk from '$lib/stores/session';
 
 import { NDKKind, type NDKFilter, type NDKEvent } from '@nostr-dev-kit/ndk';
-import { myBids } from './freelance-eventstores';
-import type { BidEvent } from '$lib/events/BidEvent';
 
 // The p-tag of the filter gets assigned when user is initialized
 export const allReceivedZapsFilter: NDKFilter = {
@@ -16,22 +14,24 @@ export const allReceivedZaps = get(ndk).storeSubscribe(allReceivedZapsFilter, {
     autoStart: false,
 });
 
-// todo: use wot here too
 export const filteredReceivedZaps = derived(
-    [allReceivedZaps, myBids],
-    ([$allReceivedZaps, $myBids]) => {
-        // filter zaps that arrived on my bids
+    [allReceivedZaps],
+    ([$allReceivedZaps]) => {
         return $allReceivedZaps.filter((zap: NDKEvent) => {
-            let myBidZapped = false;
-            for (const bid of $myBids as BidEvent[]) {
-                const zapTarget = zap.tagValue('a');
-                if (zapTarget === bid.tagAddress()) {
-                    myBidZapped = true;
-                    break;
-                }
+            let bidZapped = false;
+            let orderZapped = false;
+
+            const zapTargetKind = parseInt(
+                zap.tagValue('a')?.split(':')[0] ?? '-1'
+            );
+
+            if(zapTargetKind === NDKKind.FreelanceBid) {
+                bidZapped = true;
+            } else if(zapTargetKind === NDKKind.FreelanceOrder) {
+                orderZapped = true;
             }
 
-            return myBidZapped;
+            return bidZapped || orderZapped;
         });
     }
 );
