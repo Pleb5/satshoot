@@ -17,6 +17,9 @@ export class ServiceEvent extends NDKEvent {
     private _pricing: Pricing;
     private _amount: number;
     private _pledgeSplit: number = 0;
+    private _sponsoringSplit: number = 0;
+    private _sponsoredNpub: string = '';
+
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
@@ -25,17 +28,32 @@ export class ServiceEvent extends NDKEvent {
         this._title = this.tagValue('title') as string;
         this._pricing = parseInt(this.tagValue('pricing') ?? Pricing.Absolute.toString());
         this._amount = parseInt(this.tagValue('amount') ?? '0');
+        let satshootPercentage = 0;
+        let sponsoredPercentage = 0;
         this.tags.forEach((tag: NDKTag) => {
             if (tag[0] === 'zap') {
                 if (tag[1] === SatShootPubkey) {
-                    this._pledgeSplit = parseInt(tag[3] ?? '0');
+                    satshootPercentage = parseInt(tag[3] ?? '0');
                     // Enforce range
-                    if (this._pledgeSplit < 0 || this._pledgeSplit > 100) {
-                        this._pledgeSplit = 0;
+                    if (satshootPercentage < 0 || satshootPercentage > 100) {
+                        satshootPercentage = 0;
+                    }
+                } else if (tag[1] !== this.pubkey) {
+                    //console.log('Sponsored pubkey: ', tag[1]);
+                    //console.log('this.pubkey: ', this.pubkey);
+                    this._sponsoredNpub = nip19.npubEncode(tag[1]);
+                    sponsoredPercentage = parseInt(tag[3] ?? '0');
+                    if (sponsoredPercentage < 0 || sponsoredPercentage > 100) {
+                        sponsoredPercentage = 0;
                     }
                 }
             }
         });
+        this._pledgeSplit = satshootPercentage + sponsoredPercentage;
+        if (this._pledgeSplit < 0 || this._pledgeSplit > 100) {
+            this._pledgeSplit = 0;
+        }
+        this._sponsoringSplit = this._pledgeSplit ? Math.floor(sponsoredPercentage / this._pledgeSplit * 100) : 0;
     }
 
     static from(event: NDKEvent) {
@@ -95,11 +113,29 @@ export class ServiceEvent extends NDKEvent {
         return this._pledgeSplit;
     }
 
+    get sponsoringSplit(): number {
+        return this._sponsoringSplit;
+    }
+
+    get sponsoredNpub(): string {
+        return this._sponsoredNpub;
+    }
+
     // Freelancer equals this.pubkey but it is not assured
     // that this.pubkey is defined at this point. So a simple setter wont suffice
-    public setPledgeSplit(pledgeSplit: number, freelancer: Hexpubkey) {
+    public setZapSplits(pledgeSplit: number, freelancer: Hexpubkey, sponsoredZapSplit?: ZapSplit) {
         if (pledgeSplit < 0 || pledgeSplit > 100) {
             throw new Error(`Trying to set invalid zap split percentage: ${pledgeSplit} !`);
+        }
+        if (sponsoredZapSplit) {
+            if (sponsoredZapSplit.percentage < 0 || sponsoredZapSplit.percentage > 100) {
+                throw new Error(`Trying to set invalid zap split percentage for sponsored npub: ${sponsoredZapSplit.percentage} !`);
+            }
+            try {
+                this._sponsoredNpub = nip19.npubEncode(sponsoredZapSplit.pubkey);
+            } catch {
+                throw new Error(`Invalid sponsored pubkey: ${sponsoredZapSplit.pubkey}, cannot set zap splits!`);
+            }
         }
         try {
             nip19.npubEncode(freelancer);
@@ -107,7 +143,13 @@ export class ServiceEvent extends NDKEvent {
             throw new Error(`Invalid Freelancer pubkey: ${freelancer}, cannot set zap splits!`);
         }
         this.removeTag('zap');
-        this.tags.push(['zap', SatShootPubkey, BOOTSTRAPOUTBOXRELAYS[0], pledgeSplit.toString()]);
+        const sponsoredPercentage = sponsoredZapSplit ? Math.floor(pledgeSplit * sponsoredZapSplit.percentage / 100) : 0;
+        const satshootPercentage = pledgeSplit - sponsoredPercentage;
+        this.tags.push(['zap', SatShootPubkey, BOOTSTRAPOUTBOXRELAYS[0], satshootPercentage.toString()]);
+        if (sponsoredZapSplit && sponsoredPercentage) {
+            this._sponsoringSplit = sponsoredZapSplit.percentage;
+            this.tags.push(['zap', sponsoredZapSplit.pubkey, BOOTSTRAPOUTBOXRELAYS[0], sponsoredPercentage.toString()]);
+        }
         this.tags.push([
             'zap',
             freelancer,
