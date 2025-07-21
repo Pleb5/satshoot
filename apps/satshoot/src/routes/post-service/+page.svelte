@@ -144,21 +144,25 @@
             sponsoredPubkey = nip19.decode(sponsoredNpub).data as string;
             sponsoringSplit = serviceToEdit?.sponsoringSplit ? serviceToEdit.sponsoringSplit : 50;
             imageUrls = $serviceToEdit.images;
-            initialized = true;
         }
 
         checkRelayConnections();
+        initialized = true;
     });
 
     $effect(() => {
-        if (initialized && validate()) {
+        if (initialized) {
+            const error = validateSponsoredNpub(sponsoredNpub);
+            if (error) {
+                toaster.error({title: error});
+                return;
+            }
             if (sponsoredNpub) {
                 try {
                     const decodeResult = nip19.decode(sponsoredNpub);
                     switch (decodeResult.type) {
                         case 'npub':
                             sponsoredPubkey = decodeResult.data;
-                            toaster.success({ title: 'Parsed valid Npub' });
                             break;
                         default:
                             sponsoredPubkey = '';
@@ -243,68 +247,54 @@
         return valid;
     }
 
-    function validate() {
+    function invalid(): string {
         if (!$currentUser) {
-            toaster.error({
-                title: 'Log in to post the Service!',
-            });
-
-            return false;
+            return 'Log in to post the Service!';
         }
 
         if (!titleValid) {
-            toaster.error({
-                title: `Title should be at least ${minTitleLength} character long!`,
-            });
-            return false;
+            return `Title should be at least ${minTitleLength} character long!`;
         }
 
         if (!descriptionValid) {
-            toaster.error({
-                title: `Description should be at least ${minDescriptionLength} character long!`,
-            });
-            return false;
+            return `Description should be at least ${minDescriptionLength} character long!`;
         }
 
         if (amount <= 0) {
-            toaster.error({
-                title: `Price should be greater than 0`,
-            });
-            return false;
+            return `Price should be greater than 0`;
         }
 
         if (pledgeSplit < 0) {
-            toaster.error({
-                title: `Pledge split can't be less than 0`,
-            });
-            return false;
+            return `Pledge split can't be less than 0`;
         }
 
         if (pledgeSplit > 100) {
-            toaster.error({
-                title: `Pledge split can't be more than 100%`,
-            });
-            return false;
+            return `Pledge split can't be more than 100%`;
         }
 
-        if (sponsoredNpub) {
+        return validateSponsoredNpub(sponsoredNpub);
+    }
+
+    function validateSponsoredNpub(npub: string): string {
+        if (npub) {
             if (!validSponsoredNpub) {
-                toaster.error({ title: 'Invalid npub!' });
-                return false;
+                return 'Invalid npub!';
             } else if (sponsoringSplit < 0) {
-                toaster.error({ title: 'Sponsoring split below 0!' });
-                return false;
+                return 'Sponsoring split below 0!';
             } else if (sponsoringSplit > 100) {
-                toaster.error({ type: 'Sponsoring split above 100% !' });
-                return false;
+                return 'Sponsoring split above 100% !';
             }
         }
 
-        return true;
+        return '';
     }
 
     async function postService() {
-        if (!validate()) return;
+        const error = invalid();
+        if (error) {
+            toaster.error({title: error});
+            return;
+        }
 
         try {
             posting = true;
