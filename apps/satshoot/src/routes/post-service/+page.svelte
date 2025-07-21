@@ -140,9 +140,9 @@
             pricingMethod = $serviceToEdit.pricing;
             amount = $serviceToEdit.amount;
             pledgeSplit = $serviceToEdit.pledgeSplit;
-            sponsoredNpub = serviceToEdit ? serviceToEdit.sponsoredNpub : PablosNpub;
+            sponsoredNpub = serviceToEdit ? $serviceToEdit.sponsoredNpub : PablosNpub;
             sponsoredPubkey = nip19.decode(sponsoredNpub).data as string;
-            sponsoringSplit = serviceToEdit?.sponsoringSplit ? serviceToEdit.sponsoringSplit : 50;
+            sponsoringSplit = $serviceToEdit?.sponsoringSplit ? $serviceToEdit.sponsoringSplit : 50;
             imageUrls = $serviceToEdit.images;
         }
 
