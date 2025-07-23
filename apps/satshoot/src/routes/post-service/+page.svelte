@@ -141,7 +141,7 @@
             amount = $serviceToEdit.amount;
             pledgeSplit = $serviceToEdit.pledgeSplit;
             sponsoredNpub = serviceToEdit ? $serviceToEdit.sponsoredNpub : PablosNpub;
-            sponsoredPubkey = nip19.decode(sponsoredNpub).data as string;
+            sponsoredPubkey = sponsoredNpub ? nip19.decode(sponsoredNpub).data as string : '';
             sponsoringSplit = $serviceToEdit?.sponsoringSplit ? $serviceToEdit.sponsoringSplit : 50;
             imageUrls = $serviceToEdit.images;
         }
