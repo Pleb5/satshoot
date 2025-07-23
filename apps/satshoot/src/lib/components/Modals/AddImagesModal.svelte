@@ -20,6 +20,7 @@
 
     // Local state for uploaded images and derived URLs
     let imageUrls = $derived(images.map((file) => URL.createObjectURL(file)));
+    const initialImages = [...images];
 
     let fileUploadApi: FileUploadApi;
 
@@ -66,6 +67,10 @@
             onSelectFiles={(imageFiles) => (images = [...imageFiles])}
             onApiReady={(_api) => (fileUploadApi = _api)}
             validate={(file) => {
+                if (initialImages.some((i) => i === file)) {
+                    return null
+                }
+
                 if (images.some((existing) => existing.name === file.name)) {
                     return ['FILE_EXISTS'];
                 }
