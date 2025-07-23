@@ -25,7 +25,7 @@
         PablosNpub,
     } from '$lib/utils/misc';
     import tagOptions from '$lib/utils/tag-options';
-    import { set } from 'date-fns';
+    import type { Hexpubkey } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { onMount } from 'svelte';
 
@@ -55,9 +55,9 @@
     let usdPrice = $derived(Math.floor((amount / 100_000_000) * BTCUSDPrice));
     let pledgeSplit = $state(0);
     let sponsoredNpub = $state(PablosNpub);
-    let sponsoredPubkey = $state(nip19.decode(PablosNpub).data);
-    let sponsoringSplit = $state(50);
     let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
+    let sponsoredPubkeyResult = $derived(validSponsoredNpub ? derivePubkey(sponsoredNpub) : '');
+    let sponsoringSplit = $state(50);
 
     let imageUrls = $state<string[]>([]);
 
@@ -65,7 +65,9 @@
     let freelancerShare = $derived(amount - pledgedShare);
 
     let sponsoredShare = $derived(
-        validSponsoredNpub ? Math.floor(pledgedShare * (sponsoringSplit / 100)) : 0
+        sponsoredPubkeyResult && typeof sponsoredPubkeyResult === 'string'
+            ? Math.floor(pledgedShare * (sponsoringSplit / 100))
+            : 0
     );
     let satshootShare = $derived(pledgedShare - sponsoredShare);
 
@@ -141,12 +143,6 @@
             amount = $serviceToEdit.amount;
             pledgeSplit = $serviceToEdit.pledgeSplit;
             sponsoredNpub = serviceToEdit ? $serviceToEdit.sponsoredNpub : PablosNpub;
-            try {
-                sponsoredPubkey = sponsoredNpub ? nip19.decode(sponsoredNpub).data as string : '';
-            } catch (error) {
-                sponsoredPubkey = '';
-                toaster.error({ title: 'Invalid sponsored npub.' });
-            }
             sponsoringSplit = $serviceToEdit?.sponsoringSplit ? $serviceToEdit.sponsoringSplit : 50;
             imageUrls = $serviceToEdit.images;
         }
@@ -156,34 +152,30 @@
     });
 
     $effect(() => {
-        if (initialized) {
-            const error = validateSponsoredNpub(sponsoredNpub);
-            if (error) {
-                toaster.error({title: error});
-                return;
-            }
-            if (sponsoredNpub) {
-                try {
-                    const decodeResult = nip19.decode(sponsoredNpub);
-                    switch (decodeResult.type) {
-                        case 'npub':
-                            sponsoredPubkey = decodeResult.data;
-                            break;
-                        default:
-                            sponsoredPubkey = '';
-                            toaster.error({
-                                title: 'Expecting an npub but got a different nip-19 entity.',
-                            });
-                    }
-                } catch (error) {
-                    sponsoredPubkey = '';
-                    toaster.error({ title: 'Invalid sponsored npub.' });
-                }
-            } else {
-                sponsoredPubkey = '';
-            }
+        if (typeof sponsoredPubkeyResult !== 'string' && sponsoredPubkeyResult) {
+            toaster.error(sponsoredPubkeyResult);
         }
     });
+
+    type ToasterError = { title: string };
+
+    function derivePubkey(npub: string): ToasterError | Hexpubkey {
+        if (npub) {
+            try {
+                const decodeResult = nip19.decode(npub);
+                switch (decodeResult.type) {
+                    case 'npub':
+                        return decodeResult.data;
+                    default:
+                        return { title: 'Expecting an npub but got a different nip-19 entity.' };
+                }
+            } catch (error) {
+                return { title: 'Invalid sponsored npub.' };
+            }
+        } else {
+            return '';
+        }
+    }
 
     function buildSponsoredZapSplit(npub: string, percentage: number): ZapSplit {
         const decodedData = nip19.decode(npub);
@@ -252,52 +244,55 @@
         return valid;
     }
 
-    function invalid(): string {
+    function invalid(): ToasterError | boolean {
         if (!$currentUser) {
-            return 'Log in to post the Service!';
+            return { title: 'Log in to post the Service!' };
         }
 
         if (!titleValid) {
-            return `Title should be at least ${minTitleLength} character long!`;
+            return { title: `Title should be at least ${minTitleLength} character long!` };
         }
 
         if (!descriptionValid) {
-            return `Description should be at least ${minDescriptionLength} character long!`;
+            return {
+                title: `Description should be at least ${minDescriptionLength} character long!`,
+            };
         }
 
         if (amount <= 0) {
-            return `Price should be greater than 0`;
+            return { title: `Price should be greater than 0` };
         }
 
         if (pledgeSplit < 0) {
-            return `Pledge split can't be less than 0`;
+            return { title: `Pledge split can't be less than 0` };
         }
 
         if (pledgeSplit > 100) {
-            return `Pledge split can't be more than 100%`;
+            return { title: `Pledge split can't be more than 100%` };
         }
 
-        return validateSponsoredNpub(sponsoredNpub);
+        return validateSponsoringInputs(sponsoredNpub);
     }
 
-    function validateSponsoredNpub(npub: string): string {
+    function validateSponsoringInputs(npub: string): ToasterError | boolean {
         if (npub) {
-            if (!validSponsoredNpub) {
-                return 'Invalid npub!';
+            const pubkeyResult = derivePubkey(npub);
+            if (typeof pubkeyResult !== 'string') {
+                return pubkeyResult;
             } else if (sponsoringSplit < 0) {
-                return 'Sponsoring split below 0!';
+                return { title: 'Sponsoring split below 0!' };
             } else if (sponsoringSplit > 100) {
-                return 'Sponsoring split above 100% !';
+                return { title: 'Sponsoring split above 100% !' };
             }
         }
 
-        return '';
+        return true;
     }
 
     async function postService() {
-        const error = invalid();
-        if (error) {
-            toaster.error({title: error});
+        const validOrError = invalid();
+        if (typeof validOrError !== 'boolean') {
+            toaster.error(validOrError);
             return;
         }
 
@@ -601,8 +596,8 @@
                                 <div class="">
                                     <label class="font-[600]" for=""> Sponsored npub </label>
                                 </div>
-                                {#if sponsoredPubkey}
-                                    <UserProfile pubkey={sponsoredPubkey} />
+                                {#if sponsoredPubkeyResult && typeof sponsoredPubkeyResult === 'string'}
+                                    <UserProfile pubkey={sponsoredPubkeyResult} />
                                 {/if}
                                 <div class="w-full flex flex-row items-center relative">
                                     <Input
