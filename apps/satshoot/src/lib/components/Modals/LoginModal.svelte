@@ -8,6 +8,7 @@
     import GenerateAccount from '../Login/GenerateAccount.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { UserMode, userMode } from '$lib/stores/user';
+    import { page } from '$app/state';
 
     interface Props {
         isOpen: boolean;
@@ -15,7 +16,11 @@
 
     let { isOpen = $bindable() }: Props = $props();
 
-    let selectedLoginMethod: LoginMethod | null = $state(null);
+    let selectedLoginMethod: LoginMethod | null = $state(
+        page.url.searchParams.get('state') === 'letsgo' 
+        ? LoginMethod.Register
+        : null
+    );
 
     const popUpText = `
 <p>
@@ -109,7 +114,7 @@
                     <Button
                         variant="outlined"
                         onClick={() => (selectedLoginMethod = LoginMethod.Register)}
-                        >Generate Account</Button
+                        >Sign Up</Button
                     >
                     <div class="flex justify-center">
                         <a class="anchor" href="https://github.com/Pleb5/satshoot" target="_blank">

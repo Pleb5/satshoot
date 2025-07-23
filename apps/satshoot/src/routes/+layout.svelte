@@ -130,7 +130,7 @@
     $effect(() => {
         if ($retriesLeft === 0) {
             toaster.warning({
-                title: 'Could not reconnect to Relays!',
+                title: 'Could not connect to Relays!',
                 duration: 60000, // 1 min
                 action: {
                     label: 'Check relays',
@@ -146,20 +146,6 @@
         if ($wotUpdateFailed) {
             toaster.warning({
                 title: 'Could not load Web of Trust!',
-                action: {
-                    label: 'Retry',
-                    onClick: () => {
-                        window.location.reload();
-                    },
-                },
-            });
-        }
-    });
-
-    $effect(() => {
-        if ($wotUpdateNoResults) {
-            toaster.warning({
-                title: 'Your Web of Trust is Empty!',
                 action: {
                     label: 'Retry',
                     onClick: () => {

@@ -4,7 +4,6 @@
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
-    import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
     import ndk from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
     import currentUser from '$lib/stores/user';
@@ -84,10 +83,6 @@
                     goto(redirectPath);
                 }
 
-                if ($onboardingStep === OnboardingStep.Account_Created) {
-                    $onboardingStep = OnboardingStep.Profile_Updated;
-                    goto('/settings/relays');
-                }
             } catch (e) {
                 toaster.error({
                     title: `Profile update failed! Reason: ${e}`,

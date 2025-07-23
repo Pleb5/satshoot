@@ -119,7 +119,6 @@
     }
 
     function handleRedirection() {
-        // redirect to jobs page
         if ($redirectAfterLogin) {
             if ($userMode === UserMode.Client) {
                 goto('/services');

@@ -79,7 +79,7 @@
                             <Card>
                                 <p>
                                     For sending and receiving payments, setup your
-                                    <a href="https://npub.cash/" class="anchor" target="_blank">
+                                    <a href="https:/https://coinos.io/" class="anchor" target="_blank">
                                         LN address
                                     </a>
                                     or your

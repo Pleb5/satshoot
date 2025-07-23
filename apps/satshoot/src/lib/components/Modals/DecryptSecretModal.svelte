@@ -133,10 +133,10 @@
     <div class="flex justify-between items-center m-4 gap-3">
         <input
             class="input"
-            title="Passphrase:"
+            title="Password:"
             required
             type={showPassword ? 'text' : 'password'}
-            placeholder="Enter Passphrase..."
+            placeholder="Enter Password..."
             oninput={(event) => (passphrase = event.currentTarget.value)}
         />
         <button

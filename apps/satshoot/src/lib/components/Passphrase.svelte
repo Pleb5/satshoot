@@ -36,7 +36,7 @@
 <div class={inputWrapperClasses} class:rounded-t-[6px]={roundedTop}>
     <Input
         type={showPassphrase ? 'text' : 'password'}
-        placeholder="Enter Passphrase..."
+        placeholder="Enter Password..."
         classes={!passphraseValid ? 'text-error-500' : ''}
         bind:value={passphrase}
         grow
@@ -56,7 +56,7 @@
 <div class={inputWrapperClasses}>
     <Input
         type={showConfirmPassphrase ? 'text' : 'password'}
-        placeholder="Confirm Passphrase..."
+        placeholder="Confirm Password..."
         classes={!confirmPassphraseValid ? 'text-error-500' : ''}
         bind:value={confirmPassphrase}
         grow

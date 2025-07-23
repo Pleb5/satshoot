@@ -50,7 +50,6 @@ import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/
 import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
 import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
-import { toaster } from '$lib/stores/toaster';
 
 export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init');
@@ -71,10 +70,7 @@ export async function initializeUser(ndk: NDKSvelte) {
 
         const $onboardingStep = get(onboardingStep);
         if ($onboardingStep !== OnboardingStep.Account_Created) {
-            // initialize user wallet for ecash payments
             const userRelays = await fetchUserOutboxRelays(ndk, user.pubkey, 3000);
-            console.warn('User relays in init', userRelays);
-
             let explicitRelays = DEFAULTRELAYURLS;
             if (userRelays) {
                 const writeRelayUrls = NDKRelayList.from(userRelays).writeRelayUrls;
@@ -82,19 +78,6 @@ export async function initializeUser(ndk: NDKSvelte) {
             }
 
             fetchAndInitWallet(user, ndk, { explicitRelays });
-
-            if (!userRelays) {
-                toaster.warning({
-                    title: 'Could not find Your personal Relays',
-                    duration: 60000, // 1 min
-                    action: {
-                        label: 'Configure',
-                        onClick: () => {
-                            goto('/settings/relays');
-                        },
-                    },
-                });
-            }
 
             await loadWot(ndk, user);
         }

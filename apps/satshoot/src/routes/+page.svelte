@@ -5,6 +5,17 @@
     import NostrSection from '$lib/components/HomePage/NostrSection.svelte';
     import ProsSection from '$lib/components/HomePage/ProsSection.svelte';
     import PaymentSection from '$lib/components/HomePage/PaymentSection.svelte';
+    import { onMount } from 'svelte';
+    import { page } from '$app/state';
+    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
+
+    let showLoginModal = $state(false);
+
+    onMount(() => {
+        if (page.url.searchParams.get('state') === 'letsgo') {
+            showLoginModal = true
+        }
+    })
 
 </script>
 
@@ -16,3 +27,5 @@
     <PaymentSection />
     <ProsSection />
 </div>
+
+<LoginModal bind:isOpen={showLoginModal} />

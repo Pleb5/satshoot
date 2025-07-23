@@ -316,15 +316,9 @@
             await fetchAndInitWallet($currentUser, $ndk);
             if ($wallet) {
                 $wallet = $wallet;
-            } else {
-                toaster.error({
-                    title: `Could not load wallet!`,
-                });
             }
         } else if ($loggedIn) {
-            toaster.error({
-                title: `Error: User not found!`,
-            });
+            console.error("Error: User not found!")
         }
     }
 

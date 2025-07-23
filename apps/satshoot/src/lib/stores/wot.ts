@@ -123,9 +123,8 @@ export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
 
 function updateNecessary(): boolean {
     const $followsUpdated = get(followsUpdated) as number;
-    // Update wot every 5 hours: Newbies can get followers and after 5 hours
-    // their actions will be visible to a decent amount of people
-    const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 5;
+    // Update wot every two weeks
+    const updateDelay = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 14;
 
     const $networkWoTScores = get(networkWoTScores);
 
