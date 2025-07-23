@@ -1,6 +1,5 @@
 <script lang="ts">
     import { toaster } from '$lib/stores/toaster';
-    import { getStandardAspectRatio } from '$lib/utils/image';
     import { FileUpload, type FileUploadApi } from '@skeletonlabs/skeleton-svelte';
 
     interface FileAcceptDetails {
@@ -39,32 +38,14 @@
 
     let fileUploadApi: FileUploadApi;
 
-    let processingFiles = false;
-
-    async function handleFileAccept({ files }: FileAcceptDetails) {
-        if (processingFiles) return;
-
-        processingFiles = true;
-
+    function handleFileAccept({ files }: FileAcceptDetails) {
         const validImages: File[] = [];
 
         for (const file of files) {
-            const aspectRatio = await getStandardAspectRatio(file);
-            console.log('file.name, aspectRatio', file.name, aspectRatio);
-            if (aspectRatio === '16:9') {
-                validImages.push(file);
-            } else {
-                toaster.error({
-                    title: `Image ${file.name} does not match required aspect ratio (16:9)`,
-                });
-
-                fileUploadApi.deleteFile(file);
-            }
+            validImages.push(file);
         }
 
         onSelectFiles(validImages);
-
-        processingFiles = false;
     }
 
     // Handle file rejection
