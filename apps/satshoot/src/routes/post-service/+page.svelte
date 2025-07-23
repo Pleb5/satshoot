@@ -1,5 +1,6 @@
 <script lang="ts">
     import { beforeNavigate, goto } from '$app/navigation';
+    import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
     import AddImagesModal from '$lib/components/Modals/AddImagesModal.svelte';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
@@ -18,11 +19,10 @@
     import { checkRelayConnections } from '$lib/utils/helpers';
     import { insertThousandSeparator, NostrBuildBlossomServer } from '$lib/utils/misc';
     import tagOptions from '$lib/utils/tag-options';
-    import { set } from 'date-fns';
     import { onMount } from 'svelte';
 
     // For form validation
-    const maxTags: number = 5;
+    const maxTags: number = 8;
     const minDescriptionLength = 20;
     const minTitleLength = 10;
 
@@ -51,7 +51,6 @@
 
         return {
             titleValid: true,
-            titleState: 'text-success-500',
         };
     });
 
@@ -65,7 +64,6 @@
 
         return {
             descriptionValid: true,
-            descriptionState: 'text-success-500',
         };
     });
 
@@ -299,6 +297,27 @@
         showLoginModal = true;
     }
 
+
+
+    let pledgeTooltip =
+        '<div>' +
+            '<div class="font-bold">Pledge Your support for SatShoot development!❤️‍🔥 ⚡</div>' +
+        '<ul class="list-inside list-disc space-y-2">' +
+            '<li>The Pledge Percentage will be paid to SatShoot by the Client</li>' +
+            '<li>' +
+                'Pledges appear on Services' +
+            '</li>' +
+            '<li>' +
+                'Overall pledge amount is displayed ' +
+                'on Profiles' +
+
+            '</li>' +
+            '<li>' +
+                'This can boost Reputation of a Freelancer' +
+            '</li>' +
+        '</ul>' +
+        '</div>';
+
     const selectInputClasses =
         'w-full px-[10px] py-[5px] bg-black-50 focus:bg-black-100 rounded-[6px] ' +
         'border-[2px] border-black-100 dark:border-white-100 focus:border-blue-500 focus:outline-[0px]';
@@ -306,7 +325,6 @@
     const selectOptionClasses =
         'bg-white dark:bg-brightGray transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
 </script>
-
 <div class="w-full flex flex-col gap-0 grow pb-20 sm:pb-5">
     <div class="w-full flex flex-col justify-center items-center">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
@@ -454,6 +472,12 @@
                     <div class="flex flex-col gap-[5px]">
                         <div class="">
                             <label class="font-[600]" for=""> Pledge split </label>
+
+                            <QuestionIcon
+                                extraClasses="text-[14px] p-[3px]"
+                                placement="bottom-start"
+                                popUpText={pledgeTooltip}
+                            />
                         </div>
                         <div class="w-full flex flex-row items-center relative">
                             <Input

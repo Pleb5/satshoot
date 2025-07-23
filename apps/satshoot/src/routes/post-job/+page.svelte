@@ -50,7 +50,6 @@
 
         return {
             titleValid: true,
-            titleState: 'text-success-500',
         };
     });
 
@@ -64,7 +63,6 @@
 
         return {
             descriptionValid: true,
-            descriptionState: 'text-success-500',
         };
     });
 
