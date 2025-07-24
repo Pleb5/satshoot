@@ -56,6 +56,7 @@
 
         return {
             titleValid: true,
+            titleState: 'text-black-500',
         };
     });
 
@@ -69,6 +70,7 @@
 
         return {
             descriptionValid: true,
+            descriptionState: 'text-black-500',
         };
     });
 
