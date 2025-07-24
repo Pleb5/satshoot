@@ -17,6 +17,8 @@
     import OrdersCountBreakdown from '../Modals/OrdersCountBreakdown.svelte';
     import ShareIcon from '../Icons/ShareIcon.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import type { Hexpubkey } from '@nostr-dev-kit/ndk';
+    import { nip19 } from 'nostr-tools';
 
     interface Props {
         service: ServiceEvent;
@@ -27,6 +29,7 @@
 
     let showServiceMenu = $state(false);
     let showOrderPriceBreakdownModal = $state(false);
+    let sponsoredPubkey = $state(getSponsoredPubkey(service));
 
     let statusString = $derived(getServiceStatusString(service.status));
     let statusColor = $derived(getServiceStatusColor(service.status));
@@ -46,6 +49,22 @@
                 order.status === OrderStatus.Fulfilled
         )
     );
+
+    function getSponsoredPubkey(service: ServiceEvent): Hexpubkey {
+        if (service.sponsoredNpub) {
+            try {
+                const result = nip19.decode(service.sponsoredNpub);
+                if (result.type === 'npub') {
+                    return result.data;
+                } else {
+                    console.error('Got not an npub for the sponsored npub');
+                }
+            } catch (error) {
+                console.error('Error decoding the sponsored npub: ', error);
+            }
+        }
+        return '';
+    }
 
     function handleOptionClick() {
         showServiceMenu = true;
@@ -77,7 +96,9 @@
 
 <Card classes="gap-[15px]">
     <div class="w-full flex flex-col gap-[5px]">
-        <h1 class="w-full text-center font-[700] max-sm:text-lg sm:text-[32px]">{service.title || 'No Title!'}</h1>
+        <h1 class="w-full text-center font-[700] max-sm:text-lg sm:text-[32px]">
+            {service.title || 'No Title!'}
+        </h1>
     </div>
     <div class={statusRowWrapperClasses}>
         <p title="Service Status" class="{statusRowItemClasses} {statusColor}">
@@ -119,7 +140,7 @@
 {/if}
 
 <Card>
-    <div class="w-full flex flex-row flex-wrap gap-[10px]">
+    <div class="w-full flex flex-row flex-wrap gap-[10px] items-center">
         <div class="grow-1">
             <p class="font-[500]">
                 Price:
@@ -136,6 +157,19 @@
             </p>
         </div>
 
+        <div class="grow-1">
+            <p class="font-[500]">
+                Sponsoring split:
+                <span class="font-[300]"> {service.sponsoringSplit + ' %'} </span>
+            </p>
+        </div>
+
+        {#if sponsoredPubkey}
+            <div class="gorw-1 flex flex-row gap-[20px] items-center">
+                <p class="font-[500]">for:</p>
+                <UserProfile pubkey={sponsoredPubkey} />
+            </div>
+        {/if}
         <div class="grow-1">
             <Button
                 variant="outlined"
