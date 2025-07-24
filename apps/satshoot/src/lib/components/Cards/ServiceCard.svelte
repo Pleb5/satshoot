@@ -19,6 +19,7 @@
     import { toaster } from '$lib/stores/toaster';
     import type { Hexpubkey } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
+    import { getPubkeyFromNpubOrNprofile } from '$lib/utils/nip19';
 
     interface Props {
         service: ServiceEvent;
@@ -29,8 +30,6 @@
 
     let showServiceMenu = $state(false);
     let showOrderPriceBreakdownModal = $state(false);
-    let sponsoredPubkey = $state(getSponsoredPubkey(service));
-
     let statusString = $derived(getServiceStatusString(service.status));
     let statusColor = $derived(getServiceStatusColor(service.status));
 
@@ -50,21 +49,7 @@
         )
     );
 
-    function getSponsoredPubkey(service: ServiceEvent): Hexpubkey {
-        if (service.sponsoredNpub) {
-            try {
-                const result = nip19.decode(service.sponsoredNpub);
-                if (result.type === 'npub') {
-                    return result.data;
-                } else {
-                    console.error('Got not an npub for the sponsored npub');
-                }
-            } catch (error) {
-                console.error('Error decoding the sponsored npub: ', error);
-            }
-        }
-        return '';
-    }
+    const sponsoredPubkey = getPubkeyFromNpubOrNprofile(service.sponsoredNpub);
 
     function handleOptionClick() {
         showServiceMenu = true;

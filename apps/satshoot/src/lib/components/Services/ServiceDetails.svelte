@@ -22,6 +22,7 @@
     import currentUser from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
     import OrdersCountBreakdown from '../Modals/OrdersCountBreakdown.svelte';
+    import { getPubkeyFromNpubOrNprofile } from '$lib/utils/nip19';
 
     interface Props {
         service: ServiceEvent;
@@ -70,6 +71,8 @@
                 order.status === OrderStatus.Fulfilled
         )
     );
+
+    const sponsoredPubkey = getPubkeyFromNpubOrNprofile(service.sponsoredNpub);
 
     // Effect to fetch user profile
     $effect(() => {
@@ -133,6 +136,12 @@
         <p class="font-[500]">
             Pledge split:
             <span class="font-[300]"> {service.pledgeSplit + ' %'} </span>
+        </p>
+    </div>
+    <div class="grow-1">
+        <p class="font-[500]">
+            Sponsoring split:
+            <span class="font-[300]"> {service.sponsoringSplit + ' %'} </span>
         </p>
     </div>
     <div class="grow-1">
