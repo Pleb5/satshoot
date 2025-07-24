@@ -63,7 +63,14 @@
 `;
 </script>
 
-<ModalWrapper bind:isOpen title="Login" {popUpText}>
+<ModalWrapper
+    bind:isOpen 
+    title={
+        selectedLoginMethod === LoginMethod.Register
+        ? "Sign up"
+        : "Login"
+    }
+    {popUpText}>
     {#snippet headerAction()}
         <Button
             classes={!selectedLoginMethod ? 'hidden' : ''}
