@@ -448,10 +448,10 @@
                         <div class="w-full flex flex-row items-center">
                             <select class={selectInputClasses} bind:value={pricingMethod}>
                                 <option value={Pricing.Absolute} class={selectOptionClasses}>
-                                    Absolute Price(sats)
+                                    Product price(sats)
                                 </option>
-                                <option value={Pricing.SatsPerMin} class={selectOptionClasses}>
-                                    Time-based Price(sats/minute)
+                                <option value={Pricing.Hourly} class={selectOptionClasses}>
+                                    Service fee(sats/hour)
                                 </option>
                             </select>
                         </div>
@@ -459,7 +459,7 @@
                     <div class="flex flex-col gap-[5px]">
                         <div class="">
                             <label class="font-[600]" for="">
-                                Price({pricingMethod ? 'sats/min' : 'sats'})
+                                Price({pricingMethod ? 'sats/hour' : 'sats'})
                             </label>
                         </div>
                         <div class="w-full flex flex-row items-center relative">
@@ -521,7 +521,7 @@
                                 You'd get:
                                 <span class="font-[400]">
                                     {insertThousandSeparator(freelancerShare) +
-                                        (pricingMethod ? 'sats/min' : 'sats')}
+                                        (pricingMethod ? 'sats/hour' : 'sats')}
                                 </span>
                             </p>
                         </div>
@@ -530,7 +530,7 @@
                                 Your pledge:
                                 <span class="font-[400]">
                                     {insertThousandSeparator(pledgedShare) +
-                                        (pricingMethod ? 'sats/min' : 'sats')}
+                                        (pricingMethod ? 'sats/hour' : 'sats')}
                                 </span>
                             </p>
                         </div>

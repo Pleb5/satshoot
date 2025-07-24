@@ -16,7 +16,7 @@
             const key =
                 order.amount.toString() +
                 ' ' +
-                (order.pricing === Pricing.SatsPerMin ? 'sats/min' : 'sats');
+                (order.pricing === Pricing.Hourly ? 'sats/hour' : 'sats');
 
             if (map[key]) {
                 map[key]++;

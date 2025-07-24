@@ -69,8 +69,8 @@ export class PaymentService {
             case Pricing.Absolute:
                 pricing = 'sats';
                 break;
-            case Pricing.SatsPerMin:
-                pricing = 'sats/min';
+            case Pricing.Hourly:
+                pricing = 'sats/hour';
                 break;
         }
 

@@ -147,7 +147,7 @@
 
                 const content =
                     `SatShoot Bid update on Job: ${job.title} | \n\n` +
-                    `Amount: ${bid.amount}${bid.pricing === Pricing.Absolute ? 'sats' : 'sats/min'} | \n` +
+                    `Amount: ${bid.amount}${bid.pricing === Pricing.Absolute ? 'sats' : 'sats/hour'} | \n` +
                     `Description: ${bid.description}`;
                 dm.content = await ($ndk.signer as NDKSigner).encrypt(jobHolderUser, content);
 
@@ -263,8 +263,8 @@
                             <option value={Pricing.Absolute} class={selectOptionClasses}>
                                 Absolute Price(sats)
                             </option>
-                            <option value={Pricing.SatsPerMin} class={selectOptionClasses}>
-                                Time-based Price(sats/minute)
+                            <option value={Pricing.Hourly} class={selectOptionClasses}>
+                                Time-based Price(sats/hour)
                             </option>
                         </select>
                     </div>
@@ -272,7 +272,7 @@
                 <div class="flex flex-col gap-[5px] grow-1">
                     <div class="">
                         <label class="font-[600]" for="">
-                            Price({pricingMethod ? 'sats/min' : 'sats'})
+                            Price({pricingMethod ? 'sats/hour' : 'sats'})
                         </label>
                     </div>
                     <div class="w-full flex flex-row items-center">
@@ -316,7 +316,7 @@
                             You'd get:
                             <span class="font-[400]">
                                 {insertThousandSeparator(freelancerShare) +
-                                    (pricingMethod ? ' sats/min' : ' sats')}
+                                    (pricingMethod ? ' sats/hour' : ' sats')}
                             </span>
                         </p>
                     </div>
@@ -325,7 +325,7 @@
                             Your pledge:
                             <span class="font-[400]">
                                 {insertThousandSeparator(pledgedShare) +
-                                    (pricingMethod ? ' sats/min' : ' sats')}
+                                    (pricingMethod ? ' sats/hour' : ' sats')}
                             </span>
                         </p>
                     </div>
@@ -382,7 +382,7 @@
                             Satshoot'd get:
                             <span class="font-[400]">
                                 {insertThousandSeparator(satshootShare) +
-                                    (pricingMethod ? ' sats/min' : ' sats')}
+                                    (pricingMethod ? ' sats/hour' : ' sats')}
                             </span>
                         </p>
                     </div>
@@ -391,7 +391,7 @@
                             Sponsored npub'd get:
                             <span class="font-[400]">
                                 {insertThousandSeparator(sponsoredShare) +
-                                    (pricingMethod ? ' sats/min' : ' sats')}
+                                    (pricingMethod ? ' sats/hour' : ' sats')}
                             </span>
                         </p>
                     </div>

@@ -1,6 +1,6 @@
 export enum Pricing {
     Absolute = 0,
-    SatsPerMin = 1,
+    Hourly = 1,
     // This has been postponed
     // MilestoneBased = 2,
 }

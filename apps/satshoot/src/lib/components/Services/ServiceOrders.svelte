@@ -41,8 +41,8 @@
             switch (winningBid.pricing) {
                 case Pricing.Absolute:
                     return 'sats';
-                case Pricing.SatsPerMin:
-                    return 'sats/min';
+                case Pricing.Hourly:
+                    return 'sats/hour';
             }
         }
         return '';

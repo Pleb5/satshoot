@@ -27,9 +27,9 @@
         ["image", <URL of imageN for this Service>],
 
         // Pricing Strategy: Absolute or Time-based. Mandatory
-        ["pricing", <'0'(sats) | '1'(sats/minute)>],
+        ["pricing", <'0'(sats) | '1'(sats/hour)>],
 
-        // Price of service. Refers to the absolute price OR sats/minute. Mandatory
+        // Price of service. Refers to the absolute price OR sats/hour. Mandatory
         ["amount", <100>]
 
         // Status. Deactivation indicates that this Service is not offered anymore
@@ -78,9 +78,9 @@
         [ "s", <'0' (Open) OR '1' (Fulfilled) OR '2' (Failed)> ],
 
         // Pricing Strategy at the time order was placed (Absolute or Time-based). Mandatory
-        ["pricing", <'0'(sats) | '1'(sats/minute)>],
+        ["pricing", <'0'(sats) | '1'(sats/hour)>],
 
-        // Price of service at the time order was placed. Refers to the absolute price OR sats/minute. Mandatory
+        // Price of service at the time order was placed. Refers to the absolute price OR sats/hour. Mandatory
         ["amount", <100>]
 
         // This tag MUST be set on creation of this event. Points to the
@@ -134,9 +134,9 @@
         ["d", "<Bid ID>"],
 
         // Pricing Strategy: Absolute or Time-based. Mandatory
-        ["pricing", <'0'(sats) | '1'(sats/minute)>],
+        ["pricing", <'0'(sats) | '1'(sats/hour)>],
 
-        // Price of bid. Refers to the absolute price OR sats/minute. Mandatory
+        // Price of bid. Refers to the absolute price OR sats/hour. Mandatory
         ["amount", <500>]
 
         Freelancer MUST set this tag when bidding on a Job. Mandatory

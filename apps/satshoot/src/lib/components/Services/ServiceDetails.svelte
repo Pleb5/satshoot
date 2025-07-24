@@ -57,7 +57,7 @@
 
     const pricing = $derived.by(() => {
         if (service.pricing === Pricing.Absolute) return 'sats';
-        if (service.pricing === Pricing.SatsPerMin) return 'sats/min';
+        if (service.pricing === Pricing.Hourly) return 'sats/hour';
 
         return '';
     });

@@ -15,6 +15,8 @@
     import ServiceMenu from '../Modals/ServiceMenu.svelte';
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
     import OrdersCountBreakdown from '../Modals/OrdersCountBreakdown.svelte';
+    import ShareIcon from '../Icons/ShareIcon.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         service: ServiceEvent;
@@ -31,7 +33,7 @@
 
     const pricing = $derived.by(() => {
         if (service.pricing === Pricing.Absolute) return 'sats';
-        if (service.pricing === Pricing.SatsPerMin) return 'sats/min';
+        if (service.pricing === Pricing.Hourly) return 'sats/hour';
 
         return '';
     });
@@ -47,6 +49,15 @@
 
     function handleOptionClick() {
         showServiceMenu = true;
+    }
+
+    const shareService = () => {
+        const shareURL = `https://satshoot.com/${service.encode()}`;
+        navigator.clipboard.writeText(shareURL).then(() =>
+            toaster.success({
+                title: 'Service Link Copied!',
+            })
+        );
     }
 
     const statusRowWrapperClasses =
@@ -79,19 +90,14 @@
                 {formatDate(service.created_at * 1000, 'dd-MMM-yyyy, h:m:ss a')}
             </p>
         {/if}
-        <a
-            title="Publication Source"
-            href="https://satshoot.com/"
-            target="_blank"
-            class={statusRowItemClasses}
-        >
-            <i class="bx bx-globe"></i>
-            satshoot.com
-        </a>
         <Button title="Options" onClick={handleOptionClick}>
             <i class="bx bx-dots-vertical-rounded"></i>
         </Button>
     </div>
+    <Button onClick={shareService}>
+        Share
+        <ShareIcon/>
+    </Button>
     {#if service.images.length}
         <Carousel imageUrls={service.images} />
     {/if}
