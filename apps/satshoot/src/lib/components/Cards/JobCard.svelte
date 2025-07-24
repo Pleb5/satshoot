@@ -6,6 +6,8 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Markdown from './Markdown.svelte';
+    import { toaster } from '$lib/stores/toaster';
+    import ShareIcon from '../Icons/ShareIcon.svelte';
 
     interface Props {
         job: JobEvent;
@@ -21,6 +23,15 @@
 
     function handleOptionClick() {
         showJobPostMenu = true;
+    }
+
+    const shareJob = () => {
+        const shareURL = `https://satshoot.com/${job.encode()}`;
+        navigator.clipboard.writeText(shareURL).then(() =>
+            toaster.success({
+                title: 'Service Link Copied!',
+            })
+        );
     }
 
     const statusRowWrapperClasses =
@@ -64,6 +75,10 @@
         </a>
         <Button title="Options" onClick={handleOptionClick}>
             <i class="bx bx-dots-vertical-rounded"></i>
+        </Button>
+        <Button grow onClick={shareJob}>
+            Share
+            <ShareIcon/>
         </Button>
     </div>
     <div class="w-full flex flex-col gap-[10px]">
