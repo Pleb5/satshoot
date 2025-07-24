@@ -9,7 +9,7 @@
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import { goto } from '$app/navigation';
     import { wallet } from '$lib/wallet/wallet';
-    import { insertThousandSeparator, PablosNpub } from '$lib/utils/misc';
+    import { fetchBTCUSDPrice, insertThousandSeparator, PablosNpub } from '$lib/utils/misc';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
@@ -32,6 +32,9 @@
     let validInputs = $state(true);
     let pricingMethod: Pricing = $state(Pricing.Absolute);
     let amount = $state(0);
+    let BTCUSDPrice = -1;
+    // USD price with decimals cut off and thousand separators
+    let usdPrice = $derived(Math.floor(amount / 100_000_000 * BTCUSDPrice))
     let pledgeSplit = $state(0);
     let sponsoredNpub = $state(PablosNpub);
     let sponsoredPubkey = $state('');
@@ -81,6 +84,7 @@
     });
 
     onMount(() => {
+        fetchBTCUSDPrice().then((price) => BTCUSDPrice = price)
         if (bidToEdit) {
             pricingMethod = bidToEdit.pricing;
             amount = bidToEdit.amount;
@@ -261,10 +265,10 @@
                     <div class="w-full flex flex-row items-center">
                         <select class={selectInputClasses} bind:value={pricingMethod}>
                             <option value={Pricing.Absolute} class={selectOptionClasses}>
-                                Absolute Price(sats)
+                                Product Price (sats)
                             </option>
                             <option value={Pricing.Hourly} class={selectOptionClasses}>
-                                Time-based Price(sats/hour)
+                                Service fee (sats/hour)
                             </option>
                         </select>
                     </div>
@@ -275,7 +279,7 @@
                             Price({pricingMethod ? 'sats/hour' : 'sats'})
                         </label>
                     </div>
-                    <div class="w-full flex flex-row items-center">
+                    <div class="w-full flex flex-row items-center relative">
                         <Input
                             type="number"
                             step="1"
@@ -285,6 +289,17 @@
                             bind:value={amount}
                             fullWidth
                         />
+                        <span
+                            class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
+                        >
+                            {
+                            usdPrice < 0
+                                ? '?'
+                                : '$' + usdPrice.toString()
+                                    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+                                    + ' USD'
+                            } 
+                        </span>
                     </div>
                 </div>
                 <div class="flex flex-col gap-[5px] grow-1">
