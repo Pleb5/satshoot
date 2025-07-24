@@ -26,6 +26,8 @@
     const minDescriptionLength = 20;
     const minTitleLength = 10;
 
+    let step = $state(1)
+
     let tagInput = $state('');
     let tagList = $state<string[]>([]);
 
@@ -335,219 +337,248 @@
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[10px]">
                 <div class="w-full flex flex-col gap-[5px] justify-start">
-                    <h2 class="text-[40px] font-[500]">
+                    <h2 class="text-[40px] font-[500] text-center">
                         {$serviceToEdit ? 'Edit' : 'New'} Service
                     </h2>
                 </div>
-                <Card classes="gap-[15px]">
-                    <div class="flex flex-col gap-[5px]">
-                        <label class="m-[0px] text-[14px]" for="tile">
-                            Title (min. 10 chars)
-                        </label>
-                        <div class="flex flex-row rounded-[6px] overflow-hidden bg-white">
-                            <Input
-                                id="title"
-                                bind:value={titleText}
-                                placeholder="Title of your service"
-                                classes={titleState}
-                                fullWidth
-                            />
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-[5px]">
-                        <label class="m-[0px] text-[14px]" for="description">
-                            Description (min. 20 chars)
-                        </label>
-                        <div class="flex flex-row rounded-[6px] overflow-hidden bg-white">
-                            <Input
-                                id="description"
-                                bind:value={descriptionText}
-                                placeholder="Detailed description of your service"
-                                classes="min-h-[100px] {descriptionState}"
-                                fullWidth
-                                textarea
-                                rows={6}
-                                minlength={minDescriptionLength}
-                            />
-                        </div>
-                    </div>
-                    <div class="">
+                {#if step === 1}
+                    <Card classes="gap-[15px]">
                         <div class="flex flex-col gap-[5px]">
-                            <label class="m-[0px] text-[14px]" for="tags">Tags</label>
-                            <div
-                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
-                            >
+                            <label class="m-[0px] text-[14px]" for="tile">
+                                Title (min. 10 chars)
+                            </label>
+                            <div class="flex flex-row rounded-[6px] overflow-hidden bg-white">
                                 <Input
-                                    bind:value={tagInput}
-                                    placeholder="Search and add a tag, or add a custom tag"
-                                    onKeyPress={handleEnterKeyOnTagInput}
+                                    id="title"
+                                    bind:value={titleText}
+                                    placeholder="Title of your service"
+                                    classes={titleState}
                                     fullWidth
                                 />
-                                <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
-                                >
-                                    {#each displayOptions as { label, value }}
-                                        <Button
-                                            classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white hover:text-white p-[5px] font-400"
-                                            onClick={() => addTag(value)}
-                                        >
-                                            <span class="pl-[10px]"> {label} </span>
-                                            <span
-                                                class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100 dark:border-white-100"
-                                            >
-                                                <i class="bx bx-plus"></i>
-                                            </span>
-                                        </Button>
-                                    {/each}
-                                </div>
-                            </div>
-                            <label class="m-[0px] text-[14px]" for="added-tags">
-                                Added tags ({tagList.length}/{maxTags} max.)
-                            </label>
-                            <div
-                                class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
-                            >
-                                <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px]"
-                                >
-                                    {#each tagList as tag}
-                                        <div
-                                            class="flex flex-row rounded-[4px] bg-blue-500 text-white gap-[10px] overflow-hidden"
-                                        >
-                                            <span class="pl-[10px] py-[5px]">{tag}</span>
-                                            <button
-                                                class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-white-100 hover:bg-blue-500"
-                                                onclick={() => removeTag(tag)}
-                                                aria-label="remove tag"
-                                            >
-                                                <i class="bx bx-x"></i>
-                                            </button>
-                                        </div>
-                                    {/each}
-                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="flex flex-row justify-center">
-                        <Button onClick={() => (showAddImagesModal = true)}>
-                            {#if images.length}
-                                <i class="bx bxs-pencil"></i>
-                                <span> Edit Images </span>
-                            {:else}
-                                <i class="bx bx-plus"></i>
-                                <span> Add Images </span>
-                            {/if}
-                        </Button>
-                    </div>
-                </Card>
-                <Card classes="gap-[15px]">
-                    <div class="flex flex-col gap-[5px]">
-                        <div class="">
-                            <label class="font-[600]" for=""> Pricing method </label>
-                        </div>
-                        <div class="w-full flex flex-row items-center">
-                            <select class={selectInputClasses} bind:value={pricingMethod}>
-                                <option value={Pricing.Absolute} class={selectOptionClasses}>
-                                    Product price(sats)
-                                </option>
-                                <option value={Pricing.Hourly} class={selectOptionClasses}>
-                                    Service fee(sats/hour)
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-[5px]">
-                        <div class="">
-                            <label class="font-[600]" for="">
-                                Price({pricingMethod ? 'sats/hour' : 'sats'})
+                        <div class="flex flex-col gap-[5px]">
+                            <label class="m-[0px] text-[14px]" for="description">
+                                Description (min. 20 chars)
                             </label>
+                            <div class="flex flex-row rounded-[6px] overflow-hidden bg-white">
+                                <Input
+                                    id="description"
+                                    bind:value={descriptionText}
+                                    placeholder="Detailed description of your service"
+                                    classes="min-h-[100px] {descriptionState}"
+                                    fullWidth
+                                    textarea
+                                    rows={6}
+                                    minlength={minDescriptionLength}
+                                />
+                            </div>
                         </div>
-                        <div class="w-full flex flex-row items-center relative">
-                            <Input
-                                type="number"
-                                step="1"
-                                min="0"
-                                max="100_000_000"
-                                placeholder="Amount"
-                                bind:value={amount}
-                                fullWidth
-                            />
-
-                            <span
-                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
-                            >
-                            {
-                                usdPrice < 0
-                                    ? '?'
-                                    : '$' + usdPrice.toString()
-                                        .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-                                        + ' USD'
-                            } 
-                            </span>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-[5px]">
+                    </Card>
+                {:else if step === 2}
+                    <Card classes="gap-[15px]">
                         <div class="">
-                            <label class="font-[600]" for=""> Pledge split </label>
+                            <div class="flex flex-col gap-[5px]">
+                                <label class="m-[0px] text-[14px]" for="tags">Tags</label>
+                                <div
+                                    class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
+                                >
+                                    <Input
+                                        bind:value={tagInput}
+                                        placeholder="Search and add a tag, or add a custom tag"
+                                        onKeyPress={handleEnterKeyOnTagInput}
+                                        fullWidth
+                                    />
+                                    <div
+                                        class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
+                                    >
+                                        {#each displayOptions as { label, value }}
+                                            <Button
+                                                classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white hover:text-white p-[5px] font-400"
+                                                onClick={() => addTag(value)}
+                                            >
+                                                <span class="pl-[10px]"> {label} </span>
+                                                <span
+                                                    class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100 dark:border-white-100"
+                                                >
+                                                    <i class="bx bx-plus"></i>
+                                                </span>
+                                            </Button>
+                                        {/each}
+                                    </div>
+                                </div>
+                                <label class="m-[0px] text-[14px]" for="added-tags">
+                                    Added tags ({tagList.length}/{maxTags} max.)
+                                </label>
+                                <div
+                                    class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
+                                >
+                                    <div
+                                        class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px]"
+                                    >
+                                        {#each tagList as tag}
+                                            <div
+                                                class="flex flex-row rounded-[4px] bg-blue-500 text-white gap-[10px] overflow-hidden"
+                                            >
+                                                <span class="pl-[10px] py-[5px]">{tag}</span>
+                                                <button
+                                                    class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-white-100 hover:bg-blue-500"
+                                                    onclick={() => removeTag(tag)}
+                                                    aria-label="remove tag"
+                                                >
+                                                    <i class="bx bx-x"></i>
+                                                </button>
+                                            </div>
+                                        {/each}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-row justify-center">
+                            <Button onClick={() => (showAddImagesModal = true)}>
+                                {#if images.length}
+                                    <i class="bx bxs-pencil"></i>
+                                    <span> Edit Images </span>
+                                {:else}
+                                    <i class="bx bx-plus"></i>
+                                    <span> Add Images </span>
+                                {/if}
+                            </Button>
+                        </div>
+                    </Card>
+                {:else if step === 3}
+                    <Card classes="gap-[15px]">
+                        <div class="flex flex-col gap-[5px]">
+                            <div class="">
+                                <label class="font-[600]" for=""> Pricing method </label>
+                            </div>
+                            <div class="w-full flex flex-row items-center">
+                                <select class={selectInputClasses} bind:value={pricingMethod}>
+                                    <option value={Pricing.Absolute} class={selectOptionClasses}>
+                                        Product price(sats)
+                                    </option>
+                                    <option value={Pricing.Hourly} class={selectOptionClasses}>
+                                        Service fee(sats/hour)
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-[5px]">
+                            <div class="">
+                                <label class="font-[600]" for="">
+                                    Price({pricingMethod ? 'sats/hour' : 'sats'})
+                                </label>
+                            </div>
+                            <div class="w-full flex flex-row items-center relative">
+                                <Input
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    max="100_000_000"
+                                    placeholder="Amount"
+                                    bind:value={amount}
+                                    fullWidth
+                                />
 
-                            <QuestionIcon
-                                extraClasses="text-[14px] p-[3px]"
-                                placement="bottom-start"
-                                popUpText={pledgeTooltip}
-                            />
-                        </div>
-                        <div class="w-full flex flex-row items-center relative">
-                            <Input
-                                type="number"
-                                step="1"
-                                min="0"
-                                max="100"
-                                placeholder="Percentage"
-                                bind:value={pledgeSplit}
-                                fullWidth
-                            />
-                            <span
-                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
-                            >
-                                %
-                            </span>
-                        </div>
-                    </div>
-                    <div
-                        class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-black-200"
-                    >
-                        <div class="grow-1">
-                            <p class="font-[500]">
-                                You'd get:
-                                <span class="font-[400]">
-                                    {insertThousandSeparator(freelancerShare) +
-                                        (pricingMethod ? 'sats/hour' : 'sats')}
+                                <span
+                                    class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
+                                >
+                                    {
+                                    usdPrice < 0
+                                        ? '?'
+                                        : '$' + usdPrice.toString()
+                                            .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+                                            + ' USD'
+                                    } 
                                 </span>
-                            </p>
+                            </div>
                         </div>
-                        <div class="grow-1">
-                            <p class="font-[500]">
-                                Your pledge:
-                                <span class="font-[400]">
-                                    {insertThousandSeparator(pledgedShare) +
-                                        (pricingMethod ? 'sats/hour' : 'sats')}
+                        <div class="flex flex-col gap-[5px]">
+                            <div class="">
+                                <label class="font-[600]" for=""> Pledge split </label>
+
+                                <QuestionIcon
+                                    extraClasses="text-[14px] p-[3px]"
+                                    placement="bottom-start"
+                                    popUpText={pledgeTooltip}
+                                />
+                            </div>
+                            <div class="w-full flex flex-row items-center relative">
+                                <Input
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    max="100"
+                                    placeholder="Percentage"
+                                    bind:value={pledgeSplit}
+                                    fullWidth
+                                />
+                                <span
+                                    class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
+                                >
+                                    %
                                 </span>
-                            </p>
+                            </div>
                         </div>
-                    </div>
-                </Card>
+                        <div
+                            class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-black-200"
+                        >
+                            <div class="grow-1">
+                                <p class="font-[500]">
+                                    You'd get:
+                                    <span class="font-[400]">
+                                        {insertThousandSeparator(freelancerShare) +
+                                            (pricingMethod ? 'sats/hour' : 'sats')}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="grow-1">
+                                <p class="font-[500]">
+                                    Your pledge:
+                                    <span class="font-[400]">
+                                        {insertThousandSeparator(pledgedShare) +
+                                            (pricingMethod ? 'sats/hour' : 'sats')}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                {/if}
                 <div class="flex flex-row justify-center mt-[10px]">
                     {#if !allowPostService}
                         <Button onClick={handleLogin}>Log in To Post</Button>
-                    {:else}
-                        <Button onClick={postService} disabled={posting}>
-                            {#if posting}
-                                <span>{progressStatus}</span>
-                                <ProgressRing color="white" />
-                            {:else}
-                                <span>Publish Service</span>
-                            {/if}
-                        </Button>
+                    {:else if step === 1}
+                        <Button grow onClick={()=>step=2}>Next</Button>
+                    {:else if step === 2}
+                        <div class="flex grow gap-x-4 justify-between">
+                            <Button 
+                                grow
+                                variant="outlined"
+                                onClick={()=>step=1}>
+                                Back
+                            </Button>
+                            <Button grow onClick={()=>step=3}>Next</Button>
+                        </div>
+                    {:else if step === 3}
+                        <div class="flex grow gap-x-4 justify-between">
+                            <Button
+                                variant="outlined"
+                                grow
+                                onClick={()=>step=2}>
+                                Back
+                            </Button>
+                            <Button
+                                onClick={postService}
+                                disabled={posting}
+                                classes={"bg-yellow-500"}>
+                                {#if posting}
+                                    <span>{progressStatus}</span>
+                                    <ProgressRing color="white" />
+                                {:else}
+                                    <span>Publish Service</span>
+                                {/if}
+                            </Button>
+                        </div>
                     {/if}
                 </div>
             </div>
