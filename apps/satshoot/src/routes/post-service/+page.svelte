@@ -17,7 +17,7 @@
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { uploadToBlossom } from '$lib/utils/blossom';
     import { checkRelayConnections } from '$lib/utils/helpers';
-    import { insertThousandSeparator, NostrBuildBlossomServer } from '$lib/utils/misc';
+    import { fetchBTCUSDPrice, insertThousandSeparator, NostrBuildBlossomServer } from '$lib/utils/misc';
     import tagOptions from '$lib/utils/tag-options';
     import { onMount } from 'svelte';
 
@@ -35,6 +35,9 @@
 
     let pricingMethod = $state(Pricing.Absolute);
     let amount = $state(0);
+    let BTCUSDPrice = -1;
+    // USD price with decimals cut off and thousand separators
+    let usdPrice = $derived(Math.floor(amount / 100_000_000 * BTCUSDPrice))
     let pledgeSplit = $state(0);
     let imageUrls = $state<string[]>([]);
 
@@ -98,6 +101,8 @@
     const allowPostService = $derived(!!$currentUser && $loggedIn);
 
     onMount(() => {
+        fetchBTCUSDPrice().then((price) => BTCUSDPrice = price)
+
         if ($serviceToEdit) {
             titleText = $serviceToEdit.title;
             descriptionText = $serviceToEdit.description;
@@ -457,7 +462,7 @@
                                 Price({pricingMethod ? 'sats/min' : 'sats'})
                             </label>
                         </div>
-                        <div class="w-full flex flex-row items-center">
+                        <div class="w-full flex flex-row items-center relative">
                             <Input
                                 type="number"
                                 step="1"
@@ -467,6 +472,18 @@
                                 bind:value={amount}
                                 fullWidth
                             />
+
+                            <span
+                                class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
+                            >
+                            {
+                                usdPrice < 0
+                                    ? '?'
+                                    : '$' + usdPrice.toString()
+                                        .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+                                        + ' USD'
+                            } 
+                            </span>
                         </div>
                     </div>
                     <div class="flex flex-col gap-[5px]">
