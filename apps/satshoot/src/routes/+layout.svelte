@@ -337,11 +337,11 @@
             document.documentElement.setAttribute('data-mode', mode);
         }
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredInstallPrompt = e;
-            showAppInstallPromotion = true;
-        });
+        // window.addEventListener('beforeinstallprompt', (e) => {
+        //     e.preventDefault();
+        //     deferredInstallPrompt = e;
+        //     showAppInstallPromotion = true;
+        // });
 
         window.addEventListener('offline', () => {
             console.log('offline');
