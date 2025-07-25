@@ -7,6 +7,7 @@
         confirmPassphrase: string;
         btnLabel: string;
         roundedTop?: boolean;
+        disabled?:boolean;
         onSubmit: () => void;
     }
 
@@ -15,6 +16,7 @@
         confirmPassphrase = $bindable(),
         btnLabel,
         roundedTop = false,
+        disabled = false,
         onSubmit,
     }: Props = $props();
 
@@ -73,7 +75,7 @@
 </div>
 
 <div class={btnWrapperClasses}>
-    <Button grow onClick={onSubmit}>
+    <Button grow onClick={onSubmit} disabled={disabled}>
         <i class="bx bx-log-in-circle"></i>
         {btnLabel}
     </Button>

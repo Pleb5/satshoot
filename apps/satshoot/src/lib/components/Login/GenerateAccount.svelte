@@ -16,6 +16,8 @@
     import { generateSecretKey } from 'nostr-tools';
     import { bytesToHex } from '@noble/ciphers/utils';
     import { page } from '$app/state';
+    import QuestionIcon from '../Icons/QuestionIcon.svelte';
+    import Checkbox from '../UI/Inputs/Checkbox.svelte';
 
     interface Props {
         isOpen: boolean;
@@ -25,6 +27,14 @@
 
     const privateKey = generateSecretKey();
     const generatedNsec = nsecEncode(privateKey);
+
+    let copiedNsec = $state(false);
+    let savedNsec = $state(false);
+
+    const mimeType = 'text/plain';
+    const blob = $derived(new Blob([generatedNsec], { type: mimeType }));
+    const url = $derived(URL.createObjectURL(blob));
+    const filename = "Nostr Secret Key.txt"
 
     let generatedNpub = $state('');
     let userName = $state("")
@@ -117,6 +127,51 @@
         }
     }
 
+    function onCopyNsec(): void {
+        navigator.clipboard.writeText(generatedNsec).then(() => {
+            copiedNsec = true;
+            setTimeout(() => {
+                copiedNsec = false;
+            }, 1000);
+        });
+    }
+
+    let nsecTooltip =
+        '<div>' +
+            '<div class="font-bold">This Secret is makes You unstoppable on Nostr... as long as You take care of it!</div>' +
+        '<ul class="list-inside list-disc space-y-2">' +
+            '<li>Save it to a safe place for now</li>' +
+            '<li>' +
+                "Don't send your secret key to anyone, ever!" +
+            '</li>' +
+            '<li>' +
+                'You will need it to access your nostr account' +
+            '</li>' +
+        '</ul>' +
+        '</div>';
+
+    let passPhraseTooltip =
+        '<div>' +
+            '<div class="">SatShoot saves your Secret key locally encrypted in the Browser</div>' +
+        '<ul class="list-inside list-disc space-y-2">' +
+            '<li>You will be able to login again easily with this password</li>' +
+            '<li>You will be able to export it anytime in the Settings</li>' +
+            '<li>' +
+                "During browser sessions SatShoot can use it and is unencrypted" +
+            '</li>' +
+        '</ul>' +
+        '</div>';
+
+    const labelClasses =
+        'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-black-200 dark:border-white-200 border-b-[0px] text-[14px]';
+
+    const inputWrapperClasses =
+        'w-full flex flex-col gap-[5px] bg-black-50 dark:bg-white-50 border-[1px] border-black-100 dark:border-white-100 rounded-tr-[6px] p-[5px] overflow-hidden';
+
+    const btnWrapperClasses =
+        'w-full flex flex-row gap-x-2 flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 dark:border-white-200 border-t-[0px] mb-2';
+    const downloadBtnClasses = 'btn flex gap-x-2 rounded-[0] justify-center items-center bg-blue-500 font-bold text-white dark:text-white hover:bg-blue-600 hover:text-white whitespace-nowrap '
+
 </script>
 
 <div class="w-full flex flex-col mt-[10px] gap-y-2">
@@ -154,12 +209,58 @@
         bind:value={userName}
         fullWidth
     />
-    <div>Password: min. 14 chars</div>
+    <div class="w-full flex flex-col mt-[10px]">
+        <div class="w-full flex flex-row gap-[5px]">
+            <p class={labelClasses}>Secret key</p>
+
+            <QuestionIcon
+                extraClasses="text-[14px] p-[3px]"
+                placement="bottom-start"
+                popUpText={nsecTooltip}
+            />
+        </div>
+        <div class={inputWrapperClasses}>
+            <Input value={generatedNsec} disabled grow noBorder notRounded />
+        </div>
+        <div class={btnWrapperClasses}>
+            <Button
+                variant="outlined"
+                onClick={onCopyNsec}
+                classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
+                grow
+            >
+                <span class="w-full h-full">
+                    {copiedNsec ? 'Copied' : 'Dangerously Copy'}
+                </span>
+            </Button>
+            <a 
+                class={downloadBtnClasses}
+                href={url}
+                download={filename}>
+                <span>Download</span>
+
+            </a>
+        </div>
+        <Checkbox
+            id="save-nsec"
+            label="Saved Secret key"
+            bind:checked={savedNsec}
+        />
+    </div>
+    <div class="flex gap-x-2">
+        <span>Password: min. 14 chars</span>
+        <QuestionIcon
+            extraClasses="text-[14px] p-[3px]"
+            placement="bottom-start"
+            popUpText={passPhraseTooltip}
+        />
+    </div>
     <Passphrase
         bind:passphrase={passphraseForGeneratedAccount}
         bind:confirmPassphrase={confirmPassphraseForGeneratedAccount}
         btnLabel="Next"
         onSubmit={finalizeAccountGeneration}
+        disabled={!savedNsec}
         roundedTop
     />
 </div>
