@@ -328,11 +328,12 @@
         '</div>';
 
     const selectInputClasses =
-        'w-full px-[10px] py-[5px] bg-black-50 focus:bg-black-100 rounded-[6px] ' +
+        'w-full px-[10px] py-[5px] bg-black-50 focus:bg-black-100 rounded-[6px] text-lg sm:text-xl' +
         'border-[2px] border-black-100 dark:border-white-100 focus:border-blue-500 focus:outline-[0px]';
 
     const selectOptionClasses =
-        'bg-white dark:bg-brightGray transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
+        'bg-white dark:bg-brightGray transition-all ease duration-[0.2s] w-[100%] text-lg sm:text-xl' +
+        ' rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
 </script>
 <div class="w-full flex flex-col gap-0 grow pb-20 sm:pb-5">
     <div class="w-full flex flex-col justify-center items-center">
@@ -346,7 +347,7 @@
                 {#if step === 1}
                     <Card classes="gap-[15px]">
                         <div class="flex flex-col gap-[5px]">
-                            <label class="m-[0px] text-[14px]" for="tile">
+                            <label class="m-[0px] text-lg sm:text-xl" for="tile">
                                 Title (min. 10 chars)
                             </label>
                             <div class="flex flex-row rounded-[6px] overflow-hidden bg-white">
@@ -360,7 +361,7 @@
                             </div>
                         </div>
                         <div class="flex flex-col gap-[5px]">
-                            <label class="m-[0px] text-[14px]" for="description">
+                            <label class="m-[0px] text-lg sm:text-xl" for="description">
                                 Description (min. 20 chars)
                             </label>
                             <div class="flex flex-row rounded-[6px] overflow-hidden bg-white">
@@ -375,69 +376,69 @@
                                     minlength={minDescriptionLength}
                                 />
                             </div>
-                        </div>
-                    </Card>
-                {:else if step === 2}
-                    <Card classes="gap-[15px]">
-                        <div class="">
-                            <div class="flex flex-col gap-[5px]">
-                                <label class="m-[0px] text-[14px]" for="tags">Tags</label>
-                                <div
-                                    class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
-                                >
-                                    <Input
-                                        bind:value={tagInput}
-                                        placeholder="Search and add a tag, or add a custom tag"
-                                        onKeyPress={handleEnterKeyOnTagInput}
-                                        fullWidth
-                                    />
+                            <div class="">
+                                <div class="flex flex-col gap-[5px]">
+                                    <label class="m-[0px] text-lg sm:text-xl" for="tags">Tags</label>
                                     <div
-                                        class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
+                                        class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
                                     >
-                                        {#each displayOptions as { label, value }}
-                                            <Button
-                                                classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white hover:text-white p-[5px] font-400"
-                                                onClick={() => addTag(value)}
-                                            >
-                                                <span class="pl-[10px]"> {label} </span>
-                                                <span
-                                                    class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100 dark:border-white-100"
+                                        <Input
+                                            bind:value={tagInput}
+                                            placeholder="Search and add a tag, or add a custom tag"
+                                            onKeyPress={handleEnterKeyOnTagInput}
+                                            fullWidth
+                                        />
+                                        <div
+                                            class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
+                                        >
+                                            {#each displayOptions as { label, value }}
+                                                <Button
+                                                    classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white hover:text-white p-[5px] font-400"
+                                                    onClick={() => addTag(value)}
                                                 >
-                                                    <i class="bx bx-plus"></i>
-                                                </span>
-                                            </Button>
-                                        {/each}
+                                                    <span class="pl-[10px]"> {label} </span>
+                                                    <span
+                                                        class="flex flex-col items-center justify-center px-[10px] border-l-[1px] border-black-100 dark:border-white-100"
+                                                    >
+                                                        <i class="bx bx-plus"></i>
+                                                    </span>
+                                                </Button>
+                                            {/each}
+                                        </div>
                                     </div>
-                                </div>
-                                <label class="m-[0px] text-[14px]" for="added-tags">
-                                    Added tags ({tagList.length}/{maxTags} max.)
-                                </label>
-                                <div
-                                    class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
-                                >
+                                    <label class="m-[0px] text-lg sm:text-xl" for="added-tags">
+                                        Added tags ({tagList.length}/{maxTags} max.)
+                                    </label>
                                     <div
-                                        class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px]"
+                                        class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
                                     >
-                                        {#each tagList as tag}
-                                            <div
-                                                class="flex flex-row rounded-[4px] bg-blue-500 text-white gap-[10px] overflow-hidden"
-                                            >
-                                                <span class="pl-[10px] py-[5px]">{tag}</span>
-                                                <button
-                                                    class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-white-100 hover:bg-blue-500"
-                                                    onclick={() => removeTag(tag)}
-                                                    aria-label="remove tag"
+                                        <div
+                                            class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px]"
+                                        >
+                                            {#each tagList as tag}
+                                                <div
+                                                    class="flex flex-row rounded-[4px] bg-blue-500 text-white gap-[10px] overflow-hidden"
                                                 >
-                                                    <i class="bx bx-x"></i>
-                                                </button>
-                                            </div>
-                                        {/each}
+                                                    <span class="pl-[10px] py-[5px]">{tag}</span>
+                                                    <button
+                                                        class="transition ease duration-[0.3s] text-white px-[10px] border-l-[1px] border-white-100 hover:bg-blue-500"
+                                                        onclick={() => removeTag(tag)}
+                                                        aria-label="remove tag"
+                                                    >
+                                                        <i class="bx bx-x"></i>
+                                                    </button>
+                                                </div>
+                                            {/each}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="flex flex-row justify-center">
-                            <Button onClick={() => (showAddImagesModal = true)}>
+                    </Card>
+                {:else if step === 2}
+                    <Card>
+                        <div class="flex justify-center">
+                            <Button classes={"w-full sm:w-[50%]"} onClick={() => (showAddImagesModal = true)}>
                                 {#if images.length}
                                     <i class="bx bxs-pencil"></i>
                                     <span> Edit Images </span>
@@ -448,11 +449,10 @@
                             </Button>
                         </div>
                     </Card>
-                {:else if step === 3}
                     <Card classes="gap-[15px]">
                         <div class="flex flex-col gap-[5px]">
                             <div class="">
-                                <label class="font-[600]" for=""> Pricing method </label>
+                                <label class="font-[600] text-lg sm:text-xl" for=""> Pricing method </label>
                             </div>
                             <div class="w-full flex flex-row items-center">
                                 <select class={selectInputClasses} bind:value={pricingMethod}>
@@ -467,12 +467,13 @@
                         </div>
                         <div class="flex flex-col gap-[5px]">
                             <div class="">
-                                <label class="font-[600]" for="">
+                                <label class="font-[600] text-lg sm:text-xl" for="">
                                     Price({pricingMethod ? 'sats/hour' : 'sats'})
                                 </label>
                             </div>
                             <div class="w-full flex flex-row items-center relative">
                                 <Input
+                                    classes={ "text-lg sm:text-xl"}
                                     type="number"
                                     step="1"
                                     min="0"
@@ -497,7 +498,7 @@
                         </div>
                         <div class="flex flex-col gap-[5px]">
                             <div class="">
-                                <label class="font-[600]" for=""> Pledge split </label>
+                                <label class="font-[600] text-lg sm:text-xl" for=""> Pledge split </label>
 
                                 <QuestionIcon
                                     extraClasses="text-[14px] p-[3px]"
@@ -507,6 +508,7 @@
                             </div>
                             <div class="w-full flex flex-row items-center relative">
                                 <Input
+                                    classes={ "text-lg sm:text-xl"}
                                     type="number"
                                     step="1"
                                     min="0"
@@ -526,18 +528,18 @@
                             class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-black-200"
                         >
                             <div class="grow-1">
-                                <p class="font-[500]">
+                                <p class="font-[500] text-lg sm:text-xl">
                                     You'd get:
-                                    <span class="font-[400]">
+                                    <span class="font-[400] text-lg sm:text-xl">
                                         {insertThousandSeparator(freelancerShare) +
                                             (pricingMethod ? 'sats/hour' : 'sats')}
                                     </span>
                                 </p>
                             </div>
                             <div class="grow-1">
-                                <p class="font-[500]">
+                                <p class="font-[500] text-lg sm:text-xl">
                                     Your pledge:
-                                    <span class="font-[400]">
+                                    <span class="font-[400] text-lg sm:text-xl">
                                         {insertThousandSeparator(pledgedShare) +
                                             (pricingMethod ? 'sats/hour' : 'sats')}
                                     </span>
@@ -550,23 +552,12 @@
                     {#if !allowPostService}
                         <Button onClick={handleLogin}>Log in To Post</Button>
                     {:else if step === 1}
-                        <Button grow onClick={()=>step=2}>Next</Button>
+                        <Button grow classes={"sm:max-w-80"} onClick={()=>step=2}>Next</Button>
                     {:else if step === 2}
-                        <div class="flex grow gap-x-4 justify-between">
-                            <Button 
-                                grow
-                                variant="outlined"
-                                onClick={()=>step=1}>
-                                Back
-                            </Button>
-                            <Button grow onClick={()=>step=3}>Next</Button>
-                        </div>
-                    {:else if step === 3}
-                        <div class="flex grow gap-x-4 justify-between">
+                        <div class="w-full grid grid-cols-[20%_50%] gap-x-4 justify-between">
                             <Button
                                 variant="outlined"
-                                grow
-                                onClick={()=>step=2}>
+                                onClick={()=>step=1}>
                                 Back
                             </Button>
                             <Button
