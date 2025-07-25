@@ -10,6 +10,7 @@
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
     import { Pricing, type ZapSplit } from '$lib/events/types';
+    import { PaymentService } from '$lib/services/payments';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { servicePostSuccessState } from '$lib/stores/modals';
     import { serviceToEdit } from '$lib/stores/service-to-edit';
@@ -36,7 +37,6 @@
 
     let step = $state(1);
 
-    let initialized = $state(false);
     let tagInput = $state('');
     let tagList = $state<string[]>([]);
 
@@ -61,15 +61,10 @@
 
     let imageUrls = $state<string[]>([]);
 
-    let pledgedShare = $derived(Math.floor(amount * (pledgeSplit / 100)));
-    let freelancerShare = $derived(amount - pledgedShare);
-
-    let sponsoredShare = $derived(
-        sponsoredPubkeyResult && typeof sponsoredPubkeyResult === 'string'
-            ? Math.floor(pledgedShare * (sponsoringSplit / 100))
-            : 0
-    );
-    let satshootShare = $derived(pledgedShare - sponsoredShare);
+    let freelancerShare = $state(0);
+    let pledgedShare = $state(0);
+    let satshootShare = $state(0);
+    let sponsoredShare = $state(0);
 
     const { titleValid, titleState } = $derived.by(() => {
         if (titleText.length < minTitleLength) {
@@ -148,7 +143,20 @@
         }
 
         checkRelayConnections();
-        initialized = true;
+    });
+
+    $effect(() => {
+        const paymentShares = PaymentService.computePaymentShares(
+            amount,
+            pledgeSplit,
+            sponsoredNpub,
+            sponsoringSplit
+        );
+
+        freelancerShare = paymentShares.freelancerShare;
+        satshootShare = paymentShares.satshootShare;
+        sponsoredShare = paymentShares.sponsoredShare;
+        pledgedShare = paymentShares.pledgeShare;
     });
 
     $effect(() => {

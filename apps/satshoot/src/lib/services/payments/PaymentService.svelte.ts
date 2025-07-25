@@ -30,31 +30,54 @@ export class PaymentService {
     paying = $state(false);
 
     constructor(
-        private targetEntity: JobEvent | ServiceEvent,
+        private primaryEntity: JobEvent | ServiceEvent,
         private secondaryEntity: BidEvent | OrderEvent
-    ) {}
+    ) { }
+
+    static computePaymentShares(
+        amount: number,
+        pledgeSplit: number,
+        sponsoredNpub: string,
+        sponsoringSplit: number) {
+        let sponsoredPercentage = 0;
+        let satshootPercentage = 0;
+        sponsoredPercentage = sponsoredNpub ? Math.floor(pledgeSplit * sponsoringSplit / 100) : 0;
+        satshootPercentage = pledgeSplit - sponsoredPercentage;
+
+        const sponsoredShare = Math.floor(amount * sponsoredPercentage / 100);
+        const satshootShare = Math.floor(amount * satshootPercentage / 100);
+        const pledgeShare = satshootShare + sponsoredShare;
+        const freelancerShare = amount - pledgeShare;
+
+        return {
+            freelancerShare,
+            satshootShare,
+            sponsoredShare,
+            pledgeShare
+        };
+    }
 
     /**
      * Calculate payment shares based on current amounts
      */
     get paymentShares() {
-        let sponsoredPercentage = 0;
-        let satshootPercentage = 0;
         if (this.secondaryEntity instanceof BidEvent) {
-            const bidEvent = this.secondaryEntity;
-            sponsoredPercentage = bidEvent.sponsoredNpub ? Math.floor(bidEvent.pledgeSplit * bidEvent.sponsoringSplit / 100): 0;
+            return PaymentService.computePaymentShares(
+                this.amount,
+                this.secondaryEntity.pledgeSplit,
+                this.secondaryEntity.sponsoredNpub,
+                this.secondaryEntity.sponsoringSplit
+            );
+        } else if (this.primaryEntity instanceof ServiceEvent) {
+            return PaymentService.computePaymentShares(
+                this.amount,
+                this.primaryEntity.pledgeSplit,
+                this.primaryEntity.sponsoredNpub,
+                this.primaryEntity.sponsoringSplit
+            );
+        } else {
+            throw new Error("This is a bug, unexpected entity types!");
         }
-        satshootPercentage = this.secondaryEntity.pledgeSplit - sponsoredPercentage;
-
-        const sponsoredShare = Math.floor(this.amount * sponsoredPercentage / 100); 
-        const satshootShare = Math.floor(this.amount * satshootPercentage / 100);
-        const freelancerShare = this.amount;
-
-        return {
-            satshootShare,
-            freelancerShare,
-            sponsoredShare
-        };
     }
 
     /**
@@ -84,7 +107,7 @@ export class PaymentService {
      * Initialize payment and validate inputs
      */
     async initializePayment(): Promise<PaymentCalculation | null> {
-        if (!this.targetEntity || !this.secondaryEntity) {
+        if (!this.primaryEntity || !this.secondaryEntity) {
             this.paying = false;
             throw new Error('Could not find Job/Service or Bid/Order!');
         }
@@ -119,7 +142,7 @@ export class PaymentService {
             return { isValid: false, error: 'User not authenticated' };
         }
 
-        if (!this.targetEntity || !this.secondaryEntity) {
+        if (!this.primaryEntity || !this.secondaryEntity) {
             return { isValid: false, error: 'Missing required entities' };
         }
 

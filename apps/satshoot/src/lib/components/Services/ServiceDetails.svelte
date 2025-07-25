@@ -2,7 +2,6 @@
     import {
         NDKKind,
         NDKSubscriptionCacheUsage,
-        type Hexpubkey,
         type NDKFilter,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
@@ -16,7 +15,6 @@
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { Pricing } from '$lib/events/types';
     import { wot } from '$lib/stores/wot';
-    import QuestionIcon from '../Icons/QuestionIcon.svelte';
     import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import currentUser from '$lib/stores/user';
