@@ -37,6 +37,7 @@
     let cashuPopoverStateSponsored = $state(false);
     let paymentManager = $state<PaymentManagerService | undefined>(undefined);
     let isSponsoring = $state(false);
+    let sponsoringSplit = $state(0);
     // pay confirm model props
     let showPayConfirm = $state(false);
     let payConfirmPubkey = $state('');
@@ -117,7 +118,14 @@
     $effect(() => {
         if (initialized && !!primaryEntity && !!secondaryEntity) {
             paymentManager = new PaymentManagerService(primaryEntity, secondaryEntity);
-            isSponsoring = secondaryEntity instanceof BidEvent && !!secondaryEntity.sponsoredNpub;
+            isSponsoring =
+                (secondaryEntity instanceof BidEvent && !!secondaryEntity.sponsoredNpub) ||
+                (primaryEntity instanceof ServiceEvent && !!primaryEntity.sponsoredNpub);
+            if (secondaryEntity instanceof BidEvent) {
+                sponsoringSplit = secondaryEntity.sponsoringSplit;
+            } else if (primaryEntity instanceof ServiceEvent) {
+                sponsoringSplit = primaryEntity.sponsoringSplit;
+            }
         }
     });
 
@@ -147,7 +155,14 @@
                     payAmount = paymentManager!.payment.satshootAmount;
                     break;
                 case UserEnum.Sponsored:
-                    payConfirmPubkey = nip19.decode((secondaryEntity as BidEvent).sponsoredNpub).data as string;
+                    if (secondaryEntity instanceof BidEvent) {
+                        payConfirmPubkey = nip19.decode(secondaryEntity.sponsoredNpub)
+                            .data as string;
+                    } else {
+                        payConfirmPubkey = nip19.decode(
+                            (primaryEntity as ServiceEvent).sponsoredNpub
+                        ).data as string;
+                    }
                     payAmount = paymentManager!.payment.sponsoredAmount;
                     break;
             }
@@ -230,9 +245,7 @@
                                 <div class="grow-1">
                                     <p class="font-[500]">
                                         Sponsoring split:
-                                        <span class="font-[300]">
-                                            {secondaryEntity.sponsoringSplit} %</span
-                                        >
+                                        <span class="font-[300]"> {sponsoringSplit} %</span>
                                     </p>
                                 </div>
                             {/if}
