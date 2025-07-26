@@ -240,7 +240,7 @@
                 class={downloadBtnClasses}
                 href={url}
                 download={filename}>
-                <span>Download</span>
+                <span>Save in File</span>
 
             </a>
         </div>
