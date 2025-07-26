@@ -8,14 +8,14 @@
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 
     import { nsecEncode } from 'nostr-tools/nip19';
-    import { onMount } from 'svelte';
+    import { onMount, tick } from 'svelte';
     import Passphrase from '../Passphrase.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import { toaster } from '$lib/stores/toaster';
     import { generateSecretKey } from 'nostr-tools';
     import { bytesToHex } from '@noble/ciphers/utils';
-    import { page } from '$app/state';
+    import { navigating, page } from '$app/state';
     import QuestionIcon from '../Icons/QuestionIcon.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
 
@@ -44,6 +44,7 @@
         ? 'post-service'
         : 'post-job'
     )
+    let inProgress = $state(false)
 
     onMount(async () => {
         if (page.url.searchParams.get('state') === 'letsgo') {
@@ -111,16 +112,19 @@
                 title: 'Nostr Keypair Created!',
             });
 
-            handleRedirection();
+            inProgress = true
+            await tick()
+            await handleRedirection();
 
+            inProgress = false;
             isOpen = false;
         }
     }
 
-    function handleRedirection() {
+    async function handleRedirection() {
         if ($redirectAfterLogin) {
             console.log('redirecting to:', redirectPath)
-            goto(redirectPath);
+            await goto(redirectPath);
         } else {
             console.log('not redirecting :(')
             $redirectAfterLogin = true;
@@ -145,7 +149,7 @@
                 "Don't send your secret key to anyone, ever!" +
             '</li>' +
             '<li>' +
-                'You will need it to access your nostr account' +
+                'You will need it to use your nostr account' +
             '</li>' +
         '</ul>' +
         '</div>';
@@ -154,8 +158,7 @@
         '<div>' +
             '<div class="">SatShoot saves your Secret key locally encrypted in the Browser</div>' +
         '<ul class="list-inside list-disc space-y-2">' +
-            '<li>You will be able to login again easily with this password</li>' +
-            '<li>You will be able to export it anytime in the Settings</li>' +
+            '<li>You will be able to restore your Secret key after a session ends</li>' +
             '<li>' +
                 "During active sessions SatShoot uses it therefore it's unencrypted" +
             '</li>' +
@@ -261,6 +264,7 @@
         btnLabel="Next"
         onSubmit={finalizeAccountGeneration}
         disabled={!savedNsec}
+        inProgress={inProgress}
         roundedTop
     />
 </div>

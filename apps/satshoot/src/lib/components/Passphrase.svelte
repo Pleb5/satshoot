@@ -1,5 +1,6 @@
 <script lang="ts">
     import Button from './UI/Buttons/Button.svelte';
+    import ProgressRing from './UI/Display/ProgressRing.svelte';
     import Input from './UI/Inputs/input.svelte';
 
     interface Props {
@@ -8,6 +9,7 @@
         btnLabel: string;
         roundedTop?: boolean;
         disabled?:boolean;
+        inProgress?:boolean;
         onSubmit: () => void;
     }
 
@@ -17,6 +19,7 @@
         btnLabel,
         roundedTop = false,
         disabled = false,
+        inProgress = false,
         onSubmit,
     }: Props = $props();
 
@@ -76,7 +79,11 @@
 
 <div class={btnWrapperClasses}>
     <Button grow onClick={onSubmit} disabled={disabled}>
-        <i class="bx bx-log-in-circle"></i>
-        {btnLabel}
+        {#if inProgress}
+            <ProgressRing color="white" />
+        {:else}
+            <i class="bx bx-log-in-circle"></i>
+            {btnLabel}
+        {/if}
     </Button>
 </div>
