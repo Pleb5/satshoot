@@ -30,14 +30,14 @@
 
     let copiedNsec = $state(false);
     let savedNsec = $state(false);
+    let userName = $state("")
+    let generatedNpub = $state('');
 
     const mimeType = 'text/plain';
     const blob = $derived(new Blob([generatedNsec], { type: mimeType }));
     const url = $derived(URL.createObjectURL(blob));
-    const filename = "Nostr Secret Key.txt"
+    const filename = $derived(userName + "-SatShoot-Nostr-Secret-Key.txt")
 
-    let generatedNpub = $state('');
-    let userName = $state("")
     let passphraseForGeneratedAccount = $state('');
     let confirmPassphraseForGeneratedAccount = $state('');
     let redirectPath = $state($userMode === UserMode.Freelancer
@@ -157,7 +157,7 @@
             '<li>You will be able to login again easily with this password</li>' +
             '<li>You will be able to export it anytime in the Settings</li>' +
             '<li>' +
-                "During browser sessions SatShoot can use it and is unencrypted" +
+                "During active sessions SatShoot uses it therefore it's unencrypted" +
             '</li>' +
         '</ul>' +
         '</div>';
