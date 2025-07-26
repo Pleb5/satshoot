@@ -3,6 +3,7 @@
     import OrderCard from '$lib/components/Cards/OrderCard.svelte';
     import ServiceCard from '$lib/components/Cards/ServiceCard.svelte';
     import ConfirmOrderModal from '$lib/components/Modals/ConfirmOrderModal.svelte';
+    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
@@ -278,7 +279,7 @@
                                                 onClick={triggerLogin}
                                                 classes="max-[768px]:grow-1"
                                             >
-                                                Login to make bid
+                                                Login to order
                                             </Button>
                                         </div>
                                     {/if}
@@ -367,6 +368,8 @@
         </div>
     </div>
 </div>
+
+<LoginModal bind:isOpen={showLoginModal} />
 
 {#if service}
     <ConfirmOrderModal

@@ -340,7 +340,7 @@
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[10px]">
                 <div class="w-full flex flex-col gap-[5px] justify-start">
-                    <h2 class="text-[40px] font-[500] text-center">
+                    <h2 class="text-xl sm:text-[40px] font-[500] text-center">
                         {$serviceToEdit ? 'Edit' : 'New'} Service
                     </h2>
                 </div>
@@ -532,7 +532,7 @@
                                     You'd get:
                                     <span class="font-[400] text-lg sm:text-xl">
                                         {insertThousandSeparator(freelancerShare) +
-                                            (pricingMethod ? 'sats/hour' : 'sats')}
+                                            (pricingMethod ? ' sats/hour' : ' sats')}
                                     </span>
                                 </p>
                             </div>
@@ -541,7 +541,7 @@
                                     Your pledge:
                                     <span class="font-[400] text-lg sm:text-xl">
                                         {insertThousandSeparator(pledgedShare) +
-                                            (pricingMethod ? 'sats/hour' : 'sats')}
+                                            (pricingMethod ? ' sats/hour' : ' sats')}
                                     </span>
                                 </p>
                             </div>
