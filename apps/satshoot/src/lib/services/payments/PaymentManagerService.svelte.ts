@@ -7,7 +7,7 @@ import currentUser from '$lib/stores/user';
 import { get } from 'svelte/store';
 import type { JobEvent } from '$lib/events/JobEvent';
 import { BidEvent } from '$lib/events/BidEvent';
-import type { ServiceEvent } from '$lib/events/ServiceEvent';
+import { ServiceEvent } from '$lib/events/ServiceEvent';
 import type { OrderEvent } from '$lib/events/OrderEvent';
 import { UserEnum } from './UserEnum';
 
@@ -25,12 +25,12 @@ export class PaymentManagerService {
     private sponsoredPaymentStore: PaymentStore | null = null;
 
     constructor(
-        private targetEntity: JobEvent | ServiceEvent,
+        private primaryEntity: JobEvent | ServiceEvent,
         private secondaryEntity: BidEvent | OrderEvent
     ) {
-        this.paymentService = new PaymentService(targetEntity, secondaryEntity);
-        this.lightningService = new LightningPaymentService(targetEntity, secondaryEntity);
-        this.cashuService = new CashuPaymentService(targetEntity, secondaryEntity);
+        this.paymentService = new PaymentService(primaryEntity, secondaryEntity);
+        this.lightningService = new LightningPaymentService(primaryEntity, secondaryEntity);
+        this.cashuService = new CashuPaymentService(primaryEntity, secondaryEntity);
         this.toastService = new ToastService();
 
         this.initializePaymentStores();
@@ -43,14 +43,14 @@ export class PaymentManagerService {
         if (this.secondaryEntity && get(currentUser)) {
             const freelancerFilters = createPaymentFilters(this.secondaryEntity, 'freelancer');
             const satshootFilters = createPaymentFilters(this.secondaryEntity, 'satshoot');
-            
+
             this.freelancerPaymentStore = createPaymentStore(freelancerFilters);
             this.satshootPaymentStore = createPaymentStore(satshootFilters);
-            
+
             this.freelancerPaymentStore.paymentStore.startSubscription();
             this.satshootPaymentStore.paymentStore.startSubscription();
-            
-            if (this.secondaryEntity instanceof BidEvent && !!this.secondaryEntity.sponsoredNpub) {
+
+            if (this.secondaryEntity instanceof BidEvent && !!this.secondaryEntity.sponsoredNpub || this.primaryEntity instanceof ServiceEvent && !!this.primaryEntity.sponsoredNpub) {
                 const sponsoredFilters = createPaymentFilters(this.secondaryEntity, 'sponsored');
                 this.sponsoredPaymentStore = createPaymentStore(sponsoredFilters);
                 this.sponsoredPaymentStore.paymentStore.startSubscription();
@@ -102,15 +102,15 @@ export class PaymentManagerService {
 
     setDefaultShare(userEnum: UserEnum) {
         switch (userEnum) {
-                case UserEnum.Satshoot:
-                    this.payment.satshootAmount = this.payment.paymentShares.satshootShare;
-                    return;
-                case UserEnum.Sponsored:
-                    this.payment.sponsoredAmount = this.payment.paymentShares.sponsoredShare;
-                    return;
-                case UserEnum.Freelancer:
-                    return;
-            }
+            case UserEnum.Satshoot:
+                this.payment.satshootAmount = this.payment.paymentShares.satshootShare;
+                return;
+            case UserEnum.Sponsored:
+                this.payment.sponsoredAmount = this.payment.paymentShares.sponsoredShare;
+                return;
+            case UserEnum.Freelancer:
+                return;
+        }
     }
 
     /**
