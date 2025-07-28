@@ -89,6 +89,10 @@
             : filteredTagOptions
     );
 
+    const tagRecommenderClasses = "w-full flex flex-row gap-[10px] rounded-[6px] " +
+        "border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap " +
+        "p-[10px] max-h-[100px] overflow-y-scroll "
+
     onMount(() => {
         if ($jobToEdit) {
             titleText = $jobToEdit.title;
@@ -276,7 +280,7 @@
                                     fullWidth
                                 />
                                 <div
-                                    class="w-full flex flex-row gap-[10px] rounded-[6px] border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap p-[10px] max-h-[100px] overflow-y-scroll"
+                                    class={[tagRecommenderClasses, tagInput ? '' : 'hidden']}
                                 >
                                     {#each displayOptions as { label, value }}
                                         <Button
