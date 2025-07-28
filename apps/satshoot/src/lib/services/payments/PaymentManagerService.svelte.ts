@@ -41,8 +41,8 @@ export class PaymentManagerService {
      */
     private initializePaymentStores() {
         if (this.secondaryEntity && get(currentUser)) {
-            const freelancerFilters = createPaymentFilters(this.secondaryEntity, 'freelancer');
-            const satshootFilters = createPaymentFilters(this.secondaryEntity, 'satshoot');
+            const freelancerFilters = createPaymentFilters(this.secondaryEntity, this.primaryEntity, 'freelancer');
+            const satshootFilters = createPaymentFilters(this.secondaryEntity, this.primaryEntity, 'satshoot');
 
             this.freelancerPaymentStore = createPaymentStore(freelancerFilters);
             this.satshootPaymentStore = createPaymentStore(satshootFilters);
@@ -51,7 +51,7 @@ export class PaymentManagerService {
             this.satshootPaymentStore.paymentStore.startSubscription();
 
             if (this.secondaryEntity instanceof BidEvent && !!this.secondaryEntity.sponsoredNpub || this.primaryEntity instanceof ServiceEvent && !!this.primaryEntity.sponsoredNpub) {
-                const sponsoredFilters = createPaymentFilters(this.secondaryEntity, 'sponsored');
+                const sponsoredFilters = createPaymentFilters(this.secondaryEntity, this.primaryEntity, 'sponsored');
                 this.sponsoredPaymentStore = createPaymentStore(sponsoredFilters);
                 this.sponsoredPaymentStore.paymentStore.startSubscription();
             }

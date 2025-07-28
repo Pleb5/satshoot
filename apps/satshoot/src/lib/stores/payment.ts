@@ -13,6 +13,8 @@ import { SatShootPubkey } from '$lib/utils/misc';
 import type { ExtendedBaseType, NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
 import type { OrderEvent } from '$lib/events/OrderEvent';
 import { nip19 } from 'nostr-tools';
+import { ServiceEvent } from '$lib/events/ServiceEvent';
+import type { JobEvent } from '$lib/events/JobEvent';
 
 export interface PaymentStore {
     paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
@@ -20,20 +22,22 @@ export interface PaymentStore {
 }
 
 export const createPaymentFilters = (
-    event: BidEvent | OrderEvent,
+    targetEvent: BidEvent | OrderEvent,
+    sponsoredEntity: ServiceEvent | JobEvent,
     type: 'freelancer' | 'satshoot' | 'sponsored'
 ): NDKFilter[] => {
     if (type === 'freelancer') {
-        let taggedFreelancerPubkey: string | undefined = event.author.pubkey;
-        if (event.kind === NDKKind.FreelanceOrder) {
-            taggedFreelancerPubkey = (event as OrderEvent).referencedServiceProvider
+        let taggedFreelancerPubkey: string | undefined = targetEvent.author.pubkey;
+        if (targetEvent.kind === NDKKind.FreelanceOrder) {
+            taggedFreelancerPubkey = (targetEvent as OrderEvent).referencedServiceProvider
             if (!taggedFreelancerPubkey) throw new Error(
                 'Error: Cannot get Freelancer pubkey from Bid or Order get payments for freelancer'
             )
         }
         return [
-            { kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                '#a': [event.tagAddress()],
+            {
+                kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                '#a': [targetEvent.tagAddress()],
                 '#p': [taggedFreelancerPubkey]
             },
         ];
@@ -41,31 +45,38 @@ export const createPaymentFilters = (
         return [
             {
                 kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                '#a': [event.tagAddress()],
+                '#a': [targetEvent.tagAddress()],
                 '#p': [SatShootPubkey],
             },
         ];
     } else {
-        const bidEvent = event as BidEvent;
-        if (bidEvent) {
-            try {
-                const decodedNpubResult = nip19.decode(bidEvent.sponsoredNpub);
-                const sponsoredPubkey = decodedNpubResult.type == 'npub' ? decodedNpubResult.data : undefined;
-                if (sponsoredPubkey) {
-                    return [
-                        {
-                            kinds: [NDKKind.Zap, NDKKind.Nutzap],
-                            '#p': [sponsoredPubkey],
-                            '#a': [bidEvent.referencedJobAddress],
-                        },
-                    ];
-                } else 
-                    return [];
-            } catch(error) {
-                return [];
+        let decodedNpubResult;
+        let primaryEntityAddr;
+        try {
+            if (targetEvent instanceof BidEvent) {
+                decodedNpubResult = nip19.decode(targetEvent.sponsoredNpub);
+                primaryEntityAddr = targetEvent.tagAddress();
+            } else if (sponsoredEntity instanceof ServiceEvent) {
+                decodedNpubResult = nip19.decode(sponsoredEntity.sponsoredNpub);
+                primaryEntityAddr = targetEvent.tagAddress();
+            } else {
+                console.error('Unexpected case!!!');
+                throw new Error('Unexpected combination of target and sponsored events!!!');
             }
-        } else {
-            //TODO (rodant): handle the OrderEvent case
+            const sponsoredPubkey = decodedNpubResult.type == 'npub' ? decodedNpubResult.data : undefined;
+            if (sponsoredPubkey) {
+                return [
+                    {
+                        kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                        '#p': [sponsoredPubkey],
+                        '#a': [primaryEntityAddr],
+                    },
+                ];
+            } else
+                console.warn('Unexpected case, the sponsored event received contains something different to an npub');
+            return [];
+        } catch (error) {
+            console.warn('The sponsored event contains a wrong npub!!!');
             return [];
         }
     }
