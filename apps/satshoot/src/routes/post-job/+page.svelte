@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/session';
-    import currentUser, { loggedIn, loggingIn } from '$lib/stores/user';
+    import currentUser, { loggedIn } from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
 
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
@@ -231,7 +231,7 @@
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[10px]">
                 <div class="w-full flex flex-col gap-[5px] justify-start">
-                    <h2 class="text-[40px] font-[500]">
+                    <h2 class="text-[40px] font-[500] text-center">
                         {$jobToEdit ? 'Edit' : 'New'} Job Post
                     </h2>
                 </div>

@@ -17,6 +17,8 @@ export const userMode: Writable<UserMode> = persisted<UserMode>('userMode', User
 export const loginAlert = writable(true);
 
 export const mounted = writable(false);
+
+export const onBoarding = writable(false);
 export const loggingIn = writable(false);
 export const loggedIn = writable(false);
 export const loginMethod: Writable<LoginMethod | null> = persisted('login-method', null);

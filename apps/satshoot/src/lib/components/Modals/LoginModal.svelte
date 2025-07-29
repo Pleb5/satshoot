@@ -5,10 +5,11 @@
     import Nip07Login from '../Login/Nip07Login.svelte';
     import BunkerLogin from '../Login/BunkerLogin.svelte';
     import LocalKeyLogin from '../Login/LocalKeyLogin.svelte';
-    import GenerateAccount from '../Login/GenerateAccount.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { UserMode, userMode } from '$lib/stores/user';
     import { page } from '$app/state';
+    import { goto } from '$app/navigation';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     interface Props {
         isOpen: boolean;
@@ -21,6 +22,19 @@
         ? LoginMethod.Register
         : null
     );
+
+    let navigationInProgress = $state(false)
+
+    const letsGo = async () => {
+        const url = new URL(
+            `/letsgo`, window.location.origin
+        );
+        navigationInProgress = true
+        await goto(url)
+
+        isOpen = false;
+        navigationInProgress = false;
+    }
 
     const popUpText = `
 <p>
@@ -65,11 +79,7 @@
 
 <ModalWrapper
     bind:isOpen 
-    title={
-        selectedLoginMethod === LoginMethod.Register
-        ? "Sign up"
-        : "Login"
-    }
+    title={"Login"}
     {popUpText}>
     {#snippet headerAction()}
         <Button
@@ -120,9 +130,15 @@
                     <h3 class="text-[18px]">Or, if you're new to Nostr</h3>
                     <Button
                         variant="outlined"
-                        onClick={() => (selectedLoginMethod = LoginMethod.Register)}
-                        >Sign Up</Button
-                    >
+                        onClick={letsGo}
+                        >
+                        {#if navigationInProgress}
+                            <ProgressRing color="white" />
+
+                        {:else}
+                            Sign Up
+                        {/if}
+                    </Button>
                     <div class="flex justify-center">
                         <a class="anchor" href="https://github.com/Pleb5/satshoot" target="_blank">
                             <span>Running v0.9.0</span>
@@ -135,8 +151,6 @@
                 <BunkerLogin bind:isOpen />
             {:else if selectedLoginMethod === LoginMethod.Local}
                 <LocalKeyLogin bind:isOpen />
-            {:else if selectedLoginMethod === LoginMethod.Register}
-                <GenerateAccount bind:isOpen />
             {/if}
         </div>
     </div>

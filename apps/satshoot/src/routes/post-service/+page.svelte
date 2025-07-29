@@ -1,5 +1,6 @@
 <script lang="ts">
     import { beforeNavigate, goto } from '$app/navigation';
+    import { page } from '$app/state';
     import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
     import AddImagesModal from '$lib/components/Modals/AddImagesModal.svelte';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
@@ -49,6 +50,8 @@
 
     let pledgedShare = $derived(Math.floor(amount * (pledgeSplit / 100)));
     let freelancerShare = $derived(amount - pledgedShare);
+
+    let firstService = $derived(page.url.searchParams.get('state') === 'letsgo')
 
     const { titleValid, titleState } = $derived.by(() => {
         if (titleText.length < minTitleLength) {
@@ -344,6 +347,26 @@
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[10px]">
                 <div class="w-full flex flex-col gap-[5px] justify-start">
+                    {#if firstService}
+                        <div class="w-full flex justify-center mt-2">
+                            <img
+                                src="/img/satshoot.svg"
+                                alt="Satshoot logo"
+                                class="w-14 sm:w-24 sm:justify-self-end"
+                            />
+                        </div>
+                        <div class="w-full flex justify-center">
+                            <h2 class="w-full h2 sm:h1 text-center">Welcome to SatShoot</h2>
+                        </div>
+                        <div class="flex justify-center text-center h4 sm:h3">
+                            Where individuals become unstoppable
+                        </div>
+                        <div class="mt-4 text-xl sm:text-3xl text-center">
+                            <span>
+                                Great, let's see what service you have to offer.
+                            </span>
+                        </div>
+                    {/if}
                     <h2 class="text-xl sm:text-[40px] font-[500] text-center">
                         {$serviceToEdit ? 'Edit' : 'New'} Service
                     </h2>

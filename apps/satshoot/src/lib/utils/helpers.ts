@@ -20,7 +20,7 @@ import ndk, {
     sessionPK,
 } from '$lib/stores/session';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import currentUser from '../stores/user';
+import currentUser, { onBoarding } from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
 import { loadWot, networkWoTScores } from '../stores/wot';
 import { allReviews } from '$lib/stores/reviews';
@@ -47,7 +47,6 @@ import { dev } from '$app/environment';
 import { connected } from '../stores/network';
 import { retriesLeft, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
-import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
 import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
 
@@ -68,8 +67,8 @@ export async function initializeUser(ndk: NDKSvelte) {
         myServiceFilter.authors = [user.pubkey];
         myOrderFilter.authors = [user.pubkey];
 
-        const $onboardingStep = get(onboardingStep);
-        if ($onboardingStep !== OnboardingStep.Account_Created) {
+        const $onboarding = get(onBoarding);
+        if (!$onboarding) {
             const userRelays = await fetchUserOutboxRelays(ndk, user.pubkey, 3000);
             let explicitRelays = DEFAULTRELAYURLS;
             if (userRelays) {

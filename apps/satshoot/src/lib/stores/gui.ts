@@ -7,14 +7,6 @@ export const displayEcashWarning = writable(true);
 export const scrollToMyJobsAndMyBids = writable(false);
 export const redirectAfterLogin = writable(true);
 
-export enum OnboardingStep {
-    Account_Created,
-    Profile_Updated,
-    Relays_Configured,
-}
-
-export const onboardingStep = writable<OnboardingStep | null>(null);
-
 export const servicesFilter = persisted('servicesFilter', {
     active: true,
     inActive: false,

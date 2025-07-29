@@ -25,6 +25,7 @@
         loggingIn,
         loginMethod,
         mounted,
+        onBoarding,
         UserMode,
         userMode,
     } from '$lib/stores/user';
@@ -96,7 +97,6 @@
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
     import type { ServiceEvent } from '$lib/events/ServiceEvent';
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
-    import { browser } from '$app/environment';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -667,13 +667,14 @@
             }
         }
     });
+
 </script>
 
 <Toaster classes="z-1100" {toaster}></Toaster>
 
 <!-- layout structure -->
 <div class="w-full h-full flex flex-col">
-    {#if displayNav}
+    {#if !$onBoarding}
         <header
             class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
             aria-label="Main header"
@@ -682,7 +683,7 @@
         </header>
     {/if}
 
-    <div class="flex {displayNav ? 'mt-[65px]' : ''} ">
+    <div class="flex {!$onBoarding ? 'mt-[65px]' : ''} ">
         <!-- Collapsible Sidebar (hidden on small screens) -->
         {#if displayNav}
             <SidebarLeft />

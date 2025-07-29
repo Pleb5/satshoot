@@ -3,7 +3,6 @@
     import RelayListElement from '$lib/components/RelayListElement.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
-    import { OnboardingStep, onboardingStep } from '$lib/stores/gui';
     import ndk, { DEFAULTRELAYURLS } from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
@@ -109,10 +108,6 @@
             toaster.success({
                 title: 'New Relay Config Broadcasted!',
             });
-
-            if ($onboardingStep === OnboardingStep.Profile_Updated) {
-                $onboardingStep = OnboardingStep.Relays_Configured;
-            }
         } catch (e) {
             toaster.error({
                 title: 'Could not post Relays: ' + e,
