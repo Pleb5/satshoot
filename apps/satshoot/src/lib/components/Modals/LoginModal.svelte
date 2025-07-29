@@ -7,7 +7,6 @@
     import LocalKeyLogin from '../Login/LocalKeyLogin.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { UserMode, userMode } from '$lib/stores/user';
-    import { page } from '$app/state';
     import { goto } from '$app/navigation';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
@@ -17,11 +16,7 @@
 
     let { isOpen = $bindable() }: Props = $props();
 
-    let selectedLoginMethod: LoginMethod | null = $state(
-        page.url.searchParams.get('state') === 'letsgo' 
-        ? LoginMethod.Register
-        : null
-    );
+    let selectedLoginMethod: LoginMethod | null = $state(null);
 
     let navigationInProgress = $state(false)
 

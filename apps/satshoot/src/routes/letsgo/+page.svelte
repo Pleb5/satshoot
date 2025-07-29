@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import ndk, { sessionPK } from '$lib/stores/session';
-    import { onBoarding, UserMode, userMode } from '$lib/stores/user';
+    import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
+    import { loginMethod, onBoarding, UserMode, userMode } from '$lib/stores/user';
     import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 
@@ -89,6 +89,8 @@
 
         // assign ndk signer
         $ndk.signer = new NDKPrivateKeySigner(generatedNsec);
+
+        $loginMethod = LoginMethod.Local;
 
         $sessionPK = (bytesToHex(privateKey));
 

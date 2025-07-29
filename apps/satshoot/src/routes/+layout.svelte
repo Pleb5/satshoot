@@ -186,7 +186,10 @@
             $loggingIn = false;
 
             await initializeUser($ndk);
-        } else {
+        } else if (
+            localStorage.getItem('nostr-nsec') !== null ||
+            localStorage.getItem('nostr-seedwords') !== null
+        ) {
             showDecryptSecretModal = true;
         }
     }

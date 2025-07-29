@@ -40,11 +40,15 @@
     let descriptionText = $state('');
     let images = $state<File[]>([]);
 
-    let pricingMethod = $state(Pricing.Absolute);
-    let amount = $state(0);
+    let pricingMethod = $state(Pricing.Hourly);
+    let inputAmount = $state<number|null>(null)
+    let displayAmount = $state<string>('')
+    let amount = $derived(inputAmount || 0);
+
     let BTCUSDPrice = -1;
     // USD price with decimals cut off and thousand separators
     let usdPrice = $derived(Math.floor(amount / 100_000_000 * BTCUSDPrice))
+
     let pledgeSplit = $state(0);
     let imageUrls = $state<string[]>([]);
 
@@ -103,6 +107,35 @@
               ]
             : filteredTagOptions
     );
+
+    function formatNumber(num: number | null): string {
+        if (num === null || num === undefined) return '';
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function parseNumber(str: string): number | null {
+        if (!str || str.trim() === '') return null;
+        const parsed = Number(str.replace(/,/g, ''));
+        return isNaN(parsed) ? null : parsed;
+    }
+
+    function handleAmountInput(event: Event): void {
+        const target = event.target as HTMLInputElement;
+        const parsedValue = parseNumber(target.value);
+        
+        if (parsedValue === null) {
+            inputAmount = null;
+            displayAmount = '';
+        } else {
+            inputAmount = parsedValue;
+            displayAmount = formatNumber(parsedValue);
+        }
+    }
+
+    $effect(() => {
+        displayAmount = formatNumber(inputAmount);
+    });
+
 
     let posting = $state(false);
     let progressStatus = $state('');
@@ -314,6 +347,19 @@
     }
 
 
+    let serviceTitleTooltip =
+        '<div>' +
+            '<div class="font-bold">' + 
+                'Make this short and to the point. Great examples include: Web Development, Business Consulting, etc.' +
+            '</div>' +
+        '</div>';
+
+    let tagsTooltip =
+        '<div>' +
+            '<div class="font-bold">' + 
+                'Keywords and technologies you are proficient with.' +
+            '</div>' +
+        '</div>';
 
     let pledgeTooltip =
         '<div>' +
@@ -341,6 +387,12 @@
     const selectOptionClasses =
         'bg-white dark:bg-brightGray transition-all ease duration-[0.2s] w-[100%] text-lg sm:text-xl' +
         ' rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
+
+    const amountInputClasses = 'transition ease duration-[0.3s] px-[10px] py-[5px] ' +
+    'bg-black-50 focus:bg-black-100 outline-[0px] focus:outline-[0px] border-[2px] ' +
+    'border-black-100 dark:border-white-100 focus:border-blue-500 rounded-[6px] ' + 
+    'w-full text-lg sm:text-xl'
+
 </script>
 <div class="w-full flex flex-col gap-0 grow pb-20 sm:pb-5">
     <div class="w-full flex flex-col justify-center items-center">
@@ -362,26 +414,40 @@
                             Where individuals become unstoppable
                         </div>
                         <div class="mt-4 text-xl sm:text-3xl text-center">
-                            <span>
-                                Great, let's see what service you have to offer.
-                            </span>
+                            {#if step === 1}
+                                <span>
+                                    Great, let's see what service you have to offer:
+                                </span>
+                            {:else if step === 2} 
+                                <span>
+                                    Fine work deserves <strong>hard money</strong>. What's your hourly rate?
+                                </span>
+                            {/if}
                         </div>
+                    {:else}
+                        <h2 class="text-xl sm:text-[40px] font-[500] text-center underline">
+                            {$serviceToEdit ? 'Edit' : 'New'} Service
+                        </h2>
                     {/if}
-                    <h2 class="text-xl sm:text-[40px] font-[500] text-center">
-                        {$serviceToEdit ? 'Edit' : 'New'} Service
-                    </h2>
                 </div>
                 {#if step === 1}
                     <Card classes="gap-[15px]">
                         <div class="flex flex-col gap-[5px]">
-                            <label class="m-[0px] text-lg sm:text-xl" for="tile">
-                                Title (min. 10 chars)
-                            </label>
+                            <div class="flex gap-x-2 items-center">
+                                <label class="m-[0px] text-lg sm:text-xl" for="tile">
+                                    Title (min. 10 chars)
+                                </label>
+                                <QuestionIcon
+                                    extraClasses="text-[14px] p-[3px]"
+                                    placement="bottom-start"
+                                    popUpText={serviceTitleTooltip}
+                                />
+                            </div>
                             <div class="flex flex-row rounded-[6px] overflow-hidden bg-white">
                                 <Input
                                     id="title"
                                     bind:value={titleText}
-                                    placeholder="Title of your service"
+                                    placeholder="My service"
                                     classes={titleState}
                                     fullWidth
                                 />
@@ -395,7 +461,7 @@
                                 <Input
                                     id="description"
                                     bind:value={descriptionText}
-                                    placeholder="Detailed description of your service"
+                                    placeholder="Have an idea? Let's work together and I will help you make it a reality!"
                                     classes="min-h-[100px] {descriptionState}"
                                     fullWidth
                                     textarea
@@ -405,13 +471,20 @@
                             </div>
                             <div class="">
                                 <div class="flex flex-col gap-[5px]">
-                                    <label class="m-[0px] text-lg sm:text-xl" for="tags">Tags</label>
+                                    <div class="flex gap-x-2 items-center">
+                                        <label class="m-[0px] text-lg sm:text-xl" for="tags">Tags</label>
+                                        <QuestionIcon
+                                            extraClasses="text-[14px] p-[3px]"
+                                            placement="bottom-start"
+                                            popUpText={tagsTooltip}
+                                        />
+                                    </div>
                                     <div
                                         class="flex flex-col gap-[10px] rounded-[6px] overflow-hidden bg-white dark:bg-brightGray"
                                     >
                                         <Input
                                             bind:value={tagInput}
-                                            placeholder="Search and add a tag, or add a custom tag"
+                                            placeholder="Search, or add a custom tag"
                                             onKeyPress={handleEnterKeyOnTagInput}
                                             fullWidth
                                         />
@@ -463,34 +536,38 @@
                         </div>
                     </Card>
                 {:else if step === 2}
-                    <Card>
-                        <div class="flex justify-center">
-                            <Button classes={"w-full sm:w-[50%]"} onClick={() => (showAddImagesModal = true)}>
-                                {#if images.length}
-                                    <i class="bx bxs-pencil"></i>
-                                    <span> Edit Images </span>
-                                {:else}
-                                    <i class="bx bx-plus"></i>
-                                    <span> Add Images </span>
-                                {/if}
-                            </Button>
-                        </div>
-                    </Card>
+                    {#if !firstService}
+                        <Card>
+                            <div class="flex justify-center">
+                                <Button classes={"w-full sm:w-[50%]"} onClick={() => (showAddImagesModal = true)}>
+                                    {#if images.length}
+                                        <i class="bx bxs-pencil"></i>
+                                        <span> Edit Images </span>
+                                    {:else}
+                                        <i class="bx bx-plus"></i>
+                                        <span> Add Images (optional) </span>
+                                    {/if}
+                                </Button>
+                            </div>
+                        </Card>
+                    {/if}
                     <Card classes="gap-[15px]">
                         <div class="flex flex-col gap-[5px]">
-                            <div class="">
-                                <label class="font-[600] text-lg sm:text-xl" for=""> Pricing method </label>
-                            </div>
-                            <div class="w-full flex flex-row items-center">
-                                <select class={selectInputClasses} bind:value={pricingMethod}>
-                                    <option value={Pricing.Absolute} class={selectOptionClasses}>
-                                        Product price(sats)
-                                    </option>
-                                    <option value={Pricing.Hourly} class={selectOptionClasses}>
-                                        Service fee(sats/hour)
-                                    </option>
-                                </select>
-                            </div>
+                            {#if !firstService}
+                                <div class="">
+                                    <label class="font-[600] text-lg sm:text-xl" for=""> Pricing method </label>
+                                </div>
+                                <div class="w-full flex flex-row items-center">
+                                    <select class={selectInputClasses} bind:value={pricingMethod}>
+                                        <option value={Pricing.Absolute} class={selectOptionClasses}>
+                                            Product price(sats)
+                                        </option>
+                                        <option value={Pricing.Hourly} class={selectOptionClasses}>
+                                            Service fee(sats/hour)
+                                        </option>
+                                    </select>
+                                </div>
+                            {/if}
                         </div>
                         <div class="flex flex-col gap-[5px]">
                             <div class="">
@@ -499,15 +576,12 @@
                                 </label>
                             </div>
                             <div class="w-full flex flex-row items-center relative">
-                                <Input
-                                    classes={ "text-lg sm:text-xl"}
-                                    type="number"
-                                    step="1"
-                                    min="0"
-                                    max="100_000_000"
-                                    placeholder="Amount"
-                                    bind:value={amount}
-                                    fullWidth
+                                <input
+                                    class={amountInputClasses}
+                                    type="text"
+                                    placeholder="50,000 sats / hour"
+                                    value={displayAmount}
+                                    oninput={handleAmountInput}
                                 />
 
                                 <span

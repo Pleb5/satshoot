@@ -111,7 +111,7 @@ export const filterValidPTags = (tags: NDKTag[]) =>
         });
 
 export function insertThousandSeparator(amount: number) {
-    return amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 export function abbreviateNumber(num: number): string {
