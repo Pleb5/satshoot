@@ -673,27 +673,32 @@
 
 <!-- layout structure -->
 <div class="w-full h-full flex flex-col">
-    <header
-        class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
-        aria-label="Main header"
-    >
-        <Header onRestoreLogin={restoreLogin} />
-    </header>
+    {#if displayNav}
+        <header
+            class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
+            aria-label="Main header"
+        >
+            <Header onRestoreLogin={restoreLogin} />
+        </header>
+    {/if}
 
-    <!-- Content Area -->
-    <div class="mt-[65px] flex-auto w-full h-full flex">
+    <div class="flex {displayNav ? 'mt-[65px]' : ''} ">
         <!-- Collapsible Sidebar (hidden on small screens) -->
         {#if displayNav}
             <SidebarLeft />
         {/if}
 
-        <!-- Main Content  -->
-        <main class="sm:ml-[96px] flex-1" aria-label="Main content">
-            {@render children?.()}
-            {#if !page.url.pathname.includes('messages/naddr')}
-                <div style={`height: ${footerHeight}px;`}></div>
-            {/if}
-        </main>
+        <!-- Content Area -->
+        <div class="flex-auto w-full h-full flex">
+
+            <!-- Main Content  -->
+            <main class="flex-1" aria-label="Main content">
+                {@render children?.()}
+                {#if !page.url.pathname.includes('messages/naddr')}
+                    <div style={`height: ${footerHeight}px;`}></div>
+                {/if}
+            </main>
+        </div>
     </div>
 
     <!-- Mobile Footer  -->

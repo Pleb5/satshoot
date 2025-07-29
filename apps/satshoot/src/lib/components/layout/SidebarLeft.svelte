@@ -26,7 +26,9 @@
 </script>
 
 <Navigation.Rail
-    classes="fixed left-0 top-[65px] hidden sm:block flex-none overflow-x-hidden overflow-y-auto"
+    classes="max-sm:hidden flex-none overflow-x-hidden overflow-y-auto"
+    tilesJustify="start"
+    height="h-full"
     background="bg-white dark:bg-brightGray"
 >
     {#snippet tiles()}

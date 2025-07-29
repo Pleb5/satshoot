@@ -15,7 +15,7 @@
     import { toaster } from '$lib/stores/toaster';
     import { generateSecretKey } from 'nostr-tools';
     import { bytesToHex } from '@noble/ciphers/utils';
-    import { navigating, page } from '$app/state';
+    import { page } from '$app/state';
     import QuestionIcon from '../Icons/QuestionIcon.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
 
