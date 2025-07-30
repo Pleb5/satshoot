@@ -26,10 +26,10 @@
 </script>
 
 <Navigation.Rail
-    classes="max-sm:hidden flex-none overflow-x-hidden overflow-y-auto"
-    tilesJustify="start"
-    height="h-full"
+    classes="fixed left-0 top-[65px] max-sm:hidden flex-none overflow-x-hidden overflow-y-auto z-10"
     background="bg-white dark:bg-brightGray"
+    tilesJustify="start"
+    height="h-screen"
 >
     {#snippet tiles()}
         <div class="flex flex-col items-center gap-y-4">

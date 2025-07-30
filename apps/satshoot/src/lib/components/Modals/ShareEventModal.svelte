@@ -30,8 +30,10 @@
         eventObj,
     }: Props = $props();
 
-    let shareURL = $state('');
-    let shareNaddr = $state('');
+    const naddr = $derived(eventObj?.encode() ?? '')
+    let shareURL = $derived(`https://satshoot.com/${naddr}`);
+    const shareNaddr = $derived(`nostr:${naddr}`);
+
     let message = $state('');
     let posting = $state(false);
 
@@ -125,21 +127,20 @@
         }
 
         // Assign the complete message all at once to trigger reactivity
+        console.log('New message', newMessage)
         message = newMessage;
+        
+        // Force a microtask to ensure the binding updates
+        return tick();
     }
 
-    onMount(() => {
-        if (eventObj) {
-            const naddr = eventObj.encode();
-            shareNaddr = 'nostr:' + naddr;
-            shareURL = `https://satshoot.com/${naddr}`;
-            buildDefaultMessage();
-        }
-    });
+    $inspect(message).with((type, message) => {
+        console.log('Message changed', message)
+    })
 
     // Also rebuild message when modal opens
     $effect(() => {
-        if (isOpen && eventObj && shareURL) {
+        if (isOpen && eventObj && shareURL && shareNaddr) {
             buildDefaultMessage();
         } else if (!isOpen) {
             // Reset message when modal closes
@@ -160,7 +161,7 @@
                         Share your job post with others
                     {/if}
                 </p>
-                {#if eventObj.pubkey === $currentUser?.pubkey}
+                <div class:hidden={eventObj.pubkey !== $currentUser?.pubkey}>
                     <Input
                         bind:value={message}
                         classes="min-h-[100px]"
@@ -168,8 +169,7 @@
                         textarea
                         rows={10}
                     />
-                {/if}
-                <div class="hidden">{message}</div>
+                </div>
             </div>
             <div class="w-full flex flex-wrap gap-[5px]">
                 {#if eventObj.pubkey === $currentUser?.pubkey}

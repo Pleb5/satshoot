@@ -773,7 +773,7 @@
                         <span class="text-lg sm:text-xl">
                             Here is what we got so far. If it's correct hit Post.
                         </span>
-                        <div class="w-[95vw] sm:w-[80vw] flex gap-x-2 gap-y-2 flex-wrap">
+                        <div class="w-[95vw] sm:w-[60vw] flex gap-x-2 gap-y-2 flex-wrap">
                             {#if firstService}
                                 <Card>
                                     <div class="text-center text-lg sm:text-xl">
@@ -790,9 +790,17 @@
                     {/if}
                 </div>
                 {#if step === 1}
-                    {@render firstForm()}
+                    <div class="w-full flex gap-x-2 gap-y-2 justify-center">
+                        <div class="w-[95vw] sm:w-[60vw]  flex flex-col items-center">
+                            {@render firstForm()}
+                        </div>
+                    </div>
                 {:else if step === 2}
-                    {@render secondForm()}
+                    <div class="w-full flex gap-x-2 gap-y-2 justify-center">
+                        <div class="w-[95vw] sm:w-[60vw]  flex flex-col items-center">
+                            {@render secondForm()}
+                        </div>
+                    </div>
                 {:else if step === 4}
                     <div class="flex flex-col items-center w-full">
                         <Card classes="w-[95vw] sm:w-[70vw]">
@@ -800,7 +808,7 @@
                                 <div class="text-wrap">
                                     Congratulations, your service is live on the <strong>free market</strong>!
                                 </div>
-                                <div class="text-wrap">
+                                <div class="text-wrap {!firstService ? 'hidden': ''}">
                                     You took the first step to become Unstoppable. Time to let people know.
                                 </div>
                                 <div class="w-full flex flex-wrap justify-between gap-y-2">
@@ -843,8 +851,9 @@
                     {#if !allowPostService}
                         <Button onClick={handleLogin}>Log in To Post</Button>
                     {:else if step === 1}
-                        <div class="w-full grid grid-cols-[20%_50%] gap-x-4 justify-between">
+                        <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
                             <Button
+                                grow
                                 variant="outlined"
                                 onClick={()=>goto((new URL('/letsgo', window.location.origin)))}>
                                 Back
@@ -861,13 +870,15 @@
                             </Button>
                         </div>
                     {:else if step === 2}
-                        <div class="w-full grid grid-cols-[20%_50%] gap-x-4 justify-between">
+                        <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
                             <Button
+                                grow
                                 variant="outlined"
                                 onClick={()=>step=1}>
                                 Back
                             </Button>
                             <Button
+                                grow
                                 onClick={() => {
                                     if (validateStep2()) {
                                         step = 3
@@ -877,13 +888,15 @@
                             </Button>
                         </div>
                     {:else if step === 3}
-                        <div class="w-full grid grid-cols-[20%_auto] gap-x-4 justify-between">
+                        <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
                             <Button
+                                grow
                                 variant="outlined"
                                 onClick={()=>step=2}>
                                 Back
                             </Button>
                             <Button
+                                grow
                                 onClick={finalize}
                                 disabled={posting}
                                 classes={"bg-yellow-500"}>

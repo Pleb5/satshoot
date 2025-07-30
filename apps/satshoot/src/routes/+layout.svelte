@@ -88,7 +88,6 @@
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
     import {
-        getModeOsPrefers,
         getModeUserPrefers,
         setModeUserPrefers,
     } from '$lib/utils/lightSwitch';
@@ -686,23 +685,21 @@
         </header>
     {/if}
 
-    <div class="flex {!$onBoarding ? 'mt-[65px]' : ''} ">
-        <!-- Collapsible Sidebar (hidden on small screens) -->
-        {#if displayNav}
-            <SidebarLeft />
-        {/if}
+    <!-- Collapsible Sidebar (hidden on small screens) -->
+    {#if displayNav && !$onBoarding}
+        <SidebarLeft />
+    {/if}
 
-        <!-- Content Area -->
-        <div class="flex-auto w-full h-full flex">
+    <!-- Content Area -->
+    <div class="flex-auto w-full h-full flex {!$onBoarding ? 'mt-[65px]' : ''}">
 
-            <!-- Main Content  -->
-            <main class="flex-1" aria-label="Main content">
-                {@render children?.()}
-                {#if !page.url.pathname.includes('messages/naddr')}
-                    <div style={`height: ${footerHeight}px;`}></div>
-                {/if}
-            </main>
-        </div>
+        <!-- Main Content  -->
+        <main class="{!$onBoarding ? 'sm:ml-[96px]' : ''} flex-1" aria-label="Main content">
+            {@render children?.()}
+            {#if !page.url.pathname.includes('messages/naddr')}
+                <div style={`height: ${footerHeight}px;`}></div>
+            {/if}
+        </main>
     </div>
 
     <!-- Mobile Footer  -->
