@@ -251,11 +251,16 @@
     });
 
     $effect(() => {
+        const currentAmount = amount;
+        const currentPledgeSplit = pledgeSplit || 0;
+        const currentSponsoredNpub = sponsoredNpub;
+        const currentSponsoringSplit = sponsoringSplit || 0;
+        
         const paymentShares = PaymentService.computePaymentShares(
-            amount,
-            pledgeSplit || 0,
-            sponsoredNpub,
-            sponsoringSplit || 0
+            currentAmount,
+            currentPledgeSplit,
+            currentSponsoredNpub,
+            currentSponsoringSplit
         );
 
         freelancerShare = paymentShares.freelancerShare;

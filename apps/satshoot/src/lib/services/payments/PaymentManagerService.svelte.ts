@@ -1,4 +1,4 @@
-import { PaymentService, type PaymentCalculation } from './PaymentService.svelte';
+import { PaymentService } from './PaymentService.svelte';
 import { LightningPaymentService } from './LightningPaymentService.svelte';
 import { CashuPaymentService } from './CashuPaymentService.svelte';
 import { ToastService } from './ToastService.svelte';
@@ -145,7 +145,12 @@ export class PaymentManagerService {
                 sponsoredSumMillisats
             );
 
-            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats);
+            this.handlePaymentResults(
+                paid,
+                freelancerShareMillisats,
+                satshootSumMillisats,
+                sponsoredSumMillisats
+            );
         } catch (error: any) {
             console.error(error);
             this.toastService.handleGeneralError(`An error occurred in payment process: ${error}`);

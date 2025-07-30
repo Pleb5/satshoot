@@ -419,15 +419,13 @@
                                 </Popover-->
                             {/if}
                             <div class="w-full flex flex-col gap-[5px]">
-                                <label class="font-[500]" for="plattform-contribution"
-                                    >Contribute to SatShoot
-                                    <button
-                                        type="button"
-                                        class="bx bx-check bg-[green] text-white p-[3px] ml-[5px] rounded-[50%]"
-                                        onclick={setDefaultShare(UserEnum.Satshoot)}
-                                        aria-label="Set amount to the corresponding shares"
-                                    ></button>
-                                    (use split)
+                                <label class="font-[500] flex gap-x-2 items-center" for="platform-contribution">
+                                    <span>Contribute to SatShoot</span>
+                                    <Button 
+                                        onClick={setDefaultShare(UserEnum.Satshoot)}>
+
+                                        Use Split
+                                    </Button>
                                 </label>
                                 <Input
                                     id="plattform-contribution"
@@ -519,15 +517,13 @@
                                     </Popover-->
                                 {/if}
                                 <div class="w-full flex flex-col gap-[5px]">
-                                    <label class="font-[500]" for="sponsored-contribution"
-                                        >Sponsor npub
-                                        <button
-                                            type="button"
-                                            class="bx bx-check bg-[green] text-white p-[3px] ml-[5px] rounded-[50%]"
-                                            onclick={setDefaultShare(UserEnum.Sponsored)}
-                                            aria-label="Set amount to the corresponding shares"
-                                        ></button>
-                                        (use split)
+                                    <label class="font-[500] flex gap-x-2 items-center" for="sponsored-contribution">
+                                        <span>Sponsor npub</span>
+                                        <Button 
+                                            onClick={setDefaultShare(UserEnum.Sponsored)}>
+
+                                            Use Split
+                                        </Button>
                                     </label>
                                     <Input
                                         id="sponsored-contribution"
