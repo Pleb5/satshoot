@@ -9,9 +9,11 @@
     import CopyButton from '$lib/components/UI/Buttons/CopyButton.svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
+    import UserProfile from '$lib/components/UI/Display/UserProfile.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
-    import { Pricing } from '$lib/events/types';
+    import { Pricing, type ZapSplit } from '$lib/events/types';
+    import { PaymentService } from '$lib/services/payments';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { servicePostSuccessState } from '$lib/stores/modals';
     import { serviceToEdit } from '$lib/stores/service-to-edit';
@@ -34,9 +36,12 @@
     import {
         fetchBTCUSDPrice,
         insertThousandSeparator, 
-        NostrBuildBlossomServer 
+        NostrBuildBlossomServer,
+        PablosNpub,
     } from '$lib/utils/misc';
     import tagOptions from '$lib/utils/tag-options';
+    import type { Hexpubkey } from '@nostr-dev-kit/ndk';
+    import { nip19 } from 'nostr-tools';
     import { bytesToHex } from '@noble/ciphers/utils';
     import { NDKPrivateKeySigner, NDKUser } from '@nostr-dev-kit/ndk';
     import { onMount, tick } from 'svelte';
@@ -63,7 +68,7 @@
     const minDescriptionLength = 20;
     const minTitleLength = 10;
 
-    let step = $state(1)
+    let step = $state(1);
 
     let tagInput = $state('');
     let tagList = $state<string[]>([]);
@@ -83,13 +88,22 @@
 
     let BTCUSDPrice = -1;
     // USD price with decimals cut off and thousand separators
-    let usdPrice = $derived(Math.floor(amount / 100_000_000 * BTCUSDPrice))
-
+    let usdPrice = $derived(Math.floor((amount / 100_000_000) * BTCUSDPrice));
     let pledgeSplit = $state<number|null>(null);
+    let sponsoredNpub = $state(PablosNpub);
+    let sponsoredName = $state('Sponsored')
+    let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
+    let sponsoredPubkeyResult = $derived(
+        validSponsoredNpub ? derivePubkey(sponsoredNpub) : ''
+    );
+    let sponsoringSplit = $state<number|null>(null);
+
     let imageUrls = $state<string[]>([]);
 
-    let pledgedShare = $derived(Math.floor(amount * ((pledgeSplit || 0) / 100)));
-    let freelancerShare = $derived(amount - pledgedShare);
+    let freelancerShare = $state(0);
+    let pledgedShare = $state(0);
+    let satshootShare = $state(0);
+    let sponsoredShare = $state(0);
 
     let firstService = $derived(page.url.searchParams.get('state') === 'letsgo')
     let accountPostFailed = $state(false);
@@ -174,6 +188,15 @@
         displayAmount = formatNumber(inputAmount);
     });
 
+    // $effect(() => {
+    //     if (sponsoredNpub) {
+    //         const pubkey = derivePubkey(sponsoredNpub)
+    //         if (pubkey && typeof pubkey === 'string') {
+    //             const user = new NDKUser
+    //         }
+    //     }
+    // });
+
 
     let posting = $state(false);
     let progressStatus = $state('');
@@ -184,7 +207,7 @@
     const allowPostService = $derived(firstService || (!!$currentUser && $loggedIn));
 
     onMount(() => {
-        fetchBTCUSDPrice().then((price) => BTCUSDPrice = price)
+        fetchBTCUSDPrice().then((price) => (BTCUSDPrice = price));
 
         if ($serviceToEdit) {
             titleText = $serviceToEdit.title;
@@ -196,11 +219,59 @@
             pricingMethod = $serviceToEdit.pricing;
             amount = $serviceToEdit.amount;
             pledgeSplit = $serviceToEdit.pledgeSplit;
+            sponsoredNpub = serviceToEdit ? $serviceToEdit.sponsoredNpub : PablosNpub;
+            sponsoringSplit = $serviceToEdit?.sponsoringSplit ? $serviceToEdit.sponsoringSplit : 50;
             imageUrls = $serviceToEdit.images;
         }
 
         checkRelayConnections();
     });
+
+    $effect(() => {
+        const paymentShares = PaymentService.computePaymentShares(
+            amount,
+            pledgeSplit || 0,
+            sponsoredNpub,
+            sponsoringSplit || 0
+        );
+
+        freelancerShare = paymentShares.freelancerShare;
+        satshootShare = paymentShares.satshootShare;
+        sponsoredShare = paymentShares.sponsoredShare;
+        pledgedShare = paymentShares.pledgeShare;
+    });
+
+    type ToasterError = { title: string };
+
+    function derivePubkey(npub: string): ToasterError | Hexpubkey {
+        if (npub) {
+            try {
+                const decodeResult = nip19.decode(npub);
+                switch (decodeResult.type) {
+                    case 'npub':
+                        return decodeResult.data;
+                    default:
+                        return { title: 'Expecting an npub but got a different nip-19 entity.' };
+                }
+            } catch (error) {
+                return { title: 'Invalid sponsored npub.' };
+            }
+        } else {
+            return '';
+        }
+    }
+
+    function buildSponsoredZapSplit(npub: string, percentage: number): ZapSplit {
+        const decodedData = nip19.decode(npub);
+        let sponsoredPubkey = '';
+        if (decodedData.type === 'npub') {
+            sponsoredPubkey = decodedData.data;
+        } else {
+            const errorMessage = 'Error happened while decoding sponsored npub:' + sponsoredNpub;
+            throw Error(errorMessage);
+        }
+        return { pubkey: sponsoredPubkey, percentage: percentage };
+    }
 
     beforeNavigate(async () => {
         $serviceToEdit = null;
@@ -303,8 +374,36 @@
             });
             return false;
         }
+
+        if (!validateSponsoringInputs(sponsoredNpub)) return false;
         
         return true
+    }
+
+    const validateSponsoringInputs = (npub: string): boolean => {
+        if (npub) {
+            const pubkeyResult = derivePubkey(npub);
+            if (typeof pubkeyResult !== 'string') {
+                toaster.error(pubkeyResult);
+                return false;
+            }
+        }
+
+        if ((sponsoringSplit || 0) < 0) {
+            toaster.error({
+                title: `Sponsoring split below 0!`,
+            });
+            return false;
+        } 
+
+        if ((sponsoringSplit || 0) > 100) {
+            toaster.error({
+                title: `Sponsoring split above 100%!`,
+            });
+            return false;
+        }
+
+        return true;
     }
 
     const finalize = async () => {
@@ -395,9 +494,17 @@
                 service!.tags.push(['t', tag]);
             });
 
-            service.setPledgeSplit(
-                pledgeSplit as number,
-                user?.pubkey ?? $currentUser!.pubkey
+            const sponsoredZapSplit =
+                sponsoredNpub && pledgeSplit
+                    ? buildSponsoredZapSplit(
+                        sponsoredNpub, sponsoringSplit || 0
+                    )
+                    : undefined;
+
+            service.setZapSplits(
+                pledgeSplit ?? 0,
+                user?.pubkey ?? $currentUser!.pubkey,
+                sponsoredZapSplit
             );
 
             const totalImages = images.length;
@@ -709,12 +816,51 @@
                 </span>
             </div>
         </div>
+        {#if !firstService}
+            <div class="flex flex-col gap-[5px] grow-1">
+                <div class="">
+                    <label class="font-[600]" for=""> Sponsored npub </label>
+                </div>
+                {#if sponsoredPubkeyResult && typeof sponsoredPubkeyResult === 'string'}
+                    <UserProfile pubkey={sponsoredPubkeyResult} />
+                {/if}
+                <div class="w-full flex flex-row items-center relative">
+                    <Input
+                        type="text"
+                        placeholder="npub1..."
+                        bind:value={sponsoredNpub}
+                        fullWidth
+                    />
+                </div>
+            </div>
+            <div class="flex flex-col gap-[5px]">
+                <div class="">
+                    <label class="font-[600]" for=""> Sponsoring split </label>
+                </div>
+                <div class="w-full flex flex-row items-center relative">
+                    <Input
+                        type="number"
+                        step="1"
+                        min="0"
+                        max="100"
+                        placeholder="20%"
+                        bind:value={sponsoringSplit}
+                        fullWidth
+                    />
+                    <span
+                        class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
+                    >
+                        %
+                    </span>
+                </div>
+            </div>
+        {/if}
         <div
             class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-t-[1px] border-t-black-200"
         >
             <div class="grow-1">
                 <p class="font-[500] text-lg sm:text-xl">
-                    You'd get:
+                    You get:
                     <span class="font-[400] text-lg sm:text-xl">
                         {insertThousandSeparator(freelancerShare) +
                             (pricingMethod ? ' sats/hour' : ' sats')}
@@ -730,6 +876,26 @@
                     </span>
                 </p>
             </div>
+            {#if !firstService}
+                <div class="grow-1">
+                    <p class="font-[500] text-lg sm:text-xl">
+                        SatShoot gets:
+                        <span class="font-[400] text-lg sm:text-xl">
+                            {insertThousandSeparator(satshootShare) +
+                                (pricingMethod ? ' sats/min' : ' sats')}
+                        </span>
+                    </p>
+                </div>
+                <div class="grow-1">
+                    <p class="font-[500] text-lg sm:text-xl">
+                        <span>{`${sponsoredName} gets:`}</span>
+                        <span class="font-[400] text-lg sm:text-xl">
+                            {insertThousandSeparator(sponsoredShare) +
+                                (pricingMethod ? ' sats/min' : ' sats')}
+                        </span>
+                    </p>
+                </div>
+            {/if}
         </div>
     </Card>
 {/snippet}
@@ -899,7 +1065,8 @@
                                 grow
                                 onClick={finalize}
                                 disabled={posting}
-                                classes={"bg-yellow-500"}>
+                                classes={'bg-yellow-500'}
+                            >
                                 {#if posting}
                                     <span>{progressStatus}</span>
                                     <ProgressRing color="white" />

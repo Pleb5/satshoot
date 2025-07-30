@@ -7,14 +7,13 @@
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
-    import { onMount } from 'svelte';
     import ProfileImage from './ProfileImage.svelte';
 
     interface Props {
         pubkey: Hexpubkey;
     }
 
-    let { pubkey }: Props = $props();
+    let { pubkey = $bindable() }: Props = $props();
 
     let npub = $derived(nip19.npubEncode(pubkey));
     let profileLink = $derived('/' + npub);
@@ -24,7 +23,7 @@
         userProfile?.picture ?? getRoboHashPicture(pubkey)
     );
 
-    onMount(async () => {
+    $effect(async () => {
         const user = $ndk.getUser({ pubkey });
 
         userProfile = await user.fetchProfile({

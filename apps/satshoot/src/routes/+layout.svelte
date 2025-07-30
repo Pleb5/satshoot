@@ -694,7 +694,7 @@
     <div class="flex-auto w-full h-full flex {!$onBoarding ? 'mt-[65px]' : ''}">
 
         <!-- Main Content  -->
-        <main class="{!$onBoarding ? 'sm:ml-[96px]' : ''} flex-1" aria-label="Main content">
+        <main class="{(!$onBoarding && displayNav) ? 'sm:ml-[96px]' : ''} flex-1" aria-label="Main content">
             {@render children?.()}
             {#if !page.url.pathname.includes('messages/naddr')}
                 <div style={`height: ${footerHeight}px;`}></div>

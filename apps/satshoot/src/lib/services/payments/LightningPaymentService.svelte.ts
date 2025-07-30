@@ -86,19 +86,19 @@ export class LightningPaymentService {
 
         // Fetch payment info for the sponsored npub
         if (sponsoredSumMillisats > 0) {
-            let sponsoredPubkey = undefined;
-            if (this.secondaryEntity instanceof BidEvent) {
-                if (nip19.decode(this.secondaryEntity.sponsoredNpub).type === "npub") {
-                    sponsoredPubkey = nip19.decode(this.secondaryEntity.sponsoredNpub).data as string;
-                    await this.fetchPaymentInfo(
-                        UserEnum.Sponsored,
-                        sponsoredPubkey,
-                        sponsoredSumMillisats,
-                        zapRequestRelays,
-                        invoices,
-                        this.secondaryEntity
-                    );
-                }
+            const decodingResult = this.secondaryEntity instanceof BidEvent ? nip19.decode(this.secondaryEntity.sponsoredNpub)
+                : nip19.decode((this.primaryEntity as ServiceEvent).sponsoredNpub);
+            if (decodingResult.type === "npub") {
+                await this.fetchPaymentInfo(
+                    UserEnum.Sponsored,
+                    decodingResult.data,
+                    sponsoredSumMillisats,
+                    zapRequestRelays,
+                    invoices,
+                    this.secondaryEntity
+                );
+            } else {
+                throw new Error('Expecting an npub but got something else!');
             }
         }
 
@@ -150,7 +150,7 @@ export class LightningPaymentService {
             } catch (error) {
                 console.error('An error occurred in payment process', error);
                 let payee;
-                switch(key) {
+                switch (key) {
                     case UserEnum.Freelancer:
                         payee = "Freelancer's";
                         break;

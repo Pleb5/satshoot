@@ -18,6 +18,7 @@
     import { Pricing, type ZapSplit } from '$lib/events/types';
     import { nip19 } from 'nostr-tools';
     import UserProfile from '../UI/Display/UserProfile.svelte';
+    import { PaymentService } from '$lib/services/payments';
 
     interface Props {
         isOpen: boolean;
@@ -41,12 +42,23 @@
     let sponsoringSplit = $state(50);
     let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
 
-    let pledgedShare = $derived(Math.floor(amount * (pledgeSplit / 100)));
-    let freelancerShare = $derived(amount - pledgedShare);
-    let sponsoredShare = $derived(
-        validSponsoredNpub ? Math.floor(pledgedShare * (sponsoringSplit / 100)) : 0
-    );
-    let satshootShare = $derived(pledgedShare - sponsoredShare);
+    let pledgedShare = $state(0);
+    let freelancerShare = $state(0);
+    let sponsoredShare = $state(0);
+    let satshootShare = $state(0);
+
+    $effect(() => {
+        const paymentShares = PaymentService.computePaymentShares(
+            amount,
+            pledgeSplit,
+            sponsoredNpub,
+            sponsoringSplit
+        );
+        freelancerShare = paymentShares.freelancerShare;
+        satshootShare = paymentShares.satshootShare;
+        sponsoredShare = paymentShares.sponsoredShare;
+        pledgedShare = paymentShares.pledgeShare;
+    });
 
     let description = $state('');
     let sendDm = $state(true);
@@ -60,7 +72,7 @@
                 try {
                     const decodeResult = nip19.decode(sponsoredNpub);
                     switch (decodeResult.type) {
-                        case "npub":
+                        case 'npub':
                             sponsoredPubkey = decodeResult.data;
                             validInputs = true;
                             errorText = '';
@@ -70,7 +82,7 @@
                             validInputs = false;
                             errorText = 'Expecting an npub but got a different nip-19 entity.';
                     }
-                } catch(error) {
+                } catch (error) {
                     sponsoredPubkey = '';
                     validInputs = false;
                     errorText = 'Invalid npub.';
@@ -90,7 +102,9 @@
             amount = bidToEdit.amount;
             pledgeSplit = bidToEdit.pledgeSplit;
             sponsoredNpub = bidToEdit.sponsoredNpub;
-            sponsoredPubkey = bidToEdit.sponsoredNpub ? nip19.decode(bidToEdit.sponsoredNpub).data as string : '';
+            sponsoredPubkey = bidToEdit.sponsoredNpub
+                ? (nip19.decode(bidToEdit.sponsoredNpub).data as string)
+                : '';
             sponsoringSplit = bidToEdit.sponsoringSplit;
             description = bidToEdit.description;
         }
@@ -98,8 +112,8 @@
 
     function buildSponsoredZapSplit(npub: string, percentage: number): ZapSplit {
         const decodedData = nip19.decode(npub);
-        let sponsoredPubkey = "";
-        if (decodedData.type  === "npub") {
+        let sponsoredPubkey = '';
+        if (decodedData.type === 'npub') {
             sponsoredPubkey = decodedData.data;
         } else {
             const errorMessage = 'Error happened while decoding sponsored npub:' + sponsoredNpub;
@@ -118,7 +132,10 @@
         bid.pricing = pricingMethod;
         bid.amount = amount;
         try {
-            const sponsoredZapSplit = sponsoredNpub && pledgeSplit ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit) : undefined;
+            const sponsoredZapSplit =
+                sponsoredNpub && pledgeSplit
+                    ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit)
+                    : undefined;
             bid.setZapSplits(pledgeSplit, $currentUser!.pubkey, sponsoredZapSplit);
             bid.description = description;
 

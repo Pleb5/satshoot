@@ -37,6 +37,8 @@
     let cashuPopoverStateSponsored = $state(false);
     let paymentManager = $state<PaymentManagerService | undefined>(undefined);
     let isSponsoring = $state(false);
+    let sponsoringSplit = $state(0);
+    let freelancerPubkey = $state('');
     // pay confirm model props
     let showPayConfirm = $state(false);
     let payConfirmPubkey = $state('');
@@ -117,14 +119,22 @@
     $effect(() => {
         if (initialized && !!primaryEntity && !!secondaryEntity) {
             paymentManager = new PaymentManagerService(primaryEntity, secondaryEntity);
-            isSponsoring = secondaryEntity instanceof BidEvent && !!secondaryEntity.sponsoredNpub;
+            isSponsoring =
+                (secondaryEntity instanceof BidEvent && !!secondaryEntity.sponsoredNpub) ||
+                (primaryEntity instanceof ServiceEvent && !!primaryEntity.sponsoredNpub);
+            if (secondaryEntity instanceof BidEvent) {
+                sponsoringSplit = secondaryEntity.sponsoringSplit;
+                freelancerPubkey = secondaryEntity.pubkey;
+            } else if (primaryEntity instanceof ServiceEvent) {
+                sponsoringSplit = primaryEntity.sponsoringSplit;
+                freelancerPubkey = primaryEntity.pubkey;
+            }
         }
     });
 
     const bech32ID = $derived(primaryEntity?.encode());
 
     // Derived values from payment manager
-    const paymentShares = $derived(paymentManager?.payment?.paymentShares);
     const pricingInfo = $derived(paymentManager?.pricingInfo);
     const freelancerPaid = $derived(paymentManager?.freelancerPaid);
     const satshootPaid = $derived(paymentManager?.satshootPaid);
@@ -139,7 +149,7 @@
         return () => {
             switch (payeeType) {
                 case UserEnum.Freelancer:
-                    payConfirmPubkey = secondaryEntity!.pubkey;
+                    payConfirmPubkey = freelancerPubkey;
                     payAmount = paymentManager!.payment.amount;
                     break;
                 case UserEnum.Satshoot:
@@ -147,7 +157,14 @@
                     payAmount = paymentManager!.payment.satshootAmount;
                     break;
                 case UserEnum.Sponsored:
-                    payConfirmPubkey = nip19.decode((secondaryEntity as BidEvent).sponsoredNpub).data as string;
+                    if (secondaryEntity instanceof BidEvent) {
+                        payConfirmPubkey = nip19.decode(secondaryEntity.sponsoredNpub)
+                            .data as string;
+                    } else {
+                        payConfirmPubkey = nip19.decode(
+                            (primaryEntity as ServiceEvent).sponsoredNpub
+                        ).data as string;
+                    }
                     payAmount = paymentManager!.payment.sponsoredAmount;
                     break;
             }
@@ -206,7 +223,7 @@
                     <div
                         class="w-full flex flex-col rounded-[8px] p-[15px] shadow-subtle bg-white dark:bg-brightGray gap-[15px]"
                     >
-                        <UserProfile pubkey={secondaryEntity.pubkey} />
+                        <UserProfile pubkey={freelancerPubkey} />
                         <div
                             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                         >
@@ -230,9 +247,7 @@
                                 <div class="grow-1">
                                     <p class="font-[500]">
                                         Sponsoring split:
-                                        <span class="font-[300]">
-                                            {secondaryEntity.sponsoringSplit} %</span
-                                        >
+                                        <span class="font-[300]"> {sponsoringSplit} %</span>
                                     </p>
                                 </div>
                             {/if}
