@@ -40,10 +40,10 @@
         PablosNpub,
     } from '$lib/utils/misc';
     import tagOptions from '$lib/utils/tag-options';
-    import type { Hexpubkey } from '@nostr-dev-kit/ndk';
+    import type { Hexpubkey, NDKEvent } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { bytesToHex } from '@noble/ciphers/utils';
-    import { NDKPrivateKeySigner, NDKUser } from '@nostr-dev-kit/ndk';
+    import { NDKKind, NDKPrivateKeySigner, NDKRelaySet, NDKSubscriptionCacheUsage, NDKUser, profileFromEvent } from '@nostr-dev-kit/ndk';
     import { onMount, tick } from 'svelte';
 
     class AccountPublishError extends Error {
@@ -188,14 +188,32 @@
         displayAmount = formatNumber(inputAmount);
     });
 
-    // $effect(() => {
-    //     if (sponsoredNpub) {
-    //         const pubkey = derivePubkey(sponsoredNpub)
-    //         if (pubkey && typeof pubkey === 'string') {
-    //             const user = new NDKUser
-    //         }
-    //     }
-    // });
+    $effect(() => {
+        if (sponsoredPubkeyResult) {
+            fetchSponsoredProfile()
+        }
+    });
+
+    const fetchSponsoredProfile = async () => {
+        const metadataFilter = {
+            kinds: [NDKKind.Metadata],
+            authors: [sponsoredPubkeyResult as string],
+        };
+
+        const metadataRelays = [
+            ...$ndk.pool!.connectedRelays(),
+        ];
+
+        const profileEvent: NDKEvent|null = await $ndk.fetchEvent(
+            metadataFilter,
+            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+            new NDKRelaySet(new Set(metadataRelays), $ndk)
+        )
+
+        if (!profileEvent) return;
+        const profile = profileFromEvent(profileEvent)
+        sponsoredName = profile.name ?? profile.displayName ?? ''
+    }
 
 
     let posting = $state(false);
@@ -204,7 +222,9 @@
     let showAddImagesModal = $state(false);
     let showShareModal = $state(false);
     let showLoginModal = $state(false);
-    const allowPostService = $derived(firstService || (!!$currentUser && $loggedIn));
+    const allowPostService = $derived(
+        firstService || (!!$currentUser && $loggedIn)
+    );
 
     onMount(() => {
         fetchBTCUSDPrice().then((price) => (BTCUSDPrice = price));
@@ -220,7 +240,10 @@
             amount = $serviceToEdit.amount;
             pledgeSplit = $serviceToEdit.pledgeSplit;
             sponsoredNpub = serviceToEdit ? $serviceToEdit.sponsoredNpub : PablosNpub;
-            sponsoringSplit = $serviceToEdit?.sponsoringSplit ? $serviceToEdit.sponsoringSplit : 50;
+            sponsoringSplit = $serviceToEdit?.sponsoringSplit
+                ? $serviceToEdit.sponsoringSplit
+                : null;
+
             imageUrls = $serviceToEdit.images;
         }
 
@@ -587,6 +610,20 @@
         '</ul>' +
         '</div>';
 
+    const sponsoredNpubTooltip =
+        '<div>' +
+            '<div class="">' + 
+                'Select Your own sponsored nostr account who gets a share of the Your Pledge!' +
+            '</div>' +
+        '</div>';
+
+    const sponsoringSplitTooltip =
+        '<div>' +
+            '<div class="">' + 
+                'The share that Your sponsored npub gets from the Pledge' +
+            '</div>' +
+        '</div>';
+
     const shareServiceTooltip =
         '<div>' +
             '<div class="">' + 
@@ -728,7 +765,7 @@
 
 {#snippet secondForm()}
     {#if !firstService}
-        <Card>
+        <Card classes="mb-1">
             <div class="flex justify-center">
                 <Button classes={"w-full sm:w-[50%]"} onClick={() => (showAddImagesModal = true)}>
                     {#if images.length}
@@ -791,8 +828,10 @@
             </div>
         </div>
         <div class="flex flex-col gap-[5px]">
-            <div class="">
-                <label class="font-[600] text-lg sm:text-xl" for=""> Pledge split </label>
+            <div class="flex gap-x-2 items-center">
+                <label class="font-[600] text-lg sm:text-xl" for="">
+                    Pledge split 
+                </label>
 
                 <QuestionIcon
                     extraClasses="text-[14px] p-[3px]"
@@ -820,8 +859,13 @@
         </div>
         {#if !firstService}
             <div class="flex flex-col gap-[5px] grow-1">
-                <div class="">
+                <div class="flex gap-x-2">
                     <label class="font-[600]" for=""> Sponsored npub </label>
+                    <QuestionIcon
+                        extraClasses="text-[14px] p-[3px]"
+                        placement="bottom-start"
+                        popUpText={sponsoredNpubTooltip}
+                    />
                 </div>
                 {#if sponsoredPubkeyResult && typeof sponsoredPubkeyResult === 'string'}
                     <UserProfile pubkey={sponsoredPubkeyResult} />
@@ -836,11 +880,17 @@
                 </div>
             </div>
             <div class="flex flex-col gap-[5px]">
-                <div class="">
+                <div class="flex gap-x-2">
                     <label class="font-[600]" for=""> Sponsoring split </label>
+                    <QuestionIcon
+                        extraClasses="text-[14px] p-[3px]"
+                        placement="bottom-start"
+                        popUpText={sponsoringSplitTooltip}
+                    />
                 </div>
                 <div class="w-full flex flex-row items-center relative">
                     <Input
+                        classes={ "text-lg sm:text-xl"}
                         type="number"
                         step="1"
                         min="0"
@@ -884,7 +934,7 @@
                         SatShoot gets:
                         <span class="font-[400] text-lg sm:text-xl">
                             {insertThousandSeparator(satshootShare) +
-                                (pricingMethod ? ' sats/min' : ' sats')}
+                                (pricingMethod ? ' sats/hour' : ' sats')}
                         </span>
                     </p>
                 </div>
@@ -893,7 +943,7 @@
                         <span>{`${sponsoredName} gets:`}</span>
                         <span class="font-[400] text-lg sm:text-xl">
                             {insertThousandSeparator(sponsoredShare) +
-                                (pricingMethod ? ' sats/min' : ' sats')}
+                                (pricingMethod ? ' sats/hour' : ' sats')}
                         </span>
                     </p>
                 </div>

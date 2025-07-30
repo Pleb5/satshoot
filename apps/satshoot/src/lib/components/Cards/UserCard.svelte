@@ -9,7 +9,6 @@
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterValidPTags } from '$lib/utils/misc';
     import {
-        NDKEvent,
         NDKKind,
         NDKList,
         profileFromEvent,

@@ -2,7 +2,11 @@
     import ndk from '$lib/stores/session';
     import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import {
+    NDKEvent,
+    NDKKind,
+        NDKRelaySet,
         NDKSubscriptionCacheUsage,
+        profileFromEvent,
         type Hexpubkey,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
@@ -20,19 +24,36 @@
 
     let userProfile = $state<NDKUserProfile | null>(null);
     let avatarImage = $derived(
-        userProfile?.picture ?? getRoboHashPicture(pubkey)
+        userProfile?.picture
+            ?? userProfile?.image
+            ?? getRoboHashPicture(pubkey)
     );
 
-    $effect(async () => {
-        const user = $ndk.getUser({ pubkey });
-
-        userProfile = await user.fetchProfile({
-            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-            closeOnEose: true,
-            groupable: true,
-            groupableDelay: 1000,
-        });
+    $effect(() => {
+        if (pubkey) fetchUserProfile()
     });
+
+    const fetchUserProfile = async () => {
+        const metadataFilter = {
+            kinds: [NDKKind.Metadata],
+            authors: [pubkey],
+        };
+
+        const metadataRelays = [
+            ...$ndk.pool!.connectedRelays(),
+        ];
+
+        const profileEvent: NDKEvent|null = await $ndk.fetchEvent(
+            metadataFilter,
+            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+            new NDKRelaySet(new Set(metadataRelays), $ndk)
+        )
+
+        if (!profileEvent) return;
+
+        userProfile = profileFromEvent(profileEvent)
+
+    }
 </script>
 
 <div class="w-full flex flex-row gap-[20px] p-[5px]">
@@ -51,10 +72,8 @@
                 }
             </a>
         </div>
-        <div class="grid grid-cols-1">
-            {#if userProfile?.nip05}
-                <a href={profileLink}> {userProfile.nip05} </a>
-            {/if}
+        <div class="grid grid-cols-1 {userProfile?.nip05 ? '' : 'hidden'}">
+            <a href={profileLink}> {userProfile?.nip05 ?? ''} </a>
         </div>
     </div>
 </div>
