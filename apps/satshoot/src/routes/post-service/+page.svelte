@@ -763,14 +763,16 @@
         <div class="flex flex-col gap-[5px]">
             <div class="">
                 <label class="font-[600] text-lg sm:text-xl" for="">
-                    Price({pricingMethod ? 'sats/hour' : 'sats'})
+                    Price({(pricingMethod === Pricing.Hourly) ? 'sats/hour' : 'sats'})
                 </label>
             </div>
             <div class="w-full flex flex-row items-center relative">
                 <input
                     class={amountInputClasses}
                     type="text"
-                    placeholder="50,000 sats / hour"
+                    placeholder={(pricingMethod === Pricing.Hourly) 
+                        ? '50,000 sats / hour' : '1,000,000 sats'
+                    }
                     value={displayAmount}
                     oninput={handleAmountInput}
                 />
