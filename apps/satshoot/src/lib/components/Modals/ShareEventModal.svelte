@@ -19,15 +19,20 @@
     }
 
     interface Props {
+        firstTimerMessageTitle?: string;
         isOpen: boolean;
         eventObj: JobEvent | ServiceEvent;
     }
 
-    let { isOpen = $bindable(), eventObj }: Props = $props();
+    let {
+        firstTimerMessageTitle = '',
+        isOpen = $bindable(),
+        eventObj,
+    }: Props = $props();
 
     let shareURL = $state('');
     let shareNaddr = $state('');
-    let message: string = $state('');
+    let message = $state('');
     let posting = $state(false);
 
     const type = $derived.by(() => {
@@ -88,29 +93,39 @@
 
     // Default message generator
     function buildDefaultMessage() {
-        if (!eventObj) return '';
-        let msg = '';
+        if (!eventObj) {
+            console.error('Service or Job undefined!')
+            return '';
+        }
+
+        let newMessage = '';
+
         if (type === EventType.Service) {
-            msg = `Check out this service I'm offering on Satshoot! ⚡\n\n`;
-            msg += `## ${eventObj.title}\n\n`;
-            msg += `${eventObj.description}\n\n`;
-            msg += `You can learn more, contact me, or place an order here:\n\n`;
-            msg += `${shareURL}\n\n`;
-            msg += `#satshoot #nostrservice`;
+            const title = firstTimerMessageTitle
+                ? firstTimerMessageTitle
+                : `Check out this service I'm offering on Satshoot! ⚡`
+            newMessage += `${title}\n\n`;
+            newMessage += `## ${eventObj.title}\n\n`;
+            newMessage += `${eventObj.description}\n\n`;
+            newMessage += `Reach out, or place an order here:\n\n`;
+            newMessage += `${shareURL}\n\n`;
+            newMessage += `#satshoot #nostrservice #freelance`;
         } else {
-            msg = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
-            msg += `## ${eventObj.title}\n\n`;
-            msg += `${eventObj.description}\n\n`;
-            msg += `Make a bid on this URL:\n\n`;
-            msg += `${shareURL}\n\n`;
-            msg += `#satshoot #asknostr`;
+            newMessage = `Hey Nostr,\nPlease help me with this issue and I can pay sats for your time:\n\n`;
+            newMessage += `## ${eventObj.title}\n\n`;
+            newMessage += `${eventObj.description}\n\n`;
+            newMessage += `Make a bid on this URL:\n\n`;
+            newMessage += `${shareURL}\n\n`;
+            newMessage += `#satshoot #asknostr`;
         }
         if (eventObj.tTags) {
             eventObj.tTags.forEach((tag: NDKTag) => {
-                msg += ` #${(tag as string[])[1]}`;
+                newMessage += ` #${(tag as string[])[1]}`;
             });
         }
-        return msg;
+
+        // Assign the complete message all at once to trigger reactivity
+        message = newMessage;
     }
 
     onMount(() => {
@@ -118,7 +133,17 @@
             const naddr = eventObj.encode();
             shareNaddr = 'nostr:' + naddr;
             shareURL = `https://satshoot.com/${naddr}`;
-            message = buildDefaultMessage();
+            buildDefaultMessage();
+        }
+    });
+
+    // Also rebuild message when modal opens
+    $effect(() => {
+        if (isOpen && eventObj && shareURL) {
+            buildDefaultMessage();
+        } else if (!isOpen) {
+            // Reset message when modal closes
+            message = '';
         }
     });
 </script>
@@ -144,6 +169,7 @@
                         rows={10}
                     />
                 {/if}
+                <div class="hidden">{message}</div>
             </div>
             <div class="w-full flex flex-wrap gap-[5px]">
                 {#if eventObj.pubkey === $currentUser?.pubkey}

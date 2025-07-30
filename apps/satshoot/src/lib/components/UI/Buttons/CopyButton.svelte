@@ -3,12 +3,22 @@
     import Button from './Button.svelte';
 
     interface Props {
+        buttonText?: string;
         text: string;
-        feedbackMessage?: string; // Customizable feedback message
+        feedbackMessage?: string;
         classes?: string;
     }
 
-    let { text, feedbackMessage = 'Copied!', classes = '' }: Props = $props();
+    let {
+        buttonText = '',
+        text, 
+        feedbackMessage = 'Copied!', 
+        classes = '' 
+    }: Props = $props();
+
+    const variant = buttonText
+        ? 'contained'
+        : 'outlined'
 
     function handleCopy() {
         navigator.clipboard.writeText(text).then(() =>
@@ -19,6 +29,10 @@
     }
 </script>
 
-<Button variant="outlined" classes="relative {classes}" onClick={handleCopy}>
-    <i class="bx bxs-copy"></i>
+<Button variant={variant} classes="relative {classes}" onClick={handleCopy}>
+    {#if buttonText}
+        {buttonText}
+    {:else}
+        <i class="bx bxs-copy"></i>
+    {/if}
 </Button>

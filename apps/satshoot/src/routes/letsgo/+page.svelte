@@ -1,33 +1,39 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
-    import { loginMethod, onBoarding, UserMode, userMode } from '$lib/stores/user';
-    import { broadcastUserProfile, initializeUser } from '$lib/utils/helpers';
+    import { 
+        onBoarding,
+        onBoardingName,
+        onBoardingNsec,
+        onBoardingPrivateKey,
+        UserMode,
+        userMode 
+    } from '$lib/stores/user';
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-
     import { nsecEncode } from 'nostr-tools/nip19';
-    import { onDestroy, onMount, tick } from 'svelte';
+    import { onMount, tick } from 'svelte';
     import { toaster } from '$lib/stores/toaster';
     import { generateSecretKey } from 'nostr-tools';
-    import { bytesToHex } from '@noble/ciphers/utils';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
 
-    interface Props {
-        isOpen: boolean;
-    }
+    const privateKey = $onBoardingPrivateKey 
+        ? $onBoardingPrivateKey
+        : generateSecretKey();
 
-    let { isOpen = $bindable() }: Props = $props();
+    const generatedNsec = $onBoardingNsec 
+        ? $onBoardingNsec
+        : nsecEncode(privateKey);
 
-    const privateKey = generateSecretKey();
-    const generatedNsec = nsecEncode(privateKey);
-
-    let copiedNsec = $state(false);
-    let savedNsec = $state(false);
-    let userName = $state("")
+    let nsecSaved = $state(false);
+     
+    let userName = $state(
+        $onBoardingName
+            ? $onBoardingName
+            : ""
+    )
     let generatedNpub = $state('');
 
     const filename = $derived(`SatShoot-${userName}-login.conf`)
@@ -76,43 +82,13 @@
         generatedNpub = user.npub;
     });
 
-    onDestroy(() => $onBoarding = false)
 
-    async function finalizeAccountGeneration() {
-        if (!validate()) {
-            toaster.error({
-                title: `Must set a User Name!`,
-            });
+    async function finalize() {
+        if (!validate()) return;
 
-            return;
-        }
-
-        // assign ndk signer
-        $ndk.signer = new NDKPrivateKeySigner(generatedNsec);
-
-        $loginMethod = LoginMethod.Local;
-
-        $sessionPK = (bytesToHex(privateKey));
-
-        // broadcast profile
-        const user = await $ndk.signer.user();
-        user.profile = {
-            created_at: Math.floor(Date.now() / 1000),
-            name: userName ?? "name",
-            displayName: userName ?? "name",
-            about: '',
-            bio: '',
-            lud16: '',
-            website: '',
-        };
-        broadcastUserProfile($ndk, user);
-
-        // initialize user
-        initializeUser($ndk);
-
-        toaster.success({
-            title: 'Nostr Keypair Created!',
-        });
+        $onBoardingPrivateKey = privateKey
+        $onBoardingNsec = generatedNsec
+        $onBoardingName = userName
 
         inProgress = true
         await tick()
@@ -120,12 +96,16 @@
         await handleRedirection();
 
         inProgress = false;
-        isOpen = false;
-        $onBoarding = false;
     }
     
     const validate = ():boolean => {
-        if (!userName) return false;
+        if (!userName) {
+            toaster.error({
+                title: `Must set a User Name!`,
+            });
+            return false;
+        }
+
         return true;
     }
 
@@ -133,15 +113,6 @@
         const url = new URL(redirectPath, window.location.origin)
         url.searchParams.append('state', 'letsgo')
         await goto(url.toString())
-    }
-
-    function onCopyNsec(): void {
-        navigator.clipboard.writeText(generatedNsec).then(() => {
-            copiedNsec = true;
-            setTimeout(() => {
-                copiedNsec = false;
-            }, 1000);
-        });
     }
 
     let userNameTooltip =
@@ -183,7 +154,7 @@
 
     const btnWrapperClasses =
         'w-full flex flex-row gap-x-2 flex-wrap overflow-hidden rounded-b-[6px] border-[1px] border-black-200 dark:border-white-200 border-t-[0px] mb-2';
-    const downloadBtnClasses = 'btn flex gap-x-2 rounded-[0] justify-center items-center bg-blue-500 font-bold text-white dark:text-white hover:bg-blue-600 hover:text-white whitespace-nowrap '
+    const downloadBtnClasses = 'w-full btn flex gap-x-2 rounded-[0] justify-center items-center bg-blue-500 font-bold text-white dark:text-white hover:bg-blue-600 hover:text-white whitespace-nowrap '
 
     
 
@@ -266,16 +237,6 @@
                 <Input value={generatedNsec} disabled grow noBorder notRounded />
             </div>
             <div class={btnWrapperClasses}>
-                <Button
-                    variant="outlined"
-                    onClick={onCopyNsec}
-                    classes="rounded-[0] bg-red-500 hover:bg-red-600 text-white"
-                    grow
-                >
-                    <span class="w-full h-full">
-                        {copiedNsec ? 'Copied' : 'Dangerously Copy'}
-                    </span>
-                </Button>
                 <a 
                     class={downloadBtnClasses}
                     href={url}
@@ -287,13 +248,13 @@
             <Checkbox
                 id="save-nsec"
                 label="Saved Secret key"
-                bind:checked={savedNsec}
+                bind:checked={nsecSaved}
             />
         </div>
         <Button
             classes=""
-            onClick={finalizeAccountGeneration}
-            disabled={!savedNsec || inProgress}
+            onClick={finalize}
+            disabled={!nsecSaved || inProgress}
         >
             {#if inProgress}
                 <ProgressRing color="white" />

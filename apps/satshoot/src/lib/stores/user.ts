@@ -19,6 +19,9 @@ export const loginAlert = writable(true);
 export const mounted = writable(false);
 
 export const onBoarding = writable(false);
+export const onBoardingNsec = writable<string>('')
+export const onBoardingPrivateKey = writable<Uint8Array<ArrayBufferLike>|null>(null)
+export const onBoardingName = writable<string>('')
 export const loggingIn = writable(false);
 export const loggedIn = writable(false);
 export const loginMethod: Writable<LoginMethod | null> = persisted('login-method', null);
