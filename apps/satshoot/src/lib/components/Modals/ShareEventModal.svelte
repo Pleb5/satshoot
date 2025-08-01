@@ -127,16 +127,11 @@
         }
 
         // Assign the complete message all at once to trigger reactivity
-        console.log('New message', newMessage)
         message = newMessage;
         
         // Force a microtask to ensure the binding updates
         return tick();
     }
-
-    $inspect(message).with((type, message) => {
-        console.log('Message changed', message)
-    })
 
     // Also rebuild message when modal opens
     $effect(() => {
