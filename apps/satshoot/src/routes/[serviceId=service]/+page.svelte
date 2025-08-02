@@ -22,6 +22,7 @@
         type NDKFilter,
         NDKKind,
         NDKEvent,
+        NDKSubscriptionCacheUsage,
     } from '@nostr-dev-kit/ndk';
     import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy, onMount } from 'svelte';
@@ -34,6 +35,7 @@
 
     const serviceSubOptions: NDKSubscribeOptions = {
         closeOnEose: false,
+        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL
     };
 
     const ordersSubOptions: NDKSubscribeOptions = {
@@ -170,7 +172,6 @@
                 }
             });
 
-            // Subscribe to job events
             const dTag = idFromNaddr(naddr).split(':')[2];
             const serviceFilter: NDKFilter = {
                 kinds: [NDKKind.FreelanceService],

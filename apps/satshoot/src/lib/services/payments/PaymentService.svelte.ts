@@ -39,19 +39,16 @@ export class PaymentService {
         pledgeSplit: number,
         sponsoredNpub: string,
         sponsoringSplit: number) {
-        let sponsoredPercentage = 0;
-        let satshootPercentage = 0;
 
-        sponsoredPercentage = sponsoredNpub 
-            ? Math.floor(pledgeSplit * sponsoringSplit / 100)
+        const pledgeShare = Math.floor(amount * pledgeSplit / 100);
+        const sponsoredShare = sponsoredNpub 
+            ? Math.floor(pledgeShare * sponsoringSplit / 100)
             : 0;
 
-        satshootPercentage = pledgeSplit - sponsoredPercentage;
+        const satshootShare = pledgeShare - sponsoredShare;
 
-        const freelancerShare = amount;
-        const sponsoredShare = Math.floor(amount * sponsoredPercentage / 100);
-        const satshootShare = Math.floor(amount * satshootPercentage / 100);
-        const pledgeShare = satshootShare + sponsoredShare;
+
+        const freelancerShare = amount - pledgeShare;
 
         return {
             freelancerShare,

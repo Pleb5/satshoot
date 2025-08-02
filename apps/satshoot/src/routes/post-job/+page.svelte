@@ -61,7 +61,7 @@
     let jobPostFailed = $state(false);
 
     let user: NDKUser|null = null;
-    let job = $state<JobEvent|null>(null);
+    let job = $state<JobEvent>(new JobEvent($ndk));
 
     let step = $state(1);
 
@@ -290,8 +290,6 @@
 
     async function postJob() {
         try {
-            job = new JobEvent($ndk);
-
             job.title = titleText;
             job.description = descriptionText;
             job.status = JobStatus.New;
@@ -307,7 +305,7 @@
                 job.tags.push(['d', $jobToEdit.tagValue('d') as string]);
             }
 
-            await job.publish();
+            await job.publishReplaceable();
 
             // Navigate to profile page
             $profileTabStore = ProfilePageTabs.Jobs;

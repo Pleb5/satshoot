@@ -36,6 +36,7 @@
 
     const jobSubOptions: NDKSubscribeOptions = {
         closeOnEose: false,
+        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL
     };
 
     // Component state

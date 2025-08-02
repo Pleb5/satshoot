@@ -123,7 +123,11 @@ export class PaymentManagerService {
             const paymentData = await this.paymentService.initializePayment();
             if (!paymentData) return;
 
-            let { freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats } = paymentData;
+            let {
+                freelancerShareMillisats,
+                satshootSumMillisats,
+                sponsoredSumMillisats
+            } = paymentData;
 
             switch (payeeType) {
                 case UserEnum.Freelancer:

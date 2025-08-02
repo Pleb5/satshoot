@@ -43,7 +43,14 @@
     import type { Hexpubkey, NDKEvent } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { bytesToHex } from '@noble/ciphers/utils';
-    import { NDKKind, NDKPrivateKeySigner, NDKRelaySet, NDKSubscriptionCacheUsage, NDKUser, profileFromEvent } from '@nostr-dev-kit/ndk';
+    import { 
+        NDKKind,
+        NDKPrivateKeySigner,
+        NDKRelaySet,
+        NDKSubscriptionCacheUsage,
+        NDKUser,
+        profileFromEvent 
+    } from '@nostr-dev-kit/ndk';
     import { onMount, tick } from 'svelte';
 
     class AccountPublishError extends Error {
@@ -61,7 +68,7 @@
     }
 
     let user: NDKUser|null = null;
-    let service = $state<ServiceEvent|null>(null);
+    let service = $state<ServiceEvent>(new ServiceEvent($ndk));
 
     // For form validation
     const maxTags: number = 8;
@@ -77,28 +84,29 @@
         "border-[1px] border-black-100 dark:border-white-100 bg-black-50 " +
         "flex-wrap p-[10px] max-h-[100px] overflow-y-scroll "
 
-    let titleText = $state('');
-    let descriptionText = $state('');
+    // Initialize with serviceToEdit values if available
+    let titleText = $state($serviceToEdit?.title || '');
+    let descriptionText = $state($serviceToEdit?.description || '');
     let images = $state<File[]>([]);
 
-    let pricingMethod = $state(Pricing.Hourly);
-    let inputAmount = $state<number|null>(null)
+    let pricingMethod = $state($serviceToEdit?.pricing || Pricing.Hourly);
+    let inputAmount = $state<number|null>($serviceToEdit?.amount || null)
     let displayAmount = $state<string>('')
     let amount = $derived(inputAmount || 0);
 
     let BTCUSDPrice = -1;
     // USD price with decimals cut off and thousand separators
     let usdPrice = $derived(Math.floor((amount / 100_000_000) * BTCUSDPrice));
-    let pledgeSplit = $state<number|null>(null);
-    let sponsoredNpub = $state(PablosNpub);
+    let pledgeSplit = $state<number|null>($serviceToEdit?.pledgeSplit || null);
+    let sponsoredNpub = $state($serviceToEdit?.sponsoredNpub || PablosNpub);
     let sponsoredName = $state('Sponsored')
     let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
     let sponsoredPubkeyResult = $derived(
         validSponsoredNpub ? derivePubkey(sponsoredNpub) : ''
     );
-    let sponsoringSplit = $state<number|null>(null);
+    let sponsoringSplit = $state<number|null>($serviceToEdit?.sponsoringSplit || null);
 
-    let imageUrls = $state<string[]>([]);
+    let imageUrls = $state<string[]>($serviceToEdit?.images || []);
 
     let freelancerShare = $state(0);
     let pledgedShare = $state(0);
@@ -228,26 +236,16 @@
 
     onMount(() => {
         fetchBTCUSDPrice().then((price) => (BTCUSDPrice = price));
-
-        if ($serviceToEdit) {
-            titleText = $serviceToEdit.title;
-            descriptionText = $serviceToEdit.description;
-            $serviceToEdit.tTags.forEach((tag) => {
-                tagList.push((tag as string[])[1]);
-            });
-            tagList = tagList;
-            pricingMethod = $serviceToEdit.pricing;
-            amount = $serviceToEdit.amount;
-            pledgeSplit = $serviceToEdit.pledgeSplit;
-            sponsoredNpub = serviceToEdit ? $serviceToEdit.sponsoredNpub : PablosNpub;
-            sponsoringSplit = $serviceToEdit?.sponsoringSplit
-                ? $serviceToEdit.sponsoringSplit
-                : null;
-
-            imageUrls = $serviceToEdit.images;
-        }
-
         checkRelayConnections();
+        
+        // Initialize tags if serviceToEdit exists
+        if ($serviceToEdit) {
+            const tags: string[] = [];
+            $serviceToEdit.tTags.forEach((tag) => {
+                tags.push((tag as string[])[1]);
+            });
+            tagList = tags;
+        }
     });
 
     $effect(() => {
@@ -502,7 +500,6 @@
     async function postService() {
         try {
             if (!user && !$currentUser) throw new Error('Bug! User not set!')
-            service = new ServiceEvent($ndk);
 
             // if editing service, add all the tags to new instance
             if ($serviceToEdit) {
@@ -563,7 +560,7 @@
 
             progressStatus = 'Publishing Service';
 
-            await service.publish();
+            await service.publishReplaceable();
 
             servicePostSuccessState.set({
                 showModal: true,
