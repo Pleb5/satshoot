@@ -23,8 +23,8 @@
     ]);
 </script>
 
-<TabSelector {tabs} bind:selectedTab={$freelancerTabStore} />
-<div class="w-full flex flex-col">
+<div class="w-full flex flex-col gap-y-1">
+    <TabSelector {tabs} bind:selectedTab={$freelancerTabStore} />
     {#if $freelancerTabStore === FreelancerTabs.Services}
         <div class="w-full flex flex-col gap-[10px]">
             <Card classes="flex-row flex-wrap gap-[10px] p-[5px]">

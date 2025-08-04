@@ -304,13 +304,13 @@
     });
 
     // Handle scrolling to the jobs and bids section
-    let myJobsAndMyBidsElement = $state<HTMLDivElement>();
+    let eventContainerElement = $state<HTMLDivElement>();
     $effect(() => {
-        if (myJobsAndMyBidsElement && $scrollToMyJobsAndMyBids) {
+        if (eventContainerElement && $scrollToMyJobsAndMyBids) {
             $scrollToMyJobsAndMyBids = false;
             setTimeout(() => {
-                if (myJobsAndMyBidsElement) {
-                    myJobsAndMyBidsElement.scrollIntoView({
+                if (eventContainerElement) {
+                    eventContainerElement.scrollIntoView({
                         behavior: 'smooth',
                         block: 'start',
                     });
@@ -344,11 +344,11 @@
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col max-[768px]:gap-0">
                     <UserCard {user} />
                     <div
-                        id="job-and-bids"
+                        id="event-container"
                         class="w-full flex flex-col gap-[15px] relative"
-                        bind:this={myJobsAndMyBidsElement}
+                        bind:this={eventContainerElement}
                     >
-                        <div class="w-full flex flex-col gap-[10px]">
+                        <div class="w-full flex flex-col gap-y-6">
                             {#if componentOrder && componentOrder.first === 'ServicesAndBids'}
                                 <ServicesAndBids
                                     isOwnProfile={!!isOwnProfile}

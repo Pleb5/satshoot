@@ -52,6 +52,7 @@
         profileFromEvent 
     } from '@nostr-dev-kit/ndk';
     import { onMount, tick } from 'svelte';
+    import { buildSponsoredZapSplit } from '$lib/utils/service';
 
     class AccountPublishError extends Error {
         constructor(message: string) {
@@ -285,18 +286,6 @@
         } else {
             return '';
         }
-    }
-
-    function buildSponsoredZapSplit(npub: string, percentage: number): ZapSplit {
-        const decodedData = nip19.decode(npub);
-        let sponsoredPubkey = '';
-        if (decodedData.type === 'npub') {
-            sponsoredPubkey = decodedData.data;
-        } else {
-            const errorMessage = 'Error happened while decoding sponsored npub:' + sponsoredNpub;
-            throw Error(errorMessage);
-        }
-        return { pubkey: sponsoredPubkey, percentage: percentage };
     }
 
     beforeNavigate(async () => {

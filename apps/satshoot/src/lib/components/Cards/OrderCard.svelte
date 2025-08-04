@@ -27,6 +27,7 @@
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { goto } from '$app/navigation';
     import CloseEntityModal from '../Modals/CloseEntityModal.svelte';
+    import ConfirmationDialog from '../UI/ConfirmationDialog.svelte';
 
     interface Props {
         order: OrderEvent;
@@ -38,6 +39,7 @@
     let showReviewClientModal = $state(false);
     let showReviewModal = $state(false);
     let showCloseModal = $state(false);
+    let showAcceptOrderConfirmationModal = $state(false);
 
     let servicePoster = $state<NDKUser | null>(null);
     let servicePosterProfile = $state<NDKUserProfile | null>(null);
@@ -92,8 +94,8 @@
 
     const canAcceptOrder = $derived(
         order.status === OrderStatus.Open
-        && service 
-        && !service.orders.includes(order.orderAddress)
+        && myService 
+        && !service?.orders.includes(order.orderAddress)
     );
 
     const canReviewClient = $derived(
@@ -142,6 +144,7 @@
             });
             return;
         }
+
 
         service.tags.push(['a', order.orderAddress]);
         try {
@@ -227,7 +230,12 @@
             class="w-full flex flex-row justify-center flex-wrap gap-2 border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
         >
             {#if canAcceptOrder}
-                <Button onClick={handleAcceptOrder}>Accept</Button>
+                <Button 
+                    onClick={
+                        () => showAcceptOrderConfirmationModal = true
+                    }>
+                    Accept
+                </Button>
             {/if}
 
             {#if canReviewClient}
@@ -254,8 +262,21 @@
     {/if}
 </div>
 
+{#if service}
     <CloseEntityModal
         bind:isOpen={showCloseModal}
         targetEntity={service!}
         secondaryEntity={order}
     />
+
+    <ConfirmationDialog 
+        bind:isOpen={showAcceptOrderConfirmationModal}
+        title={"Do you really want to accept the Order?"}
+        confirmText={"Accept Order"}
+        onConfirm={handleAcceptOrder}
+        onCancel={
+            ()=>showAcceptOrderConfirmationModal = !showAcceptOrderConfirmationModal
+        }
+    />
+{/if}
+

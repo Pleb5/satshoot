@@ -183,7 +183,9 @@
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={job} />
 
-<CloseEntityModal bind:isOpen={showCloseJobModal} targetEntity={job} secondaryEntity={winnerBid} />
+{#if job}
+    <CloseEntityModal bind:isOpen={showCloseJobModal} targetEntity={job} secondaryEntity={winnerBid} />
+{/if}
 
 <ReviewClientModal bind:isOpen={showReviewClientModal} eventAddress={job.jobAddress} />
 

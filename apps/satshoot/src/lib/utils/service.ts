@@ -1,5 +1,7 @@
 import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
 import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
+import type { ZapSplit } from '$lib/events/types';
+import { nip19 } from 'nostr-tools';
 
 export function getServiceStatusString(status: ServiceStatus) {
     if (status === ServiceStatus.Active) {
@@ -42,3 +44,18 @@ export function inFulfillmentOrderOnService(
 
     })
 }
+
+export function buildSponsoredZapSplit(
+    npub: string, percentage: number
+): ZapSplit {
+        const decodedData = nip19.decode(npub);
+        let sponsoredPubkey = '';
+        if (decodedData.type === 'npub') {
+            sponsoredPubkey = decodedData.data;
+        } else {
+            const errorMessage = 'Error happened while decoding sponsored npub:' + npub;
+            throw Error(errorMessage);
+        }
+        return { pubkey: sponsoredPubkey, percentage: percentage };
+    }
+

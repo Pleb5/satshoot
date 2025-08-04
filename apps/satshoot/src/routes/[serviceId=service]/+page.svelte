@@ -19,7 +19,7 @@
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
-    import { inFulfillmentOrderOnService } from '$lib/utils/service';
+    import { buildSponsoredZapSplit, inFulfillmentOrderOnService } from '$lib/utils/service';
     import {
         NDKRelay,
         NDKSubscription,
@@ -238,10 +238,18 @@
         orderEvent.referencedServiceAddress = service!.serviceAddress;
         orderEvent.pricing = service.pricing;
         orderEvent.amount = service.amount;
-        orderEvent.setPledgeSplits(
+
+
+        const sponsoredZapSplit =
+            service.sponsoredNpub && service.pledgeSplit
+                ? buildSponsoredZapSplit(
+                    service.sponsoredNpub, service.sponsoringSplit
+                )
+                : undefined;
+        orderEvent.setZapSplits(
             service.pledgeSplit,
             service.pubkey,
-            service.sponsoringSplit
+            sponsoredZapSplit
         );
         orderEvent.generateTags(); // this generates d-tag
 
@@ -335,12 +343,12 @@
                                         >
                                             {disallowMakeOrderReason}
                                         </p>
-                                        {#if myInFulfillmentOrder}
-                                            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2">
-                                                <Button onClick={goToChat}>
-                                                    <i class="bx bxs-conversation text-[20px]"></i>
-                                                    <p class="">Message</p>
-                                                </Button>
+                                        <div class="flex flex-wrap justify-center gap-x-4 gap-y-2">
+                                            <Button onClick={goToChat}>
+                                                <i class="bx bxs-conversation text-[20px]"></i>
+                                                <p class="">Message</p>
+                                            </Button>
+                                            {#if myInFulfillmentOrder}
                                                 <Button onClick={goToPay}>
                                                     <i class="bx bxs-bolt text-[20px]"></i>
                                                     <p class="">Pay</p>
@@ -353,9 +361,9 @@
                                                     <p class="">Close Order</p>
                                                 </Button>
 
-                                            </div>
-                                            
-                                        {/if}
+
+                                            {/if}
+                                        </div>
                                     </div>
                                 {/if}
                             {:else}
@@ -443,8 +451,10 @@
     />
 {/if}
 
-<CloseEntityModal
-    bind:isOpen={showCloseModal}
-    targetEntity={service!}
-    secondaryEntity={myInFulfillmentOrder!}
-/>
+{#if service}
+    <CloseEntityModal
+        bind:isOpen={showCloseModal}
+        targetEntity={service!}
+        secondaryEntity={myInFulfillmentOrder!}
+    />
+{/if}
