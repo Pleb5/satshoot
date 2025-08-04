@@ -1,13 +1,16 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import OrderCard from '$lib/components/Cards/OrderCard.svelte';
     import ServiceCard from '$lib/components/Cards/ServiceCard.svelte';
+    import CloseEntityModal from '$lib/components/Modals/CloseEntityModal.svelte';
     import ConfirmOrderModal from '$lib/components/Modals/ConfirmOrderModal.svelte';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
+    import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { myOrders } from '$lib/stores/freelance-eventstores';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
@@ -16,6 +19,7 @@
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
+    import { inFulfillmentOrderOnService } from '$lib/utils/service';
     import {
         NDKRelay,
         NDKSubscription,
@@ -59,8 +63,15 @@
     let serviceSubscription = $state<NDKSubscription>();
     let service = $state<ServiceEvent>();
 
+    const myInFulfillmentOrder = $derived.by(() => {
+        if (service) {
+            return inFulfillmentOrderOnService(service, $myOrders)
+        }
+    });
+
     let displayOrderConfirmationModal = $state(false);
     let showLoginModal = $state(false);
+    let showCloseModal = $state(false);
 
     const myService = $derived(
         !!$currentUser && !!service && $currentUser.pubkey === service.pubkey
@@ -227,7 +238,11 @@
         orderEvent.referencedServiceAddress = service!.serviceAddress;
         orderEvent.pricing = service.pricing;
         orderEvent.amount = service.amount;
-        orderEvent.setPledgeSplit(service.pledgeSplit, service.pubkey);
+        orderEvent.setPledgeSplits(
+            service.pledgeSplit,
+            service.pubkey,
+            service.sponsoringSplit
+        );
         orderEvent.generateTags(); // this generates d-tag
 
         try {
@@ -241,6 +256,33 @@
                 title: `Failed to place the order. ${error}`,
             });
         }
+    }
+
+    function goToPay() {
+        if (myInFulfillmentOrder) {
+            const url = new URL(
+                '/payments/' + myInFulfillmentOrder.encode(), window.location.origin
+            );
+            goto(url.toString());
+        }
+    }
+
+    function goToChat() {
+        if (!service) {
+            throw new Error('BUG: Trying to navigate to chat of undefined service')
+        }
+
+        const url = new URL('/messages/' + service.encode(), window.location.origin);
+        url.searchParams.append(SELECTED_QUERY_PARAM, service.pubkey);
+
+        goto(url.toString());
+    }
+
+    function handleCloseOrder() {
+        if (!service || !myInFulfillmentOrder) {
+            throw new Error('BUG: Cannot Close undefined Service or Order')
+        }
+        showCloseModal = true;
     }
 
     let selectedOrdersTab = $state(OrderTab.Pending);
@@ -286,13 +328,34 @@
                                     {/if}
                                 {:else}
                                     <div
-                                        class="w-full min-h-[100px] rounded-[8px] bg-black-100 dark:bg-white-100 border-[4px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
+                                        class="w-full min-h-[100px] rounded-[8px] bg-black-100 dark:bg-white-100 p-2 border-[4px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
                                     >
                                         <p
                                             class="font-[600] text-[18px] text-black-300 dark:text-white-300"
                                         >
                                             {disallowMakeOrderReason}
                                         </p>
+                                        {#if myInFulfillmentOrder}
+                                            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2">
+                                                <Button onClick={goToChat}>
+                                                    <i class="bx bxs-conversation text-[20px]"></i>
+                                                    <p class="">Message</p>
+                                                </Button>
+                                                <Button onClick={goToPay}>
+                                                    <i class="bx bxs-bolt text-[20px]"></i>
+                                                    <p class="">Pay</p>
+                                                </Button>
+
+                                                <Button
+                                                    onClick={handleCloseOrder}
+                                                >
+                                                    <i class="bx bxs-lock text-[20px]"></i>
+                                                    <p class="">Close Order</p>
+                                                </Button>
+
+                                            </div>
+                                            
+                                        {/if}
                                     </div>
                                 {/if}
                             {:else}
@@ -379,3 +442,9 @@
         onConfirm={confirmOrder}
     />
 {/if}
+
+<CloseEntityModal
+    bind:isOpen={showCloseModal}
+    targetEntity={service!}
+    secondaryEntity={myInFulfillmentOrder!}
+/>

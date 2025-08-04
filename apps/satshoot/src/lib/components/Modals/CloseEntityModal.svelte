@@ -14,6 +14,7 @@
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { ReviewEvent } from '$lib/events/ReviewEvent';
     import { goto } from '$app/navigation';
+    import {  NDKKind } from '@nostr-dev-kit/ndk';
 
     interface Props {
         isOpen: boolean;
@@ -21,7 +22,13 @@
         secondaryEntity?: BidEvent | OrderEvent | null;
     }
 
-    let { isOpen = $bindable(), targetEntity, secondaryEntity = null }: Props = $props();
+    let { 
+        isOpen = $bindable(),
+        targetEntity,
+        secondaryEntity = null 
+    }: Props = $props();
+
+    let isJob = $derived(targetEntity?.kind === NDKKind.FreelanceJob)
 
     let hasExpertise = $state(false);
     let hasCommunicationClarity = $state(false);
@@ -30,15 +37,18 @@
     let isClosing = $state(false);
 
     const reviewTargetAddress = $derived.by(() => {
-        if (isJob(targetEntity)) return targetEntity.acceptedBidAddress;
+        if (isJob) return (targetEntity as JobEvent).acceptedBidAddress;
 
         // we need to allow the user to post a review on service only when
         // freelancer had accepted the order
         if (
-            targetEntity instanceof ServiceEvent &&
-            targetEntity.orders.includes((secondaryEntity as OrderEvent)?.orderAddress)
-        )
-            return targetEntity.serviceAddress;
+            targetEntity.kind === NDKKind.FreelanceService &&
+            (targetEntity as ServiceEvent).orders.includes(
+                (secondaryEntity as OrderEvent)?.orderAddress
+            )
+        ) {
+            return (targetEntity as ServiceEvent).serviceAddress;
+        }
 
         return '';
     });
@@ -50,33 +60,38 @@
         }
     });
 
-    function isJob(entity: JobEvent | ServiceEvent): entity is JobEvent {
-        return targetEntity instanceof JobEvent;
-    }
+    let canPublishReplaceable = $derived(isJob ? !!targetEntity : !!secondaryEntity)
 
     function updateTargetEntityStatus() {
         if (!targetEntity) return;
 
         if (isIssueResolved) {
-            if (isJob(targetEntity)) targetEntity.status = JobStatus.Resolved;
+            if (isJob) targetEntity.status = JobStatus.Resolved;
+
             else (secondaryEntity as OrderEvent).status = OrderStatus.Fulfilled;
         } else {
-            if (isJob(targetEntity)) targetEntity.status = JobStatus.Failed;
+            if (isJob) targetEntity.status = JobStatus.Failed;
+
             else (secondaryEntity as OrderEvent).status = OrderStatus.Failed;
         }
     }
 
     async function publishReplacementEvent() {
-        if (!targetEntity) return;
-        console.log('connected relays before closing entity:', $ndk.pool.connectedRelays());
-        await tick();
+        if (!canPublishReplaceable) return;
 
-        const newEvent = isJob(targetEntity) ? new JobEvent($ndk) : new OrderEvent($ndk);
-        newEvent.tags = targetEntity.tags;
-        newEvent.description = targetEntity.description;
-        const relays = await newEvent.publish();
-        console.log('published relays', relays);
-        return relays;
+        try {
+            const entityToPublish = isJob ? targetEntity : secondaryEntity
+            console.log ('publishing event : ', entityToPublish)
+            await tick();
+
+            const relays = await entityToPublish!.publishReplaceable();
+            console.log ('relays published to', relays)
+
+            return relays;
+
+        } catch (e) {
+            toaster.error({title: `Error while closing: ${e}`})
+        }
     }
 
     async function publishReviewIfNeeded() {
@@ -136,7 +151,7 @@
     }
 </script>
 
-<ModalWrapper bind:isOpen title={`Close ${isJob(targetEntity) ? 'Job' : 'Order'}?`}>
+<ModalWrapper bind:isOpen title={`Close ${isJob ? 'Job' : 'Order'}?`}>
     <div class="w-full flex flex-col">
         <div class="w-full pt-[10px] px-[5px] flex flex-col gap-[10px]">
             <ReviewToggleQuestion
@@ -189,7 +204,7 @@
                         </span>
                     {:else}
                         <span class="font-bold">
-                            {`Close ${isJob(targetEntity) ? 'Job' : 'Order'}` +
+                            {`Close ${isJob ? 'Job' : 'Order'}` +
                                 (reviewTargetAddress ? ' and Pay' : '')}
                         </span>
                     {/if}

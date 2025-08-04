@@ -43,7 +43,7 @@ export const bunkerPerms = [
     `sign_event:${NDKKind.ZapRequest}`,
     `sign_event:${NDKKind.CashuWallet}`,
     `sign_event:${NDKKind.CashuMintList}`,
-    `sign_event:${NDKKind.WalletChange}`,
+    // `sign_event:${NDKKind.WalletChange}`, // Doesnt exist anymore, check!
     `sign_event:${NDKKind.CashuQuote}`,
     `sign_event:${NDKKind.CashuToken}`,
     `sign_event:${NDKKind.EventDeletion}`,

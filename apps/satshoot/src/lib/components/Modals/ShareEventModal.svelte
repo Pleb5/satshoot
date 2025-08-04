@@ -4,7 +4,7 @@
     import currentUser from '$lib/stores/user';
     import { NDKEvent, NDKKind, type NDKTag } from '@nostr-dev-kit/ndk';
 
-    import { onMount, tick } from 'svelte';
+    import { tick } from 'svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';

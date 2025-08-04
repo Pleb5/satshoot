@@ -1,14 +1,9 @@
 <script lang="ts">
-    import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import { ServiceStatus, type ServiceEvent } from '$lib/events/ServiceEvent';
-    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import CloseEntityModal from './CloseEntityModal.svelte';
     import ShareEventModal from './ShareEventModal.svelte';
-    import { type NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
-    import ndk, { sessionInitialized } from '$lib/stores/session';
-    import { checkRelayConnections } from '$lib/utils/helpers';
     import currentUser from '$lib/stores/user';
     import { serviceToEdit } from '$lib/stores/service-to-edit';
     import { goto } from '$app/navigation';
@@ -16,6 +11,7 @@
     import ConfirmationDialog from '../UI/ConfirmationDialog.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { myOrders } from '$lib/stores/freelance-eventstores';
+    import { inFulfillmentOrderOnService } from '$lib/utils/service';
 
     interface Props {
         isOpen: boolean;
@@ -24,50 +20,15 @@
 
     let { isOpen = $bindable(), service }: Props = $props();
 
-    const ordersSubOptions: NDKSubscribeOptions = {
-        closeOnEose: false,
-        autoStart: false,
-    };
-
-    const myOrdersFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceOrder],
-    };
-
-    const myOrdersStore = $ndk.storeSubscribe<OrderEvent>(
-        myOrdersFilter,
-        ordersSubOptions,
-        OrderEvent
-    );
-
     let serviceStatus = $state(service.status);
     let showShareModal = $state(false);
     let showCloseModal = $state(false);
     let showDeactivateConfirmationDialog = $state(false);
-    let order = $state<OrderEvent | null>(null);
 
-    // Derived states
     const myService = $derived($currentUser?.pubkey === service.pubkey);
-    const openedOrder = $derived($myOrdersStore.find((order) => order.status === OrderStatus.Open));
-
-    let initialized = $state(false);
-    $effect(() => {
-        if ($sessionInitialized && !initialized) {
-            initialized = true;
-            checkRelayConnections();
-        }
-    });
-
-    $effect(() => {
-        const openOrder = $myOrders.find(
-            (order) =>
-                order.referencedServiceAddress === service.serviceAddress &&
-                order.status === OrderStatus.Open
-        );
-
-        if (openOrder) {
-            order = openOrder;
-        }
-    });
+    const myInFulfillmentOrder = $derived(
+        inFulfillmentOrderOnService(service, $myOrders)
+    );
 
     function handleShare() {
         isOpen = false;
@@ -75,8 +36,10 @@
     }
 
     function goToPay() {
-        if (openedOrder) {
-            const url = new URL('/payments/' + openedOrder.encode(), window.location.origin);
+        if (myInFulfillmentOrder) {
+            const url = new URL(
+                '/payments/' + myInFulfillmentOrder.encode(), window.location.origin
+            );
             goto(url.toString());
         }
     }
@@ -175,14 +138,14 @@
                 </Button>
             {/if}
 
-            {#if openedOrder && service.orders.includes(openedOrder.orderAddress)}
+            {#if myInFulfillmentOrder && service.orders.includes(myInFulfillmentOrder.orderAddress)}
                 <Button variant="outlined" classes="justify-start" fullWidth onClick={goToPay}>
                     <i class="bx bxs-bolt text-[20px]"></i>
                     <p class="">Pay</p>
                 </Button>
             {/if}
 
-            {#if openedOrder}
+            {#if myInFulfillmentOrder}
                 <Button
                     variant="outlined"
                     classes="justify-start"
@@ -206,11 +169,11 @@
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
 
-{#if openedOrder}
+{#if myInFulfillmentOrder}
     <CloseEntityModal
         bind:isOpen={showCloseModal}
         targetEntity={service}
-        secondaryEntity={openedOrder}
+        secondaryEntity={myInFulfillmentOrder}
     />
 {/if}
 

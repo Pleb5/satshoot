@@ -179,8 +179,6 @@ export class ServiceEvent extends NDKEvent {
                         satshootShare = 0;
                     } 
                 } else if (tag[1] !== this.pubkey) {
-                    //console.log('Sponsored pubkey: ', tag[1]);
-                    //console.log('this.pubkey: ', this.pubkey);
                     this._sponsoredNpub = nip19.npubEncode(tag[1]);
                     sponsoredShare = parseInt(tag[3] ?? '0');
                     if (sponsoredShare < 0 || sponsoredShare > 10_000) {

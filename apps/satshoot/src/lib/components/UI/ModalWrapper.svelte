@@ -5,7 +5,7 @@
 
     interface Props {
         isOpen: boolean;
-        title?: string; // Title for the modal header
+        title?: string; 
         popUpText?: string | undefined;
         headerAction?: Snippet;
         children?: Snippet;
@@ -20,7 +20,7 @@
     }: Props = $props();
 </script>
 
-<Modal open={isOpen}>
+<Modal open={isOpen} classes="{isOpen ? '' : 'hidden'}">
     {#snippet content()}
         <Popup bind:isOpen {title} {popUpText} {headerAction} {children} />
     {/snippet}

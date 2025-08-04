@@ -9,11 +9,11 @@
         ordersFilter,
     } from '$lib/stores/gui';
     import ndk from '$lib/stores/session';
-    import currentUser, { UserMode, userMode } from '$lib/stores/user';
+    import currentUser, { userMode } from '$lib/stores/user';
     import { sessionInitialized } from '$lib/stores/session';
     import { NDKKind, type NDKFilter } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
-    import { onDestroy, onMount } from 'svelte';
+    import { onDestroy } from 'svelte';
     import { debounce } from '$lib/utils/misc';
     import ServicesAndBids from '$lib/components/ProfilePage/ServicesAndBids.svelte';
     import OrdersAndJobs from '$lib/components/ProfilePage/OrdersAndJobs.svelte';

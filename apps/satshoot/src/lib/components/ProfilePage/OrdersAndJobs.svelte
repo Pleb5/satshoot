@@ -46,7 +46,7 @@
             </Card>
             <div class="w-full flex flex-col gap-[15px]">
                 <div
-                    class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
+                    class="w-full gap-[25px] grid max-lg:grid-cols-1  grid-cols-2"
                 >
                     {#each orders as order (order.id)}
                         <OrderCard {order} showServiceDetail />
@@ -68,7 +68,7 @@
             </Card>
             <div class="w-full flex flex-col gap-[15px]">
                 <div
-                    class="w-full grid grid-cols-3 gap-[25px] max-[1200px]:grid-cols-2 max-[992px]:grid-cols-1 max-[768px]:grid-cols-1"
+                    class="w-full gap-[25px] grid max-lg:grid-cols-1  grid-cols-2"
                 >
                     {#each jobs as job (job.id)}
                         <JobCard {job} showBidsDetail />

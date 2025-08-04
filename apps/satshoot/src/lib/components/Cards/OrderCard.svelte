@@ -26,6 +26,7 @@
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { goto } from '$app/navigation';
+    import CloseEntityModal from '../Modals/CloseEntityModal.svelte';
 
     interface Props {
         order: OrderEvent;
@@ -36,6 +37,7 @@
 
     let showReviewClientModal = $state(false);
     let showReviewModal = $state(false);
+    let showCloseModal = $state(false);
 
     let servicePoster = $state<NDKUser | null>(null);
     let servicePosterProfile = $state<NDKUserProfile | null>(null);
@@ -88,6 +90,12 @@
         $clientReviews.find((review) => review.reviewedEventAddress === order.orderAddress)
     );
 
+    const canAcceptOrder = $derived(
+        order.status === OrderStatus.Open
+        && service 
+        && !service.orders.includes(order.orderAddress)
+    );
+
     const canReviewClient = $derived(
         !review &&
             myService &&
@@ -96,6 +104,11 @@
     );
 
     const canPay = $derived(myOrder && service?.orders.includes(order.orderAddress));
+
+    const canClose = $derived(
+        order.status === OrderStatus.Open
+        && canPay
+    );
 
     let initialized = $state(false);
     $effect(() => {
@@ -161,6 +174,10 @@
         }
     }
 
+    function handleCloseOrder() {
+        showCloseModal = true;
+    }
+
     function goToChat() {
         if (!service) return;
 
@@ -207,9 +224,9 @@
             </div>
         {/if}
         <div
-            class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px] justify-end"
+            class="w-full flex flex-row justify-center flex-wrap gap-2 border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
         >
-            {#if myService && order.status === OrderStatus.Open && service && !service.orders.includes(order.orderAddress)}
+            {#if canAcceptOrder}
                 <Button onClick={handleAcceptOrder}>Accept</Button>
             {/if}
 
@@ -221,7 +238,10 @@
             {#if canPay}
                 <Button onClick={goToPay}>Pay</Button>
             {/if}
-            {#if myService}
+            {#if canClose}
+                <Button onClick={handleCloseOrder}>Close</Button>
+            {/if}
+            {#if myService || myOrder}
                 <Button onClick={goToChat}>Message</Button>
             {/if}
         </div>
@@ -233,3 +253,9 @@
         <ReviewModal bind:isOpen={showReviewModal} {review} />
     {/if}
 </div>
+
+    <CloseEntityModal
+        bind:isOpen={showCloseModal}
+        targetEntity={service!}
+        secondaryEntity={order}
+    />

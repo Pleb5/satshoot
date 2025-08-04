@@ -17,8 +17,6 @@
     import OrdersCountBreakdown from '../Modals/OrdersCountBreakdown.svelte';
     import ShareIcon from '../Icons/ShareIcon.svelte';
     import { toaster } from '$lib/stores/toaster';
-    import type { Hexpubkey } from '@nostr-dev-kit/ndk';
-    import { nip19 } from 'nostr-tools';
     import { getPubkeyFromNpubOrNprofile } from '$lib/utils/nip19';
 
     interface Props {

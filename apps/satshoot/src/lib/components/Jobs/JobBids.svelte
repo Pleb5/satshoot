@@ -95,7 +95,7 @@
             console.log('Winning bid:', bid);
             if (bid) {
                 winningBid = BidEvent.from(bid);
-                const freelancerFilters = createPaymentFilters(winningBid, 'freelancer');
+                const freelancerFilters = createPaymentFilters(winningBid, job, 'freelancer');
                 freelancerPaymentStore = createPaymentStore(freelancerFilters);
                 freelancerPaymentStore.paymentStore.startSubscription();
             }

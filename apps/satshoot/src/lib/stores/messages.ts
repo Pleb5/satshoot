@@ -42,7 +42,10 @@ export const wotFilteredMessageFeed = derived([messageStore, wot], ([$messageSto
         message.tags.forEach((tag: NDKTag) => {
             if (
                 tag[0] === 'a' &&
-                tag[1].includes(NDKKind.FreelanceJob.toString() || NDKKind.FreelanceJob.toString())
+                (
+                    tag[1].includes(NDKKind.FreelanceJob.toString())
+                    || tag[1].includes(NDKKind.FreelanceService.toString())
+                )
             ) {
                 relatedToFreelance = true;
             }
@@ -50,7 +53,8 @@ export const wotFilteredMessageFeed = derived([messageStore, wot], ([$messageSto
 
         if (!relatedToFreelance) return false;
 
-        if (!$wot.has(message.pubkey)) return false;
+        // wot filtering removed from messages for now
+        // if (!$wot.has(message.pubkey)) return false;
 
         return true;
     });

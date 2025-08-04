@@ -72,11 +72,15 @@ export const createPaymentFilters = (
                         '#a': [primaryEntityAddr],
                     },
                 ];
-            } else
-                console.warn('Unexpected case, the sponsored event received contains something different to an npub');
+            } else {
+                console.warn(
+                    'Unexpected case, the sponsored event received contains' +
+                    ' something different to an npub'
+                );
+            }
             return [];
         } catch (error) {
-            console.warn('The sponsored event contains a wrong npub!!!');
+            console.warn('The sponsored event contains a wrong or no npub');
             return [];
         }
     }
