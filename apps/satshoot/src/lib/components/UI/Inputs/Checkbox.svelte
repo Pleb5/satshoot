@@ -17,7 +17,7 @@
 >
     <div class="flex flex-row gap-[10px] items-center">
         <div class="flex flex-row justify-center items-center relative">
-            <input {id} type="checkbox" bind:checked class={checkboxInputClasses} />
+            <input {id} type="checkbox" bind:checked={checked} class={checkboxInputClasses} />
         </div>
         <label for={id}>{label}</label>
     </div>

@@ -5,16 +5,16 @@
     import { redirectAfterLogin } from '$lib/stores/gui';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
-    import { NDKKind, NDKRelay, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKEvent, NDKKind, NDKRelay, NDKRelaySet, NDKSubscriptionCacheUsage, profileFromEvent } from '@nostr-dev-kit/ndk';
     import { JobEvent } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { BidEvent } from '$lib/events/BidEvent';
     import { checkRelayConnections } from '$lib/utils/helpers';
-    import { PaymentManagerService, UserEnum } from '$lib/services/payments';
+    import { PaymentManagerService, PaymentService, UserEnum } from '$lib/services/payments';
     import { goto } from '$app/navigation';
     import { onDestroy } from 'svelte';
     import UserProfile from '$lib/components/UI/Display/UserProfile.svelte';
-    import { insertThousandSeparator, SatShootPubkey } from '$lib/utils/misc';
+    import { formatNumber, insertThousandSeparator, parseNumber, SatShootPubkey } from '$lib/utils/misc';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
@@ -25,6 +25,8 @@
     import { FreelancerTabs } from '$lib/stores/tab-store';
     import ConfirmPaymentModal from '$lib/components/Modals/ConfirmPaymentModal.svelte';
     import { nip19 } from 'nostr-tools';
+    import { Pricing } from '$lib/events/types';
+    import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
 
     // Component state
     let initialized = $state(false);
@@ -32,12 +34,46 @@
     let isUserLoggedIn = $derived(!!$currentUser && $loggedIn);
     let primaryEntity = $state<JobEvent | ServiceEvent>();
     let secondaryEntity = $state<BidEvent | OrderEvent>();
+    const pricingText = $derived.by(() => {
+        let pricing = '?'
+        if (primaryEntity?.kind === NDKKind.FreelanceService) {
+            pricing = (primaryEntity as ServiceEvent).pricing === Pricing.Hourly
+                ? 'sats/hour'
+                : 'sats'
+        } else if (secondaryEntity?.kind === NDKKind.FreelanceBid) {
+            pricing = (secondaryEntity as BidEvent).pricing === Pricing.Hourly
+                ? 'sats/hour'
+                : 'sats'
+        }
+        return pricing
+    })
     let cashuPopoverStateFreelancer = $state(false);
     let cashuPopoverStateSatshoot = $state(false);
     let cashuPopoverStateSponsored = $state(false);
+
     let paymentManager = $state<PaymentManagerService | undefined>(undefined);
+
+    let inputTotalAmount = $state<number|null>(null);
+    let displayedTotalAmount = $state<string>('')
+    let calculateSplits = $state(true)
+
     let isSponsoring = $state(false);
-    let sponsoringSplit = $state(0);
+    let pledgeSplit = $state<number|null>(null);
+    let sponsoringSplit = $state<number|null>(null);
+    let sponsoredNpub = $state('');
+    let sponsoredPubkey = $derived.by(() => {
+        if (!sponsoredNpub) return null
+
+        try {
+            const decodedNpubResult = nip19.decode(sponsoredNpub)
+            return decodedNpubResult.type == 'npub'
+                ? decodedNpubResult.data : null;
+        } catch (e) {
+            console.error('Decode sponsoredNpub failed: ' + e)
+            return null
+        }
+    })
+    let sponsoredName = $state('Sponsored')
     let freelancerPubkey = $state('');
     // pay confirm model props
     let showPayConfirm = $state(false);
@@ -115,6 +151,34 @@
         }
     });
 
+    $effect(() => {
+        if (sponsoredPubkey) {
+            fetchSponsoredProfile()
+        }
+    });
+
+    const fetchSponsoredProfile = async () => {
+        const metadataFilter = {
+            kinds: [NDKKind.Metadata],
+            authors: [sponsoredPubkey as string],
+        };
+
+        const metadataRelays = [
+            ...$ndk.pool!.connectedRelays(),
+        ];
+
+        const profileEvent: NDKEvent|null = await $ndk.fetchEvent(
+            metadataFilter,
+            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+            new NDKRelaySet(new Set(metadataRelays), $ndk)
+        )
+
+        if (!profileEvent) return;
+        const profile = profileFromEvent(profileEvent)
+        sponsoredName = profile.name ?? profile.displayName ?? ''
+    }
+
+
     // Initialize payment manager when entities are available
     $effect(() => {
         if (initialized && !!primaryEntity && !!secondaryEntity) {
@@ -123,14 +187,61 @@
                 (secondaryEntity instanceof BidEvent && !!secondaryEntity.sponsoredNpub) ||
                 (primaryEntity instanceof ServiceEvent && !!primaryEntity.sponsoredNpub);
             if (secondaryEntity instanceof BidEvent) {
+                pledgeSplit = secondaryEntity.pledgeSplit;
                 sponsoringSplit = secondaryEntity.sponsoringSplit;
+                sponsoredNpub = secondaryEntity.sponsoredNpub
+
                 freelancerPubkey = secondaryEntity.pubkey;
             } else if (primaryEntity instanceof ServiceEvent) {
+                pledgeSplit = primaryEntity.pledgeSplit;
                 sponsoringSplit = primaryEntity.sponsoringSplit;
+                sponsoredNpub = primaryEntity.sponsoredNpub
                 freelancerPubkey = primaryEntity.pubkey;
             }
         }
     });
+
+    $effect(() => {
+        if (calculateSplits &&
+            inputTotalAmount &&
+            pledgeSplit &&
+            paymentManager
+        ) {
+            const paymentShares = PaymentService.computePaymentShares(
+                inputTotalAmount,
+                pledgeSplit,
+                sponsoredNpub,
+                sponsoringSplit || 0
+            );
+
+            paymentManager.payment.amount = paymentShares.freelancerShare
+            paymentManager.payment.satshootAmount = paymentShares.satshootShare
+            paymentManager.payment.sponsoredAmount = paymentShares.sponsoredShare
+        } else if (!inputTotalAmount) {
+            if (paymentManager?.payment) {
+                paymentManager.payment.amount = 0
+                paymentManager.payment.satshootAmount = 0
+                paymentManager.payment.sponsoredAmount = 0
+            }
+        }
+    });
+
+    $effect(() => {
+        displayedTotalAmount = formatNumber(inputTotalAmount);
+    });
+
+    function handleTotalAmountInput(event: Event): void {
+        const target = event.target as HTMLInputElement;
+        const parsedValue = parseNumber(target.value);
+        
+        if (parsedValue === null) {
+            inputTotalAmount = null;
+            displayedTotalAmount = '';
+        } else {
+            inputTotalAmount = parsedValue;
+            displayedTotalAmount = formatNumber(parsedValue);
+        }
+    }
 
     const bech32ID = $derived(primaryEntity?.encode());
 
@@ -200,13 +311,14 @@
         showLoginModal = true;
     }
 
-    function setDefaultShare(userEnum: UserEnum) {
-        return () => paymentManager?.setDefaultShare(userEnum);
-    }
+    const amountInputClasses = 'transition ease duration-[0.3s] px-[10px] py-[5px] ' +
+    'bg-black-50 focus:bg-black-100 outline-[0px] focus:outline-[0px] border-[2px] ' +
+    'border-black-100 dark:border-white-100 focus:border-blue-500 rounded-[6px] ' + 
+    'w-full text-lg sm:text-xl'
 </script>
 
-<div class="w-full flex flex-col justify-center items-center py-[25px]">
-    <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
+<div class="w-full flex flex-col justify-center items-center py-[25px] text-lg sm:text-xl">
+    <div class="md:max-w-[60%] w-full flex flex-col justify-start items-end px-[10px] relative">
         {#if !isUserLoggedIn}
             <Button onClick={handleLogin}>Log in To Pay</Button>
         {:else if primaryEntity && secondaryEntity && paymentManager}
@@ -240,7 +352,7 @@
                             <div class="grow-1">
                                 <p class="font-[500]">
                                     Pledge split:
-                                    <span class="font-[300]"> {secondaryEntity.pledgeSplit} %</span>
+                                    <span class="font-[300]"> {pledgeSplit} %</span>
                                 </p>
                             </div>
                             {#if isSponsoring}
@@ -326,12 +438,32 @@
                             </Popover-->
                         {/if}
                         <div class="w-full flex flex-col gap-[5px]">
+                            <div class="flex flex-col gap-[5px] mb-2">
+                                <label class="font-[500]" for="service-payment"
+                                >Total Amount to be paid</label
+                                >
+                                <div class="max-sm:flex max-sm:flex-wrap min-sm:grid min-sm:grid-cols-[1fr_auto] gap-x-2">
+                                    <input
+                                        class={amountInputClasses}
+                                        type="text"
+                                        placeholder="000,000"
+                                        value={displayedTotalAmount}
+                                        oninput={handleTotalAmountInput}
+                                    />
+                                    <Checkbox 
+                                        id={"totalAmount"}
+                                        label={"Calculate splits"}
+                                        bind:checked={calculateSplits}
+                                    />
+                                </div>
+                            </div>
                             <div class="w-full flex flex-col gap-[5px]">
                                 <label class="font-[500]" for="service-payment"
-                                    >Pay for service</label
+                                    >Freelancer share</label
                                 >
                                 <Input
                                     id="service-payment"
+                                    classes='text-lg sm:text-xl'
                                     type="number"
                                     step="1"
                                     min="0"
@@ -420,15 +552,11 @@
                             {/if}
                             <div class="w-full flex flex-col gap-[5px]">
                                 <label class="font-[500] flex gap-x-2 items-center" for="platform-contribution">
-                                    <span>Contribute to SatShoot</span>
-                                    <Button 
-                                        onClick={setDefaultShare(UserEnum.Satshoot)}>
-
-                                        Use Split
-                                    </Button>
+                                    <span>SatShoot share</span>
                                 </label>
                                 <Input
                                     id="plattform-contribution"
+                                    classes='text-lg sm:text-xl'
                                     type="number"
                                     step="1"
                                     min="0"
@@ -518,15 +646,11 @@
                                 {/if}
                                 <div class="w-full flex flex-col gap-[5px]">
                                     <label class="font-[500] flex gap-x-2 items-center" for="sponsored-contribution">
-                                        <span>Sponsor npub</span>
-                                        <Button 
-                                            onClick={setDefaultShare(UserEnum.Sponsored)}>
-
-                                            Use Split
-                                        </Button>
+                                        <span>{sponsoredName} share</span>
                                     </label>
                                     <Input
                                         id="sponsored-contribution"
+                                        classes='text-lg sm:text-xl'
                                         type="number"
                                         step="1"
                                         min="0"
@@ -591,28 +715,6 @@
                                         </Button-->
                                     {/if}
                                 </div>
-                            {/if}
-                        </div>
-                        <!-- Payment Summary -->
-                        <div
-                            class="w-full flex flex-row flex-wrap gap-[10px] pt-[10px] mt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
-                        >
-                            <p class="grow-1 text-center">
-                                Freelancer gets: {insertThousandSeparator(
-                                    paymentManager.payment.amount ?? 0
-                                )} sats
-                            </p>
-                            <p class="grow-1 text-center">
-                                SatShoot gets: {insertThousandSeparator(
-                                    paymentManager.payment.satshootAmount ?? 0
-                                )} sats
-                            </p>
-                            {#if isSponsoring}
-                                <p class="grow-1 text-center">
-                                    Sponsored npub gets: {insertThousandSeparator(
-                                        paymentManager.payment.sponsoredAmount ?? 0
-                                    )} sats
-                                </p>
                             {/if}
                         </div>
                     </div>

@@ -35,9 +35,11 @@
     } from '$lib/utils/helpers';
     import {
         fetchBTCUSDPrice,
+        formatNumber,
         insertThousandSeparator, 
         NostrBuildBlossomServer,
         PablosNpub,
+        parseNumber,
     } from '$lib/utils/misc';
     import tagOptions from '$lib/utils/tag-options';
     import type { Hexpubkey, NDKEvent } from '@nostr-dev-kit/ndk';
@@ -168,17 +170,6 @@
               ]
             : filteredTagOptions
     );
-
-    function formatNumber(num: number | null): string {
-        if (num === null || num === undefined) return '';
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
-
-    function parseNumber(str: string): number | null {
-        if (!str || str.trim() === '') return null;
-        const parsed = Number(str.replace(/,/g, ''));
-        return isNaN(parsed) ? null : parsed;
-    }
 
     function handleAmountInput(event: Event): void {
         const target = event.target as HTMLInputElement;

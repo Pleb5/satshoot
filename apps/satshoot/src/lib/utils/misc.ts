@@ -383,3 +383,15 @@ export async function fetchBTCUSDPrice (fiat = 'USD') {
     return -1
   }
 }
+
+export function formatNumber(num: number | null): string {
+    if (num === null || num === undefined) return '';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+export function parseNumber(str: string): number | null {
+    if (!str || str.trim() === '') return null;
+    const parsed = Number(str.replace(/,/g, ''));
+    return isNaN(parsed) ? null : parsed;
+}
+

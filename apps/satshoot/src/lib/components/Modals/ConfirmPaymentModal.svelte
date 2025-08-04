@@ -1,5 +1,6 @@
 <script lang="ts">
     import { toaster } from '$lib/stores/toaster';
+    import { insertThousandSeparator } from '$lib/utils/misc';
     import Button from '../UI/Buttons/Button.svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
@@ -38,7 +39,7 @@
             >
                 <p class="lg:text-[28px] text-[22px]">
                     You are about to pay
-                    <span class="font-bold">{amount} sats </span> to
+                    <span class="font-bold">{insertThousandSeparator(amount)} sats </span> to
                     {#if payeePubkey}
                         <UserProfile pubkey={payeePubkey}></UserProfile>
                     {/if}
