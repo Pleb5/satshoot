@@ -1,11 +1,11 @@
 <script lang="ts">
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
-    import { BidEvent, BidStatus } from '$lib/events/BidEvent';
+    import { BidEvent } from '$lib/events/BidEvent';
     import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
-    import { NDKEvent, NDKKind, type NDKSigner } from '@nostr-dev-kit/ndk';
+    import { NDKEvent, NDKKind, NDKRelaySet, NDKSubscriptionCacheUsage, profileFromEvent, type NDKSigner } from '@nostr-dev-kit/ndk';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import { goto } from '$app/navigation';
     import { wallet } from '$lib/wallet/wallet';
@@ -30,17 +30,16 @@
 
     const jobAddress = job.jobAddress;
 
-    let validInputs = $state(true);
     let pricingMethod: Pricing = $state(Pricing.Absolute);
-    let amount = $state(0);
+    let amount = $state<number|null>(null);
     let BTCUSDPrice = -1;
     // USD price with decimals cut off and thousand separators
-    let usdPrice = $derived(Math.floor(amount / 100_000_000 * BTCUSDPrice))
-    let pledgeSplit = $state(0);
+    let usdPrice = $derived(Math.floor((amount || 0) / 100_000_000 * BTCUSDPrice))
+    let pledgeSplit = $state<number|null>(null);
     let sponsoredNpub = $state(PablosNpub);
+    let sponsoredName = $state('Sponsored')
     let sponsoredPubkey = $state('');
-    let sponsoringSplit = $state(50);
-    let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
+    let sponsoringSplit = $state<number|null>(null);
 
     let pledgedShare = $state(0);
     let freelancerShare = $state(0);
@@ -49,10 +48,10 @@
 
     $effect(() => {
         const paymentShares = PaymentService.computePaymentShares(
-            amount,
-            pledgeSplit,
+            amount || 0,
+            pledgeSplit || 0,
             sponsoredNpub,
-            sponsoringSplit
+            sponsoringSplit || 0
         );
         freelancerShare = paymentShares.freelancerShare;
         satshootShare = paymentShares.satshootShare;
@@ -67,36 +66,52 @@
     let posting = $state(false);
 
     $effect(() => {
-        if (validate()) {
-            if (sponsoredNpub) {
-                try {
-                    const decodeResult = nip19.decode(sponsoredNpub);
-                    switch (decodeResult.type) {
-                        case 'npub':
-                            sponsoredPubkey = decodeResult.data;
-                            validInputs = true;
-                            errorText = '';
-                            break;
-                        default:
-                            sponsoredPubkey = '';
-                            validInputs = false;
-                            errorText = 'Expecting an npub but got a different nip-19 entity.';
-                    }
-                } catch (error) {
-                    sponsoredPubkey = '';
-                    validInputs = false;
-                    errorText = 'Invalid npub.';
+        if (sponsoredNpub) {
+            try {
+                const decodeResult = nip19.decode(sponsoredNpub);
+                if (decodeResult.type === 'npub') {
+                    sponsoredPubkey = decodeResult.data
+                    fetchSponsoredProfile()
+                } else {
+                    sponsoredPubkey = ''
+                    sponsoredName = '?'
                 }
-            } else {
-                sponsoredPubkey = '';
+            } catch (e) {
+                console.warn("Invalid sponsoredNpub")
+                sponsoredPubkey = ''
+                sponsoredName = '?'
             }
         } else {
-            validInputs = false;
+            sponsoredPubkey = ''
+            sponsoredName = '?'
+        } 
+    })
+
+    const fetchSponsoredProfile = async () => {
+        const metadataFilter = {
+            kinds: [NDKKind.Metadata],
+            authors: [sponsoredPubkey as string],
+        };
+
+        const metadataRelays = [
+            ...$ndk.pool!.connectedRelays(),
+        ];
+
+        const profileEvent: NDKEvent|null = await $ndk.fetchEvent(
+            metadataFilter,
+            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+            new NDKRelaySet(new Set(metadataRelays), $ndk)
+        )
+
+        if (!profileEvent) {
+            sponsoredName = ''
+            return
         }
-    });
+        const profile = profileFromEvent(profileEvent)
+        sponsoredName = profile.name ?? profile.displayName ?? ''
+    }
 
     onMount(() => {
-        fetchBTCUSDPrice().then((price) => BTCUSDPrice = price)
         if (bidToEdit) {
             pricingMethod = bidToEdit.pricing;
             amount = bidToEdit.amount;
@@ -109,6 +124,12 @@
             description = bidToEdit.description;
         }
     });
+
+    $effect(()=>{
+        if (isOpen) {
+            fetchBTCUSDPrice().then((price) => BTCUSDPrice = price)
+        }
+    })
 
     function buildSponsoredZapSplit(npub: string, percentage: number): ZapSplit {
         const decodedData = nip19.decode(npub);
@@ -130,13 +151,13 @@
         const bid = new BidEvent($ndk);
 
         bid.pricing = pricingMethod;
-        bid.amount = amount;
+        bid.amount = amount!;
         try {
             const sponsoredZapSplit =
                 sponsoredNpub && pledgeSplit
-                    ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit)
+                    ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit||0)
                     : undefined;
-            bid.setZapSplits(pledgeSplit, $currentUser!.pubkey, sponsoredZapSplit);
+            bid.setZapSplits(pledgeSplit!, $currentUser!.pubkey, sponsoredZapSplit);
             bid.description = description;
 
             bid.referencedJobAddress = jobAddress as string;
@@ -218,34 +239,57 @@
     }
 
     function validate(): boolean {
-        let valid = true;
         errorText = '';
+        if (!amount) {
+            errorText = 'Please set the Bid Price';
+            return false
+        }
         if (amount < 0) {
-            valid = false;
             errorText = 'Price below 0!';
-        } else if (amount > 100_000_000) {
-            valid = false;
-            errorText = 'Price cannot exceed 100M sats!';
-        } else if (pledgeSplit < 0) {
-            valid = false;
+            return false
+        }
+
+        if (!pledgeSplit) {
+            errorText = 'Please set the Pledge Split';
+            return false
+        }
+
+        if (pledgeSplit < 0) {
             errorText = 'Pledge split below 0!';
-        } else if (pledgeSplit > 100) {
-            valid = false;
+            return false
+        }
+        if (pledgeSplit > 100) {
             errorText = 'Pledge split above 100% !';
-        } else if (sponsoredNpub) {
-            if (!validSponsoredNpub) {
-                valid = false;
-                errorText = 'Invalid npub!';
-            } else if (sponsoringSplit < 0) {
-                valid = false;
+            return false
+        }
+        if (sponsoredNpub) {
+            if (!sponsoredPubkey) {
+                errorText = 'Invalid sponsored npub!';
+                return false
+            } 
+            if (!sponsoringSplit) {
+                errorText = 'Please set the Sponsoring Split!';
+                return false
+            }
+            if (sponsoringSplit < 0) {
                 errorText = 'Sponsoring split below 0!';
+                return false
             } else if (sponsoringSplit > 100) {
-                valid = false;
                 errorText = 'Sponsoring split above 100% !';
+                return false
             }
         }
-        return valid;
+
+        return true
     }
+
+    $effect(() => {
+        if (errorText) {
+            toaster.error({
+                title: errorText,
+            });
+        }
+    })
 
     const selectInputClasses =
         'w-full px-[10px] py-[5px] bg-black-50 focus:bg-black-100 rounded-[6px] ' +
@@ -261,20 +305,6 @@
             class="w-full flex flex-col gap-[5px] rounded-[6px] border-[1px] border-black-200 dark:border-white-200"
         >
             <div class="w-full flex flex-col gap-[10px] p-[10px]">
-                {#if errorText}
-                    <div
-                        class="w-full flex flex-row gap-[15px] flex-wrap p-[10px] border-[1px] border-red-500"
-                    >
-                        <div class="grow-1">
-                            <p class="font-[500]">
-                                Invalid inputs:
-                                <span class="font-[400]">
-                                    {errorText}
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                {/if}
                 <div class="flex flex-col gap-[5px] grow-1">
                     <div class="">
                         <label class="font-[600]" for=""> Pricing method </label>
@@ -301,8 +331,8 @@
                             type="number"
                             step="1"
                             min="0"
-                            max="100_000_000"
-                            placeholder="Amount"
+                            placeholder={pricingMethod === Pricing.Hourly 
+                            ? '50,000' : '1,000,000'}
                             bind:value={amount}
                             fullWidth
                         />
@@ -329,7 +359,7 @@
                             step="1"
                             min="0"
                             max="100"
-                            placeholder="Percentage"
+                            placeholder="1%"
                             bind:value={pledgeSplit}
                             fullWidth
                         />
@@ -345,7 +375,7 @@
                 >
                     <div class="grow-1">
                         <p class="font-[500]">
-                            You'd get:
+                            You get:
                             <span class="font-[400]">
                                 {insertThousandSeparator(freelancerShare) +
                                     (pricingMethod ? ' sats/hour' : ' sats')}
@@ -370,7 +400,7 @@
             <div class="w-full flex flex-col gap-[10px] p-[10px]">
                 <div class="flex flex-col gap-[5px] grow-1">
                     <div class="">
-                        <label class="font-[600]" for=""> Sponsored npub </label>
+                        <label class="font-[600]" for=""> Sponsoring </label>
                     </div>
                     {#if sponsoredPubkey}
                         <UserProfile pubkey={sponsoredPubkey} />
@@ -378,7 +408,7 @@
                     <div class="w-full flex flex-row items-center relative">
                         <Input
                             type="text"
-                            placeholder="npub to sponsored"
+                            placeholder="npub to sponsor"
                             bind:value={sponsoredNpub}
                             fullWidth
                         />
@@ -394,9 +424,8 @@
                             step="1"
                             min="0"
                             max="100"
-                            placeholder="Percentage"
+                            placeholder="20%"
                             bind:value={sponsoringSplit}
-                            disabled={!validSponsoredNpub}
                             fullWidth
                         />
                         <span
@@ -411,7 +440,7 @@
                 >
                     <div class="grow-1">
                         <p class="font-[500]">
-                            Satshoot'd get:
+                            Satshoot gets:
                             <span class="font-[400]">
                                 {insertThousandSeparator(satshootShare) +
                                     (pricingMethod ? ' sats/hour' : ' sats')}
@@ -420,7 +449,7 @@
                     </div>
                     <div class="grow-1">
                         <p class="font-[500]">
-                            Sponsored npub'd get:
+                            {sponsoredName} gets:
                             <span class="font-[400]">
                                 {insertThousandSeparator(sponsoredShare) +
                                     (pricingMethod ? ' sats/hour' : ' sats')}
@@ -448,7 +477,7 @@
             bind:checked={sendDm}
         />
         <div class="w-full flex flex-row justify-center">
-            <Button onClick={postBid} disabled={posting || !validInputs}>
+            <Button onClick={postBid} disabled={posting}>
                 {#if posting}
                     <span>
                         <ProgressRing />

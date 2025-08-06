@@ -390,7 +390,7 @@
                             {#if isSponsoring}
                                 <div class="grow-1">
                                     <p class="font-[500]">
-                                        Sponsored npub Paid:
+                                        Sponsored Paid:
                                         <span class="font-[300]">
                                             {$sponsoredPaid
                                                 ? insertThousandSeparator($sponsoredPaid)
