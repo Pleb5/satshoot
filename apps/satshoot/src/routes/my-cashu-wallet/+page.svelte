@@ -620,10 +620,7 @@
                                         </div>
                                         <PieChart dataset={mintBalances} />
                                         <WithdrawEcash cashuWallet={$wallet} />
-                                        <!--DepositEcash cashuWallet={$wallet} /-->
-                                        <Card classes="gap-[15px]">
-                                            <div>Deposits will be possible again in an upcoming version.</div>
-                                        </Card>
+                                        <DepositEcash cashuWallet={$wallet} />
                                         <div
                                             class="w-full flex flex-row justify-end overflow-hidden rounded-[6px] bg-black-100 dark:bg-white-100 border-[1px] border-black-200 dark:border-white-200"
                                         >
