@@ -1,50 +1,44 @@
 <script lang="ts">
-    // Core imports
     import { onMount } from 'svelte';
     import { page } from '$app/state';
 
-    // Component imports
     import ChatHead from '$lib/components/ChatHead.svelte';
     import Card from '$lib/components/UI/Card.svelte';
 
-    // Data models
     import { BidEvent } from '$lib/events/BidEvent';
     import { JobEvent } from '$lib/events/JobEvent';
 
-    // Store imports
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import currentUser, { loggedIn, userMode, UserMode } from '$lib/stores/user';
 
-    // Utilities
     import { checkRelayConnections } from '$lib/utils/helpers';
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from '@nostr-dev-kit/ndk';
     import { OrderEvent } from '$lib/events/OrderEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
+    import { wotFilteredMessageFeed } from '$lib/stores/messages';
 
-    // Types and interfaces
     interface ConversationData {
-        jobConversations: Map<JobEvent, NDKUser>;
-        serviceConversations: Map<ServiceEvent, NDKUser>;
+        jobConversations: Array<[JobEvent, NDKUser]>;
+        serviceConversations: Array<[ServiceEvent, NDKUser]>;
         loading: boolean;
         error: string | null;
     }
 
-    // Component state
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
     let pageTop = $state<HTMLDivElement>();
     let mounted = $state(false);
     let initialized = $state(false);
+    let canStartFetchingJobsFromMessages = $state(false);
+    let canStartFetchingServicesFromMessages = $state(false);
 
-    // Conversation state
     let conversationData = $state<ConversationData>({
-        jobConversations: new Map(),
-        serviceConversations: new Map(),
+        jobConversations: [],
+        serviceConversations: [],
         loading: true,
         error: null,
     });
     let noConversations = $state(false);
 
-    // Standard fetch options to reduce duplication
     const defaultFetchOptions = {
         groupable: true,
         groupableDelay: 500,
@@ -59,15 +53,14 @@
         }
     });
 
-    /**
-     * Initialize the messages view based on user mode
-     */
     async function init() {
         try {
             if ($userMode === UserMode.Client) {
                 await fetchClientConversations();
+                canStartFetchingServicesFromMessages = true
             } else if ($userMode === UserMode.Freelancer) {
                 await fetchFreelancerConversations();
+                canStartFetchingJobsFromMessages = true
             }
         } catch (error) {
             conversationData.error =
@@ -76,9 +69,112 @@
         }
     }
 
-    /**
-     * Fetch conversations for a client user
-     */
+    // This effectively fetches conversations with the following conditions:
+    // 1. No deal has been made, and NO BID/ORDER has been placed
+    // 2. In freelance mode, conversations related to the Job
+    // 3. In client mode, conversations related to the Service
+    // This is necessary when people write to someone but not yet ready to 
+    // commit with and Order or Bid, only after some initial conversation
+    // These conversations are already covered for (Clients X Jobs) and
+    // (Freelancers X Services) but not for (Clients X Orders) and (Freelancers X Jobs)
+    $effect(() => {
+        if ($wotFilteredMessageFeed) {
+            if (canStartFetchingJobsFromMessages) {
+                fetchJobsFromMessages()
+            } else if (canStartFetchingServicesFromMessages) {
+                fetchServicesFromMessages()
+            }
+        }
+    })
+
+    const fetchJobsFromMessages = async () => {
+        const dtags = getDtagsFromMessages(
+            NDKKind.FreelanceJob.toString(), conversationData.jobConversations
+        )
+
+        if (dtags.length === 0) return 
+
+        const events = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceJob],
+                '#d': dtags
+            },
+            defaultFetchOptions
+        );
+
+        const newConversations: Array<[JobEvent, NDKUser]> = [];
+        events.forEach((event) => {
+            const job = JobEvent.from(event);
+            const user = $ndk.getUser({ pubkey: job.pubkey });
+            newConversations.push([job, user]);
+        });
+        
+        conversationData = {
+            ...conversationData,
+            jobConversations: [
+                ...conversationData.jobConversations,
+                ...newConversations
+            ]
+        };
+    }
+
+    const fetchServicesFromMessages = async () => {
+        const dtags = getDtagsFromMessages(
+            NDKKind.FreelanceService.toString(), conversationData.serviceConversations
+        )
+
+        if (dtags.length === 0) return 
+
+        const events = await $ndk.fetchEvents(
+            {
+                kinds: [NDKKind.FreelanceService],
+                '#d': dtags
+            },
+            defaultFetchOptions
+        );
+
+        const newConversations: Array<[ServiceEvent, NDKUser]> = [];
+        events.forEach((event) => {
+            const service = ServiceEvent.from(event);
+            const user = $ndk.getUser({ pubkey: service.pubkey });
+            newConversations.push([service, user]);
+        });
+        
+        conversationData = {
+            ...conversationData,
+            serviceConversations: [
+                ...conversationData.serviceConversations,
+                ...newConversations
+            ]
+        };
+    }
+
+    const getDtagsFromMessages = (
+        kindToCheck: string, existingData: Array<[JobEvent | ServiceEvent, NDKUser]>
+    ): string[] => {
+        const dtags = []
+        for (const dm of $wotFilteredMessageFeed) {
+            const dtag = (dm.tagValue('a') as string).split(':')[2]
+            if (
+                (dm.tagValue('a') as string).includes(kindToCheck)
+            ) {
+                // Don't fetch jobs we already have
+                let mustContinue = false
+                for (const [event, user] of existingData) {
+                    if (event.tagValue('d') === dtag) {
+                        mustContinue = true
+                        break
+                    }
+                }
+
+                if (mustContinue) continue
+
+                dtags.push(dtag)
+            }
+        }
+        return dtags
+    }
+
     async function fetchClientConversations() {
         const events = await $ndk.fetchEvents(
             {
@@ -110,7 +206,6 @@
             }
         });
 
-        // Fetch all related services
         const serviceEvents = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceService],
@@ -130,16 +225,13 @@
         }
 
         conversationData = {
-            jobConversations,
-            serviceConversations,
+            jobConversations: Array.from(jobConversations.entries()),
+            serviceConversations: Array.from(serviceConversations.entries()),
             loading: false,
             error: null,
         };
     }
 
-    /**
-     * Fetch conversations for a freelancer user
-     */
     async function fetchFreelancerConversations() {
         const events = await $ndk.fetchEvents(
             {
@@ -169,7 +261,6 @@
             }
         }
 
-        // Fetch all related jobs
         const jobEvents = await $ndk.fetchEvents(
             {
                 kinds: [NDKKind.FreelanceJob],
@@ -189,8 +280,8 @@
         }
 
         conversationData = {
-            jobConversations,
-            serviceConversations,
+            jobConversations: Array.from(jobConversations.entries()),
+            serviceConversations: Array.from(serviceConversations.entries()),
             loading: false,
             error: null,
         };
@@ -225,19 +316,16 @@
                         <Card classes="gap-[10px]">
                             <!-- Tab Content -->
                             <div class="w-full flex flex-col gap-[10px] p-[5px] overflow-y-auto">
+                                {#each conversationData.jobConversations as [job, user]}
+                                    <ChatHead {searchQuery} {user} event={job} />
+                                {/each}
+                                {#each conversationData.serviceConversations as [service, user]}
+                                    <ChatHead {searchQuery} {user} event={service} />
+                                {/each}
                                 {#if conversationData.error}
                                     <div class="h4 text-center col-start-2 text-error">
                                         {conversationData.error}
                                     </div>
-                                {:else if conversationData.jobConversations.size > 0 || conversationData.serviceConversations.size > 0}
-                                    <!-- Display job conversations -->
-                                    {#each conversationData.jobConversations as [job, user]}
-                                        <ChatHead {searchQuery} {user} event={job} />
-                                    {/each}
-                                    <!-- Display service conversations -->
-                                    {#each conversationData.serviceConversations as [service, user]}
-                                        <ChatHead {searchQuery} {user} event={service} />
-                                    {/each}
                                 {:else if noConversations}
                                     <div class="h4 text-center col-start-2">No Conversations!</div>
                                 {:else if conversationData.loading}
