@@ -173,23 +173,29 @@ export class PaymentManagerService {
             const paymentData = await this.paymentService.initializePayment();
             if (!paymentData) return;
 
-            let { freelancerShareMillisats, satshootSumMillisats } = paymentData;
+            let { freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats } = paymentData;
 
             switch (payeeType) {
                 case UserEnum.Freelancer:
                     satshootSumMillisats = 0;
+                    sponsoredSumMillisats = 0;
                     break;
                 case UserEnum.Satshoot:
                     freelancerShareMillisats = 0;
+                    sponsoredSumMillisats = 0;
                     break;
+                case UserEnum.Sponsored:
+                    freelancerShareMillisats = 0;
+                    satshootSumMillisats = 0;
             }
 
             const paid = await this.cashuService.processPayment(
                 freelancerShareMillisats,
-                satshootSumMillisats
+                satshootSumMillisats,
+                sponsoredSumMillisats
             );
 
-            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats, 0);
+            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats);
         } catch (error: any) {
             console.error(error);
 
@@ -198,6 +204,8 @@ export class PaymentManagerService {
                 this.toastService.handlePaymentError(error, 'Freelancer');
             } else if (error.message?.includes('SatShoot')) {
                 this.toastService.handlePaymentError(error, 'SatShoot');
+            } else if (error.message?.includes('Sponsored')) {
+                this.toastService.handlePaymentError(error, 'Sponsored npub');
             } else {
                 this.toastService.handleGeneralError(error?.message || error);
             }

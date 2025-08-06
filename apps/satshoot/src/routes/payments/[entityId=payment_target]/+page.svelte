@@ -22,7 +22,6 @@
     import Card from '$lib/components/UI/Card.svelte';
     import { toaster } from '$lib/stores/toaster';
     import { OrderEvent } from '$lib/events/OrderEvent';
-    import { FreelancerTabs } from '$lib/stores/tab-store';
     import ConfirmPaymentModal from '$lib/components/Modals/ConfirmPaymentModal.svelte';
     import { nip19 } from 'nostr-tools';
     import { Pricing } from '$lib/events/types';
@@ -255,7 +254,7 @@
     const cashuTooltipText = $derived(paymentManager?.cashuTooltipText ?? '');
 
     // Payment functions
-    function openConfirmPayWithLN(payeeType: UserEnum) {
+    function openPaymentConfirmation(payeeType: UserEnum, paymentMethod: 'LN' | 'Cashu') {
         return () => {
             switch (payeeType) {
                 case UserEnum.Freelancer:
@@ -278,7 +277,7 @@
                     payAmount = paymentManager!.payment.sponsoredAmount;
                     break;
             }
-            payFunc = payWithLN(payeeType);
+            payFunc = paymentMethod === 'LN' ? payWithLN(payeeType) : payWithCashu(payeeType);
             showPayConfirm = true;
         };
     }
@@ -290,7 +289,7 @@
         };
     }
 
-    function payWithEcash(payeeType: UserEnum) {
+    function payWithCashu(payeeType: UserEnum) {
         return async () => {
             if (!paymentManager) return;
             await paymentManager.payWithCashu(payeeType);
@@ -415,7 +414,7 @@
                         class="w-full flex flex-col rounded-[8px] p-[15px] shadow-subtle bg-white dark:bg-brightGray gap-[15px]"
                     >
                         {#if cashuTooltipText && paymentManager.payment.amount}
-                            <!--Popover TODO (rodant): switched off for up coming release
+                            <Popover
                                 open={cashuPopoverStateFreelancer}
                                 onOpenChange={(e) => (cashuPopoverStateFreelancer = e.open)}
                                 positioning={{ placement: 'top' }}
@@ -434,7 +433,7 @@
                                         <p>{cashuTooltipText}</p>
                                     </Card>
                                 {/snippet}
-                            </Popover-->
+                            </Popover>
                         {/if}
                         <div class="w-full flex flex-col gap-[5px]">
                             <div class="flex flex-col gap-[5px] mb-2">
@@ -476,7 +475,7 @@
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    onClick={openConfirmPayWithLN(UserEnum.Freelancer)}
+                                    onClick={openPaymentConfirmation(UserEnum.Freelancer, 'LN')}
                                     disabled={paying || !paymentManager.payment.amount}
                                 >
                                     {#if paying}
@@ -493,10 +492,10 @@
                                     {/if}
                                 </Button>
                                 {#if hasSenderEcashSetup}
-                                    <!--Button TODO (rodant): switched off for up coming release
+                                    <Button
                                         grow
-                                        classes="w-[200px] max-w-[200px]"
-                                        onClick={payWithCashu(UserEnum.Freelancer)}
+                                        classes="w-[250px] max-w-[250px]"
+                                        onClick={openPaymentConfirmation(UserEnum.Freelancer, 'Cashu')}
                                         disabled={paying ||
                                             !canPayWithCashu ||
                                             !paymentManager?.payment.amount}
@@ -511,9 +510,9 @@
                                             />
                                             <span>Pay with Cashu</span>
                                         {/if}
-                                    </Button-->
+                                    </Button>
                                 {:else}
-                                    <!--Button TODO (rodant): switched off for up coming release
+                                    <Button
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={setupEcash}
@@ -524,11 +523,11 @@
                                             </span>
                                         {/if}
                                         <span> Setup Nostr Wallet </span>
-                                    </Button-->
+                                    </Button>
                                 {/if}
                             </div>
                             {#if cashuTooltipText && paymentManager.payment.satshootAmount}
-                                <!--Popover TODO (rodant): switched off for up coming release
+                                <Popover
                                     open={cashuPopoverStateSatshoot}
                                     onOpenChange={(e) => (cashuPopoverStateSatshoot = e.open)}
                                     positioning={{ placement: 'top' }}
@@ -547,7 +546,7 @@
                                             <p>{cashuTooltipText}</p>
                                         </Card>
                                     {/snippet}
-                                </Popover-->
+                                </Popover>
                             {/if}
                             <div class="w-full flex flex-col gap-[5px]">
                                 <label class="font-[500] flex gap-x-2 items-center" for="platform-contribution">
@@ -569,7 +568,7 @@
                                 <Button
                                     grow
                                     classes="w-[200px] max-w-[200px]"
-                                    onClick={openConfirmPayWithLN(UserEnum.Satshoot)}
+                                    onClick={openPaymentConfirmation(UserEnum.Satshoot, 'LN')}
                                     disabled={paying || !paymentManager.payment.satshootAmount}
                                 >
                                     {#if paying}
@@ -586,10 +585,10 @@
                                     {/if}
                                 </Button>
                                 {#if hasSenderEcashSetup}
-                                    <!--Button TODO (rodant): switched off for up coming release
+                                    <Button
                                         grow
-                                        classes="w-[200px] max-w-[200px]"
-                                        onClick={payWithCashu(UserEnum.Satshoot)}
+                                        classes="w-[250px] max-w-[250px]"
+                                        onClick={openPaymentConfirmation(UserEnum.Satshoot, 'Cashu')}
                                         disabled={paying ||
                                             !canPayWithCashu ||
                                             !paymentManager.payment.satshootAmount}
@@ -604,9 +603,9 @@
                                             />
                                             <span>Pay with Cashu</span>
                                         {/if}
-                                    </Button-->
+                                    </Button>
                                 {:else}
-                                    <!--Button TODO (rodant): switched off for up coming release
+                                    <Button
                                         grow
                                         classes="w-[200px] max-w-[200px]"
                                         onClick={setupEcash}
@@ -617,12 +616,12 @@
                                             </span>
                                         {/if}
                                         <span> Setup Nostr Wallet </span>
-                                    </Button-->
+                                    </Button>
                                 {/if}
                             </div>
                             {#if isSponsoring}
                                 {#if cashuTooltipText && paymentManager.payment.sponsoredAmount}
-                                    <!--Popover TODO (rodant): switched off for up coming release
+                                    <Popover
                                         open={cashuPopoverStateSponsored}
                                         onOpenChange={(e) => (cashuPopoverStateSponsored = e.open)}
                                         positioning={{ placement: 'top' }}
@@ -641,7 +640,7 @@
                                                 <p>{cashuTooltipText}</p>
                                             </Card>
                                         {/snippet}
-                                    </Popover-->
+                                    </Popover>
                                 {/if}
                                 <div class="w-full flex flex-col gap-[5px]">
                                     <label class="font-[500] flex gap-x-2 items-center" for="sponsored-contribution">
@@ -663,7 +662,7 @@
                                     <Button
                                         grow
                                         classes="w-[200px] max-w-[200px]"
-                                        onClick={openConfirmPayWithLN(UserEnum.Sponsored)}
+                                        onClick={openPaymentConfirmation(UserEnum.Sponsored, 'LN')}
                                         disabled={paying || !paymentManager.payment.sponsoredAmount}
                                     >
                                         {#if paying}
@@ -680,10 +679,10 @@
                                         {/if}
                                     </Button>
                                     {#if hasSenderEcashSetup}
-                                        <!--Button TODO (rodant): switched off for up coming release
+                                        <Button
                                             grow
-                                            classes="w-[200px] max-w-[200px]"
-                                            onClick={payWithCashu(UserEnum.Sponsored)}
+                                            classes="w-[250px] max-w-[250px]"
+                                            onClick={openPaymentConfirmation(UserEnum.Sponsored, 'Cashu')}
                                             disabled={paying ||
                                                 !canPayWithCashu ||
                                                 !paymentManager.payment.sponsoredAmount}
@@ -698,9 +697,9 @@
                                                 />
                                                 <span>Pay with Cashu</span>
                                             {/if}
-                                        </Button-->
+                                        </Button>
                                     {:else}
-                                        <!--Button TODO (rodant): switched off for up coming release
+                                        <Button
                                             grow
                                             classes="w-[200px] max-w-[200px]"
                                             onClick={setupEcash}
@@ -711,7 +710,7 @@
                                                 </span>
                                             {/if}
                                             <span> Setup Nostr Wallet </span>
-                                        </Button-->
+                                        </Button>
                                     {/if}
                                 </div>
                             {/if}

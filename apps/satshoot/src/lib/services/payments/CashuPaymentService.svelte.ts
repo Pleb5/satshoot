@@ -11,6 +11,7 @@ import { ServiceEvent } from '$lib/events/ServiceEvent';
 import { JobEvent } from '$lib/events/JobEvent';
 import { OrderEvent } from '$lib/events/OrderEvent';
 import { UserEnum } from './UserEnum';
+import { nip19 } from 'nostr-tools';
 
 export type NutZapErrorData = {
     mint: string;
@@ -39,13 +40,13 @@ export class CashuPaymentService {
     private freelancerPubkey: string;
 
     constructor(
-        private targetEntity: JobEvent | ServiceEvent,
+        private primaryEntity: JobEvent | ServiceEvent,
         private secondaryEntity: BidEvent | OrderEvent
     ) {
         this.freelancerPubkey =
             this.secondaryEntity instanceof BidEvent
                 ? this.secondaryEntity.pubkey
-                : this.targetEntity.pubkey;
+                : this.primaryEntity.pubkey;
 
         this.initializeCashuInfo();
     }
@@ -101,11 +102,13 @@ export class CashuPaymentService {
      */
     async processPayment(
         freelancerShareMillisats: number,
-        satshootSumMillisats: number
+        satshootSumMillisats: number,
+        sponsoredSumMillisats: number
     ): Promise<Map<UserEnum, boolean>> {
         const paid = new Map<UserEnum, boolean>([
             [UserEnum.Freelancer, false],
             [UserEnum.Satshoot, false],
+            [UserEnum.Sponsored, false]
         ]);
 
         const freelancerPaymentPromise = freelancerShareMillisats ? this.processCashuPayment(
@@ -120,17 +123,36 @@ export class CashuPaymentService {
             satshootSumMillisats
         ) : undefined;
 
+        let sponsoredPubkey: string | undefined = undefined;
+        if (sponsoredSumMillisats > 0) {
+            const decodingResult = this.secondaryEntity instanceof BidEvent ? nip19.decode(this.secondaryEntity.sponsoredNpub)
+                : nip19.decode((this.primaryEntity as ServiceEvent).sponsoredNpub);
+            if (decodingResult.type === "npub") {
+                sponsoredPubkey = decodingResult.data;
+            } else {
+                throw new Error('Expecting an npub but got something else!');
+            }
+        }
+        const sponsoredPaymentPromise = sponsoredSumMillisats && sponsoredPubkey ? this.processCashuPayment(
+            UserEnum.Sponsored,
+            sponsoredPubkey,
+            sponsoredSumMillisats
+        ) : undefined;
+
         const results = await Promise.allSettled([
             freelancerPaymentPromise,
             satshootPaymentPromise,
+            sponsoredPaymentPromise
         ]);
 
         results.forEach((result, index) => {
             if (result.status === 'fulfilled') {
                 if (index === 0) {
                     paid.set(UserEnum.Freelancer, true);
-                } else {
+                } else if (index === 1) {
                     paid.set(UserEnum.Satshoot, true);
+                } else {
+                    paid.set(UserEnum.Sponsored, true);
                 }
             } else {
                 // Error will be handled by the caller
@@ -181,12 +203,7 @@ export class CashuPaymentService {
             .cashuPay({
                 ...this.freelancerCashuInfo,
                 mints: compatibleMints,
-                target:
-                    userEnum === UserEnum.Freelancer
-                        ? this.secondaryEntity
-                        : this.targetEntity instanceof ServiceEvent
-                            ? this.secondaryEntity
-                            : this.targetEntity,
+                target: this.secondaryEntity,
                 recipientPubkey: pubkey,
                 amount: amountMillisats,
                 unit: 'msat',
@@ -253,21 +270,11 @@ export class CashuPaymentService {
 
         // Add reference tags
         nutzapEvent.tags.push([
-            'a',
-            userEnum === UserEnum.Freelancer
-                ? this.secondaryEntity.tagAddress()
-                : this.targetEntity instanceof ServiceEvent
-                    ? this.secondaryEntity.tagAddress()
-                    : this.targetEntity.tagAddress(),
+            'a', this.secondaryEntity.tagAddress()
         ]);
 
         nutzapEvent.tags.push([
-            'e',
-            userEnum === UserEnum.Freelancer
-                ? this.secondaryEntity.id
-                : this.targetEntity instanceof ServiceEvent
-                    ? this.secondaryEntity.id
-                    : this.targetEntity.id,
+            'e', this.secondaryEntity.id
         ]);
 
         nutzapEvent.recipientPubkey = pubkey;
