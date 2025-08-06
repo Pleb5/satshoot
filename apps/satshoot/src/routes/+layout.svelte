@@ -45,7 +45,7 @@
         wotFilteredServices,
     } from '$lib/stores/freelance-eventstores';
 
-    import { messageStore, wotFilteredMessageFeed } from '$lib/stores/messages';
+    import { messageStore, filteredMessages } from '$lib/stores/messages';
     import { sendNotification } from '$lib/stores/notifications';
     import { allReviews, clientReviews, freelancerReviews } from '$lib/stores/reviews';
     import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
@@ -581,8 +581,8 @@
     });
 
     $effect(() => {
-        if ($wotFilteredMessageFeed && $currentUser) {
-            $wotFilteredMessageFeed.forEach((dm: NDKEvent) => {
+        if ($filteredMessages && $currentUser) {
+            $filteredMessages.forEach((dm: NDKEvent) => {
                 // This is somewhat wasteful: If there was a nice way to attach
                 // a callback on uniquely new events in NDKEventStore-s
                 // We would not have to iterate over the whole array

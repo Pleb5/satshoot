@@ -15,7 +15,7 @@
     import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage, type NDKUser } from '@nostr-dev-kit/ndk';
     import { OrderEvent } from '$lib/events/OrderEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
-    import { wotFilteredMessageFeed } from '$lib/stores/messages';
+    import { filteredMessages } from '$lib/stores/messages';
 
     interface ConversationData {
         jobConversations: Array<[JobEvent, NDKUser]>;
@@ -78,7 +78,7 @@
     // These conversations are already covered for (Clients X Jobs) and
     // (Freelancers X Services) but not for (Clients X Orders) and (Freelancers X Jobs)
     $effect(() => {
-        if ($wotFilteredMessageFeed) {
+        if ($filteredMessages) {
             if (canStartFetchingJobsFromMessages) {
                 fetchJobsFromMessages()
             } else if (canStartFetchingServicesFromMessages) {
@@ -153,7 +153,7 @@
         kindToCheck: string, existingData: Array<[JobEvent | ServiceEvent, NDKUser]>
     ): string[] => {
         const dtags = []
-        for (const dm of $wotFilteredMessageFeed) {
+        for (const dm of $filteredMessages) {
             const dtag = (dm.tagValue('a') as string).split(':')[2]
             if (
                 (dm.tagValue('a') as string).includes(kindToCheck)

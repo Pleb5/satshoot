@@ -32,11 +32,9 @@ export const messageStore = get(ndk).storeSubscribe(
     [receivedMessageFilter, sentMessageFilter],
     subOptions
 );
-// Filter messages by wot. Question: is this necessary? After login the user
-// web of trust is set for the [authors] filter anywway so messages should already
-// be filtered on the relay side. Client side filtering might be unnecessary this way.
-export const wotFilteredMessageFeed = derived([messageStore, wot], ([$messageStore, $wot]) => {
-    // console.log('wotFilteredMessageFeed', wotFilteredMessageFeed)
+
+export const filteredMessages = derived(
+    [messageStore, wot], ([$messageStore, $wot]) => {
     const feed = $messageStore.filter((message: NDKEvent) => {
         let relatedToFreelance = false;
         message.tags.forEach((tag: NDKTag) => {
