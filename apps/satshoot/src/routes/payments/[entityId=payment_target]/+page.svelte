@@ -204,12 +204,11 @@
     $effect(() => {
         if (calculateSplits &&
             inputTotalAmount &&
-            pledgeSplit &&
             paymentManager
         ) {
             const paymentShares = PaymentService.computePaymentShares(
                 inputTotalAmount,
-                pledgeSplit,
+                pledgeSplit || 0,
                 sponsoredNpub,
                 sponsoringSplit || 0
             );

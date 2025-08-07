@@ -249,7 +249,7 @@
             return false
         }
 
-        if (!pledgeSplit) {
+        if (pledgeSplit === null) {
             errorText = 'Please set the Pledge Split';
             return false
         }
@@ -267,7 +267,7 @@
                 errorText = 'Invalid sponsored npub!';
                 return false
             } 
-            if (!sponsoringSplit) {
+            if (sponsoringSplit === null) {
                 errorText = 'Please set the Sponsoring Split!';
                 return false
             }

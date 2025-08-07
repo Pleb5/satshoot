@@ -360,7 +360,7 @@
             return false;
         }
 
-        if (!pledgeSplit) {
+        if (pledgeSplit === null) {
             toaster.error({
                 title: `Please set the Pledge Split!`,
             });
@@ -393,20 +393,27 @@
                 toaster.error(pubkeyResult);
                 return false;
             }
-        }
 
-        if ((sponsoringSplit || 0) < 0) {
-            toaster.error({
-                title: `Sponsoring split below 0!`,
-            });
-            return false;
-        } 
+            if (sponsoringSplit === null) {
+                toaster.error({
+                    title: `Please set the Sponsoring Split!`,
+                });
+                return false;
+            }
 
-        if ((sponsoringSplit || 0) > 100) {
-            toaster.error({
-                title: `Sponsoring split above 100%!`,
-            });
-            return false;
+            if (sponsoringSplit < 0) {
+                toaster.error({
+                    title: `Sponsoring split below 0!`,
+                });
+                return false;
+            } 
+
+            if (sponsoringSplit > 100) {
+                toaster.error({
+                    title: `Sponsoring split above 100%!`,
+                });
+                return false;
+            }
         }
 
         return true;

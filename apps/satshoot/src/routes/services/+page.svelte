@@ -63,11 +63,6 @@
         return new Set(copiedServices);
     });
 
-    $inspect($newServices, serviceList).with((type, newServices, serviceList) => {
-        console.log("new services", newServices)
-        console.log("sevices list", serviceList)
-    } )
-
     // tracks if user-defined filtering returned anything
     let noResults = $derived.by(() => {
         if (searchQuery && searchQuery.length > 0 && serviceList.size === 0) return true;
