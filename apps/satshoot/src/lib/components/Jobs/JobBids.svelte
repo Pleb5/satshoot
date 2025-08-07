@@ -21,6 +21,7 @@
     import { Popover } from '@skeletonlabs/skeleton-svelte';
     import { onDestroy } from 'svelte';
     import { Pricing } from '$lib/events/types';
+    import { wot } from '$lib/stores/wot';
 
     interface Props {
         job: JobEvent;
@@ -108,9 +109,12 @@
 
         const events = await $ndk.fetchEvents(bidsFilter, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            groupable: true,
+            groupableDelay: 500
         });
 
-        bids = Array.from(events).map((event) => BidEvent.from(event));
+        bids = Array.from(events).filter(b => $wot.has(b.pubkey))
+            .map((event) => BidEvent.from(event));
     };
 
     onDestroy(() => {
@@ -132,7 +136,7 @@
         <div class={boxWrapperClasses}>
             <p class="font-[600]">{job.status === JobStatus.New ? 'Pending ' : ''} Bids:</p>
             <p class="line-clamp-1 overflow-hidden">
-                {insertThousandSeparator(bids.length)}
+                {bids.length}
             </p>
         </div>
         {#if jobWinner}

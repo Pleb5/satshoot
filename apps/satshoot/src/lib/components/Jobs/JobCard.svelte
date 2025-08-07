@@ -8,6 +8,7 @@
     import JobActions from './JobActions.svelte';
     import JobDetails from './JobDetails.svelte';
     import JobBids from './JobBids.svelte';
+    import { wot } from '$lib/stores/wot';
 
     enum Tabs {
         JobDescription,
@@ -38,8 +39,11 @@
 
         $ndk.fetchEvents(bidsFilter, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+            groupable: true,
+            groupableDelay: 500
         }).then((bids) => {
-            highlightBidsTab = bids.size > 0;
+            highlightBidsTab = Array.from(bids)
+                    .filter(b=>$wot.has(b.pubkey)).length > 0;
         });
     });
 
