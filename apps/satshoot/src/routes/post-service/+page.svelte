@@ -12,7 +12,7 @@
     import UserProfile from '$lib/components/UI/Display/UserProfile.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
-    import { Pricing, type ZapSplit } from '$lib/events/types';
+    import { Pricing } from '$lib/events/types';
     import { PaymentService } from '$lib/services/payments';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { servicePostSuccessState } from '$lib/stores/modals';
@@ -381,7 +381,7 @@
             return false;
         }
 
-        if (!validateSponsoringInputs(sponsoredNpub)) return false;
+        if (!$onBoarding && !validateSponsoringInputs(sponsoredNpub)) return false;
         
         return true
     }
