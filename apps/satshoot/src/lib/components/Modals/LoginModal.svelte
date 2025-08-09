@@ -111,14 +111,27 @@
 
                     <h3 class="text-[18px]">Choose your login method</h3>
                     <Card classes="gap-[10px]">
+                        <div class="w-full flex gap-x-2">
+                            <Button 
+                                grow
+                                onClick={
+                                () => (selectedLoginMethod = LoginMethod.Local)
+                                }>
+                                File
+                            </Button>
+                            <Button 
+                                grow
+                                onClick={
+                                () => (selectedLoginMethod = LoginMethod.Local)
+                                }>
+                                Enter Key
+                            </Button>
+                        </div>
                         <Button onClick={() => (selectedLoginMethod = LoginMethod.Nip07)}>
                             Extension
                         </Button>
                         <Button onClick={() => (selectedLoginMethod = LoginMethod.Bunker)}>
                             Bunker
-                        </Button>
-                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Local)}>
-                            Local Key
                         </Button>
                     </Card>
                     <div class="h-[1px] w-full bg-black-200 my-[10px]"></div>

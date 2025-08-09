@@ -23,6 +23,12 @@ export enum ClientTabs {
     Jobs,
 }
 
+export enum LocalKeyLoginTabs {
+    BackupFile,
+    SecretKey,
+}
+
+
 export const profileTabStore = writable<ProfilePageTabs>(ProfilePageTabs.Jobs);
 
 export const freelancerTabStore = writable<FreelancerTabs>(FreelancerTabs.Services);

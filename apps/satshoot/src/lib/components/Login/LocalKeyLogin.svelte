@@ -2,9 +2,7 @@
     import Passphrase from '../Passphrase.svelte';
     import TabSelector from '../UI/Buttons/TabSelector.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import SeedWords from './SeedWords.svelte';
     import { privateKeyFromNsec } from '$lib/utils/nip19';
-    import { privateKeyFromSeedWords, validateWords } from 'nostr-tools/nip06';
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
     import { encryptSecret } from '$lib/utils/crypto';
     import { loginMethod, UserMode, userMode } from '$lib/stores/user';
@@ -13,123 +11,119 @@
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { goto } from '$app/navigation';
     import { toaster } from '$lib/stores/toaster';
+    import { LocalKeyLoginTabs } from '$lib/stores/tab-store';
+    import { FileUpload } from '@skeletonlabs/skeleton-svelte';
 
     interface Props {
         isOpen: boolean;
+        initialTab: LocalKeyLoginTabs
     }
 
-    let { isOpen = $bindable() }: Props = $props();
-
-    enum LocalKeyLoginTabs {
-        SecretKey,
-        SeedWords,
+    interface FileAcceptDetails {
+        files: File[];
     }
+
+    interface FileRejectDetails {
+        files: FileRejection[];
+    }
+
+    interface FileRejection {
+        file: File;
+        errors: FileError[];
+    }
+
+    type AnyString = string & {};
+    type FileError =
+        | 'TOO_MANY_FILES'
+        | 'FILE_INVALID_TYPE'
+        | 'FILE_TOO_LARGE'
+        | 'FILE_TOO_SMALL'
+        | 'FILE_INVALID'
+        | 'FILE_EXISTS'
+        | AnyString;
+
+    let { 
+        isOpen = $bindable(),
+        initialTab = LocalKeyLoginTabs.BackupFile
+    }: Props = $props();
 
     const localKeyLoginTabs = [
+        {
+            id: LocalKeyLoginTabs.BackupFile,
+            label: 'Backup File',
+        },
         {
             id: LocalKeyLoginTabs.SecretKey,
             label: 'Secret Key',
         },
-        {
-            id: LocalKeyLoginTabs.SeedWords,
-            label: 'Seed Words',
-        },
     ];
 
-    let activeTabForLocalKeyLogin = $state(LocalKeyLoginTabs.SecretKey);
+    let activeTabForLocalKeyLogin = $state(initialTab);
 
+    let backupFile = $state<File|null>(null)
+    let fileUploadSuccessful = $state(false)
     let nsecForLocalKey = $state('');
-    let seedWordsForLocalKey = $state(Array(12).fill(''));
-    let passphraseForNsec = $state('');
-    let confirmPassphraseForNsec = $state('');
-    let passphraseForSeedWords = $state('');
-    let confirmPassphraseForSeedWords = $state('');
+    let passphrase = $state('');
+    let confirmPassphrase = $state('');
 
     let statusMessage = $state('');
     let statusColor = $state('text-tertiary-200-700');
 
+    const validateBackupFile = (file:File) => {
+        const errors = []
+        if (file.type !== 'text/plain') {
+            errors.push('File must contain plain text');
+        }
+        if (!file.name.endsWith('.conf')) {
+            errors.push('File extension must be .conf');
+        }
+        if (errors.length > 0) return errors
+        
+        return null
+    }
+
     async function loginWithNsec() {
-        if (passphraseForNsec.length < 14) {
-            toaster.error({
-                title: 'Passphrase should be at least 14 characters long',
-            });
-
-            return;
-        }
-
-        if (confirmPassphraseForNsec !== passphraseForNsec) {
-            toaster.error({
-                title: 'Confirm passphrase does not match passphrase',
-            });
-
-            return;
-        }
+        if (!validatePassphrase()) return
 
         await loginWithSecret(
             nsecForLocalKey,
-            passphraseForNsec,
+            passphrase,
             'nostr-nsec',
-            'Could not create Private Key! Probably incorrect nsec!'
+            'Could not parse Private Key! Probably incorrect nsec!'
         );
     }
 
-    async function loginWithSeedWords() {
-        if (passphraseForSeedWords.length < 14) {
+    async function loginWithBackupFile() {
+        if (!validatePassphrase()) return
+
+        await loginWithSecret(
+            nsecForLocalKey,
+            passphrase,
+            'nostr-nsec',
+            'Could not parse Private Key! Probably wrong or corrupted backup file!'
+        );
+    }
+
+    const validatePassphrase = (): boolean => {
+        if (!passphrase && !confirmPassphrase) return true
+
+        if (passphrase.length < 14) {
             toaster.error({
                 title: 'Passphrase should be at least 14 characters long',
+                duration: 7000,
             });
 
-            return;
+            return false;
         }
 
-        if (confirmPassphraseForSeedWords !== passphraseForSeedWords) {
+        if (confirmPassphrase !== passphrase) {
             toaster.error({
                 title: 'Confirm passphrase does not match passphrase',
             });
 
-            return;
-        }
-
-        if (!validateSeedWordInputs(seedWordsForLocalKey)) {
-            toaster.error({
-                title: 'Invalid seed words input!',
-            });
-            return;
-        }
-
-        await loginWithSecret(
-            seedWordsForLocalKey.join(' '),
-            passphraseForSeedWords,
-            'nostr-seedwords',
-            'Could not create Private Key! Probably incorrect Seed Words!'
-        );
-    }
-
-    function validateSeedWordInputs(seedWords: string[]): boolean {
-        // Validate all words filled in
-        let allFilledIn = true;
-        seedWords.forEach((value) => {
-            if (!value) {
-                allFilledIn = false;
-            }
-        });
-
-        if (!allFilledIn) {
-            toaster.error({
-                title: 'Fill in all seed words!',
-            });
             return false;
         }
-
-        // validate valid bip39 wordlist provided
-        if (!validateWords(seedWords.join(' '))) {
-            toaster.error({
-                title: 'Check the seed words again! Not a valid bip39 wordlist!',
-            });
-            return false;
-        }
-
-        return true;
+        return true
     }
 
     async function loginWithSecret(
@@ -142,10 +136,7 @@
         statusColor = 'text-tertiary-200-700';
 
         try {
-            const privateKey =
-                storageKey === 'nostr-nsec'
-                    ? privateKeyFromNsec(secret)
-                    : privateKeyFromSeedWords(secret);
+            const privateKey = privateKeyFromNsec(secret)
 
             if (!privateKey) {
                 throw new Error('Creating Private Key from input failed!');
@@ -197,6 +188,21 @@
         }
     }
 
+    function handleFileAccept({ files }: FileAcceptDetails) {
+        console.log('accept')
+        backupFile = files[0]
+        fileUploadSuccessful = true
+    }
+
+    function handleFileReject({ files }: FileRejectDetails) {
+        const error = files[0].errors
+        error.forEach((error) => {
+            toaster.error({
+                title: `File Loading Error: ${error}`,
+            });
+        })
+    }
+
     const labelClasses =
         'px-[10px] py-[5px] rounded-t-[6px] overflow-hidden border-[1px] border-black-200 dark:border-white-200 border-b-[0px] text-[14px]';
 
@@ -225,9 +231,25 @@
 
 <!-- tabs start-->
 <div class="w-full flex flex-col gap-[10px]">
-    <TabSelector tabs={localKeyLoginTabs} bind:selectedTab={activeTabForLocalKeyLogin} />
-    {#if activeTabForLocalKeyLogin === LocalKeyLoginTabs.SecretKey}
-        <div class="w-full flex flex-col">
+    <TabSelector 
+        tabs={localKeyLoginTabs} 
+        bind:selectedTab={activeTabForLocalKeyLogin} 
+    />
+    <div class="w-full flex flex-col">
+        {#if activeTabForLocalKeyLogin === LocalKeyLoginTabs.BackupFile}
+            <FileUpload
+                name="nsec_backup"
+                accept={{"text/plain": [".conf"]}}
+                maxFiles={1}
+                subtext={"SatShoot-<User name>-login.conf"}
+                classes={"mb-2"}
+                validate={validateBackupFile}
+                onFileAccept={handleFileAccept}
+                onFileReject={handleFileReject}
+            >
+                {#snippet iconInterface()}<i class="text-2xl sm:text-3xl bx bx-save"></i>{/snippet}
+            </FileUpload>
+        {:else if activeTabForLocalKeyLogin === LocalKeyLoginTabs.SecretKey}
             <div class="w-full flex flex-row gap-[5px]">
                 <p class={labelClasses}>Secret key</p>
             </div>
@@ -242,22 +264,13 @@
                     notRounded
                 />
             </div>
-            <Passphrase
-                bind:passphrase={passphraseForNsec}
-                bind:confirmPassphrase={confirmPassphraseForNsec}
-                btnLabel="Login"
-                onSubmit={loginWithNsec}
-            />
-        </div>
-    {:else if activeTabForLocalKeyLogin === LocalKeyLoginTabs.SeedWords}
-        <div class="w-full flex flex-col">
-            <SeedWords bind:words={seedWordsForLocalKey} />
-            <Passphrase
-                bind:passphrase={passphraseForSeedWords}
-                bind:confirmPassphrase={confirmPassphraseForSeedWords}
-                btnLabel="Login"
-                onSubmit={loginWithSeedWords}
-            />
-        </div>
-    {/if}
+        {/if}
+
+        <Passphrase
+            bind:passphrase={passphrase}
+            bind:confirmPassphrase={confirmPassphrase}
+            btnLabel="Login"
+            onSubmit={loginWithNsec}
+        />
+    </div>
 </div>
