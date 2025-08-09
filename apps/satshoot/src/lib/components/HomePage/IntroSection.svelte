@@ -32,18 +32,18 @@
                         <Button
                             classes="max-w-[75%] max-[576px]:max-w-[100%]"
                             fullWidth
-                            href="/post-job/"
-                            onClick={() => ($userMode = UserMode.Client)}
-                        >
-                            Create Job Listing
-                        </Button>
-                        <Button
-                            classes="max-w-[75%] max-[576px]:max-w-[100%]"
-                            fullWidth
                             href="/services/"
                             onClick={() => ($userMode = UserMode.Client)}
                         >
                             Browse Services
+                        </Button>
+                        <Button
+                            classes="max-w-[75%] max-[576px]:max-w-[100%]"
+                            fullWidth
+                            href="/post-job/"
+                            onClick={() => ($userMode = UserMode.Client)}
+                        >
+                            Create Job Listing
                         </Button>
                     </div>
                 </div>
