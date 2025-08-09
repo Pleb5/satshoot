@@ -234,6 +234,7 @@
             <div class={inputWrapperClasses}>
                 <Input
                     bind:value={nsecForLocalKey}
+                    type="password"
                     placeholder="nsec..."
                     classes="focus:ring-0 bg-transparent"
                     grow
