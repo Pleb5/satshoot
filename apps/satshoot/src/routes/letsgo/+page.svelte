@@ -4,7 +4,6 @@
         onBoarding,
         onBoardingName,
         onBoardingNsec,
-        onBoardingPrivateKey,
         UserMode,
         userMode 
     } from '$lib/stores/user';
@@ -19,13 +18,9 @@
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
 
-    const privateKey = $onBoardingPrivateKey 
-        ? $onBoardingPrivateKey
-        : generateSecretKey();
-
     const generatedNsec = $onBoardingNsec 
         ? $onBoardingNsec
-        : nsecEncode(privateKey);
+        : nsecEncode(generateSecretKey());
 
     let nsecSaved = $state(false);
      
@@ -76,7 +71,7 @@
     let inProgress = $state(false)
 
     onMount(async () => {
-        $onBoarding = true;
+        onBoarding.set(true);
         const signer = new NDKPrivateKeySigner(generatedNsec);
         const user = await signer.user();
         generatedNpub = user.npub;
@@ -86,9 +81,8 @@
     async function finalize() {
         if (!validate()) return;
 
-        $onBoardingPrivateKey = privateKey
-        $onBoardingNsec = generatedNsec
-        $onBoardingName = userName
+        onBoardingNsec.set(generatedNsec)
+        onBoardingName.set(userName)
 
         inProgress = true
         await tick()

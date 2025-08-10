@@ -25,7 +25,6 @@
         onBoarding,
         onBoardingName,
         onBoardingNsec,
-        onBoardingPrivateKey 
     } from '$lib/stores/user';
     import { uploadToBlossom } from '$lib/utils/blossom';
     import {
@@ -432,10 +431,9 @@
 
             await postService();
 
-            $onBoarding = false;
-            $onBoardingPrivateKey = null
-            $onBoardingNsec = ''
-            $onBoardingName = ''
+            onBoarding.set(false);
+            onBoardingName.set('')
+            onBoardingNsec.set('')
 
             step = 4
         } catch (e) {
@@ -455,7 +453,11 @@
 
             $loginMethod = LoginMethod.Local;
 
-            $sessionPK = (bytesToHex($onBoardingPrivateKey as Uint8Array<ArrayBufferLike>));
+            $sessionPK = (
+                bytesToHex(
+                    nip19.decode($onBoardingNsec).data as Uint8Array<ArrayBufferLike>
+                )
+            );
 
             user = await $ndk.signer.user();
             user.profile = {

@@ -1,7 +1,18 @@
 <script lang="ts">
     import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
-    import currentUser, { loggedIn, loginMethod, onBoarding, onBoardingName, onBoardingNsec, onBoardingPrivateKey } from '$lib/stores/user';
-    import { broadcastUserProfile, checkRelayConnections, initializeUser } from '$lib/utils/helpers';
+    import currentUser, {
+        loggedIn,
+        loginMethod,
+        onBoarding,
+        onBoardingName,
+        onBoardingNsec
+    } from '$lib/stores/user';
+     
+    import { 
+        broadcastUserProfile,
+        checkRelayConnections,
+        initializeUser 
+    } from '$lib/utils/helpers';
 
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import { NDKPrivateKeySigner, NDKUser, type NDKTag } from '@nostr-dev-kit/ndk';
@@ -26,6 +37,7 @@
     import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
     import CopyButton from '$lib/components/UI/Buttons/CopyButton.svelte';
     import ShareEventModal from '$lib/components/Modals/ShareEventModal.svelte';
+    import { nip19 } from 'nostr-tools';
 
     class AccountPublishError extends Error {
         constructor(message: string) {
@@ -233,10 +245,9 @@
 
             await postJob()
 
-            $onBoarding = false;
-            $onBoardingPrivateKey = null
-            $onBoardingNsec = ''
-            $onBoardingName = ''
+            onBoarding.set(false);
+            onBoardingName.set('')
+            onBoardingNsec.set('')
 
             step = 2
         } catch (e) {
@@ -258,7 +269,9 @@
             $loginMethod = LoginMethod.Local;
 
             $sessionPK = (
-                bytesToHex($onBoardingPrivateKey as Uint8Array<ArrayBufferLike>)
+                bytesToHex(
+                    nip19.decode($onBoardingNsec).data as Uint8Array<ArrayBufferLike>
+                )
             );
 
             user = await $ndk.signer.user();
