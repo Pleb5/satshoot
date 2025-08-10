@@ -13,6 +13,7 @@
     import { toaster } from '$lib/stores/toaster';
     import { LocalKeyLoginTabs } from '$lib/stores/tab-store';
     import { FileUpload } from '@skeletonlabs/skeleton-svelte';
+    import QuestionIcon from '../Icons/QuestionIcon.svelte';
 
     interface Props {
         isOpen: boolean;
@@ -69,14 +70,21 @@
     let statusMessage = $state('');
     let statusColor = $state('text-tertiary-200-700');
 
-    const validateBackupFile = (file:File) => {
+    const validateBackupFile = (file:File): string[]|null => {
         const errors = []
-        if (file.type !== 'text/plain') {
-            errors.push('File must contain plain text');
+        
+        const acceptedMimeTypes = [
+            'text/plain',
+            '' // some browsers might not set a type
+        ];
+        
+        if (!acceptedMimeTypes.includes(file.type) && file.type !== '') {
+            errors.push(
+                `Unexpected file type: ${file.type}. Expected a '.txt' file.`
+            );
+            console.error('File validation failed:', file);
         }
-        if (!file.name.endsWith('.conf')) {
-            errors.push('File extension must be .conf');
-        }
+        
         if (errors.length > 0) return errors
         
         return null
@@ -95,13 +103,37 @@
 
     async function loginWithBackupFile() {
         if (!validatePassphrase()) return
+        if (!backupFile) {
+            toaster.error({
+                title: 'No backup file selected',
+            });
+            return;
+        }
 
-        await loginWithSecret(
-            nsecForLocalKey,
-            passphrase,
-            'nostr-nsec',
-            'Could not parse Private Key! Probably wrong or corrupted backup file!'
-        );
+        try {
+            // Read the file content
+            const fileContent = await backupFile.text();
+            
+            // Extract nsec from the file content
+            const nsecMatch = fileContent.match(/nsec=([a-zA-Z0-9]+)/);
+            
+            if (!nsecMatch || !nsecMatch[1]) {
+                throw new Error('Could not find nsec in backup file');
+            }
+            
+            const extractedNsec = nsecMatch[1];
+            
+            await loginWithSecret(
+                extractedNsec,
+                passphrase,
+                'nostr-nsec',
+                'Could not parse Private Key! Probably wrong or corrupted backup file!'
+            );
+        } catch (error) {
+            toaster.error({
+                title: `Failed to read backup file: ${error}`,
+            });
+        }
     }
 
     const validatePassphrase = (): boolean => {
@@ -189,7 +221,6 @@
     }
 
     function handleFileAccept({ files }: FileAcceptDetails) {
-        console.log('accept')
         backupFile = files[0]
         fileUploadSuccessful = true
     }
@@ -208,6 +239,16 @@
 
     const inputWrapperClasses =
         'w-full flex flex-col gap-[5px] bg-black-50 dark:bg-white-50 border-[1px] border-black-100 dark:border-white-100 rounded-tr-[6px] p-[5px] overflow-hidden';
+
+    let passphraseTooltip =
+        '<div>' +
+        '<ul class="list-inside list-disc space-y-2">' +
+            '<li>' +
+                'Login easily with a password after you session ends.' +
+            '</li>' +
+            '<li>Your secret key will be stored encrypted in the browser until logout.</li>' +
+        '</ul>' +
+        '</div>';
 </script>
 
 {#if statusMessage}
@@ -239,9 +280,9 @@
         {#if activeTabForLocalKeyLogin === LocalKeyLoginTabs.BackupFile}
             <FileUpload
                 name="nsec_backup"
-                accept={{"text/plain": [".conf"]}}
+                accept="text/*"
                 maxFiles={1}
-                subtext={"SatShoot-<User name>-login.conf"}
+                subtext={"SatShoot-<User name>-login.txt"}
                 classes={"mb-2"}
                 validate={validateBackupFile}
                 onFileAccept={handleFileAccept}
@@ -266,11 +307,25 @@
             </div>
         {/if}
 
-        <Passphrase
-            bind:passphrase={passphrase}
-            bind:confirmPassphrase={confirmPassphrase}
-            btnLabel="Login"
-            onSubmit={loginWithNsec}
-        />
+        <div class="flex flex-col place-items-center mt-2">
+            <div class="flex gap-x-2">
+            <div>Password (optional)</div>
+            <QuestionIcon
+                extraClasses="text-[14px] p-[3px]"
+                placement="bottom-start"
+                popUpText={passphraseTooltip}
+            />
+            </div>
+            <Passphrase
+                bind:passphrase={passphrase}
+                bind:confirmPassphrase={confirmPassphrase}
+                btnLabel="Login"
+                onSubmit={
+                activeTabForLocalKeyLogin === LocalKeyLoginTabs.BackupFile 
+                    ? loginWithBackupFile 
+                    : loginWithNsec
+                }
+            />
+        </div>
     </div>
 </div>

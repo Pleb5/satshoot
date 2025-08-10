@@ -375,6 +375,13 @@
                                     <Input
                                         bind:value={searchInput}
                                         placeholder="search"
+                                        type="search"
+                                        autocomplete={null}
+                                        autocapitalize="off"
+                                        autocorrect="off"
+                                        spellcheck={false}
+                                        name="search-satshoot"
+                                        id="search-satshoot"
                                     />
                                     {#if searchInput.length}
                                         <Button
@@ -500,6 +507,15 @@
                                 <Input
                                     bind:value={searchInput}
                                     placeholder="search"
+                                    type="text"
+                                    autocomplete={null}
+                                    autocapitalize="off"
+                                    autocorrect="off"
+                                    spellcheck={false}
+                                    data-form-type="other"
+                                    data-lpignore="true"
+                                    name="search-satshoot-mobile"
+                                    id="search-satshoot-mobile"
                                 />
                                 {#if searchInput.length}
                                     <Button

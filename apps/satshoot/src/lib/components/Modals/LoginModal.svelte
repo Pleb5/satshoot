@@ -9,6 +9,7 @@
     import { UserMode, userMode } from '$lib/stores/user';
     import { goto } from '$app/navigation';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { LocalKeyLoginTabs } from '$lib/stores/tab-store';
 
     interface Props {
         isOpen: boolean;
@@ -17,6 +18,7 @@
     let { isOpen = $bindable() }: Props = $props();
 
     let selectedLoginMethod: LoginMethod | null = $state(null);
+    let initialTab: LocalKeyLoginTabs = $state(LocalKeyLoginTabs.BackupFile)
 
     let navigationInProgress = $state(false)
 
@@ -115,15 +117,19 @@
                             <Button 
                                 grow
                                 onClick={
-                                () => (selectedLoginMethod = LoginMethod.Local)
-                                }>
+                                () => {
+                                    selectedLoginMethod = LoginMethod.Local
+                                    initialTab = LocalKeyLoginTabs.BackupFile
+                                }}>
                                 File
                             </Button>
                             <Button 
                                 grow
                                 onClick={
-                                () => (selectedLoginMethod = LoginMethod.Local)
-                                }>
+                                () => {
+                                    selectedLoginMethod = LoginMethod.Local
+                                    initialTab = LocalKeyLoginTabs.SecretKey
+                                }}>
                                 Enter Key
                             </Button>
                         </div>
@@ -158,7 +164,7 @@
             {:else if selectedLoginMethod === LoginMethod.Bunker}
                 <BunkerLogin bind:isOpen />
             {:else if selectedLoginMethod === LoginMethod.Local}
-                <LocalKeyLogin bind:isOpen />
+                <LocalKeyLogin bind:isOpen {initialTab}/>
             {/if}
         </div>
     </div>

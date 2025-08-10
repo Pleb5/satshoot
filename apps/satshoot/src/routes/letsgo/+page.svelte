@@ -31,7 +31,7 @@
     )
     let generatedNpub = $state('');
 
-    const filename = $derived(`SatShoot-${userName}-login.conf`)
+    const filename = $derived(`SatShoot-${userName}-login.txt`)
 
     const fileContent = $derived(`
     # This is your SatShoot Nostr login configuration.

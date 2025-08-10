@@ -1,9 +1,10 @@
 <script lang="ts">
     import { mergeClasses } from '$lib/utils/styles';
-    import type { HTMLInputTypeAttribute } from 'svelte/elements';
+    import type { FullAutoFill, HTMLInputTypeAttribute } from 'svelte/elements';
 
     interface Props {
         id?: string | null;
+        name?: string | null;
         step?: string | number | null | undefined;
         min?: string | number | null | undefined;
         max?: string | number | null | undefined;
@@ -21,10 +22,17 @@
         rows?: number | undefined | null;
         minlength?: number | undefined | null;
         onKeyPress?: (event: KeyboardEvent) => void; // Default is a no-op
+        autocomplete?: FullAutoFill | null | undefined;
+        autocapitalize?: "off" | "on" | "characters" | "none" | "sentences" | "words" | null | undefined;
+        autocorrect?: ""|"off"|"on"|null|undefined;
+        spellcheck?: boolean;
+        'data-form-type'?: string;
+        'data-lpignore'?: string;
     }
 
     let {
         id = null,
+        name = null,
         step = null,
         min = null,
         max = null,
@@ -42,6 +50,12 @@
         rows = null,
         minlength = null,
         onKeyPress = () => {},
+        autocomplete = undefined,
+        autocapitalize = undefined,
+        autocorrect = undefined,
+        spellcheck = undefined,
+        'data-form-type': dataFormType = undefined,
+        'data-lpignore': dataLpignore = undefined,
     }: Props = $props();
 
     const baseClasses =
@@ -77,11 +91,17 @@
 {#if textarea}
     <textarea
         {id}
+        {name}
         {rows}
         {minlength}
         {placeholder}
         {disabled}
         {readonly}
+        {autocomplete}
+        {autocapitalize}
+        {spellcheck}
+        data-form-type={dataFormType}
+        data-lpignore={dataLpignore}
         class={finalClasses}
         bind:value
         bind:this={inputElement}
@@ -89,12 +109,19 @@
 {:else if type === 'number'}
     <input
         {id}
+        {name}
         {step}
         {min}
         {max}
         {placeholder}
         {disabled}
         {readonly}
+        {autocomplete}
+        {autocapitalize}
+        {autocorrect}
+        {spellcheck}
+        data-form-type={dataFormType}
+        data-lpignore={dataLpignore}
         type="number"
         class={finalClasses}
         bind:value
@@ -104,9 +131,16 @@
 {:else}
     <input
         {id}
+        {name}
         {placeholder}
         {disabled}
         {readonly}
+        {autocomplete}
+        {autocapitalize}
+        {autocorrect}
+        {spellcheck}
+        data-form-type={dataFormType}
+        data-lpignore={dataLpignore}
         class={finalClasses}
         bind:value
         bind:this={inputElement}
