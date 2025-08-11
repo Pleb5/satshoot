@@ -178,23 +178,26 @@
             const user = await signer.user();
             const npub = user.npub;
 
-            // Encrypt secret for local storage
-            const encryptedSecret = encryptSecret(secret, passphrase, npub);
-            localStorage.setItem(storageKey, encryptedSecret);
-            localStorage.setItem('nostr-npub', npub);
-            loginMethod.set(LoginMethod.Local);
-
             $sessionPK = privateKey;
 
             // Set NDK signer
             $ndk.signer = signer;
+
+            loginMethod.set(LoginMethod.Local);
+
+            if (passphrase) {
+                // Encrypt secret for local storage
+                const encryptedSecret = encryptSecret(secret, passphrase, npub);
+                localStorage.setItem(storageKey, encryptedSecret);
+                localStorage.setItem('nostr-npub', npub);
+            }
 
             // Initialize user
             initializeUser($ndk);
 
             // Display success toast
             toaster.success({
-                title: 'Encrypted Secret saved in local storage!',
+                title: 'Logged in',
             });
 
             handleRedirection();

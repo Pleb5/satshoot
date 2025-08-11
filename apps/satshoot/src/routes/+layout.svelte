@@ -183,11 +183,11 @@
         if ($sessionPK) {
             $ndk.signer = new NDKPrivateKeySigner($sessionPK);
             $loggingIn = false;
+            console.log('Start init session in local key login')
 
-            await initializeUser($ndk);
+            initializeUser($ndk);
         } else if (
-            localStorage.getItem('nostr-nsec') !== null ||
-            localStorage.getItem('nostr-seedwords') !== null
+            localStorage.getItem('nostr-nsec') !== null
         ) {
             showDecryptSecretModal = true;
         }
