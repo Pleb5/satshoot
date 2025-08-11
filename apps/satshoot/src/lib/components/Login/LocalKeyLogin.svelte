@@ -244,7 +244,7 @@
         '<div>' +
         '<ul class="list-inside list-disc space-y-2">' +
             '<li>' +
-                'Login easily with a password after you session ends.' +
+                'Login easily with a password after your session ends.' +
             '</li>' +
             '<li>Your secret key will be stored encrypted in the browser until logout.</li>' +
         '</ul>' +
