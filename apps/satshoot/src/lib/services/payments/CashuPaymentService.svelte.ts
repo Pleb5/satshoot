@@ -218,7 +218,7 @@ export class CashuPaymentService {
         }
 
         // Create and publish NutZap event
-        await this.createAndPublishNutZap(cashuResult, userEnum, pubkey);
+        await this.createAndPublishNutZap(cashuResult, pubkey);
     }
 
     /**
@@ -260,7 +260,6 @@ export class CashuPaymentService {
      */
     private async createAndPublishNutZap(
         cashuResult: { mint: string; proofs: Proof[] },
-        userEnum: UserEnum,
         pubkey: string
     ): Promise<void> {
         const nutzapEvent = new NDKNutzap(get(ndk));

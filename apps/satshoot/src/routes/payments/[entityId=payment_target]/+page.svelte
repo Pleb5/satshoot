@@ -96,7 +96,7 @@
             });
 
             $ndk.fetchEvent(decodedAddr, {
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY, // the cache delivers events with empty id in current ndk
             })
                 .then((event) => {
                     if (event) {
@@ -118,7 +118,7 @@
                 .then((primaryNaddr) => {
                     if (primaryNaddr) {
                         $ndk.fetchEvent(primaryNaddr, {
-                            cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
+                            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY, // the cache delivers events with empty id in current ndk
                         }).then((event) => {
                             if (event) {
                                 switch (event.kind) {
