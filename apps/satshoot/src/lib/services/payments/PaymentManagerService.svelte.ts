@@ -257,25 +257,37 @@ export class PaymentManagerService {
     /**
      * Check if Cashu payment is available
      */
-    get canPayWithCashu(): boolean {
-        if (!this.cashu.hasSenderEcashSetup || !this.cashu.canPayWithEcash) {
+    canPayWithCashu(userType: UserEnum): boolean {
+        if (!this.cashu.canPayWithEcash(userType)) {
             return false;
         }
 
-        return this.cashu.checkMintBalance(this.paymentService.amount + this.paymentService.satshootAmount + this.paymentService.sponsoredAmount);
+        let amountToPay: number;
+        switch (userType) {
+            case UserEnum.Freelancer:
+                amountToPay = this.paymentService.amount;
+                break;
+            case UserEnum.Satshoot:
+                amountToPay = this.paymentService.satshootAmount;
+                break;
+            default:
+                amountToPay = this.paymentService.sponsoredAmount;
+        }
+
+        return this.cashu.checkMintBalance(amountToPay);
     }
 
     /**
      * Get Cashu tooltip text for UI
      */
-    get cashuTooltipText(): string {
+    cashuTooltipText(userType: UserEnum): string {
         if (!this.cashu.hasSenderEcashSetup) {
             return 'Setup Wallet to pay with Cashu!';
         }
-        if (!this.cashu.canPayWithEcash) {
-            return 'Could not find Freelancer Cashu Info';
+        if (!this.cashu.canPayWithEcash(userType)) {
+            return `Could not find ${userType} Cashu Info`;
         }
-        if (!this.canPayWithCashu) {
+        if (!this.canPayWithCashu(userType)) {
             return 'No Mint in Wallet has enough balance for this amount!';
         }
         return '';

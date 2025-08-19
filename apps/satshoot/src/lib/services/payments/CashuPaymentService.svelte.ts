@@ -36,8 +36,11 @@ export class NutZapError extends Error {
  */
 export class CashuPaymentService {
     private freelancerCashuInfo: CashuPaymentInfo | null = $state(null);
+    private satshootCashuInfo: CashuPaymentInfo | null = $state(null);
+    private sponsoredCashuInfo: CashuPaymentInfo | null = $state(null);
     private readonly safety = 3; // 3 sats safety for balance calculations
     private freelancerPubkey: string;
+    private sponsoredPubkey: string = '';
 
     constructor(
         private primaryEntity: JobEvent | ServiceEvent,
@@ -47,6 +50,21 @@ export class CashuPaymentService {
             this.secondaryEntity instanceof BidEvent
                 ? this.secondaryEntity.pubkey
                 : this.primaryEntity.pubkey;
+
+        const sponsoredNpub =
+            this.secondaryEntity instanceof BidEvent
+                ? this.secondaryEntity.sponsoredNpub
+                : (this.primaryEntity as ServiceEvent).sponsoredNpub;
+        if (sponsoredNpub) {
+            try {
+                const { type, data } = nip19.decode(sponsoredNpub);
+                if (type === "npub") {
+                    this.sponsoredPubkey = data;
+                }
+            } catch (error) {
+                console.error("Error decoding sponsored npub: ", sponsoredNpub);
+            }
+        }
 
         this.initializeCashuInfo();
     }
@@ -58,6 +76,22 @@ export class CashuPaymentService {
         this.freelancerCashuInfo = (await getCashuPaymentInfo(
             this.freelancerPubkey
         )) as CashuPaymentInfo | null;
+
+        if (this.primaryEntity instanceof ServiceEvent && this.primaryEntity.pledgeSplit) {
+            this.satshootCashuInfo = (await getCashuPaymentInfo(
+                SatShootPubkey
+            )) as CashuPaymentInfo | null;
+        } else if (this.secondaryEntity instanceof BidEvent && this.secondaryEntity.pledgeSplit) {
+            this.satshootCashuInfo = (await getCashuPaymentInfo(
+                SatShootPubkey
+            )) as CashuPaymentInfo | null;
+        }
+
+        if (this.sponsoredPubkey) {
+            this.sponsoredCashuInfo = (await getCashuPaymentInfo(
+                this.sponsoredPubkey
+            )) as CashuPaymentInfo | null;
+        }
     }
 
     /**
@@ -80,21 +114,9 @@ export class CashuPaymentService {
     /**
      * Check if payment with ecash is possible
      */
-    get canPayWithEcash(): boolean {
-        return this.hasSenderEcashSetup && !!this.freelancerCashuInfo && this.checkMintBalance(0); // Will be checked with actual amount later
-    }
-
-    /**
-     * Get ecash tooltip text for UI
-     */
-    get ecashTooltipText(): string {
-        if (!this.hasSenderEcashSetup) {
-            return 'Setup Wallet to pay with Cashu!';
-        }
-        if (!this.freelancerCashuInfo) {
-            return 'Could not find Freelancer Cashu Info';
-        }
-        return '';
+    canPayWithEcash(userType: UserEnum): boolean {
+        const cashuInfo = this.cashuInfoFromUserType(userType);
+        return this.hasSenderEcashSetup && !!cashuInfo && this.checkMintBalance(0); // Will be checked with actual amount later
     }
 
     /**
@@ -167,14 +189,15 @@ export class CashuPaymentService {
      * Process individual Cashu payment
      */
     private async processCashuPayment(
-        userEnum: UserEnum,
+        userType: UserEnum,
         pubkey: string,
         amountMillisats: number
     ): Promise<void> {
         if (amountMillisats === 0) return;
 
-        if (!this.freelancerCashuInfo || !this.freelancerCashuInfo.mints) {
-            throw new Error(`Could not fetch cashu payment info for ${userEnum}!`);
+        const cashuInfo = this.cashuInfoFromUserType(userType);
+        if (!cashuInfo || !cashuInfo.mints) {
+            throw new Error(`Could not fetch cashu payment info for ${userType}!`);
         }
 
         const walletInstance = get(wallet);
@@ -191,17 +214,17 @@ export class CashuPaymentService {
         }
 
         // Find compatible mints
-        const compatibleMints = await this.findCompatibleMints();
+        const compatibleMints = await this.findCompatibleMints(userType);
         if (compatibleMints.length === 0) {
-            throw new Error(`Could not find a mint for ${userEnum} that support sats!`);
+            throw new Error(`Could not find a mint for ${userType} that support sats!`);
         }
 
         // Process the payment
-        this.freelancerCashuInfo.allowIntramintFallback = false;
+        cashuInfo.allowIntramintFallback = false;
 
         const cashuResult = await walletInstance
             .cashuPay({
-                ...this.freelancerCashuInfo,
+                ...cashuInfo,
                 mints: compatibleMints,
                 target: this.secondaryEntity,
                 recipientPubkey: pubkey,
@@ -218,16 +241,17 @@ export class CashuPaymentService {
         }
 
         // Create and publish NutZap event
-        await this.createAndPublishNutZap(cashuResult, pubkey);
+        await this.createAndPublishNutZap(cashuResult, pubkey, userType);
     }
 
     /**
      * Find mints that are compatible with the freelancer's requirements
      */
-    private async findCompatibleMints(): Promise<string[]> {
-        if (!this.freelancerCashuInfo?.mints) return [];
+    private async findCompatibleMints(userType: UserEnum): Promise<string[]> {
+        const cashuInfo = this.cashuInfoFromUserType(userType);
+        if (!cashuInfo?.mints) return [];
 
-        const mintPromises = this.freelancerCashuInfo.mints.map(async (mintUrl) => {
+        const mintPromises = cashuInfo.mints.map(async (mintUrl) => {
             const mint = new CashuMint(mintUrl);
             return mint
                 .getInfo()
@@ -260,7 +284,8 @@ export class CashuPaymentService {
      */
     private async createAndPublishNutZap(
         cashuResult: { mint: string; proofs: Proof[] },
-        pubkey: string
+        pubkey: string,
+        userEnum: UserEnum
     ): Promise<void> {
         const nutzapEvent = new NDKNutzap(get(ndk));
         nutzapEvent.mint = cashuResult.mint;
@@ -278,9 +303,20 @@ export class CashuPaymentService {
 
         nutzapEvent.recipientPubkey = pubkey;
 
-        const explicitRelays = [...(this.freelancerCashuInfo?.relays ?? [])];
+        const explicitRelays = [...(this.cashuInfoFromUserType(userEnum)?.relays ?? [])];
 
         await this.trySignAndPublishNutZap(nutzapEvent, explicitRelays);
+    }
+
+    private cashuInfoFromUserType(userType: UserEnum) {
+        switch (userType) {
+            case UserEnum.Freelancer:
+                return this.freelancerCashuInfo;
+            case UserEnum.Satshoot:
+                return this.satshootCashuInfo;
+            default:
+                return this.sponsoredCashuInfo;
+        }
     }
 
     /**

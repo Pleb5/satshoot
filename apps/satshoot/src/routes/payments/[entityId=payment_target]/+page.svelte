@@ -5,7 +5,14 @@
     import { redirectAfterLogin } from '$lib/stores/gui';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
-    import { NDKEvent, NDKKind, NDKRelay, NDKRelaySet, NDKSubscriptionCacheUsage, profileFromEvent } from '@nostr-dev-kit/ndk';
+    import {
+        NDKEvent,
+        NDKKind,
+        NDKRelay,
+        NDKRelaySet,
+        NDKSubscriptionCacheUsage,
+        profileFromEvent,
+    } from '@nostr-dev-kit/ndk';
     import { JobEvent } from '$lib/events/JobEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { BidEvent } from '$lib/events/BidEvent';
@@ -14,7 +21,12 @@
     import { goto } from '$app/navigation';
     import { onDestroy } from 'svelte';
     import UserProfile from '$lib/components/UI/Display/UserProfile.svelte';
-    import { formatNumber, insertThousandSeparator, parseNumber, SatShootPubkey } from '$lib/utils/misc';
+    import {
+        formatNumber,
+        insertThousandSeparator,
+        parseNumber,
+        SatShootPubkey,
+    } from '$lib/utils/misc';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
@@ -34,45 +46,42 @@
     let primaryEntity = $state<JobEvent | ServiceEvent>();
     let secondaryEntity = $state<BidEvent | OrderEvent>();
     const pricingText = $derived.by(() => {
-        let pricing = '?'
+        let pricing = '?';
         if (primaryEntity?.kind === NDKKind.FreelanceService) {
-            pricing = (primaryEntity as ServiceEvent).pricing === Pricing.Hourly
-                ? 'sats/hour'
-                : 'sats'
+            pricing =
+                (primaryEntity as ServiceEvent).pricing === Pricing.Hourly ? 'sats/hour' : 'sats';
         } else if (secondaryEntity?.kind === NDKKind.FreelanceBid) {
-            pricing = (secondaryEntity as BidEvent).pricing === Pricing.Hourly
-                ? 'sats/hour'
-                : 'sats'
+            pricing =
+                (secondaryEntity as BidEvent).pricing === Pricing.Hourly ? 'sats/hour' : 'sats';
         }
-        return pricing
-    })
+        return pricing;
+    });
     let cashuPopoverStateFreelancer = $state(false);
     let cashuPopoverStateSatshoot = $state(false);
     let cashuPopoverStateSponsored = $state(false);
 
     let paymentManager = $state<PaymentManagerService | undefined>(undefined);
 
-    let inputTotalAmount = $state<number|null>(null);
-    let displayedTotalAmount = $state<string>('')
-    let calculateSplits = $state(true)
+    let inputTotalAmount = $state<number | null>(null);
+    let displayedTotalAmount = $state<string>('');
+    let calculateSplits = $state(true);
 
     let isSponsoring = $state(false);
-    let pledgeSplit = $state<number|null>(null);
-    let sponsoringSplit = $state<number|null>(null);
+    let pledgeSplit = $state<number | null>(null);
+    let sponsoringSplit = $state<number | null>(null);
     let sponsoredNpub = $state('');
     let sponsoredPubkey = $derived.by(() => {
-        if (!sponsoredNpub) return null
+        if (!sponsoredNpub) return null;
 
         try {
-            const decodedNpubResult = nip19.decode(sponsoredNpub)
-            return decodedNpubResult.type == 'npub'
-                ? decodedNpubResult.data : null;
+            const decodedNpubResult = nip19.decode(sponsoredNpub);
+            return decodedNpubResult.type == 'npub' ? decodedNpubResult.data : null;
         } catch (e) {
-            console.error('Decode sponsoredNpub failed: ' + e)
-            return null
+            console.error('Decode sponsoredNpub failed: ' + e);
+            return null;
         }
-    })
-    let sponsoredName = $state('Sponsored')
+    });
+    let sponsoredName = $state('Sponsored');
     let freelancerPubkey = $state('');
     // pay confirm model props
     let showPayConfirm = $state(false);
@@ -85,74 +94,76 @@
             checkRelayConnections();
 
             const naddr = page.params.entityId;
-            const relaysFromURL = relaysFromNaddr(naddr).split(',');
-            const decodedAddr = idFromNaddr(naddr);
+            const relaysFromURL = naddr ? relaysFromNaddr(naddr).split(',') : [];
+            const decodedAddr = naddr ? idFromNaddr(naddr) : undefined;
 
-            // Add relays from URL
-            relaysFromURL.forEach((relayURL: string) => {
-                if (relayURL) {
-                    $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
-                }
-            });
-
-            $ndk.fetchEvent(decodedAddr, {
-                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY, // the cache delivers events with empty id in current ndk
-            })
-                .then((event) => {
-                    if (event) {
-                        switch (event.kind) {
-                            case NDKKind.FreelanceBid:
-                                secondaryEntity = BidEvent.from(event);
-                                return secondaryEntity.referencedJobAddress;
-                            case NDKKind.FreelanceOrder:
-                                secondaryEntity = OrderEvent.from(event);
-                                return secondaryEntity.referencedServiceAddress;
-                            default:
-                                toaster.error({
-                                    title: 'Unexpected entity to be paid. Entities not loaded!',
-                                    duration: 60000, // 1 min
-                                });
-                        }
+            if (decodedAddr) {
+                // Add relays from URL
+                relaysFromURL.forEach((relayURL: string) => {
+                    if (relayURL) {
+                        $ndk.pool.addRelay(new NDKRelay(relayURL, undefined, $ndk));
                     }
-                })
-                .then((primaryNaddr) => {
-                    if (primaryNaddr) {
-                        $ndk.fetchEvent(primaryNaddr, {
-                            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY, // the cache delivers events with empty id in current ndk
-                        }).then((event) => {
-                            if (event) {
-                                switch (event.kind) {
-                                    case NDKKind.FreelanceJob:
-                                        primaryEntity = JobEvent.from(event);
-                                        initialized = true;
-                                        break;
-                                    case NDKKind.FreelanceService:
-                                        primaryEntity = ServiceEvent.from(event);
-                                        initialized = true;
-                                        break;
-                                    default:
-                                        toaster.error({
-                                            title: 'Unexpected entity as target. Entities not loaded!',
-                                            duration: 60000, // 1 min
-                                        });
-                                }
-                            }
-                        });
-                    }
-                })
-                .catch((reason) => {
-                    console.log(`Error fetching Entities!: ${reason}`);
-                    toaster.error({
-                        title: 'Entities not loaded yet!',
-                        duration: 60000, // 1 min
-                    });
                 });
+
+                $ndk.fetchEvent(decodedAddr, {
+                    cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY, // the cache delivers events with empty id in current ndk
+                })
+                    .then((event) => {
+                        if (event) {
+                            switch (event.kind) {
+                                case NDKKind.FreelanceBid:
+                                    secondaryEntity = BidEvent.from(event);
+                                    return secondaryEntity.referencedJobAddress;
+                                case NDKKind.FreelanceOrder:
+                                    secondaryEntity = OrderEvent.from(event);
+                                    return secondaryEntity.referencedServiceAddress;
+                                default:
+                                    toaster.error({
+                                        title: 'Unexpected entity to be paid. Entities not loaded!',
+                                        duration: 60000, // 1 min
+                                    });
+                            }
+                        }
+                    })
+                    .then((primaryNaddr) => {
+                        if (primaryNaddr) {
+                            $ndk.fetchEvent(primaryNaddr, {
+                                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY, // the cache delivers events with empty id in current ndk
+                            }).then((event) => {
+                                if (event) {
+                                    switch (event.kind) {
+                                        case NDKKind.FreelanceJob:
+                                            primaryEntity = JobEvent.from(event);
+                                            initialized = true;
+                                            break;
+                                        case NDKKind.FreelanceService:
+                                            primaryEntity = ServiceEvent.from(event);
+                                            initialized = true;
+                                            break;
+                                        default:
+                                            toaster.error({
+                                                title: 'Unexpected entity as target. Entities not loaded!',
+                                                duration: 60000, // 1 min
+                                            });
+                                    }
+                                }
+                            });
+                        }
+                    })
+                    .catch((reason) => {
+                        console.log(`Error fetching Entities!: ${reason}`);
+                        toaster.error({
+                            title: 'Entities not loaded yet!',
+                            duration: 60000, // 1 min
+                        });
+                    });
+            }
         }
     });
 
     $effect(() => {
         if (sponsoredPubkey) {
-            fetchSponsoredProfile()
+            fetchSponsoredProfile();
         }
     });
 
@@ -162,21 +173,18 @@
             authors: [sponsoredPubkey as string],
         };
 
-        const metadataRelays = [
-            ...$ndk.pool!.connectedRelays(),
-        ];
+        const metadataRelays = [...$ndk.pool!.connectedRelays()];
 
-        const profileEvent: NDKEvent|null = await $ndk.fetchEvent(
+        const profileEvent: NDKEvent | null = await $ndk.fetchEvent(
             metadataFilter,
-            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+            { cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST },
             new NDKRelaySet(new Set(metadataRelays), $ndk)
-        )
+        );
 
         if (!profileEvent) return;
-        const profile = profileFromEvent(profileEvent)
-        sponsoredName = profile.name ?? profile.displayName ?? ''
-    }
-
+        const profile = profileFromEvent(profileEvent);
+        sponsoredName = profile.name ?? profile.displayName ?? '';
+    };
 
     // Initialize payment manager when entities are available
     $effect(() => {
@@ -188,23 +196,20 @@
             if (secondaryEntity instanceof BidEvent) {
                 pledgeSplit = secondaryEntity.pledgeSplit;
                 sponsoringSplit = secondaryEntity.sponsoringSplit;
-                sponsoredNpub = secondaryEntity.sponsoredNpub
+                sponsoredNpub = secondaryEntity.sponsoredNpub;
 
                 freelancerPubkey = secondaryEntity.pubkey;
             } else if (primaryEntity instanceof ServiceEvent) {
                 pledgeSplit = primaryEntity.pledgeSplit;
                 sponsoringSplit = primaryEntity.sponsoringSplit;
-                sponsoredNpub = primaryEntity.sponsoredNpub
+                sponsoredNpub = primaryEntity.sponsoredNpub;
                 freelancerPubkey = primaryEntity.pubkey;
             }
         }
     });
 
     $effect(() => {
-        if (calculateSplits &&
-            inputTotalAmount &&
-            paymentManager
-        ) {
+        if (calculateSplits && inputTotalAmount && paymentManager) {
             const paymentShares = PaymentService.computePaymentShares(
                 inputTotalAmount,
                 pledgeSplit || 0,
@@ -212,14 +217,14 @@
                 sponsoringSplit || 0
             );
 
-            paymentManager.payment.amount = paymentShares.freelancerShare
-            paymentManager.payment.satshootAmount = paymentShares.satshootShare
-            paymentManager.payment.sponsoredAmount = paymentShares.sponsoredShare
+            paymentManager.payment.amount = paymentShares.freelancerShare;
+            paymentManager.payment.satshootAmount = paymentShares.satshootShare;
+            paymentManager.payment.sponsoredAmount = paymentShares.sponsoredShare;
         } else if (!inputTotalAmount) {
             if (paymentManager?.payment) {
-                paymentManager.payment.amount = 0
-                paymentManager.payment.satshootAmount = 0
-                paymentManager.payment.sponsoredAmount = 0
+                paymentManager.payment.amount = 0;
+                paymentManager.payment.satshootAmount = 0;
+                paymentManager.payment.sponsoredAmount = 0;
             }
         }
     });
@@ -231,7 +236,7 @@
     function handleTotalAmountInput(event: Event): void {
         const target = event.target as HTMLInputElement;
         const parsedValue = parseNumber(target.value);
-        
+
         if (parsedValue === null) {
             inputTotalAmount = null;
             displayedTotalAmount = '';
@@ -250,8 +255,20 @@
     const sponsoredPaid = $derived(paymentManager?.sponsoredPaid);
     const paying = $derived(paymentManager?.payment?.paying ?? false);
     const hasSenderEcashSetup = $derived(paymentManager?.hasSenderEcashSetup ?? false);
-    const canPayWithCashu = $derived(paymentManager?.canPayWithCashu ?? false);
-    const cashuTooltipText = $derived(paymentManager?.cashuTooltipText ?? '');
+    const canPayWithCashu = $derived(paymentManager?.canPayWithCashu(UserEnum.Freelancer) ?? false);
+    const canPayWithCashuSatshoot = $derived(
+        paymentManager?.canPayWithCashu(UserEnum.Satshoot) ?? false
+    );
+    const canPayWithCashuSponsored = $derived(
+        paymentManager?.canPayWithCashu(UserEnum.Sponsored) ?? false
+    );
+    const cashuTooltipText = $derived(paymentManager?.cashuTooltipText(UserEnum.Freelancer) ?? '');
+    const cashuTooltipTextSatshoot = $derived(
+        paymentManager?.cashuTooltipText(UserEnum.Satshoot) ?? ''
+    );
+    const cashuTooltipTextSponsored = $derived(
+        paymentManager?.cashuTooltipText(UserEnum.Sponsored) ?? ''
+    );
 
     // Payment functions
     function openPaymentConfirmation(payeeType: UserEnum, paymentMethod: 'LN' | 'Cashu') {
@@ -309,10 +326,11 @@
         showLoginModal = true;
     }
 
-    const amountInputClasses = 'transition ease duration-[0.3s] px-[10px] py-[5px] ' +
-    'bg-black-50 focus:bg-black-100 outline-[0px] focus:outline-[0px] border-[2px] ' +
-    'border-black-100 dark:border-white-100 focus:border-blue-500 rounded-[6px] ' + 
-    'w-full text-lg sm:text-xl'
+    const amountInputClasses =
+        'transition ease duration-[0.3s] px-[10px] py-[5px] ' +
+        'bg-black-50 focus:bg-black-100 outline-[0px] focus:outline-[0px] border-[2px] ' +
+        'border-black-100 dark:border-white-100 focus:border-blue-500 rounded-[6px] ' +
+        'w-full text-lg sm:text-xl';
 </script>
 
 <div class="w-full flex flex-col justify-center items-center py-[25px] text-lg sm:text-xl">
@@ -438,9 +456,11 @@
                         <div class="w-full flex flex-col gap-[5px]">
                             <div class="flex flex-col gap-[5px] mb-2">
                                 <label class="font-[500]" for="service-payment"
-                                >Total Amount to be paid</label
+                                    >Total Amount to be paid</label
                                 >
-                                <div class="max-sm:flex max-sm:flex-wrap min-sm:grid min-sm:grid-cols-[1fr_auto] gap-x-2">
+                                <div
+                                    class="max-sm:flex max-sm:flex-wrap min-sm:grid min-sm:grid-cols-[1fr_auto] gap-x-2"
+                                >
                                     <input
                                         class={amountInputClasses}
                                         type="text"
@@ -448,9 +468,9 @@
                                         value={displayedTotalAmount}
                                         oninput={handleTotalAmountInput}
                                     />
-                                    <Checkbox 
-                                        id={"totalAmount"}
-                                        label={"Calculate splits"}
+                                    <Checkbox
+                                        id={'totalAmount'}
+                                        label={'Calculate splits'}
                                         bind:checked={calculateSplits}
                                     />
                                 </div>
@@ -461,7 +481,7 @@
                                 >
                                 <Input
                                     id="service-payment"
-                                    classes='text-lg sm:text-xl'
+                                    classes="text-lg sm:text-xl"
                                     type="number"
                                     step="1"
                                     min="0"
@@ -495,7 +515,10 @@
                                     <Button
                                         grow
                                         classes="w-[250px] max-w-[250px]"
-                                        onClick={openPaymentConfirmation(UserEnum.Freelancer, 'Cashu')}
+                                        onClick={openPaymentConfirmation(
+                                            UserEnum.Freelancer,
+                                            'Cashu'
+                                        )}
                                         disabled={paying ||
                                             !canPayWithCashu ||
                                             !paymentManager?.payment.amount}
@@ -526,7 +549,7 @@
                                     </Button>
                                 {/if}
                             </div>
-                            {#if cashuTooltipText && paymentManager.payment.satshootAmount}
+                            {#if cashuTooltipTextSatshoot && paymentManager.payment.satshootAmount}
                                 <Popover
                                     open={cashuPopoverStateSatshoot}
                                     onOpenChange={(e) => (cashuPopoverStateSatshoot = e.open)}
@@ -543,18 +566,21 @@
                                     {/snippet}
                                     {#snippet content()}
                                         <Card>
-                                            <p>{cashuTooltipText}</p>
+                                            <p>{cashuTooltipTextSatshoot}</p>
                                         </Card>
                                     {/snippet}
                                 </Popover>
                             {/if}
                             <div class="w-full flex flex-col gap-[5px]">
-                                <label class="font-[500] flex gap-x-2 items-center" for="platform-contribution">
+                                <label
+                                    class="font-[500] flex gap-x-2 items-center"
+                                    for="platform-contribution"
+                                >
                                     <span>SatShoot share</span>
                                 </label>
                                 <Input
                                     id="plattform-contribution"
-                                    classes='text-lg sm:text-xl'
+                                    classes="text-lg sm:text-xl"
                                     type="number"
                                     step="1"
                                     min="0"
@@ -588,9 +614,12 @@
                                     <Button
                                         grow
                                         classes="w-[250px] max-w-[250px]"
-                                        onClick={openPaymentConfirmation(UserEnum.Satshoot, 'Cashu')}
+                                        onClick={openPaymentConfirmation(
+                                            UserEnum.Satshoot,
+                                            'Cashu'
+                                        )}
                                         disabled={paying ||
-                                            !canPayWithCashu ||
+                                            !canPayWithCashuSatshoot ||
                                             !paymentManager.payment.satshootAmount}
                                     >
                                         {#if paying}
@@ -620,7 +649,7 @@
                                 {/if}
                             </div>
                             {#if isSponsoring}
-                                {#if cashuTooltipText && paymentManager.payment.sponsoredAmount}
+                                {#if cashuTooltipTextSponsored && paymentManager.payment.sponsoredAmount}
                                     <Popover
                                         open={cashuPopoverStateSponsored}
                                         onOpenChange={(e) => (cashuPopoverStateSponsored = e.open)}
@@ -637,18 +666,21 @@
                                         {/snippet}
                                         {#snippet content()}
                                             <Card>
-                                                <p>{cashuTooltipText}</p>
+                                                <p>{cashuTooltipTextSponsored}</p>
                                             </Card>
                                         {/snippet}
                                     </Popover>
                                 {/if}
                                 <div class="w-full flex flex-col gap-[5px]">
-                                    <label class="font-[500] flex gap-x-2 items-center" for="sponsored-contribution">
+                                    <label
+                                        class="font-[500] flex gap-x-2 items-center"
+                                        for="sponsored-contribution"
+                                    >
                                         <span>{sponsoredName} share</span>
                                     </label>
                                     <Input
                                         id="sponsored-contribution"
-                                        classes='text-lg sm:text-xl'
+                                        classes="text-lg sm:text-xl"
                                         type="number"
                                         step="1"
                                         min="0"
@@ -682,9 +714,12 @@
                                         <Button
                                             grow
                                             classes="w-[250px] max-w-[250px]"
-                                            onClick={openPaymentConfirmation(UserEnum.Sponsored, 'Cashu')}
+                                            onClick={openPaymentConfirmation(
+                                                UserEnum.Sponsored,
+                                                'Cashu'
+                                            )}
                                             disabled={paying ||
-                                                !canPayWithCashu ||
+                                                !canPayWithCashuSponsored ||
                                                 !paymentManager.payment.sponsoredAmount}
                                         >
                                             {#if paying}
