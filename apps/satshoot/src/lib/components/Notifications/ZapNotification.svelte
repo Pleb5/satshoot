@@ -68,7 +68,7 @@
         } else if (notification.kind === NDKKind.Nutzap) {
             const nutZapAmount = notification.tagValue('amount');
             if (nutZapAmount) {
-                amount = Math.round(parseInt(nutZapAmount) / 1000);
+                amount = parseInt(nutZapAmount);
             }
         }
 
