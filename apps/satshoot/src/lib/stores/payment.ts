@@ -51,14 +51,14 @@ export const createPaymentFilters = (
         ];
     } else {
         let decodedNpubResult;
-        let primaryEntityAddr;
+        let targetEventAddr;
         try {
             if (targetEvent instanceof BidEvent) {
                 decodedNpubResult = nip19.decode(targetEvent.sponsoredNpub);
-                primaryEntityAddr = targetEvent.tagAddress();
+                targetEventAddr = targetEvent.tagAddress();
             } else if (sponsoredEntity instanceof ServiceEvent) {
                 decodedNpubResult = nip19.decode(sponsoredEntity.sponsoredNpub);
-                primaryEntityAddr = targetEvent.tagAddress();
+                targetEventAddr = targetEvent.tagAddress();
             } else {
                 console.error('Unexpected case!!!');
                 throw new Error('Unexpected combination of target and sponsored events!!!');
@@ -69,7 +69,7 @@ export const createPaymentFilters = (
                     {
                         kinds: [NDKKind.Zap, NDKKind.Nutzap],
                         '#p': [sponsoredPubkey],
-                        '#a': [primaryEntityAddr],
+                        '#a': [targetEventAddr],
                     },
                 ];
             } else {
