@@ -119,65 +119,7 @@ export class PaymentManagerService {
      * @payeeType if specified, the payment goes only to the given payee type. Otherwise all parties get paid.
      */
     async payWithLightning(payeeType: UserEnum | void): Promise<void> {
-        try {
-            const paymentData = await this.paymentService.initializePayment();
-
-            if (!paymentData)
-                return;
-
-            const totalAmount = paymentData.freelancerShareMillisats + paymentData.satshootSumMillisats + paymentData.sponsoredSumMillisats;
-            console.log("Total Amount = ", totalAmount);
-            if (totalAmount <= 0)
-                return;
-
-            let {
-                freelancerShareMillisats,
-                satshootSumMillisats,
-                sponsoredSumMillisats
-            } = paymentData;
-
-            switch (payeeType) {
-                case UserEnum.Freelancer:
-                    satshootSumMillisats = 0;
-                    sponsoredSumMillisats = 0;
-                    break;
-                case UserEnum.Satshoot:
-                    freelancerShareMillisats = 0;
-                    sponsoredSumMillisats = 0;
-                    break;
-                case UserEnum.Sponsored:
-                    freelancerShareMillisats = 0;
-                    satshootSumMillisats = 0;
-            }
-
-            const paid = await this.lightningService.processPayment(
-                freelancerShareMillisats,
-                satshootSumMillisats,
-                sponsoredSumMillisats
-            );
-
-            this.handlePaymentResults(
-                paid,
-                freelancerShareMillisats,
-                satshootSumMillisats,
-                sponsoredSumMillisats
-            );
-        } catch (error: any) {
-            console.error(error);
-
-            // Check if it's a payment error for specific user
-            if (error.message?.includes('Freelancer')) {
-                this.toastService.handlePaymentError(error, 'Freelancer');
-            } else if (error.message?.includes('SatShoot')) {
-                this.toastService.handlePaymentError(error, 'SatShoot');
-            } else if (error.message?.includes('Sponsored')) {
-                this.toastService.handlePaymentError(error, 'Sponsored npub');
-            } else {
-                this.toastService.handleGeneralError(`An error occurred in payment process: ${error}`);
-            }
-        } finally {
-            this.paymentService.resetPaymentState();
-        }
+        return this.payWith(this.lightningService)(payeeType);
     }
 
     /**
@@ -186,49 +128,55 @@ export class PaymentManagerService {
      * @payeeType if specified, the payment goes only to the given payee type. Otherwise all parties get paid.
      */
     async payWithCashu(payeeType: UserEnum | void): Promise<void> {
-        try {
-            const paymentData = await this.paymentService.initializePayment();
-            if (!paymentData) return;
+        return this.payWith(this.cashuService)(payeeType);
+    }
 
-            let { freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats } = paymentData;
+    private payWith(paymentMethod: LightningPaymentService | CashuPaymentService): (payeeType: UserEnum | void) => Promise<void> {
+        return (async (payeeType) => {
+            try {
+                const paymentData = await this.paymentService.initializePayment();
+                if (!paymentData) return;
 
-            switch (payeeType) {
-                case UserEnum.Freelancer:
-                    satshootSumMillisats = 0;
-                    sponsoredSumMillisats = 0;
-                    break;
-                case UserEnum.Satshoot:
-                    freelancerShareMillisats = 0;
-                    sponsoredSumMillisats = 0;
-                    break;
-                case UserEnum.Sponsored:
-                    freelancerShareMillisats = 0;
-                    satshootSumMillisats = 0;
+                let { freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats } = paymentData;
+
+                const totalAmount = freelancerShareMillisats + satshootSumMillisats + sponsoredSumMillisats;
+                if (totalAmount <= 0)
+                    return;
+
+                switch (payeeType) {
+                    case UserEnum.Freelancer:
+                        satshootSumMillisats = 0;
+                        sponsoredSumMillisats = 0;
+                        break;
+                    case UserEnum.Satshoot:
+                        freelancerShareMillisats = 0;
+                        sponsoredSumMillisats = 0;
+                        break;
+                    case UserEnum.Sponsored:
+                        freelancerShareMillisats = 0;
+                        satshootSumMillisats = 0;
+                }
+
+                const paid = await paymentMethod.processPayment(freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats);
+
+                this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats);
+            } catch (error: any) {
+                console.error(error);
+
+                // Check if it's a payment error for specific user
+                if (error.message?.includes('Freelancer')) {
+                    this.toastService.handlePaymentError(error, 'Freelancer');
+                } else if (error.message?.includes('SatShoot')) {
+                    this.toastService.handlePaymentError(error, 'SatShoot');
+                } else if (error.message?.includes('Sponsored')) {
+                    this.toastService.handlePaymentError(error, 'Sponsored npub');
+                } else {
+                    this.toastService.handleGeneralError(`An error occurred in payment process: ${error}`);
+                }
+            } finally {
+                this.paymentService.resetPaymentState();
             }
-
-            const paid = await this.cashuService.processPayment(
-                freelancerShareMillisats,
-                satshootSumMillisats,
-                sponsoredSumMillisats
-            );
-
-            this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats);
-        } catch (error: any) {
-            console.error(error);
-
-            // Check if it's a payment error for specific user
-            if (error.message?.includes('Freelancer')) {
-                this.toastService.handlePaymentError(error, 'Freelancer');
-            } else if (error.message?.includes('SatShoot')) {
-                this.toastService.handlePaymentError(error, 'SatShoot');
-            } else if (error.message?.includes('Sponsored')) {
-                this.toastService.handlePaymentError(error, 'Sponsored npub');
-            } else {
-                this.toastService.handleGeneralError(error?.message || error);
-            }
-        } finally {
-            this.paymentService.resetPaymentState();
-        }
+        });
     }
 
     /**

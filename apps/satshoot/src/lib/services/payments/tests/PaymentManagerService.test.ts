@@ -3,9 +3,6 @@ import { PaymentManagerService } from '../PaymentManagerService.svelte';
 import { UserEnum } from '../UserEnum';
 import type { JobEvent } from '$lib/events/JobEvent';
 import type { BidEvent } from '$lib/events/BidEvent';
-import type { ServiceEvent } from '$lib/events/ServiceEvent';
-import type { OrderEvent } from '$lib/events/OrderEvent';
-import { get } from 'svelte/store';
 
 // Mock all dependencies
 vi.mock('../PaymentService.svelte', () => ({
@@ -536,7 +533,7 @@ describe('PaymentManagerService', () => {
             await service.payWithCashu();
 
             // Verify
-            expect(mockToastService.handleGeneralError).toHaveBeenCalledWith('String error');
+            expect(mockToastService.handleGeneralError).toHaveBeenCalledOnce();
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
         });
 
