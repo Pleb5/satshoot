@@ -150,7 +150,7 @@ describe('PaymentManagerService', () => {
                 5000    // sponsoredSumMillisats
             );
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
-            
+
             // Verify toast notifications for successful payments
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(3);
         });
@@ -171,7 +171,7 @@ describe('PaymentManagerService', () => {
                 0,      // satshootSumMillisats (zeroed)
                 0       // sponsoredSumMillisats (zeroed)
             );
-            
+
             // Only freelancer toast should be shown
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(1);
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledWith(
@@ -199,7 +199,7 @@ describe('PaymentManagerService', () => {
                 10000,  // satshootSumMillisats
                 0       // sponsoredSumMillisats (zeroed)
             );
-            
+
             // Only satshoot toast should be shown
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(1);
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledWith(
@@ -227,7 +227,7 @@ describe('PaymentManagerService', () => {
                 0,     // satshootSumMillisats (zeroed)
                 5000   // sponsoredSumMillisats
             );
-            
+
             // Only sponsored toast should be shown
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(1);
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledWith(
@@ -255,7 +255,7 @@ describe('PaymentManagerService', () => {
             expect(mockLightningService.processPayment).toHaveBeenCalledWith(
                 100000, 10000, 5000
             );
-            
+
             // Toast service should be called for all payments with appropriate status
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(3);
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
@@ -264,6 +264,23 @@ describe('PaymentManagerService', () => {
         it('should return early if initializePayment returns null', async () => {
             // Setup
             mockPaymentService.initializePayment.mockResolvedValue(null);
+
+            // Execute
+            await service.payWithLightning();
+
+            // Verify - no payment processing should occur
+            expect(mockLightningService.processPayment).not.toHaveBeenCalled();
+            expect(mockToastService.handlePaymentStatus).not.toHaveBeenCalled();
+            expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
+        });
+
+        it('should return early if initializePayment returns zero amounts for all payees', async () => {
+            // Setup
+            mockPaymentService.initializePayment.mockResolvedValue({
+                freelancerShareMillisats: 0,
+                satshootSumMillisats: 0,
+                sponsoredSumMillisats: 0
+            });
 
             // Execute
             await service.payWithLightning();
@@ -332,7 +349,7 @@ describe('PaymentManagerService', () => {
                 5000    // sponsoredSumMillisats
             );
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
-            
+
             // Verify toast notifications
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(3);
         });
@@ -353,7 +370,7 @@ describe('PaymentManagerService', () => {
                 0,      // satshootSumMillisats (zeroed)
                 0       // sponsoredSumMillisats (zeroed)
             );
-            
+
             // Only freelancer toast should be shown
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(1);
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledWith(
@@ -381,7 +398,7 @@ describe('PaymentManagerService', () => {
                 10000,  // satshootSumMillisats
                 0       // sponsoredSumMillisats (zeroed)
             );
-            
+
             // Only satshoot toast should be shown
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(1);
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledWith(
@@ -409,7 +426,7 @@ describe('PaymentManagerService', () => {
                 0,     // satshootSumMillisats (zeroed)
                 5000   // sponsoredSumMillisats
             );
-            
+
             // Only sponsored toast should be shown
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(1);
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledWith(
@@ -526,7 +543,7 @@ describe('PaymentManagerService', () => {
             expect(mockCashuService.processPayment).toHaveBeenCalledWith(
                 100000, 10000, 5000
             );
-            
+
             // Toast service should handle mixed results
             expect(mockToastService.handlePaymentStatus).toHaveBeenCalledTimes(3);
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
@@ -542,7 +559,7 @@ describe('PaymentManagerService', () => {
                 sponsoredSumMillisats: 0
             };
             mockPaymentService.initializePayment.mockResolvedValue(mockPaymentData);
-            
+
             const paymentMap = new Map<UserEnum, boolean>();
             mockLightningService.processPayment.mockResolvedValue(paymentMap);
 
@@ -550,8 +567,8 @@ describe('PaymentManagerService', () => {
             await service.payWithLightning();
 
             // Verify - processPayment called with zeros
-            expect(mockLightningService.processPayment).toHaveBeenCalledWith(0, 0, 0);
-            
+            expect(mockLightningService.processPayment).not.toHaveBeenCalledWith(0, 0, 0);
+
             // No toast notifications should be shown for zero amounts
             expect(mockToastService.handlePaymentStatus).not.toHaveBeenCalled();
         });
@@ -566,7 +583,7 @@ describe('PaymentManagerService', () => {
                 },
                 totalPaid: 0
             };
-            
+
             vi.mocked((service as any).freelancerPaymentStore = mockStore);
             vi.mocked((service as any).satshootPaymentStore = mockStore);
             vi.mocked((service as any).sponsoredPaymentStore = mockStore);

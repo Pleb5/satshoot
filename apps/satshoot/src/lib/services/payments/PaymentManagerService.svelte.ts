@@ -121,7 +121,14 @@ export class PaymentManagerService {
     async payWithLightning(payeeType: UserEnum | void): Promise<void> {
         try {
             const paymentData = await this.paymentService.initializePayment();
-            if (!paymentData) return;
+            
+            if (!paymentData)
+                return;
+            
+            const totalAmount = paymentData.freelancerShareMillisats + paymentData.satshootSumMillisats + paymentData.sponsoredSumMillisats;
+            console.log("Total Amount = ", totalAmount);
+            if (totalAmount <= 0)
+                return;
 
             let {
                 freelancerShareMillisats,
