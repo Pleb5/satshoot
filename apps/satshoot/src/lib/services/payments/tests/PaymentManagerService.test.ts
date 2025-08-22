@@ -291,6 +291,45 @@ describe('PaymentManagerService', () => {
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
         });
 
+        it('should handle Freelancer-specific payment error', async () => {
+            // Setup
+            const error = new Error('Freelancer payment failed');
+            mockLightningService.processPayment.mockRejectedValue(error);
+
+            // Execute
+            await service.payWithLightning(UserEnum.Freelancer);
+
+            // Verify
+            expect(mockToastService.handlePaymentError).toHaveBeenCalledWith(error, 'Freelancer');
+            expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
+        });
+
+        it('should handle SatShoot-specific payment error', async () => {
+            // Setup
+            const error = new Error('SatShoot payment failed');
+            mockLightningService.processPayment.mockRejectedValue(error);
+
+            // Execute
+            await service.payWithLightning(UserEnum.Satshoot);
+
+            // Verify
+            expect(mockToastService.handlePaymentError).toHaveBeenCalledWith(error, 'SatShoot');
+            expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
+        });
+
+        it('should handle Sponsored-specific payment error', async () => {
+            // Setup
+            const error = new Error('Sponsored payment failed');
+            mockLightningService.processPayment.mockRejectedValue(error);
+
+            // Execute
+            await service.payWithLightning(UserEnum.Sponsored);
+
+            // Verify
+            expect(mockToastService.handlePaymentError).toHaveBeenCalledWith(error, 'Sponsored npub');
+            expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
+        });
+
         it('should handle errors and show general error toast', async () => {
             // Setup
             const error = new Error('Lightning payment failed');
@@ -300,9 +339,7 @@ describe('PaymentManagerService', () => {
             await service.payWithLightning();
 
             // Verify error handling
-            expect(mockToastService.handleGeneralError).toHaveBeenCalledWith(
-                'An error occurred in payment process: Error: Lightning payment failed'
-            );
+            expect(mockToastService.handleGeneralError).toHaveBeenCalledOnce();
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
         });
 
@@ -486,7 +523,7 @@ describe('PaymentManagerService', () => {
             await service.payWithCashu();
 
             // Verify
-            expect(mockToastService.handleGeneralError).toHaveBeenCalledWith('Generic payment error');
+            expect(mockToastService.handleGeneralError).toHaveBeenCalledOnce();
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
         });
 

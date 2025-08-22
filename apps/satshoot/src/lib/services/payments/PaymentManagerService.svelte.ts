@@ -121,10 +121,10 @@ export class PaymentManagerService {
     async payWithLightning(payeeType: UserEnum | void): Promise<void> {
         try {
             const paymentData = await this.paymentService.initializePayment();
-            
+
             if (!paymentData)
                 return;
-            
+
             const totalAmount = paymentData.freelancerShareMillisats + paymentData.satshootSumMillisats + paymentData.sponsoredSumMillisats;
             console.log("Total Amount = ", totalAmount);
             if (totalAmount <= 0)
@@ -164,7 +164,17 @@ export class PaymentManagerService {
             );
         } catch (error: any) {
             console.error(error);
-            this.toastService.handleGeneralError(`An error occurred in payment process: ${error}`);
+
+            // Check if it's a payment error for specific user
+            if (error.message?.includes('Freelancer')) {
+                this.toastService.handlePaymentError(error, 'Freelancer');
+            } else if (error.message?.includes('SatShoot')) {
+                this.toastService.handlePaymentError(error, 'SatShoot');
+            } else if (error.message?.includes('Sponsored')) {
+                this.toastService.handlePaymentError(error, 'Sponsored npub');
+            } else {
+                this.toastService.handleGeneralError(`An error occurred in payment process: ${error}`);
+            }
         } finally {
             this.paymentService.resetPaymentState();
         }
