@@ -1,0 +1,47 @@
+{
+    "name": "satshoot-bootstrapper",
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite dev --host 0.0.0.0 --port 8001",
+        "build": "vite build",
+        "preview": "vite preview --port 8001",
+        "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+        "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+        "test": "vitest",
+        "test:e2e": "playwright test",
+        "lint": "eslint .",
+        "format": "prettier --write ."
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.47.0",
+        "@skeletonlabs/skeleton": "^3.1.2",
+        "@skeletonlabs/skeleton-svelte": "^1.2.1",
+        "@sveltejs/adapter-node": "^5.2.7",
+        "@sveltejs/kit": "^2.20.7",
+        "@sveltejs/vite-plugin-svelte": "^5.0.3",
+        "@tailwindcss/forms": "^0.5.10",
+        "@tailwindcss/typography": "^0.5.16",
+        "@tailwindcss/vite": "^4.1.4",
+        "@types/node": "^20.17.30",
+        "@types/ws": "^8.5.12",
+        "eslint": "^9.13.0",
+        "prettier": "^3.6.2",
+        "prettier-plugin-svelte": "^3.2.6",
+        "svelte": "^5.27.1",
+        "svelte-check": "^4.1.6",
+        "tailwindcss": "^4.1.4",
+        "tslib": "^2.8.1",
+        "typescript": "^5.8.3",
+        "vite": "^6.3.1",
+        "vitest": "^3.1.1"
+    },
+    "dependencies": {
+        "@nostr-dev-kit/ndk": "workspace:^",
+        "@nostr-dev-kit/ndk-svelte": "workspace:^",
+        "@sveltejs/adapter-static": "^3.0.8",
+        "nostr-tools": "~2.5.2",
+        "svelte-persisted-store": "^0.11.0",
+        "ws": "^8.18.0"
+    }
+}
