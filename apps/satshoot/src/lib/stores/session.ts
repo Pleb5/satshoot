@@ -32,6 +32,7 @@ export enum LoginMethod {
     Bunker = 'bunker',
     Nip07 = 'nip07',
     Local = 'local',
+    NostrConnect = 'nostrconnect',
     Register = 'Register',
 }
 

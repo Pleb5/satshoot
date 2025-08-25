@@ -175,6 +175,9 @@
             case LoginMethod.Nip07:
                 await handleNip07Login();
                 break;
+            case LoginMethod.NostrConnect:
+                await handleNostrConnectLogin();
+                break;
         }
     }
 
@@ -314,6 +317,93 @@
         });
     }
 
+    function setupNostrConnectTimeout() {
+        return setTimeout(() => {
+            if (!$ndk.signer) {
+                toaster.warning({
+                    title: 'NostrConnect restoration took too long!',
+                    description: 'Fix or Remove NostrConnect credentials!',
+                    duration: 60000, // 1 min
+                    action: {
+                        label: 'Logout',
+                        onClick: () => {
+                            $loggingIn = false;
+                            logout();
+                        },
+                    },
+                });
+            }
+        }, 20000);
+    }
+
+    function showNostrConnectError(error: any) {
+        toaster.error({
+            title: 'Could not restore NostrConnect session!',
+            description: `Reason: ${error}`,
+            duration: 60000, // 1 min
+        });
+    }
+
+    async function handleNostrConnectLogin() {
+        const localSignerKey = localStorage.getItem('nostrConnectLocalSigner');
+        const remotePubkey = localStorage.getItem('nostrConnectRemotePubkey');
+
+        if (!localSignerKey || !remotePubkey) {
+            console.log('No NostrConnect credentials found in localStorage');
+            $loggingIn = false;
+            return;
+        }
+
+        // Setup timeout similar to bunker login
+        const timeoutId = setupNostrConnectTimeout();
+
+        try {
+            console.log('Attempting NostrConnect restoration...');
+
+            // Import the NostrConnect service
+            const { NostrConnectService } = await import('$lib/services/login/NostrConnectService');
+
+            // Attempt to restore the connection using stored credentials
+            const restoredSigner = await NostrConnectService.restore(localSignerKey, remotePubkey);
+
+            if (restoredSigner) {
+                // Connection restored successfully
+                $ndk.signer = restoredSigner;
+                console.log('NostrConnect session restored successfully');
+
+                // Initialize user and complete login
+                await initializeUser($ndk);
+                $loggingIn = false;
+
+                toaster.success({
+                    title: 'NostrConnect session restored!',
+                });
+            } else {
+                throw new Error('Failed to restore NostrConnect session');
+            }
+
+            // Clear timeout on success
+            clearTimeout(timeoutId);
+        } catch (error) {
+            console.error('NostrConnect restoration failed:', error);
+
+            // Clear timeout
+            clearTimeout(timeoutId);
+
+            // Show error message
+            showNostrConnectError(error);
+
+            // Clear invalid stored data
+            localStorage.removeItem('nostrConnectLocalSigner');
+            localStorage.removeItem('nostrConnectRemotePubkey');
+
+            // Reset login method
+            $loginMethod = null;
+        } finally {
+            $loggingIn = false;
+        }
+    }
+
     async function handleNip07Login() {
         if (!$ndk.signer) {
             $ndk.signer = new NDKNip07Signer();
@@ -330,8 +420,7 @@
 
     function configureBasics() {
         localStorage.debug = '*';
-        const mode = getModeUserPrefers()
-            || document.documentElement.getAttribute('data-mode');
+        const mode = getModeUserPrefers() || document.documentElement.getAttribute('data-mode');
         if (!mode) {
             setModeUserPrefers('dark');
             document.documentElement.setAttribute('data-mode', 'dark');
