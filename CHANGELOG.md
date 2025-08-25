@@ -1,4 +1,14 @@
 # https://satshoot.com
+
+## 1.0.0
+- Services and Orders
+- Review events: Labels tweaked
+- Freelance follows: use NIP51 set kind
+- Sponsoring splits
+- Payment page with separated flow for each party
+- Onboarding wizard
+- New Landing Page
+- Design improvements
 ## 0.2.0
 - Cashu NIP60 wallet
 - NIP61 NutZap payments

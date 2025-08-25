@@ -1,6 +1,6 @@
 {
     "name": "satshoot",
-    "version": "0.9.0",
+    "version": "1.0.0",
     "scripts": {
         "dev": "vite dev --host 0.0.0.0",
         "build": "vite build",
