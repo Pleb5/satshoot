@@ -375,9 +375,6 @@
                 await initializeUser($ndk);
                 $loggingIn = false;
 
-                toaster.success({
-                    title: 'NostrConnect session restored!',
-                });
             } else {
                 throw new Error('Failed to restore NostrConnect session');
             }
