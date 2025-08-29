@@ -209,6 +209,8 @@ export class NostrConnectService {
             nip46Signer.bunkerPubkey = remotePubkey;
             nip46Signer.userPubkey = remotePubkey;
 
+            await nip46Signer.blockUntilReady()
+
             return nip46Signer;
         } catch (error) {
             console.error('NostrConnect restoration failed:', error);

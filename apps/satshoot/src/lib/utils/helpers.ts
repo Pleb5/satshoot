@@ -193,6 +193,8 @@ export function logout() {
     localStorage.removeItem('bunkerTargetNpub');
     localStorage.removeItem('bunkerUrl');
     localStorage.removeItem('bunkerRelayURLs');
+    localStorage.removeItem('nostrConnectLocalSigner');
+    localStorage.removeItem('nostrConnectRemotePubkey');
     localStorage.removeItem('readNotifications');
     localStorage.removeItem('jobFilter');
     localStorage.removeItem('bidFilter');
