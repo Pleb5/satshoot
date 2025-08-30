@@ -74,12 +74,6 @@ stop_server() {
     fi
 }
 
-# Function to add original_ndk remote
-add_original_ndk() {
-    echo "Adding original_ndk remote..."
-    git remote add original_ndk https://github.com/nostr-dev-kit/ndk.git
-    echo "Remote added. You can now fetch and merge from this remote."
-}
 
 # Function to make a clean build with ndk
 clean_build() {
@@ -100,14 +94,11 @@ case "$1" in
     stop)
         stop_server
         ;;
-    add-remote)
-        add_original_ndk
-        ;;
     clean-build)
         clean_build
         ;;
     *)
-        echo "Usage: $0 {start|stop|add-remote|clean-build}"
+        echo "Usage: $0 {start|stop|clean-build}"
         exit 1
         ;;
 esac
