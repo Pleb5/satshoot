@@ -3,6 +3,7 @@ import { getPublicKey, generateSecretKey } from 'nostr-tools';
 import { NDKKind } from '@nostr-dev-kit/ndk';
 import { JobEvent } from '$lib/events/JobEvent';
 import { BidEvent } from '$lib/events/BidEvent';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 vi.mock('$lib/events/JobEvent', () => ({
     JobEvent: {
@@ -173,7 +174,7 @@ describe('JobBidService', () => {
             // Mock user bid that won
             const userBid = createMockNDKEvent({
                 id: bidId,
-                kind: NDKKind.FreelanceBid,
+                kind: ExtendedNDKKind.FreelanceBid,
                 pubkey: testUser,
                 tagAddress: () => `bid-address-${bidId}`,
                 referencedJobAddress: jobAddress,
@@ -182,7 +183,7 @@ describe('JobBidService', () => {
             // Mock job that accepted the user's bid
             const wonJob = createMockNDKEvent({
                 id: 'job-123',
-                kind: NDKKind.FreelanceJob,
+                kind: ExtendedNDKKind.FreelanceJob,
                 pubkey: otherUser,
                 tagAddress: () => jobAddress,
                 acceptedBidAddress: `bid-address-${bidId}`,
@@ -206,7 +207,7 @@ describe('JobBidService', () => {
             expect(mockNDKInstance.fetchEvents).toHaveBeenCalledTimes(4);
             expect(mockNDKInstance.fetchEvents).toHaveBeenNthCalledWith(
                 1,
-                { kinds: [NDKKind.FreelanceBid], authors: [testUser] },
+                { kinds: [ExtendedNDKKind.FreelanceBid], authors: [testUser] },
                 expect.any(Object)
             );
         });
@@ -218,7 +219,7 @@ describe('JobBidService', () => {
             // Mock user's job
             const userJob = createMockNDKEvent({
                 id: 'user-job-456',
-                kind: NDKKind.FreelanceJob,
+                kind: ExtendedNDKKind.FreelanceJob,
                 pubkey: testUser,
                 tagAddress: () => jobAddress,
             });
@@ -226,7 +227,7 @@ describe('JobBidService', () => {
             // Mock winning bid on user's job
             const winningBid = createMockNDKEvent({
                 id: bidId,
-                kind: NDKKind.FreelanceBid,
+                kind: ExtendedNDKKind.FreelanceBid,
                 pubkey: otherUser,
                 referencedJobAddress: jobAddress,
             });
@@ -269,7 +270,7 @@ describe('JobBidService', () => {
             // Mock user bid
             const userBid = createMockNDKEvent({
                 id: bidId,
-                kind: NDKKind.FreelanceBid,
+                kind: ExtendedNDKKind.FreelanceBid,
                 pubkey: testUser,
                 tagAddress: () => `bid-address-${bidId}`,
                 referencedJobAddress: jobAddress,
@@ -278,7 +279,7 @@ describe('JobBidService', () => {
             // Mock job from user NOT in WoT
             const jobNotInWot = createMockNDKEvent({
                 id: 'job-not-in-wot',
-                kind: NDKKind.FreelanceJob,
+                kind: ExtendedNDKKind.FreelanceJob,
                 pubkey: 'untrusted-user',
                 tagAddress: () => jobAddress,
                 acceptedBidAddress: `bid-address-${bidId}`,
@@ -309,7 +310,7 @@ describe('JobBidService', () => {
         it('should handle mismatched bids correctly', async () => {
             const userBid = createMockNDKEvent({
                 id: 'orphaned-bid',
-                kind: NDKKind.FreelanceBid,
+                kind: ExtendedNDKKind.FreelanceBid,
                 pubkey: testUser,
                 tagAddress: () => 'bid-address-orphaned',
             });
@@ -317,7 +318,7 @@ describe('JobBidService', () => {
             // Job that doesn't match the bid
             const unmatchedJob = createMockNDKEvent({
                 id: 'unmatched-job',
-                kind: NDKKind.FreelanceJob,
+                kind: ExtendedNDKKind.FreelanceJob,
                 pubkey: otherUser,
                 tagAddress: () => 'different-job-address',
                 acceptedBidAddress: 'different-bid-address',
@@ -346,27 +347,27 @@ describe('JobBidService', () => {
         it('should handle complex scenario with multiple jobs and bids', async () => {
             const userBid1 = createMockNDKEvent({
                 id: 'user-bid-1',
-                kind: NDKKind.FreelanceBid,
+                kind: ExtendedNDKKind.FreelanceBid,
                 pubkey: testUser,
                 tagAddress: () => 'bid-address-1',
             });
 
             const jobWon1 = createMockNDKEvent({
-                kind: NDKKind.FreelanceJob,
+                kind: ExtendedNDKKind.FreelanceJob,
                 pubkey: otherUser,
                 tagAddress: () => 'job-1',
                 acceptedBidAddress: 'bid-address-1',
             });
 
             const userJob1 = createMockNDKEvent({
-                kind: NDKKind.FreelanceJob,
+                kind: ExtendedNDKKind.FreelanceJob,
                 pubkey: testUser,
                 tagAddress: () => 'user-job-1',
             });
 
             const bidOnUserJob = createMockNDKEvent({
                 id: 'bid-on-user-job',
-                kind: NDKKind.FreelanceBid,
+                kind: ExtendedNDKKind.FreelanceBid,
                 pubkey: otherUser,
                 referencedJobAddress: 'user-job-1',
             });
@@ -409,27 +410,27 @@ describe('JobBidService', () => {
         it('should handle duplicate job addresses correctly', async () => {
             const userBid = createMockNDKEvent({
                 id: 'bid-1',
-                kind: NDKKind.FreelanceBid,
+                kind: ExtendedNDKKind.FreelanceBid,
                 pubkey: testUser,
                 tagAddress: () => 'bid-address-1',
             });
 
             const wonJob = createMockNDKEvent({
-                kind: NDKKind.FreelanceJob,
+                kind: ExtendedNDKKind.FreelanceJob,
                 pubkey: otherUser,
                 tagAddress: () => 'same-job-address',
                 acceptedBidAddress: 'bid-address-1',
             });
 
             const userJob = createMockNDKEvent({
-                kind: NDKKind.FreelanceJob,
+                kind: ExtendedNDKKind.FreelanceJob,
                 pubkey: testUser,
                 tagAddress: () => 'same-job-address', // Same address as won job
             });
 
             const bidOnUserJob = createMockNDKEvent({
                 id: 'bid-2',
-                kind: NDKKind.FreelanceBid,
+                kind: ExtendedNDKKind.FreelanceBid,
                 pubkey: otherUser,
                 referencedJobAddress: 'same-job-address',
             });
@@ -452,13 +453,13 @@ describe('JobBidService', () => {
         it('should verify event processing calls JobEvent.from and BidEvent.from', async () => {
             const userBid = createMockNDKEvent({
                 id: 'test-bid',
-                kind: NDKKind.FreelanceBid,
+                kind: ExtendedNDKKind.FreelanceBid,
                 pubkey: testUser,
                 tagAddress: () => 'test-bid-address',
             });
 
             const wonJob = createMockNDKEvent({
-                kind: NDKKind.FreelanceJob,
+                kind: ExtendedNDKKind.FreelanceJob,
                 pubkey: otherUser,
                 tagAddress: () => 'test-job-address',
                 acceptedBidAddress: 'test-bid-address',
@@ -482,7 +483,7 @@ describe('JobBidService', () => {
             const manyBids = Array.from({ length: 100 }, (_, i) =>
                 createMockNDKEvent({
                     id: `bid-${i}`,
-                    kind: NDKKind.FreelanceBid,
+                    kind: ExtendedNDKKind.FreelanceBid,
                     pubkey: testUser,
                     tagAddress: () => `bid-address-${i}`,
                 })
@@ -491,7 +492,7 @@ describe('JobBidService', () => {
             const manyJobs = Array.from({ length: 50 }, (_, i) =>
                 createMockNDKEvent({
                     id: `job-${i}`,
-                    kind: NDKKind.FreelanceJob,
+                    kind: ExtendedNDKKind.FreelanceJob,
                     pubkey: otherUser,
                     tagAddress: () => `job-address-${i}`,
                     acceptedBidAddress: `bid-address-${i}`,

@@ -3,7 +3,7 @@
     import { ReviewType, type ReviewEvent } from '$lib/events/ReviewEvent';
     import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
-    import { NDKKind, NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
@@ -16,6 +16,7 @@
     import Fuse from 'fuse.js';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { OrderEvent } from '$lib/events/OrderEvent';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     interface Props {
         notification: ReviewEvent;
@@ -56,13 +57,13 @@
             const reviewedEventKind = parseInt(notification.reviewedEventAddress.split(':')[0]);
 
             if (reviewedEvent) {
-                if (reviewedEventKind === NDKKind.FreelanceService) {
+                if (reviewedEventKind === ExtendedNDKKind.FreelanceService) {
                     jobOrService = ServiceEvent.from(reviewedEvent);
                     label = 'has reviewed service:';
-                } else if (reviewedEventKind === NDKKind.FreelanceJob) {
+                } else if (reviewedEventKind === ExtendedNDKKind.FreelanceJob) {
                     jobOrService = JobEvent.from(reviewedEvent);
                     label = 'has reviewed job:';
-                } else if (reviewedEventKind === NDKKind.FreelanceBid) {
+                } else if (reviewedEventKind === ExtendedNDKKind.FreelanceBid) {
                     const bid = BidEvent.from(reviewedEvent);
                     const jobEvent = await $ndk.fetchEvent(bid.referencedJobAddress, {
                         groupable: true,
@@ -73,7 +74,7 @@
                         jobOrService = JobEvent.from(jobEvent);
                         label = 'has reviewed a bid on job:';
                     }
-                } else if (reviewedEventKind === NDKKind.FreelanceOrder) {
+                } else if (reviewedEventKind === ExtendedNDKKind.FreelanceOrder) {
                     const order = OrderEvent.from(reviewedEvent);
                     const serviceEvent = await $ndk.fetchEvent(order.referencedServiceAddress, {
                         groupable: true,

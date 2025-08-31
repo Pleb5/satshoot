@@ -13,6 +13,7 @@ import normalizeUrl from 'normalize-url';
 import type { RelayFirstFetchOpts } from './helpers';
 import { get } from 'svelte/store';
 import ndk from '$lib/stores/session';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 export const JobsPerPage = 9;
 export const ServicesPerPage = 9;
@@ -34,12 +35,12 @@ export const bunkerPerms = [
     'nip04_decrypt',
     'nip44_encrypt',
     'nip44_decrypt',
-    `sign_event:${NDKKind.FreelanceJob}`,
-    `sign_event:${NDKKind.FreelanceBid}`,
+    `sign_event:${ExtendedNDKKind.FreelanceJob}`,
+    `sign_event:${ExtendedNDKKind.FreelanceBid}`,
     `sign_event:${NDKKind.Metadata}`,
     `sign_event:${NDKKind.Text}`,
     `sign_event:${NDKKind.EncryptedDirectMessage}`,
-    `sign_event:${NDKKind.Review}`,
+    `sign_event:${ExtendedNDKKind.Review}`,
     `sign_event:${NDKKind.ZapRequest}`,
     `sign_event:${NDKKind.CashuWallet}`,
     `sign_event:${NDKKind.CashuMintList}`,
@@ -221,11 +222,7 @@ export function clipText(text: string, maxLength: number) {
     return clippedText + ' ...';
 }
 
-
-export function clipMarkdownText(
-    text: string, 
-    maxLength: number
-): string {
+export function clipMarkdownText(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;
 
     // Pre-process to identify special patterns and their rendered lengths
@@ -240,20 +237,20 @@ export function clipMarkdownText(
         },
         {
             regex: /https?:\/\/[^\s]+/g,
-            getRenderedLength: (match: string) => Math.min(match.length, 40), 
-        }
+            getRenderedLength: (match: string) => Math.min(match.length, 40),
+        },
     ];
 
     // Calculate positions and rendered lengths
-    let positions: Array<{start: number, end: number, renderedLength: number}> = [];
-    
+    let positions: Array<{ start: number; end: number; renderedLength: number }> = [];
+
     for (const pattern of specialPatterns) {
         const matches = Array.from(text.matchAll(pattern.regex));
         for (const match of matches) {
             positions.push({
                 start: match.index!,
                 end: match.index! + match[0].length,
-                renderedLength: pattern.getRenderedLength(match[0])
+                renderedLength: pattern.getRenderedLength(match[0]),
             });
         }
     }
@@ -268,8 +265,8 @@ export function clipMarkdownText(
 
     for (let i = 0; i < text.length; i++) {
         // Check if we're at the start of a special pattern
-        const pattern = positions.find(p => p.start === i);
-        
+        const pattern = positions.find((p) => p.start === i);
+
         if (pattern) {
             if (renderedLength + pattern.renderedLength > maxLength) {
                 // Clip before this pattern
@@ -281,7 +278,7 @@ export function clipMarkdownText(
             i = pattern.end - 1;
         } else {
             // Regular character
-            const isInsidePattern = positions.some(p => i >= p.start && i < p.end);
+            const isInsidePattern = positions.some((p) => i >= p.start && i < p.end);
             if (!isInsidePattern) {
                 renderedLength++;
                 if (renderedLength >= maxLength) {
@@ -296,7 +293,7 @@ export function clipMarkdownText(
     if (clipIndex < text.length) {
         const beforeClip = text.slice(0, clipIndex);
         const lastSpaceIndex = beforeClip.lastIndexOf(' ');
-        
+
         if (lastSpaceIndex > maxLength * 0.7) {
             clipIndex = lastSpaceIndex;
         }
@@ -372,16 +369,16 @@ export async function fetchEventFromRelaysFirst(
     return cachedEvent;
 }
 
-export async function fetchBTCUSDPrice (fiat = 'USD') {
-  const url = `https://api.coinbase.com/v2/prices/BTC-${fiat}/spot`
-  try {
-    const res = await fetch(url)
-    const body = await res.json()
-    return parseFloat(body.data.amount)
-  } catch (err) {
-    console.error(err)
-    return -1
-  }
+export async function fetchBTCUSDPrice(fiat = 'USD') {
+    const url = `https://api.coinbase.com/v2/prices/BTC-${fiat}/spot`;
+    try {
+        const res = await fetch(url);
+        const body = await res.json();
+        return parseFloat(body.data.amount);
+    } catch (err) {
+        console.error(err);
+        return -1;
+    }
 }
 
 export function formatNumber(num: number | null): string {
@@ -394,4 +391,3 @@ export function parseNumber(str: string): number | null {
     const parsed = Number(str.replace(/,/g, ''));
     return isNaN(parsed) ? null : parsed;
 }
-

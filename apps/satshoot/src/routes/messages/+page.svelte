@@ -16,6 +16,7 @@
     import { OrderEvent } from '$lib/events/OrderEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { filteredMessages } from '$lib/stores/messages';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     interface ConversationData {
         jobConversations: Array<[JobEvent, NDKUser]>;
@@ -57,10 +58,10 @@
         try {
             if ($userMode === UserMode.Client) {
                 await fetchClientConversations();
-                canStartFetchingServicesFromMessages = true
+                canStartFetchingServicesFromMessages = true;
             } else if ($userMode === UserMode.Freelancer) {
                 await fetchFreelancerConversations();
-                canStartFetchingJobsFromMessages = true
+                canStartFetchingJobsFromMessages = true;
             }
         } catch (error) {
             conversationData.error =
@@ -73,31 +74,32 @@
     // 1. No deal has been made, and NO BID/ORDER has been placed
     // 2. In freelance mode, conversations related to the Job
     // 3. In client mode, conversations related to the Service
-    // This is necessary when people write to someone but not yet ready to 
+    // This is necessary when people write to someone but not yet ready to
     // commit with and Order or Bid, only after some initial conversation
     // These conversations are already covered for (Clients X Jobs) and
     // (Freelancers X Services) but not for (Clients X Orders) and (Freelancers X Jobs)
     $effect(() => {
         if ($filteredMessages) {
             if (canStartFetchingJobsFromMessages) {
-                fetchJobsFromMessages()
+                fetchJobsFromMessages();
             } else if (canStartFetchingServicesFromMessages) {
-                fetchServicesFromMessages()
+                fetchServicesFromMessages();
             }
         }
-    })
+    });
 
     const fetchJobsFromMessages = async () => {
         const dtags = getDtagsFromMessages(
-            NDKKind.FreelanceJob.toString(), conversationData.jobConversations
-        )
+            ExtendedNDKKind.FreelanceJob.toString(),
+            conversationData.jobConversations
+        );
 
-        if (dtags.length === 0) return 
+        if (dtags.length === 0) return;
 
         const events = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceJob],
-                '#d': dtags
+                kinds: [ExtendedNDKKind.FreelanceJob],
+                '#d': dtags,
             },
             defaultFetchOptions
         );
@@ -108,27 +110,25 @@
             const user = $ndk.getUser({ pubkey: job.pubkey });
             newConversations.push([job, user]);
         });
-        
+
         conversationData = {
             ...conversationData,
-            jobConversations: [
-                ...conversationData.jobConversations,
-                ...newConversations
-            ]
+            jobConversations: [...conversationData.jobConversations, ...newConversations],
         };
-    }
+    };
 
     const fetchServicesFromMessages = async () => {
         const dtags = getDtagsFromMessages(
-            NDKKind.FreelanceService.toString(), conversationData.serviceConversations
-        )
+            ExtendedNDKKind.FreelanceService.toString(),
+            conversationData.serviceConversations
+        );
 
-        if (dtags.length === 0) return 
+        if (dtags.length === 0) return;
 
         const events = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceService],
-                '#d': dtags
+                kinds: [ExtendedNDKKind.FreelanceService],
+                '#d': dtags,
             },
             defaultFetchOptions
         );
@@ -139,46 +139,42 @@
             const user = $ndk.getUser({ pubkey: service.pubkey });
             newConversations.push([service, user]);
         });
-        
+
         conversationData = {
             ...conversationData,
-            serviceConversations: [
-                ...conversationData.serviceConversations,
-                ...newConversations
-            ]
+            serviceConversations: [...conversationData.serviceConversations, ...newConversations],
         };
-    }
+    };
 
     const getDtagsFromMessages = (
-        kindToCheck: string, existingData: Array<[JobEvent | ServiceEvent, NDKUser]>
+        kindToCheck: string,
+        existingData: Array<[JobEvent | ServiceEvent, NDKUser]>
     ): string[] => {
-        const dtags = []
+        const dtags = [];
         for (const dm of $filteredMessages) {
-            const dtag = (dm.tagValue('a') as string).split(':')[2]
-            if (
-                (dm.tagValue('a') as string).includes(kindToCheck)
-            ) {
+            const dtag = (dm.tagValue('a') as string).split(':')[2];
+            if ((dm.tagValue('a') as string).includes(kindToCheck)) {
                 // Don't fetch jobs we already have
-                let mustContinue = false
+                let mustContinue = false;
                 for (const [event, user] of existingData) {
                     if (event.tagValue('d') === dtag) {
-                        mustContinue = true
-                        break
+                        mustContinue = true;
+                        break;
                     }
                 }
 
-                if (mustContinue) continue
+                if (mustContinue) continue;
 
-                dtags.push(dtag)
+                dtags.push(dtag);
             }
         }
-        return dtags
-    }
+        return dtags;
+    };
 
     async function fetchClientConversations() {
         const events = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceJob, NDKKind.FreelanceOrder],
+                kinds: [ExtendedNDKKind.FreelanceJob, ExtendedNDKKind.FreelanceOrder],
                 authors: [$currentUser!.pubkey],
             },
             defaultFetchOptions
@@ -189,7 +185,7 @@
         const servicesToFetch = new Set<string>();
 
         events.forEach((event) => {
-            if (event.kind === NDKKind.FreelanceJob) {
+            if (event.kind === ExtendedNDKKind.FreelanceJob) {
                 const job = JobEvent.from(event);
                 if (job.acceptedBidAddress && job.winnerFreelancer) {
                     const user = $ndk.getUser({ pubkey: job.winnerFreelancer });
@@ -197,7 +193,7 @@
                 } else {
                     jobConversations.set(job, $ndk.getUser({ pubkey: job.pubkey }));
                 }
-            } else if (event.kind === NDKKind.FreelanceOrder) {
+            } else if (event.kind === ExtendedNDKKind.FreelanceOrder) {
                 const order = OrderEvent.from(event);
                 const dTag = order.referencedServiceDTag;
                 if (dTag) {
@@ -208,7 +204,7 @@
 
         const serviceEvents = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceService],
+                kinds: [ExtendedNDKKind.FreelanceService],
                 '#d': Array.from(servicesToFetch),
             },
             { ...defaultFetchOptions, groupableDelay: 800 }
@@ -235,7 +231,7 @@
     async function fetchFreelancerConversations() {
         const events = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceBid, NDKKind.FreelanceService],
+                kinds: [ExtendedNDKKind.FreelanceBid, ExtendedNDKKind.FreelanceService],
                 authors: [$currentUser!.pubkey],
             },
             defaultFetchOptions
@@ -249,13 +245,13 @@
         const bidMap = new Map<string, BidEvent>();
 
         for (const event of events) {
-            if (event.kind === NDKKind.FreelanceBid) {
+            if (event.kind === ExtendedNDKKind.FreelanceBid) {
                 const bid = BidEvent.from(event);
                 if (bid.referencedJobDTag) {
                     jobsToFetch.push(bid.referencedJobDTag);
                     bidMap.set(bid.bidAddress, bid);
                 }
-            } else if (event.kind === NDKKind.FreelanceService) {
+            } else if (event.kind === ExtendedNDKKind.FreelanceService) {
                 const service = ServiceEvent.from(event);
                 serviceConversations.set(service, $ndk.getUser({ pubkey: service.pubkey }));
             }
@@ -263,7 +259,7 @@
 
         const jobEvents = await $ndk.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceJob],
+                kinds: [ExtendedNDKKind.FreelanceJob],
                 '#d': jobsToFetch,
             },
             { ...defaultFetchOptions, groupableDelay: 800 }

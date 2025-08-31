@@ -11,7 +11,7 @@
     import ndk from '$lib/stores/session';
     import currentUser, { userMode } from '$lib/stores/user';
     import { sessionInitialized } from '$lib/stores/session';
-    import { NDKKind, type NDKFilter } from '@nostr-dev-kit/ndk';
+    import { type NDKFilter } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { onDestroy } from 'svelte';
     import { debounce } from '$lib/utils/misc';
@@ -29,6 +29,7 @@
         createBidStatusFilter,
         createOrderStatusFilter,
     } from '$lib/utils/profilePage';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
     let npub = page.params.npub;
@@ -42,19 +43,19 @@
 
     // Jobs subscriptions
     const allJobsFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceJob],
+        kinds: [ExtendedNDKKind.FreelanceJob],
     };
     const allJobsOfUser = $ndk.storeSubscribe<JobEvent>(allJobsFilter, subOptions, JobEvent);
 
     // Bids subscriptions
     const allBidsFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceBid],
+        kinds: [ExtendedNDKKind.FreelanceBid],
     };
     const allBidsOfUser = $ndk.storeSubscribe<BidEvent>(allBidsFilter, subOptions, BidEvent);
 
     // Services subscriptions
     const allServicesFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceService],
+        kinds: [ExtendedNDKKind.FreelanceService],
     };
     const allServicesOfUser = $ndk.storeSubscribe<ServiceEvent>(
         allServicesFilter,
@@ -64,7 +65,7 @@
 
     // Orders subscriptions
     const allOrdersFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceOrder],
+        kinds: [ExtendedNDKKind.FreelanceOrder],
     };
     const allOrdersOfUser = $ndk.storeSubscribe<OrderEvent>(
         allOrdersFilter,
@@ -82,7 +83,7 @@
 
     // Applied jobs subscription (jobs on which user has made bids)
     const appliedJobsFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceJob],
+        kinds: [ExtendedNDKKind.FreelanceJob],
     };
     const appliedJobs = $ndk.storeSubscribe<JobEvent>(
         appliedJobsFilter,
@@ -97,7 +98,7 @@
 
     // Applied services subscription (services on which user has placed orders)
     const appliedServicesFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceService],
+        kinds: [ExtendedNDKKind.FreelanceService],
     };
     const appliedServices = $ndk.storeSubscribe<ServiceEvent>(
         appliedServicesFilter,

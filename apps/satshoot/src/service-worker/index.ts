@@ -6,6 +6,7 @@
 import { build, files } from '$service-worker';
 
 import { NDKKind } from '@nostr-dev-kit/ndk';
+import { ExtendedNDKKind } from '../lib/types/ndkKind';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 let openAllowed = true;
@@ -57,10 +58,10 @@ sw.onmessage = (m) => {
 async function openNotificationWindow(tag: string) {
     const urlToVisit = '/notifications/';
 
-    const jobNotification = tag === NDKKind.FreelanceJob.toString();
-    const bidNotification = tag === NDKKind.FreelanceBid.toString();
+    const jobNotification = tag === ExtendedNDKKind.FreelanceJob.toString();
+    const bidNotification = tag === ExtendedNDKKind.FreelanceBid.toString();
     const messageNotification = tag === NDKKind.EncryptedDirectMessage.toString();
-    const reviewNotification = tag === NDKKind.Review.toString();
+    const reviewNotification = tag === ExtendedNDKKind.Review.toString();
     const receivedZapNotification = tag === NDKKind.Zap.toString();
     const followNotification = tag === NDKKind.FollowSet.toString();
 

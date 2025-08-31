@@ -1,10 +1,11 @@
-import { NDKKind, NDKSubscriptionCacheUsage, type Hexpubkey } from '@nostr-dev-kit/ndk';
+import { NDKSubscriptionCacheUsage, type Hexpubkey } from '@nostr-dev-kit/ndk';
 import ndk from '$lib/stores/session';
 import { get } from 'svelte/store';
 import { wot } from '$lib/stores/wot';
 import { JobEvent } from '$lib/events/JobEvent';
 import { BidEvent } from '$lib/events/BidEvent';
 import type { JobBidContext } from './types';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 /**
  * Service for fetching and processing job and bid data
@@ -73,7 +74,7 @@ export class JobBidService {
         // Get user's bids
         const userBids = await ndkInstance.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceBid],
+                kinds: [ExtendedNDKKind.FreelanceBid],
                 authors: [this.user],
             },
             subOptions
@@ -82,7 +83,7 @@ export class JobBidService {
         // Get jobs where user's bids won
         const allJobsUserWon = await ndkInstance.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceJob],
+                kinds: [ExtendedNDKKind.FreelanceJob],
                 '#a': Array.from(userBids).map((o) => o.tagAddress()),
             },
             subOptions
@@ -123,7 +124,7 @@ export class JobBidService {
         // Get user's jobs
         const userJobs = await ndkInstance.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceJob],
+                kinds: [ExtendedNDKKind.FreelanceJob],
                 authors: [this.user],
             },
             subOptions
@@ -132,7 +133,7 @@ export class JobBidService {
         // Get winning bids on user's jobs
         const allWinningBidsOnUserJobs = await ndkInstance.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceBid],
+                kinds: [ExtendedNDKKind.FreelanceBid],
                 '#a': Array.from(userJobs).map((t) => t.tagAddress()),
             },
             subOptions

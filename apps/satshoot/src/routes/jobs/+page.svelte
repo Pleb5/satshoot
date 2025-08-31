@@ -5,14 +5,14 @@
     import { wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
-    import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import Fuse from 'fuse.js';
     import { page } from '$app/state';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
     import { JobsPerPage } from '$lib/utils/misc';
     import { onDestroy } from 'svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
-
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
     // Track debounced jobs
@@ -21,7 +21,7 @@
 
     let newJobs = $ndk.storeSubscribe(
         {
-            kinds: [NDKKind.FreelanceJob],
+            kinds: [ExtendedNDKKind.FreelanceJob],
         },
         {
             autoStart: false,

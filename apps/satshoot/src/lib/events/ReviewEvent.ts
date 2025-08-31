@@ -1,10 +1,5 @@
-import {
-    NDKEvent,
-    type NDKTag,
-    type NostrEvent,
-    NDKKind,
-    type Hexpubkey,
-} from '@nostr-dev-kit/ndk';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
+import { NDKEvent, type NDKTag, type NostrEvent, type Hexpubkey } from '@nostr-dev-kit/ndk';
 
 import NDK from '@nostr-dev-kit/ndk';
 
@@ -51,7 +46,7 @@ export interface FreelancerRating {
 export class ReviewEvent extends NDKEvent {
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
-        this.kind ??= NDKKind.Review;
+        this.kind ??= ExtendedNDKKind.Review;
         if (!this.tagValue('L')) {
             this.tags.push(['L', 'qts/freelancing']);
         }
@@ -171,14 +166,16 @@ export class ReviewEvent extends NDKEvent {
         const eventKind = parseInt(eventAddress.split(':')[0] as string);
         if (
             this.type === ReviewType.Client &&
-            (eventKind === NDKKind.FreelanceBid || eventKind === NDKKind.FreelanceService)
+            (eventKind === ExtendedNDKKind.FreelanceBid ||
+                eventKind === ExtendedNDKKind.FreelanceService)
         ) {
             throw new Error('Client reviews can only be given on Job/Order events');
         }
 
         if (
             this.type === ReviewType.Freelancer &&
-            (eventKind === NDKKind.FreelanceJob || eventKind === NDKKind.FreelanceOrder)
+            (eventKind === ExtendedNDKKind.FreelanceJob ||
+                eventKind === ExtendedNDKKind.FreelanceOrder)
         ) {
             throw new Error('Freelancer reviews can only be given on Bid/service events');
         }

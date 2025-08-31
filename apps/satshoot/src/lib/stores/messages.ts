@@ -9,6 +9,7 @@ import {
 
 import { get, writable, derived } from 'svelte/store';
 import { wot } from './wot';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 export const subOptions: NDKSubscriptionOptions = {
     closeOnEose: false,
@@ -33,17 +34,14 @@ export const messageStore = get(ndk).storeSubscribe(
     subOptions
 );
 
-export const filteredMessages = derived(
-    [messageStore, wot], ([$messageStore, $wot]) => {
+export const filteredMessages = derived([messageStore, wot], ([$messageStore, $wot]) => {
     const feed = $messageStore.filter((message: NDKEvent) => {
         let relatedToFreelance = false;
         message.tags.forEach((tag: NDKTag) => {
             if (
                 tag[0] === 'a' &&
-                (
-                    tag[1].includes(NDKKind.FreelanceJob.toString())
-                    || tag[1].includes(NDKKind.FreelanceService.toString())
-                )
+                (tag[1].includes(ExtendedNDKKind.FreelanceJob.toString()) ||
+                    tag[1].includes(ExtendedNDKKind.FreelanceService.toString()))
             ) {
                 relatedToFreelance = true;
             }

@@ -13,6 +13,7 @@ import ndk from '$lib/stores/session';
 import currentUserStore from '$lib/stores/user';
 import { checkRelayConnections } from '$lib/utils/helpers';
 import type { ContactService } from './ContactService.svelte';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 /**
  * Service for handling service-related functionality
@@ -91,7 +92,7 @@ export class ServiceService {
 
         try {
             const orderFilter: NDKFilter = {
-                kinds: [NDKKind.FreelanceOrder],
+                kinds: [ExtendedNDKKind.FreelanceOrder],
                 '#a': [this.serviceAddress],
             };
 

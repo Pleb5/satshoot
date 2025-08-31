@@ -10,29 +10,30 @@ import {
     ReviewType,
 } from '$lib/events/ReviewEvent';
 
-import { NDKKind, type Hexpubkey, type NDKFilter } from '@nostr-dev-kit/ndk';
+import { type Hexpubkey, type NDKFilter } from '@nostr-dev-kit/ndk';
 
 import { orderEventsChronologically } from '$lib/utils/helpers';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 export const subOptions: NDKSubscriptionOptions = {
     closeOnEose: false,
     groupable: false,
 };
 
-export const allReviewsFilter: NDKFilter<NDKKind.Review> = {
-    kinds: [NDKKind.Review],
+export const allReviewsFilter: NDKFilter = {
+    kinds: [ExtendedNDKKind.Review],
     '#L': ['qts/freelancing'],
 };
 
-// export const reviewsOnMyJobsFilter: NDKFilter<NDKKind.Review> = {
-//     kinds: [NDKKind.Review],
+// export const reviewsOnMyJobsFilter: NDKFilter<ExtendedNDKKind.Review> = {
+//     kinds: [ExtendedNDKKind.Review],
 //     '#L': ['qts/freelancing'],
 //     authors: [],
 //     '#a': [],
 // };
 
-// export const reviewsOnMyBidsFilter: NDKFilter<NDKKind.Review> = {
-//     kinds: [NDKKind.Review],
+// export const reviewsOnMyBidsFilter: NDKFilter<ExtendedNDKKind.Review> = {
+//     kinds: [ExtendedNDKKind.Review],
 //     '#L': ['qts/freelancing'],
 //     authors: [],
 //     '#a': [],
@@ -111,7 +112,7 @@ function filterDuplicateReviewsOnSameDeal(reviews: ReviewEvent[]): ReviewEvent[]
         if (review.reviewedEventAddress) {
             const reviewedKind = review.reviewedEventAddress.split(':')[0];
             if (
-                reviewedKind === NDKKind.FreelanceJob.toString() &&
+                reviewedKind === ExtendedNDKKind.FreelanceJob.toString() &&
                 !jobReviewsSet.has(review.reviewedEventAddress)
             ) {
                 jobReviewsSet.add(review.reviewedEventAddress);

@@ -1,4 +1,4 @@
-import { NDKKind, NDKSubscriptionCacheUsage, type Hexpubkey } from '@nostr-dev-kit/ndk';
+import { NDKSubscriptionCacheUsage, type Hexpubkey } from '@nostr-dev-kit/ndk';
 import type { ServiceOrderContext } from './types';
 import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
 import { get } from 'svelte/store';
@@ -6,6 +6,7 @@ import ndk from '$lib/stores/session';
 import { wot } from '$lib/stores/wot';
 import { ServiceEvent } from '$lib/events/ServiceEvent';
 import { OrderEvent } from '$lib/events/OrderEvent';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 export class ServiceOrderService {
     private user: Hexpubkey;
@@ -67,7 +68,7 @@ export class ServiceOrderService {
         // Get user's services
         const userServices = await ndkInstance.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceService],
+                kinds: [ExtendedNDKKind.FreelanceService],
                 authors: [this.user],
             },
             subOptions
@@ -80,7 +81,7 @@ export class ServiceOrderService {
 
         const allOrdersOnUserServices = await ndkInstance.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceOrder],
+                kinds: [ExtendedNDKKind.FreelanceOrder],
                 '#a': Array.from(userServices).map((s) => s.tagAddress()),
             },
             subOptions
@@ -119,7 +120,7 @@ export class ServiceOrderService {
         // Get user's orders
         const userOrders = await ndkInstance.fetchEvents(
             {
-                kinds: [NDKKind.FreelanceOrder],
+                kinds: [ExtendedNDKKind.FreelanceOrder],
                 authors: [this.user],
             },
             subOptions
@@ -127,7 +128,7 @@ export class ServiceOrderService {
 
         // all services on which user placed the order
         const ordersServices = await ndkInstance.fetchEvents({
-            kinds: [NDKKind.FreelanceService],
+            kinds: [ExtendedNDKKind.FreelanceService],
             '#a': Array.from(userOrders).map((o) => o.tagAddress()),
         });
 

@@ -1,6 +1,6 @@
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 import { NDKEvent, type NDKTag, type NostrEvent } from '@nostr-dev-kit/ndk';
 import NDK from '@nostr-dev-kit/ndk';
-import { NDKKind } from '@nostr-dev-kit/ndk';
 
 export enum JobStatus {
     New = 0,
@@ -15,7 +15,7 @@ export class JobEvent extends NDKEvent {
 
     constructor(ndk?: NDK, rawEvent?: NostrEvent) {
         super(ndk, rawEvent);
-        this.kind ??= NDKKind.FreelanceJob;
+        this.kind ??= ExtendedNDKKind.FreelanceJob;
         this._status = parseInt(this.tagValue('s') as string);
         this._title = this.tagValue('title') as string;
     }

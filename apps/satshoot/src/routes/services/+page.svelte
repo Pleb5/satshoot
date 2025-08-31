@@ -5,6 +5,7 @@
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { ServicesPerPage } from '$lib/utils/misc';
     import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
@@ -19,7 +20,7 @@
 
     let newServices = $ndk.storeSubscribe(
         {
-            kinds: [NDKKind.FreelanceService],
+            kinds: [ExtendedNDKKind.FreelanceService],
         },
         {
             autoStart: false,

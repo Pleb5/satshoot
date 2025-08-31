@@ -10,7 +10,6 @@
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
     import { abbreviateNumber, insertThousandSeparator } from '$lib/utils/misc';
     import {
-        NDKKind,
         NDKSubscriptionCacheUsage,
         NDKUser,
         type NDKFilter,
@@ -21,6 +20,7 @@
     import { Popover } from '@skeletonlabs/skeleton-svelte';
     import { onDestroy } from 'svelte';
     import { Pricing } from '$lib/events/types';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     interface Props {
         job: JobEvent;
@@ -102,7 +102,7 @@
         }
 
         const bidsFilter: NDKFilter = {
-            kinds: [NDKKind.FreelanceBid],
+            kinds: [ExtendedNDKKind.FreelanceBid],
             '#a': [job.jobAddress],
         };
 

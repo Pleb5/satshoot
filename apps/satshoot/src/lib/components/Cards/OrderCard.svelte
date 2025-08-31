@@ -1,13 +1,7 @@
 <script lang="ts">
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
-    import {
-        type NDKFilter,
-        NDKKind,
-        NDKSubscriptionCacheUsage,
-        NDKUser,
-        type NDKUserProfile,
-    } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage, NDKUser, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
@@ -28,7 +22,7 @@
     import { goto } from '$app/navigation';
     import CloseEntityModal from '../Modals/CloseEntityModal.svelte';
     import ConfirmationDialog from '../UI/ConfirmationDialog.svelte';
-
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     interface Props {
         order: OrderEvent;
         showServiceDetail?: boolean;
@@ -60,8 +54,8 @@
         return servicePosterProfile?.name ?? servicePoster!.npub.substring(0, 8);
     });
 
-    const serviceFilter: NDKFilter<NDKKind.FreelanceService> = {
-        kinds: [NDKKind.FreelanceService],
+    const serviceFilter = {
+        kinds: [ExtendedNDKKind.FreelanceService],
         '#d': [order.referencedServiceAddress.split(':')[2]],
     };
 
@@ -93,9 +87,9 @@
     );
 
     const canAcceptOrder = $derived(
-        order.status === OrderStatus.Open
-        && myService 
-        && !service?.orders.includes(order.orderAddress)
+        order.status === OrderStatus.Open &&
+            myService &&
+            !service?.orders.includes(order.orderAddress)
     );
 
     const canReviewClient = $derived(
@@ -107,10 +101,7 @@
 
     const canPay = $derived(myOrder && service?.orders.includes(order.orderAddress));
 
-    const canClose = $derived(
-        order.status === OrderStatus.Open
-        && canPay
-    );
+    const canClose = $derived(order.status === OrderStatus.Open && canPay);
 
     let initialized = $state(false);
     $effect(() => {
@@ -145,7 +136,6 @@
             return;
         }
 
-
         service.tags.push(['a', order.orderAddress]);
         try {
             await service.publishReplaceable();
@@ -173,7 +163,7 @@
             const url = new URL('/payments/' + order.encode(), window.location.origin);
             goto(url.toString());
         } else {
-            throw new Error('Cannot pay, Order not found!')
+            throw new Error('Cannot pay, Order not found!');
         }
     }
 
@@ -230,12 +220,7 @@
             class="w-full flex flex-row justify-center flex-wrap gap-2 border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
         >
             {#if canAcceptOrder}
-                <Button 
-                    onClick={
-                        () => showAcceptOrderConfirmationModal = true
-                    }>
-                    Accept
-                </Button>
+                <Button onClick={() => (showAcceptOrderConfirmationModal = true)}>Accept</Button>
             {/if}
 
             {#if canReviewClient}
@@ -269,14 +254,11 @@
         secondaryEntity={order}
     />
 
-    <ConfirmationDialog 
+    <ConfirmationDialog
         bind:isOpen={showAcceptOrderConfirmationModal}
-        title={"Do you really want to accept the Order?"}
-        confirmText={"Accept Order"}
+        title={'Do you really want to accept the Order?'}
+        confirmText={'Accept Order'}
         onConfirm={handleAcceptOrder}
-        onCancel={
-            ()=>showAcceptOrderConfirmationModal = !showAcceptOrderConfirmationModal
-        }
+        onCancel={() => (showAcceptOrderConfirmationModal = !showAcceptOrderConfirmationModal)}
     />
 {/if}
-
