@@ -2,7 +2,6 @@ import ndk from '$lib/stores/session';
 import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
 import type { NDKFilter } from '@nostr-dev-kit/ndk';
 import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
-import { NDKKind } from '@nostr-dev-kit/ndk';
 
 import { JobEvent } from '$lib/events/JobEvent';
 import { BidEvent } from '$lib/events/BidEvent';
@@ -12,6 +11,7 @@ import { wot } from '$lib/stores/wot';
 import { get, derived } from 'svelte/store';
 import { ServiceEvent } from '$lib/events/ServiceEvent';
 import { OrderEvent } from '$lib/events/OrderEvent';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 // Export necessary when restarting a subscription with a new filter
 export const subOptions: NDKSubscribeOptions = {
@@ -21,39 +21,39 @@ export const subOptions: NDKSubscribeOptions = {
 };
 
 export const allJobsFilter: NDKFilter = {
-    kinds: [NDKKind.FreelanceJob],
+    kinds: [ExtendedNDKKind.FreelanceJob],
 };
 
 export const allBidsFilter: NDKFilter = {
-    kinds: [NDKKind.FreelanceBid],
+    kinds: [ExtendedNDKKind.FreelanceBid],
 };
 
 export const allServicesFilter: NDKFilter = {
-    kinds: [NDKKind.FreelanceService],
+    kinds: [ExtendedNDKKind.FreelanceService],
 };
 
 export const allOrdersFilter: NDKFilter = {
-    kinds: [NDKKind.FreelanceOrder],
+    kinds: [ExtendedNDKKind.FreelanceOrder],
 };
 
 // The filter's pubkey part will be filled in when user logs in
 export const myJobFilter: NDKFilter = {
-    kinds: [NDKKind.FreelanceJob],
+    kinds: [ExtendedNDKKind.FreelanceJob],
 };
 
 // The filter's pubkey part will be filled in when user logs in
 export const myBidFilter: NDKFilter = {
-    kinds: [NDKKind.FreelanceBid],
+    kinds: [ExtendedNDKKind.FreelanceBid],
 };
 
 // The filter's pubkey part will be filled in when user logs in
 export const myServiceFilter: NDKFilter = {
-    kinds: [NDKKind.FreelanceService],
+    kinds: [ExtendedNDKKind.FreelanceService],
 };
 
 // The filter's pubkey part will be filled in when user logs in
 export const myOrderFilter: NDKFilter = {
-    kinds: [NDKKind.FreelanceOrder],
+    kinds: [ExtendedNDKKind.FreelanceOrder],
 };
 
 export const allJobs: NDKEventStore<ExtendedBaseType<JobEvent>> = get(ndk).storeSubscribe<JobEvent>(

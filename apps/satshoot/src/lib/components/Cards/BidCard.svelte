@@ -3,12 +3,15 @@
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
-    import { createPaymentFilters, createPaymentStore, type PaymentStore } from '$lib/stores/payment';
+    import {
+        createPaymentFilters,
+        createPaymentStore,
+        type PaymentStore,
+    } from '$lib/stores/payment';
     import { freelancerReviews } from '$lib/stores/reviews';
     import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import {
-        NDKKind,
         NDKSubscriptionCacheUsage,
         NDKUser,
         type NDKFilter,
@@ -30,6 +33,7 @@
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { goto } from '$app/navigation';
     import { Pricing } from '$lib/events/types';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     interface Props {
         bid: BidEvent;
@@ -50,16 +54,16 @@
     let showTakeBidModal = $state(false);
     let showReviewModal = $state(false);
 
-    let freelancerPaymentStore = $state<PaymentStore|null>(null)
-    let satshootPaymentStore = $state<PaymentStore|null>(null)
-    let sponsoredNpubPaymentStore =$state<PaymentStore|null>(null) 
+    let freelancerPaymentStore = $state<PaymentStore | null>(null);
+    let satshootPaymentStore = $state<PaymentStore | null>(null);
+    let sponsoredNpubPaymentStore = $state<PaymentStore | null>(null);
 
     let freelancerPaid = $derived(freelancerPaymentStore?.totalPaid ?? null);
     let satshootPaid = $derived(satshootPaymentStore?.totalPaid ?? null);
     let sponsoredNpubPaid = $derived(sponsoredNpubPaymentStore?.totalPaid ?? null);
 
-    const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
-        kinds: [NDKKind.FreelanceJob],
+    const jobFilter = {
+        kinds: [ExtendedNDKKind.FreelanceJob],
         '#d': [bid.referencedJobAddress.split(':')[2]],
     };
     const jobStore = $ndk.storeSubscribe<JobEvent>(
@@ -144,12 +148,12 @@
     });
 
     let jobPoster = $state<NDKUser | null>(null);
-    let jobBasedSetupDone = $state(false)
+    let jobBasedSetupDone = $state(false);
     $effect(() => {
         if (job && !jobBasedSetupDone) {
-            jobBasedSetupDone = true
+            jobBasedSetupDone = true;
             setupJobPoster($ndk.getUser({ pubkey: job.pubkey }));
-            startPaymentSubs()
+            startPaymentSubs();
         }
     });
 
@@ -165,7 +169,7 @@
         freelancerPaymentStore.paymentStore.startSubscription();
         satshootPaymentStore.paymentStore.startSubscription();
         sponsoredNpubPaymentStore.paymentStore.startSubscription();
-    }
+    };
 
     const setupJobPoster = async (poster: NDKUser) => {
         jobPoster = poster;
@@ -245,11 +249,7 @@
                     <p class="font-[500]">
                         Freelancer Paid:
                         <span class="font-[300]">
-                            {
-                                $freelancerPaid 
-                                ? insertThousandSeparator($freelancerPaid)
-                                : '?'
-                            } sats
+                            {$freelancerPaid ? insertThousandSeparator($freelancerPaid) : '?'} sats
                         </span>
                     </p>
                 </div>
@@ -257,11 +257,7 @@
                     <p class="font-[500]">
                         SatShoot Paid:
                         <span class="font-[300]">
-                            {
-                                $satshootPaid 
-                                ? insertThousandSeparator($satshootPaid)
-                                : '?'
-                            } sats
+                            {$satshootPaid ? insertThousandSeparator($satshootPaid) : '?'} sats
                         </span>
                     </p>
                 </div>
@@ -269,11 +265,8 @@
                     <div class="grow-1">
                         <p class="font-[500]">
                             Sponsored Paid:
-                            {
-                                $sponsoredNpubPaid 
-                                ? insertThousandSeparator($sponsoredNpubPaid)
-                                : '?'
-                            } sats
+                            {$sponsoredNpubPaid ? insertThousandSeparator($sponsoredNpubPaid) : '?'}
+                            sats
                         </p>
                     </div>
                 {/if}

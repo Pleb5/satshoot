@@ -16,6 +16,7 @@
     import { toaster } from '$lib/stores/toaster';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
@@ -24,7 +25,6 @@
         NDKRelay,
         NDKSubscription,
         type NDKFilter,
-        NDKKind,
         NDKEvent,
         NDKSubscriptionCacheUsage,
     } from '@nostr-dev-kit/ndk';
@@ -39,7 +39,7 @@
 
     const serviceSubOptions: NDKSubscribeOptions = {
         closeOnEose: false,
-        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL
+        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
     };
 
     const ordersSubOptions: NDKSubscribeOptions = {
@@ -48,7 +48,7 @@
     };
 
     const allOrdersFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceOrder],
+        kinds: [ExtendedNDKKind.FreelanceOrder],
     };
 
     const allOrdersStore = $ndk.storeSubscribe<OrderEvent>(
@@ -65,7 +65,7 @@
 
     const myInFulfillmentOrder = $derived.by(() => {
         if (service) {
-            return inFulfillmentOrderOnService(service, $myOrders)
+            return inFulfillmentOrderOnService(service, $myOrders);
         }
     });
 
@@ -185,7 +185,7 @@
 
             const dTag = idFromNaddr(naddr).split(':')[2];
             const serviceFilter: NDKFilter = {
-                kinds: [NDKKind.FreelanceService],
+                kinds: [ExtendedNDKKind.FreelanceService],
                 '#d': [dTag],
             };
 
@@ -239,18 +239,11 @@
         orderEvent.pricing = service.pricing;
         orderEvent.amount = service.amount;
 
-
         const sponsoredZapSplit =
             service.sponsoredNpub && service.pledgeSplit
-                ? buildSponsoredZapSplit(
-                    service.sponsoredNpub, service.sponsoringSplit
-                )
+                ? buildSponsoredZapSplit(service.sponsoredNpub, service.sponsoringSplit)
                 : undefined;
-        orderEvent.setZapSplits(
-            service.pledgeSplit,
-            service.pubkey,
-            sponsoredZapSplit
-        );
+        orderEvent.setZapSplits(service.pledgeSplit, service.pubkey, sponsoredZapSplit);
         orderEvent.generateTags(); // this generates d-tag
 
         try {
@@ -269,7 +262,8 @@
     function goToPay() {
         if (myInFulfillmentOrder) {
             const url = new URL(
-                '/payments/' + myInFulfillmentOrder.encode(), window.location.origin
+                '/payments/' + myInFulfillmentOrder.encode(),
+                window.location.origin
             );
             goto(url.toString());
         }
@@ -277,7 +271,7 @@
 
     function goToChat() {
         if (!service) {
-            throw new Error('BUG: Trying to navigate to chat of undefined service')
+            throw new Error('BUG: Trying to navigate to chat of undefined service');
         }
 
         const url = new URL('/messages/' + service.encode(), window.location.origin);
@@ -288,7 +282,7 @@
 
     function handleCloseOrder() {
         if (!service || !myInFulfillmentOrder) {
-            throw new Error('BUG: Cannot Close undefined Service or Order')
+            throw new Error('BUG: Cannot Close undefined Service or Order');
         }
         showCloseModal = true;
     }
@@ -354,14 +348,10 @@
                                                     <p class="">Pay</p>
                                                 </Button>
 
-                                                <Button
-                                                    onClick={handleCloseOrder}
-                                                >
+                                                <Button onClick={handleCloseOrder}>
                                                     <i class="bx bxs-lock text-[20px]"></i>
                                                     <p class="">Close Order</p>
                                                 </Button>
-
-
                                             {/if}
                                         </div>
                                     </div>

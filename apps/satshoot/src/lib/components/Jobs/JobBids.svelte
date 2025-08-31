@@ -10,7 +10,6 @@
     import { getJobStatusColor, getJobStatusString } from '$lib/utils/job';
     import { abbreviateNumber, insertThousandSeparator } from '$lib/utils/misc';
     import {
-        NDKKind,
         NDKSubscriptionCacheUsage,
         NDKUser,
         type NDKFilter,
@@ -22,7 +21,7 @@
     import { onDestroy } from 'svelte';
     import { Pricing } from '$lib/events/types';
     import { wot } from '$lib/stores/wot';
-
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     interface Props {
         job: JobEvent;
     }
@@ -103,17 +102,18 @@
         }
 
         const bidsFilter: NDKFilter = {
-            kinds: [NDKKind.FreelanceBid],
+            kinds: [ExtendedNDKKind.FreelanceBid],
             '#a': [job.jobAddress],
         };
 
         const events = await $ndk.fetchEvents(bidsFilter, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             groupable: true,
-            groupableDelay: 500
+            groupableDelay: 500,
         });
 
-        bids = Array.from(events).filter(b => $wot.has(b.pubkey))
+        bids = Array.from(events)
+            .filter((b) => $wot.has(b.pubkey))
             .map((event) => BidEvent.from(event));
     };
 

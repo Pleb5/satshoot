@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/session';
-    import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 
     import { onMount } from 'svelte';
 
@@ -14,7 +14,7 @@
     import currentUser from '$lib/stores/user';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
-
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     interface Props {
         notification: JobEvent | BidEvent;
     }
@@ -94,8 +94,8 @@
         if (!(notification instanceof BidEvent)) return;
 
         const dTagOfJob = notification.referencedJobAddress.split(':')[2];
-        const jobFilter: NDKFilter<NDKKind.FreelanceJob> = {
-            kinds: [NDKKind.FreelanceJob],
+        const jobFilter = {
+            kinds: [ExtendedNDKKind.FreelanceJob],
             '#d': [dTagOfJob],
         };
 

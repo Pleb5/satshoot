@@ -15,6 +15,7 @@ import type { OrderEvent } from '$lib/events/OrderEvent';
 import { nip19 } from 'nostr-tools';
 import { ServiceEvent } from '$lib/events/ServiceEvent';
 import type { JobEvent } from '$lib/events/JobEvent';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 export interface PaymentStore {
     paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
@@ -28,17 +29,18 @@ export const createPaymentFilters = (
 ): NDKFilter[] => {
     if (type === 'freelancer') {
         let taggedFreelancerPubkey: string | undefined = targetEvent.author.pubkey;
-        if (targetEvent.kind === NDKKind.FreelanceOrder) {
-            taggedFreelancerPubkey = (targetEvent as OrderEvent).referencedServiceProvider
-            if (!taggedFreelancerPubkey) throw new Error(
-                'Error: Cannot get Freelancer pubkey from Bid or Order get payments for freelancer'
-            )
+        if (targetEvent.kind === ExtendedNDKKind.FreelanceOrder) {
+            taggedFreelancerPubkey = (targetEvent as OrderEvent).referencedServiceProvider;
+            if (!taggedFreelancerPubkey)
+                throw new Error(
+                    'Error: Cannot get Freelancer pubkey from Bid or Order get payments for freelancer'
+                );
         }
         return [
             {
                 kinds: [NDKKind.Zap, NDKKind.Nutzap],
                 '#a': [targetEvent.tagAddress()],
-                '#p': [taggedFreelancerPubkey]
+                '#p': [taggedFreelancerPubkey],
             },
         ];
     } else if (type == 'satshoot') {
@@ -63,7 +65,8 @@ export const createPaymentFilters = (
                 console.error('Unexpected case!!!');
                 throw new Error('Unexpected combination of target and sponsored events!!!');
             }
-            const sponsoredPubkey = decodedNpubResult.type == 'npub' ? decodedNpubResult.data : undefined;
+            const sponsoredPubkey =
+                decodedNpubResult.type == 'npub' ? decodedNpubResult.data : undefined;
             if (sponsoredPubkey) {
                 return [
                     {
@@ -75,7 +78,7 @@ export const createPaymentFilters = (
             } else {
                 console.warn(
                     'Unexpected case, the sponsored event received contains' +
-                    ' something different to an npub'
+                        ' something different to an npub'
                 );
             }
             return [];

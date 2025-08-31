@@ -4,6 +4,7 @@ import { NDKKind } from '@nostr-dev-kit/ndk';
 import { vi } from 'vitest';
 import { ServiceEvent } from '$lib/events/ServiceEvent';
 import { OrderEvent } from '$lib/events/OrderEvent';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 // Mock dependencies
 const mockNDKInstance = {
@@ -137,13 +138,13 @@ describe('ServiceOrderService', () => {
         it('should process user services and related orders', async () => {
             const serviceEvent = createMockNDKEvent({
                 id: 'service-1',
-                kind: NDKKind.FreelanceService,
+                kind: ExtendedNDKKind.FreelanceService,
                 pubkey: testUser,
             });
 
             const orderEvent = createMockNDKEvent({
                 id: 'order-1',
-                kind: NDKKind.FreelanceOrder,
+                kind: ExtendedNDKKind.FreelanceOrder,
                 pubkey: otherUser,
                 tags: [['a', serviceEvent.tagAddress()]],
             });
@@ -181,13 +182,13 @@ describe('ServiceOrderService', () => {
         it('should filter orders not in WoT', async () => {
             const serviceEvent = createMockNDKEvent({
                 id: 'service-1',
-                kind: NDKKind.FreelanceService,
+                kind: ExtendedNDKKind.FreelanceService,
                 pubkey: testUser,
             });
 
             const orderEvent = createMockNDKEvent({
                 id: 'order-1',
-                kind: NDKKind.FreelanceOrder,
+                kind: ExtendedNDKKind.FreelanceOrder,
                 pubkey: 'untrusted-user',
                 tags: [['a', serviceEvent.tagAddress()]],
             });
@@ -218,13 +219,13 @@ describe('ServiceOrderService', () => {
         it('should process user orders and related services', async () => {
             const orderEvent = createMockNDKEvent({
                 id: 'order-1',
-                kind: NDKKind.FreelanceOrder,
+                kind: ExtendedNDKKind.FreelanceOrder,
                 pubkey: testUser,
             });
 
             const serviceEvent = createMockNDKEvent({
                 id: 'service-1',
-                kind: NDKKind.FreelanceService,
+                kind: ExtendedNDKKind.FreelanceService,
                 pubkey: otherUser,
                 tags: [['a', orderEvent.tagAddress()]],
             });
@@ -258,20 +259,20 @@ describe('ServiceOrderService', () => {
             // User services
             const service1 = createMockNDKEvent({
                 id: 'service-1',
-                kind: NDKKind.FreelanceService,
+                kind: ExtendedNDKKind.FreelanceService,
                 pubkey: testUser,
             });
 
             const service2 = createMockNDKEvent({
                 id: 'service-2',
-                kind: NDKKind.FreelanceService,
+                kind: ExtendedNDKKind.FreelanceService,
                 pubkey: testUser,
             });
 
             // Orders on user services
             const order1 = createMockNDKEvent({
                 id: 'order-1',
-                kind: NDKKind.FreelanceOrder,
+                kind: ExtendedNDKKind.FreelanceOrder,
                 pubkey: otherUser,
                 tags: [['a', service1.tagAddress()]],
             });
@@ -279,14 +280,14 @@ describe('ServiceOrderService', () => {
             // User orders
             const userOrder = createMockNDKEvent({
                 id: 'user-order',
-                kind: NDKKind.FreelanceOrder,
+                kind: ExtendedNDKKind.FreelanceOrder,
                 pubkey: testUser,
             });
 
             // Service for user order
             const serviceForOrder = createMockNDKEvent({
                 id: 'service-for-order',
-                kind: NDKKind.FreelanceService,
+                kind: ExtendedNDKKind.FreelanceService,
                 pubkey: otherUser,
                 tags: [['a', userOrder.tagAddress()]],
             });

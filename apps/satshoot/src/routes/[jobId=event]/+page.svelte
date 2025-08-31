@@ -27,6 +27,7 @@
 
     import { onDestroy, onMount } from 'svelte';
     import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     enum BidTab {
         Pending,
@@ -36,7 +37,7 @@
 
     const jobSubOptions: NDKSubscribeOptions = {
         closeOnEose: false,
-        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL
+        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
     };
 
     // Component state
@@ -44,7 +45,7 @@
     let jobPost = $state<JobEvent>();
 
     const bidsFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceBid],
+        kinds: [ExtendedNDKKind.FreelanceBid],
     };
     const bidSubOptions: NDKSubscribeOptions = {
         closeOnEose: false,
@@ -170,7 +171,7 @@
             // Subscribe to job events
             const dTag = idFromNaddr(naddr).split(':')[2];
             const jobFilter: NDKFilter = {
-                kinds: [NDKKind.FreelanceJob],
+                kinds: [ExtendedNDKKind.FreelanceJob],
                 '#d': [dTag],
             };
 

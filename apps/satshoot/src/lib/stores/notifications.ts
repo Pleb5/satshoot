@@ -12,6 +12,7 @@ import currentUser from './user';
 import { getActiveServiceWorker, orderEventsChronologically } from '$lib/utils/helpers';
 import { goto } from '$app/navigation';
 import { OrderEvent } from '$lib/events/OrderEvent';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 export const browserNotificationsEnabled: Writable<boolean> = persisted(
     'browserNotificationsEnabled',
@@ -38,13 +39,14 @@ export const unReadNotifications = derived(
 export const jobNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
         return (
-            notification.kind === NDKKind.FreelanceJob || notification.kind === NDKKind.FreelanceBid
+            notification.kind === ExtendedNDKKind.FreelanceJob ||
+            notification.kind === ExtendedNDKKind.FreelanceBid
         );
     });
 
     const events: (JobEvent | BidEvent)[] = [];
     filteredEvents.forEach((e: NDKEvent) => {
-        const event = e.kind === NDKKind.FreelanceJob ? JobEvent.from(e) : BidEvent.from(e);
+        const event = e.kind === ExtendedNDKKind.FreelanceJob ? JobEvent.from(e) : BidEvent.from(e);
         events.push(event);
     });
 
@@ -55,7 +57,7 @@ export const jobNotifications = derived([notifications], ([$notifications]) => {
 
 export const serviceNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter(
-        (notification: NDKEvent) => notification.kind === NDKKind.FreelanceOrder
+        (notification: NDKEvent) => notification.kind === ExtendedNDKKind.FreelanceOrder
     );
 
     const orders: OrderEvent[] = [];
@@ -88,7 +90,7 @@ export const messageNotifications = derived(
 
 export const reviewNotifications = derived([notifications], ([$notifications]) => {
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-        return notification.kind === NDKKind.Review;
+        return notification.kind === ExtendedNDKKind.Review;
     });
 
     const reviews: ReviewEvent[] = [];
@@ -144,9 +146,9 @@ export async function sendNotification(event: NDKEvent) {
     let tag = '';
 
     switch (event.kind) {
-        case NDKKind.FreelanceJob:
-        case NDKKind.FreelanceBid:
-        case NDKKind.FreelanceOrder:
+        case ExtendedNDKKind.FreelanceJob:
+        case ExtendedNDKKind.FreelanceBid:
+        case ExtendedNDKKind.FreelanceOrder:
             title = 'Update!';
             body = '🔔 Check your Notifications!';
             tag = event.kind.toString();
@@ -156,10 +158,10 @@ export async function sendNotification(event: NDKEvent) {
             body = '🔔 Check your Notifications!';
             tag = NDKKind.EncryptedDirectMessage.toString();
             break;
-        case NDKKind.Review:
+        case ExtendedNDKKind.Review:
             title = 'Someone left a Review!';
             body = '🔔 Check your Notifications!';
-            tag = NDKKind.Review.toString();
+            tag = ExtendedNDKKind.Review.toString();
             break;
         case NDKKind.Zap:
             title = 'Payment arrived!';

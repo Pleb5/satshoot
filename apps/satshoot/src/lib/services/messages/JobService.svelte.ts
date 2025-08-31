@@ -1,7 +1,6 @@
 import { get } from 'svelte/store';
 import {
     NDKEvent,
-    NDKKind,
     NDKRelay,
     NDKSubscription,
     NDKSubscriptionCacheUsage,
@@ -13,6 +12,7 @@ import ndk from '$lib/stores/session';
 import currentUserStore from '$lib/stores/user';
 import { checkRelayConnections } from '$lib/utils/helpers';
 import type { ContactService } from './ContactService.svelte';
+import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 /**
  * Service for handling job-related functionality
@@ -93,7 +93,7 @@ export class JobService {
 
         try {
             const bidFilter: NDKFilter = {
-                kinds: [NDKKind.FreelanceBid],
+                kinds: [ExtendedNDKKind.FreelanceBid],
                 '#a': [this.jobAddress],
             };
 

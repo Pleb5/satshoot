@@ -14,21 +14,16 @@
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { ReviewEvent } from '$lib/events/ReviewEvent';
     import { goto } from '$app/navigation';
-    import {  NDKKind } from '@nostr-dev-kit/ndk';
-
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     interface Props {
         isOpen: boolean;
         targetEntity: JobEvent | ServiceEvent;
         secondaryEntity?: BidEvent | OrderEvent | null;
     }
 
-    let { 
-        isOpen = $bindable(),
-        targetEntity,
-        secondaryEntity = null 
-    }: Props = $props();
+    let { isOpen = $bindable(), targetEntity, secondaryEntity = null }: Props = $props();
 
-    let isJob = $derived(targetEntity?.kind === NDKKind.FreelanceJob)
+    let isJob = $derived(targetEntity?.kind === ExtendedNDKKind.FreelanceJob);
 
     let hasExpertise = $state(false);
     let hasCommunicationClarity = $state(false);
@@ -42,7 +37,7 @@
         // we need to allow the user to post a review on service only when
         // freelancer had accepted the order
         if (
-            targetEntity.kind === NDKKind.FreelanceService &&
+            targetEntity.kind === ExtendedNDKKind.FreelanceService &&
             (targetEntity as ServiceEvent).orders.includes(
                 (secondaryEntity as OrderEvent)?.orderAddress
             )
@@ -60,18 +55,16 @@
         }
     });
 
-    let canPublishReplaceable = $derived(isJob ? !!targetEntity : !!secondaryEntity)
+    let canPublishReplaceable = $derived(isJob ? !!targetEntity : !!secondaryEntity);
 
     function updateTargetEntityStatus() {
         if (!targetEntity) return;
 
         if (isIssueResolved) {
             if (isJob) targetEntity.status = JobStatus.Resolved;
-
             else (secondaryEntity as OrderEvent).status = OrderStatus.Fulfilled;
         } else {
             if (isJob) targetEntity.status = JobStatus.Failed;
-
             else (secondaryEntity as OrderEvent).status = OrderStatus.Failed;
         }
     }
@@ -80,17 +73,16 @@
         if (!canPublishReplaceable) return;
 
         try {
-            const entityToPublish = isJob ? targetEntity : secondaryEntity
-            console.log ('publishing event : ', entityToPublish)
+            const entityToPublish = isJob ? targetEntity : secondaryEntity;
+            console.log('publishing event : ', entityToPublish);
             await tick();
 
             const relays = await entityToPublish!.publishReplaceable();
-            console.log ('relays published to', relays)
+            console.log('relays published to', relays);
 
             return relays;
-
         } catch (e) {
-            toaster.error({title: `Error while closing: ${e}`})
+            toaster.error({ title: `Error while closing: ${e}` });
         }
     }
 

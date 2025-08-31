@@ -2,12 +2,12 @@
     import { marked, type Token, type Tokens, type TokenizerAndRendererExtension } from 'marked';
     import DOMPurify from 'dompurify';
     import ndk from '$lib/stores/session';
-    import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import hljs from 'highlight.js';
     import 'highlight.js/styles/github-dark.css';
     import type { AddressPointer } from 'nostr-tools/nip19';
-
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     interface Props {
         content?: string;
     }
@@ -27,7 +27,7 @@
             const urlObj = new URL(url);
             const domain = urlObj.hostname.replace('www.', '');
             const pathname = urlObj.pathname;
-            
+
             // Option 1: Domain + shortened path (recommended)
             if (pathname && pathname !== '/') {
                 const pathParts = pathname.split('/').filter(Boolean);
@@ -41,17 +41,18 @@
                 }
             }
             return domain;
-            
+
             // Option 2: First/Last characters (uncomment to use)
             // const fullUrl = url.length > 40 ? `${url.substring(0, 20)}...${url.substring(url.length - 15)}` : url;
             // return fullUrl;
-            
+
             // Option 3: Just domain (uncomment to use)
             // return domain;
-            
         } catch (e) {
             // Fallback for invalid URLs
-            return url.length > 40 ? `${url.substring(0, 20)}...${url.substring(url.length - 15)}` : url;
+            return url.length > 40
+                ? `${url.substring(0, 20)}...${url.substring(url.length - 15)}`
+                : url;
         }
     }
 
@@ -148,10 +149,8 @@
             const { tagType, content, userName } = token;
             let url = `/${tagType}${content}`;
             let external = false;
-            let linkText = userName
-                ? `@${userName}`
-                : shortenNostrUri(tagType, content);
-            
+            let linkText = userName ? `@${userName}` : shortenNostrUri(tagType, content);
+
             switch (tagType) {
                 case 'nevent':
                 case 'note':
@@ -167,8 +166,9 @@
                 case 'naddr':
                     try {
                         const data = nip19.decode(content).data as AddressPointer;
-                        if (data.kind === NDKKind.FreelanceJob
-                            || data.kind === NDKKind.FreelanceService
+                        if (
+                            data.kind === ExtendedNDKKind.FreelanceJob ||
+                            data.kind === ExtendedNDKKind.FreelanceService
                         ) {
                             url = `/${tagType}${content}`;
                         } else {
@@ -186,7 +186,7 @@
                     </a>`;
         },
     };
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+/;
     const emailTokenizer: TokenizerAndRendererExtension = {
         name: 'email',
@@ -269,8 +269,8 @@
         if (content) {
             (async () => {
                 const parsed = await marked(content);
-                sanitizedContent = DOMPurify.sanitize(parsed, { 
-                    ADD_ATTR: ['target', 'title']
+                sanitizedContent = DOMPurify.sanitize(parsed, {
+                    ADD_ATTR: ['target', 'title'],
                 });
             })();
         }
@@ -285,11 +285,11 @@
     .markdown {
         padding: 1em;
     }
-    
+
     .markdown :global(.link) {
         word-break: break-word;
     }
-    
+
     .markdown :global(.link:hover) {
         text-decoration: underline;
         cursor: pointer;

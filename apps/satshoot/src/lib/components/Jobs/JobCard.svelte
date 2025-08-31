@@ -1,7 +1,7 @@
 <script lang="ts">
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
-    import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import Author from './Author.svelte';
@@ -9,6 +9,7 @@
     import JobDetails from './JobDetails.svelte';
     import JobBids from './JobBids.svelte';
     import { wot } from '$lib/stores/wot';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     enum Tabs {
         JobDescription,
@@ -33,17 +34,16 @@
         if (!showBidsDetail || job?.status !== JobStatus.New) return;
 
         const bidsFilter: NDKFilter = {
-            kinds: [NDKKind.FreelanceBid],
+            kinds: [ExtendedNDKKind.FreelanceBid],
             '#a': [job.jobAddress],
         };
 
         $ndk.fetchEvents(bidsFilter, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             groupable: true,
-            groupableDelay: 500
+            groupableDelay: 500,
         }).then((bids) => {
-            highlightBidsTab = Array.from(bids)
-                    .filter(b=>$wot.has(b.pubkey)).length > 0;
+            highlightBidsTab = Array.from(bids).filter((b) => $wot.has(b.pubkey)).length > 0;
         });
     });
 

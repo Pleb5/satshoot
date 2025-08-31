@@ -20,6 +20,7 @@
     import Fuse from 'fuse.js';
     import { OrderEvent } from '$lib/events/OrderEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     interface Props {
         notification: NDKEvent;
@@ -32,12 +33,12 @@
     const zapInvoice: NDKZapInvoice | null = zapInvoiceFromEvent(notification);
 
     // This could be derived from the deal pubkey that the zap refers to as well
-    const lnZapperPubkey: string | undefined = notification.tagValue('P') ??
-        zapInvoice?.zappee ?? notification.pubkey
+    const lnZapperPubkey: string | undefined =
+        notification.tagValue('P') ?? zapInvoice?.zappee ?? notification.pubkey;
 
     const zapper =
         notification.kind === NDKKind.Zap
-            ? $ndk.getUser({ pubkey:  lnZapperPubkey})
+            ? $ndk.getUser({ pubkey: lnZapperPubkey })
             : $ndk.getUser({ pubkey: notification.pubkey });
 
     let zapperName = $state(zapper.npub.substring(0, 8));
@@ -80,40 +81,40 @@
         if (atag) {
             dTag = atag.split(':')[2];
             zappedKind = parseInt(atag.split(':')[0]);
-        } 
+        }
 
         if (zappedKind && dTag) {
             const filter: NDKFilter = {
                 kinds: [zappedKind],
-                '#d': [dTag]
-            }
-            if (zappedKind === NDKKind.FreelanceBid) {
-                const event = await $ndk.fetchEvent(filter)
+                '#d': [dTag],
+            };
+            if (zappedKind === ExtendedNDKKind.FreelanceBid) {
+                const event = await $ndk.fetchEvent(filter);
                 if (event) {
-                    zappedBid = BidEvent.from(event)
+                    zappedBid = BidEvent.from(event);
                     const jobDtag = zappedBid.referencedJobDTag;
                     if (jobDtag) {
                         const jobEvent = await $ndk.fetchEvent({
-                            kinds: [NDKKind.FreelanceJob],
-                            '#d': [jobDtag]
-                        })
+                            kinds: [ExtendedNDKKind.FreelanceJob],
+                            '#d': [jobDtag],
+                        });
                         if (jobEvent) {
-                            job = JobEvent.from(jobEvent)
+                            job = JobEvent.from(jobEvent);
                         }
                     }
                 }
-            } else if (zappedKind === NDKKind.FreelanceOrder) {
-                const event = await $ndk.fetchEvent(filter)
+            } else if (zappedKind === ExtendedNDKKind.FreelanceOrder) {
+                const event = await $ndk.fetchEvent(filter);
                 if (event) {
-                    zappedOrder = OrderEvent.from(event)
+                    zappedOrder = OrderEvent.from(event);
                     const serviceDtag = zappedOrder.referencedServiceDTag;
                     if (serviceDtag) {
                         const serviceEvent = await $ndk.fetchEvent({
-                            kinds: [NDKKind.FreelanceService],
-                            '#d': [serviceDtag]
-                        })
+                            kinds: [ExtendedNDKKind.FreelanceService],
+                            '#d': [serviceDtag],
+                        });
                         if (serviceEvent) {
-                            service = ServiceEvent.from(serviceEvent)
+                            service = ServiceEvent.from(serviceEvent);
                         }
                     }
                 }

@@ -9,7 +9,7 @@
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import ndk from '$lib/stores/session';
-    import { NDKKind, NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ProfileImage from '../UI/Display/ProfileImage.svelte';
@@ -18,7 +18,7 @@
     import { page } from '$app/state';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { OrderEvent } from '$lib/events/OrderEvent';
-
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     interface Props {
         review: ReviewEvent;
         isOpen: boolean;
@@ -58,13 +58,13 @@
             const reviewedEventKind = parseInt(review.reviewedEventAddress.split(':')[0]);
 
             if (event) {
-                if (reviewedEventKind === NDKKind.FreelanceService) {
+                if (reviewedEventKind === ExtendedNDKKind.FreelanceService) {
                     reviewedEvent = ServiceEvent.from(event);
                     label = 'has reviewed service:';
-                } else if (reviewedEventKind === NDKKind.FreelanceJob) {
+                } else if (reviewedEventKind === ExtendedNDKKind.FreelanceJob) {
                     reviewedEvent = JobEvent.from(event);
                     label = 'has reviewed job:';
-                } else if (reviewedEventKind === NDKKind.FreelanceBid) {
+                } else if (reviewedEventKind === ExtendedNDKKind.FreelanceBid) {
                     const bid = BidEvent.from(event);
                     const jobEvent = await $ndk.fetchEvent(bid.referencedJobAddress, {
                         groupable: true,
@@ -75,7 +75,7 @@
                         reviewedEvent = JobEvent.from(jobEvent);
                         label = 'has reviewed a bid on job:';
                     }
-                } else if (reviewedEventKind === NDKKind.FreelanceOrder) {
+                } else if (reviewedEventKind === ExtendedNDKKind.FreelanceOrder) {
                     const order = OrderEvent.from(event);
                     const serviceEvent = await $ndk.fetchEvent(order.referencedServiceAddress, {
                         groupable: true,

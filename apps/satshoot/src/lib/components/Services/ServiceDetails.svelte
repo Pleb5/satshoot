@@ -21,6 +21,7 @@
     import Button from '../UI/Buttons/Button.svelte';
     import OrdersCountBreakdown from '../Modals/OrdersCountBreakdown.svelte';
     import { getPubkeyFromNpubOrNprofile } from '$lib/utils/nip19';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     interface Props {
         service: ServiceEvent;
@@ -35,7 +36,7 @@
     };
 
     const allOrdersFilter: NDKFilter = {
-        kinds: [NDKKind.FreelanceOrder],
+        kinds: [ExtendedNDKKind.FreelanceOrder],
     };
 
     const allOrdersStore = $ndk.storeSubscribe<OrderEvent>(

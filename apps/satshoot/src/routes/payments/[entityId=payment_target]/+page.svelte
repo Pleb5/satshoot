@@ -38,6 +38,7 @@
     import { nip19 } from 'nostr-tools';
     import { Pricing } from '$lib/events/types';
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     // Component state
     let initialized = $state(false);
@@ -47,10 +48,10 @@
     let secondaryEntity = $state<BidEvent | OrderEvent>();
     const pricingText = $derived.by(() => {
         let pricing = '?';
-        if (primaryEntity?.kind === NDKKind.FreelanceService) {
+        if (primaryEntity?.kind === ExtendedNDKKind.FreelanceService) {
             pricing =
                 (primaryEntity as ServiceEvent).pricing === Pricing.Hourly ? 'sats/hour' : 'sats';
-        } else if (secondaryEntity?.kind === NDKKind.FreelanceBid) {
+        } else if (secondaryEntity?.kind === ExtendedNDKKind.FreelanceBid) {
             pricing =
                 (secondaryEntity as BidEvent).pricing === Pricing.Hourly ? 'sats/hour' : 'sats';
         }
@@ -111,10 +112,10 @@
                     .then((event) => {
                         if (event) {
                             switch (event.kind) {
-                                case NDKKind.FreelanceBid:
+                                case ExtendedNDKKind.FreelanceBid:
                                     secondaryEntity = BidEvent.from(event);
                                     return secondaryEntity.referencedJobAddress;
-                                case NDKKind.FreelanceOrder:
+                                case ExtendedNDKKind.FreelanceOrder:
                                     secondaryEntity = OrderEvent.from(event);
                                     return secondaryEntity.referencedServiceAddress;
                                 default:
@@ -132,11 +133,11 @@
                             }).then((event) => {
                                 if (event) {
                                     switch (event.kind) {
-                                        case NDKKind.FreelanceJob:
+                                        case ExtendedNDKKind.FreelanceJob:
                                             primaryEntity = JobEvent.from(event);
                                             initialized = true;
                                             break;
-                                        case NDKKind.FreelanceService:
+                                        case ExtendedNDKKind.FreelanceService:
                                             primaryEntity = ServiceEvent.from(event);
                                             initialized = true;
                                             break;

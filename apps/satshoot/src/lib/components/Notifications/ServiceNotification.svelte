@@ -1,6 +1,5 @@
 <script lang="ts">
     import ndk, { sessionInitialized } from '$lib/stores/session';
-    import { NDKKind, type NDKFilter, type NDKUserProfile } from '@nostr-dev-kit/ndk';
 
     import { onDestroy, onMount } from 'svelte';
 
@@ -15,7 +14,7 @@
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
-
+    import { ExtendedNDKKind } from '$lib/types/ndkKind';
     interface Props {
         notification: OrderEvent;
     }
@@ -34,8 +33,8 @@
     let servicePublisherName = $state(servicePublisher.npub.substring(0, 8));
     let servicePublisherImage = $state(getRoboHashPicture(servicePublisher.pubkey));
 
-    const serviceFilter: NDKFilter<NDKKind.FreelanceService> = {
-        kinds: [NDKKind.FreelanceService],
+    const serviceFilter = {
+        kinds: [ExtendedNDKKind.FreelanceService],
         '#d': [order.referencedServiceAddress.split(':')[2]],
     };
 
