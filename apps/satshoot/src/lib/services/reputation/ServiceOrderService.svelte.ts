@@ -1,6 +1,9 @@
-import { NDKSubscriptionCacheUsage, type Hexpubkey } from '@nostr-dev-kit/ndk';
+import {
+    NDKSubscriptionCacheUsage,
+    type Hexpubkey,
+    type NDKSubscriptionOptions,
+} from '@nostr-dev-kit/ndk';
 import type { ServiceOrderContext } from './types';
-import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
 import { get } from 'svelte/store';
 import ndk from '$lib/stores/session';
 import { wot } from '$lib/stores/wot';
@@ -19,7 +22,7 @@ export class ServiceOrderService {
      * Initialize and fetch all job and bid data for the user
      */
     async initialize(): Promise<ServiceOrderContext> {
-        const subOptions: NDKSubscribeOptions = {
+        const subOptions: NDKSubscriptionOptions = {
             cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
         };
 
@@ -56,7 +59,7 @@ export class ServiceOrderService {
     }
 
     private async processUserServices(
-        subOptions: NDKSubscribeOptions,
+        subOptions: NDKSubscriptionOptions,
         confirmOrders: string[],
         involvedOrders: string[],
         involvedServiceEvents: ServiceEvent[],
@@ -108,7 +111,7 @@ export class ServiceOrderService {
     }
 
     private async processUserOrders(
-        subOptions: NDKSubscribeOptions,
+        subOptions: NDKSubscriptionOptions,
         ordersOfUser: string[],
         involvedOrders: string[],
         involvedServiceEvents: ServiceEvent[],

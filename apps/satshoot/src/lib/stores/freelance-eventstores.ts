@@ -1,7 +1,6 @@
 import ndk from '$lib/stores/session';
 import type { NDKEventStore, ExtendedBaseType } from '@nostr-dev-kit/ndk-svelte';
-import type { NDKFilter } from '@nostr-dev-kit/ndk';
-import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
+import type { NDKFilter, NDKSubscriptionOptions } from '@nostr-dev-kit/ndk';
 
 import { JobEvent } from '$lib/events/JobEvent';
 import { BidEvent } from '$lib/events/BidEvent';
@@ -14,10 +13,9 @@ import { OrderEvent } from '$lib/events/OrderEvent';
 import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 // Export necessary when restarting a subscription with a new filter
-export const subOptions: NDKSubscribeOptions = {
+export const subOptions: NDKSubscriptionOptions = {
     closeOnEose: false,
     groupable: false,
-    autoStart: false,
 };
 
 export const allJobsFilter: NDKFilter = {
@@ -58,23 +56,27 @@ export const myOrderFilter: NDKFilter = {
 
 export const allJobs: NDKEventStore<ExtendedBaseType<JobEvent>> = get(ndk).storeSubscribe<JobEvent>(
     allJobsFilter,
-    subOptions,
+    { ...subOptions, autoStart: false },
     JobEvent
 );
 
 export const allBids: NDKEventStore<ExtendedBaseType<BidEvent>> = get(ndk).storeSubscribe<BidEvent>(
     allBidsFilter,
-    subOptions,
+    { ...subOptions, autoStart: false },
     BidEvent
 );
 
 export const allServices: NDKEventStore<ExtendedBaseType<ServiceEvent>> = get(
     ndk
-).storeSubscribe<ServiceEvent>(allServicesFilter, subOptions, ServiceEvent);
+).storeSubscribe<ServiceEvent>(
+    allServicesFilter,
+    { ...subOptions, autoStart: false },
+    ServiceEvent
+);
 
 export const allOrders: NDKEventStore<ExtendedBaseType<OrderEvent>> = get(
     ndk
-).storeSubscribe<OrderEvent>(allOrdersFilter, subOptions, OrderEvent);
+).storeSubscribe<OrderEvent>(allOrdersFilter, { ...subOptions, autoStart: false }, OrderEvent);
 
 export const wotFilteredJobs = derived([allJobs, wot], ([$allJobs, $wot]) => {
     return $allJobs.filter((job: JobEvent) => $wot.has(job.pubkey));
@@ -94,20 +96,20 @@ export const wotFilteredOrders = derived([allOrders, wot], ([$allOrders, $wot]) 
 
 export const myJobs: NDKEventStore<ExtendedBaseType<JobEvent>> = get(ndk).storeSubscribe<JobEvent>(
     myJobFilter,
-    subOptions,
+    { ...subOptions, autoStart: false },
     JobEvent
 );
 
 export const myBids: NDKEventStore<ExtendedBaseType<BidEvent>> = get(ndk).storeSubscribe<BidEvent>(
     myBidFilter,
-    subOptions,
+    { ...subOptions, autoStart: false },
     BidEvent
 );
 
 export const myServices: NDKEventStore<ExtendedBaseType<ServiceEvent>> = get(
     ndk
-).storeSubscribe<ServiceEvent>(myServiceFilter, subOptions, ServiceEvent);
+).storeSubscribe<ServiceEvent>(myServiceFilter, { ...subOptions, autoStart: false }, ServiceEvent);
 
 export const myOrders: NDKEventStore<ExtendedBaseType<OrderEvent>> = get(
     ndk
-).storeSubscribe<OrderEvent>(myOrderFilter, subOptions, OrderEvent);
+).storeSubscribe<OrderEvent>(myOrderFilter, { ...subOptions, autoStart: false }, OrderEvent);
