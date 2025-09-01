@@ -28,7 +28,6 @@
         NDKEvent,
         NDKSubscriptionCacheUsage,
     } from '@nostr-dev-kit/ndk';
-    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
     import { onDestroy, onMount } from 'svelte';
 
     enum OrderTab {
@@ -37,23 +36,16 @@
         Completed,
     }
 
-    const serviceSubOptions: NDKSubscribeOptions = {
-        closeOnEose: false,
-        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-    };
-
-    const ordersSubOptions: NDKSubscribeOptions = {
-        closeOnEose: false,
-        autoStart: false,
-    };
-
     const allOrdersFilter: NDKFilter = {
         kinds: [ExtendedNDKKind.FreelanceOrder],
     };
 
     const allOrdersStore = $ndk.storeSubscribe<OrderEvent>(
         allOrdersFilter,
-        ordersSubOptions,
+        {
+            closeOnEose: false,
+            autoStart: false,
+        },
         OrderEvent
     );
 
@@ -189,7 +181,10 @@
                 '#d': [dTag],
             };
 
-            serviceSubscription = $ndk.subscribe(serviceFilter, serviceSubOptions);
+            serviceSubscription = $ndk.subscribe(serviceFilter, {
+                closeOnEose: false,
+                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+            });
             serviceSubscription.on('event', handleServiceEvent);
         }
     });

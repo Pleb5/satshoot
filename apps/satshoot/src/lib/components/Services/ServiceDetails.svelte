@@ -15,7 +15,6 @@
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { Pricing } from '$lib/events/types';
     import { wot } from '$lib/stores/wot';
-    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import currentUser from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
@@ -30,18 +29,16 @@
     let { service }: Props = $props();
     let showOrderPriceBreakdownModal = $state(false);
 
-    const ordersSubOptions: NDKSubscribeOptions = {
-        closeOnEose: false,
-        autoStart: false,
-    };
-
     const allOrdersFilter: NDKFilter = {
         kinds: [ExtendedNDKKind.FreelanceOrder],
     };
 
     const allOrdersStore = $ndk.storeSubscribe<OrderEvent>(
         allOrdersFilter,
-        ordersSubOptions,
+        {
+            closeOnEose: false,
+            autoStart: false,
+        },
         OrderEvent
     );
 

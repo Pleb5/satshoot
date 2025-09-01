@@ -9,7 +9,6 @@ import {
 } from '@nostr-dev-kit/ndk';
 import ndk from '$lib/stores/session';
 import { get } from 'svelte/store';
-import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
 import currentUserStore from '$lib/stores/user';
 import SELECTED_QUERY_PARAM from '.';
 
@@ -25,10 +24,8 @@ export class MessageService {
         if (encodedAddress) this.encodedAddress = encodedAddress;
     }
 
-
     initialize(currentUserPubkey: string) {
         const ndkInstance = get(ndk);
-
 
         const messagesFilter: NDKFilter[] = [
             {
@@ -45,29 +42,30 @@ export class MessageService {
             },
         ];
 
-        const messageSubOptions: NDKSubscribeOptions = {
-            autoStart: true,
+        // Subscriptions automatically start unless autoStart is set to false
+        this.subscription = ndkInstance.subscribe(messagesFilter, {
             cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
             closeOnEose: false,
             groupable: false,
-        };
-
-        this.subscription = ndkInstance.subscribe(messagesFilter, messageSubOptions);
+        });
         this.subscription.on('event', async (event) => {
             // This is a temporary NDK fix: Somehow the cache
             // returns one additional invalid event that is
             // the copy of one of the messages subscribed to
-            //  but its ID is EMPTY string and the signature 
+            //  but its ID is EMPTY string and the signature
             //  has the real ID of the message event.
             //  Also, the corrupted event is NOT verified yet.
-            if (event.id === "") return;
+            if (event.id === '') return;
 
-            this.handleMessageEvent(event)
+            this.handleMessageEvent(event);
         });
     }
 
     handleMessageEvent(message: NDKEvent) {
-        if (this.messages.some((m) => m.id === message.id)){console.log('message already there, returning...', message); return}
+        if (this.messages.some((m) => m.id === message.id)) {
+            console.log('message already there, returning...', message);
+            return;
+        }
 
         this.messages = [...this.messages, message];
     }

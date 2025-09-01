@@ -26,7 +26,6 @@
     } from '@nostr-dev-kit/ndk';
 
     import { onDestroy, onMount } from 'svelte';
-    import type { NDKSubscribeOptions } from '@nostr-dev-kit/ndk-svelte';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     enum BidTab {
@@ -35,11 +34,6 @@
         Lost,
     }
 
-    const jobSubOptions: NDKSubscribeOptions = {
-        closeOnEose: false,
-        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-    };
-
     // Component state
     let jobSubscription = $state<NDKSubscription>();
     let jobPost = $state<JobEvent>();
@@ -47,12 +41,15 @@
     const bidsFilter: NDKFilter = {
         kinds: [ExtendedNDKKind.FreelanceBid],
     };
-    const bidSubOptions: NDKSubscribeOptions = {
-        closeOnEose: false,
-        autoStart: false,
-    };
 
-    const bidStore = $ndk.storeSubscribe<BidEvent>(bidsFilter, bidSubOptions, BidEvent);
+    const bidStore = $ndk.storeSubscribe<BidEvent>(
+        bidsFilter,
+        {
+            closeOnEose: false,
+            autoStart: false,
+        },
+        BidEvent
+    );
 
     let alreadySubscribedToBids = $state(false);
     let winningBid = $derived.by(() => {
@@ -175,7 +172,10 @@
                 '#d': [dTag],
             };
 
-            jobSubscription = $ndk.subscribe(jobFilter, jobSubOptions);
+            jobSubscription = $ndk.subscribe(jobFilter, {
+                closeOnEose: false,
+                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+            });
             jobSubscription.on('event', handleJobEvent);
         }
     });
