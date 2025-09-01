@@ -14,7 +14,7 @@ import {
     NDKSubscriptionCacheUsage,
     NDKZapper,
     type NDKLnUrlData,
-    type NDKZapperOptions,
+    type NDKTag,
 } from '@nostr-dev-kit/ndk';
 import { get } from 'svelte/store';
 import { UserEnum } from './UserEnum';
@@ -25,6 +25,21 @@ export interface InvoiceDetails {
     receiver: string;
     eventId: string;
     zapper?: string;
+}
+
+interface NDKZapperOptions {
+    /**
+     * Comment to include in the zap event
+     */
+    comment?: string;
+    /**
+     * Extra tags to add to the zap event
+     */
+    tags?: NDKTag[];
+    /**
+     * Whether to use nutzap as fallback
+     */
+    nutzapAsFallback?: boolean;
 }
 
 /**
@@ -42,7 +57,6 @@ export class LightningPaymentService {
                 ? this.secondaryEntity.pubkey
                 : this.primaryEntity.pubkey;
     }
-
 
     /**
      * Process Lightning Network payment
@@ -86,9 +100,11 @@ export class LightningPaymentService {
 
         // Fetch payment info for the sponsored npub
         if (sponsoredSumMillisats > 0) {
-            const decodingResult = this.secondaryEntity instanceof BidEvent ? nip19.decode(this.secondaryEntity.sponsoredNpub)
-                : nip19.decode((this.primaryEntity as ServiceEvent).sponsoredNpub);
-            if (decodingResult.type === "npub") {
+            const decodingResult =
+                this.secondaryEntity instanceof BidEvent
+                    ? nip19.decode(this.secondaryEntity.sponsoredNpub)
+                    : nip19.decode((this.primaryEntity as ServiceEvent).sponsoredNpub);
+            if (decodingResult.type === 'npub') {
                 await this.fetchPaymentInfo(
                     UserEnum.Sponsored,
                     decodingResult.data,
@@ -115,7 +131,7 @@ export class LightningPaymentService {
                 invoice: invoice.paymentRequest,
                 onPaid: () => {
                     paid.set(key, true);
-                    closeModal();// Don't wait necessarily on the zap event
+                    closeModal(); // Don't wait necessarily on the zap event
                 },
             });
 
@@ -123,7 +139,7 @@ export class LightningPaymentService {
                 kinds: [NDKKind.Zap],
                 limit: 0,
                 '#p': [invoice.receiver],
-                '#P': [get(currentUser)!.pubkey]
+                '#P': [get(currentUser)!.pubkey],
             };
 
             try {
@@ -160,9 +176,7 @@ export class LightningPaymentService {
                     default:
                         payee = "Sponsored Npub's";
                 }
-                throw new Error(
-                    `Could not fetch ${payee} zap receipt: ${error}`
-                );
+                throw new Error(`Could not fetch ${payee} zap receipt: ${error}`);
             }
         }
 
