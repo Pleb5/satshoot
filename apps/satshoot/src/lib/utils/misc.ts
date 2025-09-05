@@ -28,7 +28,7 @@ if (typeof NDKKind === 'undefined') {
     throw new Error('NDKKind is undefined. Check your imports.');
 }
 
-export const bunkerPerms = [
+export const nip46SignerPerms = [
     'get_public_key',
     'get_relays',
     'nip04_encrypt',

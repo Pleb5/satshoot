@@ -3,7 +3,7 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import Nip07Login from '../Login/Nip07Login.svelte';
-    import BunkerLogin from '../Login/BunkerLogin.svelte';
+    import Nip46Login from '../Login/Nip46Login.svelte';
     import LocalKeyLogin from '../Login/LocalKeyLogin.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { UserMode, userMode } from '$lib/stores/user';
@@ -18,20 +18,18 @@
     let { isOpen = $bindable() }: Props = $props();
 
     let selectedLoginMethod: LoginMethod | null = $state(null);
-    let initialTab: LocalKeyLoginTabs = $state(LocalKeyLoginTabs.BackupFile)
+    let initialTab: LocalKeyLoginTabs = $state(LocalKeyLoginTabs.BackupFile);
 
-    let navigationInProgress = $state(false)
+    let navigationInProgress = $state(false);
 
     const letsGo = async () => {
-        const url = new URL(
-            `/letsgo`, window.location.origin
-        );
-        navigationInProgress = true
-        await goto(url)
+        const url = new URL(`/letsgo`, window.location.origin);
+        navigationInProgress = true;
+        await goto(url);
 
         isOpen = false;
         navigationInProgress = false;
-    }
+    };
 
     const popUpText = `
 <p>
@@ -74,10 +72,7 @@
 `;
 </script>
 
-<ModalWrapper
-    bind:isOpen 
-    title={"Login"}
-    {popUpText}>
+<ModalWrapper bind:isOpen title={'Login'} {popUpText}>
     {#snippet headerAction()}
         <Button
             classes={!selectedLoginMethod ? 'hidden' : ''}
@@ -114,41 +109,37 @@
                     <h3 class="text-[18px]">Choose your login method</h3>
                     <Card classes="gap-[10px]">
                         <div class="w-full flex gap-x-2">
-                            <Button 
+                            <Button
                                 grow
-                                onClick={
-                                () => {
-                                    selectedLoginMethod = LoginMethod.Local
-                                    initialTab = LocalKeyLoginTabs.BackupFile
-                                }}>
+                                onClick={() => {
+                                    selectedLoginMethod = LoginMethod.Local;
+                                    initialTab = LocalKeyLoginTabs.BackupFile;
+                                }}
+                            >
                                 File
                             </Button>
-                            <Button 
+                            <Button
                                 grow
-                                onClick={
-                                () => {
-                                    selectedLoginMethod = LoginMethod.Local
-                                    initialTab = LocalKeyLoginTabs.SecretKey
-                                }}>
+                                onClick={() => {
+                                    selectedLoginMethod = LoginMethod.Local;
+                                    initialTab = LocalKeyLoginTabs.SecretKey;
+                                }}
+                            >
                                 Enter Key
                             </Button>
                         </div>
                         <Button onClick={() => (selectedLoginMethod = LoginMethod.Nip07)}>
                             Extension
                         </Button>
-                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Bunker)}>
-                            Bunker
+                        <Button onClick={() => (selectedLoginMethod = LoginMethod.Nip46)}>
+                            Remote Signer
                         </Button>
                     </Card>
                     <div class="h-[1px] w-full bg-black-200 my-[10px]"></div>
                     <h3 class="text-[18px]">Or, if you're new to Nostr</h3>
-                    <Button
-                        variant="outlined"
-                        onClick={letsGo}
-                        >
+                    <Button variant="outlined" onClick={letsGo}>
                         {#if navigationInProgress}
                             <ProgressRing color="white" />
-
                         {:else}
                             Sign Up
                         {/if}
@@ -161,10 +152,10 @@
                 </div>
             {:else if selectedLoginMethod === LoginMethod.Nip07}
                 <Nip07Login bind:isOpen />
-            {:else if selectedLoginMethod === LoginMethod.Bunker}
-                <BunkerLogin bind:isOpen />
+            {:else if selectedLoginMethod === LoginMethod.Nip46}
+                <Nip46Login bind:isOpen />
             {:else if selectedLoginMethod === LoginMethod.Local}
-                <LocalKeyLogin bind:isOpen {initialTab}/>
+                <LocalKeyLogin bind:isOpen {initialTab} />
             {/if}
         </div>
     </div>

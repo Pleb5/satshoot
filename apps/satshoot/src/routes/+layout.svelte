@@ -14,6 +14,7 @@
         sessionPK,
     } from '$lib/stores/session';
     import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
+    import NDK from '@nostr-dev-kit/ndk';
 
     import { Dexie } from 'dexie';
 
@@ -87,10 +88,7 @@
 
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
-    import {
-        getModeUserPrefers,
-        setModeUserPrefers,
-    } from '$lib/utils/lightSwitch';
+    import { getModeUserPrefers, setModeUserPrefers } from '$lib/utils/lightSwitch';
     import { jobPostSuccessState, bidTakenState } from '$lib/stores/modals';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
@@ -116,15 +114,15 @@
 
     let currentMode: string | null = null;
     $effect(() => {
-        if (page.url.pathname==='/') {
-            console.log('setting dark mode for LP')
+        if (page.url.pathname === '/') {
+            console.log('setting dark mode for LP');
             currentMode = document.documentElement.getAttribute('data-mode');
             document.documentElement.setAttribute('data-mode', 'dark');
         } else if (currentMode) {
-            console.log('setting back mode to original')
+            console.log('setting back mode to original');
             document.documentElement.setAttribute('data-mode', currentMode);
         }
-    })
+    });
 
     $effect(() => {
         if ($retriesLeft === 0) {
@@ -169,14 +167,11 @@
             case LoginMethod.Local:
                 await handleLocalLogin();
                 break;
-            case LoginMethod.Bunker:
-                await handleBunkerLogin();
+            case LoginMethod.Nip46:
+                await handleNip46Login();
                 break;
             case LoginMethod.Nip07:
                 await handleNip07Login();
-                break;
-            case LoginMethod.NostrConnect:
-                await handleNostrConnectLogin();
                 break;
         }
     }
@@ -186,12 +181,10 @@
         if ($sessionPK) {
             $ndk.signer = new NDKPrivateKeySigner($sessionPK);
             $loggingIn = false;
-            console.log('Start init session in local key login')
+            console.log('Start init session in local key login');
 
             initializeUser($ndk);
-        } else if (
-            localStorage.getItem('nostr-nsec') !== null
-        ) {
+        } else if (localStorage.getItem('nostr-nsec') !== null) {
             showDecryptSecretModal = true;
         }
     }
@@ -247,82 +240,12 @@
         }
     }
 
-    async function handleBunkerLogin() {
-        const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
-        const bunkerUrl = localStorage.getItem('bunkerUrl');
-        const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
-
-        if (!localBunkerKey || !bunkerRelayURLsString || !bunkerUrl) {
-            return;
-        }
-
-        const bunkerRelayURLs = bunkerRelayURLsString.split(',');
-
-        setupBunkerTimeout();
-
-        console.log('bunker relays:', bunkerRelayURLs);
-        console.log('bunkerndk connected relays', $bunkerNDK.pool);
-        // ONLY WORKS WITH EXPLICIT RELAYS, NOT WITH SIMPLE POOL.ADDRELAY() CALL
-        bunkerRelayURLs.forEach((url) => {
-            const relay = $bunkerNDK.addExplicitRelay(url);
-            $bunkerNDK.pool.on('relay:ready', async (r: NDKRelay) => {
-                if ($bunkerRelayConnected) {
-                    console.info('A bunker relay already connected, init bunker NOT necessary');
-                    return;
-                }
-                $bunkerRelayConnected = true;
-                console.info(`Bunker relay ${r.url} READY, connect Bunker...`);
-                try {
-                    const localSigner = new NDKPrivateKeySigner(localBunkerKey);
-                    const remoteSigner = new NDKNip46Signer($bunkerNDK, bunkerUrl, localSigner);
-
-                    const returnedUser = await remoteSigner.blockUntilReady();
-                    console.info('Bunker connected! Logging in...');
-                    if (returnedUser.npub) {
-                        $ndk.signer = remoteSigner;
-                        await initializeUser($ndk);
-                        $loggingIn = false;
-                    }
-                } catch (e) {
-                    showBunkerConnectionError(e);
-                }
-            });
-        });
-        $bunkerNDK.connect();
-    }
-
-    function setupBunkerTimeout() {
-        setTimeout(() => {
-            if (!$ndk.signer) {
-                toaster.warning({
-                    title: 'Bunker connection took too long!',
-                    description: 'Fix or Remove Bunker Connection!',
-                    duration: 60000, // 1 min
-                    action: {
-                        label: 'Logout',
-                        onClick: () => {
-                            $loggingIn = false;
-                            logout();
-                        },
-                    },
-                });
-            }
-        }, 20000);
-    }
-
-    function showBunkerConnectionError(error: any) {
-        toaster.error({
-            title: 'Could not connect to Bunker!',
-            description: `Reason: ${error}`,
-        });
-    }
-
-    function setupNostrConnectTimeout() {
+    function setupNip46Timeout() {
         return setTimeout(() => {
             if (!$ndk.signer) {
                 toaster.warning({
-                    title: 'NostrConnect restoration took too long!',
-                    description: 'Fix or Remove NostrConnect credentials!',
+                    title: 'Remote Signer restoration took too long!',
+                    description: 'Fix or Remove remote signer credentials!',
                     duration: 60000, // 1 min
                     action: {
                         label: 'Logout',
@@ -336,67 +259,127 @@
         }, 20000);
     }
 
-    function showNostrConnectError(error: any) {
+    function showNip46Error(error: any) {
         toaster.error({
-            title: 'Could not restore NostrConnect session!',
+            title: 'Could not restore remote signer session!',
             description: `Reason: ${error}`,
             duration: 60000, // 1 min
         });
     }
 
-    async function handleNostrConnectLogin() {
-        const localSignerKey = localStorage.getItem('nostrConnectLocalSigner');
-        const remotePubkey = localStorage.getItem('nostrConnectRemotePubkey');
+    async function handleNip46Login() {
+        const signerPayload = localStorage.getItem('nip46SignerPayload');
 
-        if (!localSignerKey || !remotePubkey) {
-            console.log('No NostrConnect credentials found in localStorage');
+        if (!signerPayload) {
+            console.log('No nip46SignerPayload found in localStorage');
             $loggingIn = false;
             return;
         }
 
-        // Setup timeout similar to bunker login
-        const timeoutId = setupNostrConnectTimeout();
+        const timeoutId = setupNip46Timeout();
 
         try {
-            console.log('Attempting NostrConnect restoration...');
+            console.log('Attempting remote signer restoration...');
 
-            // Import the NostrConnect service
-            const { NostrConnectService } = await import('$lib/services/login/NostrConnectService');
+            // Parse relay URLs from the signer payload
+            const parsedPayload = JSON.parse(signerPayload);
+            const relayUrls = (parsedPayload?.payload?.relayUrls || []) as string[];
 
-            // Attempt to restore the connection using stored credentials
-            const restoredSigner = await NostrConnectService.restore(localSignerKey, remotePubkey);
-
-            if (restoredSigner) {
-                // Connection restored successfully
-                $ndk.signer = restoredSigner;
-                console.log('NostrConnect session restored successfully');
-
-                // Initialize user and complete login
-                await initializeUser($ndk);
-                $loggingIn = false;
-
-            } else {
-                throw new Error('Failed to restore NostrConnect session');
+            if (relayUrls.length === 0) {
+                throw new Error('No relay URLs found in signer payload');
             }
+
+            // Create a fresh ndk instance for restoration
+            const remoteSignerNDK = new NDK({
+                enableOutboxModel: false,
+                explicitRelayUrls: relayUrls,
+            });
+
+            // Connect to relays first
+            console.log('Connecting to bunker relays...');
+            await remoteSignerNDK.connect();
+
+            // Wait for relay connections with better event handling
+            console.log('Waiting for relay connections to stabilize...');
+            let attempts = 0;
+            const maxAttempts = 10;
+
+            while (attempts < maxAttempts) {
+                const connectedRelays = remoteSignerNDK.pool.connectedRelays();
+                console.log(
+                    `Attempt ${attempts + 1}: Connected bunker relays: ${connectedRelays.length}`
+                );
+
+                if (connectedRelays.length > 0) {
+                    console.log('At least one relay connected, proceeding with restoration');
+                    break;
+                }
+
+                await new Promise((resolve) => setTimeout(resolve, 500));
+                attempts++;
+            }
+
+            const finalConnectedRelays = remoteSignerNDK.pool.connectedRelays();
+            console.log('Final connected bunker relays:', finalConnectedRelays.length);
+
+            if (finalConnectedRelays.length === 0) {
+                throw new Error(
+                    'No remote signer relays connected after multiple attempts. Check your internet connection and relay availability.'
+                );
+            }
+
+            // Use NDK's built-in restoration method with timeout
+            console.log('Attempting signer restoration with payload...');
+
+            const restoredSigner = await NDKNip46Signer.fromPayload(signerPayload, remoteSignerNDK);
+
+            // remove secret from restored signer, we don't need it
+            // it was only needed for login not for the restoration process
+            restoredSigner.secret = null;
+
+            console.log('Testing restored signer connection...');
+
+            const user = await restoredSigner.blockUntilReady();
+
+            if (!user.npub) {
+                throw new Error('Failed to restore remote signer session - no user returned');
+            }
+
+            // Connection restored successfully
+            $ndk.signer = restoredSigner;
+            console.log('Remote signer session restored successfully');
+            // Initialize user and complete login
+            await initializeUser($ndk);
 
             // Clear timeout on success
             clearTimeout(timeoutId);
+            $loggingIn = false;
         } catch (error) {
-            console.error('NostrConnect restoration failed:', error);
+            console.error('Remote signer restoration failed:', error);
 
             // Clear timeout
             clearTimeout(timeoutId);
 
-            // Show error message
-            showNostrConnectError(error);
+            // Provide more specific error context
+            let errorMessage = 'Unknown error occurred';
+            if (error instanceof Error) {
+                errorMessage = error.message;
 
-            // Clear invalid stored data
-            localStorage.removeItem('nostrConnectLocalSigner');
-            localStorage.removeItem('nostrConnectRemotePubkey');
+                // Add helpful context for common bunker issues
+                if (errorMessage.includes('No bunker relays connected')) {
+                    errorMessage +=
+                        '\n\nTip: Make sure you have a stable internet connection and that the bunker relays are online.';
+                } else if (errorMessage.includes('blockUntilReady')) {
+                    errorMessage +=
+                        '\n\nTip: The bunker might be offline or busy. Try again in a few moments.';
+                } else if (errorMessage.includes('fromPayload')) {
+                    errorMessage +=
+                        '\n\nTip: Your stored credentials might be corrupted. Try logging in again.';
+                }
+            }
 
-            // Reset login method
-            $loginMethod = null;
-        } finally {
+            showNip46Error(errorMessage);
+
             $loggingIn = false;
         }
     }
@@ -755,7 +738,6 @@
             }
         }
     });
-
 </script>
 
 <Toaster classes="z-1100" {toaster}></Toaster>
@@ -778,9 +760,11 @@
 
     <!-- Content Area -->
     <div class="flex-auto w-full h-full flex {!$onBoarding ? 'mt-[65px]' : ''}">
-
         <!-- Main Content  -->
-        <main class="{(!$onBoarding && displayNav) ? 'sm:ml-[96px]' : ''} flex-1" aria-label="Main content">
+        <main
+            class="{!$onBoarding && displayNav ? 'sm:ml-[96px]' : ''} flex-1"
+            aria-label="Main content"
+        >
             {@render children?.()}
             {#if !page.url.pathname.includes('messages/naddr')}
                 <div style={`height: ${footerHeight}px;`}></div>
