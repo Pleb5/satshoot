@@ -79,8 +79,8 @@
 >
     <p class="w-full px-[10px] py-[5px]">
         Browser extensions can communicate fairly securely with any website locally in your browser.
-        Connection to them is much more stable than Bunkers. However, extensions have access to any
-        sensitive data you might load on any website.
+        Connection to them is much more stable than Remote Signers. However, extensions have access
+        to any sensitive data you might load on any website.
     </p>
 </div>
 

@@ -21,6 +21,8 @@ export const BOOTSTRAPOUTBOXRELAYS = [
     // "wss://bitcoiner.social/",
 ];
 
+export const NOSTRCONNECTRELAYURLS = ['wss://relay.nsec.app'];
+
 export const blastrUrl = 'wss://sendit.nosflare.com';
 
 export enum RestoreMethod {
@@ -29,10 +31,9 @@ export enum RestoreMethod {
 }
 
 export enum LoginMethod {
-    Bunker = 'bunker',
-    Nip07 = 'nip07',
     Local = 'local',
-    NostrConnect = 'nostrconnect',
+    Nip07 = 'nip07',
+    Nip46 = 'nip46',
     Register = 'Register',
 }
 
