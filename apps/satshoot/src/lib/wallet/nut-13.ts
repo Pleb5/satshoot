@@ -7,11 +7,6 @@
 import { generateMnemonic, validateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
 import { HDKey } from '@scure/bip32';
-import { sha256 } from '@noble/hashes/sha256';
-import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
-import type { Proof } from '@cashu/cashu-ts';
-import { persisted } from 'svelte-persisted-store';
-import { get, writable, type Writable } from 'svelte/store';
 
 // Constants from NUT-13 specification
 const DERIVATION_PATH = `m/129372'/0'`; // Standard derivation path for Cashu
@@ -23,33 +18,6 @@ export interface MnemonicSeedData {
     lastBackupAt?: number;
 }
 
-// Store for mnemonic seed data (encrypted in localStorage)
-export const mnemonicStore = persisted<MnemonicSeedData | null>(
-    'cashu-mnemonic-seed',
-    null,
-    {
-        storage: 'local',
-        serializer: {
-            stringify(data: MnemonicSeedData | null) {
-                if (!data) return 'null';
-                // In production, you should encrypt this data
-                // For now, we're just base64 encoding as a minimal obfuscation
-                const jsonStr = JSON.stringify(data);
-                return btoa(jsonStr);
-            },
-            parse(text: string) {
-                if (text === 'null') return null;
-                try {
-                    const jsonStr = atob(text);
-                    return JSON.parse(jsonStr) as MnemonicSeedData;
-                } catch {
-                    return null;
-                }
-            },
-        },
-    }
-);
-
 /**
  * Generate a new mnemonic seed phrase (BIP39)
  * @param strength - Strength in bits (128, 160, 192, 224, or 256). Default is 128 (12 words)
@@ -57,12 +25,6 @@ export const mnemonicStore = persisted<MnemonicSeedData | null>(
  */
 export function generateMnemonicSeed(strength: 128 | 160 | 192 | 224 | 256 = 128): string {
     const mnemonic = generateMnemonic(wordlist, strength);
-    
-    // Store the generated mnemonic
-    mnemonicStore.set({
-        mnemonic,
-        createdAt: Date.now(),
-    });
     
     return mnemonic;
 }
@@ -82,87 +44,13 @@ export function validateMnemonicSeed(mnemonic: string): boolean {
  * @param passphrase - Optional BIP39 passphrase
  * @returns HDKey instance for the master key
  */
-export function deriveRootKey(mnemonic: string, passphrase: string = ''): HDKey {
+export function deriveSeedKey(mnemonic: string, passphrase: string = ''): Uint8Array {
     if (!validateMnemonicSeed(mnemonic)) {
         throw new Error('Invalid mnemonic seed phrase');
     }
     
     const seed = mnemonicToSeedSync(mnemonic, passphrase);
-    return HDKey.fromMasterSeed(seed);
-}
-
-/**
- * Derive a deterministic secret for a proof according to NUT-13
- * @param mnemonic - The mnemonic phrase
- * @param keysetId - The keyset ID
- * @param counter - The counter value for this keyset
- * @param passphrase - Optional BIP39 passphrase
- * @returns The deterministic secret as a hex string
- */
-export function deriveDeterministicSecret(
-    mnemonic: string,
-    keysetId: string,
-    counter: number,
-    passphrase: string = ''
-): string {
-    const rootKey = deriveRootKey(mnemonic, passphrase);
-    
-    // Derive the child key for Cashu
-    const cashuKey = rootKey.derive(DERIVATION_PATH);
-    
-    // Derive keyset-specific key using keyset ID as index
-    // Convert keyset ID to a number for derivation (using first 4 bytes of hash)
-    const keysetHash = sha256(new TextEncoder().encode(keysetId));
-    const keysetIndex = new DataView(keysetHash.buffer).getUint32(0, true) & 0x7fffffff; // Make sure it's non-hardened
-    
-    const keysetKey = cashuKey.deriveChild(keysetIndex);
-    
-    // Derive counter-specific secret
-    const counterKey = keysetKey.deriveChild(counter);
-    
-    if (!counterKey.privateKey) {
-        throw new Error('Failed to derive private key');
-    }
-    
-    // Create the deterministic secret according to NUT-13
-    // secret = SHA256(version_byte || private_key)
-    const versionedKey = new Uint8Array(33);
-    versionedKey[0] = VERSION_BYTE;
-    versionedKey.set(counterKey.privateKey, 1);
-    
-    const secret = sha256(versionedKey);
-    return bytesToHex(secret);
-}
-
-/**
- * Generate deterministic secrets for multiple proofs
- * @param mnemonic - The mnemonic phrase
- * @param keysetId - The keyset ID
- * @param count - Number of secrets to generate
- * @param startCounter - Starting counter value (default: 0)
- * @param passphrase - Optional BIP39 passphrase
- * @returns Array of deterministic secrets
- */
-export function generateDeterministicSecrets(
-    mnemonic: string,
-    keysetId: string,
-    count: number,
-    startCounter: number = 0,
-    passphrase: string = ''
-): string[] {
-    const secrets: string[] = [];
-    
-    for (let i = 0; i < count; i++) {
-        const secret = deriveDeterministicSecret(
-            mnemonic,
-            keysetId,
-            startCounter + i,
-            passphrase
-        );
-        secrets.push(secret);
-    }
-    
-    return secrets;
+    return seed;
 }
 
 /**
@@ -174,13 +62,7 @@ export function generateDeterministicSecrets(
  * @param encrypted - Whether to encrypt the mnemonic before saving
  * @param passphrase - Encryption passphrase (required if encrypted is true)
  */
-export async function saveMnemonicToFile(encrypted: boolean = false, passphrase?: string): Promise<void> {
-    const mnemonicData = get(mnemonicStore);
-    
-    if (!mnemonicData) {
-        throw new Error('No mnemonic seed found to save');
-    }
-    
+export async function saveMnemonicToFile(mnemonic: string, encrypted: boolean = false, passphrase?: string): Promise<void> {
     let content: string;
     let filename: string;
     let mimeType: string;
@@ -192,11 +74,11 @@ export async function saveMnemonicToFile(encrypted: boolean = false, passphrase?
         
         // Simple XOR encryption for the browser environment
         // In production, use a proper encryption library like CryptoJS or WebCrypto API
-        const encrypted = await encryptMnemonic(mnemonicData.mnemonic, passphrase);
+        const encrypted = await encryptMnemonic(mnemonic, passphrase);
         content = JSON.stringify({
             encrypted: true,
             data: encrypted,
-            createdAt: mnemonicData.createdAt,
+            createdAt: Date.now(),
             version: '1.0'
         });
         filename = 'cashu-mnemonic-seed.enc';
@@ -204,8 +86,8 @@ export async function saveMnemonicToFile(encrypted: boolean = false, passphrase?
     } else {
         content = JSON.stringify({
             encrypted: false,
-            mnemonic: mnemonicData.mnemonic,
-            createdAt: mnemonicData.createdAt,
+            mnemonic: mnemonic,
+            createdAt: Date.now(),
             version: '1.0'
         });
         filename = 'cashu-mnemonic-seed.json';
@@ -222,14 +104,6 @@ export async function saveMnemonicToFile(encrypted: boolean = false, passphrase?
     a.click();
     
     URL.revokeObjectURL(url);
-    
-    // Update last backup timestamp
-    mnemonicStore.update(data => {
-        if (data) {
-            data.lastBackupAt = Date.now();
-        }
-        return data;
-    });
 }
 
 /**
@@ -263,12 +137,6 @@ export async function readMnemonicFromFile(file: File, passphrase?: string): Pro
                 if (!validateMnemonicSeed(mnemonic)) {
                     throw new Error('Invalid mnemonic seed in file');
                 }
-                
-                // Store the imported mnemonic
-                mnemonicStore.set({
-                    mnemonic,
-                    createdAt: data.createdAt || Date.now(),
-                });
                 
                 resolve(mnemonic);
             } catch (error) {
@@ -394,44 +262,4 @@ async function decryptMnemonic(encryptedData: string, passphrase: string): Promi
     );
     
     return decoder.decode(decrypted);
-}
-
-/**
- * Get the current mnemonic from storage
- * @returns The stored mnemonic data or null if none exists
- */
-export function getCurrentMnemonic(): MnemonicSeedData | null {
-    return get(mnemonicStore);
-}
-
-/**
- * Clear the stored mnemonic seed
- * WARNING: This will permanently remove the mnemonic from browser storage
- */
-export function clearMnemonicSeed(): void {
-    mnemonicStore.set(null);
-}
-
-/**
- * Import a mnemonic seed phrase
- * @param mnemonic - The mnemonic phrase to import
- * @throws Error if the mnemonic is invalid
- */
-export function importMnemonicSeed(mnemonic: string): void {
-    if (!validateMnemonicSeed(mnemonic)) {
-        throw new Error('Invalid mnemonic seed phrase');
-    }
-    
-    mnemonicStore.set({
-        mnemonic,
-        createdAt: Date.now(),
-    });
-}
-
-/**
- * Check if a mnemonic seed is stored
- * @returns true if a mnemonic is stored, false otherwise
- */
-export function hasMnemonicSeed(): boolean {
-    return get(mnemonicStore) !== null;
 }
