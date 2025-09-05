@@ -6,7 +6,6 @@
 
 import { generateMnemonic, validateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
-import { HDKey } from '@scure/bip32';
 
 // Constants from NUT-13 specification
 const DERIVATION_PATH = `m/129372'/0'`; // Standard derivation path for Cashu
