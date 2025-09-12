@@ -4,6 +4,7 @@
  * Spec: https://github.com/cashubtc/nuts/blob/main/13.md
  */
 
+import type { NDKUser } from '@nostr-dev-kit/ndk';
 import { generateMnemonic, validateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
 
@@ -45,16 +46,15 @@ export function deriveSeedKey(mnemonic: string, passphrase: string = ''): Uint8A
 /**
  * Save mnemonic seed to a file (browser download)
  * @param mnemonic - the mnemonic phrase
- * @param encrypted - Whether to encrypt the mnemonic before saving
- * @param passphrase - Encryption passphrase (required if encrypted is true)
+ * @param encryption - Encryption instance (required if encrypted is true)
  */
-export async function saveMnemonicToFile(mnemonic: string, encrypted: boolean = false, passphrase?: string)
+export async function saveMnemonicToFile(mnemonic: string, encryption?: Encryption)
     : Promise<void> {
-    const { filename, mimeType } = encrypted ?
+    const { filename, mimeType } = encryption ?
         { filename: 'cashu-mnemonic-seed.enc', mimeType: 'application/octet-stream' }
         : { filename: 'cashu-mnemonic-seed.json', mimeType: 'application/json' };
 
-    const content = await createMnemonicSeedData(mnemonic, encrypted, passphrase);
+    const content = await createMnemonicSeedData(mnemonic, encryption);
     const blob = new Blob([JSON.stringify(content)], { type: mimeType });
     const url = URL.createObjectURL(blob);
 
@@ -76,22 +76,15 @@ export interface MnemonicSeedData {
 /**
  * Create the mnemonic data from the mnemonic seed phrase
  * @param mnemonic - the mnemonic phrase
- * @param encrypted - Whether to encrypt the mnemonic
- * @param passphrase - Encryption passphrase (required if encrypted is true)
+ * @param encryption - Encryption instance (required if the mnemonic should be encrypted)
  * @returns - promise with the mnemonic data in success case
  */
-export async function createMnemonicSeedData(mnemonic: string, encrypted: boolean, passphrase?: string)
+export async function createMnemonicSeedData(mnemonic: string, encryption?: Encryption)
     : Promise<MnemonicSeedData> {
     let content;
 
-    if (encrypted) {
-        if (!passphrase || passphrase.length < 14) {
-            throw new Error('Minimum 14 characters required for passphrase');
-        }
-
-        // Simple XOR encryption for the browser environment
-        // In production, use a proper encryption library like CryptoJS or WebCrypto API
-        const encrypted = await encryptMnemonic(mnemonic, passphrase);
+    if (encryption) {
+        const encrypted = await encryption.encrypt(mnemonic);
         content = {
             encrypted: true,
             data: encrypted,
@@ -113,10 +106,10 @@ export async function createMnemonicSeedData(mnemonic: string, encrypted: boolea
 /**
  * Read mnemonic seed from a file (browser file upload)
  * @param file - The File object to read from
- * @param passphrase - Decryption passphrase (required if file is encrypted)
+ * @param encryption - Decryption instance (required if file is encrypted)
  * @returns The mnemonic seed phrase
  */
-export async function readMnemonicFromFile(file: File, passphrase?: string): Promise<string> {
+export async function readMnemonicFromFile(file: File, encryption?: Encryption): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
@@ -125,7 +118,7 @@ export async function readMnemonicFromFile(file: File, passphrase?: string): Pro
                 const content = e.target?.result as string;
                 const data = JSON.parse(content) as MnemonicSeedData;
                 if (isValidSeedData(data)) {
-                    let mnemonic = await mnemonicFromSeedData(data, passphrase);
+                    let mnemonic = await mnemonicFromSeedData(data, encryption);
                     resolve(mnemonic);
                 } else {
                     console.error('Validation of seed phrase file failed: Object structure does not match the schema.');
@@ -148,18 +141,18 @@ export async function readMnemonicFromFile(file: File, passphrase?: string): Pro
  * Extract mnemonic seed phrase from the mnemonic data. The function decrypts the mnemonic if required and 
  * validates it.
  * @param data - the mnemonic data
- * @param passphrase - the passphrase in case the mnemonic is encrypted
+ * @param encryption - the encryption instance to be use in case the mnemonic is encrypted
  * @returns - a promise to the mnemonic
  */
-export async function mnemonicFromSeedData(data: MnemonicSeedData, passphrase?: string): Promise<string> {
+export async function mnemonicFromSeedData(data: MnemonicSeedData, encryption?: Encryption): Promise<string> {
     let mnemonic: string;
 
     if (data.encrypted) {
-        if (!passphrase) {
-            throw new Error('Passphrase required for encrypted file');
+        if (!encryption) {
+            throw new Error('Encryption instance required for encrypted file');
         }
 
-        mnemonic = await decryptMnemonic(data.data, passphrase);
+        mnemonic = await encryption.decrypt(data.data);
     } else {
         mnemonic = data.data;
     }
@@ -180,13 +173,37 @@ function isValidSeedData(data: MnemonicSeedData): boolean {
     );
 }
 
+interface Encryption {
+    encrypt(data: string): Promise<string>;
+    decrypt(data: string): Promise<string>;
+}
+
+export function nip44EncryptionForUser(user: NDKUser): Encryption {
+    return {
+        encrypt: (data: string) => {
+            const encrypted = user.ndk?.signer?.encrypt(user, data);
+            if (!encrypted) {
+                throw new Error("Not ndk or signer set and needed for this function");
+            }
+            return encrypted;
+        },
+        decrypt: (data: string) => {
+            const decrypted = user.ndk?.signer?.decrypt(user, data);
+            if (!decrypted) {
+                throw new Error("Not ndk or signer set and needed for this function");
+            }
+            return decrypted;
+        }
+    };
+}
+
 /**
  * Simple encryption using Web Crypto API
  * @param mnemonic - The mnemonic to encrypt
  * @param passphrase - The passphrase for encryption
  * @returns Base64 encoded encrypted data
  */
-async function encryptMnemonic(mnemonic: string, passphrase: string): Promise<string> {
+async function webEncryptMnemonic(mnemonic: string, passphrase: string): Promise<string> {
     const encoder = new TextEncoder();
     const data = encoder.encode(mnemonic);
 
@@ -245,7 +262,7 @@ async function encryptMnemonic(mnemonic: string, passphrase: string): Promise<st
  * @param passphrase - The passphrase for decryption
  * @returns The decrypted mnemonic
  */
-async function decryptMnemonic(encryptedData: string, passphrase: string): Promise<string> {
+async function webDecryptMnemonic(encryptedData: string, passphrase: string): Promise<string> {
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
 
