@@ -3,7 +3,6 @@
     import { page } from '$app/state';
     import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
     import AddImagesModal from '$lib/components/Modals/AddImagesModal.svelte';
-    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import ShareEventModal from '$lib/components/Modals/ShareEventModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import CopyButton from '$lib/components/UI/Buttons/CopyButton.svelte';
@@ -15,7 +14,7 @@
     import { Pricing } from '$lib/events/types';
     import { PaymentService } from '$lib/services/payments';
     import { redirectAfterLogin } from '$lib/stores/gui';
-    import { servicePostSuccessState } from '$lib/stores/modals';
+    import { servicePostSuccessState, showLoginModal } from '$lib/stores/modals';
     import { serviceToEdit } from '$lib/stores/service-to-edit';
     import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
@@ -220,7 +219,6 @@
 
     let showAddImagesModal = $state(false);
     let showShareModal = $state(false);
-    let showLoginModal = $state(false);
     const allowPostService = $derived(
         firstService || (!!$currentUser && $loggedIn)
     );
@@ -566,7 +564,25 @@
 
     function handleLogin() {
         $redirectAfterLogin = false;
-        showLoginModal = true;
+        $showLoginModal = true;
+    }
+
+    async function handleSkip() {
+        await finalizeAccount()
+
+        onBoarding.set(false);
+        onBoardingName.set('')
+        onBoardingNsec.set('')
+
+        // It's possible that user is coming from job page, he may want to post the bid
+        // Therefor, we'll redirect the user to the job page
+        if(!$redirectAfterLogin && window.history.length > 2) {
+            // Navigate back to the previous page
+            window.history.go(-2);
+        }
+
+        // When user don't want to publish the Service Immediately, we'll redirect the user to jobs page
+        goto('/jobs')
     }
 
 
@@ -1060,24 +1076,41 @@
                     {#if !allowPostService}
                         <Button onClick={handleLogin}>Log in To Post</Button>
                     {:else if step === 1}
-                        <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
-                            <Button
-                                grow
-                                variant="outlined"
-                                onClick={()=>goto((new URL('/letsgo', window.location.origin)))}>
-                                Back
-                            </Button>
-                            <Button 
-                                grow
-                                classes={"sm:max-w-80"}
-                                onClick={() => {
-                                    if (validateStep1()) {
-                                        step = 2
-                                    }
-                                }}>
-                                Next
-                            </Button>
+                        <div class="flex flex-col sm:max-w-[60vw] w-full gap-4">
+                            <div class="w-full sm:max-w-[60vw] flex gap-x-4 {firstService ? 'justify-between' : 'justify-center'}">
+                                {#if firstService}
+                                    <Button
+                                        grow
+                                        variant="outlined"
+                                        onClick={()=>goto((new URL('/letsgo', window.location.origin)))}>
+                                        Back
+                                    </Button>
+                                {/if}
+                                <Button 
+                                    grow
+                                    classes={"sm:max-w-80"}
+                                    onClick={() => {
+                                        if (validateStep1()) {
+                                            step = 2
+                                        }
+                                    }}>
+                                    Next
+                                </Button>
+                            </div>
+                        
+                            {#if firstService}
+                                <div class="w-full sm:max-w-[60vw] flex gap-x-4">
+                                    <Button
+                                        grow
+                                        variant="outlined"
+                                        onClick={handleSkip}
+                                    >
+                                        Skip
+                                    </Button>
+                                </div>
+                            {/if}
                         </div>
+
                     {:else if step === 2}
                         <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
                             <Button
@@ -1127,7 +1160,6 @@
     </div>
 </div>
 
-<LoginModal bind:isOpen={showLoginModal} />
 
 {#if showAddImagesModal}
     <AddImagesModal

@@ -1,7 +1,6 @@
 <script lang="ts">
     import { page } from '$app/state';
     import currentUser, { loggedIn } from '$lib/stores/user';
-    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
@@ -39,10 +38,10 @@
     import { Pricing } from '$lib/events/types';
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import { showLoginModal } from '$lib/stores/modals';
 
     // Component state
     let initialized = $state(false);
-    let showLoginModal = $state(false);
     let isUserLoggedIn = $derived(!!$currentUser && $loggedIn);
     let primaryEntity = $state<JobEvent | ServiceEvent>();
     let secondaryEntity = $state<BidEvent | OrderEvent>();
@@ -324,7 +323,7 @@
 
     function handleLogin() {
         $redirectAfterLogin = false;
-        showLoginModal = true;
+        $showLoginModal = true;
     }
 
     const amountInputClasses =
@@ -758,7 +757,6 @@
     </div>
 </div>
 
-<LoginModal bind:isOpen={showLoginModal} />
 
 <ConfirmPaymentModal
     bind:isOpen={showPayConfirm}

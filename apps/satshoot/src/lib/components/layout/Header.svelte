@@ -1,7 +1,5 @@
 <script lang="ts">
     import { Avatar } from '@skeletonlabs/skeleton-svelte';
-
-    import LoginModal from '../Modals/LoginModal.svelte';
     import currentUser, {
         loggedIn,
         loggingIn,
@@ -20,10 +18,10 @@
     import { page } from '$app/state';
     import { beforeNavigate, goto } from '$app/navigation';
     import { onDestroy, onMount } from 'svelte';
-    import LogoutModal from '../Modals/LogoutModal.svelte';
     import { idFromNaddr, isFreelanceJobOrServiceURI, isNpubOrNprofile, getPubkeyFromNpubOrNprofile } from '$lib/utils/nip19';
     import type { NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
+    import { showLoginModal, showLogoutModal } from '$lib/stores/modals';
 
     interface Props {
         onRestoreLogin: () => void;
@@ -31,8 +29,6 @@
 
     let { onRestoreLogin }: Props = $props();
 
-    let showLoginModal = $state(false);
-    let showLogoutModal = $state(false);
     let showAppMenu = $state(false);
 
     let profilePicture = $state('');
@@ -336,7 +332,7 @@
     };
 
     function handleLogin() {
-        showLoginModal = true;
+        $showLoginModal = true;
     }
 
     const satShootLogoWrapperClass = 'flex flex-row items-center gap-4 ' + '';
@@ -482,7 +478,7 @@
                                 <div class="flex items-center gap-x-2">
                                     <Button
                                         classes={extraClassesForLogoutBtn}
-                                        onClick={() => (showLogoutModal = true)}
+                                        onClick={() => ($showLogoutModal = true)}
                                     >
                                         Logout
                                     </Button>
@@ -596,5 +592,3 @@
 
 <AppMenu bind:isOpen={showAppMenu} />
 
-<LoginModal bind:isOpen={showLoginModal} />
-<LogoutModal bind:isOpen={showLogoutModal} />

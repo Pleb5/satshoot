@@ -5,13 +5,13 @@
     import ServiceCard from '$lib/components/Cards/ServiceCard.svelte';
     import CloseEntityModal from '$lib/components/Modals/CloseEntityModal.svelte';
     import ConfirmOrderModal from '$lib/components/Modals/ConfirmOrderModal.svelte';
-    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { myOrders } from '$lib/stores/freelance-eventstores';
+    import { showLoginModal } from '$lib/stores/modals';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
     import currentUser, { loggedIn } from '$lib/stores/user';
@@ -62,7 +62,6 @@
     });
 
     let displayOrderConfirmationModal = $state(false);
-    let showLoginModal = $state(false);
     let showCloseModal = $state(false);
 
     const myService = $derived(
@@ -221,7 +220,7 @@
     });
 
     function triggerLogin() {
-        showLoginModal = true;
+        showLoginModal.set(true)
     }
 
     async function confirmOrder(note: string) {
@@ -426,7 +425,6 @@
     </div>
 </div>
 
-<LoginModal bind:isOpen={showLoginModal} />
 
 {#if service}
     <ConfirmOrderModal

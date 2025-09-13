@@ -33,3 +33,7 @@ export const bidTakenState = writable<BidTakenState>({
     showModal: false,
     jobId: null,
 });
+
+export const showLoginModal = writable(false);
+
+export const showLogoutModal = writable(false);

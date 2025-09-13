@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import { 
+    import {
         onBoarding,
         onBoardingName,
         onBoardingNsec,
@@ -17,13 +17,14 @@
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
+    import { showLoginModal } from '$lib/stores/modals';
 
     const generatedNsec = $onBoardingNsec 
         ? $onBoardingNsec
         : nsecEncode(generateSecretKey());
 
     let nsecSaved = $state(false);
-     
+
     let userName = $state(
         $onBoardingName
             ? $onBoardingName
@@ -91,7 +92,7 @@
 
         inProgress = false;
     }
-    
+
     const validate = ():boolean => {
         if (!userName) {
             toaster.error({
@@ -108,6 +109,30 @@
         url.searchParams.append('state', 'letsgo')
         await goto(url.toString())
     }
+
+    const handleBackToLogin = async () => {
+        // Set onBoarding to false
+        onBoarding.set(false);
+
+        // Clear onboarding session data
+        onBoardingName.set('');
+        onBoardingNsec.set('');
+
+        // Navigate back to the previous page (or home page as fallback)
+        if (window.history.length > 1) {
+            window.history.back();
+            // Wait a bit then open the login modal
+            setTimeout(() => {
+                $showLoginModal = true;
+
+            }, 100);
+        } else {
+            // If no previous page, go to home and open login modal
+            await goto('/');
+            $showLoginModal = true
+
+        }
+    };
 
     let userNameTooltip =
         '<div>' +
@@ -256,6 +281,10 @@
                 <i class="bx bx-log-in-circle"></i>
                 Next
             {/if}
+        </Button>
+        <Button variant="outlined" classes="mt-2" onClick={handleBackToLogin}>
+            <i class="bx bx-arrow-back"></i>
+            Back to Login
         </Button>
     </div>
 </div>

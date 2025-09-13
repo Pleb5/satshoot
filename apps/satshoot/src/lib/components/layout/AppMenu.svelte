@@ -8,6 +8,7 @@
     import TowerBroadcastIcon from '../Icons/TowerBroadcastIcon.svelte';
     import { Modal } from '@skeletonlabs/skeleton-svelte';
     import { goto } from '$app/navigation';
+    import { showLogoutModal } from '$lib/stores/modals';
 
     interface Props {
         isOpen: boolean;
@@ -17,7 +18,6 @@
 
     let showAnnouncementModal = $state(false);
     let showFeedbackModal = $state(false);
-    let showLogoutModal = $state(false);
 
     let profileHref = $derived($currentUser ? '/' + $currentUser.npub || '' + '/' : '/');
 
@@ -32,7 +32,7 @@
     }
 
     function onLogout() {
-        showLogoutModal = true;
+        $showLogoutModal = true;
         isOpen = false;
     }
 
@@ -130,4 +130,3 @@
 
 <Announcement bind:isOpen={showAnnouncementModal} />
 <FeedbackModal bind:isOpen={showFeedbackModal} />
-<LogoutModal bind:isOpen={showLogoutModal} />

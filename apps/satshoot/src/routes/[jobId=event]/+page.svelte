@@ -4,7 +4,6 @@
     import BidCard from '$lib/components/Cards/BidCard.svelte';
     import UserCard from '$lib/components/Cards/UserCard.svelte';
     import CreateBidModal from '$lib/components/Modals/CreateBidModal.svelte';
-    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import TabSelector from '$lib/components/UI/Buttons/TabSelector.svelte';
     import { BidEvent } from '$lib/events/BidEvent';
@@ -27,6 +26,8 @@
 
     import { onDestroy, onMount } from 'svelte';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import { showLoginModal } from '$lib/stores/modals';
+    import { redirectAfterLogin } from '$lib/stores/gui';
 
     enum BidTab {
         Pending,
@@ -81,7 +82,6 @@
         return BidTab.Pending;
     });
 
-    let showLoginModal = $state(false);
     let showCreateBidModal = $state(false);
     let createBidModalProps = $state<{ job: JobEvent; bidToEdit?: BidEvent } | null>(null);
 
@@ -227,7 +227,8 @@
     }
 
     function triggerLogin() {
-        showLoginModal = true;
+        $redirectAfterLogin = false
+        $showLoginModal = true;
     }
 
     const tabs = [
@@ -387,8 +388,6 @@
         </div>
     </div>
 </div>
-
-<LoginModal bind:isOpen={showLoginModal} />
 
 {#if createBidModalProps}
     <CreateBidModal bind:isOpen={showCreateBidModal} {...createBidModalProps} />

@@ -28,7 +28,6 @@
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import Input from '$lib/components/UI/Inputs/input.svelte';
-    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import { toaster } from '$lib/stores/toaster';
@@ -38,6 +37,7 @@
     import CopyButton from '$lib/components/UI/Buttons/CopyButton.svelte';
     import ShareEventModal from '$lib/components/Modals/ShareEventModal.svelte';
     import { nip19 } from 'nostr-tools';
+    import { showLoginModal } from '$lib/stores/modals';
 
     class AccountPublishError extends Error {
         constructor(message: string) {
@@ -53,7 +53,6 @@
         }
     }
 
-    let showLoginModal = $state(false);
     let showShareModal = $state(false);
 
     let tagInput = $state('');
@@ -332,7 +331,25 @@
 
     function handleLogin() {
         $redirectAfterLogin = false;
-        showLoginModal = true;
+        $showLoginModal = true;
+    }
+
+    async function handleSkip() {
+        await finalizeAccount()
+
+        onBoarding.set(false);
+        onBoardingName.set('')
+        onBoardingNsec.set('')
+
+        // It's possible that user is coming from job page, he may want to post the bid
+        // Therefor, we'll redirect the user to the job page
+        if(!$redirectAfterLogin && window.history.length > 2) {
+            // Navigate back to the previous page
+            window.history.go(-2);
+        }
+
+        // When user don't want to publish the job Immediately, we'll redirect the user to services page
+        goto('/services')
     }
 
     const jobTitleTooltip =
@@ -569,34 +586,48 @@
                     {#if !allowPostJob}
                         <Button onClick={handleLogin}>Log in To Post</Button>
                     {:else}
-                        <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
-                            {#if firstJob && step === 1}
-                                <Button
-                                    grow
-                                    variant="outlined"
-                                    onClick={()=>{
-                                        goto(new URL('/letsgo', window.location.origin))
-                                    }}>
-                                    Back
-                                </Button>
-                            {/if}
-                            {#if step < 2}
-                                <Button
-                                    grow
-                                    onClick={finalize}
-                                    disabled={posting}
-                                    classes={'bg-yellow-500'}
-                                >
-                                    {#if posting}
-                                        <ProgressRing color="white" />
-                                    {:else if jobPostFailed || accountPostFailed}
-                                        <span>Try again</span>
-                                    {:else}
-                                        <span>Post on the Free Market</span>
-                                    {/if}
-                                </Button>
-                            {/if}
+                        <div class="flex flex-col sm:max-w-[60vw] w-full gap-4">
+                            <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
+                                {#if firstJob && step === 1}
+                                    <Button
+                                        grow
+                                        variant="outlined"
+                                        onClick={()=>{
+                                            goto(new URL('/letsgo', window.location.origin))
+                                        }}>
+                                        Back
+                                    </Button>
+                                {/if}
+                                {#if step < 2}
+                                    <Button
+                                        grow
+                                        onClick={finalize}
+                                        disabled={posting}
+                                        classes={'bg-yellow-500'}
+                                    >
+                                        {#if posting}
+                                            <ProgressRing color="white" />
+                                        {:else if jobPostFailed || accountPostFailed}
+                                            <span>Try again</span>
+                                        {:else}
+                                            <span>Post on the Free Market</span>
+                                        {/if}
+                                    </Button>
+                                {/if}
+                            </div>
+                                {#if firstJob}
+                                    <div class="w-full sm:max-w-[60vw] flex gap-x-4">
+                                        <Button
+                                            grow
+                                            variant="outlined"
+                                            onClick={handleSkip}
+                                    >
+                                            Skip
+                                        </Button>
+                                    </div>
+                                {/if}
                         </div>
+
                     {/if}
                 </div>
             </div>
@@ -604,7 +635,6 @@
     </div>
 </div>
 
-<LoginModal bind:isOpen={showLoginModal} />
 
 <ShareEventModal
     firstTimerMessageTitle={ !firstJob ? '' :

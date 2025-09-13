@@ -89,11 +89,13 @@
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
     import { getModeUserPrefers, setModeUserPrefers } from '$lib/utils/lightSwitch';
-    import { jobPostSuccessState, bidTakenState } from '$lib/stores/modals';
+    import { jobPostSuccessState, bidTakenState, showLoginModal, showLogoutModal } from '$lib/stores/modals';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
     import type { ServiceEvent } from '$lib/events/ServiceEvent';
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
+    import LoginModal from '$lib/components/Modals/LoginModal.svelte';
+    import LogoutModal from '$lib/components/Modals/LogoutModal.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -460,6 +462,12 @@
             $ndk.cacheAdapter = new NDKCacheAdapterDexie({ dbName: 'satshoot-db' });
         }
 
+        // if user leaves the app during onboarding and comes back later
+        // redirect the user to on boarding flow
+        if($onBoarding) {
+            goto('/letsgo')
+        }
+ 
         configureBasics();
 
         await $ndk.connect();
@@ -798,3 +806,9 @@
 {#if $bidTakenState.showModal && $bidTakenState.jobId}
     <BidTakenModal bind:isOpen={$bidTakenState.showModal} jobId={$bidTakenState.jobId} />
 {/if}
+
+<!-- Login Modal -->
+<LoginModal bind:isOpen={$showLoginModal} />
+
+<!-- Logout Modal -->
+<LogoutModal bind:isOpen={$showLogoutModal} />
