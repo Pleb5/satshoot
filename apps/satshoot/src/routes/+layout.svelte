@@ -115,6 +115,7 @@
 
     let showDecryptSecretModal = $state(false);
     let showMnemonicSeedInputModal = $state(false);
+    let bip39seedS = $state<Uint8Array>();
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(
@@ -206,7 +207,10 @@
             $loggingIn = false;
             console.log('Start init session in local key login');
             initializeUser($ndk, bip39seed);
-        } else if (localStorage.getItem('nostr-nsec') !== null) {
+        } else if (
+            localStorage.getItem('nostr-nsec') !== null
+        ) {
+            bip39seedS = bip39seed;
             showDecryptSecretModal = true;
         }
     }
@@ -245,7 +249,7 @@
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
         $sessionPK = privateKey;
 
-        initializeUser($ndk);
+        initializeUser($ndk, bip39seedS);
     }
 
     function getPrivateKeyFromDecryptedSecret(
