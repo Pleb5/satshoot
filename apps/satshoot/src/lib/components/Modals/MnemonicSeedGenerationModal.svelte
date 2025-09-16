@@ -5,6 +5,7 @@
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Input from '../UI/Inputs/input.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import { toaster } from '$lib/stores/toaster';
 
     interface Props {
         isOpen: boolean;
@@ -13,7 +14,7 @@
 
     let { isOpen = $bindable(), onCompletion }: Props = $props();
     let seedWords = $state(Array(0));
-    let confirmationWords = $state(Array(12).fill(""));
+    let confirmationWords = $state(Array(12).fill(''));
     let showSeedWords = $state(false);
     let step = $state(0);
     let seedSecuredConfirmation = $state(false);
@@ -29,10 +30,18 @@
     });
 
     function handleConfirm(confirmWords: string[]) {
-        if (confirmWords.join(" ") !== seedWords.join(" ")) {
-            alert("The seed words don't match!");
+        if (confirmWords.join(' ') !== seedWords.join(' ')) {
+            toaster.error({
+                title: "The seed words don't match!",
+                duration: 10000, // 10 secs
+            });
             return;
         }
+        isOpen = false;
+        toaster.info({
+            title: "Seed words confirmed!",
+            duration: 10000, // 10 secs
+        })
         onCompletion(confirmWords);
     }
 </script>

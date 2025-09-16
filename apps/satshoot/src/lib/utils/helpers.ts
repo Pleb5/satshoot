@@ -50,7 +50,7 @@ import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/
 import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { fetchEventFromRelaysFirst, APP_RELAY_STORAGE_KEY } from '$lib/utils/misc';
 
-export async function initializeUser(ndk: NDKSvelte) {
+export async function initializeUser(ndk: NDKSvelte, bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
     console.log('begin user init');
     try {
         loggingIn.set(false);
@@ -76,7 +76,9 @@ export async function initializeUser(ndk: NDKSvelte) {
                 explicitRelays = [...explicitRelays, ...writeRelayUrls];
             }
 
-            fetchAndInitWallet(user, ndk, { explicitRelays });
+            // TODO: (rodant) - Get the NUT-13 private key from local storage if present and pass it to fetchAndInitWallet ???
+            // In case the user has a NUT-13 private key on a different device, he will be asked for the mnemonic when visiting the wallet page ???
+            fetchAndInitWallet(user, ndk, { explicitRelays, bip39seed });
 
             await loadWot(ndk, user);
         }
@@ -107,6 +109,7 @@ export async function initializeUser(ndk: NDKSvelte) {
 export type WalletFetchOpts = {
     fetchLegacyWallet?: boolean;
     explicitRelays?: string[];
+    bip39seed?: Uint8Array
 };
 
 export async function fetchAndInitWallet(
@@ -149,7 +152,7 @@ export async function fetchAndInitWallet(
             nostrWallet = await NDKCashuWallet.from(event);
         } else if (event.kind === NDKKind.CashuWallet) {
             checkLegacy = false;
-            nostrWallet = await NDKCashuWallet.from(event);
+            nostrWallet = await NDKCashuWallet.from(event, walletFetchOpts.bip39seed);
         } else if (event.kind === NDKKind.CashuMintList) {
             cashuMintList = NDKCashuMintList.from(event);
         }

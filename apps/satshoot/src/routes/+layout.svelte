@@ -104,6 +104,8 @@
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import LogoutModal from '$lib/components/Modals/LogoutModal.svelte';
     import DecentralizedDiscoveryModal from '$lib/components/Modals/DecentralizedDiscoveryModal.svelte';
+    import { deriveSeedKey } from '$lib/wallet/nut-13';
+    import MnemonicSeedInputModal from '$lib/components/Modals/MnemonicSeedInputModal.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -112,6 +114,7 @@
     let { children }: Props = $props();
 
     let showDecryptSecretModal = $state(false);
+    let showMnemonicSeedInputModal = $state(false);
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(
@@ -163,7 +166,13 @@
         }
     });
 
-    async function restoreLogin() {
+    function generateBip39Seed(seedWords: string[]): void {
+        const bip39seed = deriveSeedKey(seedWords.join(' '));
+        restoreLogin(bip39seed);
+    }
+
+    async function restoreLogin(bip39seed?: Uint8Array) {
+        console.log('logging in user');
         // For UI feedback
         $loggingIn = true;
         await tick();
@@ -175,25 +184,28 @@
 
         switch ($loginMethod) {
             case LoginMethod.Local:
-                await handleLocalLogin();
+                await handleLocalLogin(bip39seed);
                 break;
             case LoginMethod.Nip46:
                 await handleNip46Login();
                 break;
             case LoginMethod.Nip07:
-                await handleNip07Login();
+                await handleNip07Login(bip39seed);
                 break;
         }
+
+        console.log('Session initialized!');
+
+        sessionInitialized.set(true);
     }
 
-    async function handleLocalLogin() {
+    async function handleLocalLogin(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
         // We either get the private key from sessionStorage or decrypt from localStorage
         if ($sessionPK) {
             $ndk.signer = new NDKPrivateKeySigner($sessionPK);
             $loggingIn = false;
             console.log('Start init session in local key login');
-
-            initializeUser($ndk);
+            initializeUser($ndk, bip39seed);
         } else if (localStorage.getItem('nostr-nsec') !== null) {
             showDecryptSecretModal = true;
         }
@@ -251,6 +263,32 @@
     }
 
     function setupNip46Timeout() {
+        setTimeout(() => {
+            if (!$ndk.signer) {
+                toaster.warning({
+                    title: 'Bunker connection took too long!',
+                    description: 'Fix or Remove Bunker Connection!',
+                    duration: 60000, // 1 min
+                    action: {
+                        label: 'Logout',
+                        onClick: () => {
+                            $loggingIn = false;
+                            logout();
+                        },
+                    },
+                });
+            }
+        }, 20000);
+    }
+
+    function showBunkerConnectionError(error: any) {
+        toaster.error({
+            title: 'Could not connect to Bunker!',
+            description: `Reason: ${error}`,
+        });
+    }
+
+    function setupNostrConnectTimeout() {
         return setTimeout(() => {
             if (!$ndk.signer) {
                 toaster.warning({
@@ -394,10 +432,10 @@
         }
     }
 
-    async function handleNip07Login() {
+    async function handleNip07Login(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
         if (!$ndk.signer) {
             $ndk.signer = new NDKNip07Signer();
-            await initializeUser($ndk);
+            await initializeUser($ndk, bip39seed);
             $loggingIn = false;
         }
     }
@@ -481,12 +519,8 @@
         await $ndk.connect();
 
         if (!$loggedIn) {
-            console.log('logging in user');
-            await restoreLogin();
+            showMnemonicSeedInputModal = true;
         }
-        console.log('Session initialized!');
-
-        sessionInitialized.set(true);
     });
 
     onDestroy(() => {
@@ -750,7 +784,7 @@
             class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
             aria-label="Main header"
         >
-            <Header onRestoreLogin={restoreLogin} />
+            <Header onRestoreLogin={() => showMnemonicSeedInputModal = true} />
         </header>
     {/if}
 
@@ -808,3 +842,8 @@
 
 <!-- Decentralized Discovery Modal -->
 <DecentralizedDiscoveryModal bind:isOpen={$showDecentralizedDiscoveryModal} />
+<MnemonicSeedInputModal
+    bind:isOpen={showMnemonicSeedInputModal}
+    onConfirm={generateBip39Seed}
+    onSkip={restoreLogin}
+/>
