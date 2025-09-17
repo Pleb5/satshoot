@@ -76,8 +76,6 @@ export async function initializeUser(ndk: NDKSvelte, bip39seed?: Uint8Array<Arra
                 explicitRelays = [...explicitRelays, ...writeRelayUrls];
             }
 
-            // TODO: (rodant) - Get the NUT-13 private key from local storage if present and pass it to fetchAndInitWallet ???
-            // In case the user has a NUT-13 private key on a different device, he will be asked for the mnemonic when visiting the wallet page ???
             fetchAndInitWallet(user, ndk, { explicitRelays, bip39seed });
 
             await loadWot(ndk, user);
@@ -152,6 +150,7 @@ export async function fetchAndInitWallet(
             nostrWallet = await NDKCashuWallet.from(event);
         } else if (event.kind === NDKKind.CashuWallet) {
             checkLegacy = false;
+            console.log(`fetchAndInitWallet ${walletFetchOpts.bip39seed ? "with" : "without"} NUT-13 seed`);
             nostrWallet = await NDKCashuWallet.from(event, walletFetchOpts.bip39seed);
         } else if (event.kind === NDKKind.CashuMintList) {
             cashuMintList = NDKCashuMintList.from(event);
