@@ -2,7 +2,7 @@
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
     import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
-    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/session';
+    import ndk, { DEFAULTRELAYURLS, nut13SeedStorage } from '$lib/stores/session';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { userCashuInfo, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
     import {
@@ -84,9 +84,12 @@
     const walletRelays = $derived($userCashuInfo?.relays ?? []);
 
     $effect(() => {
-        if (!$wallet) {
+        if (!$wallet && !$nut13SeedStorage) {
             showMnemonicSeedInputModal = true;
             return;
+        }
+        if (!$wallet && $nut13SeedStorage) {
+            tryLoadWallet($nut13SeedStorage);
         }
         if ($wallet && $userCashuInfo) {
             checkLegacyWallet();
@@ -270,9 +273,24 @@
     function generateBip39Seed(newWallet: boolean): (seedWords: string[]) => void {
         return async (seedWords) => {
             const bip39seed = deriveSeedKey(seedWords.join(' '));
+            $nut13SeedStorage = bip39seed;
             if (newWallet) setupWallet(bip39seed);
             else await tryLoadWallet(bip39seed);
         };
+    }
+
+    function handleNewWallet() {
+        console.log("NUT-13 SEED: ", $nut13SeedStorage); //TODO: remove this before delivering to production!
+        if (!$nut13SeedStorage) showMnemonicSeedGenerationModal = true;
+        else setupWallet($nut13SeedStorage);
+    }
+
+    function handleReloadWallet() {
+        if (!$nut13SeedStorage) {
+            showMnemonicSeedInputModal = true;
+            return;
+        }
+        tryLoadWallet($nut13SeedStorage);
     }
 
     // Handler for new wallet mint selection
@@ -599,10 +617,10 @@
                     {/each}
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <Button onClick={() => (showMnemonicSeedGenerationModal = true)}
+                        <Button onClick={handleNewWallet}
                             >New Nostr Wallet</Button
                         >
-                        <Button onClick={() => (showMnemonicSeedInputModal = true)}
+                        <Button onClick={handleReloadWallet}
                             >Try loading Wallet</Button
                         >
                     </div>

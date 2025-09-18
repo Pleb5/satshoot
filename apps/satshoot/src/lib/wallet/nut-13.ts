@@ -173,7 +173,7 @@ function isValidSeedData(data: MnemonicSeedData): boolean {
     );
 }
 
-interface Encryption {
+export interface Encryption {
     encrypt(data: string): Promise<string>;
     decrypt(data: string): Promise<string>;
 }

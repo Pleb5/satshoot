@@ -29,7 +29,7 @@
             return;
         }
         isOpen = false;
-        toaster.info({
+        toaster.success({
             title: 'Seed words validated!',
             duration: 10000, // 10 secs
         });
@@ -42,14 +42,14 @@
     }
 </script>
 
-<ModalWrapper bind:isOpen title="Input Mnemonic Seed Words for your Cashu Wallet">
+<ModalWrapper bind:isOpen title="Input Seed Words for your Cashu Wallet">
     <section class="flex flex-col gap-4">
         <span>
-            If you already have a Cashu wallet with mnemonic seed words, please reenter them in the
-            following fields. This is important to ensure the funds you'll receive are backed up by
-            the same seed and the whole wallet can be recovered.
+            If you already have a Nostr Cashu wallet backed up with mnemonic seed words (NUT-13),
+            please reenter them in the following fields. This is important to ensure the funds
+            you'll receive stay backed up by the same seed and the whole wallet can be recovered in the future.
         </span>
-        <span>Otherwise just skip this step.</span>
+        <span>If it is not the case, just skip this step.</span>
         <SeedWords bind:words={seedWords}></SeedWords>
         <div class="flex">
             <div class="flex flex-row w-full gap-2">
