@@ -201,6 +201,10 @@
             localStorage.getItem('nostr-nsec') !== null
         ) {
             showDecryptSecretModal = true;
+        } else {
+            $loggingIn = false;
+            $loggedIn = false;
+            $loginMethod = null;
         }
     }
 
