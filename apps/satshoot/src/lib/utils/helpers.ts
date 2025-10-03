@@ -152,7 +152,7 @@ export async function fetchAndInitWallet(
         } else if (event.kind === NDKKind.CashuWallet) {
             checkLegacy = false;
             console.log(`fetchAndInitWallet ${walletFetchOpts.bip39seed ? "with" : "without"} NUT-13 seed`);
-            nostrWallet = await NDKCashuWallet.from(event, walletFetchOpts.bip39seed);
+            nostrWallet = await NDKCashuWallet.from(event);
         } else if (event.kind === NDKKind.CashuMintList) {
             cashuMintList = NDKCashuMintList.from(event);
         }
