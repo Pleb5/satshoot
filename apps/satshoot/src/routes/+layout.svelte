@@ -89,7 +89,12 @@
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
     import { getModeUserPrefers, setModeUserPrefers } from '$lib/utils/lightSwitch';
-    import { jobPostSuccessState, bidTakenState, showLoginModal, showLogoutModal } from '$lib/stores/modals';
+    import {
+        jobPostSuccessState,
+        bidTakenState,
+        showLoginModal,
+        showLogoutModal,
+    } from '$lib/stores/modals';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
     import type { ServiceEvent } from '$lib/events/ServiceEvent';
@@ -464,10 +469,10 @@
 
         // if user leaves the app during onboarding and comes back later
         // redirect the user to on boarding flow
-        if($onBoarding) {
-            goto('/letsgo')
+        if ($onBoarding) {
+            goto('/letsgo');
         }
- 
+
         configureBasics();
 
         await $ndk.connect();
@@ -555,7 +560,8 @@
     $effect(() => {
         if ($currentUser && $userMode === UserMode.Freelancer) {
             $wotFilteredJobs.forEach((job: JobEvent) => {
-                if (job.status === JobStatus.New && $currentUserFreelanceFollows.has(job.pubkey)) {
+                // no need to send notification for own job
+                if (job.pubkey !== $currentUser.pubkey) {
                     sendNotification(job);
                 }
             });
@@ -592,12 +598,10 @@
         }
     });
 
-    // when a bid is placed on current user's job which is in new state
+    // when a bid is placed on current user's job
     $effect(() => {
-        if ($wotFilteredBids && $myJobs) {
+        if ($wotFilteredBids && $myJobs && $userMode === UserMode.Client) {
             $myJobs.forEach((job: JobEvent) => {
-                if (job.status !== JobStatus.New) return;
-
                 $wotFilteredBids.forEach((bid: BidEvent) => {
                     if (bid.referencedJobDTag === job.dTag) {
                         sendNotification(bid);
@@ -607,16 +611,12 @@
         }
     });
 
-    // when order is placed on my service
+    // when there's an order on my service
     $effect(() => {
         if ($wotFilteredOrders && $myServices) {
             $wotFilteredOrders.forEach((o: OrderEvent) => {
                 $myServices.forEach((s: ServiceEvent) => {
-                    if (
-                        o.referencedServiceAddress === s.serviceAddress &&
-                        o.status === OrderStatus.Open &&
-                        !s.orders.includes(o.orderAddress)
-                    ) {
+                    if (o.referencedServiceAddress === s.serviceAddress) {
                         sendNotification(o);
                     }
                 });
@@ -629,27 +629,7 @@
         if ($wotFilteredServices && $myOrders) {
             $wotFilteredServices.forEach((s: ServiceEvent) => {
                 $myOrders.forEach((o: OrderEvent) => {
-                    if (
-                        o.referencedServiceAddress === s.serviceAddress &&
-                        o.status === OrderStatus.Open &&
-                        s.orders.includes(o.orderAddress)
-                    ) {
-                        sendNotification(o);
-                    }
-                });
-            });
-        }
-    });
-
-    // when order is closed associated with my service
-    $effect(() => {
-        if ($wotFilteredOrders && $myServices) {
-            $wotFilteredOrders.forEach((o: OrderEvent) => {
-                $myServices.forEach((s: ServiceEvent) => {
-                    if (
-                        o.referencedServiceAddress === s.serviceAddress &&
-                        o.status !== OrderStatus.Open
-                    ) {
+                    if (o.referencedServiceAddress === s.serviceAddress) {
                         sendNotification(o);
                     }
                 });

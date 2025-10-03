@@ -28,6 +28,9 @@ export class ServiceEvent extends NDKEvent {
         this._pricing = parseInt(this.tagValue('pricing') ?? Pricing.Absolute.toString());
         this._amount = parseInt(this.tagValue('amount') ?? '0');
         this.parseZapSplits();
+        if (this.created_at && !this.publishedAt) {
+            this.publishedAt = this.created_at;
+        }
     }
 
     static from(event: NDKEvent) {
@@ -93,6 +96,15 @@ export class ServiceEvent extends NDKEvent {
 
     get sponsoredNpub(): string {
         return this._sponsoredNpub;
+    }
+
+    get publishedAt(): number {
+        return parseInt(this.tagValue('published_at') ?? '0');
+    }
+
+    set publishedAt(publishedAt: number) {
+        this.removeTag('published_at');
+        this.tags.push(['published_at', publishedAt.toString()]);
     }
 
     // Freelancer equals this.pubkey but it is not assured
@@ -231,7 +243,9 @@ export class ServiceEvent extends NDKEvent {
     }
 
     public addOrder(orderAddress: string) {
-        this.tags.push(['a', orderAddress]);
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        this.tags.push(['a', orderAddress, timestamp.toString()]);
     }
 
     // public addZapSplits(zapSplits: ZapSplit[]) {
@@ -263,4 +277,68 @@ export class ServiceEvent extends NDKEvent {
     //         ]);
     //     });
     // }
+
+    /**
+     * Adds a state history entry when status changes
+     * @param oldStatus Previous service status
+     */
+    addStateHistory(oldStatus: ServiceStatus) {
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        this.tags.push([
+            'state_history',
+            oldStatus.toString(),
+            this._status.toString(),
+            timestamp.toString(),
+        ]);
+    }
+
+    /**
+     * Adds a pricing history entry when pricing or amount changes
+     * @param oldPricing Previous pricing method
+     * @param oldAmount Previous amount value
+     */
+    addPricingHistory(oldPricing: Pricing, oldAmount: number) {
+        const oldData = { pricing: oldPricing, amount: oldAmount };
+        const newData = { pricing: this._pricing, amount: this._amount };
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        this.tags.push([
+            'pricing_history',
+            JSON.stringify(oldData),
+            JSON.stringify(newData),
+            timestamp.toString(),
+        ]);
+    }
+
+    /**
+     * Adds a zap splits history entry when zap splits change
+     * @param oldPledgeSplit Previous pledge split percentage
+     * @param oldSponsoringSplit Previous sponsoring split percentage
+     * @param oldSponsoredNpub Previous sponsored npub
+     */
+    addZapSplitsHistory(
+        oldPledgeSplit: number,
+        oldSponsoringSplit: number,
+        oldSponsoredNpub: string
+    ) {
+        const oldData = {
+            pledgeSplit: oldPledgeSplit,
+            sponsoringSplit: oldSponsoringSplit,
+            sponsoredNpub: oldSponsoredNpub,
+        };
+        const newData = {
+            pledgeSplit: this._pledgeSplit,
+            sponsoringSplit: this._sponsoringSplit,
+            sponsoredNpub: this._sponsoredNpub,
+        };
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        this.tags.push([
+            'zap_splits_history',
+            JSON.stringify(oldData),
+            JSON.stringify(newData),
+            timestamp.toString(),
+        ]);
+    }
 }

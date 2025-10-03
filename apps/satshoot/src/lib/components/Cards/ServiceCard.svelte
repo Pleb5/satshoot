@@ -60,7 +60,7 @@
                 title: 'Service Link Copied!',
             })
         );
-    }
+    };
 
     const statusRowWrapperClasses =
         'w-full flex flex-row gap-[5px] flex-wrap justify-around rounded-[4px] ' +
@@ -88,10 +88,10 @@
             <i class="bx bx-info-circle"></i>
             Service Status: {statusString}
         </p>
-        {#if service.created_at}
+        {#if service.publishedAt}
             <p title="Edit Date/Time" class={statusRowItemClasses}>
                 <i class="bx bx-edit-alt"></i>
-                {formatDate(service.created_at * 1000, 'dd-MMM-yyyy, h:m:ss a')}
+                {formatDate(service.publishedAt * 1000, 'dd-MMM-yyyy, h:m:ss a')}
             </p>
         {/if}
         <Button title="Options" onClick={handleOptionClick}>
@@ -100,7 +100,7 @@
     </div>
     <Button onClick={shareService}>
         Share
-        <ShareIcon/>
+        <ShareIcon />
     </Button>
     {#if service.images.length}
         <Carousel imageUrls={service.images} />

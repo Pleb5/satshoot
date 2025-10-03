@@ -276,13 +276,13 @@
     <div
         class="w-full flex flex-row flex-wrap gap-[5px] border-t-[1px] border-t-black-100 dark:border-t-white-100 pl-[5px] pr-[5px] pt-[10px]"
     >
-        {#if bid.created_at}
+        {#if bid.publishedAt}
             <p class="font-[500] grow-1 flex flex-row flex-wrap">
                 Bid published on:
                 <span class="font-[300]">
-                    {formatDate(bid.created_at * 1000, 'dd-MMM-yyyy, h:m a') +
+                    {formatDate(bid.publishedAt * 1000, 'dd-MMM-yyyy, h:m a') +
                         ', ' +
-                        formatDistanceToNow(bid.created_at * 1000) +
+                        formatDistanceToNow(bid.publishedAt * 1000) +
                         ' Ago'}
                 </span>
             </p>

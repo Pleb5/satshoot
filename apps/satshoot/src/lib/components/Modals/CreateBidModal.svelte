@@ -5,7 +5,14 @@
     import { onMount } from 'svelte';
     import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
-    import { NDKEvent, NDKKind, NDKRelaySet, NDKSubscriptionCacheUsage, profileFromEvent, type NDKSigner } from '@nostr-dev-kit/ndk';
+    import {
+        NDKEvent,
+        NDKKind,
+        NDKRelaySet,
+        NDKSubscriptionCacheUsage,
+        profileFromEvent,
+        type NDKSigner,
+    } from '@nostr-dev-kit/ndk';
     import { ProfilePageTabs, profileTabStore } from '$lib/stores/tab-store';
     import { goto } from '$app/navigation';
     import { wallet } from '$lib/wallet/wallet';
@@ -31,15 +38,15 @@
     const jobAddress = job.jobAddress;
 
     let pricingMethod: Pricing = $state(Pricing.Absolute);
-    let amount = $state<number|null>(null);
+    let amount = $state<number | null>(null);
     let BTCUSDPrice = -1;
     // USD price with decimals cut off and thousand separators
-    let usdPrice = $derived(Math.floor((amount || 0) / 100_000_000 * BTCUSDPrice))
-    let pledgeSplit = $state<number|null>(null);
+    let usdPrice = $derived(Math.floor(((amount || 0) / 100_000_000) * BTCUSDPrice));
+    let pledgeSplit = $state<number | null>(null);
     let sponsoredNpub = $state(PablosNpub);
-    let sponsoredName = $state('Sponsored')
+    let sponsoredName = $state('Sponsored');
     let sponsoredPubkey = $state('');
-    let sponsoringSplit = $state<number|null>(null);
+    let sponsoringSplit = $state<number | null>(null);
 
     let pledgedShare = $state(0);
     let freelancerShare = $state(0);
@@ -70,22 +77,22 @@
             try {
                 const decodeResult = nip19.decode(sponsoredNpub);
                 if (decodeResult.type === 'npub') {
-                    sponsoredPubkey = decodeResult.data
-                    fetchSponsoredProfile()
+                    sponsoredPubkey = decodeResult.data;
+                    fetchSponsoredProfile();
                 } else {
-                    sponsoredPubkey = ''
-                    sponsoredName = '?'
+                    sponsoredPubkey = '';
+                    sponsoredName = '?';
                 }
             } catch (e) {
-                console.warn("Invalid sponsoredNpub")
-                sponsoredPubkey = ''
-                sponsoredName = '?'
+                console.warn('Invalid sponsoredNpub');
+                sponsoredPubkey = '';
+                sponsoredName = '?';
             }
         } else {
-            sponsoredPubkey = ''
-            sponsoredName = '?'
-        } 
-    })
+            sponsoredPubkey = '';
+            sponsoredName = '?';
+        }
+    });
 
     const fetchSponsoredProfile = async () => {
         const metadataFilter = {
@@ -93,23 +100,21 @@
             authors: [sponsoredPubkey as string],
         };
 
-        const metadataRelays = [
-            ...$ndk.pool!.connectedRelays(),
-        ];
+        const metadataRelays = [...$ndk.pool!.connectedRelays()];
 
-        const profileEvent: NDKEvent|null = await $ndk.fetchEvent(
+        const profileEvent: NDKEvent | null = await $ndk.fetchEvent(
             metadataFilter,
-            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+            { cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST },
             new NDKRelaySet(new Set(metadataRelays), $ndk)
-        )
+        );
 
         if (!profileEvent) {
-            sponsoredName = ''
-            return
+            sponsoredName = '';
+            return;
         }
-        const profile = profileFromEvent(profileEvent)
-        sponsoredName = profile.name ?? profile.displayName ?? ''
-    }
+        const profile = profileFromEvent(profileEvent);
+        sponsoredName = profile.name ?? profile.displayName ?? '';
+    };
 
     onMount(() => {
         if (bidToEdit) {
@@ -125,11 +130,11 @@
         }
     });
 
-    $effect(()=>{
+    $effect(() => {
         if (isOpen) {
-            fetchBTCUSDPrice().then((price) => BTCUSDPrice = price)
+            fetchBTCUSDPrice().then((price) => (BTCUSDPrice = price));
         }
-    })
+    });
 
     function buildSponsoredZapSplit(npub: string, percentage: number): ZapSplit {
         const decodedData = nip19.decode(npub);
@@ -155,7 +160,7 @@
         try {
             const sponsoredZapSplit =
                 sponsoredNpub && pledgeSplit
-                    ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit||0)
+                    ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit || 0)
                     : undefined;
             bid.setZapSplits(pledgeSplit!, $currentUser!.pubkey, sponsoredZapSplit);
             bid.description = description;
@@ -166,9 +171,22 @@
             if (!bidToEdit) {
                 // generate unique d-tag
                 bid.generateTags();
+                const timestamp = Math.floor(Date.now() / 1000);
+                bid.created_at = timestamp;
+                bid.publishedAt = timestamp;
             } else {
                 bid.removeTag('d');
                 bid.tags.push(['d', bidToEdit.tagValue('d') as string]);
+
+                // Compare pricing and amount with existing bid values
+                const oldPricing = bidToEdit.pricing;
+                const oldAmount = bidToEdit.amount;
+                const hasChanges = oldPricing !== pricingMethod || oldAmount !== amount!;
+
+                // Add pricing history if there are changes
+                if (hasChanges) {
+                    bid.addPricingHistory(oldPricing, oldAmount);
+                }
             }
 
             console.log('bid', bid);
@@ -242,45 +260,45 @@
         errorText = '';
         if (!amount) {
             errorText = 'Please set the Bid Price';
-            return false
+            return false;
         }
         if (amount < 0) {
             errorText = 'Price below 0!';
-            return false
+            return false;
         }
 
         if (pledgeSplit === null) {
             errorText = 'Please set the Pledge Split';
-            return false
+            return false;
         }
 
         if (pledgeSplit < 0) {
             errorText = 'Pledge split below 0!';
-            return false
+            return false;
         }
         if (pledgeSplit > 100) {
             errorText = 'Pledge split above 100% !';
-            return false
+            return false;
         }
         if (sponsoredNpub) {
             if (!sponsoredPubkey) {
                 errorText = 'Invalid sponsored npub!';
-                return false
-            } 
+                return false;
+            }
             if (sponsoringSplit === null) {
                 errorText = 'Please set the Sponsoring Split!';
-                return false
+                return false;
             }
             if (sponsoringSplit < 0) {
                 errorText = 'Sponsoring split below 0!';
-                return false
+                return false;
             } else if (sponsoringSplit > 100) {
                 errorText = 'Sponsoring split above 100% !';
-                return false
+                return false;
             }
         }
 
-        return true
+        return true;
     }
 
     $effect(() => {
@@ -289,7 +307,7 @@
                 title: errorText,
             });
         }
-    })
+    });
 
     const selectInputClasses =
         'w-full px-[10px] py-[5px] bg-black-50 focus:bg-black-100 rounded-[6px] ' +
@@ -331,21 +349,18 @@
                             type="number"
                             step="1"
                             min="0"
-                            placeholder={pricingMethod === Pricing.Hourly 
-                            ? '50,000' : '1,000,000'}
+                            placeholder={pricingMethod === Pricing.Hourly ? '50,000' : '1,000,000'}
                             bind:value={amount}
                             fullWidth
                         />
                         <span
                             class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
                         >
-                            {
-                            usdPrice < 0
+                            {usdPrice < 0
                                 ? '?'
-                                : '$' + usdPrice.toString()
-                                    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-                                    + ' USD'
-                            } 
+                                : '$' +
+                                  usdPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') +
+                                  ' USD'}
                         </span>
                     </div>
                 </div>

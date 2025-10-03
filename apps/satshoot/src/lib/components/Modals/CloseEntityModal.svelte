@@ -60,12 +60,30 @@
     function updateTargetEntityStatus() {
         if (!targetEntity) return;
 
-        if (isIssueResolved) {
-            if (isJob) targetEntity.status = JobStatus.Resolved;
-            else (secondaryEntity as OrderEvent).status = OrderStatus.Fulfilled;
+        if (isJob) {
+            updateJobStatus(targetEntity as JobEvent);
         } else {
-            if (isJob) targetEntity.status = JobStatus.Failed;
-            else (secondaryEntity as OrderEvent).status = OrderStatus.Failed;
+            updateOrderStatus(secondaryEntity as OrderEvent);
+        }
+    }
+
+    function updateJobStatus(job: JobEvent) {
+        const oldStatus = job.status;
+        const newStatus = isIssueResolved ? JobStatus.Resolved : JobStatus.Failed;
+
+        job.status = newStatus;
+        if (oldStatus !== newStatus) {
+            job.addStateHistory(oldStatus);
+        }
+    }
+
+    function updateOrderStatus(order: OrderEvent) {
+        const oldStatus = order.status;
+        const newStatus = isIssueResolved ? OrderStatus.Fulfilled : OrderStatus.Failed;
+
+        order.status = newStatus;
+        if (oldStatus !== newStatus) {
+            order.addStateHistory(oldStatus);
         }
     }
 

@@ -26,9 +26,7 @@
 
     // Derived states
     const myService = $derived($currentUser?.pubkey === service.pubkey);
-    const myInFulfillMentOrder = $derived(
-        inFulfillmentOrderOnService(service, $myOrders)
-    );
+    const myInFulfillMentOrder = $derived(inFulfillmentOrderOnService(service, $myOrders));
 
     function handleShare() {
         showShareModal = true;
@@ -36,7 +34,10 @@
 
     function goToPay() {
         if (myInFulfillMentOrder) {
-            const url = new URL('/payments/' + myInFulfillMentOrder.encode(), window.location.origin);
+            const url = new URL(
+                '/payments/' + myInFulfillMentOrder.encode(),
+                window.location.origin
+            );
             goto(url.toString());
         }
     }
@@ -53,33 +54,35 @@
     }
 
     async function handleActivate() {
-        service.status = ServiceStatus.Active;
-        try {
-            await service.publishReplaceable();
-            serviceStatus = ServiceStatus.Active;
-            toaster.success({
-                title: 'Service Activated',
-            });
-        } catch (error) {
-            console.error(error);
-            toaster.error({
-                title: `Failed to activate the service: ${error}`,
-            });
-        }
+        await updateServiceStatus(ServiceStatus.Active, 'Service Activated', 'activate');
     }
 
     async function deactivate() {
-        service.status = ServiceStatus.InActive;
+        await updateServiceStatus(ServiceStatus.InActive, 'Service de-activated', 'de-activate');
+    }
+
+    async function updateServiceStatus(
+        newStatus: ServiceStatus,
+        successMessage: string,
+        action: string
+    ) {
+        const oldStatus = service.status;
+
+        service.status = newStatus;
+        if (oldStatus !== newStatus) {
+            service.addStateHistory(oldStatus);
+        }
+
         try {
             await service.publishReplaceable();
-            serviceStatus = ServiceStatus.InActive;
+            serviceStatus = newStatus;
             toaster.success({
-                title: 'Service de-activated',
+                title: successMessage,
             });
         } catch (error) {
             console.error(error);
             toaster.error({
-                title: `Failed to de-activate the service: ${error}`,
+                title: `Failed to ${action} the service: ${error}`,
             });
         }
     }

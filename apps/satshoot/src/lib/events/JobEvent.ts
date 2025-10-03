@@ -18,6 +18,10 @@ export class JobEvent extends NDKEvent {
         this.kind ??= ExtendedNDKKind.FreelanceJob;
         this._status = parseInt(this.tagValue('s') as string);
         this._title = this.tagValue('title') as string;
+
+        if (this.created_at && !this.publishedAt) {
+            this.publishedAt = this.created_at;
+        }
     }
 
     static from(event: NDKEvent) {
@@ -35,10 +39,14 @@ export class JobEvent extends NDKEvent {
     }
 
     set acceptedBidAddress(bidAddress: string) {
+        const timestamp = Math.floor(Date.now() / 1000);
+
         // Can only have exactly one accepted bid tag
         this.removeTag('a');
-        this.tags.push(['a', bidAddress]);
+        this.tags.push(['a', bidAddress, timestamp.toString()]);
         this.status = JobStatus.InProgress;
+
+        this.addStateHistory(JobStatus.InProgress, timestamp);
     }
 
     get winnerFreelancer(): string | undefined {
@@ -80,5 +88,44 @@ export class JobEvent extends NDKEvent {
 
     get tTags(): NDKTag[] {
         return this.tags.filter((tag: NDKTag) => tag[0] === 't');
+    }
+
+    get publishedAt(): number {
+        return parseInt(this.tagValue('published_at') ?? '0');
+    }
+
+    set publishedAt(publishedAt: number) {
+        this.removeTag('published_at');
+        this.tags.push(['published_at', publishedAt.toString()]);
+    }
+
+    /**
+     * Adds a state history entry when status changes
+     * @param oldStatus Previous job status
+     */
+    addStateHistory(oldStatus: JobStatus, timestamp?: number) {
+        timestamp = timestamp ?? Math.floor(Date.now() / 1000);
+
+        this.tags.push([
+            'state_history',
+            oldStatus.toString(),
+            this._status.toString(),
+            timestamp.toString(),
+        ]);
+    }
+
+    /**
+     * Gets the complete state history of the job
+     * @returns Array of state transitions with timestamps
+     */
+    get stateHistory(): Array<{ fromStatus: JobStatus; toStatus: JobStatus; timestamp: number }> {
+        return this.tags
+            .filter((tag: NDKTag) => tag[0] === 'state_history')
+            .map((tag: NDKTag) => ({
+                fromStatus: parseInt(tag[1]) as JobStatus,
+                toStatus: parseInt(tag[2]) as JobStatus,
+                timestamp: parseInt(tag[3]),
+            }))
+            .sort((a, b) => a.timestamp - b.timestamp);
     }
 }

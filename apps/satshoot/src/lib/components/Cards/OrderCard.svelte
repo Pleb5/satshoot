@@ -136,7 +136,7 @@
             return;
         }
 
-        service.tags.push(['a', order.orderAddress]);
+        service.addOrder(order.orderAddress);
         try {
             await service.publishReplaceable();
             toaster.success({

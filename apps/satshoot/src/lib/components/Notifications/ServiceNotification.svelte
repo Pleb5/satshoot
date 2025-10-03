@@ -93,14 +93,24 @@
         if (!service) return;
 
         if (myOrder) {
+            // I placed the order
             if (order.status === OrderStatus.Open && service.orders.includes(order.orderAddress)) {
                 return 'Order Accepted';
             }
+            if (order.status === OrderStatus.Open && !service.orders.includes(order.orderAddress)) {
+                return 'Order Pending';
+            }
+            if (order.status !== OrderStatus.Open) {
+                return 'Order Closed';
+            }
         } else if (myService) {
+            // Someone placed an order on my service
             if (order.status === OrderStatus.Open && !service.orders.includes(order.orderAddress)) {
                 return 'Order Placed';
             }
-
+            if (order.status === OrderStatus.Open && service.orders.includes(order.orderAddress)) {
+                return 'Order In Progress';
+            }
             if (order.status !== OrderStatus.Open) {
                 return 'Order Closed';
             }
@@ -108,6 +118,7 @@
     });
 
     let initialized = $state(false);
+
     $effect(() => {
         if ($sessionInitialized && !initialized) {
             initialized = true;
@@ -186,6 +197,54 @@
 
         return classes;
     });
+
+    const getOrderTimeline = (
+        orderEvent: OrderEvent,
+        serviceEvent: ServiceEvent
+    ): Array<{ label: string; timestamp: number; color: string }> => {
+        const timeline: Array<{ label: string; timestamp: number; color: string }> = [];
+
+        // Find if this order is in the service's accepted orders
+        const orderTag = serviceEvent.tags.find(
+            (tag) => tag[0] === 'a' && tag[1] === orderEvent.orderAddress
+        );
+        const isAccepted = !!orderTag;
+
+        // Find acceptance timestamp from service tag
+        const acceptanceTimestamp = orderTag && orderTag[2] ? parseInt(orderTag[2]) : null;
+
+        // Add order acceptance entry if order was accepted
+        if (isAccepted && acceptanceTimestamp) {
+            timeline.push({
+                label: 'Order Accepted',
+                timestamp: acceptanceTimestamp,
+                color: 'bg-yellow-500',
+            });
+        }
+
+        // Add order completion/failure from state history
+        const completionEntry = orderEvent.stateHistory.find(
+            (entry) =>
+                entry.toStatus === OrderStatus.Fulfilled || entry.toStatus === OrderStatus.Failed
+        );
+
+        if (completionEntry) {
+            const label =
+                completionEntry.toStatus === OrderStatus.Fulfilled
+                    ? 'Order Fulfilled'
+                    : 'Order Failed';
+            const color =
+                completionEntry.toStatus === OrderStatus.Fulfilled ? 'bg-green-600' : 'bg-red-600';
+
+            timeline.push({
+                label,
+                timestamp: completionEntry.timestamp,
+                color,
+            });
+        }
+
+        return timeline.sort((a, b) => a.timestamp - b.timestamp);
+    };
 </script>
 
 <Card
@@ -203,15 +262,19 @@
             <a href={'/' + user.npub}>
                 <ProfileImage src={userImage} />
             </a>
-            <div class="flex flex-col items-start">
+            <div class="min-w-[50%] flex flex-col items-start overflow-hidden">
                 <a href={'/' + user.npub}>
                     <p>{userName}</p>
                 </a>
                 <div class="flex flex-row gap-[5px] flex-wrap">
                     {#if orderState === 'Order Placed'}
                         <p>Has placed an order on:</p>
+                    {:else if orderState === 'Order Pending'}
+                        <p>Your order is pending on:</p>
                     {:else if orderState === 'Order Accepted'}
                         <p>Has accepted your order on:</p>
+                    {:else if orderState === 'Order In Progress'}
+                        <p>Order in progress on:</p>
                     {:else if orderState === 'Order Closed'}
                         <p>Has closed order on:</p>
                     {/if}
@@ -221,6 +284,31 @@
                     >
                         "{service.title}"
                     </a>
+                </div>
+
+                <!-- Order Status Timestamps -->
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    <!-- Order Creation -->
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span>
+                            Order Placed: {new Date(
+                                (order.publishedAt || 0) * 1000
+                            ).toLocaleString()}
+                        </span>
+                    </div>
+
+                    <!-- Order Timeline -->
+                    {#each getOrderTimeline(order, service) as timelineEntry}
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full {timelineEntry.color}"></span>
+                            <span>
+                                {timelineEntry.label}: {new Date(
+                                    timelineEntry.timestamp * 1000
+                                ).toLocaleString()}
+                            </span>
+                        </div>
+                    {/each}
                 </div>
             </div>
         </div>

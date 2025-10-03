@@ -29,12 +29,12 @@
     import {
         broadcastUserProfile,
         checkRelayConnections,
-        initializeUser 
+        initializeUser,
     } from '$lib/utils/helpers';
     import {
         fetchBTCUSDPrice,
         formatNumber,
-        insertThousandSeparator, 
+        insertThousandSeparator,
         NostrBuildBlossomServer,
         PablosNpub,
         parseNumber,
@@ -43,13 +43,13 @@
     import type { Hexpubkey, NDKEvent } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { bytesToHex } from '@noble/ciphers/utils';
-    import { 
+    import {
         NDKKind,
         NDKPrivateKeySigner,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
         NDKUser,
-        profileFromEvent 
+        profileFromEvent,
     } from '@nostr-dev-kit/ndk';
     import { onMount, tick } from 'svelte';
     import { buildSponsoredZapSplit } from '$lib/utils/service';
@@ -68,7 +68,7 @@
         }
     }
 
-    let user: NDKUser|null = null;
+    let user: NDKUser | null = null;
     let service = $state<ServiceEvent>(new ServiceEvent($ndk));
 
     // For form validation
@@ -81,9 +81,10 @@
     let tagInput = $state('');
     let tagList = $state<string[]>([]);
 
-    const tagRecommenderClasses = "w-full flex flex-row gap-[10px] rounded-[6px]" +
-        "border-[1px] border-black-100 dark:border-white-100 bg-black-50 " +
-        "flex-wrap p-[10px] max-h-[100px] overflow-y-scroll "
+    const tagRecommenderClasses =
+        'w-full flex flex-row gap-[10px] rounded-[6px]' +
+        'border-[1px] border-black-100 dark:border-white-100 bg-black-50 ' +
+        'flex-wrap p-[10px] max-h-[100px] overflow-y-scroll ';
 
     // Initialize with serviceToEdit values if available
     let titleText = $state($serviceToEdit?.title || '');
@@ -91,21 +92,19 @@
     let images = $state<File[]>([]);
 
     let pricingMethod = $state($serviceToEdit?.pricing || Pricing.Hourly);
-    let inputAmount = $state<number|null>($serviceToEdit?.amount || null)
-    let displayAmount = $state<string>('')
+    let inputAmount = $state<number | null>($serviceToEdit?.amount || null);
+    let displayAmount = $state<string>('');
     let amount = $derived(inputAmount || 0);
 
     let BTCUSDPrice = -1;
     // USD price with decimals cut off and thousand separators
     let usdPrice = $derived(Math.floor((amount / 100_000_000) * BTCUSDPrice));
-    let pledgeSplit = $state<number|null>($serviceToEdit?.pledgeSplit || null);
+    let pledgeSplit = $state<number | null>($serviceToEdit?.pledgeSplit || null);
     let sponsoredNpub = $state($serviceToEdit?.sponsoredNpub || PablosNpub);
-    let sponsoredName = $state('Sponsored')
+    let sponsoredName = $state('Sponsored');
     let validSponsoredNpub = $derived(/^^(npub1)[a-zA-Z0-9]*/.test(sponsoredNpub));
-    let sponsoredPubkeyResult = $derived(
-        validSponsoredNpub ? derivePubkey(sponsoredNpub) : ''
-    );
-    let sponsoringSplit = $state<number|null>($serviceToEdit?.sponsoringSplit || null);
+    let sponsoredPubkeyResult = $derived(validSponsoredNpub ? derivePubkey(sponsoredNpub) : '');
+    let sponsoringSplit = $state<number | null>($serviceToEdit?.sponsoringSplit || null);
 
     let imageUrls = $state<string[]>($serviceToEdit?.images || []);
 
@@ -114,7 +113,7 @@
     let satshootShare = $state(0);
     let sponsoredShare = $state(0);
 
-    let firstService = $derived(page.url.searchParams.get('state') === 'letsgo')
+    let firstService = $derived(page.url.searchParams.get('state') === 'letsgo');
     let accountPostFailed = $state(false);
     let servicePostFailed = $state(false);
 
@@ -172,7 +171,7 @@
     function handleAmountInput(event: Event): void {
         const target = event.target as HTMLInputElement;
         const parsedValue = parseNumber(target.value);
-        
+
         if (parsedValue === null) {
             inputAmount = null;
             displayAmount = '';
@@ -188,7 +187,7 @@
 
     $effect(() => {
         if (sponsoredPubkeyResult) {
-            fetchSponsoredProfile()
+            fetchSponsoredProfile();
         }
     });
 
@@ -198,35 +197,30 @@
             authors: [sponsoredPubkeyResult as string],
         };
 
-        const metadataRelays = [
-            ...$ndk.pool!.connectedRelays(),
-        ];
+        const metadataRelays = [...$ndk.pool!.connectedRelays()];
 
-        const profileEvent: NDKEvent|null = await $ndk.fetchEvent(
+        const profileEvent: NDKEvent | null = await $ndk.fetchEvent(
             metadataFilter,
-            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+            { cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST },
             new NDKRelaySet(new Set(metadataRelays), $ndk)
-        )
+        );
 
         if (!profileEvent) return;
-        const profile = profileFromEvent(profileEvent)
-        sponsoredName = profile.name ?? profile.displayName ?? ''
-    }
-
+        const profile = profileFromEvent(profileEvent);
+        sponsoredName = profile.name ?? profile.displayName ?? '';
+    };
 
     let posting = $state(false);
     let progressStatus = $state('');
 
     let showAddImagesModal = $state(false);
     let showShareModal = $state(false);
-    const allowPostService = $derived(
-        firstService || (!!$currentUser && $loggedIn)
-    );
+    const allowPostService = $derived(firstService || (!!$currentUser && $loggedIn));
 
     onMount(() => {
         fetchBTCUSDPrice().then((price) => (BTCUSDPrice = price));
         checkRelayConnections();
-        
+
         // Initialize tags if serviceToEdit exists
         if ($serviceToEdit) {
             const tags: string[] = [];
@@ -242,7 +236,7 @@
         const currentPledgeSplit = pledgeSplit || 0;
         const currentSponsoredNpub = sponsoredNpub;
         const currentSponsoringSplit = sponsoringSplit || 0;
-        
+
         const paymentShares = PaymentService.computePaymentShares(
             currentAmount,
             currentPledgeSplit,
@@ -331,7 +325,7 @@
         return valid;
     }
 
-    const validateStep1 = ():boolean => {
+    const validateStep1 = (): boolean => {
         if (!titleValid) {
             toaster.error({
                 title: `Title should be at least ${minTitleLength} character long!`,
@@ -346,10 +340,10 @@
             return false;
         }
 
-        return true
-    }
+        return true;
+    };
 
-    const validateStep2 = ():boolean => {
+    const validateStep2 = (): boolean => {
         if (amount <= 0) {
             toaster.error({
                 title: `Price should be greater than 0`,
@@ -379,9 +373,9 @@
         }
 
         if (!$onBoarding && !validateSponsoringInputs(sponsoredNpub)) return false;
-        
-        return true
-    }
+
+        return true;
+    };
 
     const validateSponsoringInputs = (npub: string): boolean => {
         if (npub) {
@@ -403,7 +397,7 @@
                     title: `Sponsoring split below 0!`,
                 });
                 return false;
-            } 
+            }
 
             if (sponsoringSplit > 100) {
                 toaster.error({
@@ -414,26 +408,26 @@
         }
 
         return true;
-    }
+    };
 
     const finalize = async () => {
-        if (!validateStep1() || !validateStep2()) return
+        if (!validateStep1() || !validateStep2()) return;
 
         try {
             posting = true;
-            await tick()
+            await tick();
 
             if (firstService) {
-                await finalizeAccount()
+                await finalizeAccount();
             }
 
             await postService();
 
             onBoarding.set(false);
-            onBoardingName.set('')
-            onBoardingNsec.set('')
+            onBoardingName.set('');
+            onBoardingNsec.set('');
 
-            step = 4
+            step = 4;
         } catch (e) {
             if (e instanceof AccountPublishError) {
                 accountPostFailed = true;
@@ -443,7 +437,7 @@
         } finally {
             posting = false;
         }
-    }
+    };
 
     const finalizeAccount = async () => {
         try {
@@ -451,10 +445,8 @@
 
             $loginMethod = LoginMethod.Local;
 
-            $sessionPK = (
-                bytesToHex(
-                    nip19.decode($onBoardingNsec).data as Uint8Array<ArrayBufferLike>
-                )
+            $sessionPK = bytesToHex(
+                nip19.decode($onBoardingNsec).data as Uint8Array<ArrayBufferLike>
             );
 
             user = await $ndk.signer.user();
@@ -480,17 +472,20 @@
             toaster.error({
                 title: 'Could not Post Account: ' + e,
             });
-            throw new AccountPublishError('Publishing Account Failed')
+            throw new AccountPublishError('Publishing Account Failed');
         }
-    }
+    };
 
     async function postService() {
         try {
-            if (!user && !$currentUser) throw new Error('Bug! User not set!')
+            if (!user && !$currentUser) throw new Error('Bug! User not set!');
 
             // if editing service, add all the tags to new instance
             if ($serviceToEdit) {
                 service.tags = $serviceToEdit.tags;
+                const timestamp = Math.floor(Date.now() / 1000);
+                service.created_at = timestamp;
+                service.publishedAt = timestamp;
             } else {
                 service.status = ServiceStatus.Active;
             }
@@ -500,24 +495,55 @@
             service.pricing = pricingMethod;
             service.amount = amount;
 
+            if ($serviceToEdit) {
+                const oldPricing = $serviceToEdit.pricing;
+                const oldAmount = $serviceToEdit.amount;
+                const hasChanges = oldPricing !== pricingMethod || oldAmount !== amount;
+                if (hasChanges) {
+                    service.addPricingHistory(oldPricing, oldAmount);
+                }
+            }
+
             // if we don't remove existing 't' tags, it will cause duplication
-            service.removeTag('t'); 
+            service.removeTag('t');
             tagList.forEach((tag) => {
                 service!.tags.push(['t', tag]);
             });
 
             const sponsoredZapSplit =
                 sponsoredNpub && pledgeSplit
-                    ? buildSponsoredZapSplit(
-                        sponsoredNpub, sponsoringSplit || 0
-                    )
+                    ? buildSponsoredZapSplit(sponsoredNpub, sponsoringSplit || 0)
                     : undefined;
+
+            // Store old zap splits values before setting new ones (for history tracking)
+            let shouldAddZapSplitsHistory = false;
+            let oldPledgeSplit = 0;
+            let oldSponsoringSplit = 0;
+            let oldSponsoredNpub = '';
+
+            if ($serviceToEdit) {
+                oldPledgeSplit = $serviceToEdit.pledgeSplit;
+                oldSponsoringSplit = $serviceToEdit.sponsoringSplit;
+                oldSponsoredNpub = $serviceToEdit.sponsoredNpub;
+
+                const hasZapSplitsChanges =
+                    oldPledgeSplit !== (pledgeSplit ?? 0) ||
+                    oldSponsoringSplit !== (sponsoringSplit ?? 0) ||
+                    oldSponsoredNpub !== sponsoredNpub;
+
+                shouldAddZapSplitsHistory = hasZapSplitsChanges;
+            }
 
             service.setZapSplits(
                 pledgeSplit ?? 0,
                 user?.pubkey ?? $currentUser!.pubkey,
                 sponsoredZapSplit
             );
+
+            // Add zap splits history after setting new values
+            if (shouldAddZapSplitsHistory) {
+                service.addZapSplitsHistory(oldPledgeSplit, oldSponsoringSplit, oldSponsoredNpub);
+            }
 
             const totalImages = images.length;
             let uploadedImages = 0;
@@ -558,7 +584,7 @@
             toaster.error({
                 title: 'Could not Post Service: ' + e,
             });
-            throw new ServicePublishError('Publishing Service Failed')
+            throw new ServicePublishError('Publishing Service Failed');
         }
     }
 
@@ -568,85 +594,84 @@
     }
 
     async function handleSkip() {
-        await finalizeAccount()
+        await finalizeAccount();
 
         onBoarding.set(false);
-        onBoardingName.set('')
-        onBoardingNsec.set('')
+        onBoardingName.set('');
+        onBoardingNsec.set('');
 
         // It's possible that user is coming from job page, he may want to post the bid
         // Therefor, we'll redirect the user to the job page
-        if(!$redirectAfterLogin && window.history.length > 2) {
+        if (!$redirectAfterLogin && window.history.length > 2) {
             // Navigate back to the previous page
             window.history.go(-2);
         }
 
         // When user don't want to publish the Service Immediately, we'll redirect the user to jobs page
-        goto('/jobs')
+        goto('/jobs');
     }
-
 
     const serviceTitleTooltip =
         '<div>' +
-            '<div class="font-bold">' + 
-                'Make this short and to the point. Great examples include: Web Development, Business Consulting, etc.' +
-            '</div>' +
+        '<div class="font-bold">' +
+        'Make this short and to the point. Great examples include: Web Development, Business Consulting, etc.' +
+        '</div>' +
         '</div>';
 
     const tagsTooltip =
         '<div>' +
-            '<div class="font-bold">' + 
-                'Keywords and technologies you are proficient with.' +
-            '</div>' +
+        '<div class="font-bold">' +
+        'Keywords and technologies you are proficient with.' +
+        '</div>' +
         '</div>';
 
     const pledgeTooltip =
         '<div>' +
-            '<div class="font-bold">Pledge Your support for SatShoot development!❤️‍🔥 ⚡</div>' +
+        '<div class="font-bold">Pledge Your support for SatShoot development!❤️‍🔥 ⚡</div>' +
         '<ul class="list-inside list-disc space-y-2">' +
-            '<li>A small piece of your pie will be paid to SatShoot by the Client</li>' +
-            '<li>' +
-                'Pledges appear on Services' +
-            '</li>' +
-            '<li>' +
-                'Overall pledge amount is displayed on Profiles' +
-            '</li>' +
-            '<li>' +
-                'This can boost Reputation of a Freelancer' +
-            '</li>' +
+        '<li>A small piece of your pie will be paid to SatShoot by the Client</li>' +
+        '<li>' +
+        'Pledges appear on Services' +
+        '</li>' +
+        '<li>' +
+        'Overall pledge amount is displayed on Profiles' +
+        '</li>' +
+        '<li>' +
+        'This can boost Reputation of a Freelancer' +
+        '</li>' +
         '</ul>' +
         '</div>';
 
     const sponsoredNpubTooltip =
         '<div>' +
-            '<div class="">' + 
-                'Select Your own sponsored nostr account who gets a share of the Your Pledge!' +
-            '</div>' +
+        '<div class="">' +
+        'Select Your own sponsored nostr account who gets a share of the Your Pledge!' +
+        '</div>' +
         '</div>';
 
     const sponsoringSplitTooltip =
         '<div>' +
-            '<div class="">' + 
-                'The share that Your sponsored npub gets from the Pledge' +
-            '</div>' +
+        '<div class="">' +
+        'The share that Your sponsored npub gets from the Pledge' +
+        '</div>' +
         '</div>';
 
     const shareServiceTooltip =
         '<div>' +
-            '<div class="">' + 
-                'When you share on Nostr, SatShoot will re-share your post, so ' +
-                'more people will see it.' +
-            '</div>' +
+        '<div class="">' +
+        'When you share on Nostr, SatShoot will re-share your post, so ' +
+        'more people will see it.' +
+        '</div>' +
         '</div>';
 
     const copyLinkTooltip =
         '<div>' +
-            '<div class="">' + 
-                'This is a Nostr link to your service. Be careful where you share ' + 
-                'it! While your Nostr profile is not tied to your real name, if you ' +
-                'share this on mainstream social media you will for ever link your ' +
-                'account to your real identity!' +
-            '</div>' +
+        '<div class="">' +
+        'This is a Nostr link to your service. Be careful where you share ' +
+        'it! While your Nostr profile is not tied to your real name, if you ' +
+        'share this on mainstream social media you will for ever link your ' +
+        'account to your real identity!' +
+        '</div>' +
         '</div>';
 
     const selectInputClasses =
@@ -657,19 +682,18 @@
         'bg-white dark:bg-brightGray transition-all ease duration-[0.2s] w-[100%] text-lg sm:text-xl' +
         ' rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
 
-    const amountInputClasses = 'transition ease duration-[0.3s] px-[10px] py-[5px] ' +
-    'bg-black-50 focus:bg-black-100 outline-[0px] focus:outline-[0px] border-[2px] ' +
-    'border-black-100 dark:border-white-100 focus:border-blue-500 rounded-[6px] ' + 
-    'w-full text-lg sm:text-xl'
-
+    const amountInputClasses =
+        'transition ease duration-[0.3s] px-[10px] py-[5px] ' +
+        'bg-black-50 focus:bg-black-100 outline-[0px] focus:outline-[0px] border-[2px] ' +
+        'border-black-100 dark:border-white-100 focus:border-blue-500 rounded-[6px] ' +
+        'w-full text-lg sm:text-xl';
 </script>
+
 {#snippet firstForm()}
     <Card classes="gap-[15px]">
         <div class="flex flex-col gap-[5px]">
             <div class="flex gap-x-2 items-center">
-                <label class="m-[0px] text-lg sm:text-xl" for="tile">
-                    Title (min. 10 chars)
-                </label>
+                <label class="m-[0px] text-lg sm:text-xl" for="tile"> Title (min. 10 chars) </label>
                 <QuestionIcon
                     extraClasses="text-[14px] p-[3px]"
                     placement="bottom-start"
@@ -721,9 +745,7 @@
                             onKeyPress={handleEnterKeyOnTagInput}
                             fullWidth
                         />
-                        <div
-                            class={[tagRecommenderClasses, tagInput ? '' : 'hidden']}
-                        >
+                        <div class={[tagRecommenderClasses, tagInput ? '' : 'hidden']}>
                             {#each displayOptions as { label, value }}
                                 <Button
                                     classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white hover:text-white p-[5px] font-400"
@@ -774,7 +796,7 @@
     {#if !firstService}
         <Card classes="mb-1">
             <div class="flex justify-center">
-                <Button classes={"w-full sm:w-[50%]"} onClick={() => (showAddImagesModal = true)}>
+                <Button classes={'w-full sm:w-[50%]'} onClick={() => (showAddImagesModal = true)}>
                     {#if images.length}
                         <i class="bx bxs-pencil"></i>
                         <span> Edit Images </span>
@@ -807,16 +829,16 @@
         <div class="flex flex-col gap-[5px]">
             <div class="">
                 <label class="font-[600] text-lg sm:text-xl" for="">
-                    Price({(pricingMethod === Pricing.Hourly) ? 'sats/hour' : 'sats'})
+                    Price({pricingMethod === Pricing.Hourly ? 'sats/hour' : 'sats'})
                 </label>
             </div>
             <div class="w-full flex flex-row items-center relative">
                 <input
                     class={amountInputClasses}
                     type="text"
-                    placeholder={(pricingMethod === Pricing.Hourly) 
-                        ? '50,000 sats / hour' : '1,000,000 sats'
-                    }
+                    placeholder={pricingMethod === Pricing.Hourly
+                        ? '50,000 sats / hour'
+                        : '1,000,000 sats'}
                     value={displayAmount}
                     oninput={handleAmountInput}
                 />
@@ -824,21 +846,15 @@
                 <span
                     class="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-black-500 dark:text-white-500 pointer-events-none"
                 >
-                    {
-                    usdPrice < 0
+                    {usdPrice < 0
                         ? '?'
-                        : '$' + usdPrice.toString()
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-                            + ' USD'
-                    } 
+                        : '$' + usdPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' USD'}
                 </span>
             </div>
         </div>
         <div class="flex flex-col gap-[5px]">
             <div class="flex gap-x-2 items-center">
-                <label class="font-[600] text-lg sm:text-xl" for="">
-                    Pledge split 
-                </label>
+                <label class="font-[600] text-lg sm:text-xl" for=""> Pledge split </label>
 
                 <QuestionIcon
                     extraClasses="text-[14px] p-[3px]"
@@ -848,7 +864,7 @@
             </div>
             <div class="w-full flex flex-row items-center relative">
                 <Input
-                    classes={ "text-lg sm:text-xl"}
+                    classes={'text-lg sm:text-xl'}
                     type="number"
                     step="1"
                     min="0"
@@ -897,7 +913,7 @@
                 </div>
                 <div class="w-full flex flex-row items-center relative">
                     <Input
-                        classes={ "text-lg sm:text-xl"}
+                        classes={'text-lg sm:text-xl'}
                         type="number"
                         step="1"
                         min="0"
@@ -980,12 +996,11 @@
                         </div>
                         <div class="mt-4 text-xl sm:text-3xl text-center">
                             {#if step === 1}
+                                <span> Great, let's see what service you have to offer: </span>
+                            {:else if step === 2}
                                 <span>
-                                    Great, let's see what service you have to offer:
-                                </span>
-                            {:else if step === 2} 
-                                <span>
-                                    Fine work deserves <strong>hard money</strong>. What's your hourly rate?
+                                    Fine work deserves <strong>hard money</strong>. What's your
+                                    hourly rate?
                                 </span>
                             {/if}
                         </div>
@@ -1001,9 +1016,7 @@
                         <div class="w-[95vw] sm:w-[60vw] flex gap-x-2 gap-y-2 flex-wrap">
                             {#if firstService}
                                 <Card>
-                                    <div class="text-center text-lg sm:text-xl">
-                                        Name:
-                                    </div>
+                                    <div class="text-center text-lg sm:text-xl">Name:</div>
                                     <div class="text-center text-lg sm:text-xl">
                                         {$onBoardingName}
                                     </div>
@@ -1016,13 +1029,13 @@
                 </div>
                 {#if step === 1}
                     <div class="w-full flex gap-x-2 gap-y-2 justify-center">
-                        <div class="w-[95vw] sm:w-[60vw]  flex flex-col items-center">
+                        <div class="w-[95vw] sm:w-[60vw] flex flex-col items-center">
                             {@render firstForm()}
                         </div>
                     </div>
                 {:else if step === 2}
                     <div class="w-full flex gap-x-2 gap-y-2 justify-center">
-                        <div class="w-[95vw] sm:w-[60vw]  flex flex-col items-center">
+                        <div class="w-[95vw] sm:w-[60vw] flex flex-col items-center">
                             {@render secondForm()}
                         </div>
                     </div>
@@ -1031,15 +1044,17 @@
                         <Card classes="w-[95vw] sm:w-[70vw]">
                             <div class="flex flex-col items-center gap-y-2 text-xl sm:text-2xl">
                                 <div class="text-wrap">
-                                    Congratulations, your service is live on the <strong>free market</strong>!
+                                    Congratulations, your service is live on the <strong
+                                        >free market</strong
+                                    >!
                                 </div>
-                                <div class="text-wrap {!firstService ? 'hidden': ''}">
-                                    You took the first step to become Unstoppable. Time to let people know.
+                                <div class="text-wrap {!firstService ? 'hidden' : ''}">
+                                    You took the first step to become Unstoppable. Time to let
+                                    people know.
                                 </div>
                                 <div class="w-full flex flex-wrap justify-between gap-y-2">
                                     <div class="flex gap-x-1 items-center">
-                                        <Button
-                                            onClick={() => showShareModal = true}>
+                                        <Button onClick={() => (showShareModal = true)}>
                                             Share on Nostr
                                         </Button>
                                         <QuestionIcon
@@ -1049,11 +1064,11 @@
                                         />
                                     </div>
                                     <div class="flex gap-x-1 items-center">
-                                        <CopyButton 
-                                            buttonText={"Copy Link"}
+                                        <CopyButton
+                                            buttonText={'Copy Link'}
                                             text={`https://satshoot.com/${service!.encode()}`}
-                                            feedbackMessage={"Link Copied!"}>
-                                        </CopyButton>
+                                            feedbackMessage={'Link Copied!'}
+                                        ></CopyButton>
                                         <QuestionIcon
                                             extraClasses="text-[14px] p-[3px]"
                                             placement="bottom-start"
@@ -1065,9 +1080,9 @@
                         </Card>
                         <Button
                             classes="text-lg sm:text-xl mt-4"
-                            onClick={() => goto(
-                                new URL(`/${service!.encode()}`, window.location.origin)
-                            )}>
+                            onClick={() =>
+                                goto(new URL(`/${service!.encode()}`, window.location.origin))}
+                        >
                             View Service
                         </Button>
                     </div>
@@ -1077,66 +1092,59 @@
                         <Button onClick={handleLogin}>Log in To Post</Button>
                     {:else if step === 1}
                         <div class="flex flex-col sm:max-w-[60vw] w-full gap-4">
-                            <div class="w-full sm:max-w-[60vw] flex gap-x-4 {firstService ? 'justify-between' : 'justify-center'}">
+                            <div
+                                class="w-full sm:max-w-[60vw] flex gap-x-4 {firstService
+                                    ? 'justify-between'
+                                    : 'justify-center'}"
+                            >
                                 {#if firstService}
                                     <Button
                                         grow
                                         variant="outlined"
-                                        onClick={()=>goto((new URL('/letsgo', window.location.origin)))}>
+                                        onClick={() =>
+                                            goto(new URL('/letsgo', window.location.origin))}
+                                    >
                                         Back
                                     </Button>
                                 {/if}
-                                <Button 
+                                <Button
                                     grow
-                                    classes={"sm:max-w-80"}
+                                    classes={'sm:max-w-80'}
                                     onClick={() => {
                                         if (validateStep1()) {
-                                            step = 2
+                                            step = 2;
                                         }
-                                    }}>
+                                    }}
+                                >
                                     Next
                                 </Button>
                             </div>
-                        
+
                             {#if firstService}
                                 <div class="w-full sm:max-w-[60vw] flex gap-x-4">
-                                    <Button
-                                        grow
-                                        variant="outlined"
-                                        onClick={handleSkip}
-                                    >
+                                    <Button grow variant="outlined" onClick={handleSkip}>
                                         Skip
                                     </Button>
                                 </div>
                             {/if}
                         </div>
-
                     {:else if step === 2}
                         <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
-                            <Button
-                                grow
-                                variant="outlined"
-                                onClick={()=>step=1}>
-                                Back
-                            </Button>
+                            <Button grow variant="outlined" onClick={() => (step = 1)}>Back</Button>
                             <Button
                                 grow
                                 onClick={() => {
                                     if (validateStep2()) {
-                                        step = 3
+                                        step = 3;
                                     }
-                                }}>
+                                }}
+                            >
                                 <span>Next</span>
                             </Button>
                         </div>
                     {:else if step === 3}
                         <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
-                            <Button
-                                grow
-                                variant="outlined"
-                                onClick={()=>step=2}>
-                                Back
-                            </Button>
+                            <Button grow variant="outlined" onClick={() => (step = 2)}>Back</Button>
                             <Button
                                 grow
                                 onClick={finalize}
@@ -1160,7 +1168,6 @@
     </div>
 </div>
 
-
 {#if showAddImagesModal}
     <AddImagesModal
         bind:isOpen={showAddImagesModal}
@@ -1169,12 +1176,11 @@
     />
 {/if}
 
-
-<ShareEventModal 
-    firstTimerMessageTitle={ !firstService ? '' :
-        "I've just published my service offering on the free market.\n" + 
-        "SatShoot helped me take the first step towards becoming Unstoppable! ⚡"
-    } 
+<ShareEventModal
+    firstTimerMessageTitle={!firstService
+        ? ''
+        : "I've just published my service offering on the free market.\n" +
+          'SatShoot helped me take the first step towards becoming Unstoppable! ⚡'}
     bind:isOpen={showShareModal}
-    eventObj={service!} 
+    eventObj={service!}
 />

@@ -32,7 +32,7 @@
                 title: 'Service Link Copied!',
             })
         );
-    }
+    };
 
     const statusRowWrapperClasses =
         'w-full flex flex-row gap-[5px] flex-wrap justify-around rounded-[4px] ' +
@@ -49,7 +49,9 @@
 
 <Card classes="gap-[15px]">
     <div class="w-full flex flex-col gap-[5px]">
-        <h1 class="w-full text-center font-[700] max-sm:text-lg sm:text-[32px] wrap-normal overflow-hidden">
+        <h1
+            class="w-full text-center font-[700] max-sm:text-lg sm:text-[32px] wrap-normal overflow-hidden"
+        >
             <Markdown content={job.title || 'No Title!'} />
         </h1>
     </div>
@@ -58,10 +60,10 @@
             <i class="bx bx-info-circle"></i>
             Job Status: {statusString}
         </p>
-        {#if job.created_at}
+        {#if job.publishedAt}
             <p title="Edit Date/Time" class={statusRowItemClasses}>
                 <i class="bx bx-edit-alt"></i>
-                {formatDate(job.created_at * 1000, 'dd-MMM-yyyy, h:m:ss a')}
+                {formatDate(job.publishedAt * 1000, 'dd-MMM-yyyy, h:m:ss a')}
             </p>
         {/if}
         <a
@@ -78,7 +80,7 @@
         </Button>
         <Button grow onClick={shareJob}>
             Share
-            <ShareIcon/>
+            <ShareIcon />
         </Button>
     </div>
     <div class="w-full flex flex-col gap-[10px]">

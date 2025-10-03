@@ -220,7 +220,7 @@
     });
 
     function triggerLogin() {
-        showLoginModal.set(true)
+        showLoginModal.set(true);
     }
 
     async function confirmOrder(note: string) {
@@ -232,6 +232,8 @@
         orderEvent.referencedServiceAddress = service!.serviceAddress;
         orderEvent.pricing = service.pricing;
         orderEvent.amount = service.amount;
+        orderEvent.created_at = Math.floor(Date.now() / 1000);
+        orderEvent.publishedAt = orderEvent.created_at;
 
         const sponsoredZapSplit =
             service.sponsoredNpub && service.pledgeSplit
@@ -424,7 +426,6 @@
         </div>
     </div>
 </div>
-
 
 {#if service}
     <ConfirmOrderModal

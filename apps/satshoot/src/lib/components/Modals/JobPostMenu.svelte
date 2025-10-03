@@ -14,6 +14,7 @@
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import CloseEntityModal from './CloseEntityModal.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
+    import JobHistoryModal from './JobHistoryModal.svelte';
 
     interface Props {
         isOpen: boolean;
@@ -26,6 +27,7 @@
     let showCloseJobModal = $state(false);
     let showReviewClientModal = $state(false);
     let showReviewModal = $state(false);
+    let showHistoryModal = $state(false);
 
     const bech32ID = $derived(job.encode());
 
@@ -111,6 +113,11 @@
         isOpen = false;
         showReviewModal = true;
     }
+
+    function handleShowHistory() {
+        isOpen = false;
+        showHistoryModal = true;
+    }
 </script>
 
 <ModalWrapper bind:isOpen title="Job Menu">
@@ -176,6 +183,16 @@
                     <p class="">Preview Review</p>
                 </Button>
             {/if}
+
+            <Button
+                variant="outlined"
+                classes="justify-start"
+                fullWidth
+                onClick={handleShowHistory}
+            >
+                <i class="bx bx-history text-[20px]"></i>
+                <p class="">Job History</p>
+            </Button>
         </div>
         <!-- popups Job-Post-Menu end -->
     </div>
@@ -184,9 +201,15 @@
 <ShareEventModal bind:isOpen={showShareModal} eventObj={job} />
 
 {#if job}
-    <CloseEntityModal bind:isOpen={showCloseJobModal} targetEntity={job} secondaryEntity={winnerBid} />
+    <CloseEntityModal
+        bind:isOpen={showCloseJobModal}
+        targetEntity={job}
+        secondaryEntity={winnerBid}
+    />
 {/if}
 
 <ReviewClientModal bind:isOpen={showReviewClientModal} eventAddress={job.jobAddress} />
 
 <ReviewModal bind:isOpen={showReviewModal} review={review!} />
+
+<JobHistoryModal bind:isOpen={showHistoryModal} {job} />

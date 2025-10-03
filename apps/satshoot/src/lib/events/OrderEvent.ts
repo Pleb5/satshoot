@@ -30,6 +30,10 @@ export class OrderEvent extends NDKEvent {
         this._pricing = parseInt(this.tagValue('pricing') ?? Pricing.Absolute.toString());
         this._amount = parseInt(this.tagValue('amount') ?? '0');
         this.parseZapSplits();
+
+        if (this.created_at && !this.publishedAt) {
+            this.publishedAt = this.created_at;
+        }
     }
 
     static from(event: NDKEvent) {
@@ -114,6 +118,15 @@ export class OrderEvent extends NDKEvent {
 
     get sponsoredNpub(): string {
         return this._sponsoredNpub;
+    }
+
+    get publishedAt(): number {
+        return parseInt(this.tagValue('published_at') ?? '0');
+    }
+
+    set publishedAt(publishedAt: number) {
+        this.removeTag('published_at');
+        this.tags.push(['published_at', publishedAt.toString()]);
     }
 
     public setZapSplits(pledgeSplit: number, freelancer: Hexpubkey, sponsoredZapSplit?: ZapSplit) {
@@ -212,5 +225,38 @@ export class OrderEvent extends NDKEvent {
         this._sponsoringSplit = this._pledgeSplit
             ? Math.round((sponsoredShare / (satshootShare + sponsoredShare)) * 100)
             : 0;
+    }
+
+    /**
+     * Adds a state history entry when status changes
+     * @param oldStatus Previous order status
+     */
+    addStateHistory(oldStatus: OrderStatus) {
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        this.tags.push([
+            'state_history',
+            oldStatus.toString(),
+            this._status.toString(),
+            timestamp.toString(),
+        ]);
+    }
+
+    /**
+     * Gets the state history from tags
+     */
+    get stateHistory(): Array<{
+        fromStatus: OrderStatus;
+        toStatus: OrderStatus;
+        timestamp: number;
+    }> {
+        return this.tags
+            .filter((tag: NDKTag) => tag[0] === 'state_history')
+            .map((tag: NDKTag) => ({
+                fromStatus: parseInt(tag[1]) as OrderStatus,
+                toStatus: parseInt(tag[2]) as OrderStatus,
+                timestamp: parseInt(tag[3]),
+            }))
+            .sort((a, b) => a.timestamp - b.timestamp);
     }
 }

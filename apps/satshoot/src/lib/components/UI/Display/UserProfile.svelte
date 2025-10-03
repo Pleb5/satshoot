@@ -2,8 +2,8 @@
     import ndk from '$lib/stores/session';
     import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import {
-    NDKEvent,
-    NDKKind,
+        NDKEvent,
+        NDKKind,
         NDKRelaySet,
         NDKSubscriptionCacheUsage,
         profileFromEvent,
@@ -24,13 +24,11 @@
 
     let userProfile = $state<NDKUserProfile | null>(null);
     let avatarImage = $derived(
-        userProfile?.picture
-            ?? userProfile?.image
-            ?? getRoboHashPicture(pubkey)
+        userProfile?.picture ?? userProfile?.image ?? getRoboHashPicture(pubkey)
     );
 
     $effect(() => {
-        if (pubkey) fetchUserProfile()
+        if (pubkey) fetchUserProfile();
     });
 
     const fetchUserProfile = async () => {
@@ -39,21 +37,18 @@
             authors: [pubkey],
         };
 
-        const metadataRelays = [
-            ...$ndk.pool!.connectedRelays(),
-        ];
+        const metadataRelays = [...$ndk.pool!.connectedRelays()];
 
-        const profileEvent: NDKEvent|null = await $ndk.fetchEvent(
+        const profileEvent: NDKEvent | null = await $ndk.fetchEvent(
             metadataFilter,
-            {cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST},
+            { cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST },
             new NDKRelaySet(new Set(metadataRelays), $ndk)
-        )
+        );
 
         if (!profileEvent) return;
 
-        userProfile = profileFromEvent(profileEvent)
-
-    }
+        userProfile = profileFromEvent(profileEvent);
+    };
 </script>
 
 <div class="w-full flex flex-row gap-[20px] p-[5px]">
@@ -62,14 +57,12 @@
             <ProfileImage src={avatarImage} />
         </a>
     </div>
-    <div class="flex flex-col">
+    <div class="flex flex-col {userProfile?.nip05 ? '' : 'justify-center'}">
         <div class="grid grid-cols-1">
             <a href={profileLink} class="font-[600]">
-                {
-                    userProfile?.name ??
+                {userProfile?.name ??
                     userProfile?.displayName ??
-                    shortenTextWithEllipsesInMiddle(npub, 15)
-                }
+                    shortenTextWithEllipsesInMiddle(npub, 15)}
             </a>
         </div>
         <div class="grid grid-cols-1 {userProfile?.nip05 ? '' : 'hidden'}">

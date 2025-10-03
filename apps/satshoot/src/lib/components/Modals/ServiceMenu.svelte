@@ -12,6 +12,7 @@
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { myOrders } from '$lib/stores/freelance-eventstores';
     import { inFulfillmentOrderOnService } from '$lib/utils/service';
+    import ServiceHistoryModal from './ServiceHistoryModal.svelte';
 
     interface Props {
         isOpen: boolean;
@@ -24,11 +25,10 @@
     let showShareModal = $state(false);
     let showCloseModal = $state(false);
     let showDeactivateConfirmationDialog = $state(false);
+    let showHistoryModal = $state(false);
 
     const myService = $derived($currentUser?.pubkey === service.pubkey);
-    const myInFulfillmentOrder = $derived(
-        inFulfillmentOrderOnService(service, $myOrders)
-    );
+    const myInFulfillmentOrder = $derived(inFulfillmentOrderOnService(service, $myOrders));
 
     function handleShare() {
         isOpen = false;
@@ -38,7 +38,8 @@
     function goToPay() {
         if (myInFulfillmentOrder) {
             const url = new URL(
-                '/payments/' + myInFulfillmentOrder.encode(), window.location.origin
+                '/payments/' + myInFulfillmentOrder.encode(),
+                window.location.origin
             );
             goto(url.toString());
         }
@@ -57,33 +58,34 @@
     }
 
     async function handleActivate() {
-        service.status = ServiceStatus.Active;
-        try {
-            await service.publishReplaceable();
-            serviceStatus = ServiceStatus.Active;
-            toaster.success({
-                title: 'Service Activated',
-            });
-        } catch (error) {
-            console.error(error);
-            toaster.error({
-                title: `Failed to activate the service: ${error}`,
-            });
-        }
+        await updateServiceStatus(ServiceStatus.Active, 'Service Activated', 'activate');
     }
 
     async function deactivate() {
-        service.status = ServiceStatus.InActive;
+        await updateServiceStatus(ServiceStatus.InActive, 'Service de-activated', 'de-activate');
+    }
+
+    async function updateServiceStatus(
+        newStatus: ServiceStatus,
+        successMessage: string,
+        action: string
+    ) {
+        const oldStatus = service.status;
+        service.status = newStatus;
+        if (oldStatus !== newStatus) {
+            service.addStateHistory(oldStatus);
+        }
+
         try {
             await service.publishReplaceable();
-            serviceStatus = ServiceStatus.InActive;
+            serviceStatus = newStatus;
             toaster.success({
-                title: 'Service de-activated',
+                title: successMessage,
             });
         } catch (error) {
             console.error(error);
             toaster.error({
-                title: `Failed to de-activate the service: ${error}`,
+                title: `Failed to ${action} the service: ${error}`,
             });
         }
     }
@@ -93,6 +95,11 @@
         url.searchParams.append(SELECTED_QUERY_PARAM, service.pubkey);
 
         goto(url.toString());
+    }
+
+    function handleShowHistory() {
+        isOpen = false;
+        showHistoryModal = true;
     }
 </script>
 
@@ -163,6 +170,16 @@
                     <p class="">Message</p>
                 </Button>
             {/if}
+
+            <Button
+                variant="outlined"
+                classes="justify-start"
+                fullWidth
+                onClick={handleShowHistory}
+            >
+                <i class="bx bx-history text-[20px]"></i>
+                <p class="">Service History</p>
+            </Button>
         </div>
     </div>
 </ModalWrapper>
@@ -189,3 +206,5 @@
         </strong>
     </ConfirmationDialog>
 {/if}
+
+<ServiceHistoryModal bind:isOpen={showHistoryModal} {service} />

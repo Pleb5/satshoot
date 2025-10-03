@@ -5,13 +5,13 @@
         loginMethod,
         onBoarding,
         onBoardingName,
-        onBoardingNsec
+        onBoardingNsec,
     } from '$lib/stores/user';
-     
-    import { 
+
+    import {
         broadcastUserProfile,
         checkRelayConnections,
-        initializeUser 
+        initializeUser,
     } from '$lib/utils/helpers';
 
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
@@ -71,15 +71,14 @@
     let accountPostFailed = $state(false);
     let jobPostFailed = $state(false);
 
-    let user: NDKUser|null = null;
+    let user: NDKUser | null = null;
     let job = $state<JobEvent>(new JobEvent($ndk));
 
     let step = $state(1);
 
     let firstJob = $derived(
-        $onBoarding === true
-        || page.url.searchParams.get('state') === 'letsgo'
-    )
+        $onBoarding === true || page.url.searchParams.get('state') === 'letsgo'
+    );
     const allowPostJob = $derived(firstJob || (!!$currentUser && $loggedIn));
 
     const { titleValid, titleState } = $derived.by(() => {
@@ -110,12 +109,12 @@
         };
     });
 
-    const validateJob = ():boolean => {
+    const validateJob = (): boolean => {
         if (!titleValid) {
             toaster.error({
                 title: `Title must be minimum ${minTitleLength} characters!`,
             });
-            return false
+            return false;
         }
 
         if (!descriptionValid) {
@@ -125,12 +124,10 @@
             return false;
         }
 
-        return true
-    }
+        return true;
+    };
 
-    const transformedTag = $derived(
-        tagInput.length > 0 ? transFormTag(tagInput) : ''
-    );
+    const transformedTag = $derived(tagInput.length > 0 ? transFormTag(tagInput) : '');
 
     const sortedTagOptions = $derived(
         tagOptions.sort((a, b) => {
@@ -142,9 +139,7 @@
 
     const filteredTagOptions = $derived(
         tagInput.length > 0
-            ? sortedTagOptions.filter(
-                (option) => option.value.includes(transformedTag)
-            )
+            ? sortedTagOptions.filter((option) => option.value.includes(transformedTag))
             : []
     );
     // Always include the input tag as the first item, even if it's an exact match
@@ -152,16 +147,15 @@
         transformedTag.length > 0
             ? [
                   { label: tagInput, value: transformedTag },
-                  ...filteredTagOptions.filter(
-                        (option) => option.value !== transformedTag
-                    ),
+                  ...filteredTagOptions.filter((option) => option.value !== transformedTag),
               ]
             : filteredTagOptions
     );
 
-    const tagRecommenderClasses = "w-full flex flex-row gap-[10px] rounded-[6px] " +
-        "border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap " +
-        "p-[10px] max-h-[100px] overflow-y-scroll "
+    const tagRecommenderClasses =
+        'w-full flex flex-row gap-[10px] rounded-[6px] ' +
+        'border-[1px] border-black-100 dark:border-white-100 bg-black-50 flex-wrap ' +
+        'p-[10px] max-h-[100px] overflow-y-scroll ';
 
     onMount(() => {
         if ($jobToEdit) {
@@ -232,23 +226,23 @@
 
     const finalize = async () => {
         if (!validateJob()) return;
-     
+
         posting = true;
 
         await tick();
 
         try {
             if (firstJob) {
-                await finalizeAccount()
+                await finalizeAccount();
             }
 
-            await postJob()
+            await postJob();
 
             onBoarding.set(false);
-            onBoardingName.set('')
-            onBoardingNsec.set('')
+            onBoardingName.set('');
+            onBoardingNsec.set('');
 
-            step = 2
+            step = 2;
         } catch (e) {
             if (e instanceof AccountPublishError) {
                 accountPostFailed = true;
@@ -256,10 +250,9 @@
                 jobPostFailed = true;
             }
         } finally {
-            posting = false
+            posting = false;
         }
-
-    }
+    };
 
     const finalizeAccount = async () => {
         try {
@@ -267,10 +260,8 @@
 
             $loginMethod = LoginMethod.Local;
 
-            $sessionPK = (
-                bytesToHex(
-                    nip19.decode($onBoardingNsec).data as Uint8Array<ArrayBufferLike>
-                )
+            $sessionPK = bytesToHex(
+                nip19.decode($onBoardingNsec).data as Uint8Array<ArrayBufferLike>
             );
 
             user = await $ndk.signer.user();
@@ -296,9 +287,9 @@
             toaster.error({
                 title: 'Could not Post Account: ' + e,
             });
-            throw new AccountPublishError('Publishing Account Failed')
+            throw new AccountPublishError('Publishing Account Failed');
         }
-    }
+    };
 
     async function postJob() {
         try {
@@ -312,6 +303,9 @@
             // only if we are not editing but creating a new job
             if (!$jobToEdit) {
                 job.generateTags();
+                const timestamp = Math.floor(Date.now() / 1000);
+                job.created_at = timestamp;
+                job.publishedAt = timestamp;
             } else {
                 job.removeTag('d');
                 job.tags.push(['d', $jobToEdit.tagValue('d') as string]);
@@ -325,7 +319,7 @@
             toaster.error({
                 title: 'Could not post Job: ' + e,
             });
-            throw new JobPublishError('Failed to post Job')
+            throw new JobPublishError('Failed to post Job');
         }
     }
 
@@ -335,53 +329,53 @@
     }
 
     async function handleSkip() {
-        await finalizeAccount()
+        await finalizeAccount();
 
         onBoarding.set(false);
-        onBoardingName.set('')
-        onBoardingNsec.set('')
+        onBoardingName.set('');
+        onBoardingNsec.set('');
 
         // It's possible that user is coming from job page, he may want to post the bid
         // Therefor, we'll redirect the user to the job page
-        if(!$redirectAfterLogin && window.history.length > 2) {
+        if (!$redirectAfterLogin && window.history.length > 2) {
             // Navigate back to the previous page
             window.history.go(-2);
         }
 
         // When user don't want to publish the job Immediately, we'll redirect the user to services page
-        goto('/services')
+        goto('/services');
     }
 
     const jobTitleTooltip =
         '<div>' +
-            '<div class="font-bold">' + 
-                'Make this short and to the point.' +
-            '</div>' +
+        '<div class="font-bold">' +
+        'Make this short and to the point.' +
+        '</div>' +
         '</div>';
 
     const tagsTooltip =
         '<div>' +
-            '<div class="font-bold">' + 
-                'Keywords and technologies this Job is about.' +
-            '</div>' +
+        '<div class="font-bold">' +
+        'Keywords and technologies this Job is about.' +
+        '</div>' +
         '</div>';
 
     const shareJobTooltip =
         '<div>' +
-            '<div class="">' + 
-                'When you share on Nostr, SatShoot will re-share your post, so ' +
-                'more people will see it.' +
-            '</div>' +
+        '<div class="">' +
+        'When you share on Nostr, SatShoot will re-share your post, so ' +
+        'more people will see it.' +
+        '</div>' +
         '</div>';
 
     const copyLinkTooltip =
         '<div>' +
-            '<div class="">' + 
-                'This is a Nostr link to your job. Be careful where you share ' + 
-                'it! While your Nostr profile is not tied to your real name, if you ' +
-                'share this on mainstream social media you will for ever link your ' +
-                'account to your real identity!' +
-            '</div>' +
+        '<div class="">' +
+        'This is a Nostr link to your job. Be careful where you share ' +
+        'it! While your Nostr profile is not tied to your real name, if you ' +
+        'share this on mainstream social media you will for ever link your ' +
+        'account to your real identity!' +
+        '</div>' +
         '</div>';
 </script>
 
@@ -404,23 +398,23 @@
                         <div class="flex justify-center text-center h4 sm:h3">
                             Where individuals become unstoppable
                         </div>
-                        <div class="flex flex-col items-center mt-4 text-xl sm:text-3xl text-center">
+                        <div
+                            class="flex flex-col items-center mt-4 text-xl sm:text-3xl text-center"
+                        >
                             {#if step === 1}
                                 {#if firstJob}
-                                    <div class="w-[95vw] sm:w-[60vw] flex gap-x-2 gap-y-2 flex-wrap justify-center mb-2">
+                                    <div
+                                        class="w-[95vw] sm:w-[60vw] flex gap-x-2 gap-y-2 flex-wrap justify-center mb-2"
+                                    >
                                         <Card>
-                                            <div class="text-center text-lg sm:text-xl">
-                                                Name:
-                                            </div>
+                                            <div class="text-center text-lg sm:text-xl">Name:</div>
                                             <div class="text-center text-lg sm:text-xl">
                                                 {$onBoardingName}
                                             </div>
                                         </Card>
                                     </div>
                                 {/if}
-                                <span>
-                                    Great, let's see what You want to get solved:
-                                </span>
+                                <span> Great, let's see what You want to get solved: </span>
                             {/if}
                         </div>
                     {:else}
@@ -490,9 +484,7 @@
                                         onKeyPress={handleEnterKeyOnTagInput}
                                         fullWidth
                                     />
-                                    <div
-                                        class={[tagRecommenderClasses, tagInput ? '' : 'hidden']}
-                                    >
+                                    <div class={[tagRecommenderClasses, tagInput ? '' : 'hidden']}>
                                         {#each displayOptions as { label, value }}
                                             <Button
                                                 classes="bg-black-200 dark:bg-white-200 text-black-500 dark:text-white hover:text-white p-[5px] font-400"
@@ -541,15 +533,17 @@
                         <Card classes="w-[95vw] sm:w-[70vw]">
                             <div class="flex flex-col items-center gap-y-2 text-xl sm:text-2xl">
                                 <div class="text-wrap">
-                                    Congratulations, your Job is live on the <strong>free market</strong>!
+                                    Congratulations, your Job is live on the <strong
+                                        >free market</strong
+                                    >!
                                 </div>
-                                <div class="text-wrap {!firstJob ? 'hidden': ''}">
-                                    You took the first step to become Unstoppable. Time to let people know.
+                                <div class="text-wrap {!firstJob ? 'hidden' : ''}">
+                                    You took the first step to become Unstoppable. Time to let
+                                    people know.
                                 </div>
                                 <div class="w-full flex flex-wrap justify-between gap-y-2">
                                     <div class="flex gap-x-1 items-center">
-                                        <Button
-                                            onClick={() => showShareModal = true}>
+                                        <Button onClick={() => (showShareModal = true)}>
                                             Share on Nostr
                                         </Button>
                                         <QuestionIcon
@@ -559,11 +553,11 @@
                                         />
                                     </div>
                                     <div class="flex gap-x-1 items-center">
-                                        <CopyButton 
-                                            buttonText={"Copy Link"}
+                                        <CopyButton
+                                            buttonText={'Copy Link'}
                                             text={`https://satshoot.com/${job!.encode()}`}
-                                            feedbackMessage={"Link Copied!"}>
-                                        </CopyButton>
+                                            feedbackMessage={'Link Copied!'}
+                                        ></CopyButton>
                                         <QuestionIcon
                                             extraClasses="text-[14px] p-[3px]"
                                             placement="bottom-start"
@@ -575,9 +569,9 @@
                         </Card>
                         <Button
                             classes="text-lg sm:text-xl mt-4"
-                            onClick={() => goto(
-                                new URL(`/${job!.encode()}`, window.location.origin)
-                            )}>
+                            onClick={() =>
+                                goto(new URL(`/${job!.encode()}`, window.location.origin))}
+                        >
                             View Job
                         </Button>
                     </div>
@@ -592,9 +586,10 @@
                                     <Button
                                         grow
                                         variant="outlined"
-                                        onClick={()=>{
-                                            goto(new URL('/letsgo', window.location.origin))
-                                        }}>
+                                        onClick={() => {
+                                            goto(new URL('/letsgo', window.location.origin));
+                                        }}
+                                    >
                                         Back
                                     </Button>
                                 {/if}
@@ -615,19 +610,14 @@
                                     </Button>
                                 {/if}
                             </div>
-                                {#if firstJob}
-                                    <div class="w-full sm:max-w-[60vw] flex gap-x-4">
-                                        <Button
-                                            grow
-                                            variant="outlined"
-                                            onClick={handleSkip}
-                                    >
-                                            Skip
-                                        </Button>
-                                    </div>
-                                {/if}
+                            {#if firstJob}
+                                <div class="w-full sm:max-w-[60vw] flex gap-x-4">
+                                    <Button grow variant="outlined" onClick={handleSkip}>
+                                        Skip
+                                    </Button>
+                                </div>
+                            {/if}
                         </div>
-
                     {/if}
                 </div>
             </div>
@@ -635,11 +625,8 @@
     </div>
 </div>
 
-
 <ShareEventModal
-    firstTimerMessageTitle={ !firstJob ? '' :
-        "I've just published a Job on the free market.\n" 
-    } 
+    firstTimerMessageTitle={!firstJob ? '' : "I've just published a Job on the free market.\n"}
     bind:isOpen={showShareModal}
-    eventObj={job!} 
+    eventObj={job!}
 />

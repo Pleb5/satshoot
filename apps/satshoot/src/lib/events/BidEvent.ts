@@ -30,6 +30,9 @@ export class BidEvent extends NDKEvent {
         this._pricing = parseInt(this.tagValue('pricing') ?? Pricing.Absolute.toString());
         this._amount = parseInt(this.tagValue('amount') ?? '0');
         this.parseZapSplits();
+        if (this.created_at && !this.publishedAt) {
+            this.publishedAt = this.created_at;
+        }
     }
 
     static from(event: NDKEvent) {
@@ -198,5 +201,32 @@ export class BidEvent extends NDKEvent {
 
     set description(desc: string) {
         this.content = desc;
+    }
+
+    get publishedAt(): number {
+        return parseInt(this.tagValue('published_at') ?? '0');
+    }
+
+    set publishedAt(publishedAt: number) {
+        this.removeTag('published_at');
+        this.tags.push(['published_at', publishedAt.toString()]);
+    }
+
+    /**
+     * Adds a pricing history entry when pricing or amount changes
+     * @param oldPricing Previous pricing method
+     * @param oldAmount Previous amount value
+     */
+    addPricingHistory(oldPricing: Pricing, oldAmount: number) {
+        const oldData = { pricing: oldPricing, amount: oldAmount };
+        const newData = { pricing: this._pricing, amount: this._amount };
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        this.tags.push([
+            'pricing_history',
+            JSON.stringify(oldData),
+            JSON.stringify(newData),
+            timestamp.toString(),
+        ]);
     }
 }

@@ -11,6 +11,8 @@
         // Update/Replacement is based on this. Allows for multiple Services with simple edits. Mandatory
         ["d", "<Service ID>"],
 
+        ["published_at", <timestamp>], // this is actual publish date
+
         // A title for the Service. Mandatory
         ["title", "<title>"]
 
@@ -36,16 +38,28 @@
         // while preserves its history. Mandatory
         [ "s", <'0' (InActive) OR '1' (Active)> ],
 
+        // Records all status changes. Append new entries, never replace existing ones
+        // for initial state use -1 for from_status
+        ["state_history", <from_status>, <to_status>, <change_timestamp>],
+        ["state_history", <from_status>, <to_status>, <change_timestamp>],
+        // ... more state history entries as status changes occur
+
+        // Records all pricing changes (amount and pricing). Append new entries, never replace existing ones
+        ["pricing_history", JSON.stringify(old_amount_pricing), JSON.stringify(old_amount_pricing), <change_timestamp>],
+        ["pricing_history", JSON.stringify(old_amount_pricing), JSON.stringify(old_amount_pricing), <change_timestamp>],
+        // ... more pricing history entries as pricing changes occur
+
         // If a Freelancer is ready to fullfill a Freelance Order he SHOULD set this.
         // Multiple a-tags mean that this Service has been sold multiple times
-        ["a", "32766:<hex pubkey of Client1>:<Freelance Order d-tag>"],
-        ["a", "32766:<hex pubkey of Client2>:<Freelance Order d-tag>"],
+        ["a", "32766:<hex pubkey of Client1>:<Freelance Order d-tag>", <acceptance_timestamp>],
+        ["a", "32766:<hex pubkey of Client2>:<Freelance Order d-tag>", <acceptance_timestamp>],
 
         // Tag if Freelancer wants to share public payments (zaps) on this Service
         // These can be percentage ratios adding up to 100%. Optional
         ["zap", "<Freelancer pubkey>", "<relay hint>", "96"]
         ["zap", "<Supported pubkey (e.g. app dev)>", "<relay hint>", "2"]
         ["zap", "<Sponsored pubkey (optional e.g. partner of the freelancer)>", "<relay hint>", "2"]
+        ["zap_history", JSON.stringify(old_state), JSON.stringify(new_state)]
     ],
     "content": {
         <detailed description of the Service. Mandatory>
@@ -63,6 +77,8 @@
         // Update/Replacement is based on this. Allows for multiple Orders with simple edits. Mandatory
         ["d", "<Order id>"],
 
+        ["published_at", <timestamp>], // this is actual publish date
+
         // Mandatory. Clients place an Order on a Service and the following happens:
 
         // 1. The Order's initial state is '0' (Open) which can be displayed as 'Pending' in apps,
@@ -76,6 +92,14 @@
         // can be displayed as 'Closed' in apps that want to gather cocluded Orders together.
 
         [ "s", <'0' (Open) OR '1' (Fulfilled) OR '2' (Failed)> ],
+
+        // Records all status changes. Append new entries, never replace existing ones
+        // for initial state use -1 for from_status
+        ["state_history", <from_status>, <to_status>, <change_timestamp>],
+        ["state_history", <from_status>, <to_status>, <change_timestamp>],
+        // ... more state history entries as status changes occur
+
+
 
         // Pricing Strategy at the time order was placed (Absolute or Time-based). Mandatory
         ["pricing", <'0'(sats) | '1'(sats/hour)>],
@@ -106,6 +130,8 @@
         // Update/Replacement is based on this. Allows for multiple Jobs with simple edits. Mandatory
         ["d", "<Job id>"],
 
+        ["published_at", <timestamp>], // this is actual publish date
+
         // Category Labels, max 5 recommended. Optional
         ["t", "<tag1>"],
         ["t", "<tag2>"],
@@ -115,8 +141,15 @@
         // Job status. "New" while Job is taking Bids, "In-Progress" as soon as a Bid is taken, and "Resolved/Failed" when the Job is concluded
         [ "s", <'0' (New) OR '1' (In Progress) OR '2' (Resolved) OR '3' (Failed)> ],
 
+        // Records all status changes. Append new entries, never replace existing ones
+        // for initial state use -1 for from_status
+        ["state_history", <from_status>, <to_status>, <change_timestamp>],
+        ["state_history", <from_status>, <to_status>, <change_timestamp>],
+        // ... more state history entries as status changes occur
+
+
         // If Client accepts a Freelance Bid he SHOULD set this tag
-        ["a", "32768:<hex pubkey of Freelancer>:<Freelance Bid d-tag>"],
+        ["a", "32768:<hex pubkey of Freelancer>:<Freelance Bid d-tag>", <acceptance_timestamp>],
     ],
     "content": {
         <detailed description of the Job, mandatory>
@@ -133,13 +166,20 @@
         // Replacement is based on this. Allows for multiple Bids with simple edits. Mandatory
         ["d", "<Bid ID>"],
 
+        ["published_at", <timestamp>], // this is actual publish date
+
         // Pricing Strategy: Absolute or Time-based. Mandatory
         ["pricing", <'0'(sats) | '1'(sats/hour)>],
 
         // Price of bid. Refers to the absolute price OR sats/hour. Mandatory
         ["amount", <500>]
 
-        Freelancer MUST set this tag when bidding on a Job. Mandatory
+        // Records all pricing changes (amount and pricing). Append new entries, never replace existing ones
+        ["pricing_history", JSON.stringify(old_amount_pricing), JSON.stringify(old_amount_pricing), <change_timestamp>],
+        ["pricing_history", JSON.stringify(old_amount_pricing), JSON.stringify(old_amount_pricing), <change_timestamp>],
+        // ... more pricing history entries as pricing changes occur
+
+        // Freelancer MUST set this tag when bidding on a Job. Mandatory
         ["a", "32767:<hex pubkey of Client>:<Job d-tag of a Job>">],
 
         // Tag if Freelancer wants to share public payments (zaps) on this Bid
@@ -171,8 +211,8 @@ Clients and Freelancers by their outstanding attributes.
 While the is a good framework to use, there can be opinionated implementations of this system.
 Nostr apps can determine the exact labels and the weights of the "excellence labels",
 therefore in SatShoot we have either '0' or '1' as a value in the rating tags,
-which showcases all the possible labels in each event, while only indicating if 
-the reviewed freelancer or client received that label or not, the exact scoring itself is 
+which showcases all the possible labels in each event, while only indicating if
+the reviewed freelancer or client received that label or not, the exact scoring itself is
 left to the implementation to decide.
 
 Important to note that if the overall experience is bad (success/thumb), every other label SHOULD be 0
@@ -191,9 +231,9 @@ The scores in SatShoot are commented out.
         // worth 0.5 in satshoot
         ["rating", “<0 | 1>”, “success”],
         // worth 0.3 in satshoot
-        ["rating", “<0 | 1>”, “expertise”], 
+        ["rating", “<0 | 1>”, “expertise”],
         // worth 0.2 in satshoot
-        ["rating", “<0 | 1>”, “communication”], 
+        ["rating", “<0 | 1>”, “communication”],
         ["a", "<32765 | 32768>:<hex pubkey of Freelancer>:<Service/Bid d-tag>"],
     ],
     "content": {
@@ -212,9 +252,9 @@ The scores in SatShoot are commented out.
         ["L", qts/freelancing]
         ["l", “client”, “qts/freelancing”],
         // worth 0.5 in satshoot
-        ["rating", “<0 | 1>”, “thumb”], 
+        ["rating", “<0 | 1>”, “thumb”],
         // worth 0.5 in satshoot
-        ["rating", “<0 | 1>”, “communication”], 
+        ["rating", “<0 | 1>”, “communication”],
         ["a", "<32766 | 32767>:<hex pubkey of the Client>:<Order/Job d-tag>"],
     ],
     "content": {

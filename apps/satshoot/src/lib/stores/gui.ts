@@ -29,3 +29,17 @@ export const bidFilter = persisted('bidFilter', {
     success: false,
     lost: false,
 });
+
+export enum NotificationTabs {
+    Follows,
+    Zaps,
+    Jobs,
+    Services,
+    Messages,
+    Reviews,
+}
+
+export const selectedNotificationTab = persisted(
+    'selectedNotificationTab',
+    NotificationTabs.Follows
+);

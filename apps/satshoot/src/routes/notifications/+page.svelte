@@ -20,29 +20,20 @@
     import { checkRelayConnections } from '$lib/utils/helpers';
     import { onMount } from 'svelte';
     import ServiceNotification from '$lib/components/Notifications/ServiceNotification.svelte';
+    import { selectedNotificationTab, NotificationTabs } from '$lib/stores/gui';
 
-    enum Tab {
-        Follows,
-        Zaps,
-        Jobs,
-        Services,
-        Messages,
-        Reviews,
-    }
-
-    let selectedTab = $state(Tab.Follows);
-    let previousTab = $state<Tab | null>(null);
+    let previousTab = $state<NotificationTabs | null>(null);
 
     $effect(() => {
-        if (previousTab !== null && previousTab !== selectedTab) {
+        if (previousTab !== null && previousTab !== $selectedNotificationTab) {
             markNotificationsAsRead(previousTab);
         }
-        previousTab = selectedTab;
+        previousTab = $selectedNotificationTab;
     });
 
-    function markNotificationsAsRead(tab: Tab) {
+    function markNotificationsAsRead(tab: NotificationTabs) {
         switch (tab) {
-            case Tab.Follows:
+            case NotificationTabs.Follows:
                 readNotifications.update((notifications) => {
                     $followNotifications.forEach((notificationEvent) => {
                         notifications.add(notificationEvent.id);
@@ -50,7 +41,7 @@
                     return notifications;
                 });
                 break;
-            case Tab.Zaps:
+            case NotificationTabs.Zaps:
                 readNotifications.update((notifications) => {
                     $receivedZapsNotifications.forEach((notificationEvent) => {
                         notifications.add(notificationEvent.id);
@@ -58,7 +49,7 @@
                     return notifications;
                 });
                 break;
-            case Tab.Jobs:
+            case NotificationTabs.Jobs:
                 readNotifications.update((notifications) => {
                     $jobNotifications.forEach((notificationEvent) => {
                         notifications.add(notificationEvent.id);
@@ -66,7 +57,7 @@
                     return notifications;
                 });
                 break;
-            case Tab.Services:
+            case NotificationTabs.Services:
                 readNotifications.update((notifications) => {
                     $serviceNotifications.forEach((notificationEvent) => {
                         notifications.add(notificationEvent.id);
@@ -74,7 +65,7 @@
                     return notifications;
                 });
                 break;
-            case Tab.Messages:
+            case NotificationTabs.Messages:
                 readNotifications.update((notifications) => {
                     $messageNotifications.forEach((notificationEvent) => {
                         notifications.add(notificationEvent.id);
@@ -82,7 +73,7 @@
                     return notifications;
                 });
                 break;
-            case Tab.Reviews:
+            case NotificationTabs.Reviews:
                 readNotifications.update((notifications) => {
                     $reviewNotifications.forEach((notificationEvent) => {
                         notifications.add(notificationEvent.id);
@@ -97,7 +88,7 @@
 
     let tabs = $derived([
         {
-            id: Tab.Follows,
+            id: NotificationTabs.Follows,
             label: 'Follows',
             icon: 'user',
             notificationCount: $followNotifications.filter(
@@ -105,7 +96,7 @@
             ).length,
         },
         {
-            id: Tab.Zaps,
+            id: NotificationTabs.Zaps,
             label: 'Zaps',
             icon: 'bolt',
             notificationCount: $receivedZapsNotifications.filter(
@@ -113,7 +104,7 @@
             ).length,
         },
         {
-            id: Tab.Jobs,
+            id: NotificationTabs.Jobs,
             label: 'Jobs',
             icon: 'briefcase',
             notificationCount: $jobNotifications.filter(
@@ -121,7 +112,7 @@
             ).length,
         },
         {
-            id: Tab.Services,
+            id: NotificationTabs.Services,
             label: 'Services',
             icon: 'briefcase',
             notificationCount: $serviceNotifications.filter(
@@ -129,7 +120,7 @@
             ).length,
         },
         {
-            id: Tab.Messages,
+            id: NotificationTabs.Messages,
             label: 'Messages',
             icon: 'conversation',
             notificationCount: $messageNotifications.filter(
@@ -137,7 +128,7 @@
             ).length,
         },
         {
-            id: Tab.Reviews,
+            id: NotificationTabs.Reviews,
             label: 'Reviews',
             icon: 'star',
             notificationCount: $reviewNotifications.filter(
@@ -154,34 +145,34 @@
                 class="max-w-[1400px] w-full h-full flex flex-col justify-start items-end px-[10px] relative"
             >
                 <div class="w-full h-full flex flex-col gap-[15px]">
-                    <TabSelector {tabs} bind:selectedTab />
+                    <TabSelector {tabs} bind:selectedTab={$selectedNotificationTab} />
                     <div class="w-full flex flex-col grow overflow-y-auto">
-                        {#if selectedTab === Tab.Follows}
+                        {#if $selectedNotificationTab === NotificationTabs.Follows}
                             <NotificationsList
                                 notifications={$followNotifications}
                                 NotificationComponent={FollowNotification}
                             />
-                        {:else if selectedTab === Tab.Zaps}
+                        {:else if $selectedNotificationTab === NotificationTabs.Zaps}
                             <NotificationsList
                                 notifications={$receivedZapsNotifications}
                                 NotificationComponent={ZapNotification}
                             />
-                        {:else if selectedTab === Tab.Jobs}
+                        {:else if $selectedNotificationTab === NotificationTabs.Jobs}
                             <NotificationsList
                                 notifications={$jobNotifications}
                                 NotificationComponent={JobNotification}
                             />
-                        {:else if selectedTab === Tab.Services}
+                        {:else if $selectedNotificationTab === NotificationTabs.Services}
                             <NotificationsList
                                 notifications={$serviceNotifications}
                                 NotificationComponent={ServiceNotification}
                             />
-                        {:else if selectedTab === Tab.Messages}
+                        {:else if $selectedNotificationTab === NotificationTabs.Messages}
                             <NotificationsList
                                 notifications={$messageNotifications}
                                 NotificationComponent={MessageNotification}
                             />
-                        {:else if selectedTab === Tab.Reviews}
+                        {:else if $selectedNotificationTab === NotificationTabs.Reviews}
                             <NotificationsList
                                 notifications={$reviewNotifications}
                                 NotificationComponent={ReviewNotification}
