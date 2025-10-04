@@ -6,6 +6,7 @@ import { NDKKind } from '@nostr-dev-kit/ndk';
 
 import { JobEvent } from '$lib/events/JobEvent';
 import { BidEvent } from '$lib/events/BidEvent';
+import { OnboardingJobEvent } from '$lib/events/OnboardingJobEvent';
 
 import { wot } from '$lib/stores/wot';
 
@@ -54,6 +55,11 @@ export const myServiceFilter: NDKFilter = {
 // The filter's pubkey part will be filled in when user logs in
 export const myOrderFilter: NDKFilter = {
     kinds: [NDKKind.FreelanceOrder],
+};
+
+// The filter's pubkey part will be filled in when user logs in
+export const myOnboardingJobFilter: NDKFilter = {
+    kinds: [NDKKind.FreelanceJob],
 };
 
 export const allJobs: NDKEventStore<ExtendedBaseType<JobEvent>> = get(ndk).storeSubscribe<JobEvent>(
@@ -111,3 +117,7 @@ export const myServices: NDKEventStore<ExtendedBaseType<ServiceEvent>> = get(
 export const myOrders: NDKEventStore<ExtendedBaseType<OrderEvent>> = get(
     ndk
 ).storeSubscribe<OrderEvent>(myOrderFilter, subOptions, OrderEvent);
+
+export const myOnboardingJobs: NDKEventStore<ExtendedBaseType<OnboardingJobEvent>> = get(
+    ndk
+).storeSubscribe<OnboardingJobEvent>(myOnboardingJobFilter, subOptions, OnboardingJobEvent);

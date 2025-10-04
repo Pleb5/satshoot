@@ -17,6 +17,7 @@
     import { debounce } from '$lib/utils/misc';
     import ServicesAndBids from '$lib/components/ProfilePage/ServicesAndBids.svelte';
     import OrdersAndJobs from '$lib/components/ProfilePage/OrdersAndJobs.svelte';
+    import PendingOnboardingJobs from '$lib/components/Onboarding/PendingOnboardingJobs.svelte';
     import { BidEvent } from '$lib/events/BidEvent';
     import { JobEvent } from '$lib/events/JobEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
@@ -349,6 +350,7 @@
                         bind:this={eventContainerElement}
                     >
                         <div class="w-full flex flex-col gap-y-6">
+                            <PendingOnboardingJobs />
                             {#if componentOrder && componentOrder.first === 'ServicesAndBids'}
                                 <ServicesAndBids
                                     isOwnProfile={!!isOwnProfile}
