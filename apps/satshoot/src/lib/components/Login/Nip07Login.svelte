@@ -2,7 +2,7 @@
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
     import { redirectAfterLogin } from '$lib/stores/gui';
-    import ndk, { nut13SeedStorage, LoginMethod } from '$lib/stores/session';
+    import ndk, { LoginMethod } from '$lib/stores/session';
     import { loginMethod, UserMode, userMode } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
     import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
@@ -34,7 +34,7 @@
                 if (returnedUser.npub) {
                     loginMethod.set(LoginMethod.Nip07);
                     $ndk.signer = nip07Signer;
-                    initializeUser($ndk, $nut13SeedStorage);
+                    initializeUser($ndk);
                     handleRedirection();
                     askingForNip07Permission = false;
                     isOpen = false;

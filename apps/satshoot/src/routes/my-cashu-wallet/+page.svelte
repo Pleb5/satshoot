@@ -2,7 +2,7 @@
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
     import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
-    import ndk, { DEFAULTRELAYURLS, nut13SeedStorage } from '$lib/stores/session';
+    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/session';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { userCashuInfo, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
     import {
@@ -84,12 +84,9 @@
     const walletRelays = $derived($userCashuInfo?.relays ?? []);
 
     $effect(() => {
-        if (!$wallet && !$nut13SeedStorage) {
-            showMnemonicSeedInputModal = true;
+        if (!$wallet) {
+            tryLoadWallet();
             return;
-        }
-        if (!$wallet && $nut13SeedStorage) {
-            tryLoadWallet($nut13SeedStorage);
         }
         if ($wallet && $userCashuInfo) {
             checkLegacyWallet();
@@ -265,7 +262,7 @@
         return balanceStr;
     }
 
-    function setupWallet(bip39seed: Uint8Array) {
+    function setupNewWallet(bip39seed: Uint8Array) {
         tempWallet = new NDKCashuWallet($ndk, bip39seed);
         showMintModal = true;
     }
@@ -273,24 +270,9 @@
     function generateBip39Seed(newWallet: boolean): (seedWords: string[]) => void {
         return async (seedWords) => {
             const bip39seed = deriveSeedKey(seedWords.join(' '));
-            $nut13SeedStorage = bip39seed;
-            if (newWallet) setupWallet(bip39seed);
-            else await tryLoadWallet(bip39seed);
+            if (newWallet) setupNewWallet(bip39seed);
+            else await recoverDeterministicWallet(bip39seed);
         };
-    }
-
-    function handleNewWallet() {
-        console.log("NUT-13 SEED: ", $nut13SeedStorage); //TODO: remove this before delivering to production!
-        if (!$nut13SeedStorage) showMnemonicSeedGenerationModal = true;
-        else setupWallet($nut13SeedStorage);
-    }
-
-    function handleReloadWallet() {
-        if (!$nut13SeedStorage) {
-            showMnemonicSeedInputModal = true;
-            return;
-        }
-        tryLoadWallet($nut13SeedStorage);
     }
 
     // Handler for new wallet mint selection
@@ -342,11 +324,10 @@
         }
     }
 
-    async function tryLoadWallet(bip39seed?: Uint8Array) {
+    async function tryLoadWallet() {
         if ($currentUser) {
             await fetchAndInitWallet($currentUser, $ndk, {
                 fetchLegacyWallet: true,
-                bip39seed: bip39seed,
             });
             if ($wallet) {
                 $wallet = $wallet;
@@ -354,6 +335,11 @@
         } else if ($loggedIn) {
             console.error('Error: User not found!');
         }
+    }
+
+    // TODO (rodant)
+    async function recoverDeterministicWallet(_bip39seed: Uint8Array): Promise<void> {
+        return Promise.resolve();
     }
 
     async function updateMints(mints: string[]) {
@@ -617,10 +603,10 @@
                     {/each}
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <Button onClick={handleNewWallet}
+                        <Button onClick={() => showMnemonicSeedGenerationModal = true}
                             >New Nostr Wallet</Button
                         >
-                        <Button onClick={handleReloadWallet}
+                        <Button onClick={tryLoadWallet}
                             >Try loading Wallet</Button
                         >
                     </div>

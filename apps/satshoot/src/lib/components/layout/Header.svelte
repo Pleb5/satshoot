@@ -11,7 +11,7 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterAndRelaySetFromBech32, NDKKind, NDKRelaySet, NDKSubscriptionCacheUsage, profileFromEvent, type NDKEvent } from '@nostr-dev-kit/ndk';
-    import ndk, { nut13SeedStorage, BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
+    import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import AppMenu from './AppMenu.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -337,15 +337,6 @@
     };
 
     function handleLogin() {
-        if (!$nut13SeedStorage) {
-            showMnemonicSeedInputModal = true;
-            return;
-        }
-        showLoginModal = true;
-    }
-
-    function handleMnemonicSeedInput(mnemonicSeed: string[]) {
-        $nut13SeedStorage = deriveSeedKey(mnemonicSeed.join(" "));
         showLoginModal = true;
     }
 

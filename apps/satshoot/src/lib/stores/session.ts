@@ -80,34 +80,6 @@ export function getAppRelays(): string[] {
     return DEFAULTRELAYURLS;
 }
 
-// Load app relays from localStorage, fallback to defaults
-export function getAppRelays(): string[] {
-    if (typeof localStorage === 'undefined') {
-        return DEFAULTRELAYURLS;
-    }
-
-    try {
-        const storedRelays = localStorage.getItem(APP_RELAY_STORAGE_KEY);
-        if (storedRelays) {
-            const parsed = JSON.parse(storedRelays);
-            return Array.isArray(parsed) ? parsed : DEFAULTRELAYURLS;
-        } else {
-            // No saved relays, save defaults to localStorage
-            localStorage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(DEFAULTRELAYURLS));
-            return DEFAULTRELAYURLS;
-        }
-    } catch (e) {
-        console.error('Error loading app relays from localStorage:', e);
-        // Try to save defaults even after error
-        try {
-            localStorage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(DEFAULTRELAYURLS));
-        } catch (saveError) {
-            console.error('Error saving default relays to localStorage:', saveError);
-        }
-    }
-    return DEFAULTRELAYURLS;
-}
-
 const passphrase = "a0d4c4f38e7370b7fcea8fc49582724e614c97486d894eb8392af06f24051910";
 const salt = "fbcf1278c4edf42c35adc3c923f252e9d043bccbe98f3c48df81d04f72f63d24";
 export const nut13SeedStorage: Writable<Uint8Array | undefined> = persisted("nut13Seed", undefined, { 

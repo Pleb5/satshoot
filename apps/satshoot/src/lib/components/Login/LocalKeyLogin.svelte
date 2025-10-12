@@ -6,7 +6,7 @@
     import { NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
     import { encryptSecret } from '$lib/utils/crypto';
     import { loginMethod, UserMode, userMode } from '$lib/stores/user';
-    import ndk, { nut13SeedStorage, LoginMethod, sessionPK } from '$lib/stores/session';
+    import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
     import { initializeUser } from '$lib/utils/helpers';
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { goto } from '$app/navigation';
@@ -193,7 +193,7 @@
             }
 
             // Initialize user
-            initializeUser($ndk, $nut13SeedStorage);
+            initializeUser($ndk);
 
             // Display success toast
             toaster.success({
