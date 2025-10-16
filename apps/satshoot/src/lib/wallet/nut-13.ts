@@ -55,7 +55,7 @@ export async function saveMnemonicToFile(mnemonic: string, encryption?: Encrypti
         : { filename: 'cashu-mnemonic-seed.json', mimeType: 'application/json' };
 
     const content = await createMnemonicSeedData(mnemonic, encryption);
-    const blob = new Blob([JSON.stringify(content)], { type: mimeType });
+    const blob = new Blob([JSON.stringify(content, undefined, 2)], { type: mimeType });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement('a');
@@ -68,7 +68,7 @@ export async function saveMnemonicToFile(mnemonic: string, encryption?: Encrypti
 
 export interface MnemonicSeedData {
     encrypted: boolean,
-    data: string,
+    mnemonic: string,
     createdAt: number,
     version: string
 }
@@ -87,14 +87,14 @@ export async function createMnemonicSeedData(mnemonic: string, encryption?: Encr
         const encrypted = await encryption.encrypt(mnemonic);
         content = {
             encrypted: true,
-            data: encrypted,
+            mnemonic: encrypted,
             createdAt: Date.now(),
             version: '1.0'
         };
     } else {
         content = {
             encrypted: false,
-            data: mnemonic,
+            mnemonic: mnemonic,
             createdAt: Date.now(),
             version: '1.0'
         };
@@ -152,9 +152,9 @@ export async function mnemonicFromSeedData(data: MnemonicSeedData, encryption?: 
             throw new Error('Encryption instance required for encrypted file');
         }
 
-        mnemonic = await encryption.decrypt(data.data);
+        mnemonic = await encryption.decrypt(data.mnemonic);
     } else {
-        mnemonic = data.data;
+        mnemonic = data.mnemonic;
     }
 
     // Validate the mnemonic before storing
@@ -167,7 +167,7 @@ export async function mnemonicFromSeedData(data: MnemonicSeedData, encryption?: 
 function isValidSeedData(data: MnemonicSeedData): boolean {
     return (typeof data === 'object'
         && typeof data.encrypted === 'boolean'
-        && typeof data.data === 'string'
+        && typeof data.mnemonic === 'string'
         && typeof data.createdAt === 'number'
         && typeof data.version === 'string'
     );

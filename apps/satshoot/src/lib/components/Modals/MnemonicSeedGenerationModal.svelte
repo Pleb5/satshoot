@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { generateMnemonicSeed } from '$lib/wallet/nut-13';
+    import { generateMnemonicSeed, saveMnemonicToFile } from '$lib/wallet/nut-13';
     import SeedWords from '../Login/SeedWords.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
@@ -14,7 +14,6 @@
     let { isOpen = $bindable(), onCompletion }: Props = $props();
     let seedWords = $state(Array(0));
     let confirmationWords = $state(Array(12).fill(''));
-    let showSeedWords = $state(false);
     let step = $state(0);
     let seedSecuredConfirmation = $state(false);
 
@@ -43,6 +42,10 @@
         });
         onCompletion(confirmWords);
     }
+
+    async function handleSaveToFile() {
+        await saveMnemonicToFile(seedWords.join(" "));
+    }
 </script>
 
 <ModalWrapper bind:isOpen title="Mnemonic Seed Words for Nostr Cashu Wallet">
@@ -59,7 +62,9 @@
                     label="I saved the seed words."
                     bind:checked={seedSecuredConfirmation}
                 />
-                <Button>Save to File</Button>
+                <Button onClick={handleSaveToFile}>
+                    Save to File
+                </Button>
                 <Button onClick={() => (step = 1)} disabled={!seedSecuredConfirmation}
                     >Continue</Button
                 >
