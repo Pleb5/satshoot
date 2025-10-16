@@ -22,11 +22,7 @@
     import type { NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { showLoginModal, showLogoutModal } from '$lib/stores/modals';
-    import MnemonicSeedInputModal from '../Modals/MnemonicSeedInputModal.svelte';
-    import { deriveSeedKey } from '$lib/wallet/nut-13';
-    import { encryptSecret } from '$lib/utils/crypto';
-    import { bytesToHex, hexToBytes } from '@noble/ciphers/utils';
-
+    
     interface Props {
         onRestoreLogin: () => void;
     }
