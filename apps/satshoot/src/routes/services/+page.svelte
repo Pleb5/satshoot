@@ -3,6 +3,7 @@
     import ServiceCard from '$lib/components/Services/ServiceCard.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
+    import { showDecentralizedDiscoveryModal } from '$lib/stores/modals';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
@@ -134,8 +135,20 @@
     <div class="w-full flex flex-col justify-center items-center py-[50px]">
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
-                <div class="w-full flex flex-col gap-[15px] justify-start">
-                    <h2 class="text-[40px] font-[500]">Latest Service Listings</h2>
+                <div
+                    class="flex flex-row justify-between items-center gap-4 max-[768px]:flex-col max-[768px]:items-start"
+                >
+                    <h2 class="max-sm:text-2xl sm:text-[40px] font-[500]">
+                        Latest Service Listings
+                    </h2>
+                    <Button
+                        variant="outlined"
+                        onClick={() => ($showDecentralizedDiscoveryModal = true)}
+                        classes="whitespace-nowrap"
+                    >
+                        <i class="bx bx-broadcast"></i>
+                        Decentralized Discovery
+                    </Button>
                 </div>
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <div class="w-full flex flex-col gap-[25px]">

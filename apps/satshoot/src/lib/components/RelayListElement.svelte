@@ -41,9 +41,18 @@
             relayElement.addEventListener('keydown', handleKeydown);
         }
 
+        // Only for actual selected relays, check their status in the pool
         const ndkPool = $ndk.pool;
 
-        const relay = ndkPool.getRelay(relayUrl, true);
+        // Check if relay exists in pool (it should for selected relays)
+        // Use the pool's relays Map directly to avoid adding to pool
+        const relay = ndkPool.relays.get(normalizeRelayUrl(relayUrl));
+
+        if (!relay) {
+            relayStatusColor = 'bg-gray-400';
+            relayStatusText = 'Not Connected';
+            return;
+        }
 
         relay.on('connect', () => {
             console.log('relay connected:>> ', relay);
@@ -127,6 +136,7 @@
 >
     <div
         class="flex flex-row gap-[5px] justify-center items-center p-[10px] bg-black-200 border-r-[1px] border-black-100 dark:border-white-100 max-[576px]:w-full"
+        title={relayStatusText}
     >
         <div
             title={relayStatusText}
@@ -144,7 +154,8 @@
         <Button
             onClick={() => onAdd()}
             variant="text"
-            classes="min-h-[35px] rounded-[0px] hover:bg-green-600 hover:text-white"
+            classes="min-h-[35px] rounded-[0px] hover:bg-green-600 hover:text-white transition-all"
+            title="Add this relay to your list"
         >
             <i class="bx bx-plus"></i>
             Add
@@ -153,7 +164,8 @@
         <Button
             onClick={() => onRemove()}
             variant="text"
-            classes="min-h-[35px] rounded-[0px] hover:bg-red-500 hover:text-white"
+            classes="min-h-[35px] rounded-[0px] hover:bg-red-500 hover:text-white transition-all"
+            title="Remove this relay"
         >
             <i class="bx bxs-trash"></i>
         </Button>

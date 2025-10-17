@@ -37,3 +37,5 @@ export const bidTakenState = writable<BidTakenState>({
 export const showLoginModal = writable(false);
 
 export const showLogoutModal = writable(false);
+
+export const showDecentralizedDiscoveryModal = writable(false);

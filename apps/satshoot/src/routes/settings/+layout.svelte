@@ -19,6 +19,10 @@
             label: 'Profile',
         },
         {
+            href: '/settings/mailbox/',
+            label: 'Mailbox',
+        },
+        {
             href: '/settings/relays/',
             label: 'Relays',
         },
@@ -79,7 +83,11 @@
                             <Card>
                                 <p>
                                     For sending and receiving payments, setup your
-                                    <a href="https:/https://coinos.io/" class="anchor" target="_blank">
+                                    <a
+                                        href="https:/https://coinos.io/"
+                                        class="anchor"
+                                        target="_blank"
+                                    >
                                         LN address
                                     </a>
                                     or your
@@ -95,19 +103,29 @@
                                     with customizable themes and built-in nostr features
                                 </p>
                             </Card>
-                        {:else}
+                        {:else if page.route.id === '/settings/mailbox'}
                             <Card>
-                                <p>Selecting reliable relays matters to your experience.</p>
+                                <p>
+                                    Mailbox relays are a way for other users to find your events, or
+                                    send you events.
+                                </p>
                                 <p>
                                     Check out
                                     <a
-                                        href="https://next.nostr.watch/"
+                                        href="https://github.com/nostr-protocol/nips/blob/master/65.md"
                                         class="anchor"
                                         target="_blank"
                                     >
-                                        nostr watch
+                                        Nip65
                                     </a>
                                     to learn more
+                                </p>
+                            </Card>
+                        {:else if page.route.id === '/settings/relays'}
+                            <Card>
+                                <p>
+                                    These relays are stored locally and are used for everything in
+                                    the app
                                 </p>
                             </Card>
                         {/if}

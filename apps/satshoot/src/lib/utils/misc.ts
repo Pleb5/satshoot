@@ -18,6 +18,8 @@ import { ExtendedNDKKind } from '$lib/types/ndkKind';
 export const JobsPerPage = 9;
 export const ServicesPerPage = 9;
 
+export const APP_RELAY_STORAGE_KEY = 'satshoot-app-relays';
+
 export const NostrBuildBlossomServer = 'https://blossom.band';
 
 export const SatShootPubkey = 'e3244843f8ab6483827e305e5b9d7f61b9eb791aa274d2a36836f3999c767650';

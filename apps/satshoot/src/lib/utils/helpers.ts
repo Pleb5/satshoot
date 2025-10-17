@@ -48,7 +48,7 @@ import { connected } from '../stores/network';
 import { retriesLeft, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
 import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
-import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
+import { fetchEventFromRelaysFirst, APP_RELAY_STORAGE_KEY } from '$lib/utils/misc';
 
 export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init');
@@ -193,6 +193,7 @@ export function logout() {
     localStorage.removeItem('readNotifications');
     localStorage.removeItem('jobFilter');
     localStorage.removeItem('bidFilter');
+    localStorage.removeItem(APP_RELAY_STORAGE_KEY);
 
     sessionStorage.clear();
 

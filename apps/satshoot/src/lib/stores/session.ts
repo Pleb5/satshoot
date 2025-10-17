@@ -4,6 +4,7 @@ import { writable } from 'svelte/store';
 
 import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
+import { APP_RELAY_STORAGE_KEY } from '$lib/utils/misc';
 
 export const DEFAULTRELAYURLS = [
     // "wss://relay.nostr.band/",
@@ -16,9 +17,9 @@ export const BOOTSTRAPOUTBOXRELAYS = [
     'wss://purplepag.es/',
     'wss://indexer.coracle.social/',
     'wss://relay.damus.io/',
-    // "wss://relay.nostr.band/",
-    // "wss://nos.lol/",
-    // "wss://bitcoiner.social/",
+    'wss://relay.nostr.band/',
+    'wss://nos.lol/',
+    'wss://bitcoiner.social/',
 ];
 
 export const NOSTRCONNECTRELAYURLS = ['wss://relay.nsec.app'];
@@ -42,7 +43,40 @@ export enum LoginMethod {
 // Saves us from decryption every time user reloads page during a session
 export const sessionPK: Writable<string> = persisted('pk', '', { storage: 'session' });
 
+// Store top discovered relays from decentralized discovery
+export const discoveredRelays: Writable<string[]> = persisted('discovered-relays', [], {
+    storage: 'session',
+});
+
 export const sessionInitialized = writable(false);
+
+// Load app relays from localStorage, fallback to defaults
+export function getAppRelays(): string[] {
+    if (typeof localStorage === 'undefined') {
+        return DEFAULTRELAYURLS;
+    }
+
+    try {
+        const storedRelays = localStorage.getItem(APP_RELAY_STORAGE_KEY);
+        if (storedRelays) {
+            const parsed = JSON.parse(storedRelays);
+            return Array.isArray(parsed) ? parsed : DEFAULTRELAYURLS;
+        } else {
+            // No saved relays, save defaults to localStorage
+            localStorage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(DEFAULTRELAYURLS));
+            return DEFAULTRELAYURLS;
+        }
+    } catch (e) {
+        console.error('Error loading app relays from localStorage:', e);
+        // Try to save defaults even after error
+        try {
+            localStorage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(DEFAULTRELAYURLS));
+        } catch (saveError) {
+            console.error('Error saving default relays to localStorage:', saveError);
+        }
+    }
+    return DEFAULTRELAYURLS;
+}
 
 // Client-side caching. Used for performance enhancement as well as a solution to identify
 // new data and serve push notifications. Notify user when 'jobs of interest' change,
@@ -53,7 +87,7 @@ const ndkSvelte = new NDKSvelte({
     blacklistRelayUrls: [],
     autoConnectUserRelays: true,
     autoFetchUserMutelist: true,
-    explicitRelayUrls: DEFAULTRELAYURLS,
+    explicitRelayUrls: getAppRelays(),
 });
 
 export const bunkerNDK = writable(new NDK({ enableOutboxModel: false }));

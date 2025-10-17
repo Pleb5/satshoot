@@ -13,6 +13,7 @@
     import { onDestroy } from 'svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import { showDecentralizedDiscoveryModal } from '$lib/stores/modals';
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
     // Track debounced jobs
@@ -133,7 +134,21 @@
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-col gap-[15px] justify-start">
-                    <h2 class="max-sm:text-2xl sm:text-[40px] font-[500]">Latest Job Listings</h2>
+                    <div
+                        class="flex flex-row justify-between items-center gap-4 max-[768px]:flex-col max-[768px]:items-start"
+                    >
+                        <h2 class="max-sm:text-2xl sm:text-[40px] font-[500]">
+                            Latest Job Listings
+                        </h2>
+                        <Button
+                            variant="outlined"
+                            onClick={() => ($showDecentralizedDiscoveryModal = true)}
+                            classes="whitespace-nowrap"
+                        >
+                            <i class="bx bx-broadcast"></i>
+                            Decentralized Discovery
+                        </Button>
+                    </div>
                 </div>
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <div class="w-full flex flex-col gap-[25px]">

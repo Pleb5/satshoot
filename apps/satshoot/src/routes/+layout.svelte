@@ -10,6 +10,7 @@
     import ndk, {
         bunkerNDK,
         bunkerRelayConnected,
+        discoveredRelays,
         sessionInitialized,
         sessionPK,
     } from '$lib/stores/session';
@@ -94,6 +95,7 @@
         bidTakenState,
         showLoginModal,
         showLogoutModal,
+        showDecentralizedDiscoveryModal,
     } from '$lib/stores/modals';
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
@@ -101,6 +103,7 @@
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import LogoutModal from '$lib/components/Modals/LogoutModal.svelte';
+    import DecentralizedDiscoveryModal from '$lib/components/Modals/DecentralizedDiscoveryModal.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -506,6 +509,16 @@
         if (allReviews) allReviews.empty();
     });
 
+    $effect(() => {
+        if ($sessionInitialized && $ndk) {
+            $discoveredRelays.forEach((relay) => {
+                if (!$ndk.explicitRelayUrls.includes(relay)) {
+                    $ndk.addExplicitRelay(relay, undefined, true);
+                }
+            });
+        }
+    });
+
     // Check for app updates and bid reload option to user in a Toast
     $effect(() => {
         if ($updated) {
@@ -792,3 +805,6 @@
 
 <!-- Logout Modal -->
 <LogoutModal bind:isOpen={$showLogoutModal} />
+
+<!-- Decentralized Discovery Modal -->
+<DecentralizedDiscoveryModal bind:isOpen={$showDecentralizedDiscoveryModal} />
