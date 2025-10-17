@@ -29,7 +29,6 @@
 
     let { onRestoreLogin }: Props = $props();
 
-    let showMnemonicSeedInputModal = $state(false);
     let showAppMenu = $state(false);
 
     let profilePicture = $state('');
@@ -333,7 +332,7 @@
     };
 
     function handleLogin() {
-        showLoginModal = true;
+        $showLoginModal = true;
     }
 
     const satShootLogoWrapperClass = 'flex flex-row items-center gap-4 ' + '';
@@ -592,5 +591,3 @@
 </div>
 
 <AppMenu bind:isOpen={showAppMenu} />
-
-<MnemonicSeedInputModal bind:isOpen={showMnemonicSeedInputModal} onConfirm={handleMnemonicSeedInput} onSkip={() => showLoginModal = true} />
