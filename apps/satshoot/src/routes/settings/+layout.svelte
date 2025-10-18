@@ -19,12 +19,12 @@
             label: 'Profile',
         },
         {
-            href: '/settings/mailbox/',
-            label: 'Mailbox',
+            href: '/settings/app-relays/',
+            label: 'App Relays',
         },
         {
-            href: '/settings/relays/',
-            label: 'Relays',
+            href: '/settings/mailbox-relays',
+            label: 'Mailbox Relays',
         },
     ];
 </script>
@@ -103,7 +103,7 @@
                                     with customizable themes and built-in nostr features
                                 </p>
                             </Card>
-                        {:else if page.route.id === '/settings/mailbox'}
+                        {:else if page.route.id === '/settings/mailbox-relays'}
                             <Card>
                                 <p>
                                     Mailbox relays are a way for other users to find your events, or
@@ -121,12 +121,9 @@
                                     to learn more
                                 </p>
                             </Card>
-                        {:else if page.route.id === '/settings/relays'}
+                        {:else if page.route.id === '/settings/app-relays'}
                             <Card>
-                                <p>
-                                    These relays are stored locally and are used for everything in
-                                    the app
-                                </p>
+                                <p>Main relays SatShoot uses to publish and fetch data</p>
                             </Card>
                         {/if}
                     </div>

@@ -1,5 +1,5 @@
 import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import NDK from '@nostr-dev-kit/ndk';
+import NDK, { NDKRelay, NDKRelayAuthPolicies } from '@nostr-dev-kit/ndk';
 import { writable } from 'svelte/store';
 
 import { persisted } from 'svelte-persisted-store';
@@ -88,6 +88,7 @@ const ndkSvelte = new NDKSvelte({
     autoConnectUserRelays: true,
     autoFetchUserMutelist: true,
     explicitRelayUrls: getAppRelays(),
+    relayAuthDefaultPolicy: NDKRelayAuthPolicies.signIn(),
 });
 
 export const bunkerNDK = writable(new NDK({ enableOutboxModel: false }));

@@ -144,8 +144,6 @@ async function updateSocialWoT(primaryWoTEvents: Set<NDKEvent>, ndk: NDKSvelte) 
     // Now get ALL second order follows, mutes and reports
     const authorsArray = Array.from(authors);
 
-    await ndk.outboxTracker!.trackUsers(authorsArray);
-
     const networkFilter = {
         kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report, NDKKind.Metadata],
         authors: authorsArray,

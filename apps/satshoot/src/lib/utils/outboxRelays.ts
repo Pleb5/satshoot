@@ -83,7 +83,17 @@ async function getRelayListForUsersBatch(pubkeys: Hexpubkey[], ndk: NDK, timeout
     return relayLists;
 }
 
-export async function calculateRelaySet(pubkeys: Hexpubkey[], ndk: NDK) {
+interface ProgressCallback {
+    fetchedUsers: number;
+    currentBatch: number;
+    totalBatches: number;
+}
+
+export async function calculateRelaySet(
+    pubkeys: Hexpubkey[],
+    ndk: NDK,
+    onProgress?: (progress: ProgressCallback) => void
+) {
     const pubkeyToRelaysMap = new Map<Hexpubkey, Set<WebSocket['url']>>();
     const BATCH_SIZE = 1000;
 
@@ -93,13 +103,14 @@ export async function calculateRelaySet(pubkeys: Hexpubkey[], ndk: NDK) {
 
     console.log(`Connected relays: ${ndk.outboxPool?.connectedRelays().length}`);
 
+    const totalBatches = Math.ceil(pubkeys.length / BATCH_SIZE);
+    let totalFetchedUsers = 0;
+
     for (let i = 0; i < pubkeys.length; i += BATCH_SIZE) {
         const batch = pubkeys.slice(i, i + BATCH_SIZE);
-        console.log(
-            `Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(
-                pubkeys.length / BATCH_SIZE
-            )} (${batch.length} pubkeys)`
-        );
+        const currentBatch = Math.floor(i / BATCH_SIZE) + 1;
+
+        console.log(`Processing batch ${currentBatch}/${totalBatches} (${batch.length} pubkeys)`);
 
         try {
             const relayListsMap = await getRelayListForUsersBatch(batch, ndk);
@@ -111,11 +122,20 @@ export async function calculateRelaySet(pubkeys: Hexpubkey[], ndk: NDK) {
                 }
             });
 
+            totalFetchedUsers = pubkeyToRelaysMap.size;
+
             console.log(
-                `Batch ${Math.floor(i / BATCH_SIZE) + 1}: Found relays for ${
-                    relayListsMap.size
-                } users`
+                `Batch ${currentBatch}: Found relays for ${relayListsMap.size} users (total: ${totalFetchedUsers})`
             );
+
+            // Report progress
+            if (onProgress) {
+                onProgress({
+                    fetchedUsers: totalFetchedUsers,
+                    currentBatch,
+                    totalBatches,
+                });
+            }
         } catch (error) {
             console.error(`Error fetching relay lists for batch:`, error);
         }

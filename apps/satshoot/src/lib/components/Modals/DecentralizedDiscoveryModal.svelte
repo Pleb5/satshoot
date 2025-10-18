@@ -14,11 +14,14 @@
     let currentStep = $state(0);
     let isRunning = $state(false);
     let discoveredRelays = $state(0);
+    let fetchedUsers = $state(0);
+    let totalUsers = $state(0);
+    let currentBatch = $state(0);
+    let totalBatches = $state(0);
 
     const steps = [
-        '1/3: Calculating relay set...',
-        '2/3: Connecting to relays...',
-        '3/3: Fetching all events...',
+        '1/2: Fetching relay lists from your Web of Trust...',
+        '2/2: Adding optimal relays to pool...',
     ];
 
     async function startDiscovery() {
@@ -26,7 +29,7 @@
         currentStep = 0;
 
         try {
-            // Step 1: Calculate relay set
+            // Step 1: Fetch relay lists from WoT
             currentStep = 1;
 
             const wotPubkeys = Array.from($wot);
@@ -34,20 +37,22 @@
             if (wotPubkeys.length === 0) {
                 throw new Error('No pubkeys in Web of Trust');
             }
-            const relayUrls = await calculateRelaySet(wotPubkeys, $ndk);
+
+            totalUsers = wotPubkeys.length;
+
+            const relayUrls = await calculateRelaySet(wotPubkeys, $ndk, (progress) => {
+                fetchedUsers = progress.fetchedUsers;
+                currentBatch = progress.currentBatch;
+                totalBatches = progress.totalBatches;
+            });
             console.log('relayUrls', relayUrls);
 
             // Save top 5 relays to session storage
             sessionDiscoveredRelays.set(relayUrls.slice(0, 5));
 
-            // Step 2: Connect to relays
+            // Step 2: Add relays to pool
             currentStep = 2;
-            await connectToRelays(relayUrls);
-
-            // Step 3: Fetch events
-            currentStep = 3;
-            // Give already opened subscriptions time to fetch events
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await addRelaysToPool(relayUrls);
 
             // Success!
             toaster.create({
@@ -73,25 +78,27 @@
         }
     }
 
-    async function connectToRelays(relayUrls: WebSocket['url'][]) {
-        console.log(`Connecting to ${relayUrls.length} optimal relays...`);
+    async function addRelaysToPool(relayUrls: WebSocket['url'][]) {
+        console.log(`Adding ${relayUrls.length} optimal relays to pool...`);
         discoveredRelays = relayUrls.length;
 
-        // Use temporary relays - they won't be permanently added to the pool
+        // Add relays to the pool
         for (const relayUrl of relayUrls) {
-            // const relay = new NDKRelay(relayUrl, undefined, $ndk);
-            // $ndk.pool.useTemporaryRelay(relay);
             $ndk.addExplicitRelay(relayUrl, undefined, true);
         }
 
-        // Give relays time to connect
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Small delay to show step completion
+        await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     function resetModal() {
         currentStep = 0;
         isRunning = false;
         discoveredRelays = 0;
+        fetchedUsers = 0;
+        totalUsers = 0;
+        currentBatch = 0;
+        totalBatches = 0;
     }
 
     function handleClose() {
@@ -138,9 +145,16 @@
                     {/each}
                 </div>
 
-                {#if discoveredRelays > 0 && currentStep >= 2}
+                {#if currentStep === 1 && totalUsers > 0}
                     <p class="text-sm text-center text-surface-600 dark:text-surface-400">
-                        Using {discoveredRelays} optimal relays
+                        Batch {currentBatch}/{totalBatches} • Found relays for {fetchedUsers}/{totalUsers}
+                        users
+                    </p>
+                {/if}
+
+                {#if discoveredRelays > 0 && currentStep === 2}
+                    <p class="text-sm text-center text-surface-600 dark:text-surface-400">
+                        Adding {discoveredRelays} optimal relays
                     </p>
                 {/if}
             </div>
