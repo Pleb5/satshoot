@@ -104,8 +104,6 @@
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import LogoutModal from '$lib/components/Modals/LogoutModal.svelte';
     import DecentralizedDiscoveryModal from '$lib/components/Modals/DecentralizedDiscoveryModal.svelte';
-    import { deriveSeedKey } from '$lib/wallet/nut-13';
-    import MnemonicSeedInputModal from '$lib/components/Modals/MnemonicSeedInputModal.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -842,8 +840,3 @@
 
 <!-- Decentralized Discovery Modal -->
 <DecentralizedDiscoveryModal bind:isOpen={$showDecentralizedDiscoveryModal} />
-<MnemonicSeedInputModal
-    bind:isOpen={showMnemonicSeedInputModal}
-    onConfirm={generateBip39Seed}
-    onSkip={restoreLogin}
-/>

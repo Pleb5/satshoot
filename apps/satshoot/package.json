@@ -49,7 +49,7 @@
         "@nostr-dev-kit/ndk-cache-dexie": "2.6.34",
         "@nostr-dev-kit/ndk-svelte": "2.4.38",
         "@nostr-dev-kit/ndk-svelte-components": "2.3.11",
-        "@nostr-dev-kit/ndk-wallet": "0.6.2",
+        "@nostr-dev-kit/ndk-wallet": "workspace:^",
         "@scure/bip39": "2.0.0",
         "@tailwindcss/vite": "^4.1.4",
         "@zag-js/svelte": "^1.10.0",
