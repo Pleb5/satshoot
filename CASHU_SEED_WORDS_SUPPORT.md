@@ -1,10 +1,10 @@
-# Second Iteration towards NUT-13 support in Satshoot
-After implementing some basic functions for seed handling in nut-13.ts and first user UI flows in the modals MnemonicSeedGenerationModal.svelte and MnemonicSeedInputModal for setting up and initializing the wallet, now we want to implement a solid framework for durable Nostr native wallet seed support in the ndk-wallet package.
+# Second Iteration Toward NUT-13 Support in Satshoot
+After implementing the basic seed-handling functions in `nut-13.ts` and the initial user flows in `MnemonicSeedGenerationModal.svelte` and `MnemonicSeedInputModal.svelte`, our next goal is to build a robust framework for durable Nostr-native wallet seed support in the `ndk-wallet` package.
 
-For this purpose we introduce the Nostr Wallet Seed Event first.
+To achieve this, we first introduce the Nostr Wallet Seed event.
 
-## New Deterministic Cashu Wallet Event in ndk-wallet Package
-For deterministic Cashu proofs the ndk-wallet must track for every mint and keyset a counter representing the last used value starting by zero. This part of the wallet state must be store in the Nostr network through a new Nostr event (wallet seed event) with the following structure:
+## New Deterministic Cashu Wallet Event in the ndk-wallet Package
+For deterministic Cashu proofs, the `ndk-wallet` must track, for every mint and keyset, a counter that represents the last used value, starting at zero. This part of the wallet state must be stored on the Nostr network via a new Nostr event (wallet seed event) with the following structure:
 
 ### Protocol Extension
 This new event kind will be proposed as an extension of NIP-60:
@@ -24,18 +24,18 @@ This new event kind will be proposed as an extension of NIP-60:
 }
 ```
 
-This ndk-wallet extension is the ground for the second iteration towards NUT-13 support in Satshoot.
+This extension provides the foundation for the second iteration toward NUT-13 support in Satshoot.
 
 ### Implementation Tasks Breakdown for ndk-wallet
-* Clients can pass a Deterministic Wallet Event (kind 17376) to a existing NDKCashuWallet to set the bip39seed and the mint counter information in the WalletState.
-* The counter information in kind 17376 must be store in the ndk-wallet classes as well.
-  * The wallet seed gets stored in the NDKCashuWallet class (_bip39seed).
-  * The current counter state for all wallet's mints must be stored in the WalletState class.
-* This counter state must be made available at different places where new proofs are created. The counter value must be passed to the cashu-ts wallet functions to generate the next secret.
-* After that the wallet seed event must be updated with the new counter incremented by one for the used mint and keyset-id. This is done similarly to how the new proofs are published in ndk-wallet. The internal wallet state must be updated immediately.
+* Clients can pass a Deterministic Wallet Event (kind `17376`) to an existing `NDKCashuWallet` to set the BIP-39 seed and corresponding mint counter information in `WalletState`.
+* The counter information in kind `17376` must also be stored within the `ndk-wallet` classes:
+  * The wallet seed is stored in the `NDKCashuWallet` class (`_bip39seed`).
+  * The current counter state for all wallet mints is stored in the `WalletState` class.
+* The counter state must be accessible wherever new proofs are generated. The counter value should be passed to the `cashu-ts` wallet functions to derive the next secret.
+* After generating a proof, the wallet seed event must be updated with the counter incremented by one for the relevant mint and keyset ID. This mirrors how the new proofs are published in `ndk-wallet`, and the internal wallet state must be updated immediately.
 
 ## Second Iteration in Satshoot
 ### Implementation Tasks Breakdown
-* Upon login the application must load this event kind (17376) along with the Cashu wallet event (kind 17375).
-  * If non of the events 17375 and 17376 are loaded, the user must be prompted to create the Nostr Cashu Wallet with BIP-39 seed as already partly implemented in my-cashu-wallet/+page.svelte.
-  * If the app can't load any event kind 17376 but a 17375 is found (legacy case), we proceed as before implementing this feature. No seed is set in the NDKCashuWallet and the new logic described bellow doesn't apply.
+* Upon login, the application must load event kind `17376` along with the Cashu wallet event (kind `17375`).
+  * If neither event `17375` nor `17376` is loaded, prompt the user to create the Nostr Cashu wallet with a BIP-39 seed, as partially implemented in `my-cashu-wallet/+page.svelte`.
+  * If the application cannot load event kind `17376` but finds a `17375` (legacy scenario), continue with the existing behavior; do not set the seed in `NDKCashuWallet`, and ignore the new logic described above.
