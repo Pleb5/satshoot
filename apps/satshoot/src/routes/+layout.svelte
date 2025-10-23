@@ -142,7 +142,7 @@
                 action: {
                     label: 'Check relays',
                     onClick: () => {
-                        goto('/settings/relays');
+                        goto('/settings/app-relays');
                     },
                 },
             });
@@ -195,8 +195,78 @@
 
             initializeUser($ndk);
         } else if (localStorage.getItem('nostr-nsec') !== null) {
-            showDecryptSecretModal = true;
+            // Try to auto-decrypt with empty passphrase first (for no-passphrase logins)
+            await attemptAutoDecrypt();
         }
+    }
+
+    async function attemptAutoDecrypt() {
+        try {
+            const encryptedNsec = localStorage.getItem('nostr-nsec');
+            const salt = localStorage.getItem('nostr-npub');
+
+            if (!encryptedNsec || !salt) {
+                logout();
+                return;
+            }
+
+            // Try to decrypt with empty passphrase first
+            const decryptedSecret = await decryptSecretAsync(encryptedNsec, '', salt);
+
+            if (decryptedSecret) {
+                // Success! Auto-restore without modal
+                const privateKey = privateKeyFromNsec(decryptedSecret);
+                if (privateKey) {
+                    $ndk.signer = new NDKPrivateKeySigner(privateKey);
+                    $sessionPK = privateKey;
+                    $loggingIn = false;
+                    initializeUser($ndk);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.log('Auto-decrypt failed, will show modal:', error);
+        }
+
+        // If auto-decrypt failed, show the modal for manual passphrase entry
+        showDecryptSecretModal = true;
+    }
+
+    async function decryptSecretAsync(
+        ciphertext: string,
+        passphrase: string,
+        salt: string
+    ): Promise<string | null> {
+        return new Promise((resolve) => {
+            const cryptWorker = new Worker(
+                new URL('$lib/utils/crypto.worker.ts', import.meta.url),
+                { type: 'module' }
+            );
+
+            const timeout = setTimeout(() => {
+                cryptWorker.terminate();
+                resolve(null);
+            }, 5000); // 5 second timeout
+
+            cryptWorker.onmessage = (m) => {
+                clearTimeout(timeout);
+                cryptWorker.terminate();
+                const decryptedSecret = m.data['decryptedSecret'];
+                resolve(decryptedSecret || null);
+            };
+
+            cryptWorker.onerror = () => {
+                clearTimeout(timeout);
+                cryptWorker.terminate();
+                resolve(null);
+            };
+
+            cryptWorker.postMessage({
+                encrpytedSecret: ciphertext,
+                passphrase: passphrase,
+                salt: salt,
+            });
+        });
     }
 
     function decryptSecretModalCallback(res: {

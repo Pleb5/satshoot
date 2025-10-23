@@ -141,14 +141,16 @@
 <Card {classes} actAsButton onClick={goToChat}>
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
-        <a href={'/' + user.npub}>
+        <a href={'/' + user.npub} class="shrink-0">
             <ProfileImage src={userImage} />
         </a>
-        <div class="flex flex-col">
-            <p>{userName}</p>
+        <div class="flex-1 min-w-0 flex flex-col">
+            <p class="truncate max-w-full">{userName}</p>
             {#if decryptedDM}
-                <div class="flex flex-row gap-[5px] flex-wrap">
-                    {decryptedDM.slice(0, 90)}{decryptedDM.length > 90 ? '...' : ''}
+                <div class="flex flex-row gap-[5px] flex-wrap w-full">
+                    <span class="break-all">
+                        {decryptedDM.slice(0, 90)}{decryptedDM.length > 90 ? '...' : ''}
+                    </span>
                 </div>
             {:else}
                 <ProgressRing color="primary" />
