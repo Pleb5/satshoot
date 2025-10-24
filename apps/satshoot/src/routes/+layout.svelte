@@ -520,13 +520,12 @@
         sessionInitialized.set(true);
     });
 
-    onDestroy(() => {
-                action: {
-                    label: 'Reload',
-                    onClick: () => {
-                        // Reload new page circumventing browser cache
-                        location.href = location.pathname + '?v=' + new Date().getTime();
-                    },
+        await $ndk.connect();
+
+        if (!$loggedIn && $loginMethod) {
+            showMnemonicSeedInputModal = true;
+        }
+    });
                 },
             });
         }
