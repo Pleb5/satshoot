@@ -180,9 +180,15 @@
 
             loginMethod.set(LoginMethod.Local);
 
-            const passphraseToUse = passphrase || '';
-            const encryptedSecret = encryptSecret(secret, passphraseToUse, npub);
-            localStorage.setItem(storageKey, encryptedSecret);
+            // If no passphrase is provided, store the nsec directly (unencrypted)
+            // If passphrase is provided, encrypt the secret
+            if (passphrase && passphrase.trim() !== '') {
+                const encryptedSecret = encryptSecret(secret, passphrase, npub);
+                localStorage.setItem(storageKey, encryptedSecret);
+            } else {
+                // Store unencrypted nsec when no passphrase is used
+                localStorage.setItem(storageKey, secret);
+            }
             localStorage.setItem('nostr-npub', npub);
 
             // Initialize user
