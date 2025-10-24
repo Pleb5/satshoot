@@ -40,6 +40,9 @@
     import ConfirmationDialog from '$lib/components/UI/ConfirmationDialog.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import { deriveSeedKey } from '$lib/wallet/nut-13';
+    import MnemonicSeedGenerationModal from '$lib/components/Modals/MnemonicSeedGenerationModal.svelte';
+    import MnemonicSeedInputModal from '$lib/components/Modals/MnemonicSeedInputModal.svelte';
 
     enum Tab {
         Mints,
@@ -57,6 +60,8 @@
     let showRecoverEcashWallet = $state(false);
     let showBackupEcashWallet = $state(false);
     let showCleanWalletConfirmationDialog = $state(false);
+    let showMnemonicSeedGenerationModal = $state(false);
+    let showMnemonicSeedInputModal = $state(false);
 
     let mintBalances: Record<string, number> = $state({});
     let walletBalance = $state('0');
@@ -79,11 +84,11 @@
     const walletRelays = $derived($userCashuInfo?.relays ?? []);
 
     $effect(() => {
-        if (!$wallet && !$nut13SeedStorage) {
+        if (!$wallet) {
             showMnemonicSeedInputModal = true;
             return;
         }
-        if (!$wallet && $nut13SeedStorage) {
+        if ($wallet && $userCashuInfo) {
             tryLoadWallet($nut13SeedStorage);
         }
         if ($wallet && $userCashuInfo) {
@@ -260,9 +265,17 @@
         return balanceStr;
     }
 
-    async function setupWallet() {
-        tempWallet = new NDKCashuWallet($ndk);
+    function setupWallet(bip39seed: Uint8Array) {
+        tempWallet = new NDKCashuWallet($ndk, bip39seed);
         showMintModal = true;
+    }
+
+    function generateBip39Seed(newWallet: boolean): (seedWords: string[]) => void {
+        return async (seedWords) => {
+            const bip39seed = deriveSeedKey(seedWords.join(' '));
+            if (newWallet) setupWallet(bip39seed);
+            else await tryLoadWallet(bip39seed);
+        };
     }
 
     // Handler for new wallet mint selection
@@ -308,20 +321,23 @@
 
             newWallet.relaySet = NDKRelaySet.fromRelayUrls(mintRelays, $ndk);
 
-            const cashuInfo = new NDKCashuMintList($ndk);
-            cashuInfo.p2pk = newWallet._p2pk;
-            cashuInfo.relays = mintRelays;
-            cashuInfo.mints = newWallet.mints;
+        }
+    }
 
-            await broadcastEvent($ndk, cashuInfo, { replaceable: true });
-            await newWallet.publish();
-
-            toaster.success({
-                title: `Nostr Wallet created!`,
+    async function tryLoadWallet(bip39seed?: Uint8Array) {
+        if ($currentUser) {
+            await fetchAndInitWallet($currentUser, $ndk, {
+                fetchLegacyWallet: true,
+                bip39seed: bip39seed,
             });
+            if ($wallet) {
+                $wallet = $wallet;
+            }
+        } else if ($loggedIn) {
+            console.error('Error: User not found!');
+        }
+    }
 
-            walletInit(newWallet, cashuInfo, $ndk, $currentUser!);
-        } catch (err) {
             console.error(err);
             toaster.error({
                 title: `Failed to create Nostr Wallet: ${err}`,
@@ -580,14 +596,18 @@
                         </div>
                     </section>
 
-                    <!-- Placeholder Section for mobile view -->
-                    {#each { length: 2 } as _}
-                        <section class="w-full hidden max-[768px]:block">
-                            <div class="p-4 space-y-4">
-                                <div class="placeholder animate-pulse"></div>
-                                <div class="grid grid-cols-3 gap-8">
-                                    <div class="placeholder animate-pulse"></div>
-                                    <div class="placeholder animate-pulse"></div>
+                    {/each}
+                {:else if $walletStatus === NDKWalletStatus.FAILED}
+                    <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
+                        <Button onClick={() => (showMnemonicSeedGenerationModal = true)}
+                            >New Nostr Wallet</Button
+                        >
+                        <Button onClick={() => (showMnemonicSeedInputModal = true)}
+                            >Try loading Wallet</Button
+                        >
+                    </div>
+                {:else if $wallet}
+                    <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                                     <div class="placeholder animate-pulse"></div>
                                 </div>
                                 <div class="grid grid-cols-4 gap-4">
@@ -800,10 +820,20 @@
 
 {#if $wallet}
     <ExploreMintsModal
-        bind:isOpen={showExploreMintsModal}
-        cashuWallet={$wallet}
-        callback={handleMintsUpdate}
-    />
+        balance. Do you really wish to clean wallet?
+    </strong>
+</ConfirmationDialog>
+
+<MnemonicSeedGenerationModal
+    bind:isOpen={showMnemonicSeedGenerationModal}
+    onCompletion={generateBip39Seed(true)}
+/>
+
+<MnemonicSeedInputModal
+    bind:isOpen={showMnemonicSeedInputModal}
+    onConfirm={generateBip39Seed(false)}
+    onSkip={tryLoadWallet}
+/>
 {/if}
 
 <RecoverEcashWallet bind:isOpen={showRecoverEcashWallet} />
