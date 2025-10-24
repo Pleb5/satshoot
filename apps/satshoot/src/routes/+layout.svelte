@@ -198,13 +198,16 @@
             showDecryptSecretModal = true;
         }
     }
+            localStorage.getItem('nostr-nsec') !== null
+        ) {
+            showDecryptSecretModal = true;
+        } else {
+            $loggingIn = false;
+            $loggedIn = false;
+            $loginMethod = null;
+        }
+    }
 
-    function decryptSecretModalCallback(res: {
-        decryptedSecret?: string;
-        restoreMethod?: RestoreMethod;
-    }) {
-        // Get decrypted seed from a modal prompt where user enters passphrase
-        // User can dismiss modal in which case decryptedSeed is undefined
         const { decryptedSecret, restoreMethod } = res;
 
         if (!decryptedSecret) {
