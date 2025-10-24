@@ -112,12 +112,13 @@
 
     let { children }: Props = $props();
 
+
     let showDecryptSecretModal = $state(false);
+    let showMnemonicSeedInputModal = $state(false);
+    let bip39seedS = $state<Uint8Array>();
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(
-    );
-    const displayFooter = $derived(displayNav && !hideBottomNav);
     let footerHeight = $state(0);
     let followSubscription = $state<NDKSubscription>();
 
@@ -203,13 +204,16 @@
             showDecryptSecretModal = true;
         }
     }
-            return;
+            $loggingIn = false;
+            console.log('Start init session in local key login');
+            initializeUser($ndk, bip39seed);
+        } else if (
+            localStorage.getItem('nostr-nsec') !== null
+        ) {
+            bip39seedS = bip39seed;
+            showDecryptSecretModal = true;
         }
-
-        if (!restoreMethod) {
-            showErrorToast(
-                'Could not get restore method. Clear browser local storage and login again.'
-            );
+    }
             return;
         }
 
@@ -242,14 +246,13 @@
     }
 
     function getPrivateKeyFromDecryptedSecret(
-    function setupNip46Timeout() {
-        return setTimeout(() => {
-            if (!$ndk.signer) {
-                toaster.warning({
-                    title: 'Remote Signer restoration took too long!',
-                    description: 'Fix or Remove remote signer credentials!',
-                    duration: 60000, // 1 min
-                    action: {
+        $ndk.signer = new NDKPrivateKeySigner(privateKey);
+        $sessionPK = privateKey;
+
+        initializeUser($ndk, bip39seedS);
+    }
+
+    function getPrivateKeyFromDecryptedSecret(
                         label: 'Logout',
                         onClick: () => {
                             $loggingIn = false;
