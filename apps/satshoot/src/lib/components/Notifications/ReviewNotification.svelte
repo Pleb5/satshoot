@@ -162,7 +162,7 @@
                 {#if jobOrService}
                     <a
                         href={'/' + jobOrService.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] link break-all"
+                        class="transition ease duration-[0.3s] font-[600] link break-words"
                     >
                         "{jobOrService.title}"
                     </a>

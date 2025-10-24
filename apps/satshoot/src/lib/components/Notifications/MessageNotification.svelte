@@ -148,7 +148,7 @@
             <p class="truncate max-w-full">{userName}</p>
             {#if decryptedDM}
                 <div class="flex flex-row gap-[5px] flex-wrap w-full">
-                    <span class="break-all">
+                    <span class="break-words">
                         {decryptedDM.slice(0, 90)}{decryptedDM.length > 90 ? '...' : ''}
                     </span>
                 </div>

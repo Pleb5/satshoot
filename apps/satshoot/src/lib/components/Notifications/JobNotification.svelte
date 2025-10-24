@@ -311,7 +311,7 @@
                     </p>
                     <a
                         href={notificationMessage.link}
-                        class="transition ease duration-[0.3s] font-[600] link break-all"
+                        class="transition ease duration-[0.3s] font-[600] link break-words"
                     >
                         "{notificationMessage.title}"
                     </a>
@@ -323,7 +323,7 @@
                         <!-- Job Creation -->
                         <div class="flex items-center gap-2">
                             <span class="w-2 h-2 shrink-0 rounded-full bg-blue-500"></span>
-                            <span class="break-all">
+                            <span class="break-words">
                                 Job Created: {new Date(
                                     (notification.publishedAt || 0) * 1000
                                 ).toLocaleString()}
@@ -338,7 +338,7 @@
                                         historyEntry.toStatus
                                     )}"
                                 ></span>
-                                <span class="break-all">
+                                <span class="break-words">
                                     {getStatusLabel(historyEntry.toStatus)}: {new Date(
                                         historyEntry.timestamp * 1000
                                     ).toLocaleString()}
@@ -354,7 +354,7 @@
                         <!-- Bid Creation -->
                         <div class="flex items-center gap-2">
                             <span class="w-2 h-2 shrink-0 rounded-full bg-blue-500"></span>
-                            <span class="break-all">
+                            <span class="break-words">
                                 Bid Created: {new Date(
                                     (notification.publishedAt || 0) * 1000
                                 ).toLocaleString()}
@@ -366,7 +366,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 shrink-0 rounded-full {timelineEntry.color}"
                                 ></span>
-                                <span class="break-all">
+                                <span class="break-words">
                                     {timelineEntry.label}: {new Date(
                                         timelineEntry.timestamp * 1000
                                     ).toLocaleString()}

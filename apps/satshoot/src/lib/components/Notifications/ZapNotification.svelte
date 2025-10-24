@@ -192,14 +192,14 @@
                 {#if job}
                     <a
                         href={'/' + job.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] link break-all"
+                        class="transition ease duration-[0.3s] font-[600] link break-words"
                     >
                         for the Job: "{job.title}"
                     </a>
                 {:else if service}
                     <a
                         href={'/' + service.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] link break-all"
+                        class="transition ease duration-[0.3s] font-[600] link break-words"
                     >
                         for the Service: "{service.title}"
                     </a>
