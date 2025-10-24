@@ -77,11 +77,9 @@ export async function initializeUser(ndk: NDKSvelte) {
                 explicitRelays = [...explicitRelays, ...writeRelayUrls];
             }
 
-            fetchAndInitWallet(user, ndk, { explicitRelays });
+            fetchAndInitWallet(user, ndk, { explicitRelays, bip39seed });
 
             await loadWot(ndk, user);
-        }
-
         myJobs.startSubscription();
         myBids.startSubscription();
         myServices.startSubscription();
@@ -150,9 +148,10 @@ export async function fetchAndInitWallet(
             nostrWallet = await NDKCashuWallet.from(event);
         } else if (event.kind === NDKKind.CashuWallet) {
             checkLegacy = false;
-        } else if (event.kind === NDKKind.CashuWallet) {
-            checkLegacy = false;
             console.log(`fetchAndInitWallet ${walletFetchOpts.bip39seed ? "with" : "without"} NUT-13 seed`);
+            nostrWallet = await NDKCashuWallet.from(event, walletFetchOpts.bip39seed);
+        } else if (event.kind === NDKKind.CashuMintList) {
+            cashuMintList = NDKCashuMintList.from(event);
             nostrWallet = await NDKCashuWallet.from(event);
         } else if (event.kind === NDKKind.CashuMintList) {
             cashuMintList = NDKCashuMintList.from(event);

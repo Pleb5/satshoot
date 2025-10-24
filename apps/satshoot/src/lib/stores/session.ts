@@ -80,9 +80,11 @@ export function getAppRelays(): string[] {
     return DEFAULTRELAYURLS;
 }
 
-// Load app relays from localStorage, fallback to defaults
-export function getAppRelays(): string[] {
-    if (typeof localStorage === 'undefined') {
+export const nut13SeedStorage = writable<Uint8Array | undefined>();
+
+// Client-side caching. Used for performance enhancement as well as a solution to identify
+// new data and serve push notifications. Notify user when 'jobs of interest' change,
+// that is, my jobs and jobs I bid on, as well as new messages
         return DEFAULTRELAYURLS;
     }
 

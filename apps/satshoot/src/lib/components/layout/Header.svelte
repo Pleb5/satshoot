@@ -11,7 +11,7 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterAndRelaySetFromBech32, NDKKind, NDKRelaySet, NDKSubscriptionCacheUsage, profileFromEvent, type NDKEvent } from '@nostr-dev-kit/ndk';
-    import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
+    import ndk, { nut13SeedStorage, BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import AppMenu from './AppMenu.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -24,14 +24,17 @@
     import { showLoginModal, showLogoutModal } from '$lib/stores/modals';
     import MnemonicSeedInputModal from '../Modals/MnemonicSeedInputModal.svelte';
     import { deriveSeedKey } from '$lib/wallet/nut-13';
-    import { encryptSecret } from '$lib/utils/crypto';
-    import { bytesToHex, hexToBytes } from '@noble/ciphers/utils';
 
     interface Props {
         onRestoreLogin: () => void;
+    import { bytesToHex, hexToBytes } from '@noble/ciphers/utils';
+
     let { onRestoreLogin }: Props = $props();
 
+    let showMnemonicSeedInputModal = $state(false);
     let showAppMenu = $state(false);
+
+    let profilePicture = $state('');
 
     let profilePicture = $state('');
     let hasAttemptedProfileFetch = $state(false);
@@ -333,11 +336,14 @@
         }
     };
 
-    function handleLogin() {
-        if (!$nut13SeedStorage) {
-            showMnemonicSeedInputModal = true;
-            return;
+    function handleLogin(mnemonicSeed?: string[]) {
+        if (mnemonicSeed) {
+            $nut13SeedStorage = deriveSeedKey(mnemonicSeed.join(" "));
         }
+        showLoginModal = true;
+    }
+
+    const satShootLogoWrapperClass = 'flex flex-row items-center gap-4 ' + '';
         showLoginModal = true;
     }
 
@@ -485,13 +491,13 @@
                             {:else if $loggingIn}
                                 <div class="flex items-center gap-x-2">
                                     <Button
-                                        classes={extraClassesForLogoutBtn}
-                                        onClick={() => ($showLogoutModal = true)}
-                                    >
-                                        Logout
-                                    </Button>
-                                    <h3 class="h6 md:h3 font-bold">Logging in...</h3>
-                                    <ProgressRing color="primary" size={12} />
+                            {:else if $loginMethod === 'local'}
+                                <Button onClick={onRestoreLogin}>Login</Button>
+                            {:else}
+                                <Button onClick={() => showMnemonicSeedInputModal = true}>Login</Button>
+                            {/if}
+                        </div>
+                    {:else}
                                 </div>
                             {:else if $loginMethod === 'local'}
                                 <Button onClick={onRestoreLogin}>Login</Button>
@@ -589,9 +595,10 @@
                                     </div>
                                 {/if}
                             </div>
-                            <i class="bx bx-search text-2xl mt-[5px]"></i>
-                        </div>
-                    {/if}
+
+<AppMenu bind:isOpen={showAppMenu} />
+
+<MnemonicSeedInputModal bind:isOpen={showMnemonicSeedInputModal} onConfirm={handleLogin} onSkip={handleLogin} />
                 </div>
             </div>
         </div>

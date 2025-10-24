@@ -8,6 +8,7 @@
     import '@fortawesome/fontawesome-free/css/solid.css';
 
     import ndk, {
+        nut13SeedStorage,
         bunkerNDK,
         bunkerRelayConnected,
         discoveredRelays,
@@ -115,8 +116,6 @@
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(
-        page.route.id === '/messages/[jobId=event]' ||
-            page.route.id === '/messages/[serviceId=service]'
     );
     const displayFooter = $derived(displayNav && !hideBottomNav);
     let footerHeight = $state(0);
@@ -163,14 +162,9 @@
         }
     });
 
-    async function restoreLogin() {
+    async function restoreLogin(bip39seed?: Uint8Array) {
+        console.log('logging in user');
         // For UI feedback
-        $loggingIn = true;
-        await tick();
-
-        if (!$loginMethod) {
-            $loggingIn = false;
-            return;
         }
 
         switch ($loginMethod) {
@@ -191,29 +185,24 @@
         if ($sessionPK) {
             $ndk.signer = new NDKPrivateKeySigner($sessionPK);
             $loggingIn = false;
-            console.log('Start init session in local key login');
-
-            initializeUser($ndk);
-        } else if (localStorage.getItem('nostr-nsec') !== null) {
-            showDecryptSecretModal = true;
+                await handleNip07Login(bip39seed);
+                break;
         }
     }
-            localStorage.getItem('nostr-nsec') !== null
-        ) {
-            showDecryptSecretModal = true;
+
+    async function handleLocalLogin(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
         } else {
             $loggingIn = false;
             $loggedIn = false;
             $loginMethod = null;
         }
     }
-
-        const { decryptedSecret, restoreMethod } = res;
-
-        if (!decryptedSecret) {
-            showErrorToast(
-                'Could not get decrypted secret. Clear browser local storage and login again.'
-            );
+        } else if (
+            localStorage.getItem('nostr-nsec') !== null
+        ) {
+            showDecryptSecretModal = true;
+        }
+    }
             return;
         }
 
@@ -246,13 +235,13 @@
         switch (restoreMethod) {
             case RestoreMethod.Seed:
                 return privateKeyFromSeedWords(decryptedSecret);
-            case RestoreMethod.Nsec:
-                return privateKeyFromNsec(decryptedSecret);
-            default:
-                return undefined;
-        }
+        $ndk.signer = new NDKPrivateKeySigner(privateKey);
+        $sessionPK = privateKey;
+
+        initializeUser($ndk, $nut13SeedStorage);
     }
 
+    function getPrivateKeyFromDecryptedSecret(
     function setupNip46Timeout() {
         return setTimeout(() => {
             if (!$ndk.signer) {
@@ -519,15 +508,19 @@
                     $ndk.addExplicitRelay(relay, undefined, true);
                 }
             });
+
+        await $ndk.connect();
+
+        if (!$loggedIn) {
+            await restoreLogin($nut13SeedStorage);
         }
+
+        console.log('Session initialized!');
+
+        sessionInitialized.set(true);
     });
 
-    // Check for app updates and bid reload option to user in a Toast
-    $effect(() => {
-        if ($updated) {
-            toaster.info({
-                title: 'New version of the app is available!',
-                duration: 60_000,
+    onDestroy(() => {
                 action: {
                     label: 'Reload',
                     onClick: () => {
@@ -785,14 +778,13 @@
         >
             <Footer />
         </footer>
+            class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
+            aria-label="Main header"
+        >
+            <Header onRestoreLogin={() => restoreLogin($nut13SeedStorage)} />
+        </header>
     {/if}
-</div>
 
-<DecryptSecretModal bind:isOpen={showDecryptSecretModal} callback={decryptSecretModalCallback} />
-
-<!-- Job Post Success Modal -->
-{#if $jobPostSuccessState.showModal && $jobPostSuccessState.jobData}
-    <JobPostSuccess
         bind:isOpen={$jobPostSuccessState.showModal}
         job={$jobPostSuccessState.jobData}
     />
