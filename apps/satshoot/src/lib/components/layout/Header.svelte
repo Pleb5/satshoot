@@ -22,11 +22,13 @@
     import type { NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { showLoginModal, showLogoutModal } from '$lib/stores/modals';
+    import MnemonicSeedInputModal from '../Modals/MnemonicSeedInputModal.svelte';
+    import { deriveSeedKey } from '$lib/wallet/nut-13';
+    import { encryptSecret } from '$lib/utils/crypto';
+    import { bytesToHex, hexToBytes } from '@noble/ciphers/utils';
 
     interface Props {
         onRestoreLogin: () => void;
-    }
-
     let { onRestoreLogin }: Props = $props();
 
     let showAppMenu = $state(false);
@@ -332,15 +334,21 @@
     };
 
     function handleLogin() {
-        $showLoginModal = true;
+        if (!$nut13SeedStorage) {
+            showMnemonicSeedInputModal = true;
+            return;
+        }
+        showLoginModal = true;
+    }
+
+    function handleMnemonicSeedInput(mnemonicSeed: string[]) {
+        $nut13SeedStorage = deriveSeedKey(mnemonicSeed.join(" "));
+        showLoginModal = true;
     }
 
     const satShootLogoWrapperClass = 'flex flex-row items-center gap-4 ' + '';
 
     const satShootLogoClass =
-        'flex flex-row justify-start items-center relative gap-4 text-[20px] ' +
-        'font-[800] text-blue-500 hover:text-blue-600 hover:no-underline ' +
-        'transition ease-in-out duration-[0.3s] w-full ';
 </script>
 
 <div class="w-full flex flex-col justify-center items-center gap-0">
@@ -491,13 +499,13 @@
                                 <Button onClick={handleLogin}>Login</Button>
                             {/if}
                         </div>
+                            {:else if $loginMethod === 'local'}
+                                <Button onClick={onRestoreLogin}>Login</Button>
+                            {:else}
+                                <Button onClick={handleLogin}>Login</Button>
+                            {/if}
+                        </div>
                     {:else}
-                        <!-- In mobile view when displaySearchInput is true, replace normal header with search input -->
-                        <div
-                            class="flex flex-row grow gap-4 items-center justify-evenly sm:hidden py-[10px] search-container"
-                        >
-                            <Button variant="outlined" onClick={() => (displaySearchInput = false)}>
-                                <i class="bx bx-chevron-left text-xl"></i>
                             </Button>
                             <div class="relative flex-1">
                                 <Input
@@ -592,3 +600,8 @@
 
 <AppMenu bind:isOpen={showAppMenu} />
 
+
+
+<AppMenu bind:isOpen={showAppMenu} />
+
+<MnemonicSeedInputModal bind:isOpen={showMnemonicSeedInputModal} onConfirm={handleMnemonicSeedInput} onSkip={() => showLoginModal = true} />

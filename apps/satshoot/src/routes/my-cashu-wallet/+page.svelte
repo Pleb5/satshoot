@@ -2,7 +2,7 @@
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
     import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
-    import ndk, { DEFAULTRELAYURLS } from '$lib/stores/session';
+    import ndk, { DEFAULTRELAYURLS, nut13SeedStorage } from '$lib/stores/session';
     import currentUser, { loggedIn } from '$lib/stores/user';
     import { userCashuInfo, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
     import {
@@ -79,9 +79,12 @@
     const walletRelays = $derived($userCashuInfo?.relays ?? []);
 
     $effect(() => {
-        if (!$wallet) {
-            tryLoadWallet();
+        if (!$wallet && !$nut13SeedStorage) {
+            showMnemonicSeedInputModal = true;
             return;
+        }
+        if (!$wallet && $nut13SeedStorage) {
+            tryLoadWallet($nut13SeedStorage);
         }
         if ($wallet && $userCashuInfo) {
             checkLegacyWallet();
@@ -267,17 +270,32 @@
         if (!selectedMints?.length) {
             toaster.error({ title: `No mint is selected. Choose at-least 1 mint` });
             return;
-        }
-
-        if (tempWallet) {
-            tempWallet.mints = selectedMints;
-            continueWalletSetup(tempWallet);
-        }
+    function generateBip39Seed(newWallet: boolean): (seedWords: string[]) => void {
+        return async (seedWords) => {
+            const bip39seed = deriveSeedKey(seedWords.join(' '));
+            $nut13SeedStorage = bip39seed;
+            if (newWallet) setupWallet(bip39seed);
+            else await tryLoadWallet(bip39seed);
+        };
     }
 
-    async function continueWalletSetup(newWallet: NDKCashuWallet) {
-        try {
-            await newWallet.getP2pk();
+    function handleNewWallet() {
+        console.log("NUT-13 SEED: ", $nut13SeedStorage); //TODO: remove this before delivering to production!
+        if (!$nut13SeedStorage) showMnemonicSeedGenerationModal = true;
+        else setupWallet($nut13SeedStorage);
+    }
+
+    function handleReloadWallet() {
+        if (!$nut13SeedStorage) {
+            showMnemonicSeedInputModal = true;
+            return;
+        }
+        tryLoadWallet($nut13SeedStorage);
+    }
+
+    // Handler for new wallet mint selection
+    function handleMintSelection(selectedMints: string[]) {
+        if (!selectedMints?.length) {
 
             let mintRelays = DEFAULTRELAYURLS;
             const userRelays = await fetchUserOutboxRelays($ndk, $currentUser!.pubkey);
@@ -596,16 +614,16 @@
                                 class="w-full flex flex-col gap-[15px] relative max-[768px]:mt-[15px]"
                             >
                                 <!-- Wallet card start -->
-                                <div class="max-w-[95vw]">
-                                    <Card classes="gap-[15px]">
-                                        <div
-                                            class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-linear-to-tl from-blue-500 to-blue-400 shadow-deep"
-                                        >
-                                            <div class="font-[500] text-white">
-                                                <p>Wallet</p>
-                                            </div>
-                                            <p class="text-[24px] font-[500] text-white">
-                                                {walletBalance}
+                    {/each}
+                {:else if $walletStatus === NDKWalletStatus.FAILED}
+                    <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
+                        <Button onClick={handleNewWallet}
+                            >New Nostr Wallet</Button
+                        >
+                        <Button onClick={handleReloadWallet}
+                            >Try loading Wallet</Button
+                        >
+                    </div>
                                                 <span
                                                     class="text-[16px] opacity-[0.5] font-[500] text-white mt-[-5px]"
                                                 >

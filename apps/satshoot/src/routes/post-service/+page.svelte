@@ -466,7 +466,6 @@
 
             toaster.success({
                 title: 'Nostr Keypair Created!',
-            });
         } catch (e) {
             console.error(e);
             toaster.error({

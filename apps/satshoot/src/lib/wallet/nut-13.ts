@@ -170,13 +170,13 @@ export function generateDeterministicSecrets(
  */
 
 /**
- * Save mnemonic seed to a file (browser download)
- * @param encrypted - Whether to encrypt the mnemonic before saving
- * @param passphrase - Encryption passphrase (required if encrypted is true)
- */
-export async function saveMnemonicToFile(encrypted: boolean = false, passphrase?: string): Promise<void> {
-    const mnemonicData = get(mnemonicStore);
-    
+    );
+}
+
+export interface Encryption {
+    encrypt(data: string): Promise<string>;
+    decrypt(data: string): Promise<string>;
+}
     if (!mnemonicData) {
         throw new Error('No mnemonic seed found to save');
     }
