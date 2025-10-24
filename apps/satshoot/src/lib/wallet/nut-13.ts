@@ -3,14 +3,12 @@ import { wordlist } from '@scure/bip39/wordlists/english';
 
 /**
  * Generate a new mnemonic seed phrase (BIP39)
- * @param strength - Strength in bits (128, 160, 192, 224, or 256). Default is 128 (12 words)
- */
-export function generateMnemonicSeed(strength: 128 | 160 | 192 | 224 | 256 = 128): string {
-    const mnemonic = generateMnemonic(wordlist, strength);
 
-    return mnemonic;
-}
+import { generateMnemonic, validateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
+import { wordlist } from '@scure/bip39/wordlists/english';
 
+// Constants from NUT-13 specification
+const DERIVATION_PATH = `m/129372'/0'`; // Standard derivation path for Cashu
     if (!validateMnemonicSeed(mnemonic)) {
         throw new Error('Invalid mnemonic seed phrase');
     }
