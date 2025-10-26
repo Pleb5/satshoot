@@ -587,7 +587,10 @@
         if ($currentUser && $userMode === UserMode.Freelancer) {
             $wotFilteredJobs.forEach((job: JobEvent) => {
                 // no need to send notification for own job
-                if (job.pubkey !== $currentUser.pubkey) {
+                if (
+                    job.pubkey !== $currentUser.pubkey &&
+                    $currentUserFreelanceFollows.has(job.pubkey)
+                ) {
                     sendNotification(job);
                 }
             });
