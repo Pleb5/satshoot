@@ -19,6 +19,8 @@
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
+    import { clipMarkdownText } from '$lib/utils/misc';
+    import Markdown from '../Cards/Markdown.svelte';
 
     interface Props {
         notification: NDKEvent;
@@ -33,7 +35,12 @@
     let userImage = $state(getRoboHashPicture(user.pubkey));
 
     let userProfile: NDKUserProfile | null;
+
     let decryptedDM = $state<string>();
+    const processedDM = $derived(
+        decryptedDM ? clipMarkdownText(decryptedDM, 50) : ''
+    );
+
     let messageLink = $state('');
     const eventAddress = notification.tagValue('a');
 
@@ -148,9 +155,9 @@
             <p class="truncate max-w-full">{userName}</p>
             {#if decryptedDM}
                 <div class="flex flex-row gap-[5px] flex-wrap w-full">
-                    <span class="break-words">
-                        {decryptedDM.slice(0, 90)}{decryptedDM.length > 90 ? '...' : ''}
-                    </span>
+                    <p class="font-normal text-[15px] overflow-y-auto">
+                        <Markdown content={processedDM} />
+                    </p>
                 </div>
             {:else}
                 <ProgressRing color="primary" />
