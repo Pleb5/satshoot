@@ -568,7 +568,7 @@
                             </div>
                         </Card>
                         <Button
-                            classes="text-lg sm:text-xl mt-4"
+                            classes="mt-4"
                             onClick={() =>
                                 goto(new URL(`/${job!.encode()}`, window.location.origin))}
                         >
