@@ -298,11 +298,6 @@
         { id: OrderTab.InProgress, label: 'In-Progress' },
         { id: OrderTab.Completed, label: 'Completed' },
     ];
-
-    $inspect($myOrders).with((type, orders) => {
-
-        console.log('my orders:', orders)
-    }) 
 </script>
 
 <div bind:this={pageTop} class="w-full flex flex-col gap-0 grow pb-20 sm:pb-5">

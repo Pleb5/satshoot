@@ -31,9 +31,7 @@
 
     $effect(() => {
         if (isOpen && !targetEntityClone && targetEntity) {
-            console.log('isOpen effect')
             if (isJob) {
-                console.log('isJob effect')
                 targetEntityClone = JobEvent.from(targetEntity)
                 if (secondaryEntity === null) {
                     secondaryEntityClone = null
@@ -44,7 +42,6 @@
                 }
 
             } else {
-                console.log('isService effect')
                 targetEntityClone = ServiceEvent.from(targetEntity)
                 if (!secondaryEntity) {
                     throw new Error('BUG:Trying to close a non-existing Order!')
@@ -52,18 +49,11 @@
 
                 secondaryEntityClone = OrderEvent.from(secondaryEntity) 
 
-                console.log('targetEntityClone orders:', targetEntityClone.orders)
-                console.log('secondaryEntityClone ordersAddress:', secondaryEntityClone.orderAddress)
                 if (targetEntityClone.orders.includes(secondaryEntityClone.orderAddress)) {
                     reviewTargetAddress = targetEntityClone.serviceAddress
                 }
-                console.log('reviewTargetAddress', reviewTargetAddress)
-        
-                console.log('service cloned:', targetEntityClone)
-                console.log('Order cloned:', secondaryEntityClone)
             }
         } else if (!isOpen) {
-            console.log('NOT isOpen effect')
             targetEntityClone = undefined
             secondaryEntityClone = undefined
             reviewTargetAddress = ''
@@ -138,7 +128,6 @@
         if (!reviewTargetAddress) return;
         const reviewEvent = new ReviewEvent($ndk);
 
-        console.log("Review target address:", reviewTargetAddress)
         reviewEvent.reviewedEventAddress = reviewTargetAddress;
         reviewEvent.freelancerRatings = {
             success: isIssueResolved,
@@ -146,9 +135,7 @@
             communication: hasCommunicationClarity,
             reviewText,
         };
-        console.log('review event:', reviewEvent);
         const relaysReview = await reviewEvent.publish();
-        console.log('published relays', relaysReview);
         return relaysReview;
     }
 
