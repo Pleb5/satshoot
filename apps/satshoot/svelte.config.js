@@ -11,7 +11,7 @@ const config = {
     vite: {
         server: {
             fs: {
-                allow: [],
+                allow: ['./packages/ndk-wallet'],
             },
         },
     },

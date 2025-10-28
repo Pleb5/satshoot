@@ -22,7 +22,7 @@
     import type { NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { showLoginModal, showLogoutModal } from '$lib/stores/modals';
-
+    
     interface Props {
         onRestoreLogin: () => void;
     }
@@ -591,4 +591,3 @@
 </div>
 
 <AppMenu bind:isOpen={showAppMenu} />
-

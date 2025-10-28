@@ -74,6 +74,12 @@ stop_server() {
     fi
 }
 
+# Function to add original_ndk_wallet remote
+add_original_ndk_wallet() {
+    echo "Adding original_ndk_wallet remote..."
+    git remote add original_ndk_wallet https://github.com/rodant/ndk-wallet.git
+    echo "Remote added. You can now fetch and merge from this remote."
+}
 
 # Function to make a clean build with ndk
 clean_build() {
@@ -94,11 +100,14 @@ case "$1" in
     stop)
         stop_server
         ;;
+    add-remote)
+        add_original_ndk_wallet
+        ;;
     clean-build)
         clean_build
         ;;
     *)
-        echo "Usage: $0 {start|stop|clean-build}"
+        echo "Usage: $0 {start|stop|add-remote|clean-build}"
         exit 1
         ;;
 esac

@@ -2,7 +2,7 @@
   "name": "satshoot",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
+    "build": "./ndk_compile.sh && turbo run build",
     "dev": "turbo run dev",
     "preview": "turbo run preview"
   },

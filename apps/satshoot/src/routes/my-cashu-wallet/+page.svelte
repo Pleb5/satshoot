@@ -40,6 +40,9 @@
     import ConfirmationDialog from '$lib/components/UI/ConfirmationDialog.svelte';
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import { toaster } from '$lib/stores/toaster';
+    import { deriveSeedKey } from '$lib/wallet/nut-13';
+    import MnemonicSeedGenerationModal from '$lib/components/Modals/MnemonicSeedGenerationModal.svelte';
+    import MnemonicSeedInputModal from '$lib/components/Modals/MnemonicSeedInputModal.svelte';
 
     enum Tab {
         Mints,
@@ -57,6 +60,8 @@
     let showRecoverEcashWallet = $state(false);
     let showBackupEcashWallet = $state(false);
     let showCleanWalletConfirmationDialog = $state(false);
+    let showMnemonicSeedGenerationModal = $state(false);
+    let showMnemonicSeedInputModal = $state(false);
 
     let mintBalances: Record<string, number> = $state({});
     let walletBalance = $state('0');
@@ -257,9 +262,17 @@
         return balanceStr;
     }
 
-    async function setupWallet() {
-        tempWallet = new NDKCashuWallet($ndk);
+    function setupNewWallet(bip39seed: Uint8Array) {
+        tempWallet = new NDKCashuWallet($ndk, bip39seed);
         showMintModal = true;
+    }
+
+    function generateBip39Seed(newWallet: boolean): (seedWords: string[]) => void {
+        return async (seedWords) => {
+            const bip39seed = deriveSeedKey(seedWords.join(' '));
+            if (newWallet) setupNewWallet(bip39seed);
+            else await recoverDeterministicWallet(bip39seed);
+        };
     }
 
     // Handler for new wallet mint selection
@@ -313,13 +326,20 @@
 
     async function tryLoadWallet() {
         if ($currentUser) {
-            await fetchAndInitWallet($currentUser, $ndk);
+            await fetchAndInitWallet($currentUser, $ndk, {
+                fetchLegacyWallet: true,
+            });
             if ($wallet) {
                 $wallet = $wallet;
             }
         } else if ($loggedIn) {
-            console.error("Error: User not found!")
+            console.error('Error: User not found!');
         }
+    }
+
+    // TODO (rodant)
+    async function recoverDeterministicWallet(_bip39seed: Uint8Array): Promise<void> {
+        return Promise.resolve();
     }
 
     async function updateMints(mints: string[]) {
@@ -583,8 +603,12 @@
                     {/each}
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <Button onClick={setupWallet}>New Nostr Wallet</Button>
-                        <Button onClick={tryLoadWallet}>Try loading Wallet</Button>
+                        <Button onClick={() => showMnemonicSeedGenerationModal = true}
+                            >New Nostr Wallet</Button
+                        >
+                        <Button onClick={tryLoadWallet}
+                            >Try loading Wallet</Button
+                        >
                     </div>
                 {:else if $wallet}
                     <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
@@ -803,3 +827,14 @@
         balance. Do you really wish to clean wallet?
     </strong>
 </ConfirmationDialog>
+
+<MnemonicSeedGenerationModal
+    bind:isOpen={showMnemonicSeedGenerationModal}
+    onCompletion={generateBip39Seed(true)}
+/>
+
+<MnemonicSeedInputModal
+    bind:isOpen={showMnemonicSeedInputModal}
+    onConfirm={generateBip39Seed(false)}
+    onSkip={tryLoadWallet}
+/>

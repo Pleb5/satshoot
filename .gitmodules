@@ -1,0 +1,3 @@
+[submodule "packages/ndk-wallet"]
+	path = packages/ndk-wallet
+	url = https://github.com/rodant/ndk-wallet.git

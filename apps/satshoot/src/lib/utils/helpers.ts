@@ -47,7 +47,7 @@ import { dev } from '$app/environment';
 import { connected } from '../stores/network';
 import { retriesLeft, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
-import { NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
+import { DeterministicCashuWalletInfoKind, NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { fetchEventFromRelaysFirst, APP_RELAY_STORAGE_KEY } from '$lib/utils/misc';
 
 export async function initializeUser(ndk: NDKSvelte) {
@@ -126,7 +126,7 @@ export async function fetchAndInitWallet(
         }
     }
 
-    const kindsArr = [NDKKind.CashuWallet, NDKKind.LegacyCashuWallet, NDKKind.CashuMintList];
+    const kindsArr = [NDKKind.CashuWallet, NDKKind.LegacyCashuWallet, NDKKind.CashuMintList, DeterministicCashuWalletInfoKind];
     if (walletFetchOpts.fetchLegacyWallet) kindsArr.push(NDKKind.LegacyCashuWallet);
 
     const cashuPromise = ndk.fetchEvents(
@@ -143,16 +143,23 @@ export async function fetchAndInitWallet(
     console.info('cashuEvents loaded:', cashuEvents);
     let nostrWallet: NDKCashuWallet | undefined;
     let cashuMintList: NDKCashuMintList | undefined;
-    let checkLegacy = true;
+    let walletEvent: NDKEvent | undefined;
+    let deterministicWalletEvent: NDKEvent | undefined;
     for (const event of cashuEvents) {
-        if (event.kind === NDKKind.LegacyCashuWallet && checkLegacy) {
+        if (event.kind === NDKKind.LegacyCashuWallet) {
             nostrWallet = await NDKCashuWallet.from(event);
         } else if (event.kind === NDKKind.CashuWallet) {
-            checkLegacy = false;
-            nostrWallet = await NDKCashuWallet.from(event);
+            walletEvent = event;
+        } else if (event.kind === DeterministicCashuWalletInfoKind) {
+            deterministicWalletEvent = event;
+            console.log("fetchAndInitWallet: found deterministic cashu wallet event");
         } else if (event.kind === NDKKind.CashuMintList) {
             cashuMintList = NDKCashuMintList.from(event);
         }
+    }
+    if (walletEvent) {
+        nostrWallet = await NDKCashuWallet.from(walletEvent, deterministicWalletEvent);
+        nostrWallet!.relaySet = NDKRelaySet.fromRelayUrls(relays, ndk);
     }
     if (nostrWallet && cashuMintList) {
         walletInit(nostrWallet, cashuMintList, ndk, user);
@@ -175,6 +182,7 @@ export function logout() {
     currentUser.set(null);
 
     // We dont remove modeCurrent(dark/light theme), debug and app_updated_at entries
+    localStorage.removeItem('nut13Seed');
     localStorage.removeItem('walletBackup');
     localStorage.removeItem('followsUpdated');
     localStorage.removeItem('tabStore');

@@ -1,5 +1,5 @@
 import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import NDK, { NDKRelay, NDKRelayAuthPolicies } from '@nostr-dev-kit/ndk';
+import NDK, { NDKRelayAuthPolicies } from '@nostr-dev-kit/ndk';
 import { writable } from 'svelte/store';
 
 import { persisted } from 'svelte-persisted-store';

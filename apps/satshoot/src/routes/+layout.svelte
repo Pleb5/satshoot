@@ -8,8 +8,6 @@
     import '@fortawesome/fontawesome-free/css/solid.css';
 
     import ndk, {
-        bunkerNDK,
-        bunkerRelayConnected,
         discoveredRelays,
         sessionInitialized,
         sessionPK,
@@ -22,7 +20,6 @@
     import { updated, pollUpdated } from '$lib/stores/app-updated';
     import { online, retriesLeft } from '$lib/stores/network';
     import currentUser, {
-        currentUserFreelanceFollows,
         loggedIn,
         loggingIn,
         loginMethod,
@@ -54,7 +51,7 @@
 
     import { checkRelayConnections, initializeUser, logout } from '$lib/utils/helpers';
 
-    import { wotUpdateFailed, wotUpdateNoResults } from '$lib/stores/wot';
+    import { wotUpdateFailed } from '$lib/stores/wot';
 
     import { LoginMethod, RestoreMethod } from '$lib/stores/session';
 
@@ -63,7 +60,6 @@
         NDKNip07Signer,
         NDKNip46Signer,
         NDKPrivateKeySigner,
-        NDKRelay,
         NDKSubscription,
         type NDKEvent,
     } from '@nostr-dev-kit/ndk';
@@ -100,7 +96,7 @@
     import JobPostSuccess from '$lib/components/Modals/JobPostSuccess.svelte';
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
     import type { ServiceEvent } from '$lib/events/ServiceEvent';
-    import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
+    import { type OrderEvent } from '$lib/events/OrderEvent';
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import LogoutModal from '$lib/components/Modals/LogoutModal.svelte';
     import DecentralizedDiscoveryModal from '$lib/components/Modals/DecentralizedDiscoveryModal.svelte';
@@ -164,6 +160,7 @@
     });
 
     async function restoreLogin() {
+        console.log('logging in user');
         // For UI feedback
         $loggingIn = true;
         await tick();
@@ -192,7 +189,6 @@
             $ndk.signer = new NDKPrivateKeySigner($sessionPK);
             $loggingIn = false;
             console.log('Start init session in local key login');
-
             initializeUser($ndk);
         } else if (localStorage.getItem('nostr-nsec') !== null) {
             const storedSecret = localStorage.getItem('nostr-nsec');
@@ -209,6 +205,10 @@
             }
 
             showDecryptSecretModal = true;
+        } else {
+            $loggingIn = false;
+            $loggedIn = false;
+            $loginMethod = null;
         }
     }
 
@@ -267,8 +267,8 @@
         return setTimeout(() => {
             if (!$ndk.signer) {
                 toaster.warning({
-                    title: 'Remote Signer restoration took too long!',
-                    description: 'Fix or Remove remote signer credentials!',
+                    title: 'Bunker connection took too long!',
+                    description: 'Fix or Remove Bunker Connection!',
                     duration: 60000, // 1 min
                     action: {
                         label: 'Logout',
@@ -373,15 +373,8 @@
             console.log('Remote signer session restored successfully');
             // Initialize user and complete login
             await initializeUser($ndk);
-
-            // Clear timeout on success
-            clearTimeout(timeoutId);
-            $loggingIn = false;
         } catch (error) {
             console.error('Remote signer restoration failed:', error);
-
-            // Clear timeout
-            clearTimeout(timeoutId);
 
             // Provide more specific error context
             let errorMessage = 'Unknown error occurred';
@@ -403,6 +396,9 @@
 
             showNip46Error(errorMessage);
 
+            $loggingIn = false;
+        } finally {
+            clearTimeout(timeoutId);
             $loggingIn = false;
         }
     }
@@ -494,9 +490,9 @@
         await $ndk.connect();
 
         if (!$loggedIn) {
-            console.log('logging in user');
             await restoreLogin();
         }
+
         console.log('Session initialized!');
 
         sessionInitialized.set(true);

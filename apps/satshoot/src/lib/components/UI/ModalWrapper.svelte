@@ -20,7 +20,7 @@
     }: Props = $props();
 </script>
 
-<Modal open={isOpen} classes="{isOpen ? '' : 'hidden'}">
+<Modal open={isOpen} classes={isOpen ? '' : 'hidden'}>
     {#snippet content()}
         <Popup bind:isOpen {title} {popUpText} {headerAction} {children} />
     {/snippet}
