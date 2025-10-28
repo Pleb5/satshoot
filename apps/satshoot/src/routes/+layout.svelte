@@ -20,6 +20,7 @@
     import { updated, pollUpdated } from '$lib/stores/app-updated';
     import { online, retriesLeft } from '$lib/stores/network';
     import currentUser, {
+        currentUserFreelanceFollows,
         loggedIn,
         loggingIn,
         loginMethod,

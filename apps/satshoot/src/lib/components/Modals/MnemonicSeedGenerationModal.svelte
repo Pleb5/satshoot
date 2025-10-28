@@ -56,7 +56,7 @@
                 words secret and secured, otherwise you may loose your funds.
             </p>
             <SeedWords bind:words={seedWords} inputsDisabled showCopyButton></SeedWords>
-            <div class="flex flex-row w-full gap-2">
+            <div class="flex flex-wrap w-full gap-2">
                 <Checkbox
                     id="confirm-checkbox"
                     label="I saved the seed words."
