@@ -9,8 +9,9 @@
     import { toaster } from '$lib/stores/toaster';
     import ConfirmationDialog from '../UI/ConfirmationDialog.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
-    import { inFulfillmentOrderOnService } from '$lib/utils/service';
+    import { inFulfillmentOrderOnService, openOrderOnService } from '$lib/utils/service';
     import { myOrders } from '$lib/stores/freelance-eventstores';
+    import { OrderEvent } from '$lib/events/OrderEvent';
 
     interface Props {
         service: ServiceEvent;
@@ -26,7 +27,17 @@
 
     // Derived states
     const myService = $derived($currentUser?.pubkey === service.pubkey);
-    const myInFulfillMentOrder = $derived(inFulfillmentOrderOnService(service, $myOrders));
+    const myInFulfillMentOrder = $derived.by(() => {
+        return inFulfillmentOrderOnService(service, $myOrders)
+    });
+
+    const myOpenOrderOnService = $derived.by(() => {
+        if (service && $myOrders) {
+            return openOrderOnService(service, $myOrders)
+        }
+    });
+
+    let canCloseOrder = $derived(!!myOpenOrderOnService)
 
     function handleShare() {
         showShareModal = true;
@@ -43,6 +54,9 @@
     }
 
     function handleCloseOrder() {
+        if (!service || !myOpenOrderOnService) {
+            throw new Error('BUG: Cannot Close undefined Service or Order');
+        }
         showCloseModal = true;
     }
 
@@ -138,7 +152,7 @@
             </Button>
         {/if}
 
-        {#if myInFulfillMentOrder}
+        {#if canCloseOrder}
             <Button variant="outlined" classes="justify-start" fullWidth onClick={handleCloseOrder}>
                 <i class="bx bxs-lock text-[20px]"></i>
                 <p class="">Close Order</p>
@@ -156,13 +170,11 @@
 
 <ShareEventModal bind:isOpen={showShareModal} eventObj={service} />
 
-{#if myInFulfillMentOrder}
-    <CloseEntityModal
-        bind:isOpen={showCloseModal}
-        targetEntity={service}
-        secondaryEntity={myInFulfillMentOrder}
-    />
-{/if}
+<CloseEntityModal
+    bind:isOpen={showCloseModal}
+    targetEntity={service}
+    secondaryEntity={myOpenOrderOnService}
+/>
 
 {#if showDeactivateConfirmationDialog}
     <ConfirmationDialog

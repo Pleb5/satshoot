@@ -25,28 +25,57 @@
 
     let isJob = $derived(targetEntity?.kind === ExtendedNDKKind.FreelanceJob);
 
+    let targetEntityClone: JobEvent | ServiceEvent | undefined = undefined;
+    let secondaryEntityClone: BidEvent | OrderEvent | null | undefined = undefined;
+    let reviewTargetAddress = $state<string>('')
+
+    $effect(() => {
+        if (isOpen && !targetEntityClone && targetEntity) {
+            console.log('isOpen effect')
+            if (isJob) {
+                console.log('isJob effect')
+                targetEntityClone = JobEvent.from(targetEntity)
+                if (secondaryEntity === null) {
+                    secondaryEntityClone = null
+                    reviewTargetAddress = ''
+                } else {
+                    secondaryEntityClone = BidEvent.from(secondaryEntity)
+                    reviewTargetAddress = targetEntityClone.acceptedBidAddress as string
+                }
+
+            } else {
+                console.log('isService effect')
+                targetEntityClone = ServiceEvent.from(targetEntity)
+                if (!secondaryEntity) {
+                    throw new Error('BUG:Trying to close a non-existing Order!')
+                }
+
+                secondaryEntityClone = OrderEvent.from(secondaryEntity) 
+
+                console.log('targetEntityClone orders:', targetEntityClone.orders)
+                console.log('secondaryEntityClone ordersAddress:', secondaryEntityClone.orderAddress)
+                if (targetEntityClone.orders.includes(secondaryEntityClone.orderAddress)) {
+                    reviewTargetAddress = targetEntityClone.serviceAddress
+                }
+                console.log('reviewTargetAddress', reviewTargetAddress)
+        
+                console.log('service cloned:', targetEntityClone)
+                console.log('Order cloned:', secondaryEntityClone)
+            }
+        } else if (!isOpen) {
+            console.log('NOT isOpen effect')
+            targetEntityClone = undefined
+            secondaryEntityClone = undefined
+            reviewTargetAddress = ''
+        }
+    })
+
     let hasExpertise = $state(false);
     let hasCommunicationClarity = $state(false);
     let isIssueResolved = $state(true);
     let reviewText = $state('');
     let isClosing = $state(false);
 
-    const reviewTargetAddress = $derived.by(() => {
-        if (isJob) return (targetEntity as JobEvent).acceptedBidAddress;
-
-        // we need to allow the user to post a review on service only when
-        // freelancer had accepted the order
-        if (
-            targetEntity.kind === ExtendedNDKKind.FreelanceService &&
-            (targetEntity as ServiceEvent).orders.includes(
-                (secondaryEntity as OrderEvent)?.orderAddress
-            )
-        ) {
-            return (targetEntity as ServiceEvent).serviceAddress;
-        }
-
-        return '';
-    });
 
     $effect(() => {
         if (!isIssueResolved) {
@@ -55,15 +84,17 @@
         }
     });
 
-    let canPublishReplaceable = $derived(isJob ? !!targetEntity : !!secondaryEntity);
+    let canPublishReplaceable = $derived(
+        isJob ? !!targetEntityClone : !!secondaryEntityClone
+    );
 
     function updateTargetEntityStatus() {
-        if (!targetEntity) return;
+        if (!targetEntityClone) return;
 
         if (isJob) {
-            updateJobStatus(targetEntity as JobEvent);
+            updateJobStatus(targetEntityClone as JobEvent);
         } else {
-            updateOrderStatus(secondaryEntity as OrderEvent);
+            updateOrderStatus(secondaryEntityClone as OrderEvent);
         }
     }
 
@@ -91,9 +122,8 @@
         if (!canPublishReplaceable) return;
 
         try {
-            const entityToPublish = isJob ? targetEntity : secondaryEntity;
+            const entityToPublish = isJob ? targetEntityClone : secondaryEntityClone;
             console.log('publishing event : ', entityToPublish);
-            await tick();
 
             const relays = await entityToPublish!.publishReplaceable();
             console.log('relays published to', relays);
@@ -107,6 +137,8 @@
     async function publishReviewIfNeeded() {
         if (!reviewTargetAddress) return;
         const reviewEvent = new ReviewEvent($ndk);
+
+        console.log("Review target address:", reviewTargetAddress)
         reviewEvent.reviewedEventAddress = reviewTargetAddress;
         reviewEvent.freelancerRatings = {
             success: isIssueResolved,
@@ -121,9 +153,9 @@
     }
 
     function goToPay() {
-        if (secondaryEntity) {
+        if (secondaryEntityClone && reviewTargetAddress) {
             isOpen = false;
-            const url = new URL('/payments/' + secondaryEntity.encode(), window.location.origin);
+            const url = new URL('/payments/' + secondaryEntityClone.encode(), window.location.origin);
             goto(url.toString());
         }
     }
@@ -144,12 +176,13 @@
     }
 
     async function closeEntity() {
-        if (!targetEntity) {
+        if (!targetEntityClone) {
             handleMissingEntity();
             return;
         }
         try {
             isClosing = true;
+            await tick();
             updateTargetEntityStatus();
             await publishReplacementEvent();
             await publishReviewIfNeeded();

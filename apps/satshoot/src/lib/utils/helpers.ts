@@ -198,6 +198,8 @@ export function logout() {
     localStorage.removeItem('nostr-nsec');
     localStorage.removeItem('pk');
     localStorage.removeItem('nip46SignerPayload');
+    localStorage.removeItem('nostrConnectLocalSigner');
+    localStorage.removeItem('nostrConnectRemotePubkey');
     localStorage.removeItem('readNotifications');
     localStorage.removeItem('jobFilter');
     localStorage.removeItem('bidFilter');

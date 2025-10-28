@@ -341,9 +341,7 @@
             <div class="w-full flex flex-col">
                 <!-- Share Job Post start -->
                 <div class="w-full flex flex-col">
-                    <h1
-                        class="w-full text-center font-[700] text-[32px] wrap-normal overflow-hidden"
-                    >
+                    <h1 class="w-full text-center font-[700] text-2xl sm:text-[32px] break-words">
                         Make Payments
                     </h1>
                 </div>
@@ -355,8 +353,8 @@
                         <div
                             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                         >
-                            <div class="grow-1">
-                                <p class="font-[500]">
+                            <div class="grow-1 min-w-0">
+                                <p class="font-[500] break-words">
                                     {pricingInfo?.costLabel}
                                     <span class="font-[300]">
                                         {insertThousandSeparator(secondaryEntity.amount) +
@@ -365,15 +363,15 @@
                                     </span>
                                 </p>
                             </div>
-                            <div class="grow-1">
-                                <p class="font-[500]">
+                            <div class="grow-1 min-w-0">
+                                <p class="font-[500] break-words">
                                     Pledge split:
                                     <span class="font-[300]"> {pledgeSplit} %</span>
                                 </p>
                             </div>
                             {#if isSponsoring}
-                                <div class="grow-1">
-                                    <p class="font-[500]">
+                                <div class="grow-1 min-w-0">
+                                    <p class="font-[500] break-words">
                                         Sponsoring split:
                                         <span class="font-[300]"> {sponsoringSplit} %</span>
                                     </p>
@@ -383,8 +381,8 @@
                         <div
                             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                         >
-                            <div class="grow-1">
-                                <p class="font-[500]">
+                            <div class="grow-1 min-w-0">
+                                <p class="font-[500] break-words">
                                     Freelancer Paid:
                                     <span class="font-[300]">
                                         {$freelancerPaid
@@ -393,8 +391,8 @@
                                     </span>
                                 </p>
                             </div>
-                            <div class="grow-1">
-                                <p class="font-[500]">
+                            <div class="grow-1 min-w-0">
+                                <p class="font-[500] break-words">
                                     SatShoot Paid:
                                     <span class="font-[300]">
                                         {$satshootPaid
@@ -404,8 +402,8 @@
                                 </p>
                             </div>
                             {#if isSponsoring}
-                                <div class="grow-1">
-                                    <p class="font-[500]">
+                                <div class="grow-1 min-w-0">
+                                    <p class="font-[500] break-words">
                                         Sponsored Paid:
                                         <span class="font-[300]">
                                             {$sponsoredPaid
@@ -422,7 +420,7 @@
                     >
                         <p class="">Compensation for:</p>
 
-                        <a href={'/' + bech32ID + '/'} class="anchor font-[600]">
+                        <a href={'/' + bech32ID + '/'} class="anchor font-[600] break-words">
                             {primaryEntity instanceof JobEvent
                                 ? primaryEntity.title
                                 : (primaryEntity as ServiceEvent).title}
@@ -491,10 +489,10 @@
                                 />
                             </div>
                             <!-- Payment Buttons for first Payee -->
-                            <div class="flex flex-row justify-center gap-[5px] py-[10px]">
+                            <div class="flex flex-row flex-wrap justify-center gap-[5px] py-[10px]">
                                 <Button
                                     grow
-                                    classes="w-[200px] max-w-[200px]"
+                                    classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial text-sm sm:text-base"
                                     onClick={openPaymentConfirmation(UserEnum.Freelancer, 'LN')}
                                     disabled={paying || !paymentManager.payment.amount}
                                 >
@@ -504,7 +502,7 @@
                                         </span>
                                     {:else}
                                         <img
-                                            class="h-[20px] w-auto"
+                                            class="h-[16px] sm:h-[20px] w-auto"
                                             src="/img/lightning.png"
                                             alt="Lightning icon"
                                         />
@@ -514,7 +512,7 @@
                                 {#if hasSenderEcashSetup}
                                     <Button
                                         grow
-                                        classes="w-[250px] max-w-[250px]"
+                                        classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial text-sm sm:text-base"
                                         onClick={openPaymentConfirmation(
                                             UserEnum.Freelancer,
                                             'Cashu'
@@ -527,7 +525,7 @@
                                             <ProgressRing />
                                         {:else}
                                             <img
-                                                class="h-[20px] w-auto"
+                                                class="h-[16px] sm:h-[20px] w-auto"
                                                 src="/img/cashu.png"
                                                 alt="Cashu icon"
                                             />
@@ -537,7 +535,7 @@
                                 {:else}
                                     <Button
                                         grow
-                                        classes="w-[200px] max-w-[200px]"
+                                        classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial text-sm sm:text-base"
                                         onClick={setupEcash}
                                     >
                                         {#if paying}
@@ -590,10 +588,10 @@
                                 />
                             </div>
                             <!-- Payment Buttons for second Payee -->
-                            <div class="flex flex-row justify-center gap-[5px] py-[10px]">
+                            <div class="flex flex-row flex-wrap justify-center gap-[5px] py-[10px]">
                                 <Button
                                     grow
-                                    classes="w-[200px] max-w-[200px]"
+                                    classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial text-sm sm:text-base"
                                     onClick={openPaymentConfirmation(UserEnum.Satshoot, 'LN')}
                                     disabled={paying || !paymentManager.payment.satshootAmount}
                                 >
@@ -603,7 +601,7 @@
                                         </span>
                                     {:else}
                                         <img
-                                            class="h-[20px] w-auto"
+                                            class="h-[16px] sm:h-[20px] w-auto"
                                             src="/img/lightning.png"
                                             alt="Lightning icon"
                                         />
@@ -613,7 +611,7 @@
                                 {#if hasSenderEcashSetup}
                                     <Button
                                         grow
-                                        classes="w-[250px] max-w-[250px]"
+                                        classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial text-sm sm:text-base"
                                         onClick={openPaymentConfirmation(
                                             UserEnum.Satshoot,
                                             'Cashu'
@@ -626,7 +624,7 @@
                                             <ProgressRing />
                                         {:else}
                                             <img
-                                                class="h-[20px] w-auto"
+                                                class="h-[16px] sm:h-[20px] w-auto"
                                                 src="/img/cashu.png"
                                                 alt="Cashu icon"
                                             />
@@ -636,7 +634,7 @@
                                 {:else}
                                     <Button
                                         grow
-                                        classes="w-[200px] max-w-[200px]"
+                                        classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial text-sm sm:text-base"
                                         onClick={setupEcash}
                                     >
                                         {#if paying}
@@ -690,10 +688,12 @@
                                     />
                                 </div>
                                 <!-- Payment Buttons for third Payee -->
-                                <div class="flex flex-row justify-center gap-[5px] py-[10px]">
+                                <div
+                                    class="flex flex-row flex-wrap justify-center gap-[5px] py-[10px]"
+                                >
                                     <Button
                                         grow
-                                        classes="w-[200px] max-w-[200px]"
+                                        classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial text-sm sm:text-base"
                                         onClick={openPaymentConfirmation(UserEnum.Sponsored, 'LN')}
                                         disabled={paying || !paymentManager.payment.sponsoredAmount}
                                     >
@@ -703,7 +703,7 @@
                                             </span>
                                         {:else}
                                             <img
-                                                class="h-[20px] w-auto"
+                                                class="h-[16px] sm:h-[20px] w-auto"
                                                 src="/img/lightning.png"
                                                 alt="Lightning icon"
                                             />
@@ -713,7 +713,7 @@
                                     {#if hasSenderEcashSetup}
                                         <Button
                                             grow
-                                            classes="w-[250px] max-w-[250px]"
+                                            classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial text-sm sm:text-base"
                                             onClick={openPaymentConfirmation(
                                                 UserEnum.Sponsored,
                                                 'Cashu'
@@ -726,7 +726,7 @@
                                                 <ProgressRing />
                                             {:else}
                                                 <img
-                                                    class="h-[20px] w-auto"
+                                                    class="h-[16px] sm:h-[20px] w-auto"
                                                     src="/img/cashu.png"
                                                     alt="Cashu icon"
                                                 />
@@ -736,7 +736,7 @@
                                     {:else}
                                         <Button
                                             grow
-                                            classes="w-[200px] max-w-[200px]"
+                                            classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial text-sm sm:text-base"
                                             onClick={setupEcash}
                                         >
                                             {#if paying}
@@ -756,7 +756,6 @@
         {/if}
     </div>
 </div>
-
 
 <ConfirmPaymentModal
     bind:isOpen={showPayConfirm}

@@ -294,16 +294,16 @@
 <Card {classes} actAsButton onClick={markAsRead}>
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
-        <a href={userLink}>
+        <a href={userLink} class="shrink-0">
             <ProfileImage src={userImage} />
         </a>
-        <div class="min-w-[50%] flex flex-col items-start overflow-hidden">
+        <div class="flex-1 min-w-0 flex flex-col items-start">
             <a href={userLink}>
-                <p>{userName}</p>
+                <p class="truncate max-w-full">{userName}</p>
             </a>
 
             {#if notificationMessage}
-                <div class="flex flex-row gap-[5px] flex-wrap">
+                <div class="flex flex-row gap-[5px] flex-wrap w-full">
                     <p>
                         <span class={notificationMessage.prefixClass ?? ''}>
                             {notificationMessage.prefix}
@@ -311,7 +311,7 @@
                     </p>
                     <a
                         href={notificationMessage.link}
-                        class="transition ease duration-[0.3s] font-[600] link"
+                        class="transition ease duration-[0.3s] font-[600] link break-words"
                     >
                         "{notificationMessage.title}"
                     </a>
@@ -319,11 +319,11 @@
 
                 <!-- Job Status Timestamps -->
                 {#if notification instanceof JobEvent}
-                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1 w-full">
                         <!-- Job Creation -->
                         <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                            <span>
+                            <span class="w-2 h-2 shrink-0 rounded-full bg-blue-500"></span>
+                            <span class="break-words">
                                 Job Created: {new Date(
                                     (notification.publishedAt || 0) * 1000
                                 ).toLocaleString()}
@@ -334,11 +334,11 @@
                         {#each notification.stateHistory as historyEntry}
                             <div class="flex items-center gap-2">
                                 <span
-                                    class="w-2 h-2 rounded-full {getStatusColor(
+                                    class="w-2 h-2 shrink-0 rounded-full {getStatusColor(
                                         historyEntry.toStatus
                                     )}"
                                 ></span>
-                                <span>
+                                <span class="break-words">
                                     {getStatusLabel(historyEntry.toStatus)}: {new Date(
                                         historyEntry.timestamp * 1000
                                     ).toLocaleString()}
@@ -350,11 +350,11 @@
 
                 <!-- Bid Status Timestamps -->
                 {#if notification instanceof BidEvent && job}
-                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1 w-full">
                         <!-- Bid Creation -->
                         <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                            <span>
+                            <span class="w-2 h-2 shrink-0 rounded-full bg-blue-500"></span>
+                            <span class="break-words">
                                 Bid Created: {new Date(
                                     (notification.publishedAt || 0) * 1000
                                 ).toLocaleString()}
@@ -364,8 +364,9 @@
                         <!-- Bid Status Timeline -->
                         {#each getBidTimeline(notification, job) as timelineEntry}
                             <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full {timelineEntry.color}"></span>
-                                <span>
+                                <span class="w-2 h-2 shrink-0 rounded-full {timelineEntry.color}"
+                                ></span>
+                                <span class="break-words">
                                     {timelineEntry.label}: {new Date(
                                         timelineEntry.timestamp * 1000
                                     ).toLocaleString()}

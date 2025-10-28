@@ -180,26 +180,26 @@
 >
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
-        <a href={'/' + zapper.npub}>
+        <a href={'/' + zapper.npub} class="shrink-0">
             <ProfileImage src={zapperImage} />
         </a>
-        <div class="flex flex-col">
-            <p>{zapperName}</p>
-            <div class="flex flex-row gap-[5px] flex-wrap">
+        <div class="flex-1 min-w-0 flex flex-col">
+            <p class="truncate max-w-full">{zapperName}</p>
+            <div class="flex flex-row gap-[5px] flex-wrap w-full">
                 <p>
                     Has zapped you {(amount ? insertThousandSeparator(amount) : '?') + ' sats'}
                 </p>
                 {#if job}
                     <a
                         href={'/' + job.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] link"
+                        class="transition ease duration-[0.3s] font-[600] link break-words"
                     >
                         for the Job: "{job.title}"
                     </a>
                 {:else if service}
                     <a
                         href={'/' + service.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] link"
+                        class="transition ease duration-[0.3s] font-[600] link break-words"
                     >
                         for the Service: "{service.title}"
                     </a>

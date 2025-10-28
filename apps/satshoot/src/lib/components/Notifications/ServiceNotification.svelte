@@ -259,14 +259,14 @@
     <NotificationTimestamp ndkEvent={order} />
     {#if service && user && orderState}
         <div class="w-full flex flex-row gap-[15px]">
-            <a href={'/' + user.npub}>
+            <a href={'/' + user.npub} class="shrink-0">
                 <ProfileImage src={userImage} />
             </a>
-            <div class="min-w-[50%] flex flex-col items-start overflow-hidden">
+            <div class="flex-1 min-w-0 flex flex-col items-start">
                 <a href={'/' + user.npub}>
-                    <p>{userName}</p>
+                    <p class="truncate max-w-full">{userName}</p>
                 </a>
-                <div class="flex flex-row gap-[5px] flex-wrap">
+                <div class="flex flex-row gap-[5px] flex-wrap w-full">
                     {#if orderState === 'Order Placed'}
                         <p>Has placed an order on:</p>
                     {:else if orderState === 'Order Pending'}
@@ -280,18 +280,18 @@
                     {/if}
                     <a
                         href={'/' + service.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] link"
+                        class="transition ease duration-[0.3s] font-[600] link break-words"
                     >
                         "{service.title}"
                     </a>
                 </div>
 
                 <!-- Order Status Timestamps -->
-                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1 w-full">
                     <!-- Order Creation -->
                     <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                        <span>
+                        <span class="w-2 h-2 shrink-0 rounded-full bg-blue-500"></span>
+                        <span class="break-words">
                             Order Placed: {new Date(
                                 (order.publishedAt || 0) * 1000
                             ).toLocaleString()}
@@ -301,8 +301,9 @@
                     <!-- Order Timeline -->
                     {#each getOrderTimeline(order, service) as timelineEntry}
                         <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full {timelineEntry.color}"></span>
-                            <span>
+                            <span class="w-2 h-2 shrink-0 rounded-full {timelineEntry.color}"
+                            ></span>
+                            <span class="break-words">
                                 {timelineEntry.label}: {new Date(
                                     timelineEntry.timestamp * 1000
                                 ).toLocaleString()}

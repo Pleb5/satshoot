@@ -138,7 +138,7 @@
                 action: {
                     label: 'Check relays',
                     onClick: () => {
-                        goto('/settings/relays');
+                        goto('/settings/app-relays');
                     },
                 },
             });
@@ -190,9 +190,20 @@
             $loggingIn = false;
             console.log('Start init session in local key login');
             initializeUser($ndk);
-        } else if (
-            localStorage.getItem('nostr-nsec') !== null
-        ) {
+        } else if (localStorage.getItem('nostr-nsec') !== null) {
+            const storedSecret = localStorage.getItem('nostr-nsec');
+
+            if (storedSecret && storedSecret.startsWith('nsec')) {
+                const privateKey = privateKeyFromNsec(storedSecret);
+                if (privateKey) {
+                    $ndk.signer = new NDKPrivateKeySigner(privateKey);
+                    $sessionPK = privateKey;
+                    $loggingIn = false;
+                    initializeUser($ndk);
+                    return;
+                }
+            }
+
             showDecryptSecretModal = true;
         } else {
             $loggingIn = false;
@@ -572,7 +583,10 @@
         if ($currentUser && $userMode === UserMode.Freelancer) {
             $wotFilteredJobs.forEach((job: JobEvent) => {
                 // no need to send notification for own job
-                if (job.pubkey !== $currentUser.pubkey) {
+                if (
+                    job.pubkey !== $currentUser.pubkey &&
+                    $currentUserFreelanceFollows.has(job.pubkey)
+                ) {
                     sendNotification(job);
                 }
             });

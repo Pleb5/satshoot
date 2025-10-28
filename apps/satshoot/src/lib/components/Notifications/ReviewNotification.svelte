@@ -152,17 +152,17 @@
 >
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
-        <a href={'/' + user.npub}>
+        <a href={'/' + user.npub} class="shrink-0">
             <ProfileImage src={userImage} />
         </a>
-        <div class="flex flex-col grow-1 items-start">
-            <p>{userName}</p>
-            <div class="flex flex-row gap-[5px] flex-wrap">
+        <div class="flex-1 min-w-0 flex flex-col items-start">
+            <p class="truncate max-w-full">{userName}</p>
+            <div class="flex flex-row gap-[5px] flex-wrap w-full">
                 <p>{label}</p>
                 {#if jobOrService}
                     <a
                         href={'/' + jobOrService.encode() + '/'}
-                        class="transition ease duration-[0.3s] font-[600] link"
+                        class="transition ease duration-[0.3s] font-[600] link break-words"
                     >
                         "{jobOrService.title}"
                     </a>
@@ -171,7 +171,7 @@
                 {/if}
             </div>
         </div>
-        <div class="flex flex-col gap-[5px] justify-end">
+        <div class="flex flex-col gap-[5px] justify-end shrink-0">
             <Button onClick={handlePreview}>Preview</Button>
         </div>
     </div>

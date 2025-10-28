@@ -92,10 +92,12 @@
     }}
 >
     <NotificationTimestamp ndkEvent={notification} />
-    <a href={'/' + follower.npub} class="flex flex-row items-center gap-[10px]">
-        <ProfileImage src={followerImage} />
-        <div class="flex flex-col gap-[0px]">
-            <p>{followerName}</p>
+    <a href={'/' + follower.npub} class="flex flex-row items-center gap-[10px] w-full">
+        <div class="shrink-0">
+            <ProfileImage src={followerImage} />
+        </div>
+        <div class="flex-1 min-w-0 flex flex-col gap-[0px]">
+            <p class="truncate max-w-full">{followerName}</p>
             <p>has followed you</p>
         </div>
     </a>

@@ -17,7 +17,7 @@
 
     interface Props {
         isOpen: boolean;
-        initialTab: LocalKeyLoginTabs
+        initialTab: LocalKeyLoginTabs;
     }
 
     interface FileAcceptDetails {
@@ -43,10 +43,7 @@
         | 'FILE_EXISTS'
         | AnyString;
 
-    let { 
-        isOpen = $bindable(),
-        initialTab = LocalKeyLoginTabs.BackupFile
-    }: Props = $props();
+    let { isOpen = $bindable(), initialTab = LocalKeyLoginTabs.BackupFile }: Props = $props();
 
     const localKeyLoginTabs = [
         {
@@ -61,8 +58,8 @@
 
     let activeTabForLocalKeyLogin = $state(initialTab);
 
-    let backupFile = $state<File|null>(null)
-    let fileUploadSuccessful = $state(false)
+    let backupFile = $state<File | null>(null);
+    let fileUploadSuccessful = $state(false);
     let nsecForLocalKey = $state('');
     let passphrase = $state('');
     let confirmPassphrase = $state('');
@@ -70,28 +67,26 @@
     let statusMessage = $state('');
     let statusColor = $state('text-tertiary-200-700');
 
-    const validateBackupFile = (file:File): string[]|null => {
-        const errors = []
-        
+    const validateBackupFile = (file: File): string[] | null => {
+        const errors = [];
+
         const acceptedMimeTypes = [
             'text/plain',
-            '' // some browsers might not set a type
+            '', // some browsers might not set a type
         ];
-        
+
         if (!acceptedMimeTypes.includes(file.type) && file.type !== '') {
-            errors.push(
-                `Unexpected file type: ${file.type}. Expected a '.txt' file.`
-            );
+            errors.push(`Unexpected file type: ${file.type}. Expected a '.txt' file.`);
             console.error('File validation failed:', file);
         }
-        
-        if (errors.length > 0) return errors
-        
-        return null
-    }
+
+        if (errors.length > 0) return errors;
+
+        return null;
+    };
 
     async function loginWithNsec() {
-        if (!validatePassphrase()) return
+        if (!validatePassphrase()) return;
 
         await loginWithSecret(
             nsecForLocalKey,
@@ -102,7 +97,7 @@
     }
 
     async function loginWithBackupFile() {
-        if (!validatePassphrase()) return
+        if (!validatePassphrase()) return;
         if (!backupFile) {
             toaster.error({
                 title: 'No backup file selected',
@@ -113,16 +108,16 @@
         try {
             // Read the file content
             const fileContent = await backupFile.text();
-            
+
             // Extract nsec from the file content
             const nsecMatch = fileContent.match(/nsec=([a-zA-Z0-9]+)/);
-            
+
             if (!nsecMatch || !nsecMatch[1]) {
                 throw new Error('Could not find nsec in backup file');
             }
-            
+
             const extractedNsec = nsecMatch[1];
-            
+
             await loginWithSecret(
                 extractedNsec,
                 passphrase,
@@ -137,7 +132,7 @@
     }
 
     const validatePassphrase = (): boolean => {
-        if (!passphrase && !confirmPassphrase) return true
+        if (!passphrase && !confirmPassphrase) return true;
 
         if (passphrase.length < 14) {
             toaster.error({
@@ -155,8 +150,8 @@
 
             return false;
         }
-        return true
-    }
+        return true;
+    };
 
     async function loginWithSecret(
         secret: string,
@@ -168,7 +163,7 @@
         statusColor = 'text-tertiary-200-700';
 
         try {
-            const privateKey = privateKeyFromNsec(secret)
+            const privateKey = privateKeyFromNsec(secret);
 
             if (!privateKey) {
                 throw new Error('Creating Private Key from input failed!');
@@ -185,12 +180,16 @@
 
             loginMethod.set(LoginMethod.Local);
 
-            if (passphrase) {
-                // Encrypt secret for local storage
+            // If no passphrase is provided, store the nsec directly (unencrypted)
+            // If passphrase is provided, encrypt the secret
+            if (passphrase && passphrase.trim() !== '') {
                 const encryptedSecret = encryptSecret(secret, passphrase, npub);
                 localStorage.setItem(storageKey, encryptedSecret);
-                localStorage.setItem('nostr-npub', npub);
+            } else {
+                // Store unencrypted nsec when no passphrase is used
+                localStorage.setItem(storageKey, secret);
             }
+            localStorage.setItem('nostr-npub', npub);
 
             // Initialize user
             initializeUser($ndk);
@@ -224,17 +223,17 @@
     }
 
     function handleFileAccept({ files }: FileAcceptDetails) {
-        backupFile = files[0]
-        fileUploadSuccessful = true
+        backupFile = files[0];
+        fileUploadSuccessful = true;
     }
 
     function handleFileReject({ files }: FileRejectDetails) {
-        const error = files[0].errors
+        const error = files[0].errors;
         error.forEach((error) => {
             toaster.error({
                 title: `File Loading Error: ${error}`,
             });
-        })
+        });
     }
 
     const labelClasses =
@@ -246,10 +245,10 @@
     let passphraseTooltip =
         '<div>' +
         '<ul class="list-inside list-disc space-y-2">' +
-            '<li>' +
-                'Login easily with a password after your session ends.' +
-            '</li>' +
-            '<li>Your secret key will be stored encrypted in the browser until logout.</li>' +
+        '<li>' +
+        'Login easily with a password after your session ends.' +
+        '</li>' +
+        '<li>Your secret key will be stored encrypted in the browser until logout.</li>' +
         '</ul>' +
         '</div>';
 </script>
@@ -275,18 +274,15 @@
 
 <!-- tabs start-->
 <div class="w-full flex flex-col gap-[10px]">
-    <TabSelector 
-        tabs={localKeyLoginTabs} 
-        bind:selectedTab={activeTabForLocalKeyLogin} 
-    />
+    <TabSelector tabs={localKeyLoginTabs} bind:selectedTab={activeTabForLocalKeyLogin} />
     <div class="w-full flex flex-col">
         {#if activeTabForLocalKeyLogin === LocalKeyLoginTabs.BackupFile}
             <FileUpload
                 name="nsec_backup"
                 accept="text/*"
                 maxFiles={1}
-                subtext={"SatShoot-<User name>-login.txt"}
-                classes={"mb-2"}
+                subtext={'SatShoot-<User name>-login.txt'}
+                classes={'mb-2'}
                 validate={validateBackupFile}
                 onFileAccept={handleFileAccept}
                 onFileReject={handleFileReject}
@@ -312,22 +308,20 @@
 
         <div class="flex flex-col place-items-center mt-2">
             <div class="flex gap-x-2">
-            <div>Password (optional)</div>
-            <QuestionIcon
-                extraClasses="text-[14px] p-[3px]"
-                placement="bottom-start"
-                popUpText={passphraseTooltip}
-            />
+                <div>Password (optional)</div>
+                <QuestionIcon
+                    extraClasses="text-[14px] p-[3px]"
+                    placement="bottom-start"
+                    popUpText={passphraseTooltip}
+                />
             </div>
             <Passphrase
-                bind:passphrase={passphrase}
-                bind:confirmPassphrase={confirmPassphrase}
+                bind:passphrase
+                bind:confirmPassphrase
                 btnLabel="Login"
-                onSubmit={
-                activeTabForLocalKeyLogin === LocalKeyLoginTabs.BackupFile 
-                    ? loginWithBackupFile 
-                    : loginWithNsec
-                }
+                onSubmit={activeTabForLocalKeyLogin === LocalKeyLoginTabs.BackupFile
+                    ? loginWithBackupFile
+                    : loginWithNsec}
             />
         </div>
     </div>
