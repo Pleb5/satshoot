@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
+    import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import { NDKSubscriptionCacheUsage, NDKUser, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import Button from '../UI/Buttons/Button.svelte';
@@ -78,7 +78,9 @@
         return null;
     });
 
-    const myService = $derived(!!service && service.pubkey === $currentUser?.pubkey);
+    const myService = $derived(
+        !!service && service.pubkey === $currentUser?.pubkey
+    );
 
     const myOrder = $derived(order.pubkey === $currentUser?.pubkey);
 
@@ -87,7 +89,8 @@
     );
 
     const canAcceptOrder = $derived(
-        order.status === OrderStatus.Open &&
+        !!service &&
+            order.status === OrderStatus.Open &&
             myService &&
             !service?.orders.includes(order.orderAddress)
     );
@@ -99,9 +102,13 @@
             service?.orders.includes(order.orderAddress)
     );
 
-    const canPay = $derived(myOrder && service?.orders.includes(order.orderAddress));
+    const canPay = $derived(
+        !!service && myOrder && service.orders.includes(order.orderAddress)
+    );
 
-    const canClose = $derived(order.status === OrderStatus.Open && canPay);
+    const canClose = $derived(
+        !!service && myOrder && order.status === OrderStatus.Open
+    );
 
     let initialized = $state(false);
     $effect(() => {
@@ -160,7 +167,9 @@
 
     function goToPay() {
         if (order) {
-            const url = new URL('/payments/' + order.encode(), window.location.origin);
+            const url = new URL(
+                '/payments/' + order.encode(), window.location.origin
+            );
             goto(url.toString());
         } else {
             throw new Error('Cannot pay, Order not found!');
@@ -247,18 +256,16 @@
     {/if}
 </div>
 
-{#if service}
-    <CloseEntityModal
-        bind:isOpen={showCloseModal}
-        targetEntity={service!}
-        secondaryEntity={order}
-    />
+<CloseEntityModal
+    bind:isOpen={showCloseModal}
+    targetEntity={service!}
+    secondaryEntity={order}
+/>
 
-    <ConfirmationDialog
-        bind:isOpen={showAcceptOrderConfirmationModal}
-        title={'Do you really want to accept the Order?'}
-        confirmText={'Accept Order'}
-        onConfirm={handleAcceptOrder}
-        onCancel={() => (showAcceptOrderConfirmationModal = !showAcceptOrderConfirmationModal)}
-    />
-{/if}
+<ConfirmationDialog
+    bind:isOpen={showAcceptOrderConfirmationModal}
+    title={'Do you really want to accept the Order?'}
+    confirmText={'Accept Order'}
+    onConfirm={handleAcceptOrder}
+    onCancel={() => (showAcceptOrderConfirmationModal = !showAcceptOrderConfirmationModal)}
+/>

@@ -20,7 +20,7 @@
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
-    import { buildSponsoredZapSplit, inFulfillmentOrderOnService } from '$lib/utils/service';
+    import { buildSponsoredZapSplit, inFulfillmentOrderOnService, openOrderOnService } from '$lib/utils/service';
     import {
         NDKRelay,
         NDKSubscription,
@@ -55,11 +55,19 @@
     let serviceSubscription = $state<NDKSubscription>();
     let service = $state<ServiceEvent>();
 
-    const myInFulfillmentOrder = $derived.by(() => {
-        if (service) {
-            return inFulfillmentOrderOnService(service, $myOrders);
+    let myInFulfillmentOrder = $derived.by(() => {
+        if (service && $myOrders) {
+            return inFulfillmentOrderOnService(service, $myOrders)
         }
     });
+
+    const myOpenOrderOnService = $derived.by(() => {
+        if (service && $myOrders) {
+            return openOrderOnService(service, $myOrders)
+        }
+    });
+
+    let canCloseOrder = $derived(!!myOpenOrderOnService)
 
     let displayOrderConfirmationModal = $state(false);
     let showCloseModal = $state(false);
@@ -68,7 +76,7 @@
         !!$currentUser && !!service && $currentUser.pubkey === service.pubkey
     );
 
-    const myOrdersOnCurrentService = $derived.by(() => {
+    let myOrdersOnCurrentService = $derived.by(() => {
         if (!service || myService) return [];
 
         return $myOrders.filter(
@@ -123,7 +131,7 @@
     });
 
     const { btnActionText, allowMakeOrder, disallowMakeOrderReason } = $derived.by(() => {
-        if (!service)
+        if (!service || myService)
             return {
                 allowMakeOrder: false,
                 disallowMakeOrderReason: '',
@@ -164,7 +172,7 @@
             initialized = true;
             checkRelayConnections();
 
-            const naddr = page.params.serviceId;
+            const naddr = page.params.serviceId as string;
             const relaysFromURL = relaysFromNaddr(naddr).split(',');
 
             // Add relays from URL
@@ -277,7 +285,7 @@
     }
 
     function handleCloseOrder() {
-        if (!service || !myInFulfillmentOrder) {
+        if (!service || !myOpenOrderOnService) {
             throw new Error('BUG: Cannot Close undefined Service or Order');
         }
         showCloseModal = true;
@@ -290,6 +298,11 @@
         { id: OrderTab.InProgress, label: 'In-Progress' },
         { id: OrderTab.Completed, label: 'Completed' },
     ];
+
+    $inspect($myOrders).with((type, orders) => {
+
+        console.log('my orders:', orders)
+    }) 
 </script>
 
 <div bind:this={pageTop} class="w-full flex flex-col gap-0 grow pb-20 sm:pb-5">
@@ -300,110 +313,113 @@
                     <div class="w-full flex flex-col gap-[15px]">
                         <ServiceCard {service} allOrders={wotFilteredOrders} />
                         <div class="flex flex-row justify-center">
-                            {#if !myService}
+                            {#if $loggedIn}
                                 {#if allowMakeOrder}
-                                    {#if $loggedIn}
-                                        <div class="flex flex-row justify-center">
-                                            {#if btnActionText}
-                                                <Button
-                                                    onClick={() =>
-                                                        (displayOrderConfirmationModal = true)}
-                                                    classes="max-[768px]:grow-1"
-                                                >
-                                                    {btnActionText}
+                                    <div class="flex flex-row justify-center gap-x-2">
+                                        <Button
+                                            onClick={() =>
+                                                (displayOrderConfirmationModal = true)}
+                                            classes="max-[768px]:grow-1"
+                                        >
+                                            {btnActionText}
+                                        </Button>
+                                        <Button onClick={goToChat}>
+                                            <i class="bx bxs-conversation text-[20px]"></i>
+                                            <p class="">Message</p>
+                                        </Button>
+                                    </div>
+                                {:else}
+                                    {#if !myService}
+                                        <div
+                                            class="w-full min-h-[100px] rounded-[8px] bg-black-100 dark:bg-white-100 p-2 border-[4px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
+                                        >
+                                            <p
+                                                class="font-[600] text-[18px] text-black-300 dark:text-white-300"
+                                            >
+                                                {disallowMakeOrderReason}
+                                            </p>
+                                            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2">
+                                                <Button onClick={goToChat}>
+                                                    <i class="bx bxs-conversation text-[20px]"></i>
+                                                    <p class="">Message</p>
                                                 </Button>
-                                            {/if}
+                                                {#if canCloseOrder}
+                                                    <Button onClick={handleCloseOrder}>
+                                                        <i class="bx bxs-lock text-[20px]"></i>
+                                                        <p class="">Close Order</p>
+                                                    </Button>
+                                                {/if}
+                                                {#if myInFulfillmentOrder}
+                                                    <Button onClick={goToPay}>
+                                                        <i class="bx bxs-bolt text-[20px]"></i>
+                                                        <p class="">Pay</p>
+                                                    </Button>
+                                                {/if}
+                                            </div>
                                         </div>
                                     {:else}
-                                        <div class="flex flex-row justify-center">
-                                            <Button
-                                                onClick={triggerLogin}
-                                                classes="max-[768px]:grow-1"
+                                        <!-- UI for displaying orders -->
+                                        <div class="w-full flex flex-col gap-[15px]">
+                                            <div
+                                                class="w-full flex flex-row flex-wrap gap-[10px] justify-between items-center"
                                             >
-                                                Login to order
-                                            </Button>
+                                                <p
+                                                    class="font-[600] text-[24px] flex flex-row gap-[5px] items-center"
+                                                >
+                                                    Orders
+                                                    <span class="font-[400] text-[16px]"
+                                                    >({insertThousandSeparator(
+                                                        wotFilteredOrders.length
+                                                    )})</span
+                                                    >
+                                                </p>
+                                            </div>
+
+                                            <!-- tabs start-->
+                                            <div class="w-full flex flex-col gap-[10px]">
+                                                <TabSelector {tabs} bind:selectedTab={selectedOrdersTab} />
+                                                <!-- tabs content start-->
+                                                <div class="w-full flex flex-col">
+                                                    {#if selectedOrdersTab === OrderTab.Pending}
+                                                        <div class="w-full flex flex-col">
+                                                            <div class="w-full flex flex-col gap-[15px]">
+                                                                {#each pendingOrders as order}
+                                                                    <OrderCard {order} />
+                                                                {/each}
+                                                            </div>
+                                                        </div>
+                                                    {:else if selectedOrdersTab === OrderTab.InProgress}
+                                                        <div class="w-full flex flex-col">
+                                                            <div class="w-full flex flex-col gap-[15px]">
+                                                                {#each inProgressOrders as order}
+                                                                    <OrderCard {order} />
+                                                                {/each}
+                                                            </div>
+                                                        </div>
+                                                    {:else}
+                                                        <div class="w-full flex flex-col">
+                                                            <div class="w-full flex flex-col gap-[15px]">
+                                                                {#each completedOrders as order}
+                                                                    <OrderCard {order} />
+                                                                {/each}
+                                                            </div>
+                                                        </div>
+                                                    {/if}
+                                                </div>
+                                                <!-- tabs content end -->
+                                            </div>
+                                            <!-- tabs end-->
                                         </div>
                                     {/if}
-                                {:else}
-                                    <div
-                                        class="w-full min-h-[100px] rounded-[8px] bg-black-100 dark:bg-white-100 p-2 border-[4px] border-black-100 dark:border-white-100 flex flex-col justify-center items-center"
-                                    >
-                                        <p
-                                            class="font-[600] text-[18px] text-black-300 dark:text-white-300"
-                                        >
-                                            {disallowMakeOrderReason}
-                                        </p>
-                                        <div class="flex flex-wrap justify-center gap-x-4 gap-y-2">
-                                            <Button onClick={goToChat}>
-                                                <i class="bx bxs-conversation text-[20px]"></i>
-                                                <p class="">Message</p>
-                                            </Button>
-                                            {#if myInFulfillmentOrder}
-                                                <Button onClick={goToPay}>
-                                                    <i class="bx bxs-bolt text-[20px]"></i>
-                                                    <p class="">Pay</p>
-                                                </Button>
-
-                                                <Button onClick={handleCloseOrder}>
-                                                    <i class="bx bxs-lock text-[20px]"></i>
-                                                    <p class="">Close Order</p>
-                                                </Button>
-                                            {/if}
-                                        </div>
-                                    </div>
                                 {/if}
                             {:else}
-                                <!-- UI for displaying orders -->
-                                <div class="w-full flex flex-col gap-[15px]">
-                                    <div
-                                        class="w-full flex flex-row flex-wrap gap-[10px] justify-between items-center"
+                                <div class="flex flex-row justify-center">
+                                    <Button
+                                        onClick={triggerLogin}
+                                        classes="max-[768px]:grow-1"
                                     >
-                                        <p
-                                            class="font-[600] text-[24px] flex flex-row gap-[5px] items-center"
-                                        >
-                                            Orders
-                                            <span class="font-[400] text-[16px]"
-                                                >({insertThousandSeparator(
-                                                    wotFilteredOrders.length
-                                                )})</span
-                                            >
-                                        </p>
-                                    </div>
-
-                                    <!-- tabs start-->
-                                    <div class="w-full flex flex-col gap-[10px]">
-                                        <TabSelector {tabs} bind:selectedTab={selectedOrdersTab} />
-                                        <!-- tabs content start-->
-                                        <div class="w-full flex flex-col">
-                                            {#if selectedOrdersTab === OrderTab.Pending}
-                                                <div class="w-full flex flex-col">
-                                                    <div class="w-full flex flex-col gap-[15px]">
-                                                        {#each pendingOrders as order}
-                                                            <OrderCard {order} />
-                                                        {/each}
-                                                    </div>
-                                                </div>
-                                            {:else if selectedOrdersTab === OrderTab.InProgress}
-                                                <div class="w-full flex flex-col">
-                                                    <div class="w-full flex flex-col gap-[15px]">
-                                                        {#each inProgressOrders as order}
-                                                            <OrderCard {order} />
-                                                        {/each}
-                                                    </div>
-                                                </div>
-                                            {:else}
-                                                <div class="w-full flex flex-col">
-                                                    <div class="w-full flex flex-col gap-[15px]">
-                                                        {#each completedOrders as order}
-                                                            <OrderCard {order} />
-                                                        {/each}
-                                                    </div>
-                                                </div>
-                                            {/if}
-                                        </div>
-                                        <!-- tabs content end -->
-                                    </div>
-                                    <!-- tabs end-->
+                                        Login to order
+                                    </Button>
                                 </div>
                             {/if}
                         </div>
@@ -439,6 +455,7 @@
     <CloseEntityModal
         bind:isOpen={showCloseModal}
         targetEntity={service!}
-        secondaryEntity={myInFulfillmentOrder!}
+        secondaryEntity={myOpenOrderOnService}
     />
 {/if}
+

@@ -32,7 +32,7 @@
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
-    let npub = page.params.npub;
+    let npub = page.params.npub as `npub1${string}`;
     let pubkey = nip19.decode(npub).data as string;
     let user = $ndk.getUser({ npub: npub });
 
