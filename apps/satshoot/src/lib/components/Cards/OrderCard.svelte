@@ -145,7 +145,9 @@
 
         service.addOrder(order.orderAddress);
         try {
-            await service.publishReplaceable();
+            // To trigger reactivity on 'service' we need to publish a clone
+            const serviceToPublish = ServiceEvent.from(service)
+            await serviceToPublish.publishReplaceable();
             toaster.success({
                 title: 'Order Accepted',
             });
