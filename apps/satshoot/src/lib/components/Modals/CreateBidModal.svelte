@@ -4,7 +4,7 @@
     import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
     import ndk from '$lib/stores/session';
-    import currentUser from '$lib/stores/user';
+    import currentUser, { currentUserFreelanceFollows } from '$lib/stores/user';
     import {
         NDKEvent,
         NDKKind,
@@ -26,6 +26,7 @@
     import { nip19 } from 'nostr-tools';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { PaymentService } from '$lib/services/payments';
+    import { freelanceFollow } from '$lib/utils/helpers';
 
     interface Props {
         isOpen: boolean;
@@ -218,26 +219,13 @@
 
             toaster.success({ title: 'Bid Posted!' });
 
-            if (!$currentUser?.profile?.lud16) {
-                console.log($currentUser?.profile);
-
+            if (!($currentUserFreelanceFollows.has(job.pubkey))) {
                 toaster.warning({
-                    title: 'Set up an LN Address to receive payments!',
+                    title: 'Follow Client to boost visibility of Your Bid!',
                     duration: 60000, // 1 min
                     action: {
-                        label: 'Go to Profile',
-                        onClick: () => goto('/settings/profile'),
-                    },
-                });
-            }
-
-            if ($currentUser && !$wallet) {
-                toaster.warning({
-                    title: 'Set up a Nostr Wallet to receive payments in ecash tokens!',
-                    duration: 60000, // 1 min
-                    action: {
-                        label: 'Go to Wallet',
-                        onClick: () => goto('/my-cashu-wallet'),
+                        label: 'Follow Client',
+                        onClick: () => freelanceFollow(job.pubkey),
                     },
                 });
             }

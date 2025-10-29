@@ -14,10 +14,10 @@
     import { showLoginModal } from '$lib/stores/modals';
     import ndk, { sessionInitialized } from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
-    import currentUser, { loggedIn } from '$lib/stores/user';
+    import currentUser, { currentUserFreelanceFollows, loggedIn } from '$lib/stores/user';
     import { wot } from '$lib/stores/wot';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
-    import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
+    import { checkRelayConnections, freelanceFollow, orderEventsChronologically } from '$lib/utils/helpers';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import { idFromNaddr, relaysFromNaddr } from '$lib/utils/nip19';
     import { buildSponsoredZapSplit, inFulfillmentOrderOnService, openOrderOnService } from '$lib/utils/service';
@@ -255,6 +255,18 @@
             toaster.success({
                 title: 'Order placed',
             });
+
+            if (!($currentUserFreelanceFollows.has(service.pubkey))) {
+                toaster.warning({
+                    title: 'Follow Freelancer to boost visibility of Your Order!',
+                    duration: 60000, // 1 min
+                    action: {
+                        label: 'Follow Freelancer',
+                        onClick: () => freelanceFollow(service!.pubkey),
+                    },
+                });
+            }
+
         } catch (error) {
             console.error(error);
             toaster.error({

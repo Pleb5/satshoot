@@ -12,6 +12,7 @@ import {
     type CashuPaymentInfo,
     serializeProfile,
     NDKUser,
+    NDKList,
 } from '@nostr-dev-kit/ndk';
 import ndk, {
     blastrUrl,
@@ -20,7 +21,7 @@ import ndk, {
     sessionPK,
 } from '$lib/stores/session';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
-import currentUser, { onBoarding } from '../stores/user';
+import currentUser, { freelanceFollowSets, onBoarding } from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
 import { loadWot, networkWoTScores } from '../stores/wot';
 import { allReviews } from '$lib/stores/reviews';
@@ -49,6 +50,7 @@ import { retriesLeft, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
 import { DeterministicCashuWalletInfoKind, NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { fetchEventFromRelaysFirst, APP_RELAY_STORAGE_KEY } from '$lib/utils/misc';
+import { toaster } from '$lib/stores/toaster';
 
 export async function initializeUser(ndk: NDKSvelte) {
     console.log('begin user init');
@@ -241,6 +243,73 @@ export function logout() {
     get(ndk).signer = undefined;
 
     goto('/');
+}
+
+
+export async function freelanceFollow(pubkey: string) {
+    const $currentUser = get(currentUser)
+    if (!$currentUser) return;
+
+    let followSet = get(freelanceFollowSets).get($currentUser.pubkey);
+
+    if (!followSet) {
+        followSet = new NDKList(get(ndk));
+        followSet.kind = NDKKind.FollowSet;
+        followSet.tag(['d', 'freelance']);
+    }
+
+    followSet.tag(['p', pubkey]);
+
+    await followSet
+    .publishReplaceable()
+    .then(() => {
+        toaster.success({
+            title: 'Followed!',
+        });
+
+        freelanceFollowSets.update((map) => {
+            map.set($currentUser.pubkey, followSet);
+            return map;
+        });
+    })
+    .catch((err) => {
+        console.error(err);
+        toaster.error({
+            title: 'Failed to publish follow set',
+        });
+    })
+}
+
+export async function freelanceUnfollow(pubkey: string) {
+    const $currentUser = get(currentUser)
+
+    if (!$currentUser) return;
+
+    const followSet = get(freelanceFollowSets).get($currentUser.pubkey);
+
+    if (!followSet) return;
+
+
+    followSet.removeItemByValue(pubkey);
+
+    await followSet
+    .publishReplaceable()
+    .then(() => {
+        toaster.success({
+            title: 'Un-followed!',
+        });
+
+        freelanceFollowSets.update((map) => {
+            map.set($currentUser.pubkey, followSet);
+            return map;
+        });
+    })
+    .catch((err) => {
+        console.error(err);
+        toaster.error({
+            title: 'Failed to publish follow set',
+        });
+    })
 }
 
 export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {

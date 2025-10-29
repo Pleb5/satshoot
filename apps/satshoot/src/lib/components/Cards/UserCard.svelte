@@ -5,12 +5,11 @@
         fetchFreelanceFollowSet,
         freelanceFollowSets,
     } from '$lib/stores/user';
-    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import { freelanceFollow, freelanceUnfollow, getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterValidPTags } from '$lib/utils/misc';
     import {
         NDKKind,
-        NDKList,
         profileFromEvent,
         type NDKUser,
         type NDKUserProfile,
@@ -32,6 +31,7 @@
     import { toaster } from '$lib/stores/toaster';
     import { sessionInitialized } from '$lib/stores/session';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
+    import { tick } from 'svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -140,76 +140,6 @@
         }
     });
 
-    async function follow() {
-        if (!$currentUser) return;
-
-        processingFollowSet = true;
-
-        let followSet = $freelanceFollowSets.get($currentUser.pubkey);
-
-        if (!followSet) {
-            followSet = new NDKList($ndk);
-            followSet.kind = NDKKind.FollowSet;
-            followSet.tag(['d', 'freelance']);
-        }
-
-        followSet.tag(['p', user.pubkey]);
-
-        await followSet
-            .publishReplaceable()
-            .then(() => {
-                toaster.success({
-                    title: 'Followed!',
-                });
-
-                freelanceFollowSets.update((map) => {
-                    map.set($currentUser.pubkey, followSet);
-                    return map;
-                });
-            })
-            .catch((err) => {
-                console.error(err);
-                toaster.error({
-                    title: 'Failed to publish follow set',
-                });
-            })
-            .finally(() => {
-                processingFollowSet = false;
-            });
-    }
-
-    async function unFollow() {
-        if (!$currentUser) return;
-        const followSet = $freelanceFollowSets.get($currentUser.pubkey);
-
-        if (!followSet) return;
-
-        processingFollowSet = true;
-
-        followSet.removeItemByValue(user.pubkey);
-
-        await followSet
-            .publishReplaceable()
-            .then(() => {
-                toaster.success({
-                    title: 'Un-followed!',
-                });
-
-                freelanceFollowSets.update((map) => {
-                    map.set($currentUser.pubkey, followSet);
-                    return map;
-                });
-            })
-            .catch((err) => {
-                console.error(err);
-                toaster.error({
-                    title: 'Failed to publish follow set',
-                });
-            })
-            .finally(() => {
-                processingFollowSet = false;
-            });
-    }
 
     async function setProfile() {
         // Logged in user's metadata MUST be fetched from relays
@@ -279,6 +209,24 @@
             title: 'website address',
         },
     ]);
+
+    const follow = async () => {
+        processingFollowSet = true;
+        await tick()
+
+        await freelanceFollow(user.pubkey)
+
+        processingFollowSet = false;
+    }
+
+    const unfollow = async () => {
+        processingFollowSet = true;
+        await tick()
+
+        freelanceUnfollow(user.pubkey)
+        
+        processingFollowSet = false
+    }
 
     const addressCopyBtnClasses =
         'bg-white dark:bg-brightGray rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
@@ -429,7 +377,7 @@
             </div>
             {#if $currentUser && $currentUser.npub !== npub && hasLoadedFollowSet}
                 <div class="flex flex-col gap-[10px]">
-                    <Button onClick={followStatus === FollowStatus.isFollowing ? unFollow : follow}>
+                    <Button onClick={followStatus === FollowStatus.isFollowing ? unfollow : follow}>
                         {#if processingFollowSet}
                             <ProgressRing />
                         {:else}
