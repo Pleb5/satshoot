@@ -13,7 +13,7 @@
 
 <ModalWrapper bind:isOpen title="You accepted the Bid!">
     <strong class="text-error-500">
-        It is strongly recommended you use specialized E2EE(e.g. SimpleX chat) messaging software
+        We strongly recommend to use End-to-End-Encrypted (E2EE) messaging software
         for highly sensitive information!
     </strong>
     <p class="mt-4">
