@@ -492,7 +492,7 @@
                             <div class="flex flex-row flex-wrap justify-center gap-[5px] py-[10px]">
                                 <Button
                                     grow
-                                    classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial text-sm sm:text-base"
+                                    classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial"
                                     onClick={openPaymentConfirmation(UserEnum.Freelancer, 'LN')}
                                     disabled={paying || !paymentManager.payment.amount}
                                 >
@@ -512,7 +512,7 @@
                                 {#if hasSenderEcashSetup}
                                     <Button
                                         grow
-                                        classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial text-sm sm:text-base"
+                                        classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial"
                                         onClick={openPaymentConfirmation(
                                             UserEnum.Freelancer,
                                             'Cashu'
@@ -591,7 +591,7 @@
                             <div class="flex flex-row flex-wrap justify-center gap-[5px] py-[10px]">
                                 <Button
                                     grow
-                                    classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial text-sm sm:text-base"
+                                    classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial"
                                     onClick={openPaymentConfirmation(UserEnum.Satshoot, 'LN')}
                                     disabled={paying || !paymentManager.payment.satshootAmount}
                                 >
@@ -611,7 +611,7 @@
                                 {#if hasSenderEcashSetup}
                                     <Button
                                         grow
-                                        classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial text-sm sm:text-base"
+                                        classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial"
                                         onClick={openPaymentConfirmation(
                                             UserEnum.Satshoot,
                                             'Cashu'
@@ -693,7 +693,7 @@
                                 >
                                     <Button
                                         grow
-                                        classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial text-sm sm:text-base"
+                                        classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial"
                                         onClick={openPaymentConfirmation(UserEnum.Sponsored, 'LN')}
                                         disabled={paying || !paymentManager.payment.sponsoredAmount}
                                     >
@@ -713,7 +713,7 @@
                                     {#if hasSenderEcashSetup}
                                         <Button
                                             grow
-                                            classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial text-sm sm:text-base"
+                                            classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial"
                                             onClick={openPaymentConfirmation(
                                                 UserEnum.Sponsored,
                                                 'Cashu'

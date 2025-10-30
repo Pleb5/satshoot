@@ -7841,7 +7841,6 @@ export const tagOptions = [
     { label: 'simpledateformat', value: 'simpledateformat' },
     { label: 'simplehttpserver', value: 'simplehttpserver' },
     { label: 'simplejson', value: 'simplejson' },
-    { label: 'SimpleX', value: 'simplex' },
     { label: 'simulation', value: 'simulation' },
     { label: 'simulator', value: 'simulator' },
     { label: 'simulink', value: 'simulink' },
