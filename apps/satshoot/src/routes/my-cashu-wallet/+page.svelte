@@ -42,8 +42,8 @@
     import { toaster } from '$lib/stores/toaster';
     import { deriveSeedKey } from '$lib/wallet/nut-13';
     import MnemonicSeedGenerationModal from '$lib/components/Modals/MnemonicSeedGenerationModal.svelte';
-    import MnemonicSeedInputModal from '$lib/components/Modals/MnemonicSeedInputModal.svelte';
-
+    import MnemonicSeedRecoverModal from '$lib/components/Modals/MnemonicSeedRecoverModal.svelte';
+ 
     enum Tab {
         Mints,
         Relays,
@@ -262,17 +262,10 @@
         return balanceStr;
     }
 
-    function setupNewWallet(bip39seed: Uint8Array) {
+    function createWallet(seedWords: string[]) {
+        const bip39seed = deriveSeedKey(seedWords.join(' '));
         tempWallet = new NDKCashuWallet($ndk, bip39seed);
         showMintModal = true;
-    }
-
-    function generateBip39Seed(newWallet: boolean): (seedWords: string[]) => void {
-        return async (seedWords) => {
-            const bip39seed = deriveSeedKey(seedWords.join(' '));
-            if (newWallet) setupNewWallet(bip39seed);
-            else await recoverDeterministicWallet(bip39seed);
-        };
     }
 
     // Handler for new wallet mint selection
@@ -337,9 +330,14 @@
         }
     }
 
-    // TODO (rodant)
-    async function recoverDeterministicWallet(_bip39seed: Uint8Array): Promise<void> {
-        return Promise.resolve();
+    async function recoverDeterministicWallet(seedWords: string[], mint: string): Promise<{ errors: any[], amount: number }> {
+        const bip39seed = seedWords.filter(w => w.length).length ? deriveSeedKey(seedWords.join(' ')) : $wallet.bip39seed;
+        const { errors, proofs } = await $wallet!.recoverProofsFromSeed(bip39seed, mint);
+        let amount = 0;
+        for (const proof of proofs) {
+            amount += proof.amount;
+        }
+        return { errors, amount };
     }
 
     async function updateMints(mints: string[]) {
@@ -510,6 +508,10 @@
         showRecoverEcashWallet = true;
     }
 
+    async function restoreFromSeed() {
+        showMnemonicSeedInputModal = true;
+    }
+
     const listItemWrapperClasses =
         'transition ease duration-[0.3s] w-full flex flex-row gap-[10px] justify-between rounded-[6px] ' +
         'bg-black-100 items-center overflow-hidden max-[576px]:gap-[0px] max-[576px]:flex-col hover:bg-blue-500 group';
@@ -639,6 +641,16 @@
                                                     sats
                                                 </span>
                                             </p>
+
+                                            <Button
+                                                variant="text"
+                                                classes="p-[5px] gap-[5px] text-[12px] font-[500] text-white absolute top-[5px] right-[5px]"
+                                                grow
+                                                onClick={restoreFromSeed}
+                                            >
+                                                <i class="bx bx-upload"> </i>
+                                                Recover from Seed
+                                            </Button>
 
                                             <!-- <i -->
                                             <!--         class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]" -->
@@ -844,11 +856,12 @@
 
 <MnemonicSeedGenerationModal
     bind:isOpen={showMnemonicSeedGenerationModal}
-    onCompletion={generateBip39Seed(true)}
+    onCompletion={createWallet}
 />
 
-<MnemonicSeedInputModal
+<MnemonicSeedRecoverModal
     bind:isOpen={showMnemonicSeedInputModal}
-    onConfirm={generateBip39Seed(false)}
-    onSkip={tryLoadWallet}
+    recoverFromSeed={recoverDeterministicWallet}
+    mints={$wallet?.mints}
+    isDeterministic={!!$wallet?.bip39seed}
 />
