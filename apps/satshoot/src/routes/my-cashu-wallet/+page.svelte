@@ -331,7 +331,7 @@
     }
 
     async function recoverDeterministicWallet(seedWords: string[], mint: string): Promise<{ errors: any[], amount: number }> {
-        const bip39seed = seedWords.filter(w => w.length).length ? deriveSeedKey(seedWords.join(' ')) : $wallet.bip39seed;
+        const bip39seed = seedWords.filter(w => w.length).length ? deriveSeedKey(seedWords.join(' ')) : $wallet!.bip39seed!;
         const { errors, proofs } = await $wallet!.recoverProofsFromSeed(bip39seed, mint);
         let amount = 0;
         for (const proof of proofs) {

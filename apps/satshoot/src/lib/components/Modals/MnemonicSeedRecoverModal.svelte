@@ -6,7 +6,6 @@
     import { validateMnemonicSeed } from '$lib/wallet/nut-13';
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Card from '../UI/Card.svelte';
-    import { onMount } from 'svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     interface Props {
@@ -23,24 +22,22 @@
 
     let { isOpen = $bindable(), recoverFromSeed, mints, isDeterministic }: Props = $props();
     let seedWords = $state(Array(12).fill(''));
-    let validWords = $derived(seedWords.filter(w => w.length > 0).length == 12);
+    let wordsTypedIn = $derived(seedWords.filter(w => w.length > 0).length == 12);
     let mintSelection = $state(Array<MintEntry>());
     let mintSelected = $derived(mintSelection.filter(e => e.selected).length > 0);
     let useThisWalletsSeed = $state(false);
     let step = $state(0);
     let recovering = $state(false);
 
-    onMount(() => {
-        if (mints) {
+    $effect(() => {
+        if (mints && mintSelection.length === 0) {
             mintSelection = mints.map(mint => { 
                 return { mintUrl: mint, selected: false } });
         }
     });
 
-    $effect(() => {});
-
     async function handleConfirm(confirmWords: string[], mintSelection: MintEntry[]) {
-        if (!mintSelection.length) return;
+        if (!mintSelection.filter(me => me.selected).length) return;
 
         if (!useThisWalletsSeed && !validateMnemonicSeed(confirmWords.join(' '))) {
             toaster.error({
@@ -72,6 +69,8 @@
                 });
             }
         }
+        mintSelection.forEach(me => me.selected = false);
+        step = 0;
         isOpen = false;
         recovering = false;
     }
@@ -83,43 +82,40 @@
         {#if step == 0}
             <span>
                 If you want to recover funds from an external wallet, enter its mnemonic seed words bellow. Note that  
-                after recovery, the funds remain backed up through the entered seed words.
+                after recovery, the funds remain backed up through the entered seed words and not the ones of this wallet.
             </span>
             {#if isDeterministic}
                 <span>
-                    Otherwise please select "from this wallet's seed", if you miss funds partially or completely.
+                    Otherwise select "from this wallet's seed", if you miss funds here.
                 </span>
-                <Checkbox
-                    id="from-this-seed"
-                    label="from this wallet's seed"
-                    bind:checked={useThisWalletsSeed}
-                />    
+                <div class="text-[14px]">
+                    <Checkbox
+                        id="from-this-seed"
+                        label="from this wallet's seed"
+                        bind:checked={useThisWalletsSeed}
+                    />    
+                </div>
             {/if}
             {#if !useThisWalletsSeed}
                 <SeedWords bind:words={seedWords}></SeedWords>
             {/if}
             <div class="flex">
                 <div class="flex flex-row w-full gap-2">
-                    <Button disabled={!useThisWalletsSeed && !validWords} onClick={() => step++}>Next</Button>
+                    <Button disabled={!useThisWalletsSeed && !wordsTypedIn} onClick={() => step++}>Next</Button>
                 </div>
             </div>
         {/if}
 
         {#if step > 0}
             <span>
-                Select the mints to recover from or add new ones.
+                Select the mints to recover from.
             </span>
 
             <div class="w-full flex flex-col gap-[10px]">
                 <Card>
-                    <div class="flex justify-center">
-                        <Button onClick={() => {}}>
-                            Add Mint
-                        </Button>
-                    </div>
-                    <div class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100">
-                        {#each mints as mint, index }
-                            <Checkbox id={index.toString()} label={mint} bind:checked={mintSelection[index].selected} />
+                    <div class="w-full flex flex-col text-[14px] gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100">
+                        {#each mintSelection as selection, index }
+                            <Checkbox id={index.toString()} label={selection.mintUrl} bind:checked={selection.selected} />
                         {/each}
                     </div>
                 </Card>
