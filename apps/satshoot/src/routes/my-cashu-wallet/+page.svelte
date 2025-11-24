@@ -65,6 +65,7 @@
 
     let mintBalances: Record<string, number> = $state({});
     let walletBalance = $state('0');
+    let mints = $derived($wallet?.mints);
     let cleaningWallet = $state(false);
     let toastTriggered = false;
 
@@ -862,6 +863,6 @@
 <MnemonicSeedRecoverModal
     bind:isOpen={showMnemonicSeedInputModal}
     recoverFromSeed={recoverDeterministicWallet}
-    mints={$wallet?.mints}
+    bind:mints={mints}
     isDeterministic={!!$wallet?.bip39seed}
 />

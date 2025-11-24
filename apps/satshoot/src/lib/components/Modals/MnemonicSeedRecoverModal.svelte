@@ -20,7 +20,7 @@
         selected: boolean
     };
 
-    let { isOpen = $bindable(), recoverFromSeed, mints, isDeterministic }: Props = $props();
+    let { isOpen = $bindable(), recoverFromSeed, mints = $bindable(), isDeterministic }: Props = $props();
     let seedWords = $state(Array(12).fill(''));
     let wordsTypedIn = $derived(seedWords.filter(w => w.length > 0).length == 12);
     let mintSelection = $state(Array<MintEntry>());
@@ -30,7 +30,7 @@
     let recovering = $state(false);
 
     $effect(() => {
-        if (mints && mintSelection.length === 0) {
+        if (mints && mints.length !== mintSelection.length) {
             mintSelection = mints.map(mint => { 
                 return { mintUrl: mint, selected: false } });
         }
