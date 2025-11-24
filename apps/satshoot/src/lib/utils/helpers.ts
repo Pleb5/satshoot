@@ -188,7 +188,6 @@ export function logout() {
     currentUser.set(null);
 
     // We dont remove modeCurrent(dark/light theme), debug and app_updated_at entries
-    localStorage.removeItem('nut13Seed');
     localStorage.removeItem('walletBackup');
     localStorage.removeItem('followsUpdated');
     localStorage.removeItem('tabStore');

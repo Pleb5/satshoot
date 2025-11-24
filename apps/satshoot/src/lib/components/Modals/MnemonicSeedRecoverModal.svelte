@@ -50,7 +50,7 @@
         const selectedMints = mintSelection.filter(entry => entry.selected).map(entry => entry.mintUrl);
         for (const mint of selectedMints) {
             try {
-                const { errors, amount } = await recoverFromSeed(confirmWords, mint);
+                const { errors, amount } = await recoverFromSeed(useThisWalletsSeed ? [] : confirmWords, mint);
                 if (!errors.length) {
                     toaster.success({
                         title: `${amount} sats recovered from mint: ${mint}`,
