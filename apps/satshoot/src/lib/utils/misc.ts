@@ -311,15 +311,19 @@ const stripProto = (url: string) => url.replace(/.*:\/\//, '');
 export function normalizeRelayUrl(url: string) {
     url = normalizeUrl(url, { stripHash: true, stripAuthentication: false });
 
-    // Strip protocol
-    url = stripProto(url);
-
-    // Url-s without pathnames are supposed to have a trailing slash
-    if (!url.includes('/')) {
-        url += '/';
+    if (!import.meta.env.DEV) {
+        // Strip protocol
+        url = stripProto(url);
+    
+        // Url-s without pathnames are supposed to have a trailing slash
+        if (!url.includes('/')) {
+            url += '/';
+        }
+    
+        return 'wss://' + url;
+    } else {
+        return url;
     }
-
-    return 'wss://' + url;
 }
 
 export async function fetchEventFromRelaysFirst(
