@@ -1,3 +1,4 @@
+import ndk from '$lib/stores/session';
 import { writable, get, derived } from 'svelte/store';
 import { persisted } from 'svelte-persisted-store';
 import type { Writable } from 'svelte/store';
@@ -13,8 +14,38 @@ import { tick } from 'svelte';
 
 import currentUser, { currentUserFreelanceFollows, fetchFreelanceFollowSet } from '../stores/user';
 import { followsUpdated } from '../stores/user';
-
 import satShootWoT from './satshoot-wot';
+import type { NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+
+
+export const myMuteListFilter: NDKFilter = {
+    kinds: [NDKKind.MuteList],
+}
+
+// This contains all mutes of user. Social and Freelance mutes are shared
+// so there is no separate way to mute a user only in the freelance context
+export const myMuteList: NDKEventStore<NDKEvent> = get(ndk).storeSubscribe(
+    myMuteListFilter,
+    {
+        closeOnEose: false,
+        groupable: false,
+        autoStart: false 
+    },
+);
+
+export const mutedPubkeys = derived(
+    [myMuteList],
+    ([$myMuteList]) => {
+        const ret = new Set<Hexpubkey>()
+        if ($myMuteList.length > 0) {
+            $myMuteList[0]
+                .getMatchingTags("p")
+                .forEach((t) => ret.add(t[1]))
+        }
+
+        return ret
+    }
+)
 
 export const networkWoTScores: Writable<Map<Hexpubkey, number>> = persisted(
     'networkWoTScores',
@@ -43,8 +74,22 @@ export const wotUpdateNoResults = writable(false);
 
 let saveSatShootWoT = false;
 export const wot = derived(
-    [networkWoTScores, minWot, currentUser, currentUserFreelanceFollows, useSatShootWoT],
-    ([$networkWoTScores, $minWot, $currentUser, $currentUserFreelanceFollows, $useSatShootWoT]) => {
+    [
+        networkWoTScores,
+        minWot,
+        currentUser,
+        currentUserFreelanceFollows,
+        myMuteList,
+        useSatShootWoT
+    ],
+    ([
+        $networkWoTScores,
+        $minWot,
+        $currentUser,
+        $currentUserFreelanceFollows,
+        $myMuteList,
+        $useSatShootWoT
+    ]) => {
         const initialWoT: Array<Hexpubkey> = [];
         if ($useSatShootWoT) {
             initialWoT.push(SatShootPubkey);
@@ -69,6 +114,11 @@ export const wot = derived(
                 saveSatShootWoTInFile(pubkeys);
             }
         }
+
+        // Remove muted pubkeys
+        $myMuteList.forEach((mute: NDKEvent) => {
+            pubkeys.delete(mute.pubkey)
+        })
 
         return pubkeys;
     }

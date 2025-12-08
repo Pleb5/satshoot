@@ -2,10 +2,10 @@
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
 
     import ndk, { sessionInitialized } from '$lib/stores/session';
-    import { wot } from '$lib/stores/wot';
+    import { mutedPubkeys, myMuteList, wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
-    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKEvent, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import Fuse from 'fuse.js';
     import { page } from '$app/state';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
@@ -54,9 +54,11 @@
         copiedJobs = copiedJobs.filter((t: JobEvent) => {
             const newJob = t.status === JobStatus.New;
             const partOfWot = $wot.has(t.pubkey);
+            const muted = $mutedPubkeys.has(t.pubkey)
 
-            return newJob && partOfWot;
+            return newJob && partOfWot && !muted;
         });
+
         orderEventsChronologically(copiedJobs);
 
         if (searchQuery && searchQuery.length > 0) {

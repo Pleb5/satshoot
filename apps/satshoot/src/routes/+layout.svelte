@@ -30,6 +30,8 @@
         userMode,
     } from '$lib/stores/user';
 
+    import { myMuteList } from '$lib/stores/wot';
+
     import {
         allBids,
         allJobs,
@@ -504,10 +506,13 @@
 
         if (followSubscription) followSubscription.stop();
 
+        if (myMuteList) myMuteList.empty();
+
         if (allJobs) allJobs.empty();
         if (allBids) allBids.empty();
         if (allServices) allServices.empty();
         if (allOrders) allOrders.empty();
+
 
         if (myJobs) myJobs.empty();
         if (myBids) myBids.empty();

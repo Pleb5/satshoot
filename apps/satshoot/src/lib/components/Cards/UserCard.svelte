@@ -9,6 +9,7 @@
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterValidPTags } from '$lib/utils/misc';
     import {
+    NDKEvent,
         NDKKind,
         profileFromEvent,
         type NDKUser,
@@ -32,6 +33,7 @@
     import { sessionInitialized } from '$lib/stores/session';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { tick } from 'svelte';
+    import { mutedPubkeys } from '$lib/stores/wot';
 
     enum FollowStatus {
         isFollowing,
@@ -49,6 +51,7 @@
     // State
     let userProfile = $state<NDKUserProfile | null>(null);
     let processingFollowSet = $state(false);
+    let processingMutes = $state(false);
     let showNpubQR = $state(false);
     let showNProfileQR = $state(false);
     let hasLoadedFollowSet = $state(false);
@@ -66,6 +69,12 @@
     const bech32ID = $derived(job ? job.encode() : '');
     const canEditProfile = $derived($currentUser && $currentUser?.pubkey === user.pubkey);
     const showMessageButton = $derived(!!job && job.pubkey !== $currentUser?.pubkey);
+
+    let muted = $state(false)
+
+    $effect(() =>{
+        muted = $mutedPubkeys.has(user.pubkey || "")
+    })
 
     const followStatus = $derived.by(() => {
         if (!$currentUserFreelanceFollows || !$freelanceFollowSets || !$currentUser) {
@@ -103,6 +112,16 @@
             default:
                 return 'Follow';
         }
+    });
+
+    const blockButtonText = $derived.by(() => {
+        if (muted) return "UnBlock"
+        return "Block"
+    });
+
+    const blockButtonColor = $derived.by(() => {
+        if (muted) return "bg-warning-500"
+        return "bg-error-500"
     });
 
     $effect(() => {
@@ -226,6 +245,50 @@
         freelanceUnfollow(user.pubkey)
         
         processingFollowSet = false
+    }
+
+    const mute = async () => {
+        processingMutes = true;
+        await tick()
+
+
+        const event = new NDKEvent(user.ndk, {
+            kind: NDKKind.MuteList,
+            content: "",
+            tags: [],
+        });
+
+        // Add all remaining muted pubkeys as p tags
+        for (const mutedPubkey of $mutedPubkeys) {
+            event.tags.push(["p", mutedPubkey]);
+        }
+
+        event.tags.push(["p", user.pubkey])
+
+        await event.publishReplaceable();
+
+        processingMutes = false;
+    }
+
+    const unMute = async () => {
+        processingMutes = true;
+        await tick()
+
+        const event = new NDKEvent(user.ndk, {
+            kind: NDKKind.MuteList,
+            content: "",
+            tags: [],
+        });
+
+        for (const mutedPubkey of $mutedPubkeys) {
+            if (mutedPubkey !== user.pubkey) {
+                event.tags.push(["p", mutedPubkey]);
+            }
+        }
+
+        await event.publishReplaceable();
+
+        processingMutes = false;
     }
 
     const addressCopyBtnClasses =
@@ -382,6 +445,13 @@
                             <ProgressRing />
                         {:else}
                             {followBtnText}
+                        {/if}
+                    </Button>
+                    <Button classes={blockButtonColor} onClick={muted ? unMute : mute}>
+                        {#if processingMutes}
+                            <ProgressRing />
+                        {:else}
+                            {blockButtonText}
                         {/if}
                     </Button>
                 </div>

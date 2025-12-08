@@ -23,7 +23,7 @@ import ndk, {
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import currentUser, { freelanceFollowSets, onBoarding } from '../stores/user';
 import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user';
-import { loadWot, networkWoTScores } from '../stores/wot';
+import { loadWot, myMuteList, myMuteListFilter, networkWoTScores } from '../stores/wot';
 import { allReviews } from '$lib/stores/reviews';
 import { allReceivedZapsFilter, allReceivedZaps } from '$lib/stores/zaps';
 import { messageStore, sentMessageFilter, receivedMessageFilter } from '$lib/stores/messages';
@@ -69,6 +69,8 @@ export async function initializeUser(ndk: NDKSvelte) {
         myServiceFilter.authors = [user.pubkey];
         myOrderFilter.authors = [user.pubkey];
 
+        myMuteListFilter.authors = [user.pubkey];
+
         const $onboarding = get(onBoarding);
         if (!$onboarding) {
             const userRelays = await fetchUserOutboxRelays(ndk, user.pubkey, 3000);
@@ -82,6 +84,8 @@ export async function initializeUser(ndk: NDKSvelte) {
 
             await loadWot(ndk, user);
         }
+
+        myMuteList.startSubscription();
 
         myJobs.startSubscription();
         myBids.startSubscription();

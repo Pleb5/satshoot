@@ -5,11 +5,11 @@
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
     import { showDecentralizedDiscoveryModal } from '$lib/stores/modals';
     import ndk, { sessionInitialized } from '$lib/stores/session';
-    import { wot } from '$lib/stores/wot';
+    import { mutedPubkeys, myMuteList, wot } from '$lib/stores/wot';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { ServicesPerPage } from '$lib/utils/misc';
-    import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import Fuse from 'fuse.js';
     import { onDestroy } from 'svelte';
 
@@ -53,9 +53,11 @@
         copiedServices = copiedServices.filter((s: ServiceEvent) => {
             const newService = s.status === ServiceStatus.Active;
             const partOfWot = $wot.has(s.pubkey);
+            const muted = $mutedPubkeys.has(s.pubkey)
 
-            return newService && partOfWot;
+            return newService && partOfWot && !muted;
         });
+
         orderEventsChronologically(copiedServices);
 
         if (searchQuery && searchQuery.length > 0) {
