@@ -1,4 +1,4 @@
-import { NDKCashuMintList, NDKUser, type CashuPaymentInfo } from '@nostr-dev-kit/ndk';
+import { NDKCashuMintList, NDKUser } from '@nostr-dev-kit/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import { NDKCashuWallet, NDKNutzapMonitor, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 import { writable } from 'svelte/store';
@@ -11,6 +11,7 @@ import {
     toWalletStorage,
     type WalletStorage,
 } from './cashu';
+import { getEncodedTokenV4 } from '@cashu/cashu-ts';
 
 export const wallet = writable<NDKCashuWallet | null>(null);
 export let userCashuInfo = writable<NDKCashuMintList | null>(null);
@@ -36,23 +37,29 @@ export const walletBackup = persisted<WalletStorage | null>('walletBackup', null
 });
 
 export async function walletInit(
-    nostrWallet: NDKCashuWallet,
+    ndkWallet: NDKCashuWallet,
     mintList: NDKCashuMintList,
     ndk: NDKSvelte,
-    user: NDKUser
-) {
-    if (!nostrWallet._p2pk) {
-        await nostrWallet.getP2pk();
+    user: NDKUser,
+    oldNDKWallet?: NDKCashuWallet
+): Promise<boolean> {
+    if (!ndkWallet._p2pk) {
+        await ndkWallet.getP2pk();
     }
 
-    wallet.set(nostrWallet);
+    let deterministicTransfer = false;
+    if (oldNDKWallet) {
+        deterministicTransfer = await oldNDKWallet.transferAllFundsTo(ndkWallet);
+    }
+
+    wallet.set(ndkWallet);
     userCashuInfo.set(mintList);
 
-    nostrWallet.on('ready', async () => {
+    ndkWallet.on('ready', async () => {
         walletStatus.set(NDKWalletStatus.READY);
 
         ndkNutzapMonitor = new NDKNutzapMonitor(ndk, user, { mintList });
-        ndkNutzapMonitor.wallet = nostrWallet;
+        ndkNutzapMonitor.wallet = ndkWallet;
 
         ndkNutzapMonitor.on('seen', (nutzapEvent) => {
             console.log('nutzapEvent :>> ', nutzapEvent);
@@ -62,7 +69,7 @@ export async function walletInit(
         // load Proofs, sync up and add p2pk privkeys to nutzapMonitor
         const $walletBackup = get(walletBackup);
         if ($walletBackup) {
-            await recoverWallet($walletBackup, nostrWallet, ndkNutzapMonitor);
+            await recoverWallet($walletBackup, ndkWallet, ndkNutzapMonitor);
         }
 
         ndkNutzapMonitor.start({
@@ -71,7 +78,7 @@ export async function walletInit(
         });
     });
 
-    nostrWallet.on('balance_updated', () => {
+    ndkWallet.on('balance_updated', () => {
         const $wallet = get(wallet);
         if ($wallet) {
             console.info('Balance updated, saving backup...', $wallet.balance);
@@ -83,5 +90,7 @@ export async function walletInit(
         }
     });
 
-    nostrWallet.start({ subId: 'wallet', pubkey: user.pubkey });
+    ndkWallet.start({ subId: 'wallet', pubkey: user.pubkey });
+
+    return deterministicTransfer;
 }

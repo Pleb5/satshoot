@@ -43,7 +43,7 @@
     import { deriveSeedKey } from '$lib/wallet/nut-13';
     import MnemonicSeedGenerationModal from '$lib/components/Modals/MnemonicSeedGenerationModal.svelte';
     import MnemonicSeedRecoverModal from '$lib/components/Modals/MnemonicSeedRecoverModal.svelte';
- 
+
     enum Tab {
         Mints,
         Relays,
@@ -266,6 +266,13 @@
     function createWallet(seedWords: string[]) {
         const bip39seed = deriveSeedKey(seedWords.join(' '));
         tempWallet = new NDKCashuWallet($ndk, bip39seed);
+        if ($wallet) {
+            tempWallet.event = $wallet.event;
+            tempWallet.privkeys = $wallet.privkeys;
+            tempWallet._p2pk = $wallet._p2pk;
+            tempWallet.signer = $wallet.signer;
+            tempWallet.mints = $wallet.mints;
+        }
         showMintModal = true;
     }
 
@@ -309,7 +316,15 @@
                 title: `Nostr Wallet created!`,
             });
 
-            walletInit(newWallet, cashuInfo, $ndk, $currentUser!);
+            const walletMigration = !!$wallet;
+            const deterministicTransfer = await walletInit(newWallet, cashuInfo, $ndk, $currentUser!, $wallet ?? undefined);
+            if (walletMigration && !deterministicTransfer) {
+                toaster.warning({
+                    title: "Error while transfering funds to new wallet. The funds will be stored in the new wallet, but without deterministic secrets!\n" +
+                    "To ensure all the funds are secured by the seed words, please retry the migration.",
+                    duration: 60000
+                });
+            }
         } catch (err) {
             console.error(err);
             toaster.error({
@@ -331,8 +346,13 @@
         }
     }
 
-    async function recoverDeterministicWallet(seedWords: string[], mint: string): Promise<{ errors: any[], amount: number }> {
-        const bip39seed = seedWords.filter(w => w.length).length ? deriveSeedKey(seedWords.join(' ')) : $wallet!.bip39seed!;
+    async function recoverDeterministicWallet(
+        seedWords: string[],
+        mint: string
+    ): Promise<{ errors: any[]; amount: number }> {
+        const bip39seed = seedWords.filter((w) => w.length).length
+            ? deriveSeedKey(seedWords.join(' '))
+            : $wallet!.bip39seed!;
         const { errors, proofs } = await $wallet!.recoverProofsFromSeed(bip39seed, mint);
         let amount = 0;
         for (const proof of proofs) {
@@ -645,12 +665,25 @@
 
                                             <Button
                                                 variant="text"
-                                                classes="p-[5px] gap-[5px] text-[12px] font-[500] text-white absolute top-[5px] right-[5px]"
+                                                classes="p-[5px] gap-[5px] text-[14px] font-[500] text-white absolute top-[5px] right-[5px]"
                                                 grow
                                                 onClick={restoreFromSeed}
                                             >
-                                                <i class="bx bx-upload"> </i>
+                                                <i class="bx bx-upload bx-xs"> </i>
                                                 Recover from Seed
+                                            </Button>
+
+                                            <Button
+                                                variant="text"
+                                                classes="p-[5px] gap-[5px] text-[14px] font-[500] text-white absolute bottom-[5px] right-[5px]"
+                                                grow
+                                                onClick={() =>
+                                                    (showMnemonicSeedGenerationModal = true)}
+                                            >
+                                                <i class="bx bx-check-shield bx-xs"></i>
+                                                Migrate to {$wallet.bip39seed
+                                                    ? 'New Wallet'
+                                                    : 'Seed Words Wallet'}
                                             </Button>
 
                                             <!-- <i -->
@@ -863,6 +896,6 @@
 <MnemonicSeedRecoverModal
     bind:isOpen={showMnemonicSeedInputModal}
     recoverFromSeed={recoverDeterministicWallet}
-    bind:mints={mints}
+    bind:mints
     isDeterministic={!!$wallet?.bip39seed}
 />
