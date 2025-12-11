@@ -283,6 +283,11 @@
             return;
         }
 
+        if ($wallet && $wallet.mints.filter(m => selectedMints.includes(m)).length !== $wallet.mints.length) {
+            toaster.error({ title: `Your new wallet must use at least all the mints of the old wallet!` });
+            return;
+        }
+
         if (tempWallet) {
             tempWallet.mints = selectedMints;
             continueWalletSetup(tempWallet);
