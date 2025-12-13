@@ -7,6 +7,7 @@
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Card from '../UI/Card.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
+    import { wallet } from '$lib/wallet/wallet';
 
     interface Props {
         isOpen: boolean;
@@ -54,8 +55,18 @@
                 if (!errors.length) {
                     toaster.success({
                         title: `${amount} sats recovered from mint: ${mint}`,
-                        duration: 10000, // 5 secs
+                        duration: 10000, // 10 secs
                     });
+                    if (!useThisWalletsSeed && amount) {// send funds to the same wallet to secure them with the seed.
+                        try {
+                            await $wallet?.transferAllFundsTo($wallet, { skipConsolidation: true, transferMints: mint}); 
+                        } catch(e) {
+                            toaster.warning({
+                                title: `The recovered funds aren't backed up by this wallet's seed. To solve this issue, migrate to new wallet.`,
+                                duration: 30000
+                            });
+                        }
+                    }
                 } else {
                     toaster.error({
                         title: `Errors occurred recovering from mint: ${mint}, ${amount} sats recovered`,
