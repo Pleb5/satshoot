@@ -901,6 +901,7 @@
 <MnemonicSeedRecoverModal
     bind:isOpen={showMnemonicSeedInputModal}
     recoverFromSeed={recoverDeterministicWallet}
+    updateMints={updateMints}
     bind:mints
     isDeterministic={!!$wallet?.bip39seed}
 />

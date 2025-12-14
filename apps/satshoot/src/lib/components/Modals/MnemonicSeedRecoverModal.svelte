@@ -8,10 +8,12 @@
     import Card from '../UI/Card.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import { wallet } from '$lib/wallet/wallet';
+    import Input from '../UI/Inputs/input.svelte';
 
     interface Props {
         isOpen: boolean;
         recoverFromSeed: (mnemonicSeed: string[], mint: string) => Promise<{ errors: any[], amount: number }>;
+        updateMints: (mints: string[]) => Promise<void>;
         mints?: string[];
         isDeterministic?: boolean;
     }
@@ -21,11 +23,12 @@
         selected: boolean
     };
 
-    let { isOpen = $bindable(), recoverFromSeed, mints = $bindable(), isDeterministic }: Props = $props();
+    let { isOpen = $bindable(), recoverFromSeed, updateMints, mints = $bindable(), isDeterministic }: Props = $props();
     let seedWords = $state(Array(12).fill(''));
     let wordsTypedIn = $derived(seedWords.filter(w => w.length > 0).length == 12);
     let mintSelection = $state(Array<MintEntry>());
     let mintSelected = $derived(mintSelection.filter(e => e.selected).length > 0);
+    let mintToAdd = $state("");
     let useThisWalletsSeed = $state(false);
     let step = $state(0);
     let recovering = $state(false);
@@ -49,6 +52,11 @@
         }
         recovering = true;
         const selectedMints = mintSelection.filter(entry => entry.selected).map(entry => entry.mintUrl);
+        const newMints = selectedMints.filter(m => !$wallet!.mints.includes(m));
+        if (newMints.length) {
+            $wallet!.mints.push(...newMints);
+            await updateMints($wallet!.mints);
+        }
         for (const mint of selectedMints) {
             try {
                 const { errors, amount } = await recoverFromSeed(useThisWalletsSeed ? [] : confirmWords, mint);
@@ -86,6 +94,25 @@
         recovering = false;
     }
 
+    function isValidMintURL(url: string) {
+        try {
+            const u = new URL(url);
+            if (u.protocol !== "https:" && u.protocol !== "http:") {
+                return false;
+            }
+        } catch {
+            return false;
+        }
+
+        return true;
+    }
+
+    function handleAddMint() {
+        mints?.push(mintToAdd);
+        mintSelection.push({ mintUrl: mintToAdd, selected: true});
+        mintToAdd = "";
+    }
+
 </script>
 
 <ModalWrapper bind:isOpen title="Recover Cashu Wallet from Seed">
@@ -121,6 +148,13 @@
             <span>
                 Select the mints to recover from.
             </span>
+
+            <div class="flex">
+                <div class="flex flex-row w-full gap-2">
+                    <Input bind:value={mintToAdd} placeholder={"https://"} fullWidth={true}/>
+                    <Button disabled={!isValidMintURL(mintToAdd)} onClick={handleAddMint}>Add Mint</Button>
+                </div>
+            </div>
 
             <div class="w-full flex flex-col gap-[10px]">
                 <Card>
