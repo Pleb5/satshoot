@@ -794,7 +794,7 @@
                                             <div
                                                 class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
                                             >
-                                                {#each $wallet.mints as mint (mint)}
+                                                {#each mints as mint (mint)}
                                                     <div class={listItemWrapperClasses}>
                                                         <p class={listItemClasses}>
                                                             {mint}

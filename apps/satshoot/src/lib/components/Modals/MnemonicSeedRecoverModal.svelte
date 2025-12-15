@@ -29,13 +29,17 @@
     let mintSelection = $state(Array<MintEntry>());
     let mintSelected = $derived(mintSelection.filter(e => e.selected).length > 0);
     let mintToAdd = $state("");
+    let localMints = $state(Array<string>());
     let useThisWalletsSeed = $state(false);
     let step = $state(0);
     let recovering = $state(false);
 
     $effect(() => {
-        if (mints && mints.length !== mintSelection.length) {
-            mintSelection = mints.map(mint => { 
+        if (mints && !localMints.length) {
+            localMints = mints;
+        }
+        if (localMints.length !== mintSelection.length) {
+            mintSelection = localMints.map(mint => { 
                 return { mintUrl: mint, selected: false } });
         }
     });
@@ -88,6 +92,7 @@
                 });
             }
         }
+        mints = localMints;
         mintSelection.forEach(me => me.selected = false);
         step = 0;
         isOpen = false;
@@ -108,7 +113,7 @@
     }
 
     function handleAddMint() {
-        mints?.push(mintToAdd);
+        localMints.push(mintToAdd);
         mintSelection.push({ mintUrl: mintToAdd, selected: true});
         mintToAdd = "";
     }
