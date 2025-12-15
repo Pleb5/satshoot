@@ -657,9 +657,21 @@
                                             class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-linear-to-tl from-blue-500 to-blue-400 shadow-deep"
                                         >
                                             <div class="font-[500] text-white">
-                                                <p>Wallet</p>
+                                                <p>
+                                                    {#if $wallet.bip39seed} Wallet <i class="bx bx-check-shield bx-xs text-white"></i>{/if}
+                                                    {#if !$wallet.bip39seed}
+                                                        <Button variant="contained" classes="text-white p-[5px] gap-[5px]" onClick={() => {
+                                                            toaster.warning({
+                                                                title: "This wallet isn't backed up by a seed phrase. You can fix this by migrating to a Seed Words Wallet.",
+                                                                duration: 30000
+                                                            });
+                                                        }}>
+                                                            Wallet <i class='bx bx-alert-triangle bx-xs text-white'></i>
+                                                        </Button>
+                                                    {/if}
+                                                </p>
                                             </div>
-                                            <p class="text-[24px] font-[500] text-white">
+                                            <p class="text-[24px] font-[500] text-white absolute bottom-[5px]">
                                                 {walletBalance}
                                                 <span
                                                     class="text-[16px] opacity-[0.5] font-[500] text-white mt-[-5px]"
@@ -685,10 +697,14 @@
                                                 onClick={() =>
                                                     (showMnemonicSeedGenerationModal = true)}
                                             >
-                                                <i class="bx bx-check-shield bx-xs"></i>
-                                                Migrate to {$wallet.bip39seed
-                                                    ? 'New Wallet'
-                                                    : 'Seed Words Wallet'}
+                                                {#if $wallet.bip39seed}
+                                                    <i class='bx bx-recycle bx-xs'></i> 
+                                                    Migrate to New Wallet
+                                                {/if}
+                                                {#if !$wallet.bip39seed}
+                                                    <i class="bx bx-check-shield bx-xs"></i>
+                                                    Migrate to Seed Words Wallet
+                                                {/if}
                                             </Button>
 
                                             <!-- <i -->
