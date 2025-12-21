@@ -43,6 +43,7 @@
     import { deriveSeedKey } from '$lib/wallet/nut-13';
     import MnemonicSeedGenerationModal from '$lib/components/Modals/MnemonicSeedGenerationModal.svelte';
     import MnemonicSeedRecoverModal from '$lib/components/Modals/MnemonicSeedRecoverModal.svelte';
+    import TooltipIcon from '$lib/components/Icons/TooltipIcon.svelte';
 
     enum Tab {
         Mints,
@@ -551,6 +552,9 @@
 
     const deleteIconClasses =
         'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex! h-full justify-center items-center hover:bg-red-400';
+
+    const noSeedTooltip = "This wallet isn't backed up by a seed phrase. You can fix this by migrating to a Seed Words Wallet.";
+    const seedTooltip = "You are safe, your wallet is backed up by a seed phrase.";
 </script>
 
 <div class="w-full flex flex-col gap-0 grow">
@@ -658,16 +662,21 @@
                                         >
                                             <div class="font-[500] text-white">
                                                 <p>
-                                                    {#if $wallet.bip39seed} Wallet <i class="bx bx-check-shield bx-xs text-white"></i>{/if}
+                                                    {#if $wallet.bip39seed}
+                                                        Wallet
+                                                        <TooltipIcon
+                                                                iconClasses="bx bx-check-shield bx-xs text-green-300"
+                                                                placement="top"
+                                                                popUpText={seedTooltip}
+                                                        />
+                                                    {/if}
                                                     {#if !$wallet.bip39seed}
-                                                        <Button variant="contained" classes="text-white p-[5px] gap-[5px]" onClick={() => {
-                                                            toaster.warning({
-                                                                title: "This wallet isn't backed up by a seed phrase. You can fix this by migrating to a Seed Words Wallet.",
-                                                                duration: 30000
-                                                            });
-                                                        }}>
-                                                            Wallet <i class='bx bx-alert-triangle bx-xs text-white'></i>
-                                                        </Button>
+                                                        Wallet
+                                                        <TooltipIcon
+                                                                iconClasses="bx bx-alert-triangle bx-xs text-yellow-600"
+                                                                placement="top"
+                                                                popUpText={noSeedTooltip}
+                                                        />
                                                     {/if}
                                                 </p>
                                             </div>
