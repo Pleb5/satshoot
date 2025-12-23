@@ -7,7 +7,6 @@ import type { Writable } from 'svelte/store';
 import { APP_RELAY_STORAGE_KEY } from '$lib/utils/misc';
 
 export const DEFAULTRELAYURLS = [
-    // "wss://relay.nostr.band/",
     'wss://nos.lol/',
     'wss://bitcoiner.social/',
     'wss://relay.damus.io/',
@@ -17,9 +16,7 @@ export const BOOTSTRAPOUTBOXRELAYS = [
     'wss://purplepag.es/',
     'wss://indexer.coracle.social/',
     'wss://relay.damus.io/',
-    'wss://relay.nostr.band/',
     'wss://nos.lol/',
-    'wss://bitcoiner.social/',
 ];
 
 export const NOSTRCONNECTRELAYURLS = ['wss://relay.nsec.app'];
