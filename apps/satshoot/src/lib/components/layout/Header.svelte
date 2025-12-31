@@ -467,9 +467,9 @@
                                 <button onclick={() => (showAppMenu = !showAppMenu)}>
                                     <Avatar
                                         pubkey={$currentUser?.pubkey}
+                                        showWoT={false}
                                         size="medium"
                                         classes=""
-
                                     />
                                 </button>
                             {:else if $loggingIn}

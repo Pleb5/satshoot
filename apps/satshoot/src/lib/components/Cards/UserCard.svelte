@@ -34,6 +34,7 @@
     import { tick } from 'svelte';
     import { mutedPubkeys } from '$lib/stores/wot';
     import Avatar from '../Users/Avatar.svelte';
+    import QuestionIcon from '../Icons/QuestionIcon.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -55,6 +56,7 @@
     let showNpubQR = $state(false);
     let showNProfileQR = $state(false);
     let hasLoadedFollowSet = $state(false);
+    let trusted = $state(false)
 
     // Derived state
     const npub = $derived(user.npub);
@@ -210,22 +212,31 @@
         goto(profileSettingsUrl);
     }
 
+    enum InfoItemType {
+        NIP05,
+        LN_ADDRESS,
+        WEBSITE,
+    }
+
     let userInfoItems = $derived([
-        {
-            text: userProfile?.nip05,
-            href: profileHref,
-            isExternal: false,
-            title: 'nip05',
-        },
         {
             text: userProfile?.lud16,
             title: 'Lightning address',
+            type: InfoItemType.LN_ADDRESS
         },
         {
             text: userProfile?.website,
             href: userProfile?.website || '',
             isExternal: true,
-            title: 'website address',
+            title: 'Website',
+            type: InfoItemType.WEBSITE
+        },
+        {
+            text: userProfile?.nip05,
+            href: profileHref,
+            isExternal: false,
+            title: 'NIP05',
+            type: InfoItemType.NIP05
         },
     ]);
 
@@ -293,6 +304,16 @@
 
     const addressCopyBtnClasses =
         'bg-white dark:bg-brightGray rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
+
+    let wotTooltip =
+        '<div>' +
+            '<div class="font-bold">' + 
+            '<p>This user is part of your Nostr Web of Trust.</p>' +
+            '<p>Learn more about how SatShoot revolutionizes the Trust model in Freelance in ' + 
+                '<a class="anchor" target="_blank" href="https://primal.net/a/naddr1qvzqqqr4gupzp5zweue6xqa9npf0md5pak95zgsph2za35sentk88jmzdqwk925sqq2kx3m4v3jhxjec2emhxkr8wyknyuzx2c6hsuza8ux">this article</a></p>' + 
+            '</div>' +
+        '</div>';
+
 </script>
 
 <div class="w-full max-w-[350px] flex flex-col gap-[25px] max-[768px]:max-w-full">
@@ -311,42 +332,70 @@
                 </div>
                 <div class="w-full mt-2 flex flex-col justify-center items-center">
                     <a href={profileHref}>
-                        <Avatar pubkey={user.pubkey} bind:userProfile classes={"shadow-strong"}/>
+                        <Avatar 
+                            pubkey={user.pubkey} 
+                            bind:userProfile
+                            bind:trusted
+                            size={"large"}
+                            classes={"shadow-strong"}
+                        />
                     </a>
                 </div>
             </div>
             <div class="flex flex-col gap-[10px]">
-                <a href={profileHref} class="font-[600]">
-                    {userProfile?.name ??
-                        userProfile?.displayName ??
-                        shortenTextWithEllipsesInMiddle(npub, 15)}
-                </a>
+                <div class="w-full flex justify-center sm:text-xl">
+                    <a href={profileHref} class="font-[600]">
+                        {userProfile?.name ??
+                            userProfile?.displayName ??
+                            shortenTextWithEllipsesInMiddle(npub, 15)}
+                    </a>
+                </div>
+                <div class="flex gap-x-2 border-t-[1px] border-t-black-100 dark:border-t-white-100 pt-[10px]">
+                    <div class="flex gap-x-2 items-center">
+                        <div>
+                            <span class="font-bold">Trusted:</span>
+                        </div>
+                        <div>
+                            <span class="font-bold text-white badge p-2 {trusted ? "bg-yellow-500" : "bg-red-500"}">
+                                {trusted ? "YES" : "NO"}
+                            </span>
+                            <QuestionIcon
+                                extraClasses="text-[14px] p-[3px]"
+                                placement="bottom-start"
+                                popUpText={wotTooltip}
+                            />
+                        </div>
+                    </div>
+                </div>
 
                 {#each userInfoItems as { text, href, isExternal, title }}
                     {#if text}
-                        <div
-                            class="grid grid-cols-[1fr_auto] border-[1px] border-black-100 dark:border-white-100"
-                        >
-                            <div class="overflow-x-auto scrollbar-hide whitespace-nowrap bg-black-50">
-                                {#if href}
-                                    <a
-                                        {href}
-                                        target={isExternal ? '_blank' : '_self'}
-                                        class="anchor px-[10px] py-[5px]"
-                                    >
-                                        {text}
-                                    </a>
-                                {:else}
-                                    <div class="px-[10px] py-[5px] text-start">
-                                        {text}
-                                    </div>
-                                {/if}
+                        <div class="flex flex-col gap-y-1">
+                            <div class="underline">{title}:</div>
+                            <div
+                                class="grid grid-cols-[1fr_auto] border-[1px] border-black-100 dark:border-white-100"
+                            >
+                                <div class="overflow-x-auto scrollbar-hide whitespace-nowrap bg-black-50">
+                                    {#if href}
+                                        <a
+                                            {href}
+                                            target={isExternal ? '_blank' : '_self'}
+                                            class="anchor px-[10px] py-[5px]"
+                                        >
+                                            {text}
+                                        </a>
+                                    {:else}
+                                        <div class="px-[10px] py-[5px] text-start">
+                                            {text}
+                                        </div>
+                                    {/if}
+                                </div>
+                                <CopyButton
+                                    {text}
+                                    feedbackMessage={title + ' copied!'}
+                                    classes="rounded-[0] border-l-[1px]"
+                                />
                             </div>
-                            <CopyButton
-                                {text}
-                                feedbackMessage={title + ' copied!'}
-                                classes="rounded-[0] border-l-[1px]"
-                            />
                         </div>
                     {/if}
                 {/each}

@@ -79,7 +79,7 @@ export const wot = derived(
         minWot,
         currentUser,
         currentUserFreelanceFollows,
-        myMuteList,
+        mutedPubkeys,
         useSatShootWoT
     ],
     ([
@@ -87,7 +87,7 @@ export const wot = derived(
         $minWot,
         $currentUser,
         $currentUserFreelanceFollows,
-        $myMuteList,
+        $mutedPubkeys,
         $useSatShootWoT
     ]) => {
         const initialWoT: Array<Hexpubkey> = [];
@@ -116,8 +116,8 @@ export const wot = derived(
         }
 
         // Remove muted pubkeys
-        $myMuteList.forEach((mute: NDKEvent) => {
-            pubkeys.delete(mute.pubkey)
+        $mutedPubkeys.forEach((p) => {
+            pubkeys.delete(p)
         })
 
         return pubkeys;

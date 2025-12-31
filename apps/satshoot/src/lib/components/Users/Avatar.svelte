@@ -1,29 +1,34 @@
 <script lang="ts">
     import type { NDKUser, NDKUserProfile } from '@nostr-dev-kit/ndk';
-    import ndk from '$lib/stores/session';
+    import ndk, { sessionInitialized } from '$lib/stores/session';
     import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { wot } from '$lib/stores/wot';
 
     interface Props {
         pubkey: string | undefined;
         userProfile?: NDKUserProfile | null;
+        showWoT?: boolean;
+        trusted?: boolean;
         size?: 'tiny' | 'small' | 'medium' | 'large' | undefined;
         type?: 'square' | 'circle';
-        ring?: boolean;
         classes?: string;
     }
 
     let {
         pubkey,
         userProfile = $bindable(),
+        showWoT = true,
+        trusted = $bindable(),
         size = undefined,
         type = 'circle',
-        ring = false,
         classes = '',
     }: Props = $props();
 
-    let user = $state<NDKUser>();
     let sizeClass = $state('');
     let shapeClass = $state('');
+
+    let wotClasses = $state('border-white')
+
     switch (size) {
         case 'tiny':
             sizeClass = 'w-6 h-6';
@@ -35,7 +40,7 @@
             sizeClass = 'w-14 h-14';
             break;
         case 'large':
-            sizeClass = 'w-16 h-16';
+            sizeClass = 'w-18 h-18';
             break;
         default:
             sizeClass = 'w-14 h-14';
@@ -50,39 +55,51 @@
             break;
     }
 
-    // Fetch user profile reactively
     $effect(() => {
         if (!userProfile && pubkey) {
-            user = $ndk.getUser({pubkey})
-            user.fetchProfile({
+            const user = $ndk.getUser({pubkey})
+            fetchUserProfile(user)
+        }
+    });
+
+    const fetchUserProfile = async (user: NDKUser) => {
+        try {
+            userProfile = await user.fetchProfile({
                 closeOnEose: true,
                 groupable: true,
                 groupableDelay: 800,
             })
-                .then((profile) => {
-                    if (profile) {
-                        userProfile = profile;
-                    }
-                })
-                .catch(() => {});
-        }
-    });
+        } catch {}
+    }
 
-    const baseClasses = "rounded-full border-white placeholder-white cursor-pointer border-4 border-surface-300-600 hover:border-primary-500!"
+    $effect(() => {
+        if (sessionInitialized && pubkey) {
+            if ($wot.has(pubkey)) {
+                trusted = true
+                if (showWoT) {
+                    wotClasses = 'border-yellow-500'
+                }
+            } else {
+                trusted = false
+                if (showWoT) {
+                    wotClasses = 'border-red-500'
+                }
+            }
+        }
+    })
+
+    const baseClasses = "rounded-full placeholder-white cursor-pointer border-4 hover:border-primary-500!"
 
 </script>
 
-{#if user}
+{#if pubkey}
     <div
-        class="
-        flex-none {sizeClass} {shapeClass}
-        {ring ? 'ring-4 ring-accent p-0.5' : ''}
-        "
+        class="flex-none {sizeClass} {shapeClass}"
     >
         <img
             alt="user avatar"
-            src={userProfile?.picture || getRoboHashPicture(user.pubkey)}
-            class="object-cover {baseClasses} {sizeClass} {shapeClass} {classes}"
+            src={userProfile?.picture || getRoboHashPicture(pubkey)}
+            class="object-cover {baseClasses} {sizeClass} {shapeClass} {wotClasses} {classes}"
         />
     </div>
 {:else}
