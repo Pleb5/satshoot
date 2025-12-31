@@ -41,6 +41,7 @@
             duration: 10000, // 10 secs
         });
         onCompletion(confirmWords);
+        seedWords = Array(0);
     }
 
     async function handleSaveToFile() {
