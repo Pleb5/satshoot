@@ -23,7 +23,6 @@
     import Card from '../UI/Card.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Input from '../UI/Inputs/input.svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import CopyButton from '../UI/Buttons/CopyButton.svelte';
     import QrCodeModal from '../Modals/QRCodeModal.svelte';
     import { goto } from '$app/navigation';
@@ -34,6 +33,7 @@
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { tick } from 'svelte';
     import { mutedPubkeys } from '$lib/stores/wot';
+    import Avatar from '../Users/Avatar.svelte';
 
     enum FollowStatus {
         isFollowing,
@@ -309,9 +309,9 @@
                         alt="banner"
                     />
                 </div>
-                <div class="w-full mt-[-35px] flex flex-col justify-center items-center">
+                <div class="w-full mt-2 flex flex-col justify-center items-center">
                     <a href={profileHref}>
-                        <ProfileImage src={userProfile?.picture || avatarImage} size="md" />
+                        <Avatar pubkey={user.pubkey} bind:userProfile classes={"shadow-strong"}/>
                     </a>
                 </div>
             </div>

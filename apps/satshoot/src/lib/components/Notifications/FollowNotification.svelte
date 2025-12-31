@@ -1,14 +1,12 @@
 <script lang="ts">
     import ndk from '$lib/stores/session';
     import type { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
-    import { onMount } from 'svelte';
     import Card from '../UI/Card.svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
+    import Avatar from '../Users/Avatar.svelte';
 
     interface Props {
         notification: NDKEvent;
@@ -19,21 +17,8 @@
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
     const follower = $state($ndk.getUser({ pubkey: notification.pubkey }));
-    let followerName = $state(follower.npub.substring(0, 8));
-    let followerImage = $state(getRoboHashPicture(follower.pubkey));
     let followerProfile = $state<NDKUserProfile | null>(null);
-
-    onMount(async () => {
-        followerProfile = await follower.fetchProfile();
-        if (followerProfile) {
-            if (followerProfile.name) {
-                followerName = followerProfile.name;
-            }
-            if (followerProfile.picture) {
-                followerImage = followerProfile.picture;
-            }
-        }
-    });
+    let followerName = $derived(followerProfile?.name ?? follower.npub.substring(0, 8));
 
     const display = $derived.by(() => {
         if (searchQuery && searchQuery.length > 0) {
@@ -94,7 +79,7 @@
     <NotificationTimestamp ndkEvent={notification} />
     <a href={'/' + follower.npub} class="flex flex-row items-center gap-[10px] w-full">
         <div class="shrink-0">
-            <ProfileImage src={followerImage} />
+            <Avatar pubkey={follower.pubkey} bind:userProfile={followerProfile} />
         </div>
         <div class="flex-1 min-w-0 flex flex-col gap-[0px]">
             <p class="truncate max-w-full">{followerName}</p>

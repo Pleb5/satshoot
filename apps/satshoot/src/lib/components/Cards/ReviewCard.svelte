@@ -7,18 +7,17 @@
     } from '$lib/events/ReviewEvent';
     import { formatDate, formatDistanceToNow } from 'date-fns';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
     import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { JobEvent } from '$lib/events/JobEvent';
     import { onMount } from 'svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import { BidEvent } from '$lib/events/BidEvent';
     import { beforeNavigate, goto } from '$app/navigation';
     import { page } from '$app/state';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { OrderEvent } from '$lib/events/OrderEvent';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import Avatar from '$lib/components/Users/Avatar.svelte';
     interface Props {
         review: ReviewEvent;
         isOpen: boolean;
@@ -28,25 +27,14 @@
 
     let user = $ndk.getUser({ pubkey: review.pubkey });
     let userName = $state(user.npub.substring(0, 8));
-    let userImage = $state(getRoboHashPicture(user.pubkey));
 
-    let userProfile: NDKUserProfile | null;
+    let userProfile = $state<NDKUserProfile | null>();
     let reviewedEvent = $state<JobEvent | ServiceEvent | null>(null);
     let label = $state('');
 
     let elemPage: HTMLElement;
     onMount(async () => {
         elemPage = document.querySelector('#page') as HTMLElement;
-
-        userProfile = await user.fetchProfile();
-        if (userProfile) {
-            if (userProfile.name) {
-                userName = userProfile.name;
-            }
-            if (userProfile.picture) {
-                userImage = userProfile.picture;
-            }
-        }
 
         if (review.reviewedEventAddress) {
             const event = await $ndk.fetchEvent(review.reviewedEventAddress, {
@@ -90,6 +78,14 @@
             }
         }
     });
+    
+    $effect(() => {
+        if (userProfile) {
+            if (userProfile.name) {
+                userName = userProfile.name;
+            }
+        }
+    })
 
     // Determine if the review is for a freelancer or client
     const isFreelancerReview = review.type === ReviewType.Freelancer;
@@ -139,7 +135,7 @@
 >
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + user.npub}>
-            <ProfileImage src={userImage} />
+            <Avatar pubkey={user.pubkey} size={"medium"} bind:userProfile classes={"shadow-strong"} />
         </a>
         <div class="flex flex-col grow-1 items-start">
             <a href={'/' + user.npub}>

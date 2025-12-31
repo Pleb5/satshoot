@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import currentUser from '$lib/stores/user';
     import {
@@ -10,17 +9,16 @@
     } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
     import Card from '../UI/Card.svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
     import { goto } from '$app/navigation';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
     import { clipMarkdownText } from '$lib/utils/misc';
     import Markdown from '../Cards/Markdown.svelte';
+    import Avatar from '../Users/Avatar.svelte';
 
     interface Props {
         notification: NDKEvent;
@@ -31,10 +29,8 @@
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
     let user = $state($ndk.getUser({ pubkey: notification.pubkey }));
-    let userName = $state(user.npub.substring(0, 8));
-    let userImage = $state(getRoboHashPicture(user.pubkey));
-
-    let userProfile: NDKUserProfile | null;
+    let userProfile = $state<NDKUserProfile | null>()
+    let userName = $derived(userProfile?.name ?? user.npub.substring(0, 8));
 
     let decryptedDM = $state<string>();
     const processedDM = $derived(
@@ -45,16 +41,6 @@
     const eventAddress = notification.tagValue('a');
 
     onMount(async () => {
-        userProfile = await user.fetchProfile();
-        if (userProfile) {
-            if (userProfile.name) {
-                userName = userProfile.name;
-            }
-            if (userProfile.picture) {
-                userImage = userProfile.picture;
-            }
-        }
-
         try {
             const peerPubkey =
                 notification.tagValue('p') === $currentUser!.pubkey
@@ -149,7 +135,7 @@
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + user.npub} class="shrink-0">
-            <ProfileImage src={userImage} />
+            <Avatar pubkey={notification.pubkey} bind:userProfile/>
         </a>
         <div class="flex-1 min-w-0 flex flex-col">
             <p class="truncate max-w-full">{userName}</p>

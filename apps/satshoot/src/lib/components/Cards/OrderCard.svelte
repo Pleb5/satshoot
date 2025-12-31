@@ -12,9 +12,7 @@
     import { onDestroy } from 'svelte';
     import { toaster } from '$lib/stores/toaster';
     import currentUser from '$lib/stores/user';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
     import { nip19 } from 'nostr-tools';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import { clientReviews } from '$lib/stores/reviews';
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
@@ -23,6 +21,7 @@
     import CloseEntityModal from '../Modals/CloseEntityModal.svelte';
     import ConfirmationDialog from '../UI/ConfirmationDialog.svelte';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import Avatar from '../Users/Avatar.svelte';
     interface Props {
         order: OrderEvent;
         showServiceDetail?: boolean;
@@ -37,16 +36,6 @@
 
     let servicePoster = $state<NDKUser | null>(null);
     let servicePosterProfile = $state<NDKUserProfile | null>(null);
-
-    let servicePosterImage = $derived.by(() => {
-        if (!servicePosterProfile) return '';
-
-        return (
-            servicePosterProfile?.picture ??
-            servicePosterProfile?.image ??
-            getRoboHashPicture(servicePoster!.pubkey)
-        );
-    });
 
     let servicePosterName = $derived.by(() => {
         if (!servicePosterProfile) return '?';
@@ -219,9 +208,7 @@
                         href={'/' + nip19.npubEncode(service.pubkey)}
                         class="flex flex-row items-center grow-1 gap-[10px]"
                     >
-                        {#if servicePosterImage}
-                            <ProfileImage src={servicePosterImage} size="xs" />
-                        {/if}
+                        <Avatar pubkey={service.pubkey} size={"medium"} bind:userProfile={servicePosterProfile} classes={"shadow-strong"} />
                         <span>{servicePosterName}</span>
                     </a>
                 </div>

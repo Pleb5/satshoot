@@ -1,6 +1,6 @@
 <script lang="ts">
     import ndk from '$lib/stores/session';
-    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import { shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import {
         NDKEvent,
         NDKKind,
@@ -11,7 +11,7 @@
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
-    import ProfileImage from './ProfileImage.svelte';
+    import Avatar from '$lib/components/Users/Avatar.svelte';
 
     interface Props {
         pubkey: Hexpubkey;
@@ -23,13 +23,6 @@
     let profileLink = $derived('/' + npub);
 
     let userProfile = $state<NDKUserProfile | null>(null);
-    let avatarImage = $derived(
-        userProfile?.picture ?? userProfile?.image ?? getRoboHashPicture(pubkey)
-    );
-
-    $effect(() => {
-        if (pubkey) fetchUserProfile();
-    });
 
     const fetchUserProfile = async () => {
         const metadataFilter = {
@@ -54,7 +47,7 @@
 <div class="w-full flex flex-row gap-[20px] p-[5px]">
     <div class="flex flex-col">
         <a href={profileLink}>
-            <ProfileImage src={avatarImage} />
+            <Avatar {pubkey} bind:userProfile />
         </a>
     </div>
     <div class="flex flex-col {userProfile?.nip05 ? '' : 'justify-center'}">

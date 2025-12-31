@@ -12,9 +12,7 @@
     import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import {
-        NDKSubscriptionCacheUsage,
         NDKUser,
-        type NDKFilter,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
     import { formatDate, formatDistanceToNow } from 'date-fns';
@@ -25,15 +23,14 @@
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import ReputationCard from './ReputationCard.svelte';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
     import { sessionInitialized } from '$lib/stores/session';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
     import { goto } from '$app/navigation';
     import { Pricing } from '$lib/events/types';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import Avatar from '../Users/Avatar.svelte';
 
     interface Props {
         bid: BidEvent;
@@ -122,16 +119,6 @@
 
     let jobPosterProfile = $state<NDKUserProfile | null>(null);
 
-    let jobPosterImage = $derived.by(() => {
-        if (!jobPosterProfile) return '';
-
-        return (
-            jobPosterProfile?.picture ??
-            jobPosterProfile?.image ??
-            getRoboHashPicture(jobPoster!.pubkey)
-        );
-    });
-
     let jobPosterName = $derived.by(() => {
         if (!jobPosterProfile) return '?';
 
@@ -152,7 +139,7 @@
     $effect(() => {
         if (job && !jobBasedSetupDone) {
             jobBasedSetupDone = true;
-            setupJobPoster($ndk.getUser({ pubkey: job.pubkey }));
+            jobPoster = $ndk.getUser({ pubkey: job.pubkey });
             startPaymentSubs();
         }
     });
@@ -169,13 +156,6 @@
         freelancerPaymentStore.paymentStore.startSubscription();
         satshootPaymentStore.paymentStore.startSubscription();
         sponsoredNpubPaymentStore.paymentStore.startSubscription();
-    };
-
-    const setupJobPoster = async (poster: NDKUser) => {
-        jobPoster = poster;
-        jobPosterProfile = await poster.fetchProfile({
-            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
-        });
     };
 
     function goToChat() {
@@ -311,9 +291,7 @@
                     href={'/' + nip19.npubEncode(job.pubkey)}
                     class="flex flex-row items-center grow-1 gap-[10px]"
                 >
-                    {#if jobPosterImage}
-                        <ProfileImage src={jobPosterImage} size="xs" />
-                    {/if}
+                    <Avatar pubkey={job.pubkey} bind:userProfile={jobPosterProfile} />
                     <span>{jobPosterName}</span>
                 </a>
             </div>

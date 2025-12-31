@@ -1,6 +1,5 @@
 <script lang="ts">
     import { BidEvent } from '$lib/events/BidEvent';
-    import { ReviewType, type ReviewEvent } from '$lib/events/ReviewEvent';
     import { JobEvent } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
@@ -8,15 +7,15 @@
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { OrderEvent } from '$lib/events/OrderEvent';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import Avatar from '../Users/Avatar.svelte';
+    import type { ReviewEvent } from '$lib/events/ReviewEvent';
 
     interface Props {
         notification: ReviewEvent;
@@ -27,26 +26,15 @@
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
     let user = $state($ndk.getUser({ pubkey: notification.pubkey }));
-    let userName = $state(user.npub.substring(0, 8));
-    let userImage = $state(getRoboHashPicture(user.pubkey));
+    let userProfile = $state<NDKUserProfile | null>()
+    let userName = $derived(userProfile?.name ?? user.npub.substring(0, 8));
 
-    let userProfile: NDKUserProfile | null;
     let jobOrService = $state<JobEvent | ServiceEvent>();
     let label = $state('');
 
     let showReviewModal = $state(false);
 
     onMount(async () => {
-        userProfile = await user.fetchProfile();
-        if (userProfile) {
-            if (userProfile.name) {
-                userName = userProfile.name;
-            }
-            if (userProfile.picture) {
-                userImage = userProfile.picture;
-            }
-        }
-
         if (notification.reviewedEventAddress) {
             const reviewedEvent = await $ndk.fetchEvent(notification.reviewedEventAddress, {
                 groupable: true,
@@ -153,7 +141,7 @@
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + user.npub} class="shrink-0">
-            <ProfileImage src={userImage} />
+            <Avatar pubkey={notification.pubkey} bind:userProfile />
         </a>
         <div class="flex-1 min-w-0 flex flex-col items-start">
             <p class="truncate max-w-full">{userName}</p>

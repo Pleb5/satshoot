@@ -1,20 +1,19 @@
 <script lang="ts">
     import ndk from '$lib/stores/session';
-    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage, type NDKUserProfile } from '@nostr-dev-kit/ndk';
 
     import { onMount } from 'svelte';
 
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import Card from '../UI/Card.svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
     import { BidEvent } from '$lib/events/BidEvent';
     import currentUser from '$lib/stores/user';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import Avatar from '../Users/Avatar.svelte';
     interface Props {
         notification: JobEvent | BidEvent;
     }
@@ -24,8 +23,8 @@
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
     let user = $ndk.getUser({ pubkey: notification.pubkey });
-    let userName = $state(user.npub.substring(0, 8));
-    let userImage = $state(getRoboHashPicture(user.pubkey));
+    let userProfile = $state<NDKUserProfile | null>()
+    let userName = $derived(userProfile?.name ?? user.npub.substring(0, 8));
     let npub = $state(user.npub);
 
     let job = $state<JobEvent | null>(null);
@@ -104,14 +103,6 @@
         return null;
     });
 
-    const loadUserProfile = async (userToLoad = user) => {
-        const userProfile = await userToLoad.fetchProfile();
-        if (userProfile) {
-            if (userProfile.name) userName = userProfile.name;
-            if (userProfile.picture) userImage = userProfile.picture;
-        }
-    };
-
     const loadJobDetails = async () => {
         if (!(notification instanceof BidEvent)) return;
 
@@ -134,14 +125,12 @@
         if (notification.pubkey === $currentUser?.pubkey) {
             const clientUser = $ndk.getUser({ pubkey: job.pubkey });
             userName = clientUser.npub.substring(0, 8);
-            userImage = getRoboHashPicture(clientUser.pubkey);
             npub = clientUser.npub;
-            await loadUserProfile(clientUser);
         }
     };
 
     onMount(async () => {
-        await Promise.all([loadUserProfile(), loadJobDetails()]);
+        await loadJobDetails();
     });
 
     const markAsRead = () => {
@@ -295,7 +284,13 @@
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={userLink} class="shrink-0">
-            <ProfileImage src={userImage} />
+            <Avatar 
+                pubkey={notification.pubkey === $currentUser?.pubkey 
+                    ? job?.pubkey 
+                    : notification.pubkey
+                } 
+                bind:userProfile
+            />
         </a>
         <div class="flex-1 min-w-0 flex flex-col items-start">
             <a href={userLink}>

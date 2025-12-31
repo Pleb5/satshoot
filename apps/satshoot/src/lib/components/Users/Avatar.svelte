@@ -1,31 +1,29 @@
 <script lang="ts">
-    import { run } from 'svelte/legacy';
-
     import type { NDKUser, NDKUserProfile } from '@nostr-dev-kit/ndk';
     import ndk from '$lib/stores/session';
-    import { onMount } from 'svelte';
     import { getRoboHashPicture } from '$lib/utils/helpers';
 
     interface Props {
-        pubkey: string;
-        userProfile?: NDKUserProfile | undefined;
+        pubkey: string | undefined;
+        userProfile?: NDKUserProfile | null;
         size?: 'tiny' | 'small' | 'medium' | 'large' | undefined;
         type?: 'square' | 'circle';
         ring?: boolean;
+        classes?: string;
     }
 
     let {
         pubkey,
-        userProfile = $bindable(undefined),
+        userProfile = $bindable(),
         size = undefined,
         type = 'circle',
         ring = false,
+        classes = '',
     }: Props = $props();
 
     let user = $state<NDKUser>();
     let sizeClass = $state('');
     let shapeClass = $state('');
-
     switch (size) {
         case 'tiny':
             sizeClass = 'w-6 h-6';
@@ -34,11 +32,13 @@
             sizeClass = 'w-8 h-8';
             break;
         case 'medium':
-            sizeClass = 'w-12 h-12';
+            sizeClass = 'w-14 h-14';
             break;
         case 'large':
             sizeClass = 'w-16 h-16';
             break;
+        default:
+            sizeClass = 'w-14 h-14';
     }
 
     switch (type) {
@@ -52,11 +52,12 @@
 
     // Fetch user profile reactively
     $effect(() => {
-        if (!userProfile && user) {
+        if (!userProfile && pubkey) {
+            user = $ndk.getUser({pubkey})
             user.fetchProfile({
                 closeOnEose: true,
                 groupable: true,
-                groupableDelay: 200,
+                groupableDelay: 800,
             })
                 .then((profile) => {
                     if (profile) {
@@ -67,11 +68,8 @@
         }
     });
 
-    onMount(() => {
-        if (pubkey) {
-            user = $ndk.getUser({ pubkey });
-        }
-    });
+    const baseClasses = "rounded-full border-white placeholder-white cursor-pointer border-4 border-surface-300-600 hover:border-primary-500!"
+
 </script>
 
 {#if user}
@@ -79,12 +77,12 @@
         class="
         flex-none {sizeClass} {shapeClass}
         {ring ? 'ring-4 ring-accent p-0.5' : ''}
-    "
+        "
     >
         <img
             alt="user avatar"
             src={userProfile?.picture || getRoboHashPicture(user.pubkey)}
-            class="object-cover {sizeClass} {shapeClass}"
+            class="object-cover {baseClasses} {sizeClass} {shapeClass} {classes}"
         />
     </div>
 {:else}

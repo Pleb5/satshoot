@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Avatar } from '@skeletonlabs/skeleton-svelte';
+    import Avatar from "$lib/components/Users/Avatar.svelte"
     import currentUser, {
         loggedIn,
         loggingIn,
@@ -466,12 +466,10 @@
 
                                 <button onclick={() => (showAppMenu = !showAppMenu)}>
                                     <Avatar
-                                        classes="rounded-full border-white placeholder-white cursor-pointer"
-                                        size="size-14"
-                                        border="border-4 border-surface-300-600 hover:border-primary-500!"
-                                        src={profilePicture ??
-                                            getRoboHashPicture($currentUser?.pubkey ?? '')}
-                                        name={$currentUser?.profile?.displayName ?? ''}
+                                        pubkey={$currentUser?.pubkey}
+                                        size="medium"
+                                        classes=""
+
                                     />
                                 </button>
                             {:else if $loggingIn}

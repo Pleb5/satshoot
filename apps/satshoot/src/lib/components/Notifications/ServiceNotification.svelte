@@ -1,13 +1,9 @@
 <script lang="ts">
     import ndk, { sessionInitialized } from '$lib/stores/session';
-
-    import { onDestroy, onMount } from 'svelte';
-
+    import { onDestroy } from 'svelte';
     import Card from '../UI/Card.svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import currentUser from '$lib/stores/user';
@@ -15,6 +11,9 @@
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import Avatar from '../Users/Avatar.svelte';
+    import type { NDKUserProfile } from '@nostr-dev-kit/ndk';
+
     interface Props {
         notification: OrderEvent;
     }
@@ -22,16 +21,6 @@
     let { notification: order }: Props = $props();
 
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
-
-    let orderPublisher = $ndk.getUser({ pubkey: order.pubkey });
-    let orderPublisherName = $state(orderPublisher.npub.substring(0, 8));
-    let orderPublisherImage = $state(getRoboHashPicture(orderPublisher.pubkey));
-
-    let servicePublisher = $ndk.getUser({
-        pubkey: order.referencedServiceAddress.split(':')[1],
-    });
-    let servicePublisherName = $state(servicePublisher.npub.substring(0, 8));
-    let servicePublisherImage = $state(getRoboHashPicture(servicePublisher.pubkey));
 
     const serviceFilter = {
         kinds: [ExtendedNDKKind.FreelanceService],
@@ -59,13 +48,21 @@
 
     const myOrder = $derived(order.pubkey === $currentUser?.pubkey);
 
-    const myService = $derived(!!$currentUser && service?.pubkey === $currentUser?.pubkey);
+    const myService = $derived(
+        !!$currentUser && service?.pubkey === $currentUser?.pubkey
+    );
 
-    const { user, userName, userImage } = $derived.by(() => {
+    let userProfile = $state<NDKUserProfile | null>()
+
+    let servicePublisher = $ndk.getUser({
+        pubkey: order.referencedServiceAddress.split(':')[1],
+    });
+    let orderPublisher = $ndk.getUser({ pubkey: order.pubkey });
+
+    const { user, userName } = $derived.by(() => {
         const returnObj = {
             user: null,
             userName: '',
-            userImage: '',
         };
 
         if (!service) return returnObj;
@@ -73,16 +70,16 @@
         if (myOrder) {
             return {
                 user: servicePublisher,
-                userName: servicePublisherName,
-                userImage: servicePublisherImage,
+                userName: userProfile?.name
+                    || servicePublisher.npub.substring(0,8)
             };
         }
 
         if (myService) {
             return {
                 user: orderPublisher,
-                userName: orderPublisherName,
-                userImage: orderPublisherImage,
+                userName: userProfile?.name
+                    || orderPublisher.npub.substring(0,8)
             };
         }
 
@@ -123,28 +120,6 @@
         if ($sessionInitialized && !initialized) {
             initialized = true;
             serviceStore.startSubscription();
-        }
-    });
-
-    onMount(async () => {
-        const orderPublisherProfile = await orderPublisher.fetchProfile();
-        if (orderPublisherProfile) {
-            if (orderPublisherProfile.name) {
-                orderPublisherName = orderPublisherProfile.name;
-            }
-            if (orderPublisherProfile.picture) {
-                orderPublisherImage = orderPublisherProfile.picture;
-            }
-        }
-
-        const servicePublisherProfile = await servicePublisher.fetchProfile();
-        if (servicePublisherProfile) {
-            if (servicePublisherProfile.name) {
-                servicePublisherName = servicePublisherProfile.name;
-            }
-            if (servicePublisherProfile.picture) {
-                servicePublisherImage = servicePublisherProfile.picture;
-            }
         }
     });
 
@@ -260,7 +235,7 @@
     {#if service && user && orderState}
         <div class="w-full flex flex-row gap-[15px]">
             <a href={'/' + user.npub} class="shrink-0">
-                <ProfileImage src={userImage} />
+                <Avatar pubkey={user.pubkey} bind:userProfile />
             </a>
             <div class="flex-1 min-w-0 flex flex-col items-start">
                 <a href={'/' + user.npub}>

@@ -6,21 +6,21 @@
         zapInvoiceFromEvent,
         type NDKEvent,
         type NDKFilter,
+        type NDKUserProfile,
         type NDKZapInvoice,
     } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
     import { JobEvent } from '$lib/events/JobEvent';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import Card from '../UI/Card.svelte';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
     import NotificationTimestamp from './NotificationTimestamp.svelte';
     import { readNotifications } from '$lib/stores/notifications';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
     import { page } from '$app/state';
     import Fuse from 'fuse.js';
     import { OrderEvent } from '$lib/events/OrderEvent';
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import Avatar from '../Users/Avatar.svelte';
 
     interface Props {
         notification: NDKEvent;
@@ -41,8 +41,8 @@
             ? $ndk.getUser({ pubkey: lnZapperPubkey })
             : $ndk.getUser({ pubkey: notification.pubkey });
 
-    let zapperName = $state(zapper.npub.substring(0, 8));
-    let zapperImage = $state(getRoboHashPicture(zapper.pubkey));
+    let zapperProfile = $state<NDKUserProfile | null>()
+    let zapperName = $derived(zapperProfile?.name ?? zapper.npub.substring(0, 8));
 
     let amount: number | null = $state(null);
 
@@ -52,17 +52,6 @@
     let service: ServiceEvent | null = $state(null);
 
     onMount(async () => {
-        //Profile
-        const zapperProfile = await zapper.fetchProfile();
-        if (zapperProfile) {
-            if (zapperProfile.name) {
-                zapperName = zapperProfile.name;
-            }
-            if (zapperProfile.picture) {
-                zapperImage = zapperProfile.picture;
-            }
-        }
-
         // Amount
         if (notification.kind === NDKKind.Zap && zapInvoice?.amount) {
             amount = Math.round(zapInvoice.amount / 1000);
@@ -181,7 +170,7 @@
     <NotificationTimestamp ndkEvent={notification} />
     <div class="w-full flex flex-row gap-[15px]">
         <a href={'/' + zapper.npub} class="shrink-0">
-            <ProfileImage src={zapperImage} />
+            <Avatar pubkey={zapper.pubkey} bind:userProfile={zapperProfile}/>
         </a>
         <div class="flex-1 min-w-0 flex flex-col">
             <p class="truncate max-w-full">{zapperName}</p>

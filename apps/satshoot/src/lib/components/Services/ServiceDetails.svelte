@@ -1,14 +1,11 @@
 <script lang="ts">
     import {
-        NDKKind,
-        NDKSubscriptionCacheUsage,
         type NDKFilter,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
     import ndk from '$lib/stores/session';
     import { nip19 } from 'nostr-tools';
-    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
-    import ProfileImage from '../UI/Display/ProfileImage.svelte';
+    import { shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import { ReviewType } from '$lib/events/ReviewEvent';
     import ReputationCard from '../Cards/ReputationCard.svelte';
     import type { ServiceEvent } from '$lib/events/ServiceEvent';
@@ -21,6 +18,7 @@
     import OrdersCountBreakdown from '../Modals/OrdersCountBreakdown.svelte';
     import { getPubkeyFromNpubOrNprofile } from '$lib/utils/nip19';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import Avatar from '../Users/Avatar.svelte';
 
     interface Props {
         service: ServiceEvent;
@@ -46,7 +44,6 @@
 
     // Derived values
     const npub = $derived(nip19.npubEncode(service.pubkey));
-    const avatarImage = $derived(getRoboHashPicture(service.pubkey));
     const profileLink = $derived('/' + npub);
 
     // Reactive state
@@ -70,21 +67,6 @@
 
     const sponsoredPubkey = getPubkeyFromNpubOrNprofile(service.sponsoredNpub);
 
-    // Effect to fetch user profile
-    $effect(() => {
-        const ndkUser = $ndk.getUser({ pubkey: service.pubkey });
-        ndkUser
-            .fetchProfile({
-                cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST,
-                closeOnEose: true,
-                groupable: true,
-                groupableDelay: 1000,
-            })
-            .then((profile) => {
-                userProfile = profile;
-            });
-    });
-
     $effect(() => {
         if ($currentUser && !alreadySubscribedToOrders) {
             alreadySubscribedToOrders = true;
@@ -104,7 +86,7 @@
                 class="transition ease-in-out duration-[0.3s] flex flex-col justify-center items-center"
                 href={profileLink}
             >
-                <ProfileImage src={userProfile?.picture || avatarImage} />
+                <Avatar pubkey={service.pubkey} bind:userProfile classes={"shadow-strong"}/>
             </a>
         </div>
         <div class="w-full flex flex-col gap-[5px]">
