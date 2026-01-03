@@ -490,15 +490,19 @@
 
         configureBasics();
 
-        await $ndk.connect();
+        try {
+            await $ndk.connect();
+        } catch{
 
-        if (!$loggedIn) {
-            await restoreLogin();
+        } finally {
+            if (!$loggedIn) {
+                await restoreLogin();
+            }
+
+            console.log('Session initialized!');
+
+            sessionInitialized.set(true);
         }
-
-        console.log('Session initialized!');
-
-        sessionInitialized.set(true);
     });
 
     onDestroy(() => {

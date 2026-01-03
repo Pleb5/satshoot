@@ -81,7 +81,7 @@ export function getAppRelays(): string[] {
 const ndkSvelte = new NDKSvelte({
     enableOutboxModel: true,
     outboxRelayUrls: BOOTSTRAPOUTBOXRELAYS,
-    blacklistRelayUrls: [],
+    blacklistRelayUrls: ['wss://bitcoiner.social/', 'wss://relay.nostr.band/'],
     autoConnectUserRelays: true,
     autoFetchUserMutelist: true,
     explicitRelayUrls: getAppRelays(),
