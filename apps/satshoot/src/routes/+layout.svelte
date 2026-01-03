@@ -491,9 +491,9 @@
         configureBasics();
 
         try {
-            await $ndk.connect();
-        } catch{
-
+            await $ndk.connect(2500);
+        } catch(e){
+            console.warn("NDK intial connect error:", e)
         } finally {
             if (!$loggedIn) {
                 await restoreLogin();
