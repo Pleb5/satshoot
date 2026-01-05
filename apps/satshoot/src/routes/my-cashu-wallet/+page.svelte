@@ -553,7 +553,7 @@
     const deleteIconClasses =
         'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex! h-full justify-center items-center hover:bg-red-400';
 
-    const noSeedTooltip = "This wallet isn't backed up by a seed phrase. You can fix this by migrating to a Seed Words Wallet.";
+    const noSeedTooltip = "This wallet isn't backed up by a seed phrase. You can fix this by migrating to a Seed Words Wallet.<br>PS.: Mints can take a small fee for the transfer.";
     const seedTooltip = "You are safe, your wallet is backed up by a seed phrase.";
 </script>
 
