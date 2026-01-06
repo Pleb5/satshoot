@@ -13,12 +13,23 @@
     let { cashuWallet }: Props = $props();
 
     let depositing = $state(false);
-    let amount = $state(0);
+    let amountInput = $state('');
     let selectedMint = $state('');
 
-    $effect(() => {
-        amount ??= 0;
+    const amountSats = $derived(() => {
+        const parsed = Number.parseInt(amountInput, 10);
+        return Number.isFinite(parsed) ? parsed : 0;
     });
+
+    function normalizeAmountInput(value: string) {
+        const trimmed = value.trim();
+        if (!trimmed) return '';
+
+        // Avoid leading zeros like "010" when the input was prefilled with 0.
+        // Keep a single "0" if that's all the user typed.
+        const withoutLeadingZeros = trimmed.replace(/^0+(?=\d)/, '');
+        return withoutLeadingZeros;
+    }
 
     // Initialize selected mint
     $effect(() => {
@@ -29,17 +40,18 @@
 
     async function deposit() {
         depositing = true;
-        const ndkCashuDeposit = cashuWallet.deposit(amount, selectedMint);
+        const sats = amountSats;
+        const ndkCashuDeposit = cashuWallet.deposit(sats, selectedMint);
 
         // The deposit process updates wallet state that is captured in
         // 'balance_updated' event, on which a backup is triggered (see walletInit)
         ndkCashuDeposit.on('success', () => {
             closeModal();
             toaster.success({
-                title: `Successfully deposited ${amount} sats!`,
+                title: `Successfully deposited ${sats} sats!`,
             });
             depositing = false;
-            amount = 0;
+            amountInput = '';
         });
 
         ndkCashuDeposit.on('error', (error) => {
@@ -72,7 +84,10 @@
             placeholder="000,000 sats"
             min="1"
             step="1"
-            bind:value={amount}
+            bind:value={amountInput}
+            onInput={(event) => {
+                amountInput = normalizeAmountInput((event.target as HTMLInputElement).value);
+            }}
             fullWidth
             notRounded
             noBorder
@@ -93,7 +108,7 @@
         variant="text"
         classes="bg-black-100 border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
         onClick={deposit}
-        disabled={depositing || !amount || !selectedMint}
+        disabled={depositing || amountSats <= 0 || !selectedMint}
     >
         Deposit
         {#if depositing}
