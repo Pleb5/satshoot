@@ -1,4 +1,4 @@
-# Freealance-related events used in SatShoot
+# Freelance-related events used in SatShoot
 
 ## Freelance Events: Orders on a Service (Many-to-One) and Bids on a Job (Many-to-One)
 
@@ -36,7 +36,7 @@
 
         // Status. Deactivation indicates that this Service is not offered anymore
         // while preserves its history. Mandatory
-        [ "s", <'0' (InActive) OR '1' (Active)> ],
+        [ "s", <'0' (Inactive) OR '1' (Active)> ],
 
         // Records all status changes. Append new entries, never replace existing ones
         // for initial state use -1 for from_status
@@ -49,7 +49,7 @@
         ["pricing_history", JSON.stringify(old_amount_pricing), JSON.stringify(old_amount_pricing), <change_timestamp>],
         // ... more pricing history entries as pricing changes occur
 
-        // If a Freelancer is ready to fullfill a Freelance Order he SHOULD set this.
+        // If a Freelancer is ready to fulfill a Freelance Order, they SHOULD set this.
         // Multiple a-tags mean that this Service has been sold multiple times
         ["a", "32766:<hex pubkey of Client1>:<Freelance Order d-tag>", <acceptance_timestamp>],
         ["a", "32766:<hex pubkey of Client2>:<Freelance Order d-tag>", <acceptance_timestamp>],
@@ -89,7 +89,7 @@
 
         // 3. The Order is closed by the Client paying and posting a Review. This concludes the Order
         // with a '1' (Fulfilled) state or a '2' (Failed) state. Orders with Fulfilled and Failed states
-        // can be displayed as 'Closed' in apps that want to gather cocluded Orders together.
+        // can be displayed as 'Closed' in apps that want to gather concluded Orders together.
 
         [ "s", <'0' (Open) OR '1' (Fulfilled) OR '2' (Failed)> ],
 

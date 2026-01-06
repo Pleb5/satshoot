@@ -2,14 +2,14 @@
 
 ## Development setup
 
-SatShoot is a `pnpm` + Turborepo monorepo. It includes `packages/ndk-wallet` as a git submodule.
+SatShoot is a `pnpm` + Turborepo monorepo. It includes `packages/ndk-wallet` as a Git submodule.
 
 ### Prerequisites
 
 - Node.js (recommended: current LTS)
 - `corepack` (bundled with Node) for managing the pinned `pnpm` version
 - Optional: `just` (quality-of-life scripts)
-- Optional: Nix devshell (`flake.nix`)
+- Optional: Nix dev shell (`flake.nix`)
 
 ### Clone
 

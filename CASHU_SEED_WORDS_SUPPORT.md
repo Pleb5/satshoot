@@ -1,4 +1,4 @@
-# Second Iteration Toward NUT-13 Support in Satshoot
+# Second Iteration Toward NUT-13 Support in SatShoot
 After implementing the basic seed-handling functions in `nut-13.ts` and the initial user flows in `MnemonicSeedGenerationModal.svelte` and `MnemonicSeedInputModal.svelte`, our next goal is to build a robust framework for durable Nostr-native wallet seed support in the `ndk-wallet` package.
 
 To achieve this, we first introduce the Nostr Wallet Seed event.
@@ -24,7 +24,7 @@ This new event kind will be proposed as an extension of NIP-60:
 }
 ```
 
-This extension provides the foundation for the second iteration toward NUT-13 support in Satshoot.
+This extension provides the foundation for the second iteration toward NUT-13 support in SatShoot.
 
 ### Implementation Tasks Breakdown for ndk-wallet
 * Clients can pass a Deterministic Wallet Event (kind `17376`) to an existing `NDKCashuWallet` to set the BIP-39 seed and corresponding mint counter information in `WalletState`.
@@ -34,7 +34,7 @@ This extension provides the foundation for the second iteration toward NUT-13 su
 * The counter state must be accessible wherever new proofs are generated. The counter value should be passed to the `cashu-ts` wallet functions to derive the next secret.
 * After generating a proof, the wallet seed event must be updated with the counter incremented by one for the relevant mint and keyset ID. This mirrors how the new proofs are published in `ndk-wallet`, and the internal wallet state must be updated immediately.
 
-## Second Iteration in Satshoot
+## Second Iteration in SatShoot
 ### Implementation Tasks Breakdown
 * Upon login, the application must load event kind `17376` along with the Cashu wallet event (kind `17375`).
   * If neither event `17375` nor `17376` is loaded, prompt the user to create the Nostr Cashu wallet with a BIP-39 seed, as partially implemented in `my-cashu-wallet/+page.svelte`.

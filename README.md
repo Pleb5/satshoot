@@ -29,7 +29,7 @@ See `EVENT_STRUCTURE.md` for the full tag/content schemas.
 
 - `apps/satshoot`: SvelteKit (static adapter) + Vite + TypeScript + Tailwind/Skeleton
 - Nostr client: `@nostr-dev-kit/ndk` (+ `ndk-svelte` helpers)
-- Wallet toolkit (vendored): `packages/ndk-wallet` (git submodule, used via workspace dependency)
+- Wallet toolkit (vendored): `packages/ndk-wallet` (Git submodule, used via workspace dependency)
 
 ## Development
 
@@ -49,7 +49,7 @@ Useful scripts from the repo root:
 - Tests: `pnpm -r test`
 - Clean reinstall: `just renew`
 
-If you use Nix, a devshell is provided via `flake.nix`:
+If you use Nix, a dev shell is provided via `flake.nix`:
 
 - `nix develop`
 
