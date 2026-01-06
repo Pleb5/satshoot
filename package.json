@@ -1,6 +1,9 @@
 {
   "name": "satshoot",
   "private": true,
+  "devDependencies": {
+    "turbo": "^2.5.0"
+  },
   "scripts": {
     "build": "./ndk_compile.sh && turbo run build",
     "dev": "turbo run dev",
