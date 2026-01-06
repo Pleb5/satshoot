@@ -22,6 +22,19 @@
     let withdrawing = $state(false);
     let isScanning = $state(false);
 
+    function normalizePaymentRequest(value: string): string {
+        const trimmed = value.trim();
+        if (!trimmed) return '';
+        return trimmed.replace(/^lightning:/i, '');
+    }
+
+    function formatWithdrawError(error: unknown): string {
+        if (error == null) return 'Unknown error';
+        if (typeof error === 'string') return error;
+        if (error instanceof Error) return error.message || error.name;
+        return String(error);
+    }
+
     onMount(() => {
         html5QrCode = new Html5Qrcode('qr-reader', {
             formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
@@ -34,41 +47,32 @@
     });
 
     async function withdraw() {
-        if (!pr) return;
+        const normalizedPr = normalizePaymentRequest(pr);
+        if (!normalizedPr || withdrawing) return;
 
         withdrawing = true;
-        cashuWallet
-            .lnPay({ pr })
-            .then((res) => {
-                console.log('res withdraw :>> ', res);
-                let message = '<div><p>Successfully withdrawn amount!</p>';
-                if (res?.fee) {
-                    const invoice = new Invoice({ pr });
-                    const { satoshi } = invoice;
+        try {
+            const invoice = new Invoice({ pr: normalizedPr });
+            const withdrawnSats = invoice.satoshi;
 
-                    const total = satoshi + res.fee;
-                    message += `<br/>
-                    <p>Withdrawn: ${satoshi} sats</p>
-                    <br/>
-                    <p>Fee: ${res.fee} sats</p>
-                    <br/>
-                    <p>Total: ${total} sats</p>`;
-                }
-                toaster.success({
-                    title: message,
-                });
-                pr = '';
-            })
-            .catch((err) => {
-                console.error('An error occurred in withdraw', err);
-                toaster.error({
-                    title: `Failed to withdraw: ${err?.message || err} `,
-                    duration: 60000, // 1 min
-                });
-            })
-            .finally(() => {
-                withdrawing = false;
+            const confirmation = await cashuWallet.lnPay({ pr: normalizedPr });
+            if (!confirmation) {
+                throw new Error('Payment failed (insufficient balance or mint error)');
+            }
+
+            toaster.success({
+                title: `Successfully withdrew ${withdrawnSats} sats`,
             });
+            pr = '';
+        } catch (error) {
+            console.error('An error occurred in withdraw', error);
+            toaster.error({
+                title: `Failed to withdraw: ${formatWithdrawError(error)}`,
+                duration: 60000, // 1 min
+            });
+        } finally {
+            withdrawing = false;
+        }
     }
 
     async function scanQRCode() {
