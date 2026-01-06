@@ -130,7 +130,7 @@ async function transferAllFundsTo(sourceNDKWallet: NDKCashuWallet, receivingNDKW
                 receivedProofs = await receivingWallet.receive(token, { counter });
                 if (receivingNDKWallet.bip39seed && receivedProofs.length) {
                     const counterIncrement = counter == 1 ? receivedProofs.length + 1 : receivedProofs.length;
-                    await receivingNDKWallet.incrementDeterministicCounter(currentCounterEntry.counterKey, counterIncrement);
+                    await receivingNDKWallet.incrementDeterministicCounter(currentCounterEntry.counterKey, counterIncrement, false);
                 }
             } catch (e) {
                 console.error(`Error while transferring funds to new wallet. The funds will be stored in the new wallet, but without deterministic secrets!`);

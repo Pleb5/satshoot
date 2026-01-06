@@ -316,11 +316,6 @@
             cashuInfo.mints = newWallet.mints;
 
             await broadcastEvent($ndk, cashuInfo, { replaceable: true });
-            await newWallet.publish();
-
-            toaster.success({
-                title: `Nostr Wallet created!`,
-            });
 
             const walletMigration = !!$wallet;
             const deterministicTransfer = await walletInit(newWallet, cashuInfo, $ndk, $currentUser!, $wallet ?? undefined);
@@ -331,6 +326,13 @@
                     duration: 60000
                 });
             }
+
+            await newWallet.publish();
+            console.log(`wallet after publish: ${Object.entries(newWallet.state.getDeterministicCountersSnapshot())}`);
+
+            toaster.success({
+                title: `Nostr Wallet created!`,
+            });
         } catch (err) {
             console.error(err);
             toaster.error({
