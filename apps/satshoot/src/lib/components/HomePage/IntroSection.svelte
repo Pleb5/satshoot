@@ -14,7 +14,8 @@
             <div
                 class="w-full h-[250px] max-[992px]:h-[160px] rounded-[8px] shadow-soft flex flex-col items-center justify-center gap-5"
             >
-                <img src="/img/banner.svg" alt="banner" />
+                <img src="/img/banner-light.svg" alt="SatShoot banner" class="dark:hidden" />
+                <img src="/img/banner.svg" alt="SatShoot banner" class="hidden dark:block" />
                 <p class="font-[Inter] max-sm:text-xl sm:text-2xl font-medium">Jobs. Services. Reputation.</p>
             </div>
             <div
