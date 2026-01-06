@@ -25,10 +25,12 @@
 
     let { review, isOpen = $bindable() }: Props = $props();
 
-    let user = $ndk.getUser({ pubkey: review.pubkey });
-    let userName = $state(user.npub.substring(0, 8));
+    const user = $derived.by(() => $ndk.getUser({ pubkey: review.pubkey }));
 
-    let userProfile = $state<NDKUserProfile | null>();
+    let userProfile = $state<NDKUserProfile | null>(null);
+    const userName = $derived.by(() =>
+        userProfile?.name ? userProfile.name : user.npub.substring(0, 8)
+    );
     let reviewedEvent = $state<JobEvent | ServiceEvent | null>(null);
     let label = $state('');
 
@@ -79,21 +81,15 @@
         }
     });
     
-    $effect(() => {
-        if (userProfile) {
-            if (userProfile.name) {
-                userName = userProfile.name;
-            }
-        }
-    })
-
     // Determine if the review is for a freelancer or client
-    const isFreelancerReview = review.type === ReviewType.Freelancer;
-    const ratings = isFreelancerReview ? review.freelancerRatings : review.clientRatings;
+    const isFreelancerReview = $derived(review.type === ReviewType.Freelancer);
+    const ratings = $derived(isFreelancerReview ? review.freelancerRatings : review.clientRatings);
 
     // Type assertions for ratings
-    const freelancerRatings = isFreelancerReview ? (ratings as FreelancerRating) : undefined;
-    const clientRatings = !isFreelancerReview ? (ratings as ClientRating) : undefined;
+    const freelancerRatings = $derived(
+        isFreelancerReview ? (ratings as FreelancerRating) : undefined
+    );
+    const clientRatings = $derived(!isFreelancerReview ? (ratings as ClientRating) : undefined);
 
     // Base classes for review badges
     const reviewBadgeClasses =
