@@ -1,15 +1,17 @@
 <script lang="ts">
     import { page } from '$app/state';
+    import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
     import ServiceCard from '$lib/components/Services/ServiceCard.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
+    import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
     import { ServiceEvent, ServiceStatus } from '$lib/events/ServiceEvent';
     import { showDecentralizedDiscoveryModal } from '$lib/stores/modals';
     import ndk, { sessionInitialized } from '$lib/stores/session';
-    import { mutedPubkeys, myMuteList, wot } from '$lib/stores/wot';
+    import { mutedPubkeys, wot } from '$lib/stores/wot';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
     import { ServicesPerPage } from '$lib/utils/misc';
-    import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import Fuse from 'fuse.js';
     import { onDestroy } from 'svelte';
 
@@ -48,11 +50,17 @@
         };
     });
 
+    let applyWoTFiltering = $state(true)
+
     let serviceList = $derived.by(() => {
         let copiedServices = [...debouncedNewServices];
         copiedServices = copiedServices.filter((s: ServiceEvent) => {
             const newService = s.status === ServiceStatus.Active;
-            const partOfWot = $wot.has(s.pubkey);
+
+            const partOfWot = applyWoTFiltering 
+                ? $wot.has(s.pubkey)
+                : true
+
             const muted = $mutedPubkeys.has(s.pubkey)
 
             return newService && partOfWot && !muted;
@@ -131,6 +139,12 @@
 
     const paginationBtnClasses =
         'font-[18px] py-[10px] px-[20px] ' + 'max-[576px]:grow-1 shadow-subtle';
+
+    const wotTooltip =
+        '<div class="font-bold">' +
+        '<p>Only show Services from people in your Web of Trust.</p>' +
+        '<p>Switch off to see<span class="text-yellow-500"> all Services from everyone</span></p>' +
+        '</div>'
 </script>
 
 <div class="w-full flex flex-col gap-0 grow">
@@ -138,7 +152,7 @@
         <div class="max-w-[1400px] w-full flex flex-col justify-start items-end px-[10px] relative">
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
                 <div
-                    class="flex flex-row justify-between items-center gap-4 max-[768px]:flex-col max-[768px]:items-start"
+                    class="flex flex-row items-center gap-4 max-[768px]:flex-col max-[768px]:items-start"
                 >
                     <h2 class="max-sm:text-2xl sm:text-[40px] font-[500]">
                         Latest Service Listings
@@ -151,6 +165,18 @@
                         <i class="bx bx-broadcast"></i>
                         Decentralized Discovery
                     </Button>
+                    <div class="flex gap-x-2 items-center">
+                        <Checkbox
+                            id={'totalAmount'}
+                            label={'WoT Filtering'}
+                            bind:checked={applyWoTFiltering}
+                        />
+                        <QuestionIcon
+                            extraClasses="text-[14px] p-[3px]"
+                            placement="bottom-start"
+                            popUpText={wotTooltip}
+                        />
+                    </div>
                 </div>
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
                     <div class="w-full flex flex-col gap-[25px]">

@@ -2,10 +2,10 @@
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
 
     import ndk, { sessionInitialized } from '$lib/stores/session';
-    import { mutedPubkeys, myMuteList, wot } from '$lib/stores/wot';
+    import { mutedPubkeys, wot } from '$lib/stores/wot';
     import { checkRelayConnections, orderEventsChronologically } from '$lib/utils/helpers';
 
-    import { NDKEvent, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import Fuse from 'fuse.js';
     import { page } from '$app/state';
     import JobCard from '$lib/components/Jobs/JobCard.svelte';
@@ -14,6 +14,9 @@
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
     import { showDecentralizedDiscoveryModal } from '$lib/stores/modals';
+    import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
+    import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
+
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
     // Track debounced jobs
@@ -49,11 +52,17 @@
         };
     });
 
+    let applyWoTFiltering = $state(true)
+
     let jobList = $derived.by(() => {
         let copiedJobs = [...debouncedNewJobs];
         copiedJobs = copiedJobs.filter((t: JobEvent) => {
             const newJob = t.status === JobStatus.New;
-            const partOfWot = $wot.has(t.pubkey);
+
+            const partOfWot = applyWoTFiltering 
+                ? $wot.has(t.pubkey)
+                : true
+
             const muted = $mutedPubkeys.has(t.pubkey)
 
             return newJob && partOfWot && !muted;
@@ -129,6 +138,12 @@
 
     const paginationBtnClasses =
         'font-[18px] py-[10px] px-[20px] ' + 'max-[576px]:grow-1 shadow-subtle';
+
+    const wotTooltip =
+        '<div class="font-bold">' +
+        '<p>Only show Jobs from people in your Web of Trust.</p>' +
+        '<p>Switch off to see<span class="text-yellow-500"> all Jobs from everyone</span></p>' +
+        '</div>'
 </script>
 
 <div class="w-full flex flex-col gap-0 grow">
@@ -137,7 +152,7 @@
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
                 <div class="w-full flex flex-col gap-[15px] justify-start">
                     <div
-                        class="flex flex-row justify-between items-center gap-4 max-[768px]:flex-col max-[768px]:items-start"
+                        class="flex flex-row items-center gap-4 max-[768px]:flex-col max-[768px]:items-start"
                     >
                         <h2 class="max-sm:text-2xl sm:text-[40px] font-[500]">
                             Latest Job Listings
@@ -150,6 +165,18 @@
                             <i class="bx bx-broadcast"></i>
                             Decentralized Discovery
                         </Button>
+                        <div class="flex gap-x-2 items-center">
+                            <Checkbox
+                                id={'totalAmount'}
+                                label={'WoT Filtering'}
+                                bind:checked={applyWoTFiltering}
+                            />
+                            <QuestionIcon
+                                extraClasses="text-[14px] p-[3px]"
+                                placement="bottom-start"
+                                popUpText={wotTooltip}
+                            />
+                        </div>
                     </div>
                 </div>
                 <div class="w-full flex flex-row gap-[25px] max-[768px]:flex-col">
