@@ -16,6 +16,7 @@
     import { showDecentralizedDiscoveryModal } from '$lib/stores/modals';
     import Checkbox from '$lib/components/UI/Inputs/Checkbox.svelte';
     import QuestionIcon from '$lib/components/Icons/QuestionIcon.svelte';
+    import { wotToggleOnJobsFeed as applyWoTFiltering } from '$lib/stores/gui';
 
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
@@ -52,14 +53,12 @@
         };
     });
 
-    let applyWoTFiltering = $state(true)
-
     let jobList = $derived.by(() => {
         let copiedJobs = [...debouncedNewJobs];
         copiedJobs = copiedJobs.filter((t: JobEvent) => {
             const newJob = t.status === JobStatus.New;
 
-            const partOfWot = applyWoTFiltering 
+            const partOfWot = $applyWoTFiltering 
                 ? $wot.has(t.pubkey)
                 : true
 
@@ -169,7 +168,7 @@
                             <Checkbox
                                 id={'totalAmount'}
                                 label={'WoT Filtering'}
-                                bind:checked={applyWoTFiltering}
+                                bind:checked={$applyWoTFiltering}
                             />
                             <QuestionIcon
                                 extraClasses="text-[14px] p-[3px]"

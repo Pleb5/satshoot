@@ -7,6 +7,9 @@ export const displayEcashWarning = writable(true);
 export const scrollToMyJobsAndMyBids = writable(false);
 export const redirectAfterLogin = writable(true);
 
+export const wotToggleOnJobsFeed = persisted('wotToggleOnJobsFeed', true);
+export const wotToggleOnServicesFeed = persisted('wotToggleOnJobsFeed', true);
+
 export const servicesFilter = persisted('servicesFilter', {
     active: true,
     inActive: false,

@@ -14,6 +14,7 @@
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import Fuse from 'fuse.js';
     import { onDestroy } from 'svelte';
+    import { wotToggleOnServicesFeed as applyWoTFiltering } from '$lib/stores/gui';
 
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
@@ -50,14 +51,12 @@
         };
     });
 
-    let applyWoTFiltering = $state(true)
-
     let serviceList = $derived.by(() => {
         let copiedServices = [...debouncedNewServices];
         copiedServices = copiedServices.filter((s: ServiceEvent) => {
             const newService = s.status === ServiceStatus.Active;
 
-            const partOfWot = applyWoTFiltering 
+            const partOfWot = $applyWoTFiltering 
                 ? $wot.has(s.pubkey)
                 : true
 
@@ -169,7 +168,7 @@
                         <Checkbox
                             id={'totalAmount'}
                             label={'WoT Filtering'}
-                            bind:checked={applyWoTFiltering}
+                            bind:checked={$applyWoTFiltering}
                         />
                         <QuestionIcon
                             extraClasses="text-[14px] p-[3px]"
