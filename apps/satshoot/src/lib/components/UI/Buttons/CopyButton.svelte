@@ -16,7 +16,7 @@
         classes = '',
     }: Props = $props();
 
-    const variant = $derived(() => (buttonText ? 'contained' : 'outlined'));
+    const variant = $derived(buttonText ? 'contained' : 'outlined');
 
     function handleCopy() {
         navigator.clipboard.writeText(text).then(() =>

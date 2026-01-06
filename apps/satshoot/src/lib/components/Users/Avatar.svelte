@@ -24,7 +24,7 @@
         classes = '',
     }: Props = $props();
 
-    const sizeClass = $derived(() => {
+    const sizeClass = $derived.by(() => {
         switch (size) {
             case 'tiny':
                 return 'w-6 h-6';
@@ -39,15 +39,7 @@
         }
     });
 
-    const shapeClass = $derived(() => {
-        switch (type) {
-            case 'square':
-                return 'rounded-sm';
-            case 'circle':
-            default:
-                return 'rounded-full';
-        }
-    });
+    const shapeClass = $derived(type === 'square' ? 'rounded-sm' : 'rounded-full');
 
     let wotClasses = $state('border-white');
 
