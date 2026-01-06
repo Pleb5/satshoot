@@ -24,41 +24,37 @@
         classes = '',
     }: Props = $props();
 
-    let sizeClass = $state('');
-    let shapeClass = $state('');
+    const sizeClass = $derived(() => {
+        switch (size) {
+            case 'tiny':
+                return 'w-6 h-6';
+            case 'small':
+                return 'w-8 h-8';
+            case 'medium':
+                return 'w-14 h-14';
+            case 'large':
+                return 'w-18 h-18';
+            default:
+                return 'w-14 h-14';
+        }
+    });
 
-    let wotClasses = $state('border-white')
+    const shapeClass = $derived(() => {
+        switch (type) {
+            case 'square':
+                return 'rounded-sm';
+            case 'circle':
+            default:
+                return 'rounded-full';
+        }
+    });
 
-    switch (size) {
-        case 'tiny':
-            sizeClass = 'w-6 h-6';
-            break;
-        case 'small':
-            sizeClass = 'w-8 h-8';
-            break;
-        case 'medium':
-            sizeClass = 'w-14 h-14';
-            break;
-        case 'large':
-            sizeClass = 'w-18 h-18';
-            break;
-        default:
-            sizeClass = 'w-14 h-14';
-    }
-
-    switch (type) {
-        case 'circle':
-            shapeClass = 'rounded-full';
-            break;
-        case 'square':
-            shapeClass = 'rounded-sm';
-            break;
-    }
+    let wotClasses = $state('border-white');
 
     $effect(() => {
         if (!userProfile && pubkey) {
-            const user = $ndk.getUser({pubkey})
-            fetchUserProfile(user)
+            const user = $ndk.getUser({ pubkey });
+            fetchUserProfile(user);
         }
     });
 
@@ -68,27 +64,28 @@
                 closeOnEose: true,
                 groupable: true,
                 groupableDelay: 800,
-            })
+            });
         } catch {}
-    }
+    };
 
     $effect(() => {
-        if (sessionInitialized && pubkey) {
+        if ($sessionInitialized && pubkey) {
             if ($wot.has(pubkey)) {
-                trusted = true
+                trusted = true;
                 if (showWoT) {
-                    wotClasses = 'border-yellow-500'
+                    wotClasses = 'border-yellow-500';
                 }
             } else {
-                trusted = false
+                trusted = false;
                 if (showWoT) {
-                    wotClasses = 'border-red-500'
+                    wotClasses = 'border-red-500';
                 }
             }
         }
-    })
+    });
 
-    const baseClasses = "rounded-full placeholder-white cursor-pointer border-4 hover:border-primary-500!"
+    const baseClasses =
+        'rounded-full placeholder-white cursor-pointer border-4 hover:border-primary-500!';
 
 </script>
 

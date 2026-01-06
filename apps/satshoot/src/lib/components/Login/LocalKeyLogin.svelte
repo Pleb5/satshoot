@@ -56,7 +56,12 @@
         },
     ];
 
-    let activeTabForLocalKeyLogin = $state(initialTab);
+    let activeTabForLocalKeyLogin = $state(LocalKeyLoginTabs.BackupFile);
+
+    $effect(() => {
+        if (!isOpen) return;
+        activeTabForLocalKeyLogin = initialTab;
+    });
 
     let backupFile = $state<File | null>(null);
     let fileUploadSuccessful = $state(false);

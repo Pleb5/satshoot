@@ -11,14 +11,12 @@
 
     let {
         buttonText = '',
-        text, 
-        feedbackMessage = 'Copied!', 
-        classes = '' 
+        text,
+        feedbackMessage = 'Copied!',
+        classes = '',
     }: Props = $props();
 
-    const variant = buttonText
-        ? 'contained'
-        : 'outlined'
+    const variant = $derived(() => (buttonText ? 'contained' : 'outlined'));
 
     function handleCopy() {
         navigator.clipboard.writeText(text).then(() =>
