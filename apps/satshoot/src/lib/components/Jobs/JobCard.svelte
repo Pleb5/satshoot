@@ -47,7 +47,7 @@
         });
     });
 
-    const tabs = [
+    const tabs = $derived.by(() => [
         {
             icon: 'bxs-card',
             name: Tabs.JobDescription,
@@ -65,7 +65,7 @@
             icon: 'bxs-grid-alt',
             name: Tabs.Actions,
         },
-    ];
+    ]);
 
     const jobCardBtnClasses = 'border-0 scale-100 ' + 'grow ';
 </script>
