@@ -52,8 +52,8 @@
     {#if step === 0}
         <section class="flex flex-col gap-4">
             <p>
-                These seed words can be use to restore your wallet assuming mint support. Keep these
-                words secret and secured, otherwise you may loose your funds.
+                These seed words can be used to restore your wallet assuming mint support. Keep these
+                words secret and secured, otherwise you may lose your funds.
             </p>
             <SeedWords bind:words={seedWords} inputsDisabled showCopyButton></SeedWords>
             <div class="flex flex-wrap w-full gap-2">
