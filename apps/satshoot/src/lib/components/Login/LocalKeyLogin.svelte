@@ -65,6 +65,8 @@
 
     let backupFile = $state<File | null>(null);
     let fileUploadSuccessful = $state(false);
+    let autoSubmitBackupFile = $state(false);
+    let loginInProgress = $state(false);
     let nsecForLocalKey = $state('');
     let passphrase = $state('');
     let confirmPassphrase = $state('');
@@ -158,12 +160,33 @@
         return true;
     };
 
+    const validatePassphraseSilently = () => {
+        if (!passphrase && !confirmPassphrase) return true;
+        if (passphrase.length < 14) return false;
+        if (confirmPassphrase !== passphrase) return false;
+        return true;
+    };
+
+    $effect(() => {
+        if (!isOpen) return;
+        if (!autoSubmitBackupFile) return;
+        if (activeTabForLocalKeyLogin !== LocalKeyLoginTabs.BackupFile) return;
+        if (!backupFile) return;
+        if (loginInProgress) return;
+        if (!validatePassphraseSilently()) return;
+
+        autoSubmitBackupFile = false;
+        void loginWithBackupFile();
+    });
+
     async function loginWithSecret(
         secret: string,
         passphrase: string,
         storageKey: string,
         failureMessage: string
     ) {
+        if (loginInProgress) return;
+        loginInProgress = true;
         statusMessage = 'Encrypting and saving Secret in browser storage...';
         statusColor = 'text-tertiary-200-700';
 
@@ -211,6 +234,9 @@
             toaster.error({
                 title: `${failureMessage} ${e}`,
             });
+        } finally {
+            loginInProgress = false;
+            statusMessage = '';
         }
     }
 
@@ -230,6 +256,7 @@
     function handleFileAccept({ files }: FileAcceptDetails) {
         backupFile = files[0];
         fileUploadSuccessful = true;
+        autoSubmitBackupFile = true;
     }
 
     function handleFileReject({ files }: FileRejectDetails) {
@@ -324,6 +351,8 @@
                 bind:passphrase
                 bind:confirmPassphrase
                 btnLabel="Login"
+                disabled={loginInProgress}
+                inProgress={loginInProgress}
                 onSubmit={activeTabForLocalKeyLogin === LocalKeyLoginTabs.BackupFile
                     ? loginWithBackupFile
                     : loginWithNsec}
