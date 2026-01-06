@@ -121,18 +121,6 @@
     let footerHeight = $state(0);
     let followSubscription = $state<NDKSubscription>();
 
-    let currentMode: string | null = null;
-    $effect(() => {
-        if (page.url.pathname === '/') {
-            console.log('setting dark mode for LP');
-            currentMode = document.documentElement.getAttribute('data-mode');
-            document.documentElement.setAttribute('data-mode', 'dark');
-        } else if (currentMode) {
-            console.log('setting back mode to original');
-            document.documentElement.setAttribute('data-mode', currentMode);
-        }
-    });
-
     $effect(() => {
         if ($retriesLeft === 0) {
             toaster.warning({
@@ -422,13 +410,9 @@
 
     function configureBasics() {
         localStorage.debug = '*';
-        const mode = getModeUserPrefers() || document.documentElement.getAttribute('data-mode');
-        if (!mode) {
-            setModeUserPrefers('dark');
-            document.documentElement.setAttribute('data-mode', 'dark');
-        } else if (page.url.pathname !== '/') {
-            document.documentElement.setAttribute('data-mode', mode);
-        }
+        const mode = getModeUserPrefers() || document.documentElement.getAttribute('data-mode') || 'light';
+        document.documentElement.setAttribute('data-mode', mode);
+        setModeUserPrefers(mode);
 
         // window.addEventListener('beforeinstallprompt', (e) => {
         //     e.preventDefault();

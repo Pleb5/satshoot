@@ -6,6 +6,18 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         %sveltekit.head%
 
+        <script>
+            try {
+                const storedMode = localStorage.getItem('mode');
+                const mode =
+                    storedMode ||
+                    (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                        ? 'dark'
+                        : 'light');
+                document.documentElement.setAttribute('data-mode', mode);
+            } catch {}
+        </script>
+
         <link
             rel="preload"
             href="%sveltekit.assets%/fonts/Inter-VariableFont_slnt,wght.ttf"
