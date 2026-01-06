@@ -57,9 +57,15 @@
                 withdrawnSats = new Invoice({ pr: normalizedPr }).satoshi;
             } catch {}
 
+            const warningsStartIndex = cashuWallet.warnings?.length ?? 0;
             const confirmation = await cashuWallet.lnPay({ pr: normalizedPr });
             if (!confirmation) {
-                throw new Error('Payment failed (insufficient balance or mint error)');
+                const warnings = (cashuWallet.warnings ?? [])
+                    .slice(warningsStartIndex)
+                    .map((warning) => warning.msg)
+                    .filter(Boolean);
+                const details = warnings.length > 0 ? warnings.join('\n') : undefined;
+                throw new Error(details ?? 'Payment failed (insufficient balance or mint error)');
             }
 
             toaster.success({
