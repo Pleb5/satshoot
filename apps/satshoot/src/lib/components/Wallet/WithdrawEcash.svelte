@@ -52,8 +52,10 @@
 
         withdrawing = true;
         try {
-            const invoice = new Invoice({ pr: normalizedPr });
-            const withdrawnSats = invoice.satoshi;
+            let withdrawnSats: number | undefined;
+            try {
+                withdrawnSats = new Invoice({ pr: normalizedPr }).satoshi;
+            } catch {}
 
             const confirmation = await cashuWallet.lnPay({ pr: normalizedPr });
             if (!confirmation) {
@@ -61,7 +63,10 @@
             }
 
             toaster.success({
-                title: `Successfully withdrew ${withdrawnSats} sats`,
+                title:
+                    withdrawnSats !== undefined
+                        ? `Successfully withdrew ${withdrawnSats} sats`
+                        : 'Successfully withdrew',
             });
             pr = '';
         } catch (error) {
