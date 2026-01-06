@@ -16,7 +16,7 @@
     let amountInput = $state('');
     let selectedMint = $state('');
 
-    const amountSats = $derived(() => {
+    const amountSats = $derived.by(() => {
         const parsed = Number.parseInt(amountInput, 10);
         return Number.isFinite(parsed) ? parsed : 0;
     });
