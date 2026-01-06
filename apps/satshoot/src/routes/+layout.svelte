@@ -455,8 +455,6 @@
     }
 
     onMount(async () => {
-        console.log('onMount layout');
-
         // Start polling for app updates
         pollUpdated();
 
@@ -477,21 +475,17 @@
         try {
             await $ndk.connect(2500);
         } catch(e){
-            console.warn("NDK intial connect error:", e)
+            console.warn('NDK initial connect error:', e);
         } finally {
             if (!$loggedIn) {
                 await restoreLogin();
             }
-
-            console.log('Session initialized!');
 
             sessionInitialized.set(true);
         }
     });
 
     onDestroy(() => {
-        console.log('layout on destroy');
-
         if (followSubscription) followSubscription.stop();
 
         if (myMuteList) myMuteList.empty();
