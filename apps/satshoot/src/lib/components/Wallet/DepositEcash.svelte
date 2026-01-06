@@ -21,6 +21,97 @@
         return Number.isFinite(parsed) ? parsed : 0;
     });
 
+    function joinMintUrl(mint: string, path: string) {
+        return `${mint.replace(/\/+$/, '')}${path}`;
+    }
+
+    function formatMintErrorResponseBody(body: unknown): string | undefined {
+        if (body == null) return undefined;
+        if (typeof body === 'string') return body.trim() || undefined;
+
+        if (typeof body === 'object') {
+            const anyBody = body as any;
+
+            const error = typeof anyBody.error === 'string' ? anyBody.error : undefined;
+            const message = typeof anyBody.message === 'string' ? anyBody.message : undefined;
+            const detail = anyBody.detail;
+
+            if (error) return error;
+            if (message) return message;
+
+            if (typeof detail === 'string') return detail;
+            if (Array.isArray(detail)) {
+                const lines = detail
+                    .map((item) => {
+                        if (!item || typeof item !== 'object') return String(item);
+                        const anyItem = item as any;
+                        const loc = Array.isArray(anyItem.loc) ? anyItem.loc : undefined;
+                        const msg = typeof anyItem.msg === 'string' ? anyItem.msg : undefined;
+
+                        const path = loc
+                            ? loc
+                                  .filter((segment: unknown) => segment !== 'body')
+                                  .map(String)
+                                  .join('.')
+                            : undefined;
+
+                        if (path && msg) return `${path}: ${msg}`;
+                        if (msg) return msg;
+                        if (path) return path;
+
+                        try {
+                            return JSON.stringify(anyItem);
+                        } catch {
+                            return String(anyItem);
+                        }
+                    })
+                    .filter((line) => line && line !== '[object Object]');
+
+                return lines.length > 0 ? lines.join('\n') : undefined;
+            }
+
+            try {
+                const json = JSON.stringify(anyBody, Object.getOwnPropertyNames(anyBody), 2);
+                if (json && json !== '{}') return json;
+            } catch {}
+        }
+
+        return undefined;
+    }
+
+    async function createMintQuoteFallback(mint: string, amount: number, unit = 'sat') {
+        const endpoint = joinMintUrl(mint, '/v1/mint/quote/bolt11');
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                accept: 'application/json, text/plain, */*',
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify({ amount, unit }),
+        });
+
+        const responseBody = await response.json().catch(() => undefined);
+        if (!response.ok) {
+            const status = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`.trim();
+            const detail = formatMintErrorResponseBody(responseBody);
+            const message = detail ? `${status}\n${detail}` : status;
+
+            const error = new Error(message);
+            (error as any).status = response.status;
+            (error as any).body = responseBody;
+            throw error;
+        }
+
+        const quoteId = typeof responseBody?.quote === 'string' ? responseBody.quote : undefined;
+        const request = typeof responseBody?.request === 'string' ? responseBody.request : undefined;
+
+        if (!quoteId || !request) {
+            throw new Error('Mint returned an invalid quote response');
+        }
+
+        return { quoteId, request };
+    }
+
     function normalizeAmountInput(value: string) {
         const trimmed = value.trim();
         if (!trimmed) return '';
@@ -119,7 +210,22 @@
                 showErrorOnce(error);
             });
 
-            const pr = await ndkCashuDeposit.start();
+            const pollTimeMs = 2500;
+
+            let pr: string;
+            try {
+                pr = await ndkCashuDeposit.start();
+            } catch (error) {
+                const status = (error as any)?.status;
+                if (typeof status !== 'number' || status !== 422) throw error;
+
+                console.warn('NDK deposit quote failed, attempting direct mint quote', error);
+                const quote = await createMintQuoteFallback(selectedMint, sats);
+                ndkCashuDeposit.quoteId = quote.quoteId;
+                cashuWallet.depositMonitor.addDeposit(ndkCashuDeposit);
+                setTimeout(() => ndkCashuDeposit.check(pollTimeMs), pollTimeMs);
+                pr = quote.request;
+            }
 
             launchPaymentModal({
                 invoice: pr,
