@@ -42,6 +42,9 @@
         });
         onCompletion(confirmWords);
         seedWords = Array(0);
+        confirmationWords = Array(12).fill('');
+        step = 0;
+        seedSecuredConfirmation = false;
     }
 
     async function handleSaveToFile() {
