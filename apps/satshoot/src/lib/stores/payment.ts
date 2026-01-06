@@ -1,5 +1,5 @@
 import { BidEvent } from '$lib/events/BidEvent';
-import { derived, get, type Readable } from 'svelte/store';
+import { derived, get, type Readable, writable } from 'svelte/store';
 import ndk from '$lib/stores/session';
 import {
     NDKKind,
@@ -20,6 +20,28 @@ import { ExtendedNDKKind } from '$lib/types/ndkKind';
 export interface PaymentStore {
     paymentStore: NDKEventStore<ExtendedBaseType<NDKEvent>>;
     totalPaid: Readable<number>;
+}
+
+function createEmptyPaymentEventStore(): NDKEventStore<ExtendedBaseType<NDKEvent>> {
+    const store = writable<ExtendedBaseType<NDKEvent>[]>([]);
+
+    return {
+        ...store,
+        id: 'empty-payment-store',
+        filters: undefined,
+        refCount: 0,
+        subscription: undefined,
+        eosed: true,
+        skipDeleted: true,
+        startSubscription: () => {},
+        unsubscribe: () => {},
+        onEose: (cb) => cb(),
+        onEvent: (_cb) => {},
+        ref: () => 0,
+        unref: () => 0,
+        empty: () => store.set([]),
+        changeFilters: (_filters) => {},
+    };
 }
 
 export const createPaymentFilters = (
@@ -91,12 +113,15 @@ export const createPaymentFilters = (
 
 export const createPaymentStore = (filters: NDKFilter[]): PaymentStore => {
     const $ndk = get(ndk);
-    const paymentStore = $ndk.storeSubscribe(filters, {
-        closeOnEose: false,
-        groupable: true,
-        groupableDelay: 1500,
-        autoStart: false,
-    });
+    const paymentStore =
+        filters.length > 0
+            ? $ndk.storeSubscribe(filters, {
+                  closeOnEose: false,
+                  groupable: true,
+                  groupableDelay: 1500,
+                  autoStart: false,
+              })
+            : createEmptyPaymentEventStore();
 
     const $wot = get(wot);
 
