@@ -275,6 +275,7 @@
         classes="bg-black-100 border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
         onClick={deposit}
         disabled={depositing || amountSats <= 0 || !selectedMint}
+        title="Generate an invoice and deposit sats to the selected mint"
     >
         Deposit
         {#if depositing}

@@ -192,7 +192,12 @@
         />
 
         <!-- import qr -->
-        <Button variant="text" classes="rounded-[0]" onClick={openFileDialog}>
+        <Button
+            variant="text"
+            classes="rounded-[0]"
+            onClick={openFileDialog}
+            title="Open an image containing an invoice QR code"
+        >
             <i class="bx bx-upload"></i>
         </Button>
 
@@ -201,6 +206,7 @@
             variant="text"
             classes="border-l-[1px] border-black-100 dark:border-white-100 rounded-[0]"
             onClick={isScanning ? stopScanningQR : scanQRCode}
+            title={isScanning ? 'Stop scanning' : 'Scan an invoice QR code with your camera'}
         >
             {#if isScanning}
                 <i class="bx bx-x"></i> <!-- Cancel icon when scanning -->
@@ -218,6 +224,7 @@
         classes="bg-black-100 border-t-[1px] border-black-100 dark:border-white-100 rounded-[0]"
         onClick={withdraw}
         disabled={withdrawing || !pr}
+        title="Pay this Lightning invoice using your Cashu balance"
     >
         Withdraw
         {#if withdrawing}
