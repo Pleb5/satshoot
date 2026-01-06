@@ -115,6 +115,10 @@ const ndkSvelte = new NDKSvelte({
     relayAuthDefaultPolicy: NDKRelayAuthPolicies.signIn(),
 });
 
+for (const relayUrl of BLACKLISTED_RELAYS) {
+    ndkSvelte.blacklistRelay(relayUrl);
+}
+
 export const bunkerNDK = writable(new NDK({ enableOutboxModel: false }));
 export const bunkerRelayConnected = writable(false);
 
