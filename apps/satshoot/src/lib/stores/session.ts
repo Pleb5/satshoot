@@ -8,9 +8,22 @@ import { APP_RELAY_STORAGE_KEY } from '$lib/utils/misc';
 
 export const DEFAULTRELAYURLS = [
     'wss://nos.lol/',
-    'wss://bitcoiner.social/',
     'wss://relay.damus.io/',
 ];
+
+const BLACKLISTED_RELAYS = new Set(['wss://bitcoiner.social', 'wss://bitcoiner.social/']);
+
+function sanitizeRelayUrls(relays: unknown): string[] {
+    if (!Array.isArray(relays)) return DEFAULTRELAYURLS;
+
+    const sanitized = relays
+        .filter((url): url is string => typeof url === 'string')
+        .map((url) => url.trim())
+        .filter((url) => url.length > 0)
+        .filter((url) => !BLACKLISTED_RELAYS.has(url));
+
+    return sanitized.length > 0 ? sanitized : DEFAULTRELAYURLS;
+}
 
 export const BOOTSTRAPOUTBOXRELAYS = [
     'wss://purplepag.es/',
@@ -57,7 +70,11 @@ export function getAppRelays(): string[] {
         const storedRelays = localStorage.getItem(APP_RELAY_STORAGE_KEY);
         if (storedRelays) {
             const parsed = JSON.parse(storedRelays);
-            return Array.isArray(parsed) ? parsed : DEFAULTRELAYURLS;
+            const sanitized = sanitizeRelayUrls(parsed);
+            if (!Array.isArray(parsed) || JSON.stringify(parsed) !== JSON.stringify(sanitized)) {
+                localStorage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(sanitized));
+            }
+            return sanitized;
         } else {
             // No saved relays, save defaults to localStorage
             localStorage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(DEFAULTRELAYURLS));
