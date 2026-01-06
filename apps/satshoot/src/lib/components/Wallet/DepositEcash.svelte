@@ -39,39 +39,57 @@
     });
 
     async function deposit() {
-        depositing = true;
         const sats = amountSats;
-        const ndkCashuDeposit = cashuWallet.deposit(sats, selectedMint);
+        if (depositing || sats <= 0 || !selectedMint) return;
 
-        // The deposit process updates wallet state that is captured in
-        // 'balance_updated' event, on which a backup is triggered (see walletInit)
-        ndkCashuDeposit.on('success', () => {
-            closeModal();
-            toaster.success({
-                title: `Successfully deposited ${sats} sats!`,
+        depositing = true;
+        let closePaymentModal = () => {};
+
+        try {
+            const { init, launchPaymentModal, closeModal } = await import('@getalby/bitcoin-connect');
+            init({ appName: 'SatShoot' });
+            closePaymentModal = closeModal ?? closePaymentModal;
+
+            const ndkCashuDeposit = cashuWallet.deposit(sats, selectedMint);
+
+            // The deposit process updates wallet state that is captured in
+            // 'balance_updated' event, on which a backup is triggered (see walletInit)
+            ndkCashuDeposit.on('success', () => {
+                closePaymentModal();
+                toaster.success({
+                    title: `Successfully deposited ${sats} sats!`,
+                });
+                depositing = false;
+                amountInput = '';
             });
-            depositing = false;
-            amountInput = '';
-        });
 
-        ndkCashuDeposit.on('error', (error) => {
-            console.log('ndkCashuDeposit failed', error);
+            ndkCashuDeposit.on('error', (error) => {
+                console.log('ndkCashuDeposit failed', error);
+                depositing = false;
+                closePaymentModal();
+                toaster.error({
+                    title: `Failed to deposit: \n${error}`,
+                    duration: 60000, // 1 min
+                });
+            });
+
+            const pr = await ndkCashuDeposit.start();
+
+            launchPaymentModal({
+                invoice: pr,
+            });
+        } catch (error) {
             depositing = false;
-            closeModal();
+            try {
+                closePaymentModal();
+            } catch {}
+
+            const message = error instanceof Error ? error.message : String(error);
             toaster.error({
-                title: `Failed to deposit: \n${error}`,
+                title: `Failed to deposit: \n${message}`,
                 duration: 60000, // 1 min
             });
-        });
-
-        const pr = await ndkCashuDeposit.start();
-
-        const { init, launchPaymentModal, closeModal } = await import('@getalby/bitcoin-connect');
-        init({ appName: 'SatShoot' });
-
-        launchPaymentModal({
-            invoice: pr,
-        });
+        }
     }
 </script>
 
