@@ -1,56 +1,62 @@
 # SatShoot
-A nostr-based freelance marketplace for freedom lovers.
 
-Try it live on:
-```
-https://satshoot.com
-```
+Nostr-native freelancing marketplace (PWA): post jobs, offer services, chat, pay in sats, and build a portable reputation.
 
-## Benefits
-- No middle-man: your nostr keys, your contacts, your deals.
-- Your servers: respects your relays of choice (see [outbox model](https://nostr-nips.com/nip-65)).
-- Web of Trust (WoT): uses your nostr-based social network to fight scammers, spammers, and irrelevant people.
-- Build an unstoppable reputation on nostr as a freelancer.
+- Live: https://satshoot.com
 
-## Typical Flow
-- Clients post any kind of job or problem (a Request For Quote).
-- Freelancers bid on jobs with offers (absolute or time-based).
-- Clients select the most attractive offer (price + reputation).
-- Work begins via any communication channel, defaulting to nostr DMs (NIP-04).
-- Payments happen after agreement, followed by mutual reviews.
-- Reputation builds from public zaps and public reviews.
-- Share jobs or services through your nostr feed.
+## What it does
 
-## Tech Stack
-- Frontend: SvelteKit (Svelte 5 + Vite) in `apps/satshoot`.
-- Wallet/lib: `@nostr-dev-kit/ndk-wallet` in `packages/ndk-wallet`.
-- Build orchestration: `turbo`, package management with `pnpm`.
+- **Jobs & bidding**: clients post jobs (RFQs), freelancers bid with fixed or time-based offers.
+- **Services & orders**: freelancers list services; clients can place orders.
+- **Chat & notifications**: Nostr DMs + a service worker for notifications.
+- **Payments**: Lightning zaps (NIP-57) and Cashu ecash wallets (NIP-60 / nutzaps); optional Nostr Wallet Connect (NIP-47).
+- **Anti-spam**: relay selection + outbox model (NIP-65) and Web-of-Trust oriented UX.
 
-## Quick Start
-```bash
-pnpm i
-pnpm run dev
-```
+## Protocol / event kinds
 
-If you cloned without submodules, initialize the wallet submodule:
-```bash
-git submodule update --init --recursive
-```
+SatShoot models freelancing primitives as custom Nostr event kinds:
 
-## Common Commands
-- Dev (all packages): `pnpm run dev`.
-- Build (all): `pnpm run build` (runs `./ndk_compile.sh` then `turbo run build`).
-- Preview (all): `pnpm run preview`.
-- App dev only: `pnpm --filter satshoot dev`.
-- Wallet dev only: `pnpm --filter @nostr-dev-kit/ndk-wallet dev`.
+- `32765` Freelance Service
+- `32766` Freelance Order
+- `32767` Freelance Job
+- `32768` Freelance Bid
+- `1986` Review
+- `967` Kind-scoped follow
 
-## Tests
-- App (Vitest): `pnpm --filter satshoot test`.
-- Wallet (Jest): `pnpm --filter @nostr-dev-kit/ndk-wallet test`.
-- Single Vitest file: `pnpm --filter satshoot test -- --run src/lib/wallet/wallet.test.ts`.
-- Single Jest file: `pnpm --filter @nostr-dev-kit/ndk-wallet test -- src/utils/cashu.test.ts`.
+See `EVENT_STRUCTURE.md` for the full tag/content schemas.
+
+## Tech stack
+
+- `apps/satshoot`: SvelteKit (static adapter) + Vite + TypeScript + Tailwind/Skeleton
+- Nostr client: `@nostr-dev-kit/ndk` (+ `ndk-svelte` helpers)
+- Wallet toolkit (vendored): `packages/ndk-wallet` (git submodule, used via workspace dependency)
+
+## Development
+
+1. Clone with submodules:
+   - `git clone --recurse-submodules <repo-url>`
+1. Enable the repo-pinned `pnpm` (recommended):
+   - `corepack enable && corepack prepare pnpm@9.7.0 --activate`
+1. Install dependencies:
+   - `pnpm i`
+1. Run the app:
+   - `pnpm dev`
+
+Useful scripts from the repo root:
+
+- Build: `pnpm build` (builds `packages/ndk-wallet` first, then Turbo build)
+- Preview: `pnpm preview`
+- Tests: `pnpm -r test`
+- Clean reinstall: `just renew`
+
+If you use Nix, a devshell is provided via `flake.nix`:
+
+- `nix develop`
 
 ## Contributing
-See `CONTRIBUTE.md` for setup, linting, and workflow details.
 
-- Built with [Nostr Development Kit](https://github.com/nostr-dev-kit/ndk) by @[pablof7z](https://github.com/pablof7z).
+See `CONTRIBUTE.md` and `CHANGELOG.md`.
+
+## License
+
+MIT (see `apps/satshoot/LICENSE`; `packages/ndk-wallet` declares MIT in `packages/ndk-wallet/package.json`).
