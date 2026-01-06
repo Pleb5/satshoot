@@ -31,6 +31,45 @@
         return withoutLeadingZeros;
     }
 
+    function formatDepositError(error: unknown): string {
+        if (error == null) return 'Unknown error';
+        if (typeof error === 'string') return error;
+        if (error instanceof Error) return error.message || error.name;
+        if (typeof Response !== 'undefined' && error instanceof Response) {
+            const status = `HTTP ${error.status}${error.statusText ? ` ${error.statusText}` : ''}`;
+            return status.trim();
+        }
+
+        if (typeof error === 'object') {
+            const anyError = error as any;
+
+            const status = typeof anyError.status === 'number' ? anyError.status : undefined;
+            const statusText = typeof anyError.statusText === 'string' ? anyError.statusText : undefined;
+            const message = typeof anyError.message === 'string' ? anyError.message : undefined;
+            const reason = typeof anyError.reason === 'string' ? anyError.reason : undefined;
+            const detail = typeof anyError.detail === 'string' ? anyError.detail : undefined;
+
+            const lines = [
+                status !== undefined
+                    ? `HTTP ${status}${statusText ? ` ${statusText}` : ''}`.trim()
+                    : undefined,
+                message,
+                reason,
+                detail,
+            ].filter(Boolean);
+            if (lines.length) return lines.join('\n');
+
+            try {
+                const json = JSON.stringify(anyError, Object.getOwnPropertyNames(anyError), 2);
+                if (json && json !== '{}') return json;
+            } catch {}
+
+            return Object.prototype.toString.call(anyError);
+        }
+
+        return String(error);
+    }
+
     // Initialize selected mint
     $effect(() => {
         if (cashuWallet.mints.length > 0 && !selectedMint) {
@@ -44,6 +83,16 @@
 
         depositing = true;
         let closePaymentModal = () => {};
+        let errorShown = false;
+
+        const showErrorOnce = (error: unknown) => {
+            if (errorShown) return;
+            errorShown = true;
+            toaster.error({
+                title: `Failed to deposit:\n${formatDepositError(error)}`,
+                duration: 60000, // 1 min
+            });
+        };
 
         try {
             const { init, launchPaymentModal, closeModal } = await import('@getalby/bitcoin-connect');
@@ -67,10 +116,7 @@
                 console.log('ndkCashuDeposit failed', error);
                 depositing = false;
                 closePaymentModal();
-                toaster.error({
-                    title: `Failed to deposit: \n${error}`,
-                    duration: 60000, // 1 min
-                });
+                showErrorOnce(error);
             });
 
             const pr = await ndkCashuDeposit.start();
@@ -84,11 +130,7 @@
                 closePaymentModal();
             } catch {}
 
-            const message = error instanceof Error ? error.message : String(error);
-            toaster.error({
-                title: `Failed to deposit: \n${message}`,
-                duration: 60000, // 1 min
-            });
+            showErrorOnce(error);
         }
     }
 </script>
