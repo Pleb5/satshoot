@@ -62,29 +62,40 @@ export const sessionInitialized = writable(false);
 
 // Load app relays from localStorage, fallback to defaults
 export function getAppRelays(): string[] {
-    if (typeof localStorage === 'undefined') {
+    if (typeof window === 'undefined') {
+        return DEFAULTRELAYURLS;
+    }
+
+    let storage: Storage | undefined;
+    try {
+        storage = window.localStorage;
+    } catch {
+        return DEFAULTRELAYURLS;
+    }
+
+    if (typeof storage?.getItem !== 'function' || typeof storage?.setItem !== 'function') {
         return DEFAULTRELAYURLS;
     }
 
     try {
-        const storedRelays = localStorage.getItem(APP_RELAY_STORAGE_KEY);
+        const storedRelays = storage.getItem(APP_RELAY_STORAGE_KEY);
         if (storedRelays) {
             const parsed = JSON.parse(storedRelays);
             const sanitized = sanitizeRelayUrls(parsed);
             if (!Array.isArray(parsed) || JSON.stringify(parsed) !== JSON.stringify(sanitized)) {
-                localStorage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(sanitized));
+                storage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(sanitized));
             }
             return sanitized;
         } else {
             // No saved relays, save defaults to localStorage
-            localStorage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(DEFAULTRELAYURLS));
+            storage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(DEFAULTRELAYURLS));
             return DEFAULTRELAYURLS;
         }
     } catch (e) {
         console.error('Error loading app relays from localStorage:', e);
         // Try to save defaults even after error
         try {
-            localStorage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(DEFAULTRELAYURLS));
+            storage.setItem(APP_RELAY_STORAGE_KEY, JSON.stringify(DEFAULTRELAYURLS));
         } catch (saveError) {
             console.error('Error saving default relays to localStorage:', saveError);
         }
