@@ -1,7 +1,7 @@
 <script lang="ts">
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import Button from '../UI/Buttons/Button.svelte';
-    import ndk, { discoveredRelays as sessionDiscoveredRelays } from '$lib/stores/session';
+    import ndk, { BLACKLISTED_RELAYS, discoveredRelays as sessionDiscoveredRelays } from '$lib/stores/session';
     import { wot } from '$lib/stores/wot';
     import { toaster } from '$lib/stores/toaster';
     import { calculateRelaySet } from '$lib/utils/outboxRelays';
@@ -47,12 +47,17 @@
             });
             console.log('relayUrls', relayUrls);
 
+            const sanitizedRelays = relayUrls
+                .map((relay) => relay.trim())
+                .filter((relay) => relay.length > 0)
+                .filter((relay) => !BLACKLISTED_RELAYS.has(relay));
+
             // Save top 5 relays to session storage
-            sessionDiscoveredRelays.set(relayUrls.slice(0, 5));
+            sessionDiscoveredRelays.set(sanitizedRelays.slice(0, 5));
 
             // Step 2: Add relays to pool
             currentStep = 2;
-            await addRelaysToPool(relayUrls);
+            await addRelaysToPool(sanitizedRelays);
 
             // Success!
             toaster.create({
@@ -84,6 +89,7 @@
 
         // Add relays to the pool
         for (const relayUrl of relayUrls) {
+            if (BLACKLISTED_RELAYS.has(relayUrl.trim())) continue;
             $ndk.addExplicitRelay(relayUrl, undefined, true);
         }
 

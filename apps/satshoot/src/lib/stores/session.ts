@@ -11,7 +11,7 @@ export const DEFAULTRELAYURLS = [
     'wss://relay.damus.io/',
 ];
 
-const BLACKLISTED_RELAYS = new Set(['wss://bitcoiner.social', 'wss://bitcoiner.social/']);
+export const BLACKLISTED_RELAYS = new Set(['wss://bitcoiner.social', 'wss://bitcoiner.social/']);
 
 function sanitizeRelayUrls(relays: unknown): string[] {
     if (!Array.isArray(relays)) return DEFAULTRELAYURLS;

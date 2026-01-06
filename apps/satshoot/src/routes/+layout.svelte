@@ -8,6 +8,7 @@
     import '@fortawesome/fontawesome-free/css/solid.css';
 
     import ndk, {
+        BLACKLISTED_RELAYS,
         discoveredRelays,
         sessionInitialized,
         sessionPK,
@@ -509,6 +510,7 @@
     $effect(() => {
         if ($sessionInitialized && $ndk) {
             $discoveredRelays.forEach((relay) => {
+                if (BLACKLISTED_RELAYS.has(relay.trim())) return;
                 if (!$ndk.explicitRelayUrls.includes(relay)) {
                     $ndk.addExplicitRelay(relay, undefined, true);
                 }
