@@ -23,6 +23,19 @@
         ? $onBoardingNsec
         : nsecEncode(generateSecretKey());
 
+    function maskSecretKey(nsec: string): string {
+        const trimmed = nsec.trim();
+        if (!trimmed) return '';
+
+        const prefixLength = 10;
+        const suffixLength = 8;
+        if (trimmed.length <= prefixLength + suffixLength) return trimmed;
+
+        return `${trimmed.slice(0, prefixLength)}...${trimmed.slice(-suffixLength)}`;
+    }
+
+    const displayedNsec = $derived.by(() => maskSecretKey(generatedNsec));
+
     let nsecSaved = $state(false);
 
     let userName = $state(
@@ -253,7 +266,7 @@
                 />
             </div>
             <div class={inputWrapperClasses}>
-                <Input value={generatedNsec} disabled grow noBorder notRounded />
+                <Input value={displayedNsec} disabled grow noBorder notRounded />
             </div>
             <div class={btnWrapperClasses}>
                 <a 
@@ -288,4 +301,3 @@
         </Button>
     </div>
 </div>
-
