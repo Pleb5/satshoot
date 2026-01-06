@@ -16,16 +16,16 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "9.7.0"
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
-
-      - name: Set up pnpm (Corepack)
-        run: |
-          corepack enable
-          corepack prepare pnpm@9.7.0 --activate
 
       - name: Install
         run: pnpm install --frozen-lockfile
