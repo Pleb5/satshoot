@@ -543,6 +543,7 @@
                             variant="text"
                             classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
                             onClick={() => ($displayEcashWarning = false)}
+                            title="Dismiss warning"
                         >
                             <i class="bx bx-x"> </i>
                         </Button>
@@ -603,10 +604,12 @@
                     {/each}
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <Button onClick={() => showMnemonicSeedGenerationModal = true}
+                        <Button
+                            onClick={() => showMnemonicSeedGenerationModal = true}
+                            title="Create a new Nostr Cashu wallet"
                             >New Nostr Wallet</Button
                         >
-                        <Button onClick={tryLoadWallet}
+                        <Button onClick={tryLoadWallet} title="Retry loading your wallet"
                             >Try loading Wallet</Button
                         >
                     </div>
@@ -653,6 +656,7 @@
                                                 classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                                 grow
                                                 onClick={handleWalletBackup}
+                                                title="Download an encrypted wallet backup"
                                             >
                                                 <i class="bx bx-download"> </i>
                                                 Backup
@@ -662,6 +666,7 @@
                                                 classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                                 grow
                                                 onClick={recoverWallet}
+                                                title="Restore your wallet from an encrypted backup"
                                             >
                                                 <i class="bx bx-upload"> </i>
                                                 Recover
@@ -671,6 +676,7 @@
                                                 classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                                 grow
                                                 onClick={handleCleanWallet}
+                                                title="Remove spent tokens and consolidate your wallet state"
                                             >
                                                 {#if cleaningWallet}
                                                     <ProgressRing color="white" />
@@ -695,6 +701,7 @@
                                             variant="text"
                                             classes="absolute top-[3px] right-[3px] p-[1px] text-black-400 hover:text-black-500"
                                             onClick={() => ($displayEcashWarning = false)}
+                                            title="Dismiss warning"
                                         >
                                             <i class="bx bx-x"> </i>
                                         </Button>
@@ -710,7 +717,10 @@
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card>
                                             <div class="flex justify-center">
-                                                <Button onClick={exploreMints}>
+                                                <Button
+                                                    onClick={exploreMints}
+                                                    title="Browse and add Cashu mints"
+                                                >
                                                     Explore Mints
                                                 </Button>
                                             </div>
@@ -726,6 +736,7 @@
                                                             class={deleteButtonClasses}
                                                             onclick={() => removeMint(mint)}
                                                             aria-label="Remove Mint"
+                                                            title="Remove mint"
                                                         >
                                                             <i class={deleteIconClasses}> </i>
                                                         </button>
@@ -738,7 +749,9 @@
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card>
                                             <div class="w-full flex flex-row justify-end">
-                                                <Button onClick={addRelay}>Add Relay</Button>
+                                                <Button onClick={addRelay} title="Add a relay for wallet backup events">
+                                                    Add Relay
+                                                </Button>
                                             </div>
                                             <div
                                                 class="w-full flex flex-col gap-[10px] pt-[10px] border-t-[1px] border-black-100 dark:border-white-100"
@@ -753,6 +766,7 @@
                                                                 class={deleteButtonClasses}
                                                                 onclick={() => removeRelay(relay)}
                                                                 aria-label="Remove Relay"
+                                                                title="Remove relay"
                                                             >
                                                                 <i class={deleteIconClasses}> </i>
                                                             </button>
