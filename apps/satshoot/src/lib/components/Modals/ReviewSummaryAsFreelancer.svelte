@@ -26,7 +26,7 @@
     let onlyShowReviewsOnCurrentService = $state(false);
 
     // Initialize reputation service
-    const reputationService = new ReputationService(userHex);
+    const reputationService = $derived.by(() => new ReputationService(userHex));
 
     // Initialize when session is ready
     $effect(() => {

@@ -31,7 +31,7 @@
     }: Props = $props();
 
     // Initialize reputation service
-    const reputationService = new ReputationService(user);
+    const reputationService = $derived.by(() => new ReputationService(user));
 
     // Initialize when session is ready
     $effect(() => {
