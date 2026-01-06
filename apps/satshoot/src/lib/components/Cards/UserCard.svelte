@@ -305,14 +305,15 @@
     const addressCopyBtnClasses =
         'bg-white dark:bg-brightGray rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
 
-    let wotTooltip =
+    let wotTooltip = $derived(
         '<div>' +
             '<div class="font-bold">' + 
-            '<p>This user is part of your Nostr Web of Trust.</p>' +
+            `<p>This user is ${trusted ? '' : 'NOT'} part of your Nostr Web of Trust.</p>` +
             '<p>Learn more about how SatShoot revolutionizes the Trust model in Freelance in ' + 
                 '<a class="anchor" target="_blank" href="https://primal.net/a/naddr1qvzqqqr4gupzp5zweue6xqa9npf0md5pak95zgsph2za35sentk88jmzdqwk925sqq2kx3m4v3jhxjec2emhxkr8wyknyuzx2c6hsuza8ux">this article</a></p>' + 
             '</div>' +
-        '</div>';
+        '</div>'
+    );
 
 </script>
 

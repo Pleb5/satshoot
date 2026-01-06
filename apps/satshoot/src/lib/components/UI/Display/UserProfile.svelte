@@ -1,12 +1,6 @@
 <script lang="ts">
-    import ndk from '$lib/stores/session';
     import { shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import {
-        NDKEvent,
-        NDKKind,
-        NDKRelaySet,
-        NDKSubscriptionCacheUsage,
-        profileFromEvent,
         type Hexpubkey,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
@@ -15,33 +9,16 @@
 
     interface Props {
         pubkey: Hexpubkey;
+        showLNAddress?: boolean;
     }
 
-    let { pubkey = $bindable() }: Props = $props();
+    let { pubkey = $bindable(), showLNAddress = false }: Props = $props();
 
     let npub = $derived(nip19.npubEncode(pubkey));
     let profileLink = $derived('/' + npub);
 
     let userProfile = $state<NDKUserProfile | null>(null);
 
-    const fetchUserProfile = async () => {
-        const metadataFilter = {
-            kinds: [NDKKind.Metadata],
-            authors: [pubkey],
-        };
-
-        const metadataRelays = [...$ndk.pool!.connectedRelays()];
-
-        const profileEvent: NDKEvent | null = await $ndk.fetchEvent(
-            metadataFilter,
-            { cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST },
-            new NDKRelaySet(new Set(metadataRelays), $ndk)
-        );
-
-        if (!profileEvent) return;
-
-        userProfile = profileFromEvent(profileEvent);
-    };
 </script>
 
 <div class="w-full flex flex-row gap-[20px] p-[5px]">
@@ -58,8 +35,13 @@
                     shortenTextWithEllipsesInMiddle(npub, 15)}
             </a>
         </div>
+        {#if showLNAddress}
+            <div class="underline">LN Address:</div>
+            <div class="text-yellow-500">{userProfile?.lud16 || ""}</div>
+        {/if}
         <div class="grid grid-cols-1 {userProfile?.nip05 ? '' : 'hidden'}">
-            <a href={profileLink}> {userProfile?.nip05 ?? ''} </a>
+            <div class="underline">NIP05:</div>
+            <a class="anchor" href={profileLink}> {userProfile?.nip05 ?? ''} </a>
         </div>
     </div>
 </div>

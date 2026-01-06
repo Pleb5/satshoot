@@ -349,7 +349,7 @@
                     <div
                         class="w-full flex flex-col rounded-[8px] p-[15px] shadow-subtle bg-white dark:bg-brightGray gap-[15px]"
                     >
-                        <UserProfile pubkey={freelancerPubkey} />
+                        <UserProfile pubkey={freelancerPubkey} showLNAddress={true} />
                         <div
                             class="w-full flex flex-row flex-wrap gap-[10px] justify-between p-[5px] mt-[5px] border-t-[1px] border-t-black-100"
                         >

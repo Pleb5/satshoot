@@ -41,7 +41,7 @@
                     You are about to pay
                     <span class="font-bold">{insertThousandSeparator(amount)} sats </span> to
                     {#if payeePubkey}
-                        <UserProfile pubkey={payeePubkey}></UserProfile>
+                        <UserProfile pubkey={payeePubkey} showLNAddress={true}/>
                     {/if}
                 </p>
             </div>
