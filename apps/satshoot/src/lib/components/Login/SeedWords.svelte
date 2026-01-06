@@ -12,6 +12,32 @@
     let { words = $bindable(), inputsDisabled = false, showCopyButton = false }: Props = $props();
 
     let copiedSeed = $state(false);
+    let inputElements = $state<Array<HTMLInputElement | HTMLTextAreaElement | undefined>>([]);
+
+    function normalizeSeedWordInput(value: string): string[] {
+        const lower = value.replaceAll('\u00A0', ' ').toLowerCase();
+        const trimmed = lower.trim();
+        if (!trimmed) return [];
+        return trimmed.split(/\s+/).filter(Boolean);
+    }
+
+    function applySeedInput(index: number, rawValue: string) {
+        const tokens = normalizeSeedWordInput(rawValue);
+
+        if (tokens.length <= 1) {
+            words[index] = tokens[0] ?? '';
+            return;
+        }
+
+        for (let offset = 0; offset < tokens.length; offset++) {
+            const targetIndex = index + offset;
+            if (targetIndex >= words.length) break;
+            words[targetIndex] = tokens[offset];
+        }
+
+        const nextIndex = Math.min(index + tokens.length, words.length - 1);
+        inputElements[nextIndex]?.focus?.();
+    }
 
     function onCopySeed(): void {
         navigator.clipboard.writeText(words.join(' ')).then(() => {
@@ -52,6 +78,11 @@
                 classes={!validateSingleSeedWord(words[index]) ? 'text-error-500' : ''}
                 noBorder
                 notRounded
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck={false}
+                onInput={(event) => applySeedInput(index, (event.target as HTMLInputElement).value)}
+                onElement={(element) => (inputElements[index] = element)}
             />
         </div>
     {/each}

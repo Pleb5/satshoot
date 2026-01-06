@@ -22,6 +22,9 @@
         rows?: number | undefined | null;
         minlength?: number | undefined | null;
         onKeyPress?: (event: KeyboardEvent) => void; // Default is a no-op
+        onInput?: (event: Event) => void; // Default is a no-op
+        onBlur?: (event: FocusEvent) => void; // Default is a no-op
+        onElement?: (element: HTMLInputElement | HTMLTextAreaElement | undefined) => void; // Default is a no-op
         autocomplete?: FullAutoFill | null | undefined;
         autocapitalize?: "off" | "on" | "characters" | "none" | "sentences" | "words" | null | undefined;
         autocorrect?: ""|"off"|"on"|null|undefined;
@@ -50,6 +53,9 @@
         rows = null,
         minlength = null,
         onKeyPress = () => {},
+        onInput = () => {},
+        onBlur = () => {},
+        onElement = () => {},
         autocomplete = undefined,
         autocapitalize = undefined,
         autocorrect = undefined,
@@ -86,6 +92,10 @@
             inputElement.type = type;
         }
     });
+
+    $effect(() => {
+        onElement(inputElement);
+    });
 </script>
 
 {#if textarea}
@@ -105,6 +115,8 @@
         class={finalClasses}
         bind:value
         bind:this={inputElement}
+        oninput={onInput}
+        onblur={onBlur}
     ></textarea>
 {:else if type === 'number'}
     <input
@@ -127,6 +139,8 @@
         bind:value
         bind:this={inputElement}
         onkeydown={onKeyPress}
+        oninput={onInput}
+        onblur={onBlur}
     />
 {:else}
     <input
@@ -145,5 +159,7 @@
         bind:value
         bind:this={inputElement}
         onkeydown={onKeyPress}
+        oninput={onInput}
+        onblur={onBlur}
     />
 {/if}
