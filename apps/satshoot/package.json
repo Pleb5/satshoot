@@ -8,7 +8,7 @@
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
         "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
         "serve": "vite build && npx http-server ./build/htdocs/",
-        "test": "vitest"
+        "test": "vitest run"
     },
     "devDependencies": {
         "@skeletonlabs/skeleton": "^3.1.2",
