@@ -7,12 +7,13 @@
     import Checkbox from '../UI/Inputs/Checkbox.svelte';
     import Card from '../UI/Card.svelte';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
-    import { wallet } from '$lib/wallet/wallet';
+    import { transferAllFundsTo, wallet } from '$lib/wallet/wallet';
     import Input from '../UI/Inputs/input.svelte';
+    import type { RecoverResult } from '@nostr-dev-kit/ndk-wallet';
 
     interface Props {
         isOpen: boolean;
-        recoverFromSeed: (mnemonicSeed: string[], mint: string) => Promise<{ errors: any[], amount: number }>;
+        recoverFromSeed: (mnemonicSeed: string[], mint: string) => Promise<{ errors: any[], recoverResult: RecoverResult }>;
         updateMints: (mints: string[]) => Promise<void>;
         mints?: string[];
         isDeterministic?: boolean;
@@ -63,25 +64,34 @@
         }
         for (const mint of selectedMints) {
             try {
-                const { errors, amount } = await recoverFromSeed(useThisWalletsSeed ? [] : confirmWords, mint);
+                const { errors, recoverResult } = await recoverFromSeed(useThisWalletsSeed ? [] : confirmWords, mint);
+                const amount = recoverResult.unspent?.reduce((acc, proof) => acc + proof.amount, 0) ?? 0;
+                const spent = recoverResult.spent;
+                
+                if (!useThisWalletsSeed && amount) {// send funds to the same wallet to secure them with the seed.
+                    try {
+                        await transferAllFundsTo($wallet!, $wallet!, { skipConsolidation: true, transferMints: mint}); 
+                    } catch(e) {
+                        toaster.warning({
+                            title: `The recovered funds aren't backed up by this wallet's seed. To solve this issue, migrate to new wallet.`,
+                            duration: 30000
+                        });
+                    }
+                }
                 if (!errors.length) {
                     toaster.success({
                         title: `${amount} sats recovered from mint: ${mint}`,
                         duration: 10000, // 10 secs
                     });
-                    if (!useThisWalletsSeed && amount) {// send funds to the same wallet to secure them with the seed.
-                        try {
-                            await $wallet?.transferAllFundsTo($wallet, { skipConsolidation: true, transferMints: mint}); 
-                        } catch(e) {
-                            toaster.warning({
-                                title: `The recovered funds aren't backed up by this wallet's seed. To solve this issue, migrate to new wallet.`,
-                                duration: 30000
-                            });
-                        }
-                    }
                 } else {
                     toaster.error({
                         title: `Errors occurred recovering from mint: ${mint}, ${amount} sats recovered`,
+                        duration: 10000,
+                    });
+                }
+                if (spent) {
+                    toaster.info({
+                        title: `${spent.length} proofs from mint ${mint} spent`,
                         duration: 10000,
                     });
                 }

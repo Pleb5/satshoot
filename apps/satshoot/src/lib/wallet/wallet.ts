@@ -107,7 +107,7 @@ export type TransferFundsOps = {
  * @param ops optional options to customize the operation.
  * @returns true if the funds are secured by deterministic secrets after the transfer.
  */
-async function transferAllFundsTo(sourceNDKWallet: NDKCashuWallet, receivingNDKWallet: NDKCashuWallet, ops?: TransferFundsOps): Promise<boolean> {
+export async function transferAllFundsTo(sourceNDKWallet: NDKCashuWallet, receivingNDKWallet: NDKCashuWallet, ops?: TransferFundsOps): Promise<boolean> {
     if (!ops?.skipConsolidation) {
         await sourceNDKWallet.consolidateTokens();
     }
