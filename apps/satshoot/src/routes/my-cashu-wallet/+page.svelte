@@ -59,8 +59,6 @@
     let showMintModal = $state(false);
     let showExploreMintsModal = $state(false);
     let tempWallet = $state<NDKCashuWallet | null>(null);
-    let showRecoverEcashWallet = $state(false);
-    let showBackupEcashWallet = $state(false);
     let showCleanWalletConfirmationDialog = $state(false);
     let showMnemonicSeedGenerationModal = $state(false);
     let showMnemonicSeedInputModal = $state(false);
@@ -523,16 +521,6 @@
         }
     }
 
-    async function handleWalletBackup() {
-        if (!$wallet) return;
-
-        showBackupEcashWallet = true;
-    }
-
-    async function recoverWallet() {
-        showRecoverEcashWallet = true;
-    }
-
     async function restoreFromSeed() {
         showMnemonicSeedInputModal = true;
     }
@@ -729,26 +717,6 @@
                                                 variant="text"
                                                 classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
                                                 grow
-                                                onClick={handleWalletBackup}
-                                                title="Download an encrypted wallet backup"
-                                            >
-                                                <i class="bx bx-download"> </i>
-                                                Backup
-                                            </Button>
-                                            <Button
-                                                variant="text"
-                                                classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
-                                                grow
-                                                onClick={recoverWallet}
-                                                title="Restore your wallet from an encrypted backup"
-                                            >
-                                                <i class="bx bx-upload"> </i>
-                                                Recover
-                                            </Button>
-                                            <Button
-                                                variant="text"
-                                                classes="p-[5px] gap-[5px] text-black-500  dark:text-white"
-                                                grow
                                                 onClick={handleCleanWallet}
                                                 title="Remove spent tokens and consolidate your wallet state"
                                             >
@@ -899,10 +867,6 @@
         callback={handleMintsUpdate}
     />
 {/if}
-
-<RecoverEcashWallet bind:isOpen={showRecoverEcashWallet} />
-
-<BackupEcashWallet bind:isOpen={showBackupEcashWallet} />
 
 <ConfirmationDialog
     bind:isOpen={showCleanWalletConfirmationDialog}
