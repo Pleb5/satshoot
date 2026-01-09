@@ -34,7 +34,7 @@
     },
     "type": "module",
     "dependencies": {
-        "@cashu/cashu-ts": "2.7.4",
+        "@cashu/cashu-ts": "2.8.1",
         "@floating-ui/dom": "^1.6.13",
         "@fortawesome/fontawesome-free": "^6.7.2",
         "@fortawesome/fontawesome-svg-core": "^6.7.2",
