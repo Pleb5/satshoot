@@ -9,9 +9,35 @@
     const { imageUrls, removeImage }: Props = $props();
 
     let currentIndex = $state(0);
+    let enlargedImageUrl = $state<string | null>(null);
 
     // Reference to carousel element using Svelte binding
     let carousel: HTMLDivElement;
+
+    function openImage(url: string) {
+        enlargedImageUrl = url;
+    }
+
+    function closeImage() {
+        enlargedImageUrl = null;
+    }
+
+    function handleKeydown(event: KeyboardEvent) {
+        if (event.key === 'Escape' && enlargedImageUrl) {
+            closeImage();
+            return;
+        }
+
+        if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            carouselLeft();
+        }
+
+        if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            carouselRight();
+        }
+    }
 
     function carouselLeft() {
         if (!carousel || imageUrls.length === 0) return;
@@ -37,6 +63,8 @@
     }
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <!-- Carousel -->
 <div class="card p-4 grid grid-cols-[auto_1fr_auto] gap-4 items-center">
     <!-- Button: Left -->
@@ -44,15 +72,25 @@
         <i class="bx bx-left-arrow-alt"></i>
     </Button>
     <!-- Full Images -->
-    <div bind:this={carousel} class="snap-x snap-mandatory scroll-smooth flex overflow-x-auto">
+    <div
+        bind:this={carousel}
+        class="carousel-scroll snap-x snap-mandatory scroll-smooth flex items-center overflow-x-auto"
+    >
         {#each imageUrls as url, i}
             <div class="snap-center min-w-full flex flex-col items-center">
-                <img
-                    class="max-w-full max-h-[500px] rounded-container object-contain"
-                    src={url}
-                    alt={`Image ${i + 1}`}
-                    loading="lazy"
-                />
+                <button
+                    type="button"
+                    class="p-0 bg-transparent border-0 cursor-zoom-in focus:outline-none"
+                    onclick={() => openImage(url)}
+                    aria-label={`View image ${i + 1} larger`}
+                >
+                    <img
+                        class="max-w-full max-h-[500px] rounded-container object-contain"
+                        src={url}
+                        alt={`Image ${i + 1}`}
+                        loading="lazy"
+                    />
+                </button>
             </div>
         {/each}
     </div>
@@ -68,7 +106,10 @@
             <button
                 type="button"
                 class="w-full {currentIndex === i ? 'ring-2 ring-primary' : ''}"
-                onclick={() => carouselThumbnail(i)}
+                onclick={() => {
+                    carouselThumbnail(i);
+                    openImage(url);
+                }}
             >
                 <img
                     class="w-full h-auto rounded-container hover:brightness-110 aspect-square object-cover"
@@ -91,3 +132,29 @@
         </div>
     {/each}
 </div>
+
+<style>
+    .carousel-scroll {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .carousel-scroll::-webkit-scrollbar {
+        display: none;
+    }
+</style>
+
+{#if enlargedImageUrl}
+    <div
+        class="fixed inset-0 z-90 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        onclick={closeImage}
+    >
+        <div class="max-w-[90vw] max-h-[85vh]" onclick={(event) => event.stopPropagation()}>
+            <img
+                class="w-full h-full max-w-[90vw] max-h-[85vh] rounded-container object-contain"
+                src={enlargedImageUrl}
+                alt="Enlarged service image"
+            />
+        </div>
+    </div>
+{/if}
