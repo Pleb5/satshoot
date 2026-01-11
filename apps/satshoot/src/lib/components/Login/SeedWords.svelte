@@ -26,6 +26,7 @@
 
         if (tokens.length <= 1) {
             words[index] = tokens[0] ?? '';
+            words = [...words];
             return;
         }
 
@@ -35,6 +36,7 @@
             words[targetIndex] = tokens[offset];
         }
 
+        words = [...words];
         const nextIndex = Math.min(index + tokens.length, words.length - 1);
         inputElements[nextIndex]?.focus?.();
     }
