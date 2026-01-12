@@ -129,27 +129,12 @@ const waitForVertexResponse = (
         });
     });
 
-export function requestVertexReputation(
-    ndk: NDK,
-    targetPubkey: Hexpubkey,
-    timeoutMs?: number
-): Promise<VertexReputationCacheEntry>;
-export function requestVertexReputation(
-    ndk: NDK,
-    targetPubkey: Hexpubkey,
-    sourcePubkey: Hexpubkey,
-    timeoutMs?: number
-): Promise<VertexReputationCacheEntry>;
 export async function requestVertexReputation(
     ndk: NDK,
     targetPubkey: Hexpubkey,
-    sourceOrTimeout?: Hexpubkey | number,
+    sourcePubkey: Hexpubkey,
     timeoutMs = VERTEX_REPUTATION_TIMEOUT_MS
 ): Promise<VertexReputationCacheEntry> {
-    const sourcePubkey =
-        typeof sourceOrTimeout === 'string' ? sourceOrTimeout : targetPubkey;
-    const resolvedTimeout =
-        typeof sourceOrTimeout === 'number' ? sourceOrTimeout : timeoutMs;
     const relaySet = NDKRelaySet.fromRelayUrls([VERTEX_RELAY_URL], ndk, true);
 
     const request = new NDKDVMRequest(ndk);
@@ -161,7 +146,7 @@ export async function requestVertexReputation(
 
     await request.publish(relaySet);
 
-    const response = await waitForVertexResponse(ndk, relaySet, request.id, resolvedTimeout);
+    const response = await waitForVertexResponse(ndk, relaySet, request.id, timeoutMs);
 
     if (response.kind === VERTEX_REPUTATION_ERROR_KIND) {
         throw new Error(getVertexErrorMessage(response));

@@ -6,6 +6,7 @@
         NDKSubscriptionCacheUsage,
         type Hexpubkey,
     } from '@nostr-dev-kit/ndk';
+    import type NDK from '@nostr-dev-kit/ndk';
 
     import ndk from '$lib/stores/session';
     import currentUser, { currentUserFreelanceFollows } from '$lib/stores/user';
@@ -32,8 +33,13 @@
 
     let cachedResult = $state<VertexReputationCacheEntry | null>(null);
     let loading = $state(false);
+    let loadingCache = $state(false);
+    let cacheLoaded = $state(false);
     let loadingSocialFollows = $state(false);
+    let cacheStatus = $state<string | null>(null);
+
     let socialFollows = $state<Set<Hexpubkey>>(new Set());
+
     let socialFollowsLoaded = $state(false);
 
     const isInSocialNetwork = $derived($networkWoTScores.has(targetPubkey));
@@ -71,13 +77,24 @@
     };
 
     const loadCachedResult = async () => {
+        if (loadingCache || cacheStatus) return;
+        loadingCache = true;
+        cacheStatus = null;
+        await tick();
+
         try {
             cachedResult = (await getCachedVertexReputation(targetPubkey)) ?? null;
+            cacheStatus = cachedResult ? 'Fetched from cache' : 'No cached analysis found';
         } catch (error) {
+            cachedResult = null;
+            cacheStatus = 'No cached analysis found';
             showErrorToast(
                 'Unable to load cached analysis',
                 error instanceof Error ? error.message : undefined
             );
+        } finally {
+            cacheLoaded = true;
+            loadingCache = false;
         }
     };
 
@@ -141,10 +158,18 @@
     $effect(() => {
         targetPubkey;
         cachedResult = null;
+        cacheStatus = null;
+        loadingCache = false;
     });
 
     $effect(() => {
-        if (!isOpen || !targetPubkey) return;
+        if (!isOpen) {
+            loadingCache = false;
+            cacheStatus = null;
+            return;
+        }
+
+        if (!targetPubkey) return;
         loadCachedResult();
         loadSocialFollows();
     });
@@ -187,6 +212,15 @@
                 {/if}
             </div>
 
+            {#if loadingCache}
+                <div class="flex items-center gap-2 text-sm text-black-300 dark:text-white-300 mt-3">
+                    <ProgressRing />
+                    <span>Loading cached analysis...</span>
+                </div>
+            {:else if cacheStatus}
+                <div class="text-sm text-black-300 dark:text-white-300 mt-3">{cacheStatus}</div>
+            {/if}
+
             {#if loading}
                 <div class="flex items-center gap-2 text-sm text-black-300 dark:text-white-300 mt-3">
                     <ProgressRing />
@@ -194,7 +228,7 @@
                 </div>
             {/if}
 
-            <Button onClick={runAnalysis} disabled={loading} classes="mt-3">
+            <Button onClick={runAnalysis} disabled={loading || loadingCache} classes="mt-3">
                 {cachedResult ? 'Refresh Analysis' : 'Run Analysis'}
             </Button>
         </div>
