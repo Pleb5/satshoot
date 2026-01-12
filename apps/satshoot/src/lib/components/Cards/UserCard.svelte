@@ -25,6 +25,7 @@
     import Input from '../UI/Inputs/input.svelte';
     import CopyButton from '../UI/Buttons/CopyButton.svelte';
     import QrCodeModal from '../Modals/QRCodeModal.svelte';
+    import ProfileAnalysisModal from '../Modals/ProfileAnalysisModal.svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
@@ -55,6 +56,7 @@
     let processingMutes = $state(false);
     let showNpubQR = $state(false);
     let showNProfileQR = $state(false);
+    let showAnalysisModal = $state(false);
     let hasLoadedFollowSet = $state(false);
     let trusted = $state(false)
 
@@ -351,7 +353,7 @@
                             shortenTextWithEllipsesInMiddle(npub, 15)}
                     </a>
                 </div>
-                <div class="flex gap-x-2 border-t-[1px] border-t-black-100 dark:border-t-white-100 pt-[10px]">
+                <div class="flex flex-col gap-2 border-t-[1px] border-t-black-100 dark:border-t-white-100 pt-[10px]">
                     <div class="flex gap-x-2 items-center">
                         <div>
                             <span class="font-bold">Trusted:</span>
@@ -367,6 +369,14 @@
                             />
                         </div>
                     </div>
+                    <Button
+                        title="Analysis"
+                        onClick={() => {
+                            showAnalysisModal = true;
+                        }}
+                    >
+                        Analysis
+                    </Button>
                 </div>
 
                 {#each userInfoItems as { text, href, isExternal, title }}
@@ -519,6 +529,8 @@
     title="User's Profile Address"
     data={nip19.nprofileEncode({ pubkey: user.pubkey })}
 />
+
+<ProfileAnalysisModal bind:isOpen={showAnalysisModal} targetPubkey={user.pubkey} />
 
 <style>
   /* Hide scrollbar for Chrome, Safari and Opera */
