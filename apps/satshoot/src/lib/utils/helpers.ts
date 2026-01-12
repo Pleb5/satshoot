@@ -504,8 +504,28 @@ export type RelayFirstFetchOpts = {
     explicitRelays?: NDKRelay[];
 };
 
-export async function getZapConfiguration(pubkey: string) {
+export async function getZapConfiguration(pubkey: string, lightningAddress?: string) {
     const $ndk = get(ndk);
+    const trimmedAddress = lightningAddress?.trim();
+
+    if (trimmedAddress) {
+        const isLnurl = trimmedAddress.toLowerCase().startsWith('lnurl');
+
+        try {
+            const lnurlSpec = await getNip57ZapSpecFromLud(
+                {
+                    lud06: isLnurl ? trimmedAddress : undefined,
+                    lud16: isLnurl ? undefined : trimmedAddress,
+                },
+                $ndk
+            );
+
+            return lnurlSpec ?? null;
+        } catch (err) {
+            console.error(`An error occurred in getZapConfiguration for ${pubkey}`, err);
+            return null;
+        }
+    }
 
     const metadataFilter = {
         kinds: [NDKKind.Metadata],

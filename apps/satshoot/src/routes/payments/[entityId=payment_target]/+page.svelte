@@ -86,8 +86,9 @@
     // pay confirm model props
     let showPayConfirm = $state(false);
     let payConfirmPubkey = $state('');
+    let payConfirmMethod = $state<'LN' | 'Cashu'>('LN');
     let payAmount = $state(0);
-    let payFunc = $state(async () => {});
+    let payFunc = $state(async (_lightningAddress?: string) => {});
 
     $effect(() => {
         if ($sessionInitialized && !initialized) {
@@ -294,20 +295,23 @@
                     payAmount = paymentManager!.payment.sponsoredAmount;
                     break;
             }
+            payConfirmMethod = paymentMethod;
             payFunc = paymentMethod === 'LN' ? payWithLN(payeeType) : payWithCashu(payeeType);
             showPayConfirm = true;
         };
     }
 
     function payWithLN(payeeType: UserEnum) {
-        return async () => {
+        return async (lightningAddress?: string) => {
             if (!paymentManager) return;
-            await paymentManager.payWithLightning(payeeType);
+            const trimmedAddress = lightningAddress?.trim();
+            const overrides = trimmedAddress ? { [payeeType]: trimmedAddress } : undefined;
+            await paymentManager.payWithLightning(payeeType, overrides);
         };
     }
 
     function payWithCashu(payeeType: UserEnum) {
-        return async () => {
+        return async (_lightningAddress?: string) => {
             if (!paymentManager) return;
             await paymentManager.payWithCashu(payeeType);
         };
@@ -760,6 +764,7 @@
 <ConfirmPaymentModal
     bind:isOpen={showPayConfirm}
     bind:payeePubkey={payConfirmPubkey}
+    bind:paymentMethod={payConfirmMethod}
     bind:amount={payAmount}
     bind:onConfirm={payFunc}
 />

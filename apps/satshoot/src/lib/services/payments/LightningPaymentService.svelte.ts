@@ -27,6 +27,8 @@ export interface InvoiceDetails {
     zapper?: string;
 }
 
+export type LightningAddressOverrides = Partial<Record<UserEnum, string>>;
+
 interface NDKZapperOptions {
     /**
      * Comment to include in the zap event
@@ -64,7 +66,8 @@ export class LightningPaymentService {
     async processPayment(
         freelancerShareMillisats: number,
         satshootSumMillisats: number,
-        sponsoredSumMillisats: number
+        sponsoredSumMillisats: number,
+        lightningAddressOverrides: LightningAddressOverrides = {}
     ): Promise<Map<UserEnum, boolean>> {
         const zapRequestRelays = new Map<UserEnum, string[]>();
         const invoices = new Map<UserEnum, InvoiceDetails>();
@@ -82,7 +85,8 @@ export class LightningPaymentService {
                 freelancerShareMillisats,
                 zapRequestRelays,
                 invoices,
-                this.secondaryEntity
+                this.secondaryEntity,
+                lightningAddressOverrides[UserEnum.Freelancer]
             );
         }
 
@@ -94,7 +98,8 @@ export class LightningPaymentService {
                 satshootSumMillisats,
                 zapRequestRelays,
                 invoices,
-                this.secondaryEntity
+                this.secondaryEntity,
+                lightningAddressOverrides[UserEnum.Satshoot]
             );
         }
 
@@ -111,7 +116,8 @@ export class LightningPaymentService {
                     sponsoredSumMillisats,
                     zapRequestRelays,
                     invoices,
-                    this.secondaryEntity
+                    this.secondaryEntity,
+                    lightningAddressOverrides[UserEnum.Sponsored]
                 );
             } else {
                 throw new Error('Expecting an npub but got something else!');
@@ -192,9 +198,10 @@ export class LightningPaymentService {
         amountMillisats: number,
         zapRequestRelays: Map<UserEnum, string[]>,
         invoices: Map<UserEnum, InvoiceDetails>,
-        event: NDKEvent
+        event: NDKEvent,
+        lightningAddressOverride?: string
     ) {
-        const zapConfig = await getZapConfiguration(pubkey);
+        const zapConfig = await getZapConfiguration(pubkey, lightningAddressOverride);
         if (zapConfig) {
             const payerPubkey = get(currentUser)!.pubkey;
             const invoice = await this.generateInvoice(

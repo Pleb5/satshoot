@@ -1,5 +1,5 @@
 import { PaymentService } from './PaymentService.svelte';
-import { LightningPaymentService } from './LightningPaymentService.svelte';
+import { LightningPaymentService, type LightningAddressOverrides } from './LightningPaymentService.svelte';
 import { CashuPaymentService } from './CashuPaymentService.svelte';
 import { ToastService } from './ToastService.svelte';
 import { createPaymentFilters, createPaymentStore, type PaymentStore } from '$lib/stores/payment';
@@ -118,8 +118,11 @@ export class PaymentManagerService {
      * 
      * @payeeType if specified, the payment goes only to the given payee type. Otherwise all parties get paid.
      */
-    async payWithLightning(payeeType: UserEnum | void): Promise<void> {
-        return this.payWith(this.lightningService)(payeeType);
+    async payWithLightning(
+        payeeType: UserEnum | void,
+        lightningAddressOverrides?: LightningAddressOverrides
+    ): Promise<void> {
+        return this.payWith(this.lightningService)(payeeType, lightningAddressOverrides);
     }
 
     /**
@@ -131,8 +134,10 @@ export class PaymentManagerService {
         return this.payWith(this.cashuService)(payeeType);
     }
 
-    private payWith(paymentMethod: LightningPaymentService | CashuPaymentService): (payeeType: UserEnum | void) => Promise<void> {
-        return (async (payeeType) => {
+    private payWith(
+        paymentMethod: LightningPaymentService | CashuPaymentService
+    ): (payeeType: UserEnum | void, lightningAddressOverrides?: LightningAddressOverrides) => Promise<void> {
+        return (async (payeeType, lightningAddressOverrides) => {
             try {
                 const paymentData = await this.paymentService.initializePayment();
                 if (!paymentData) return;
@@ -157,7 +162,19 @@ export class PaymentManagerService {
                         satshootSumMillisats = 0;
                 }
 
-                const paid = await paymentMethod.processPayment(freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats);
+                const paid =
+                    paymentMethod instanceof LightningPaymentService
+                        ? await paymentMethod.processPayment(
+                              freelancerShareMillisats,
+                              satshootSumMillisats,
+                              sponsoredSumMillisats,
+                              lightningAddressOverrides
+                          )
+                        : await paymentMethod.processPayment(
+                              freelancerShareMillisats,
+                              satshootSumMillisats,
+                              sponsoredSumMillisats
+                          );
 
                 this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats);
             } catch (error: any) {
