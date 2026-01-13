@@ -7,7 +7,8 @@
   "scripts": {
     "build": "./ndk_compile.sh && turbo run build",
     "dev": "turbo run dev",
-    "preview": "turbo run preview"
+    "preview": "turbo run preview",
+    "test": "pnpm --filter satshoot test && pnpm --filter @nostr-dev-kit/ndk-wallet test"
   },
   "packageManager": "pnpm@9.7.0"
 }
