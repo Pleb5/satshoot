@@ -1,13 +1,18 @@
 import NDK, {
     NDKKind,
+    NDKRelaySet,
+    NDKSubscriptionCacheUsage,
+    type Hexpubkey,
+    type NDKEvent,
     type NDKFilter,
 } from '@nostr-dev-kit/ndk';
 import {
     NDKNutzapMonitor,
-    type NDKCashuMintRecommendation,
+    type MintUrl,
+    type MintUsage,
     type NDKCashuWallet,
 } from '@nostr-dev-kit/ndk-wallet';
-import {wallet } from '$lib/wallet/wallet';
+import { wallet } from '$lib/wallet/wallet';
 import { consolidateMintTokens } from '@nostr-dev-kit/ndk-wallet';
 import { get } from 'svelte/store';
 import currentUser from '$lib/stores/user';
@@ -179,58 +184,138 @@ export function serializeWallet(walletStorage: WalletStorage) {
     return JSON.stringify(walletStorage, null, 2);
 }
 
-export async function getCashuMintRecommendations(ndk: NDK, $wot: Set<string>) {
-    const res: NDKCashuMintRecommendation = {};
+const RECOMMENDATION_FETCH_TIMEOUT_MS = 5000;
 
-    const mintListFilter: NDKFilter = { kinds: [NDKKind.CashuMintList] };
-    const mintListRecommendations = await ndk.fetchEvents(mintListFilter);
-    for (const event of mintListRecommendations) {
-        // Skip events if the publisher is not in the Web of Trust ($wot)
-        if (!$wot.has(event.pubkey)) continue;
+type MintEndorsementType = 'explicit' | 'nutzap';
 
-        // Extract "mint" tags from the event
-        for (const mintTag of event.getMatchingTags('mint')) {
-            const url = mintTag[1];
-            if (!url) continue; // Skip if URL is not present
+export type MintEndorsementTypes = {
+    explicit: boolean;
+    nutzap: boolean;
+};
 
-            // Aggregate events and pubkeys by URL
-            const entry = res[url] || { events: [], pubkeys: new Set() };
-            entry.events.push(event);
-            entry.pubkeys.add(event.pubkey);
-            res[url] = entry; // Update the result object
-        }
-    }
+export type MintRecommendationUsage = MintUsage & {
+    endorsementsByPubkey: Map<Hexpubkey, MintEndorsementTypes>;
+};
 
-    // If we have at least 5 recommendations, return early
-    if (Object.entries(res).length >= 5) {
-        return sortRecommendations(res);
-    }
+export type CashuMintRecommendations = Record<MintUrl, MintRecommendationUsage>;
 
-    const mintRecommendationFilter: NDKFilter = {
-        kinds: [NDKKind.EcashMintRecommendation],
-    };
-    const mintRecommendations = await ndk.fetchEvents(mintRecommendationFilter);
+export async function getCashuMintRecommendations(
+    ndk: NDK,
+    $wot: Set<string>
+): Promise<CashuMintRecommendations> {
+    const res: CashuMintRecommendations = {};
+
+    const mintFilters: NDKFilter[] = [
+        { kinds: [NDKKind.EcashMintRecommendation] },
+        { kinds: [NDKKind.CashuMintList] },
+    ];
+
+    const relaySet = getConnectedRelaySet(ndk);
+    const mintRecommendations = await fetchEventsWithTimeout(
+        ndk.fetchEvents(
+            mintFilters,
+            {
+                cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+                closeOnEose: true,
+                groupable: false,
+            },
+            relaySet
+        ),
+        RECOMMENDATION_FETCH_TIMEOUT_MS
+    );
+
     for (const event of mintRecommendations) {
-        // Skip events if the publisher is not in the Web of Trust ($wot)
         if (!$wot.has(event.pubkey)) continue;
 
-        // Extract "u" tags representing URLs and filter for Cashu-specific recommendations
-        for (const uTag of event.getMatchingTags('u')) {
-            if (uTag[2] && uTag[2] !== 'cashu') continue; // Skip if not related to Cashu
+        switch (event.kind) {
+            case NDKKind.CashuMintList:
+                for (const mintTag of event.getMatchingTags('mint')) {
+                    const url = mintTag[1];
+                    if (!url) continue;
 
-            const url = uTag[1];
-            if (!url) continue; // Skip if URL is not present
+                    registerEndorsement(res, url, event, 'nutzap');
+                }
+                break;
+            case NDKKind.EcashMintRecommendation:
+                for (const uTag of event.getMatchingTags('u')) {
+                    if (uTag[2] && uTag[2] !== 'cashu') continue;
 
-            // Aggregate events and pubkeys by URL
-            const entry = res[url] || { events: [], pubkeys: new Set() };
-            entry.events.push(event);
-            entry.pubkeys.add(event.pubkey);
-            res[url] = entry; // Update the result object
+                    const url = uTag[1];
+                    if (!url) continue;
+
+                    registerEndorsement(res, url, event, 'explicit');
+                }
+                break;
         }
     }
 
-    // Sort the final recommendations by the number of unique pubkeys in descending order
     return sortRecommendations(res);
+}
+
+function registerEndorsement(
+    recommendations: CashuMintRecommendations,
+    url: MintUrl,
+    event: NDKEvent,
+    endorsementType: MintEndorsementType
+) {
+    const entry = recommendations[url] || {
+        events: [],
+        pubkeys: new Set<Hexpubkey>(),
+        endorsementsByPubkey: new Map<Hexpubkey, MintEndorsementTypes>(),
+    };
+
+    entry.events.push(event);
+    entry.pubkeys.add(event.pubkey);
+
+    const current = entry.endorsementsByPubkey.get(event.pubkey) || {
+        explicit: false,
+        nutzap: false,
+    };
+
+    if (endorsementType === 'explicit') {
+        current.explicit = true;
+    } else {
+        current.nutzap = true;
+    }
+
+    entry.endorsementsByPubkey.set(event.pubkey, current);
+    recommendations[url] = entry;
+}
+
+async function fetchEventsWithTimeout(
+    promise: Promise<Set<NDKEvent>>,
+    timeoutMs: number
+): Promise<Set<NDKEvent>> {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let timedOut = false;
+
+    const timeoutPromise = new Promise<Set<NDKEvent>>((resolve) => {
+        timeoutId = setTimeout(() => {
+            timedOut = true;
+            resolve(new Set());
+        }, timeoutMs);
+    });
+
+    const result = await Promise.race([promise, timeoutPromise]);
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (timedOut) {
+        console.warn(`Cashu mint recommendation fetch timed out after ${timeoutMs}ms.`);
+    }
+
+    return result;
+}
+
+function getConnectedRelaySet(ndk: NDK) {
+    const relays = Array.from(ndk.pool?.relays?.values() ?? []);
+    const relayUrls = relays
+        .filter((relay) => ('connected' in relay ? relay.connected : true))
+        .map((relay) => relay.url);
+
+    if (relayUrls.length === 0) return undefined;
+
+    return NDKRelaySet.fromRelayUrls(relayUrls, ndk);
 }
 
 // Function to save encrypted content to a file
@@ -252,7 +337,7 @@ function saveToFile(content: string, isEncrypted = false) {
 }
 
 // Helper function to sort recommendations by the count of unique pubkeys
-function sortRecommendations(recommendations: NDKCashuMintRecommendation) {
+function sortRecommendations(recommendations: CashuMintRecommendations) {
     return Object.fromEntries(
         Object.entries(recommendations).sort((a, b) => b[1].pubkeys.size - a[1].pubkeys.size)
     );

@@ -245,10 +245,8 @@ describe('getCashuMintRecommendations', () => {
         const mockNDK = new NDKSvelte();
         const mockWoT = new Set(['pubkey1', 'pubkey2']);
 
-        // Mock events
         const mockEvents: NDKEvent[] = [];
 
-        // Create mock mint list events
         for (let i = 0; i < 3; i++) {
             const event = new NDKEvent(mockNDK);
             event.pubkey = 'pubkey1';
@@ -257,7 +255,6 @@ describe('getCashuMintRecommendations', () => {
             mockEvents.push(event);
         }
 
-        // Create mock ecash recommendation events
         for (let i = 0; i < 3; i++) {
             const event = new NDKEvent(mockNDK);
             event.pubkey = 'pubkey2';
@@ -266,42 +263,40 @@ describe('getCashuMintRecommendations', () => {
             mockEvents.push(event);
         }
 
-        // Mock the fetchEvents method
         vi.spyOn(mockNDK, 'fetchEvents').mockImplementation(() => {
             return Promise.resolve(new Set(mockEvents));
         });
 
         const result = await getCashuMintRecommendations(mockNDK, mockWoT);
 
-        expect(mockNDK.fetchEvents).toHaveBeenCalledTimes(2);
+        expect(mockNDK.fetchEvents).toHaveBeenCalledTimes(1);
         expect(Object.keys(result).length).toBe(6);
 
-        // Check that all expected mints are in the result
         for (let i = 0; i < 3; i++) {
             expect(result[`https://mint${i}.com`]).toBeDefined();
             expect(result[`https://ecash${i}.com`]).toBeDefined();
         }
+
+        expect(result['https://mint0.com'].endorsementsByPubkey.get('pubkey1')?.nutzap).toBe(true);
+        expect(result['https://ecash0.com'].endorsementsByPubkey.get('pubkey2')?.explicit).toBe(true);
     });
 
     test('should filter out recommendations from non-WoT publishers', async () => {
         const mockNDK = new NDKSvelte();
         const mockWoT = new Set(['trusted-pubkey']);
 
-        // Create events from both trusted and untrusted publishers
         const mockEvents: NDKEvent[] = [];
 
-        // Trusted publisher event
         const trustedEvent = new NDKEvent(mockNDK);
         trustedEvent.pubkey = 'trusted-pubkey';
         trustedEvent.kind = NDKKind.CashuMintList;
         trustedEvent.tags = [['mint', 'https://trusted-mint.com']];
         mockEvents.push(trustedEvent);
 
-        // Untrusted publisher event
         const untrustedEvent = new NDKEvent(mockNDK);
         untrustedEvent.pubkey = 'untrusted-pubkey';
-        untrustedEvent.kind = NDKKind.CashuMintList;
-        untrustedEvent.tags = [['mint', 'https://untrusted-mint.com']];
+        untrustedEvent.kind = NDKKind.EcashMintRecommendation;
+        untrustedEvent.tags = [['u', 'https://untrusted-mint.com', 'cashu']];
         mockEvents.push(untrustedEvent);
 
         vi.spyOn(mockNDK, 'fetchEvents').mockImplementation(() => {
@@ -313,5 +308,32 @@ describe('getCashuMintRecommendations', () => {
         expect(Object.keys(result).length).toBe(1);
         expect(result['https://trusted-mint.com']).toBeDefined();
         expect(result['https://untrusted-mint.com']).toBeUndefined();
+    });
+
+    test('should count a pubkey once per mint', async () => {
+        const mockNDK = new NDKSvelte();
+        const mockWoT = new Set(['pubkey1']);
+
+        const cashuListEvent = new NDKEvent(mockNDK);
+        cashuListEvent.pubkey = 'pubkey1';
+        cashuListEvent.kind = NDKKind.CashuMintList;
+        cashuListEvent.tags = [['mint', 'https://shared-mint.com']];
+
+        const explicitEvent = new NDKEvent(mockNDK);
+        explicitEvent.pubkey = 'pubkey1';
+        explicitEvent.kind = NDKKind.EcashMintRecommendation;
+        explicitEvent.tags = [['u', 'https://shared-mint.com', 'cashu']];
+
+        vi.spyOn(mockNDK, 'fetchEvents').mockImplementation(() => {
+            return Promise.resolve(new Set([cashuListEvent, explicitEvent]));
+        });
+
+        const result = await getCashuMintRecommendations(mockNDK, mockWoT);
+
+        expect(result['https://shared-mint.com'].pubkeys.size).toBe(1);
+        expect(result['https://shared-mint.com'].endorsementsByPubkey.get('pubkey1')).toEqual({
+            explicit: true,
+            nutzap: true,
+        });
     });
 });
