@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { NDKUser, NDKUserProfile } from '@nostr-dev-kit/ndk';
     import ndk, { sessionInitialized } from '$lib/stores/session';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import { wot } from '$lib/stores/wot';
 
     interface Props {
@@ -12,6 +12,7 @@
         size?: 'tiny' | 'small' | 'medium' | 'large' | undefined;
         type?: 'square' | 'circle';
         classes?: string;
+        showNameOnClick?: boolean;
     }
 
     let {
@@ -22,7 +23,11 @@
         size = undefined,
         type = 'circle',
         classes = '',
+        showNameOnClick = false,
     }: Props = $props();
+
+    let showName = $state(false);
+    let avatarRef: HTMLDivElement | null = null;
 
     const sizeClass = $derived.by(() => {
         switch (size) {
@@ -40,6 +45,14 @@
     });
 
     const shapeClass = $derived(type === 'square' ? 'rounded-sm' : 'rounded-full');
+    const displayName = $derived.by(() => {
+        if (!pubkey) return '';
+        return (
+            userProfile?.name ||
+            userProfile?.displayName ||
+            shortenTextWithEllipsesInMiddle(pubkey, 12)
+        );
+    });
 
     let wotClasses = $state('border-white');
 
@@ -79,17 +92,60 @@
     const baseClasses =
         'rounded-full placeholder-white cursor-pointer border-4 hover:border-primary-500!';
 
+    function toggleName(event: MouseEvent) {
+        if (!showNameOnClick) return;
+        event.stopPropagation();
+        showName = !showName;
+    }
+
+    function handleNameKeydown(event: KeyboardEvent) {
+        if (!showNameOnClick) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            showName = !showName;
+        }
+    }
+
+    function handleClickOutside(event: PointerEvent) {
+        if (!showNameOnClick || !showName) return;
+        if (avatarRef && !avatarRef.contains(event.target as Node)) {
+            showName = false;
+        }
+    }
+
+    $effect(() => {
+        if (!showNameOnClick || !showName) return;
+
+        document.addEventListener('pointerdown', handleClickOutside, true);
+
+        return () => {
+            document.removeEventListener('pointerdown', handleClickOutside, true);
+        };
+    });
+
 </script>
 
 {#if pubkey}
     <div
-        class="flex-none {sizeClass} {shapeClass}"
+        class="flex-none {sizeClass} {shapeClass} {showNameOnClick ? 'relative' : ''}"
+        role={showNameOnClick ? 'button' : undefined}
+        tabindex={showNameOnClick ? 0 : undefined}
+        on:click={toggleName}
+        on:keydown={handleNameKeydown}
+        bind:this={avatarRef}
     >
         <img
             alt="user avatar"
             src={userProfile?.picture || getRoboHashPicture(pubkey)}
             class="object-cover {baseClasses} {sizeClass} {shapeClass} {wotClasses} {classes}"
         />
+        {#if showNameOnClick && showName}
+            <div
+                class="absolute left-0 top-full mt-1 w-[160px] rounded-md bg-white px-2 py-1 text-[11px] text-black-500 shadow-subtle dark:bg-brightGray dark:text-white-100"
+            >
+                <span class="break-words text-left leading-tight">{displayName}</span>
+            </div>
+        {/if}
     </div>
 {:else}
     <img alt="" class="avatar avatar--loading" />
