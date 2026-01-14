@@ -134,8 +134,7 @@
     <section class="flex flex-col gap-4">
         {#if step == 0}
             <span>
-                If you want to recover funds from an external wallet, enter its mnemonic seed words bellow. Note that  
-                after recovery, the funds remain backed up through the entered seed words and not the ones of this wallet.
+                If you want to recover funds from an external wallet, enter its mnemonic seed words bellow.
             </span>
             {#if isDeterministic}
                 <span>
