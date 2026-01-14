@@ -266,7 +266,7 @@
         >
             <option value="" disabled>Select a mint</option>
             {#each cashuWallet.mints as mint (mint)}
-                <option value={mint}>{mint}</option>
+                <option class="dark:text-black" value={mint}>{mint}</option>
             {/each}
         </select>
     </div>
