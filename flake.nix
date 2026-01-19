@@ -19,13 +19,9 @@ outputs = { self, nixpkgs, flake-utils, ... }:
         in {
             devShell = pkgs.mkShell {
                 buildInputs = [ 
-                    pkgs.ripgrep
                     pkgs.nodejs_20 
                     pkgs.nodePackages.pnpm 
                     pkgs.just
-                    pkgs.cargo
-                    pkgs.pkg-config
-                    pkgs.openssl
                 ];
                 shellHook = ''
                     export PATH="$HOME/.cargo/bin:$PATH"
