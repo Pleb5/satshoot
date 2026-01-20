@@ -150,50 +150,47 @@ describe('wot store', () => {
     expect(result.has('freelancer-c')).toBe(true);
   });
 
-  it('adds only the other party when follow-based wot matches a deal', () => {
-    networkWoTScores.set(new Map([['trusted', 3]]));
-
+  it('adds indirect deal links from direct partners', () => {
     allBids.set([
       {
-        pubkey: 'newbie',
+        pubkey: 'partner-a',
         bidAddress: 'bid-2',
       } as any,
       {
-        pubkey: 'stranger-bidder',
+        pubkey: 'indirect-b',
         bidAddress: 'bid-3',
       } as any,
     ]);
     allJobs.set([
       {
-        pubkey: 'trusted',
+        pubkey: 'user-a',
         acceptedBidAddress: 'bid-2',
       } as any,
       {
-        pubkey: 'stranger-job',
+        pubkey: 'partner-a',
         acceptedBidAddress: 'bid-3',
       } as any,
-    ]);
-    allServices.set([
       {
-        pubkey: 'trusted',
-        serviceAddress: 'service-2',
+        pubkey: 'stranger-job',
+        acceptedBidAddress: 'bid-4',
       } as any,
     ]);
-    allOrders.set([
+    allBids.update((bids) => [
+      ...bids,
       {
-        pubkey: 'client-x',
-        referencedServiceAddress: 'service-2',
+        pubkey: 'stranger-bidder',
+        bidAddress: 'bid-4',
       } as any,
     ]);
 
     const result = get(wot);
 
-    expect(result.has('trusted')).toBe(true);
-    expect(result.has('newbie')).toBe(true);
-    expect(result.has('client-x')).toBe(true);
+    expect(result.has('partner-a')).toBe(true);
+    expect(result.has('indirect-b')).toBe(true);
     expect(result.has('stranger-job')).toBe(false);
     expect(result.has('stranger-bidder')).toBe(false);
   });
+
 
   it('removes muted pubkeys even if added by deals', () => {
     allBids.set([

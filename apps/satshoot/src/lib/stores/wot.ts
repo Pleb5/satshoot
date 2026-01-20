@@ -108,23 +108,19 @@ export const wot = derived(
         }
 
         const pubkeys = new Set<Hexpubkey>(initialWoT);
-        const followBasedWoT = new Set<Hexpubkey>(initialWoT);
 
         $networkWoTScores.forEach((score: number, follow: Hexpubkey) => {
             if (score >= $minWot) {
                 pubkeys.add(follow);
-                followBasedWoT.add(follow);
             }
         });
 
         if ($currentUser) {
             pubkeys.add($currentUser.pubkey);
-            followBasedWoT.add($currentUser.pubkey);
 
             // add current user's freelance follows to wot
             $currentUserFreelanceFollows.forEach((follow) => {
                 pubkeys.add(follow);
-                followBasedWoT.add(follow);
             });
 
             if ($currentUser.pubkey === SatShootPubkey && saveSatShootWoT) {
@@ -141,26 +137,10 @@ export const wot = derived(
                 serviceByAddress.set(service.serviceAddress, service);
             });
 
+            const dealPairs: Array<[Hexpubkey, Hexpubkey]> = [];
             const addDealPair = (left?: Hexpubkey, right?: Hexpubkey) => {
                 if (!left || !right || left === right) return;
-
-                if (left === $currentUser.pubkey) {
-                    pubkeys.add(right);
-                    return;
-                }
-
-                if (right === $currentUser.pubkey) {
-                    pubkeys.add(left);
-                    return;
-                }
-
-                if (followBasedWoT.has(left)) {
-                    pubkeys.add(right);
-                }
-
-                if (followBasedWoT.has(right)) {
-                    pubkeys.add(left);
-                }
+                dealPairs.push([left, right]);
             };
 
             $allJobs.forEach((job) => {
@@ -175,6 +155,32 @@ export const wot = derived(
                     ? serviceByAddress.get(order.referencedServiceAddress)
                     : undefined;
                 addDealPair(order.pubkey, service?.pubkey);
+            });
+
+            const directDealPartners = new Set<Hexpubkey>();
+            dealPairs.forEach(([left, right]) => {
+                if (left === $currentUser.pubkey) {
+                    directDealPartners.add(right);
+                    return;
+                }
+
+                if (right === $currentUser.pubkey) {
+                    directDealPartners.add(left);
+                }
+            });
+
+            directDealPartners.forEach((partner) => {
+                pubkeys.add(partner);
+            });
+
+            dealPairs.forEach(([left, right]) => {
+                if (directDealPartners.has(left)) {
+                    pubkeys.add(right);
+                }
+
+                if (directDealPartners.has(right)) {
+                    pubkeys.add(left);
+                }
             });
         }
 

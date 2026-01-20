@@ -10,7 +10,7 @@
     import ndk from '$lib/stores/session';
     import currentUser, { currentUserFreelanceFollows } from '$lib/stores/user';
     import { allBids, allJobs, allOrders, allServices } from '$lib/stores/freelance-eventstores';
-    import { minWot, networkWoTScores } from '$lib/stores/wot';
+    import { networkWoTScores } from '$lib/stores/wot';
     import satShootWoT from '$lib/stores/satshoot-wot';
     import { toaster } from '$lib/stores/toaster';
     import {
@@ -39,7 +39,7 @@
     let cacheStatus = $state<string | null>(null);
 
     let socialFollows = $state<Set<Hexpubkey>>(new Set());
-    let dealConnections = $state<Set<Hexpubkey>>(new Set());
+    let dealLinksViaPartners = $state<Set<Hexpubkey>>(new Set());
     let dealConnectionsLoaded = $state(false);
     let hasDirectDealConnection = $state(false);
 
@@ -49,7 +49,7 @@
     const isInFreelanceFollow = $derived($currentUserFreelanceFollows.has(targetPubkey));
     const isInSatShootWot = $derived(satShootWoT.includes(targetPubkey));
     const isInDealConnections = $derived(
-        hasDirectDealConnection || dealConnections.size > 0
+        hasDirectDealConnection || dealLinksViaPartners.size > 0
     );
 
     const dataAgeDays = $derived.by(() => {
@@ -83,7 +83,7 @@
     };
 
     const resetDealConnections = () => {
-        dealConnections = new Set();
+        dealLinksViaPartners = new Set();
         dealConnectionsLoaded = false;
         hasDirectDealConnection = false;
     };
@@ -140,14 +140,6 @@
     const loadDealConnections = () => {
         if (!$currentUser || dealConnectionsLoaded) return;
 
-        const followBasedWoT = new Set<Hexpubkey>();
-        $networkWoTScores.forEach((score, pubkey) => {
-            if (score >= $minWot) {
-                followBasedWoT.add(pubkey);
-            }
-        });
-        followBasedWoT.add($currentUser.pubkey);
-        $currentUserFreelanceFollows.forEach((pubkey) => followBasedWoT.add(pubkey));
 
         const bidByAddress = new Map<string, (typeof $allBids)[number]>();
         $allBids.forEach((bid) => {
@@ -159,28 +151,11 @@
             serviceByAddress.set(service.serviceAddress, service);
         });
 
-        const connections = new Set<Hexpubkey>();
+        const dealPairs: Array<[Hexpubkey, Hexpubkey]> = [];
 
         const addDealPair = (left?: Hexpubkey, right?: Hexpubkey) => {
             if (!left || !right || left === right) return;
-
-            if (left === $currentUser.pubkey && right === targetPubkey) {
-                hasDirectDealConnection = true;
-                return;
-            }
-
-            if (right === $currentUser.pubkey && left === targetPubkey) {
-                hasDirectDealConnection = true;
-                return;
-            }
-
-            if (left === targetPubkey && followBasedWoT.has(right)) {
-                connections.add(right);
-            }
-
-            if (right === targetPubkey && followBasedWoT.has(left)) {
-                connections.add(left);
-            }
+            dealPairs.push([left, right]);
         };
 
         $allJobs.forEach((job) => {
@@ -197,7 +172,32 @@
             addDealPair(order.pubkey, service?.pubkey);
         });
 
-        dealConnections = connections;
+        const directPartners = new Set<Hexpubkey>();
+        dealPairs.forEach(([left, right]) => {
+            if (left === $currentUser.pubkey) {
+                directPartners.add(right);
+                return;
+            }
+
+            if (right === $currentUser.pubkey) {
+                directPartners.add(left);
+            }
+        });
+
+        hasDirectDealConnection = directPartners.has(targetPubkey);
+
+        const linkPartners = new Set<Hexpubkey>();
+        dealPairs.forEach(([left, right]) => {
+            if (left === targetPubkey && directPartners.has(right)) {
+                linkPartners.add(right);
+            }
+
+            if (right === targetPubkey && directPartners.has(left)) {
+                linkPartners.add(left);
+            }
+        });
+
+        dealLinksViaPartners = linkPartners;
         dealConnectionsLoaded = true;
     };
 
@@ -290,23 +290,23 @@
                 </span>
             </div>
             <p class="text-xs text-black-300 dark:text-white-300">
-                Deals include accepted bids and orders. We show direct deals with you or trusted deal
-                links via your follow-based WoT.
+                Deals include accepted bids and orders. We show direct deals with you or deal links
+                via your partners.
             </p>
             {#if hasDirectDealConnection}
                 <span class="badge w-fit px-2 py-1 text-xs text-white bg-yellow-500">
                     Direct deal with you
                 </span>
-            {:else if dealConnections.size > 0}
+            {:else if dealLinksViaPartners.size > 0}
                 <div class="flex flex-col gap-2">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm font-semibold">Trusted deal links</span>
+                        <span class="text-sm font-semibold">Deal links via your partners</span>
                         <span class="text-xs text-black-300 dark:text-white-300">
-                            {dealConnections.size} total
+                            {dealLinksViaPartners.size} total
                         </span>
                     </div>
                     <div class="flex flex-col gap-2 max-h-40 overflow-auto">
-                        {#each Array.from(dealConnections).slice(0, 4) as pubkey}
+                        {#each Array.from(dealLinksViaPartners).slice(0, 4) as pubkey}
                             <UserProfile pubkey={pubkey} />
                         {/each}
                     </div>
