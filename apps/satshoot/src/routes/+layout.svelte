@@ -31,7 +31,13 @@
         userMode,
     } from '$lib/stores/user';
 
-    import { myMuteList } from '$lib/stores/wot';
+    import {
+        myMuteList,
+        wotFilteredBids,
+        wotFilteredJobs,
+        wotFilteredOrders,
+        wotFilteredServices,
+    } from '$lib/stores/wot';
 
     import {
         allBids,
@@ -42,10 +48,6 @@
         myJobs,
         myOrders,
         myServices,
-        wotFilteredBids,
-        wotFilteredJobs,
-        wotFilteredOrders,
-        wotFilteredServices,
     } from '$lib/stores/freelance-eventstores';
 
     import { messageStore, filteredMessages } from '$lib/stores/messages';

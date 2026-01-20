@@ -15,12 +15,17 @@ import { tick } from 'svelte';
 import currentUser, { currentUserFreelanceFollows, fetchFreelanceFollowSet } from '../stores/user';
 import { followsUpdated } from '../stores/user';
 import satShootWoT from './satshoot-wot';
+import { allBids, allJobs, allOrders, allServices } from './freelance-eventstores';
 import type { NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
+import type { BidEvent } from '../events/BidEvent';
+import type { JobEvent } from '../events/JobEvent';
+import type { OrderEvent } from '../events/OrderEvent';
+import type { ServiceEvent } from '../events/ServiceEvent';
 
 
 export const myMuteListFilter: NDKFilter = {
     kinds: [NDKKind.MuteList],
-}
+};
 
 // This contains all mutes of user. Social and Freelance mutes are shared
 // so there is no separate way to mute a user only in the freelance context
@@ -29,23 +34,21 @@ export const myMuteList: NDKEventStore<NDKEvent> = get(ndk).storeSubscribe(
     {
         closeOnEose: false,
         groupable: false,
-        autoStart: false 
+        autoStart: false,
     },
 );
 
 export const mutedPubkeys = derived(
     [myMuteList],
     ([$myMuteList]) => {
-        const ret = new Set<Hexpubkey>()
+        const ret = new Set<Hexpubkey>();
         if ($myMuteList.length > 0) {
-            $myMuteList[0]
-                .getMatchingTags("p")
-                .forEach((t) => ret.add(t[1]))
+            $myMuteList[0].getMatchingTags('p').forEach((t) => ret.add(t[1]));
         }
 
-        return ret
+        return ret;
     }
-)
+);
 
 export const networkWoTScores: Writable<Map<Hexpubkey, number>> = persisted(
     'networkWoTScores',
@@ -79,16 +82,24 @@ export const wot = derived(
         minWot,
         currentUser,
         currentUserFreelanceFollows,
+        allJobs,
+        allBids,
+        allOrders,
+        allServices,
         mutedPubkeys,
-        useSatShootWoT
+        useSatShootWoT,
     ],
     ([
         $networkWoTScores,
         $minWot,
         $currentUser,
         $currentUserFreelanceFollows,
+        $allJobs,
+        $allBids,
+        $allOrders,
+        $allServices,
         $mutedPubkeys,
-        $useSatShootWoT
+        $useSatShootWoT,
     ]) => {
         const initialWoT: Array<Hexpubkey> = [];
         if ($useSatShootWoT) {
@@ -97,32 +108,100 @@ export const wot = derived(
         }
 
         const pubkeys = new Set<Hexpubkey>(initialWoT);
+        const followBasedWoT = new Set<Hexpubkey>(initialWoT);
 
         $networkWoTScores.forEach((score: number, follow: Hexpubkey) => {
-            if (score >= $minWot) pubkeys.add(follow);
+            if (score >= $minWot) {
+                pubkeys.add(follow);
+                followBasedWoT.add(follow);
+            }
         });
 
         if ($currentUser) {
             pubkeys.add($currentUser.pubkey);
+            followBasedWoT.add($currentUser.pubkey);
 
             // add current user's freelance follows to wot
             $currentUserFreelanceFollows.forEach((follow) => {
                 pubkeys.add(follow);
+                followBasedWoT.add(follow);
             });
 
             if ($currentUser.pubkey === SatShootPubkey && saveSatShootWoT) {
                 saveSatShootWoTInFile(pubkeys);
             }
+
+            const bidByAddress = new Map<string, BidEvent>();
+            $allBids.forEach((bid) => {
+                bidByAddress.set(bid.bidAddress, bid);
+            });
+
+            const serviceByAddress = new Map<string, ServiceEvent>();
+            $allServices.forEach((service) => {
+                serviceByAddress.set(service.serviceAddress, service);
+            });
+
+            const addDealPair = (left?: Hexpubkey, right?: Hexpubkey) => {
+                if (!left || !right || left === right) return;
+
+                if (left === $currentUser.pubkey) {
+                    pubkeys.add(right);
+                    return;
+                }
+
+                if (right === $currentUser.pubkey) {
+                    pubkeys.add(left);
+                    return;
+                }
+
+                if (followBasedWoT.has(left)) {
+                    pubkeys.add(right);
+                }
+
+                if (followBasedWoT.has(right)) {
+                    pubkeys.add(left);
+                }
+            };
+
+            $allJobs.forEach((job) => {
+                const acceptedBid = job.acceptedBidAddress
+                    ? bidByAddress.get(job.acceptedBidAddress)
+                    : undefined;
+                addDealPair(job.pubkey, acceptedBid?.pubkey);
+            });
+
+            $allOrders.forEach((order) => {
+                const service = order.referencedServiceAddress
+                    ? serviceByAddress.get(order.referencedServiceAddress)
+                    : undefined;
+                addDealPair(order.pubkey, service?.pubkey);
+            });
         }
 
         // Remove muted pubkeys
         $mutedPubkeys.forEach((p) => {
-            pubkeys.delete(p)
-        })
+            pubkeys.delete(p);
+        });
 
         return pubkeys;
     }
 );
+
+export const wotFilteredJobs = derived([allJobs, wot], ([$allJobs, $wot]) => {
+    return $allJobs.filter((job: JobEvent) => $wot.has(job.pubkey));
+});
+
+export const wotFilteredBids = derived([allBids, wot], ([$allBids, $wot]) => {
+    return $allBids.filter((bid: BidEvent) => $wot.has(bid.pubkey));
+});
+
+export const wotFilteredServices = derived([allServices, wot], ([$allServices, $wot]) => {
+    return $allServices.filter((service: ServiceEvent) => $wot.has(service.pubkey));
+});
+
+export const wotFilteredOrders = derived([allOrders, wot], ([$allOrders, $wot]) => {
+    return $allOrders.filter((order: OrderEvent) => $wot.has(order.pubkey));
+});
 
 export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
     // This should not take more than 15 sec
@@ -236,7 +315,6 @@ function updateWotScores(
     events.forEach((event: NDKEvent) => {
         if (event.kind === NDKKind.Contacts) {
             const follows = filterValidPTags(event.tags);
-            const userFollow: boolean = event.pubkey === user.pubkey;
             follows.forEach((f: Hexpubkey) => {
                 // Add first order follow score
                 const currentScore: number =
