@@ -42,9 +42,11 @@
     import ProgressRing from '$lib/components/UI/Display/ProgressRing.svelte';
     import { toaster } from '$lib/stores/toaster';
     import { deriveSeedKey } from '$lib/wallet/nut-13';
+    import { insertThousandSeparator } from '$lib/utils/misc';
     import MnemonicSeedGenerationModal from '$lib/components/Modals/MnemonicSeedGenerationModal.svelte';
     import MnemonicSeedRecoverModal from '$lib/components/Modals/MnemonicSeedRecoverModal.svelte';
     import TooltipIcon from '$lib/components/Icons/TooltipIcon.svelte';
+    import { Popover } from '@skeletonlabs/skeleton-svelte';
 
     enum Tab {
         Mints,
@@ -62,6 +64,7 @@
     let showCleanWalletConfirmationDialog = $state(false);
     let showMnemonicSeedGenerationModal = $state(false);
     let showMnemonicSeedInputModal = $state(false);
+    let walletActionsOpen = $state(false);
 
     let mintBalances: Record<string, number> = $state({});
     let walletBalance = $state('0');
@@ -115,10 +118,10 @@
         if ($wallet.event?.kind === NDKKind.LegacyCashuWallet && !toastTriggered) {
             toastTriggered = true;
             toaster.warning({
-                title: 'You are using a legacy Nostr Wallet. Migrate to new?',
+                title: 'You are using a legacy Nostr Wallet. Switch to new?',
                 duration: 60_000,
                 action: {
-                    label: 'Migrate',
+                    label: 'Switch',
                     onClick: () => {
                         respondedToAction = true;
                         migrateCashuWallet($ndk)
@@ -256,7 +259,7 @@
         let balanceStr: string = '';
         const totalBalance = $wallet.balance;
         if (totalBalance) {
-            balanceStr = totalBalance.amount.toString();
+            balanceStr = insertThousandSeparator(totalBalance.amount);
         } else {
             balanceStr = '?';
         }
@@ -283,8 +286,13 @@
             return;
         }
 
-        if ($wallet && $wallet.mints.filter(m => selectedMints.includes(m)).length !== $wallet.mints.length) {
-            toaster.error({ title: `Your new wallet must use at least all the mints of the old wallet!` });
+        if (
+            $wallet &&
+            $wallet.mints.filter((m) => selectedMints.includes(m)).length !== $wallet.mints.length
+        ) {
+            toaster.error({
+                title: `Your new wallet must use at least all the mints of the old wallet!`,
+            });
             return;
         }
 
@@ -317,17 +325,26 @@
             await broadcastEvent($ndk, cashuInfo, { replaceable: true });
 
             const walletMigration = !!$wallet;
-            const deterministicTransfer = await walletInit(newWallet, cashuInfo, $ndk, $currentUser!, $wallet ?? undefined);
+            const deterministicTransfer = await walletInit(
+                newWallet,
+                cashuInfo,
+                $ndk,
+                $currentUser!,
+                $wallet ?? undefined
+            );
             if (walletMigration && !deterministicTransfer) {
                 toaster.warning({
-                    title: "Error while transfering funds to new wallet. The funds will be stored in the new wallet, but without deterministic secrets!\n" +
-                    "To ensure all the funds are secured by the seed words, please retry the migration.",
-                    duration: 60000
+                    title:
+                        'Error while transfering funds to new wallet. The funds will be stored in the new wallet, but without deterministic secrets!\n' +
+                        'To ensure all the funds are secured by the seed words, please retry the migration.',
+                    duration: 60000,
                 });
             }
 
             await newWallet.publish();
-            console.log(`wallet after publish: ${Object.entries(newWallet.state.getDeterministicCountersSnapshot())}`);
+            console.log(
+                `wallet after publish: ${Object.entries(newWallet.state.getDeterministicCountersSnapshot())}`
+            );
 
             toaster.success({
                 title: `Nostr Wallet created!`,
@@ -356,7 +373,7 @@
     async function recoverDeterministicWallet(
         seedWords: string[],
         mint: string
-    ): Promise<{ errors: any[], recoverResult: RecoverResult }> {
+    ): Promise<{ errors: any[]; recoverResult: RecoverResult }> {
         const bip39seed = seedWords.filter((w) => w.length).length
             ? deriveSeedKey(seedWords.join(' '))
             : $wallet!.bip39seed!;
@@ -539,8 +556,9 @@
     const deleteIconClasses =
         'bx bxs-trash transition ease duration-[0.3s] h-full w-full flex! h-full justify-center items-center hover:bg-red-400';
 
-    const noSeedTooltip = "This wallet isn't backed up by a seed phrase. You can fix this by migrating to a Seed Words Wallet.<br>PS.: Mints can take a small fee for the transfer.";
-    const seedTooltip = "You are safe, your wallet is backed up by a seed phrase.";
+    const noSeedTooltip =
+        "This wallet isn't backed up by a seed phrase. You can fix this by switching to a Seed Words Wallet.<br>Mints can take a small fee for this operation.";
+    const seedTooltip = 'You are safe, your wallet is backed up by a seed phrase.';
 </script>
 
 <div class="w-full flex flex-col gap-0 grow">
@@ -623,9 +641,8 @@
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
                         <Button
-                            onClick={() => showMnemonicSeedGenerationModal = true}
-                            title="Create a new Nostr Cashu wallet"
-                            >New Nostr Wallet</Button
+                            onClick={() => (showMnemonicSeedGenerationModal = true)}
+                            title="Create a new Nostr Cashu wallet">New Nostr Wallet</Button
                         >
                         <Button onClick={tryLoadWallet} title="Retry loading your wallet"
                             >Try loading Wallet</Button
@@ -644,63 +661,97 @@
                                 <div class="max-w-[95vw]">
                                     <Card classes="gap-[15px]">
                                         <div
-                                            class="w-full flex flex-col p-[10px] rounded-[6px] overflow-hidden relative min-h-[100px] bg-linear-to-tl from-blue-500 to-blue-400 shadow-deep"
+                                            class="w-full flex flex-col items-center justify-center p-[10px] rounded-[6px] overflow-hidden relative min-h-[120px] bg-linear-to-tl from-blue-500 to-blue-400 shadow-deep"
                                         >
-                                            <div class="font-[500] text-white">
-                                                <p>
-                                                    {#if $wallet.bip39seed}
-                                                        Wallet
-                                                        <TooltipIcon
-                                                                iconClasses="bx bx-check-shield bx-xs text-green-300"
-                                                                placement="top"
-                                                                popUpText={seedTooltip}
-                                                        />
-                                                    {/if}
-                                                    {#if !$wallet.bip39seed}
-                                                        Wallet
-                                                        <TooltipIcon
-                                                                iconClasses="bx bx-alert-triangle bx-xs text-yellow-600"
-                                                                placement="top"
-                                                                popUpText={noSeedTooltip}
-                                                        />
-                                                    {/if}
-                                                </p>
-                                            </div>
-                                            <p class="text-[24px] font-[500] text-white absolute bottom-[5px]">
+                                            {#if $wallet.bip39seed}
+                                                <div class="absolute top-[6px] left-[6px]">
+                                                    <TooltipIcon
+                                                        iconClasses="bx bx-check-shield bx-sm text-green-300"
+                                                        placement="top"
+                                                        popUpText={seedTooltip}
+                                                    />
+                                                </div>
+                                            {:else}
+                                                <div class="absolute top-[6px] left-[6px]">
+                                                    <TooltipIcon
+                                                        iconClasses="bx bx-alert-triangle bx-sm text-yellow-200"
+                                                        placement="top"
+                                                        popUpText={noSeedTooltip}
+                                                    />
+                                                </div>
+                                            {/if}
+
+                                            <p
+                                                class="text-[36px] font-[600] text-white text-center leading-[1.1]"
+                                            >
                                                 {walletBalance}
                                                 <span
-                                                    class="text-[16px] opacity-[0.5] font-[500] text-white mt-[-5px]"
+                                                    class="text-[20px] font-[600] text-white ml-[6px]"
                                                 >
                                                     sats
                                                 </span>
                                             </p>
 
-                                            <Button
-                                                variant="text"
-                                                classes="p-[5px] gap-[5px] text-[14px] font-[500] text-white absolute top-[5px] right-[5px]"
-                                                grow
-                                                onClick={restoreFromSeed}
-                                            >
-                                                <i class="bx bx-upload bx-xs"> </i>
-                                                Recover from Seed
-                                            </Button>
+                                            <div class="absolute top-[5px] right-[5px]">
+                                                <Popover
+                                                    open={walletActionsOpen}
+                                                    onOpenChange={(event) =>
+                                                        (walletActionsOpen = event.open)}
+                                                    positioning={{ placement: 'bottom-end' }}
+                                                    zIndex="1000"
+                                                >
+                                                    {#snippet trigger()}
+                                                        <Button
+                                                            variant="text"
+                                                            classes="p-[5px] text-white hover:bg-blue-600"
+                                                            title="Wallet actions"
+                                                        >
+                                                            <i
+                                                                class="bx bx-dots-vertical-rounded bx-sm"
+                                                            ></i>
+                                                        </Button>
+                                                    {/snippet}
+                                                    {#snippet content()}
+                                                        <div
+                                                            class="min-w-[230px] rounded-[6px] overflow-hidden border-[1px] border-black-100 dark:border-white-100 bg-white dark:bg-brightGray shadow-deep"
+                                                        >
+                                                            <button
+                                                                class="transition ease duration-[0.3s] w-full flex flex-row items-center gap-[8px] px-[12px] py-[8px] text-black-500 dark:text-white hover:bg-blue-500 hover:text-white"
+                                                                onclick={() => {
+                                                                    walletActionsOpen = false;
+                                                                    restoreFromSeed();
+                                                                }}
+                                                                title="Recover wallet from a seed phrase"
+                                                            >
+                                                                <i class="bx bx-upload bx-xs"> </i>
+                                                                Recover from Seed
+                                                            </button>
 
-                                            <Button
-                                                variant="text"
-                                                classes="p-[5px] gap-[5px] text-[14px] font-[500] text-white absolute bottom-[5px] right-[5px]"
-                                                grow
-                                                onClick={() =>
-                                                    (showMnemonicSeedGenerationModal = true)}
-                                            >
-                                                {#if $wallet.bip39seed}
-                                                    <i class='bx bx-recycle bx-xs'></i> 
-                                                    Migrate to New Wallet
-                                                {/if}
-                                                {#if !$wallet.bip39seed}
-                                                    <i class="bx bx-check-shield bx-xs"></i>
-                                                    Migrate to Seed Words Wallet
-                                                {/if}
-                                            </Button>
+                                                            <button
+                                                                class="transition ease duration-[0.3s] w-full flex flex-row items-center gap-[8px] px-[12px] py-[8px] text-black-500 dark:text-white hover:bg-blue-500 hover:text-white"
+                                                                onclick={() => {
+                                                                    walletActionsOpen = false;
+                                                                    showMnemonicSeedGenerationModal = true;
+                                                                }}
+                                                                title={$wallet?.bip39seed
+                                                                    ? 'Switch to a new wallet'
+                                                                    : 'Switch to a Seed Words Wallet'}
+                                                            >
+                                                                {#if $wallet?.bip39seed}
+                                                                    <i class="bx bx-recycle bx-xs"
+                                                                    ></i>
+                                                                    Switch to New Wallet
+                                                                {:else}
+                                                                    <i
+                                                                        class="bx bx-check-shield bx-xs"
+                                                                    ></i>
+                                                                    Switch to Seed Words Wallet
+                                                                {/if}
+                                                            </button>
+                                                        </div>
+                                                    {/snippet}
+                                                </Popover>
+                                            </div>
 
                                             <!-- <i -->
                                             <!--         class="bx bxs-wallet text-white-50 text-[75px] absolute bottom-[-35px] right-[-10px] scale-[1.5] rotate-[-25deg]" -->
@@ -735,7 +786,7 @@
                                     <Card
                                         classes="bg-warning-500 dark:bg-warning-700 relative max-[768px]:hidden"
                                     >
-                                        <p class="font-[600] text-black-400">
+                                        <p class="font-[600] text-white">
                                             Attention: This is an experimental feature, use it at
                                             your own risk.
                                         </p>
@@ -791,7 +842,10 @@
                                     <div class="w-full flex flex-col gap-[10px]">
                                         <Card>
                                             <div class="w-full flex flex-row justify-end">
-                                                <Button onClick={addRelay} title="Add a relay for wallet backup events">
+                                                <Button
+                                                    onClick={addRelay}
+                                                    title="Add a relay for wallet backup events"
+                                                >
                                                     Add Relay
                                                 </Button>
                                             </div>
@@ -888,7 +942,7 @@
 <MnemonicSeedRecoverModal
     bind:isOpen={showMnemonicSeedInputModal}
     recoverFromSeed={recoverDeterministicWallet}
-    updateMints={updateMints}
+    {updateMints}
     bind:mints
     isDeterministic={!!$wallet?.bip39seed}
 />

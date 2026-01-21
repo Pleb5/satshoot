@@ -133,8 +133,16 @@ export async function transferAllFundsTo(sourceNDKWallet: NDKCashuWallet, receiv
                     await receivingNDKWallet.incrementDeterministicCounter(currentCounterEntry.counterKey, counterIncrement, false);
                 }
             } catch (e) {
-                console.error(`Error while transferring funds to new wallet. The funds will be stored in the new wallet, but without deterministic secrets!`);
-                console.error("To ensure all the funds are secured by deterministic secrets, please retry by transferring all funds again with this method, or send the e-Cash to yourself.")
+                console.error(
+                    `Error while transferring funds to new wallet for mint ${mint}. The funds will be stored in the new wallet, but without deterministic secrets!`,
+                    e
+                );
+                if (e instanceof Error && e.cause) {
+                    console.error('Transfer error cause:', e.cause);
+                }
+                console.error(
+                    "To ensure all the funds are secured by deterministic secrets, please retry by transferring all funds again with this method, or send the e-Cash to yourself."
+                );
                 receivedProofs = proofs;
                 deterministicTransfer = false;
             }

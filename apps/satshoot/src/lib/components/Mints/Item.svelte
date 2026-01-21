@@ -103,15 +103,26 @@
     }
 
     let selectedClass = $derived(
+        isSelected ? 'bg-blue-500 text-white' : 'bg-black-100 dark:bg-white-100'
+    );
+
+    let listHoverClasses = $derived(
         isSelected
-            ? 'bg-blue-500 hover:bg-blue-500 text-white'
-            : 'bg-black-100 hover:bg-black-100 dark:bg-white-100 dark:hover:bg-white-100'
+            ? ''
+            : 'hover:text-blue-500 dark:hover:text-white hover:bg-black-100 dark:hover:bg-white-100'
     );
 
     let wrapperClasses = $derived(
         selectedClass +
             ' w-full flex flex-col items-start gap-[3px] ' +
-            'px-[10px] py-[10px] text-left relative outline-[0px]'
+            'px-[10px] py-[10px] text-left relative outline-[0px] ' +
+            listHoverClasses
+    );
+
+    let endorsementTriggerClasses = $derived(
+        'flex items-center gap-2 text-left transition-colors w-full rounded-[6px] px-[6px] py-[4px] cursor-pointer ' +
+            'bg-black-100 dark:bg-white-100 text-black-500 dark:text-white ' +
+            'hover:bg-yellow-500 hover:text-black-500 dark:hover:text-black-500'
     );
 
     const avatarWrapperClasses =
@@ -152,7 +163,7 @@
                     <div
                         role="button"
                         tabindex="0"
-                        class="flex items-center gap-2 text-left"
+                        class={endorsementTriggerClasses}
                         on:click|stopPropagation={openEndorsements}
                         on:keydown|stopPropagation={handleEndorsementKeydown}
                     >
@@ -169,10 +180,13 @@
                                 {/each}
                             </div>
                         </div>
-                        <span class="text-[12px] font-[300]">
-                            {endorsementCounts.totalCount > 4
-                                ? `+${endorsementCounts.totalCount - 4} people from your WoT recommend this mint`
-                                : 'People from your WoT recommend this mint'}
+                        <span class="flex items-center gap-1 text-[12px] font-[300] min-w-0">
+                            <span class="underline underline-offset-2">
+                                {endorsementCounts.totalCount > 4
+                                    ? `+${endorsementCounts.totalCount - 4} people from your WoT recommend this mint`
+                                    : 'People from your WoT recommend this mint'}
+                            </span>
+                            <i class="bx bx-chevron-right text-[14px] shrink-0" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="text-[12px] font-[300] text-black-300 dark:text-white-300">
