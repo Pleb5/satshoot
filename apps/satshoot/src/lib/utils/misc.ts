@@ -5,14 +5,14 @@ import {
     NDKKind,
     type NostrEvent,
     type NDKFilter,
+    type NDKRelay,
     NDKEvent,
     NDKRelaySet,
     NDKSubscriptionCacheUsage,
 } from '@nostr-dev-kit/ndk';
+import type NDK from '@nostr-dev-kit/ndk';
+
 import normalizeUrl from 'normalize-url';
-import type { RelayFirstFetchOpts } from './helpers';
-import { get } from 'svelte/store';
-import ndk from '$lib/stores/session';
 import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 export const JobsPerPage = 9;
@@ -314,30 +314,41 @@ export function normalizeRelayUrl(url: string) {
     if (!import.meta.env.DEV) {
         // Strip protocol
         url = stripProto(url);
-    
+
         // Url-s without pathnames are supposed to have a trailing slash
         if (!url.includes('/')) {
             url += '/';
         }
-    
+
         return 'wss://' + url;
     } else {
         return url;
     }
 }
 
+type RelayFirstFetchOpts = {
+    relayTimeoutMS: number;
+    fallbackToCache: boolean;
+    cacheOnly?: boolean;
+    explicitRelays?: string[] | NDKRelay[];
+};
+
 export async function fetchEventFromRelaysFirst(
+    ndk: NDK,
     filter: NDKFilter,
     fetchOpts: RelayFirstFetchOpts = {
         relayTimeoutMS: 6000,
         fallbackToCache: false,
+        cacheOnly: false,
     }
 ): Promise<NDKEvent | null> {
-    const $ndk = get(ndk);
-
     // If relays are provided construct a set and pass over to sub
     const relaySet = fetchOpts.explicitRelays
-        ? new NDKRelaySet(new Set(fetchOpts.explicitRelays), $ndk)
+        ? Array.isArray(fetchOpts.explicitRelays) &&
+          fetchOpts.explicitRelays.length > 0 &&
+          typeof fetchOpts.explicitRelays[0] === 'string'
+            ? NDKRelaySet.fromRelayUrls(fetchOpts.explicitRelays as string[], ndk)
+            : new NDKRelaySet(new Set(fetchOpts.explicitRelays as NDKRelay[]), ndk)
         : undefined;
 
     const timeoutPromise = new Promise((resolve) => {
@@ -346,7 +357,14 @@ export async function fetchEventFromRelaysFirst(
         }, fetchOpts.relayTimeoutMS);
     });
 
-    const relayPromise = $ndk.fetchEvent(
+    if (fetchOpts.cacheOnly) {
+        return await ndk.fetchEvent(filter, {
+            cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
+            groupable: false,
+        });
+    }
+
+    const relayPromise = ndk.fetchEvent(
         filter,
         {
             cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
@@ -367,7 +385,7 @@ export async function fetchEventFromRelaysFirst(
     }
 
     console.warn('Could not fetch event from relays, fetching from Cache...');
-    const cachedEvent = await $ndk.fetchEvent(filter, {
+    const cachedEvent = await ndk.fetchEvent(filter, {
         cacheUsage: NDKSubscriptionCacheUsage.ONLY_CACHE,
         groupable: false,
     });

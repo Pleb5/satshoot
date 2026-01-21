@@ -3,7 +3,6 @@ import {
     type NDKSigner,
     NDKKind,
     NDKRelayList,
-    NDKRelay,
     NDKSubscriptionCacheUsage,
     profileFromEvent,
     getNip57ZapSpecFromLud,
@@ -13,6 +12,7 @@ import {
     serializeProfile,
     NDKUser,
     NDKList,
+    NDKRelay,
 } from '@nostr-dev-kit/ndk';
 import ndk, {
     blastrUrl,
@@ -48,7 +48,11 @@ import { dev } from '$app/environment';
 import { connected } from '../stores/network';
 import { retriesLeft, retryDelay, maxRetryAttempts } from '../stores/network';
 import { ndkNutzapMonitor, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
-import { DeterministicCashuWalletInfoKind, NDKCashuWallet, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
+import {
+    DeterministicCashuWalletInfoKind,
+    NDKCashuWallet,
+    NDKWalletStatus,
+} from '@nostr-dev-kit/ndk-wallet';
 import { fetchEventFromRelaysFirst, APP_RELAY_STORAGE_KEY } from '$lib/utils/misc';
 import { toaster } from '$lib/stores/toaster';
 
@@ -132,7 +136,12 @@ export async function fetchAndInitWallet(
         }
     }
 
-    const kindsArr = [NDKKind.CashuWallet, NDKKind.LegacyCashuWallet, NDKKind.CashuMintList, DeterministicCashuWalletInfoKind];
+    const kindsArr = [
+        NDKKind.CashuWallet,
+        NDKKind.LegacyCashuWallet,
+        NDKKind.CashuMintList,
+        DeterministicCashuWalletInfoKind,
+    ];
     if (walletFetchOpts.fetchLegacyWallet) kindsArr.push(NDKKind.LegacyCashuWallet);
 
     const cashuPromise = ndk.fetchEvents(
@@ -158,7 +167,7 @@ export async function fetchAndInitWallet(
             walletEvent = event;
         } else if (event.kind === DeterministicCashuWalletInfoKind) {
             deterministicWalletEvent = event;
-            console.log("fetchAndInitWallet: found deterministic cashu wallet event");
+            console.log('fetchAndInitWallet: found deterministic cashu wallet event');
         } else if (event.kind === NDKKind.CashuMintList) {
             cashuMintList = NDKCashuMintList.from(event);
         }
@@ -248,9 +257,8 @@ export function logout() {
     goto('/');
 }
 
-
 export async function freelanceFollow(pubkey: string) {
-    const $currentUser = get(currentUser)
+    const $currentUser = get(currentUser);
     if (!$currentUser) return;
 
     let followSet = get(freelanceFollowSets).get($currentUser.pubkey);
@@ -264,27 +272,27 @@ export async function freelanceFollow(pubkey: string) {
     followSet.tag(['p', pubkey]);
 
     await followSet
-    .publishReplaceable()
-    .then(() => {
-        toaster.success({
-            title: 'Followed!',
-        });
+        .publishReplaceable()
+        .then(() => {
+            toaster.success({
+                title: 'Followed!',
+            });
 
-        freelanceFollowSets.update((map) => {
-            map.set($currentUser.pubkey, followSet);
-            return map;
+            freelanceFollowSets.update((map) => {
+                map.set($currentUser.pubkey, followSet);
+                return map;
+            });
+        })
+        .catch((err) => {
+            console.error(err);
+            toaster.error({
+                title: 'Failed to publish follow set',
+            });
         });
-    })
-    .catch((err) => {
-        console.error(err);
-        toaster.error({
-            title: 'Failed to publish follow set',
-        });
-    })
 }
 
 export async function freelanceUnfollow(pubkey: string) {
-    const $currentUser = get(currentUser)
+    const $currentUser = get(currentUser);
 
     if (!$currentUser) return;
 
@@ -292,27 +300,26 @@ export async function freelanceUnfollow(pubkey: string) {
 
     if (!followSet) return;
 
-
     followSet.removeItemByValue(pubkey);
 
     await followSet
-    .publishReplaceable()
-    .then(() => {
-        toaster.success({
-            title: 'Un-followed!',
-        });
+        .publishReplaceable()
+        .then(() => {
+            toaster.success({
+                title: 'Un-followed!',
+            });
 
-        freelanceFollowSets.update((map) => {
-            map.set($currentUser.pubkey, followSet);
-            return map;
+            freelanceFollowSets.update((map) => {
+                map.set($currentUser.pubkey, followSet);
+                return map;
+            });
+        })
+        .catch((err) => {
+            console.error(err);
+            toaster.error({
+                title: 'Failed to publish follow set',
+            });
         });
-    })
-    .catch((err) => {
-        console.error(err);
-        toaster.error({
-            title: 'Failed to publish follow set',
-        });
-    })
 }
 
 export async function getActiveServiceWorker(): Promise<ServiceWorker | null> {
@@ -373,21 +380,15 @@ export async function fetchUserOutboxRelays(
 ): Promise<NDKEvent | null> {
     const queryRelaysUrls = [...BOOTSTRAPOUTBOXRELAYS, ...DEFAULTRELAYURLS];
 
-    const queryRelays: Array<NDKRelay> = [];
-
-    queryRelaysUrls.forEach((url) => {
-        queryRelays.push(new NDKRelay(url, undefined, ndk));
-    });
-
     const relayFilter = {
         kinds: [NDKKind.RelayList],
         authors: [pubkey],
     };
 
-    let relays = await fetchEventFromRelaysFirst(relayFilter, {
-        relayTimeoutMS: timeout,
-        fallbackToCache: true,
-        explicitRelays: queryRelays,
+    let relays = await fetchEventFromRelaysFirst(ndk, relayFilter, {
+        relayTimeoutMS: 4000,
+        fallbackToCache: false,
+        explicitRelays: queryRelaysUrls,
     });
 
     return relays;
@@ -497,12 +498,6 @@ export async function checkRelayConnections() {
     }
 }
 
-export type RelayFirstFetchOpts = {
-    relayTimeoutMS: number;
-    fallbackToCache: boolean;
-    explicitRelays?: NDKRelay[];
-};
-
 export async function getZapConfiguration(pubkey: string, lightningAddress?: string) {
     const $ndk = get(ndk);
     const trimmedAddress = lightningAddress?.trim();
@@ -533,9 +528,9 @@ export async function getZapConfiguration(pubkey: string, lightningAddress?: str
 
     const metadataRelays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
 
-    const metadataEvent = await fetchEventFromRelaysFirst(metadataFilter, {
-        relayTimeoutMS: 5000,
-        fallbackToCache: false,
+    const metadataEvent = await fetchEventFromRelaysFirst($ndk, metadataFilter, {
+        relayTimeoutMS: 4000,
+        fallbackToCache: true,
         explicitRelays: metadataRelays,
     });
 
@@ -607,8 +602,8 @@ export async function getCashuPaymentInfo(
         }
     }
 
-    const cashuMintlistEvent = await fetchEventFromRelaysFirst(filter, {
-        relayTimeoutMS: 5000,
+    const cashuMintlistEvent = await fetchEventFromRelaysFirst($ndk, filter, {
+        relayTimeoutMS: 4000,
         fallbackToCache: false,
         explicitRelays: relays,
     });

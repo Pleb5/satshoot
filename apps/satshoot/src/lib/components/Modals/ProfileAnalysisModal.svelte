@@ -1,14 +1,13 @@
 <script lang="ts">
     import { tick } from 'svelte';
     import { differenceInDays } from 'date-fns';
-    import {
-        NDKKind,
-        NDKSubscriptionCacheUsage,
-        type Hexpubkey,
-    } from '@nostr-dev-kit/ndk';
+    import { NDKKind, NDKSubscriptionCacheUsage, type Hexpubkey } from '@nostr-dev-kit/ndk';
 
     import ndk from '$lib/stores/session';
-    import currentUser, { currentUserFreelanceFollows } from '$lib/stores/user';
+    import currentUser, {
+        currentUserFreelanceFollows,
+        currentUserFreelanceFollowNetwork,
+    } from '$lib/stores/user';
     import { allBids, allJobs, allOrders, allServices } from '$lib/stores/freelance-eventstores';
     import { networkWoTScores } from '$lib/stores/wot';
     import satShootWoT from '$lib/stores/satshoot-wot';
@@ -46,11 +45,9 @@
     let socialFollowsLoaded = $state(false);
 
     const isInSocialNetwork = $derived($networkWoTScores.has(targetPubkey));
-    const isInFreelanceFollow = $derived($currentUserFreelanceFollows.has(targetPubkey));
+    const isInFreelanceFollow = $derived($currentUserFreelanceFollowNetwork.has(targetPubkey));
     const isInSatShootWot = $derived(satShootWoT.includes(targetPubkey));
-    const isInDealConnections = $derived(
-        hasDirectDealConnection || dealLinksViaPartners.size > 0
-    );
+    const isInDealConnections = $derived(hasDirectDealConnection || dealLinksViaPartners.size > 0);
 
     const dataAgeDays = $derived.by(() => {
         if (!cachedResult) return null;
@@ -140,7 +137,6 @@
     const loadDealConnections = () => {
         if (!$currentUser || dealConnectionsLoaded) return;
 
-
         const bidByAddress = new Map<string, (typeof $allBids)[number]>();
         $allBids.forEach((bid) => {
             bidByAddress.set(bid.bidAddress, bid);
@@ -211,11 +207,7 @@
         await tick();
 
         try {
-            cachedResult = await requestVertexReputation(
-                $ndk,
-                targetPubkey,
-                $currentUser.pubkey
-            );
+            cachedResult = await requestVertexReputation($ndk, targetPubkey, $currentUser.pubkey);
         } catch (error) {
             showErrorToast(
                 'Vertex analysis failed',
@@ -260,15 +252,19 @@
             <div class="flex items-center justify-between">
                 <span class="text-base font-semibold">In your social network</span>
                 <span
-                    class="badge p-2 text-white {isInSocialNetwork ? 'bg-yellow-500' : 'bg-red-500'}"
+                    class="badge p-2 text-white {isInSocialNetwork
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500'}"
                 >
                     {isInSocialNetwork ? 'YES' : 'NO'}
                 </span>
             </div>
             <div class="flex items-center justify-between">
-                <span class="text-base font-semibold">Freelance follow</span>
+                <span class="text-base font-semibold">Freelance follow network</span>
                 <span
-                    class="badge p-2 text-white {isInFreelanceFollow ? 'bg-yellow-500' : 'bg-red-500'}"
+                    class="badge p-2 text-white {isInFreelanceFollow
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500'}"
                 >
                     {isInFreelanceFollow ? 'YES' : 'NO'}
                 </span>
@@ -284,7 +280,9 @@
             <div class="flex items-center justify-between">
                 <span class="text-base font-semibold">Deal connection</span>
                 <span
-                    class="badge p-2 text-white {isInDealConnections ? 'bg-yellow-500' : 'bg-red-500'}"
+                    class="badge p-2 text-white {isInDealConnections
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500'}"
                 >
                     {isInDealConnections ? 'YES' : 'NO'}
                 </span>
@@ -307,7 +305,7 @@
                     </div>
                     <div class="flex flex-col gap-2 max-h-40 overflow-auto">
                         {#each Array.from(dealLinksViaPartners).slice(0, 4) as pubkey}
-                            <UserProfile pubkey={pubkey} />
+                            <UserProfile {pubkey} />
                         {/each}
                     </div>
                 </div>
@@ -327,7 +325,9 @@
             </div>
 
             {#if loadingCache}
-                <div class="flex items-center gap-2 text-sm text-black-300 dark:text-white-300 mt-3">
+                <div
+                    class="flex items-center gap-2 text-sm text-black-300 dark:text-white-300 mt-3"
+                >
                     <ProgressRing />
                     <span>Loading cached analysis...</span>
                 </div>
@@ -336,7 +336,9 @@
             {/if}
 
             {#if loading}
-                <div class="flex items-center gap-2 text-sm text-black-300 dark:text-white-300 mt-3">
+                <div
+                    class="flex items-center gap-2 text-sm text-black-300 dark:text-white-300 mt-3"
+                >
                     <ProgressRing />
                     <span>Requesting analysis from Vertex...</span>
                 </div>
@@ -350,9 +352,15 @@
         {#if cachedResult}
             <div class="border-t-[1px] border-t-black-100 dark:border-t-white-100 pt-4">
                 <div class="flex items-center justify-between">
-                    <span class="font-semibold">Top reputable followers</span>
+                    <span class="font-semibold">Top social followers</span>
                     {#if loadingSocialFollows}
-                        <span class="text-xs text-black-300 dark:text-white-300">Loading follows...</span>
+                        <span class="text-xs text-black-300 dark:text-white-300"
+                            >Loading follows...</span
+                        >
+                    {:else}
+                        <span class="text-xs text-black-300 dark:text-white-300"
+                            >Followed on social by You?</span
+                        >
                     {/if}
                 </div>
 

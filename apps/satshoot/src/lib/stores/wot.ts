@@ -12,7 +12,14 @@ import { NDKSubscriptionCacheUsage, NDKKind } from '@nostr-dev-kit/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import { tick } from 'svelte';
 
-import currentUser, { currentUserFreelanceFollows, fetchFreelanceFollowSet } from '../stores/user';
+import currentUser, {
+    currentUserFreelanceFollows,
+    fetchFreelanceFollowSet,
+    fetchFreelanceFollowSetWithCache,
+    freelanceFollowNetwork,
+    freelanceFollowNetworkUpdated,
+    freelanceFollowSets,
+} from '../stores/user';
 import { followsUpdated } from '../stores/user';
 import satShootWoT from './satshoot-wot';
 import { allBids, allJobs, allOrders, allServices } from './freelance-eventstores';
@@ -82,6 +89,7 @@ export const wot = derived(
         minWot,
         currentUser,
         currentUserFreelanceFollows,
+        freelanceFollowNetwork,
         allJobs,
         allBids,
         allOrders,
@@ -94,6 +102,7 @@ export const wot = derived(
         $minWot,
         $currentUser,
         $currentUserFreelanceFollows,
+        $freelanceFollowNetwork,
         $allJobs,
         $allBids,
         $allOrders,
@@ -120,6 +129,10 @@ export const wot = derived(
 
             // add current user's freelance follows to wot
             $currentUserFreelanceFollows.forEach((follow) => {
+                pubkeys.add(follow);
+            });
+
+            $freelanceFollowNetwork.forEach((follow) => {
                 pubkeys.add(follow);
             });
 
@@ -226,6 +239,8 @@ export async function loadWot(ndk: NDKSvelte, user: NDKUser) {
         // fetch the freelance follow event of current user
         const freelanceFollows = await fetchFreelanceFollowSet(user.pubkey);
 
+        void updateFreelanceFollowNetwork(user);
+
         if (updateNecessary()) {
             const primaryWoTEventsFilter: NDKFilter = {
                 kinds: [NDKKind.Contacts, NDKKind.MuteList, NDKKind.Report],
@@ -301,6 +316,63 @@ async function updateSocialWoT(primaryWoTEvents: Set<NDKEvent>, ndk: NDKSvelte) 
     console.log('Updated Network wot scores:', networkWoTScores);
 
     followsUpdated.set(Math.floor(Date.now() / 1000));
+}
+
+async function updateFreelanceFollowNetwork(user: NDKUser) {
+    const now = Math.floor(Date.now() / 1000);
+    const cacheCutoff = now - 60 * 60 * 24 * 7;
+    const lastUpdated = get(freelanceFollowNetworkUpdated);
+    const useCacheOnly = lastUpdated >= cacheCutoff;
+
+    const directFollows = Array.from(get(currentUserFreelanceFollows));
+    if (directFollows.length === 0) {
+        freelanceFollowNetwork.set(new Set());
+        freelanceFollowNetworkUpdated.set(now);
+        return;
+    }
+
+    if (directFollows.length === 1) {
+        freelanceFollowNetwork.set(new Set());
+        freelanceFollowNetworkUpdated.set(now);
+        return;
+    }
+
+    try {
+        await Promise.all(
+            directFollows.map((pubkey) => fetchFreelanceFollowSetWithCache(pubkey, useCacheOnly))
+        );
+    } catch (error) {
+        console.warn('Failed to refresh freelance follow network', error);
+    }
+
+    const followSets = get(freelanceFollowSets);
+    const counts = new Map<Hexpubkey, number>();
+
+    const directFollowSet = new Set(directFollows);
+
+    directFollows.forEach((follow) => {
+        const followSet = followSets.get(follow);
+        if (!followSet) return;
+
+        const follows = filterValidPTags(followSet.tags);
+        follows.forEach((pubkey) => {
+            if (pubkey === user.pubkey) return;
+            if (directFollowSet.has(pubkey)) return;
+
+            const currentCount = counts.get(pubkey) ?? 0;
+            counts.set(pubkey, currentCount + 1);
+        });
+    });
+
+    const network = new Set<Hexpubkey>();
+    counts.forEach((count, pubkey) => {
+        if (count >= 2) {
+            network.add(pubkey);
+        }
+    });
+
+    freelanceFollowNetwork.set(network);
+    freelanceFollowNetworkUpdated.set(now);
 }
 
 function updateWotScores(
