@@ -94,6 +94,7 @@
         // Clear any existing timer
         if (debounceTimer) {
             clearTimeout(debounceTimer);
+            debounceTimer = null;
         }
 
         let trimmedSearchInput = searchInput.trim();
@@ -333,6 +334,10 @@
     function clearSearch() {
         searchInput = '';
         previousSearchInput = ''; // Update previousSearchInput to prevent effect re-trigger
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+        }
         // Clear freelance naddr results
         showFreelanceNaddrResult = false;
         freelanceEvent = null;
@@ -387,11 +392,17 @@
             previousSearchInput = searchInput;
             if (searchInput) {
                 handleSearch();
-            } else if (searchInput === '' && page.url.searchParams.has('searchQuery')) {
-                // Only clear URL params if search was cleared and we have searchQuery param
-                const url = new URL(page.url);
-                url.searchParams.delete('searchQuery');
-                goto(url.toString(), { replaceState: true, keepFocus: true });
+            } else {
+                if (debounceTimer) {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = null;
+                }
+                if (page.url.searchParams.has('searchQuery')) {
+                    // Only clear URL params if search was cleared and we have searchQuery param
+                    const url = new URL(page.url);
+                    url.searchParams.delete('searchQuery');
+                    goto(url.toString(), { replaceState: true, keepFocus: true });
+                }
             }
         }
     })
@@ -540,22 +551,24 @@
                                     <Input
                                         bind:value={searchInput}
                                         placeholder="search"
-                                        type="search"
+                                        type="text"
                                         autocomplete={null}
                                         autocapitalize="off"
                                         autocorrect="off"
                                         spellcheck={false}
+                                        classes="pr-9"
                                         name="search-satshoot"
                                         id="search-satshoot"
                                     />
                                     {#if searchInput.length}
-                                        <Button
-                                            variant="text"
-                                            onClick={clearSearch}
-                                            classes="absolute top-0 bottom-0 right-0"
+                                        <button
+                                            type="button"
+                                            class="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-black-500 hover:text-blue-500"
+                                            aria-label="Clear search"
+                                            onclick={clearSearch}
                                         >
                                             <i class="bx bx-x"></i>
-                                        </Button>
+                                        </button>
                                     {/if}
                                     
                                     <!-- Freelance Naddr Search Results Dropdown -->
@@ -741,19 +754,21 @@
                                     autocapitalize="off"
                                     autocorrect="off"
                                     spellcheck={false}
+                                    classes="pr-9"
                                     data-form-type="other"
                                     data-lpignore="true"
                                     name="search-satshoot-mobile"
                                     id="search-satshoot-mobile"
                                 />
                                 {#if searchInput.length}
-                                    <Button
-                                        variant="text"
-                                        onClick={clearSearch}
-                                        classes="absolute top-0 bottom-0 right-0"
+                                    <button
+                                        type="button"
+                                        class="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-black-500 hover:text-blue-500"
+                                        aria-label="Clear search"
+                                        onclick={clearSearch}
                                     >
                                         <i class="bx bx-x"></i>
-                                    </Button>
+                                    </button>
                                 {/if}
                                 
                                 <!-- Freelance Naddr Search Results Dropdown (Mobile) -->
