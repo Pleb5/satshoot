@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Avatar from "$lib/components/Users/Avatar.svelte"
+    import Avatar from '$lib/components/Users/Avatar.svelte';
     import currentUser, {
         loggedIn,
         loggingIn,
@@ -8,9 +8,21 @@
         userMode,
     } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
-    import { getRoboHashPicture } from '$lib/utils/helpers';
+    import { get } from 'svelte/store';
+
+    import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
-    import { filterAndRelaySetFromBech32, NDKKind, NDKRelaySet, NDKSubscriptionCacheUsage, profileFromEvent, type NDKEvent } from '@nostr-dev-kit/ndk';
+    import type NDK from '@nostr-dev-kit/ndk';
+    import {
+        filterAndRelaySetFromBech32,
+        NDKKind,
+        NDKRelaySet,
+        NDKSubscriptionCacheUsage,
+        profileFromEvent,
+        type Hexpubkey,
+        type NDKEvent,
+        type NDKUserProfile,
+    } from '@nostr-dev-kit/ndk';
     import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import AppMenu from './AppMenu.svelte';
@@ -18,10 +30,21 @@
     import { page } from '$app/state';
     import { beforeNavigate, goto } from '$app/navigation';
     import { onDestroy, onMount } from 'svelte';
-    import { idFromNaddr, isFreelanceJobOrServiceURI, isNpubOrNprofile, getPubkeyFromNpubOrNprofile } from '$lib/utils/nip19';
-    import type { NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import {
+        getPubkeyFromNpubOrNprofile,
+        idFromNaddr,
+        isFreelanceJobOrServiceURI,
+        isNpubOrNprofile,
+    } from '$lib/utils/nip19';
     import { nip19 } from 'nostr-tools';
     import { showLoginModal, showLogoutModal } from '$lib/stores/modals';
+    import {
+        requestVertexProfileSearch,
+        VERTEX_PROFILE_SEARCH_LIMIT,
+        VERTEX_PROFILE_SEARCH_MIN_LENGTH,
+        VERTEX_PROFILE_SEARCH_SORT,
+        VERTEX_PROFILE_SEARCH_TIMEOUT_MS,
+    } from '$lib/services/vertex/vertex-profile-search';
     
     interface Props {
         onRestoreLogin: () => void;
@@ -50,6 +73,16 @@
     let showProfileResult = $state(false);
     let profileError = $state(false);
 
+    let searchingProfileNames = $state(false);
+    let showProfileNameResult = $state(false);
+    let profileNameSearchRequestId = $state(0);
+    let profileNameQuery = $state('');
+    let profileNameHasSearched = $state(false);
+    let profileNameResults = $state<
+        Array<{ pubkey: Hexpubkey; profile: NDKUserProfile | null }>
+    >([]);
+    let profileNameError = $state(false);
+
     let debounceTimer = $state<NodeJS.Timeout | null>(null);
     let previousSearchInput = $state('');
     let previousPath = $state('');
@@ -64,18 +97,20 @@
         }
 
         let trimmedSearchInput = searchInput.trim();
-        if (trimmedSearchInput.startsWith("nostr:")) {
-            trimmedSearchInput = trimmedSearchInput.replace("nostr:", "")
-        } 
-        
+        if (trimmedSearchInput.startsWith('nostr:')) {
+            trimmedSearchInput = trimmedSearchInput.replace('nostr:', '');
+        }
+
         // Check if it's a freelance event
         if (isFreelanceJobOrServiceURI(trimmedSearchInput)) {
+            resetProfileNameResults();
             handleFreelanceNaddrSearch(trimmedSearchInput);
             return;
         }
-        
+
         // Check if it's an npub or nprofile
         if (isNpubOrNprofile(trimmedSearchInput)) {
+            resetProfileNameResults();
             handleProfileSearch(trimmedSearchInput);
             return;
         }
@@ -85,6 +120,23 @@
         freelanceEvent = null;
         showProfileResult = false;
         userProfile = null;
+
+        const looksLikeBech32Entity =
+            /^(npub1|nprofile1|naddr1|nevent1|note1|nsec1|nrelay1|nwc1)/i.test(trimmedSearchInput);
+
+        if (looksLikeBech32Entity) {
+            resetProfileNameResults();
+        } else if (trimmedSearchInput.length >= VERTEX_PROFILE_SEARCH_MIN_LENGTH) {
+            showProfileNameResult = true;
+            profileNameQuery = trimmedSearchInput;
+            profileNameHasSearched = false;
+            searchingProfileNames = false;
+            profileNameError = false;
+            profileNameResults = [];
+        } else {
+            resetProfileNameResults();
+        }
+
 
         // Set a new timer for regular search
         debounceTimer = setTimeout(() => {
@@ -99,6 +151,110 @@
             goto(url.toString(), { replaceState: true, keepFocus: true });
         }, 300); // 300ms debounce delay
     }
+
+    function resetProfileNameResults() {
+        searchingProfileNames = false;
+        showProfileNameResult = false;
+        profileNameQuery = '';
+        profileNameHasSearched = false;
+        profileNameResults = [];
+        profileNameError = false;
+        profileNameSearchRequestId += 1;
+    }
+
+    async function handleProfileNameSearch(searchTerm: string) {
+        if (!$currentUser) {
+            resetProfileNameResults();
+            return;
+        }
+
+        const trimmedSearchTerm = searchTerm.trim();
+        if (trimmedSearchTerm.length < VERTEX_PROFILE_SEARCH_MIN_LENGTH) {
+            resetProfileNameResults();
+            return;
+        }
+
+        showProfileNameResult = true;
+        profileNameQuery = trimmedSearchTerm;
+        profileNameHasSearched = true;
+        searchingProfileNames = true;
+        profileNameError = false;
+        profileNameResults = [];
+
+        const requestId = profileNameSearchRequestId + 1;
+        profileNameSearchRequestId = requestId;
+
+        try {
+            const ndkInstance = get(ndk) as unknown as NDK;
+
+            const results = await requestVertexProfileSearch(
+                ndkInstance,
+                trimmedSearchTerm,
+                $currentUser.pubkey,
+                {
+                    limit: VERTEX_PROFILE_SEARCH_LIMIT,
+                    sort: VERTEX_PROFILE_SEARCH_SORT,
+                    timeoutMs: VERTEX_PROFILE_SEARCH_TIMEOUT_MS,
+                }
+            );
+
+            if (profileNameSearchRequestId !== requestId) {
+                return;
+            }
+
+            const metadataRelays = [
+                ...ndkInstance.outboxPool!.connectedRelays(),
+                ...ndkInstance.pool!.connectedRelays(),
+            ];
+
+            const resolved = await Promise.all(
+                results.map(async (entry: { pubkey: Hexpubkey }) => {
+                    const metadataFilter = {
+                        kinds: [NDKKind.Metadata],
+                        authors: [entry.pubkey],
+                    };
+
+                    const profileEvent = await fetchEventFromRelaysFirst(
+                        ndkInstance,
+                        metadataFilter,
+                        {
+                            relayTimeoutMS: 3000,
+                            fallbackToCache: true,
+                            explicitRelays: metadataRelays,
+                        }
+                    );
+
+                    return {
+                        pubkey: entry.pubkey,
+                        profile: profileEvent ? profileFromEvent(profileEvent) : null,
+                    };
+                })
+            );
+
+            if (profileNameSearchRequestId !== requestId) {
+                return;
+            }
+
+            profileNameResults = resolved;
+        } catch (error) {
+            if (profileNameSearchRequestId === requestId) {
+                console.error('Error searching profiles by name:', error);
+                profileNameError = true;
+            }
+        } finally {
+            if (profileNameSearchRequestId === requestId) {
+                searchingProfileNames = false;
+            }
+        }
+    }
+
+    function triggerProfileNameSearch() {
+        if (!profileNameQuery) return;
+        if (searchingProfileNames) return;
+        if (profileNameQuery.length < VERTEX_PROFILE_SEARCH_MIN_LENGTH) return;
+        handleProfileNameSearch(profileNameQuery);
+    }
+
 
     async function handleFreelanceNaddrSearch(naddrString: string) {
         searchingFreelanceNaddr = true;
@@ -127,46 +283,52 @@
         }
     }
 
-    async function handleProfileSearch(identifier: string) {
-        searchingProfile = true;
-        profileError = false;
-        userProfile = null;
-        profilePubkey = null;
-        showProfileResult = true;
+     async function handleProfileSearch(identifier: string) {
+         searchingProfile = true;
+         profileError = false;
+         userProfile = null;
+         profilePubkey = null;
+         showProfileResult = true;
 
-        try {
-            const pubkey = getPubkeyFromNpubOrNprofile(identifier);
-            if (!pubkey) {
-                profileError = true;
-                return;
-            }
+         try {
+             const pubkey = getPubkeyFromNpubOrNprofile(identifier);
+             if (!pubkey) {
+                 profileError = true;
+                 return;
+             }
 
-            profilePubkey = pubkey;
+             profilePubkey = pubkey;
 
-            // Fetch user metadata
-            const metadataFilter = {
-                kinds: [NDKKind.Metadata],
-                authors: [pubkey],
-            };
+             const ndkInstance = get(ndk) as unknown as NDK;
 
-            const profileEvent = await fetchEventFromRelaysFirst(metadataFilter, {
-                relayTimeoutMS: 3000,
-                fallbackToCache: true,
-            });
+             // Fetch user metadata
+             const metadataFilter = {
+                 kinds: [NDKKind.Metadata],
+                 authors: [pubkey],
+             };
 
-            if (profileEvent) {
-                userProfile = profileFromEvent(profileEvent);
-            } else {
-                // If no profile found, we'll still show the result with default avatar
-                userProfile = null;
-            }
-        } catch (error) {
-            console.error('Error fetching profile:', error);
-            profileError = true;
-        } finally {
-            searchingProfile = false;
-        }
-    }
+             const profileEvent = await fetchEventFromRelaysFirst(
+                 ndkInstance,
+                 metadataFilter,
+                 {
+                     relayTimeoutMS: 3000,
+                     fallbackToCache: true,
+                 }
+             );
+
+             if (profileEvent) {
+                 userProfile = profileFromEvent(profileEvent);
+             } else {
+                 // If no profile found, we'll still show the result with default avatar
+                 userProfile = null;
+             }
+         } catch (error) {
+             console.error('Error fetching profile:', error);
+             profileError = true;
+         } finally {
+             searchingProfile = false;
+         }
+     }
 
     function clearSearch() {
         searchInput = '';
@@ -180,6 +342,7 @@
         userProfile = null;
         profilePubkey = null;
         profileError = false;
+        resetProfileNameResults();
         // Get the current query parameters
         const url = new URL(page.url);
         // delete search query param
@@ -188,12 +351,14 @@
         goto(url.toString(), { replaceState: true, keepFocus: true });
     }
 
+
     function closeFreelanceNaddrResult() {
         showFreelanceNaddrResult = false;
     }
 
     function closeProfileResult() {
         showProfileResult = false;
+        showProfileNameResult = false;
     }
 
     function handleClickOutside(event: MouseEvent) {
@@ -240,7 +405,7 @@
             if (showFreelanceNaddrResult) {
                 closeFreelanceNaddrResult();
             }
-            if (showProfileResult) {
+            if (showProfileResult || showProfileNameResult) {
                 closeProfileResult();
             }
             
@@ -260,6 +425,8 @@
                 userProfile = null;
                 profilePubkey = null;
                 profileError = false;
+
+                resetProfileNameResults();
                 
                 // Clear URL search param if it exists
                 if (page.url.searchParams.has('searchQuery')) {
@@ -315,7 +482,9 @@
 
         const metadataRelays = [...BOOTSTRAPOUTBOXRELAYS, ...DEFAULTRELAYURLS];
 
-        const profileEvent = await fetchEventFromRelaysFirst(metadataFilter, {
+        const ndkInstance = get(ndk) as unknown as NDK;
+
+        const profileEvent = await fetchEventFromRelaysFirst(ndkInstance, metadataFilter, {
             relayTimeoutMS: 3000,
             fallbackToCache: true,
             explicitRelays: Array.from(NDKRelaySet.fromRelayUrls(metadataRelays, $ndk).relays),
@@ -413,36 +582,102 @@
                                     {/if}
                                     
                                     <!-- Profile Search Results Dropdown -->
-                                    {#if showProfileResult}
+                                    {#if showProfileResult || showProfileNameResult}
                                         <div class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 p-4">
-                                            {#if searchingProfile}
-                                                <div class="flex items-center justify-center py-4">
-                                                    <ProgressRing size={8} />
-                                                    <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching...</span>
-                                                </div>
-                                            {:else if profileError || !profilePubkey}
-                                                <div class="text-center py-4 text-gray-500 dark:text-gray-400">
-                                                    <i class="bx bx-user-x text-2xl mb-2"></i>
-                                                    <p class="text-sm">Profile Not Found</p>
-                                                </div>
-                                            {:else}
-                                                <a class="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" href={'/' + nip19.npubEncode(profilePubkey)}>
-                                                    <img 
-                                                        src={userProfile?.picture || getRoboHashPicture(profilePubkey)} 
-                                                        alt="Profile" 
-                                                        class="w-12 h-12 rounded-full object-cover"
-                                                    />
-                                                    <div class="flex flex-col">
-                                                        <span class="font-medium text-gray-900 dark:text-gray-100">
-                                                            {userProfile?.name || userProfile?.displayName || 'Anonymous'}
-                                                        </span>
-                                                        {#if userProfile?.nip05}
-                                                            <span class="text-sm text-gray-600 dark:text-gray-400">
-                                                                {userProfile.nip05}
-                                                            </span>
-                                                        {/if}
+                                            {#if showProfileResult}
+                                                {#if searchingProfile}
+                                                    <div class="flex items-center justify-center py-4">
+                                                        <ProgressRing size={8} />
+                                                        <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching...</span>
                                                     </div>
-                                                </a>
+                                                {:else if profileError || !profilePubkey}
+                                                    <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                                                        <i class="bx bx-user-x text-2xl mb-2"></i>
+                                                        <p class="text-sm">Profile Not Found</p>
+                                                    </div>
+                                                {:else}
+                                                    <a class="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" href={'/' + nip19.npubEncode(profilePubkey)}>
+                                                        <img 
+                                                            src={userProfile?.picture || getRoboHashPicture(profilePubkey)} 
+                                                            alt="Profile" 
+                                                            class="w-12 h-12 rounded-full object-cover"
+                                                        />
+                                                        <div class="flex flex-col min-w-0">
+                                                            <span class="font-medium text-gray-900 dark:text-gray-100">
+                                                                {userProfile?.name || userProfile?.displayName || 'Anonymous'}
+                                                            </span>
+                                                            {#if userProfile?.nip05}
+                                                                <span class="text-sm text-gray-600 dark:text-gray-400">
+                                                                    {userProfile.nip05}
+                                                                </span>
+                                                            {/if}
+                                                        </div>
+                                                    </a>
+                                                {/if}
+                                            {/if}
+
+                                            {#if showProfileNameResult}
+                                                {#if searchingProfileNames}
+                                                    <div class="flex items-center justify-center py-4">
+                                                        <ProgressRing size={8} />
+                                                        <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching profiles...</span>
+                                                    </div>
+                                                {:else if profileNameError}
+                                                    <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                                                        <i class="bx bx-user-x text-2xl mb-2"></i>
+                                                        <p class="text-sm">Profile Search Failed</p>
+                                                    </div>
+                                                {:else if profileNameHasSearched && profileNameResults.length === 0}
+                                                    <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                                                        <i class="bx bx-search-alt text-2xl mb-2"></i>
+                                                        <p class="text-sm">Nothing Found</p>
+                                                    </div>
+                                                {:else if profileNameResults.length === 0}
+                                                    <div class="flex flex-col gap-3">
+                                                        <div class="text-center text-gray-700 dark:text-gray-200">
+                                                            <p class="text-sm">Search profiles on Vertex (paid)</p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">Query: {profileNameQuery}</p>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            class="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 hover:bg-gray-100 dark:hover:bg-gray-900 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors"
+                                                            onclick={triggerProfileNameSearch}
+                                                        >
+                                                            <i class="bx bx-search"></i>
+                                                            Search on Vertex
+                                                        </button>
+                                                    </div>
+                                                {:else}
+                                                    <div class="flex flex-col">
+                                                        {#each profileNameResults as result}
+                                                            <a
+                                                                class="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                                                href={'/' + nip19.npubEncode(result.pubkey)}
+                                                            >
+                                                                <img
+                                                                    src={result.profile?.picture || getRoboHashPicture(result.pubkey)}
+                                                                    alt="Profile"
+                                                                    class="w-10 h-10 rounded-full object-cover"
+                                                                />
+                                                                <div class="flex flex-col min-w-0">
+                                                                    <span class="font-medium text-gray-900 dark:text-gray-100">
+                                                                        {result.profile?.name ||
+                                                                            result.profile?.displayName ||
+                                                                            shortenTextWithEllipsesInMiddle(
+                                                                                nip19.npubEncode(result.pubkey),
+                                                                                20
+                                                                            )}
+                                                                    </span>
+                                                                    {#if result.profile?.nip05}
+                                                                        <span class="text-sm text-gray-600 dark:text-gray-400">
+                                                                            {result.profile.nip05}
+                                                                        </span>
+                                                                    {/if}
+                                                                </div>
+                                                            </a>
+                                                        {/each}
+                                                    </div>
+                                                {/if}
                                             {/if}
                                         </div>
                                     {/if}
@@ -545,36 +780,102 @@
                                 {/if}
                                 
                                 <!-- Profile Search Results Dropdown (Mobile) -->
-                                {#if showProfileResult}
+                                {#if showProfileResult || showProfileNameResult}
                                     <div class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 p-4">
-                                        {#if searchingProfile}
-                                            <div class="flex items-center justify-center py-4">
-                                                <ProgressRing size={8} />
-                                                <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching...</span>
-                                            </div>
-                                        {:else if profileError || !profilePubkey}
-                                            <div class="text-center py-4 text-gray-500 dark:text-gray-400">
-                                                <i class="bx bx-user-x text-2xl mb-2"></i>
-                                                <p class="text-sm">Profile Not Found</p>
-                                            </div>
-                                        {:else}
-                                            <a class="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" href={'/' + nip19.npubEncode(profilePubkey)}>
-                                                <img 
-                                                    src={userProfile?.picture || getRoboHashPicture(profilePubkey)} 
-                                                    alt="Profile" 
-                                                    class="w-10 h-10 rounded-full object-cover"
-                                                />
-                                                <div class="flex flex-col">
-                                                    <span class="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                                                        {userProfile?.name || userProfile?.displayName || 'Anonymous'}
-                                                    </span>
-                                                    {#if userProfile?.nip05}
-                                                        <span class="text-xs text-gray-600 dark:text-gray-400">
-                                                            {userProfile.nip05}
-                                                        </span>
-                                                    {/if}
+                                        {#if showProfileResult}
+                                            {#if searchingProfile}
+                                                <div class="flex items-center justify-center py-4">
+                                                    <ProgressRing size={8} />
+                                                    <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching...</span>
                                                 </div>
-                                            </a>
+                                            {:else if profileError || !profilePubkey}
+                                                <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                                                    <i class="bx bx-user-x text-2xl mb-2"></i>
+                                                    <p class="text-sm">Profile Not Found</p>
+                                                </div>
+                                            {:else}
+                                                <a class="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" href={'/' + nip19.npubEncode(profilePubkey)}>
+                                                    <img 
+                                                        src={userProfile?.picture || getRoboHashPicture(profilePubkey)} 
+                                                        alt="Profile" 
+                                                        class="w-10 h-10 rounded-full object-cover"
+                                                    />
+                                                    <div class="flex flex-col min-w-0">
+                                                        <span class="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                                                            {userProfile?.name || userProfile?.displayName || 'Anonymous'}
+                                                        </span>
+                                                        {#if userProfile?.nip05}
+                                                            <span class="text-xs text-gray-600 dark:text-gray-400">
+                                                                {userProfile.nip05}
+                                                            </span>
+                                                        {/if}
+                                                    </div>
+                                                </a>
+                                            {/if}
+                                        {/if}
+
+                                        {#if showProfileNameResult}
+                                            {#if searchingProfileNames}
+                                                <div class="flex items-center justify-center py-4">
+                                                    <ProgressRing size={8} />
+                                                    <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching profiles...</span>
+                                                </div>
+                                            {:else if profileNameError}
+                                                <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                                                    <i class="bx bx-user-x text-2xl mb-2"></i>
+                                                    <p class="text-sm">Profile Search Failed</p>
+                                                </div>
+                                            {:else if profileNameHasSearched && profileNameResults.length === 0}
+                                                <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                                                    <i class="bx bx-search-alt text-2xl mb-2"></i>
+                                                    <p class="text-sm">Nothing Found</p>
+                                                </div>
+                                            {:else if profileNameResults.length === 0}
+                                                <div class="flex flex-col gap-3">
+                                                    <div class="text-center text-gray-700 dark:text-gray-200">
+                                                        <p class="text-sm">Search profiles on Vertex (paid)</p>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">Query: {profileNameQuery}</p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        class="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 hover:bg-gray-100 dark:hover:bg-gray-900 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors"
+                                                        onclick={triggerProfileNameSearch}
+                                                    >
+                                                        <i class="bx bx-search"></i>
+                                                        Search on Vertex
+                                                    </button>
+                                                </div>
+                                            {:else}
+                                                <div class="flex flex-col">
+                                                    {#each profileNameResults as result}
+                                                        <a
+                                                            class="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                                            href={'/' + nip19.npubEncode(result.pubkey)}
+                                                        >
+                                                            <img
+                                                                src={result.profile?.picture || getRoboHashPicture(result.pubkey)}
+                                                                alt="Profile"
+                                                                class="w-10 h-10 rounded-full object-cover"
+                                                            />
+                                                            <div class="flex flex-col min-w-0">
+                                                                <span class="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                                                                    {result.profile?.name ||
+                                                                        result.profile?.displayName ||
+                                                                        shortenTextWithEllipsesInMiddle(
+                                                                            nip19.npubEncode(result.pubkey),
+                                                                            20
+                                                                        )}
+                                                                </span>
+                                                                {#if result.profile?.nip05}
+                                                                    <span class="text-xs text-gray-600 dark:text-gray-400">
+                                                                        {result.profile.nip05}
+                                                                    </span>
+                                                                {/if}
+                                                            </div>
+                                                        </a>
+                                                    {/each}
+                                                </div>
+                                            {/if}
                                         {/if}
                                     </div>
                                 {/if}
