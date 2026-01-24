@@ -14,7 +14,8 @@
     import { toaster } from '$lib/stores/toaster';
     import {
         getCachedVertexReputation,
-        requestVertexReputation,
+        requestVertexReputationWithCredits,
+        VERTEX_PRICING_URL,
         type VertexReputationCacheEntry,
     } from '$lib/services/vertex/vertex-reputation';
 
@@ -67,10 +68,20 @@
     });
 
     const showErrorToast = (title: string, description?: string) => {
+        const needsCreditsAction = (description ?? '').toLowerCase().includes('credits');
+
         toaster.error({
             title,
             description,
             duration: Infinity,
+            action: needsCreditsAction
+                ? {
+                      label: 'Buy credits',
+                      onClick: () => {
+                          window.open(VERTEX_PRICING_URL, '_blank', 'noopener,noreferrer');
+                      },
+                  }
+                : undefined,
         });
     };
 
@@ -207,7 +218,19 @@
         await tick();
 
         try {
-            cachedResult = await requestVertexReputation($ndk, targetPubkey, $currentUser.pubkey);
+            const { entry, credits } = await requestVertexReputationWithCredits(
+                $ndk,
+                targetPubkey,
+                $currentUser.pubkey
+            );
+            cachedResult = entry;
+
+            if (credits) {
+                toaster.success({
+                    title: `Vertex credits remaining: ${credits.credits}`,
+                    duration: 7000,
+                });
+            }
         } catch (error) {
             showErrorToast(
                 'Vertex analysis failed',

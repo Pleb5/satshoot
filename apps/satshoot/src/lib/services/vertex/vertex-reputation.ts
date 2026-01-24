@@ -1,10 +1,11 @@
+import type NDK from '@nostr-dev-kit/ndk';
 import Dexie, { type Table } from 'dexie';
 import {
     NDKDVMRequest,
+    NDKKind,
     NDKRelaySet,
     NDKSubscriptionCacheUsage,
     type Hexpubkey,
-    type NDK,
     type NDKEvent,
     type NDKTag,
 } from '@nostr-dev-kit/ndk';
@@ -16,6 +17,9 @@ export const VERTEX_REPUTATION_ERROR_KIND = 7000;
 export const VERTEX_REPUTATION_SORT = 'personalizedPagerank';
 export const VERTEX_REPUTATION_LIMIT = 5;
 export const VERTEX_REPUTATION_TIMEOUT_MS = 20000;
+export const VERTEX_CREDITS_KIND = 22243;
+export const VERTEX_CREDITS_TIMEOUT_MS = 8000;
+export const VERTEX_PRICING_URL = 'https://vertexlab.io/pricing/';
 
 export interface VertexReputationEntry {
     pubkey: Hexpubkey;
@@ -39,6 +43,11 @@ export interface VertexReputationCacheEntry {
     result: VertexReputationResult;
 }
 
+export interface VertexCreditsInfo {
+    credits: number;
+    lastRequest?: number;
+}
+
 class VertexReputationDatabase extends Dexie {
     results!: Table<VertexReputationCacheEntry, Hexpubkey>;
 
@@ -54,6 +63,13 @@ const vertexDb = new VertexReputationDatabase();
 
 const getTagValue = (tags: NDKTag[], name: string): string | undefined =>
     tags.find((tag) => tag[0] === name)?.[1];
+
+const parseNumberTag = (tags: NDKTag[], name: string): number | undefined => {
+    const value = getTagValue(tags, name);
+    if (!value) return undefined;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? undefined : parsed;
+};
 
 export const parseVertexReputationResponse = (event: NDKEvent): VertexReputationResult => {
     let parsed: VertexReputationEntry[];
@@ -107,7 +123,10 @@ const waitForVertexResponse = (
     new Promise((resolve, reject) => {
         const subscription = ndk.subscribe(
             {
-                kinds: [VERTEX_REPUTATION_RESPONSE_KIND, VERTEX_REPUTATION_ERROR_KIND],
+                kinds: [
+                    VERTEX_REPUTATION_RESPONSE_KIND as NDKKind,
+                    VERTEX_REPUTATION_ERROR_KIND as NDKKind,
+                ],
                 '#e': [requestId],
             },
             {
@@ -122,19 +141,58 @@ const waitForVertexResponse = (
             reject(new Error('Timed out waiting for Vertex response.'));
         }, timeoutMs);
 
-        subscription.on('event', (event) => {
+        subscription.on('event', (event: NDKEvent) => {
             clearTimeout(timeoutId);
             subscription.stop();
             resolve(event);
         });
     });
 
-export async function requestVertexReputation(
+const waitForVertexCredits = (
+    ndk: NDK,
+    relaySet: NDKRelaySet,
+    timeoutMs: number
+): Promise<VertexCreditsInfo> =>
+    new Promise((resolve, reject) => {
+        const subscription = ndk.subscribe(
+            {
+                kinds: [VERTEX_CREDITS_KIND as NDKKind],
+            },
+            {
+                closeOnEose: false,
+                cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+                relaySet,
+            }
+        );
+
+        const timeoutId = setTimeout(() => {
+            subscription.stop();
+            reject(new Error('Timed out waiting for Vertex credits.'));
+        }, timeoutMs);
+
+        subscription.on('event', (event: NDKEvent) => {
+            clearTimeout(timeoutId);
+            subscription.stop();
+
+            const credits = parseNumberTag(event.tags, 'credits');
+            if (credits === undefined) {
+                reject(new Error('Vertex credits response was missing credits.'));
+                return;
+            }
+
+            resolve({
+                credits,
+                lastRequest: parseNumberTag(event.tags, 'lastRequest'),
+            });
+        });
+    });
+
+export async function requestVertexReputationWithCredits(
     ndk: NDK,
     targetPubkey: Hexpubkey,
     sourcePubkey: Hexpubkey,
     timeoutMs = VERTEX_REPUTATION_TIMEOUT_MS
-): Promise<VertexReputationCacheEntry> {
+): Promise<{ entry: VertexReputationCacheEntry; credits: VertexCreditsInfo | null }> {
     const relaySet = NDKRelaySet.fromRelayUrls([VERTEX_RELAY_URL], ndk, true);
 
     const request = new NDKDVMRequest(ndk);
@@ -161,5 +219,29 @@ export async function requestVertexReputation(
 
     await vertexDb.results.put(entry);
 
-    return entry;
-};
+    let credits: VertexCreditsInfo | null = null;
+
+    try {
+        credits = await waitForVertexCredits(ndk, relaySet, VERTEX_CREDITS_TIMEOUT_MS);
+    } catch (error) {
+        console.warn('Failed to fetch Vertex credits', error);
+    }
+
+    return { entry, credits };
+}
+
+export async function requestVertexReputation(
+    ndk: NDK,
+    targetPubkey: Hexpubkey,
+    sourcePubkey: Hexpubkey,
+    timeoutMs = VERTEX_REPUTATION_TIMEOUT_MS
+): Promise<VertexReputationCacheEntry> {
+    const response = await requestVertexReputationWithCredits(
+        ndk,
+        targetPubkey,
+        sourcePubkey,
+        timeoutMs
+    );
+
+    return response.entry;
+}
