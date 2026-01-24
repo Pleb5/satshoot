@@ -5,11 +5,16 @@
         fetchFreelanceFollowSet,
         freelanceFollowSets,
     } from '$lib/stores/user';
-    import { freelanceFollow, freelanceUnfollow, getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
+    import {
+        freelanceFollow,
+        freelanceUnfollow,
+        getRoboHashPicture,
+        shortenTextWithEllipsesInMiddle,
+    } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterValidPTags } from '$lib/utils/misc';
     import {
-    NDKEvent,
+        NDKEvent,
         NDKKind,
         profileFromEvent,
         type NDKUser,
@@ -58,7 +63,7 @@
     let showNProfileQR = $state(false);
     let showAnalysisModal = $state(false);
     let hasLoadedFollowSet = $state(false);
-    let trusted = $state(false)
+    let trusted = $state(false);
 
     // Derived state
     const npub = $derived(user.npub);
@@ -74,11 +79,11 @@
     const canEditProfile = $derived($currentUser && $currentUser?.pubkey === user.pubkey);
     const showMessageButton = $derived(!!job && job.pubkey !== $currentUser?.pubkey);
 
-    let muted = $state(false)
+    let muted = $state(false);
 
-    $effect(() =>{
-        muted = $mutedPubkeys.has(user.pubkey || "")
-    })
+    $effect(() => {
+        muted = $mutedPubkeys.has(user.pubkey || '');
+    });
 
     const followStatus = $derived.by(() => {
         if (!$currentUserFreelanceFollows || !$freelanceFollowSets || !$currentUser) {
@@ -119,13 +124,13 @@
     });
 
     const blockButtonText = $derived.by(() => {
-        if (muted) return "UnBlock"
-        return "Block"
+        if (muted) return 'UnBlock';
+        return 'Block';
     });
 
     const blockButtonColor = $derived.by(() => {
-        if (muted) return "bg-warning-500"
-        return "bg-error-500"
+        if (muted) return 'bg-warning-500';
+        return 'bg-error-500';
     });
 
     $effect(() => {
@@ -163,7 +168,6 @@
         }
     });
 
-
     async function setProfile() {
         // Logged in user's metadata MUST be fetched from relays
         // to avoid metadata edit from stale state
@@ -180,7 +184,7 @@
             ...$ndk.pool!.connectedRelays(),
         ];
 
-        const profile = await fetchEventFromRelaysFirst(metadataFilter, {
+        const profile = await fetchEventFromRelaysFirst($ndk, metadataFilter, {
             relayTimeoutMS: 3000,
             fallbackToCache,
             explicitRelays: metadataRelays,
@@ -224,99 +228,97 @@
         {
             text: userProfile?.lud16,
             title: 'Lightning address',
-            type: InfoItemType.LN_ADDRESS
+            type: InfoItemType.LN_ADDRESS,
         },
         {
             text: userProfile?.website,
             href: userProfile?.website || '',
             isExternal: true,
             title: 'Website',
-            type: InfoItemType.WEBSITE
+            type: InfoItemType.WEBSITE,
         },
         {
             text: userProfile?.nip05,
             href: profileHref,
             isExternal: false,
             title: 'NIP05',
-            type: InfoItemType.NIP05
+            type: InfoItemType.NIP05,
         },
     ]);
 
     const follow = async () => {
         processingFollowSet = true;
-        await tick()
+        await tick();
 
-        await freelanceFollow(user.pubkey)
+        await freelanceFollow(user.pubkey);
 
         processingFollowSet = false;
-    }
+    };
 
     const unfollow = async () => {
         processingFollowSet = true;
-        await tick()
+        await tick();
 
-        freelanceUnfollow(user.pubkey)
-        
-        processingFollowSet = false
-    }
+        freelanceUnfollow(user.pubkey);
+
+        processingFollowSet = false;
+    };
 
     const mute = async () => {
         processingMutes = true;
-        await tick()
-
+        await tick();
 
         const event = new NDKEvent(user.ndk, {
             kind: NDKKind.MuteList,
-            content: "",
+            content: '',
             tags: [],
         });
 
         // Add all remaining muted pubkeys as p tags
         for (const mutedPubkey of $mutedPubkeys) {
-            event.tags.push(["p", mutedPubkey]);
+            event.tags.push(['p', mutedPubkey]);
         }
 
-        event.tags.push(["p", user.pubkey])
+        event.tags.push(['p', user.pubkey]);
 
         await event.publishReplaceable();
 
         processingMutes = false;
-    }
+    };
 
     const unMute = async () => {
         processingMutes = true;
-        await tick()
+        await tick();
 
         const event = new NDKEvent(user.ndk, {
             kind: NDKKind.MuteList,
-            content: "",
+            content: '',
             tags: [],
         });
 
         for (const mutedPubkey of $mutedPubkeys) {
             if (mutedPubkey !== user.pubkey) {
-                event.tags.push(["p", mutedPubkey]);
+                event.tags.push(['p', mutedPubkey]);
             }
         }
 
         await event.publishReplaceable();
 
         processingMutes = false;
-    }
+    };
 
     const addressCopyBtnClasses =
         'bg-white dark:bg-brightGray rounded-[0px] border-l-[1px] border-l-black-100 hover:border-l-transparent ';
 
     let wotTooltip = $derived(
         '<div>' +
-            '<div class="font-bold">' + 
+            '<div class="font-bold">' +
             `<p>This user is ${trusted ? '' : 'NOT'} part of your Nostr Web of Trust.</p>` +
-            '<p>Learn more about how SatShoot revolutionizes the Trust model in Freelance in ' + 
-                '<a class="anchor" target="_blank" href="https://primal.net/a/naddr1qvzqqqr4gupzp5zweue6xqa9npf0md5pak95zgsph2za35sentk88jmzdqwk925sqq2kx3m4v3jhxjec2emhxkr8wyknyuzx2c6hsuza8ux">this article</a></p>' + 
+            '<p>Learn more about how SatShoot revolutionizes the Trust model in Freelance in ' +
+            '<a class="anchor" target="_blank" href="https://primal.net/a/naddr1qvzqqqr4gupzp5zweue6xqa9npf0md5pak95zgsph2za35sentk88jmzdqwk925sqq2kx3m4v3jhxjec2emhxkr8wyknyuzx2c6hsuza8ux">this article</a></p>' +
             '</div>' +
-        '</div>'
+            '</div>'
     );
-
 </script>
 
 <div class="w-full max-w-[350px] flex flex-col gap-[25px] max-[768px]:max-w-full">
@@ -335,12 +337,12 @@
                 </div>
                 <div class="w-full mt-2 flex flex-col justify-center items-center">
                     <a href={profileHref}>
-                        <Avatar 
-                            pubkey={user.pubkey} 
+                        <Avatar
+                            pubkey={user.pubkey}
                             bind:userProfile
                             bind:trusted
-                            size={"large"}
-                            classes={"shadow-strong"}
+                            size={'large'}
+                            classes={'shadow-strong'}
                         />
                     </a>
                 </div>
@@ -353,14 +355,20 @@
                             shortenTextWithEllipsesInMiddle(npub, 15)}
                     </a>
                 </div>
-                <div class="flex flex-col gap-2 border-t-[1px] border-t-black-100 dark:border-t-white-100 pt-[10px]">
+                <div
+                    class="flex flex-col gap-2 border-t-[1px] border-t-black-100 dark:border-t-white-100 pt-[10px]"
+                >
                     <div class="flex gap-x-2 items-center">
                         <div>
                             <span class="font-bold">Trusted:</span>
                         </div>
                         <div>
-                            <span class="font-bold text-white badge p-2 {trusted ? "bg-yellow-500" : "bg-red-500"}">
-                                {trusted ? "YES" : "NO"}
+                            <span
+                                class="font-bold text-white badge p-2 {trusted
+                                    ? 'bg-yellow-500'
+                                    : 'bg-red-500'}"
+                            >
+                                {trusted ? 'YES' : 'NO'}
                             </span>
                             <QuestionIcon
                                 extraClasses="text-[14px] p-[3px]"
@@ -386,7 +394,9 @@
                             <div
                                 class="grid grid-cols-[1fr_auto] border-[1px] border-black-100 dark:border-white-100"
                             >
-                                <div class="overflow-x-auto scrollbar-hide whitespace-nowrap bg-black-50">
+                                <div
+                                    class="overflow-x-auto scrollbar-hide whitespace-nowrap bg-black-50"
+                                >
                                     {#if href}
                                         <a
                                             {href}
@@ -533,14 +543,14 @@
 <ProfileAnalysisModal bind:isOpen={showAnalysisModal} targetPubkey={user.pubkey} />
 
 <style>
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Hide scrollbar for IE, Edge and Firefox */
-  .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .scrollbar-hide {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
 </style>
