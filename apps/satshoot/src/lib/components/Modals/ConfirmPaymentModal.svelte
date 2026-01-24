@@ -48,7 +48,7 @@
             ...ndkInstance.pool!.connectedRelays(),
         ];
 
-        const metadataEvent = await fetchEventFromRelaysFirst(metadataFilter, {
+        const metadataEvent = await fetchEventFromRelaysFirst(ndkInstance, metadataFilter, {
             relayTimeoutMS: 5000,
             fallbackToCache: false,
             explicitRelays: metadataRelays,

@@ -45,11 +45,15 @@
             ...$ndk.pool!.connectedRelays(),
         ];
 
-        const profile = await fetchEventFromRelaysFirst(metadataFilter, {
-            relayTimeoutMS: 4000,
-            fallbackToCache,
-            explicitRelays: metadataRelays,
-        });
+        const profile = await fetchEventFromRelaysFirst(
+            $ndk,
+            metadataFilter,
+            {
+                relayTimeoutMS: 4000,
+                fallbackToCache,
+                explicitRelays: metadataRelays,
+            } as any
+        );
 
         if (profile) {
             userProfile = profileFromEvent(profile);
