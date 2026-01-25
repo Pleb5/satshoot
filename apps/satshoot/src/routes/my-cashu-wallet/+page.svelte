@@ -71,6 +71,7 @@
     let mints = $derived($wallet?.mints);
     let cleaningWallet = $state(false);
     let toastTriggered = false;
+    let walletRelayUnavailable = $state(false);
 
     let selectedTab = $state(Tab.Mints);
 
@@ -100,6 +101,12 @@
             mintBalances = $wallet.mintBalances;
 
             walletBalance = getBalanceStr($wallet);
+
+            const walletRelayUrls = $userCashuInfo.relays ?? [];
+            const activeWalletRelays = $wallet.relaySet?.relayUrls ?? [];
+            walletRelayUnavailable =
+                walletRelayUrls.length > 0 &&
+                !activeWalletRelays.some((relay) => walletRelayUrls.includes(relay));
 
             $wallet.on('balance_updated', () => {
                 mintBalances = $wallet!.mintBalances;
@@ -585,6 +592,15 @@
                         </Button>
                     </Card>
                 {/if}
+                {#if walletRelayUnavailable}
+                    <Card
+                        classes="bg-warning-500 dark:bg-warning-700 hidden max-[768px]:flex relative"
+                    >
+                        <p class="font-[600] text-white">
+                            Wallet relays are unavailable. We are using app relays temporarily.
+                        </p>
+                    </Card>
+                {/if}
                 {#if $walletStatus === NDKWalletStatus.INITIAL || $walletStatus === NDKWalletStatus.LOADING}
                     <!-- Placeholder Section for desktop view -->
 
@@ -798,6 +814,16 @@
                                         >
                                             <i class="bx bx-x"> </i>
                                         </Button>
+                                    </Card>
+                                {/if}
+                                {#if walletRelayUnavailable}
+                                    <Card
+                                        classes="bg-warning-500 dark:bg-warning-700 relative max-[768px]:hidden"
+                                    >
+                                        <p class="font-[600] text-white">
+                                            Wallet relays are unavailable. We are using app relays
+                                            temporarily.
+                                        </p>
                                     </Card>
                                 {/if}
                             </div>

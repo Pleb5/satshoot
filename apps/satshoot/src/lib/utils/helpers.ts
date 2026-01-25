@@ -13,11 +13,13 @@ import {
     NDKUser,
     NDKList,
     NDKRelay,
+    type NDKFilter,
 } from '@nostr-dev-kit/ndk';
 import ndk, {
     blastrUrl,
     BOOTSTRAPOUTBOXRELAYS,
     DEFAULTRELAYURLS,
+    getAppRelays,
     sessionPK,
 } from '$lib/stores/session';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
@@ -119,20 +121,104 @@ export type WalletFetchOpts = {
     explicitRelays?: string[];
 };
 
+export type WalletRelayFallback = {
+    relayUrls: string[];
+    usingAppRelays: boolean;
+};
+
+type RelayFetchResult = {
+    events: Set<NDKEvent>;
+    responsiveRelays: string[];
+};
+
+const WALLET_RELAY_FETCH_TIMEOUT_MS = 4000;
+
+async function fetchCashuEventsFromRelays(
+    ndk: NDKSvelte,
+    filter: NDKFilter,
+    relayUrls: string[]
+): Promise<RelayFetchResult> {
+    if (relayUrls.length === 0) {
+        return { events: new Set<NDKEvent>(), responsiveRelays: [] };
+    }
+
+    const results = await Promise.all(
+        relayUrls.map(async (relayUrl) => {
+            let timeoutId: ReturnType<typeof setTimeout> | undefined;
+            let timedOut = false;
+
+            const timeoutPromise = new Promise<Set<NDKEvent>>((resolve) => {
+                timeoutId = setTimeout(() => {
+                    timedOut = true;
+                    resolve(new Set());
+                }, WALLET_RELAY_FETCH_TIMEOUT_MS);
+            });
+
+            try {
+                const relaySet = NDKRelaySet.fromRelayUrls([relayUrl], ndk);
+                const events = await Promise.race([
+                    ndk.fetchEvents(
+                        filter,
+                        { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY },
+                        relaySet
+                    ),
+                    timeoutPromise,
+                ]);
+
+                if (timeoutId) clearTimeout(timeoutId);
+
+                if (timedOut) {
+                    console.warn(
+                        `Cashu wallet relay ${relayUrl} timed out after ${WALLET_RELAY_FETCH_TIMEOUT_MS}ms.`
+                    );
+                }
+
+                return { relayUrl, events, timedOut };
+            } catch (error) {
+                if (timeoutId) clearTimeout(timeoutId);
+                console.warn(`Cashu wallet relay ${relayUrl} errored while fetching.`, error);
+                return { relayUrl, events: new Set<NDKEvent>(), timedOut: true };
+            }
+        })
+    );
+
+    const events = new Set<NDKEvent>();
+    const responsiveRelays: string[] = [];
+
+    for (const result of results) {
+        if (!result.timedOut) {
+            responsiveRelays.push(result.relayUrl);
+        }
+
+        for (const event of result.events) {
+            events.add(event);
+        }
+    }
+
+    return { events, responsiveRelays };
+}
+
 export async function fetchAndInitWallet(
     user: NDKUser,
     ndk: NDKSvelte,
     walletFetchOpts: WalletFetchOpts = {
         fetchLegacyWallet: true,
     }
-) {
+): Promise<WalletRelayFallback> {
     walletStatus.set(NDKWalletStatus.LOADING);
 
-    let relays = DEFAULTRELAYURLS;
-    if (!walletFetchOpts.explicitRelays || walletFetchOpts.explicitRelays.length === 0) {
+    const appRelays = getAppRelays();
+    let walletRelays = DEFAULTRELAYURLS;
+    let userOutboxRelays: string[] = [];
+
+    if (walletFetchOpts.explicitRelays && walletFetchOpts.explicitRelays.length > 0) {
+        walletRelays = walletFetchOpts.explicitRelays;
+        userOutboxRelays = walletFetchOpts.explicitRelays;
+    } else {
         const userRelays = await fetchUserOutboxRelays(ndk, user.pubkey, 2000);
         if (userRelays) {
-            relays = [...relays, ...NDKRelayList.from(userRelays).writeRelayUrls];
+            userOutboxRelays = NDKRelayList.from(userRelays).writeRelayUrls;
+            walletRelays = [...walletRelays, ...userOutboxRelays];
         }
     }
 
@@ -144,16 +230,41 @@ export async function fetchAndInitWallet(
     ];
     if (walletFetchOpts.fetchLegacyWallet) kindsArr.push(NDKKind.LegacyCashuWallet);
 
-    const cashuPromise = ndk.fetchEvents(
-        {
-            kinds: kindsArr,
-            authors: [user.pubkey],
-        },
-        { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY },
-        NDKRelaySet.fromRelayUrls(relays, ndk)
-    );
+    const filter = {
+        kinds: kindsArr,
+        authors: [user.pubkey],
+    };
 
-    const cashuEvents: Set<NDKEvent> = await cashuPromise;
+    const resolvedWalletRelays = walletRelays.filter(Boolean);
+    const resolvedOutboxRelays = userOutboxRelays.filter(Boolean);
+
+    const walletFetch = await fetchCashuEventsFromRelays(ndk, filter, resolvedWalletRelays);
+    let cashuEvents = walletFetch.events;
+
+    const walletRelaysAvailable = walletFetch.responsiveRelays.length > 0;
+    let effectiveRelays = walletRelaysAvailable ? walletFetch.responsiveRelays : [];
+
+    if (!walletRelaysAvailable) {
+        if (resolvedOutboxRelays.length > 0) {
+            const outboxFetch = await fetchCashuEventsFromRelays(
+                ndk,
+                filter,
+                resolvedOutboxRelays
+            );
+            cashuEvents = outboxFetch.events;
+            effectiveRelays =
+                outboxFetch.responsiveRelays.length > 0
+                    ? outboxFetch.responsiveRelays
+                    : resolvedOutboxRelays;
+        }
+
+        if (effectiveRelays.length === 0 && appRelays.length > 0) {
+            const appFetch = await fetchCashuEventsFromRelays(ndk, filter, appRelays);
+            cashuEvents = appFetch.events;
+            effectiveRelays =
+                appFetch.responsiveRelays.length > 0 ? appFetch.responsiveRelays : appRelays;
+        }
+    }
 
     console.info('cashuEvents loaded:', cashuEvents);
     let nostrWallet: NDKCashuWallet | undefined;
@@ -172,15 +283,58 @@ export async function fetchAndInitWallet(
             cashuMintList = NDKCashuMintList.from(event);
         }
     }
+    const walletRelayUrls = cashuMintList?.relays?.filter(Boolean) ?? [];
+    let walletRelaySetUrls = effectiveRelays;
+    let walletRelaysUnavailable = false;
+
+    if (walletRelayUrls.length > 0) {
+        const walletRelayFetch = await fetchCashuEventsFromRelays(ndk, filter, walletRelayUrls);
+        if (walletRelayFetch.responsiveRelays.length > 0) {
+            walletRelaySetUrls = walletRelayFetch.responsiveRelays;
+        } else {
+            walletRelaysUnavailable = true;
+            if (resolvedOutboxRelays.length > 0) {
+                const outboxFetch = await fetchCashuEventsFromRelays(
+                    ndk,
+                    filter,
+                    resolvedOutboxRelays
+                );
+                walletRelaySetUrls =
+                    outboxFetch.responsiveRelays.length > 0
+                        ? outboxFetch.responsiveRelays
+                        : resolvedOutboxRelays;
+            }
+
+            if (walletRelaySetUrls.length === 0 && appRelays.length > 0) {
+                const appFetch = await fetchCashuEventsFromRelays(ndk, filter, appRelays);
+                walletRelaySetUrls =
+                    appFetch.responsiveRelays.length > 0 ? appFetch.responsiveRelays : appRelays;
+            }
+        }
+    }
+
     if (walletEvent) {
         nostrWallet = await NDKCashuWallet.from(walletEvent, deterministicWalletEvent);
-        nostrWallet!.relaySet = NDKRelaySet.fromRelayUrls(relays, ndk);
+        nostrWallet!.relaySet = NDKRelaySet.fromRelayUrls(walletRelaySetUrls, ndk);
     }
+    const relayFallback = {
+        relayUrls: walletRelaySetUrls,
+        usingAppRelays: walletRelaysUnavailable,
+    };
+
+    if (relayFallback.usingAppRelays) {
+        toaster.warning({
+            title: 'Wallet relays are unavailable. Using app relays temporarily.',
+        });
+    }
+
     if (nostrWallet && cashuMintList) {
         walletInit(nostrWallet, cashuMintList, ndk, user);
     } else {
         walletStatus.set(NDKWalletStatus.FAILED);
     }
+
+    return relayFallback;
 }
 
 export function logout() {
