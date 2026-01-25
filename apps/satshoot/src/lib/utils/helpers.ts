@@ -16,7 +16,6 @@ import {
     type NDKFilter,
 } from '@nostr-dev-kit/ndk';
 import ndk, {
-    BLACKLISTED_RELAYS,
     blastrUrl,
     BOOTSTRAPOUTBOXRELAYS,
     DEFAULTRELAYURLS,
@@ -134,26 +133,17 @@ type RelayFetchResult = {
 
 const WALLET_RELAY_FETCH_TIMEOUT_MS = 4000;
 
-const blockedRelayUrls = new Set(
-    Array.from(BLACKLISTED_RELAYS).map((relay) => relay.replace(/\/$/, ''))
-);
-
-function filterBlockedRelays(relayUrls: string[]): string[] {
-    return relayUrls.filter((relayUrl) => !blockedRelayUrls.has(relayUrl.replace(/\/$/, '')));
-}
-
 async function fetchCashuEventsFromRelays(
     ndk: NDKSvelte,
     filter: NDKFilter,
     relayUrls: string[]
 ): Promise<RelayFetchResult> {
-    const sanitizedRelays = filterBlockedRelays(relayUrls);
-    if (sanitizedRelays.length === 0) {
+    if (relayUrls.length === 0) {
         return { events: new Set<NDKEvent>(), responsiveRelays: [] };
     }
 
     const results = await Promise.all(
-        sanitizedRelays.map(async (relayUrl) => {
+        relayUrls.map(async (relayUrl) => {
             let timeoutId: ReturnType<typeof setTimeout> | undefined;
             let timedOut = false;
 
@@ -218,7 +208,6 @@ export async function fetchAndInitWallet(
     walletStatus.set(NDKWalletStatus.LOADING);
 
     const appRelays = getAppRelays();
-    const sanitizedAppRelays = filterBlockedRelays(appRelays);
     let walletRelays = DEFAULTRELAYURLS;
     let userOutboxRelays: string[] = [];
 
@@ -248,7 +237,6 @@ export async function fetchAndInitWallet(
 
     const resolvedWalletRelays = walletRelays.filter(Boolean);
     const resolvedOutboxRelays = userOutboxRelays.filter(Boolean);
-    const sanitizedOutboxRelays = filterBlockedRelays(resolvedOutboxRelays);
 
     const walletFetch = await fetchCashuEventsFromRelays(ndk, filter, resolvedWalletRelays);
     let cashuEvents = walletFetch.events;
@@ -257,26 +245,24 @@ export async function fetchAndInitWallet(
     let effectiveRelays = walletRelaysAvailable ? walletFetch.responsiveRelays : [];
 
     if (!walletRelaysAvailable) {
-        if (sanitizedOutboxRelays.length > 0) {
+        if (resolvedOutboxRelays.length > 0) {
             const outboxFetch = await fetchCashuEventsFromRelays(
                 ndk,
                 filter,
-                sanitizedOutboxRelays
+                resolvedOutboxRelays
             );
             cashuEvents = outboxFetch.events;
             effectiveRelays =
                 outboxFetch.responsiveRelays.length > 0
                     ? outboxFetch.responsiveRelays
-                    : sanitizedOutboxRelays;
+                    : resolvedOutboxRelays;
         }
 
-        if (effectiveRelays.length === 0 && sanitizedAppRelays.length > 0) {
-            const appFetch = await fetchCashuEventsFromRelays(ndk, filter, sanitizedAppRelays);
+        if (effectiveRelays.length === 0 && appRelays.length > 0) {
+            const appFetch = await fetchCashuEventsFromRelays(ndk, filter, appRelays);
             cashuEvents = appFetch.events;
             effectiveRelays =
-                appFetch.responsiveRelays.length > 0
-                    ? appFetch.responsiveRelays
-                    : sanitizedAppRelays;
+                appFetch.responsiveRelays.length > 0 ? appFetch.responsiveRelays : appRelays;
         }
     }
 
@@ -307,24 +293,22 @@ export async function fetchAndInitWallet(
             walletRelaySetUrls = walletRelayFetch.responsiveRelays;
         } else {
             walletRelaysUnavailable = true;
-            if (sanitizedOutboxRelays.length > 0) {
+            if (resolvedOutboxRelays.length > 0) {
                 const outboxFetch = await fetchCashuEventsFromRelays(
                     ndk,
                     filter,
-                    sanitizedOutboxRelays
+                    resolvedOutboxRelays
                 );
                 walletRelaySetUrls =
                     outboxFetch.responsiveRelays.length > 0
                         ? outboxFetch.responsiveRelays
-                        : sanitizedOutboxRelays;
+                        : resolvedOutboxRelays;
             }
 
-            if (walletRelaySetUrls.length === 0 && sanitizedAppRelays.length > 0) {
-                const appFetch = await fetchCashuEventsFromRelays(ndk, filter, sanitizedAppRelays);
+            if (walletRelaySetUrls.length === 0 && appRelays.length > 0) {
+                const appFetch = await fetchCashuEventsFromRelays(ndk, filter, appRelays);
                 walletRelaySetUrls =
-                    appFetch.responsiveRelays.length > 0
-                        ? appFetch.responsiveRelays
-                        : sanitizedAppRelays;
+                    appFetch.responsiveRelays.length > 0 ? appFetch.responsiveRelays : appRelays;
             }
         }
     }

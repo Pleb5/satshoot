@@ -112,6 +112,7 @@ const ndkSvelte = new NDKSvelte({
     autoConnectUserRelays: true,
     autoFetchUserMutelist: true,
     explicitRelayUrls: getAppRelays(),
+    blacklistRelayUrls: Array.from(BLACKLISTED_RELAYS),
 });
 
 ndkSvelte.relayAuthDefaultPolicy = NDKRelayAuthPolicies.signIn({ ndk: ndkSvelte });
