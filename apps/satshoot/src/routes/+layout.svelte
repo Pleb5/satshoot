@@ -310,6 +310,7 @@
             const remoteSignerNDK = new NDK({
                 enableOutboxModel: false,
                 explicitRelayUrls: relayUrls,
+                blacklistRelayUrls: Array.from(BLACKLISTED_RELAYS),
             });
 
             // Connect to relays first

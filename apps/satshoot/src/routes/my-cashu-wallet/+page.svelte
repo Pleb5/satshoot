@@ -1,10 +1,15 @@
 <script lang="ts">
     import ExploreMintsModal from '$lib/components/Modals/ExploreMintsModal.svelte';
-    import RecoverEcashWallet from '$lib/components/Modals/RecoverEcashWallet.svelte';
     import { displayEcashWarning } from '$lib/stores/gui';
     import ndk, { DEFAULTRELAYURLS } from '$lib/stores/session';
     import currentUser, { loggedIn } from '$lib/stores/user';
-    import { userCashuInfo, wallet, walletInit, walletStatus } from '$lib/wallet/wallet';
+    import {
+        userCashuInfo,
+        wallet,
+        walletDecryptFailed,
+        walletInit,
+        walletStatus,
+    } from '$lib/wallet/wallet';
     import {
         arraysAreEqual,
         broadcastEvent,
@@ -28,7 +33,6 @@
         type WalletProofChange,
     } from '@nostr-dev-kit/ndk-wallet';
 
-    import BackupEcashWallet from '$lib/components/Modals/BackupEcashWallet.svelte';
     import Card from '$lib/components/UI/Card.svelte';
     import Button from '$lib/components/UI/Buttons/Button.svelte';
     import WithdrawEcash from '$lib/components/Wallet/WithdrawEcash.svelte';
@@ -574,9 +578,7 @@
             <div class="w-full flex flex-col gap-[35px] max-[576px]:gap-[25px]">
                 <!-- Wallet card end -->
                 {#if $displayEcashWarning}
-                    <Card
-                        classes="bg-warning-500 dark:bg-warning-700 hidden max-[768px]:flex relative"
-                    >
+                    <Card classes="bg-warning-500 hidden max-[768px]:flex relative">
                         <p class="font-[600] text-white">
                             Warning: Experimental feature, use at your own risk! LN payments will
                             only appear in your LN wallet balance. This wallet only handles Cashu
