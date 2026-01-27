@@ -36,10 +36,6 @@ export async function walletInit(
     ndkNutzapMonitor = new NDKNutzapMonitor(ndk, user, { mintList });
     ndkNutzapMonitor.wallet = ndkWallet;
 
-    ndkNutzapMonitor.on('seen', (nutzapEvent) => {
-      console.log('nutzapEvent :>> ', nutzapEvent);
-    });
-
     ndkNutzapMonitor.start({
       filter: { limit: 100 },
       opts: { skipVerification: true },

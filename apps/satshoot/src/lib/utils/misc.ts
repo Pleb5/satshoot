@@ -10,6 +10,7 @@ import {
     NDKRelaySet,
     NDKSubscriptionCacheUsage,
 } from '@nostr-dev-kit/ndk';
+import { DeterministicCashuWalletInfoKind } from '@nostr-dev-kit/ndk-wallet';
 import type NDK from '@nostr-dev-kit/ndk';
 
 import normalizeUrl from 'normalize-url';
@@ -53,6 +54,7 @@ export const nip46SignerPerms = [
     `sign_event:${NDKKind.Nutzap}`,
     `sign_event:${NDKKind.RelayList}`,
     `sign_event:${NDKKind.HttpAuth}`,
+    `sign_event:${DeterministicCashuWalletInfoKind}`,
 ];
 
 interface SetSerializer {

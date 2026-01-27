@@ -352,10 +352,24 @@
                 });
             }
 
-            await newWallet.publish();
-            console.log(
-                `wallet after publish: ${Object.entries(newWallet.state.getDeterministicCountersSnapshot())}`
-            );
+            console.info('Publishing new wallet', {
+                pubkey: $currentUser?.pubkey,
+                mints: newWallet.mints,
+                relaySetUrls: newWallet.relaySet?.relayUrls ?? [],
+            });
+            const signerPubkey = await $ndk.signer?.user()?.then((u) => u.pubkey);
+            const publishResult = await Promise.race([
+                newWallet.publish(),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Wallet publish timed out')), 8000)
+                ),
+            ]);
+            console.info('Wallet publish done', {
+                publishResult,
+                signerPubkey,
+                walletPubkey: newWallet.event?.pubkey,
+                counters: Object.entries(newWallet.state.getDeterministicCountersSnapshot()),
+            });
 
             toaster.success({
                 title: `Nostr Wallet created!`,
@@ -656,6 +670,18 @@
                             </div>
                         </section>
                     {/each}
+                {:else if $walletDecryptFailed}
+                    <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
+                        <Card classes="bg-warning-500">
+                            <p class="font-[600] text-white">
+                                Could not decrypt wallet. Check your signer connection and try
+                                again.
+                            </p>
+                        </Card>
+                        <Button onClick={tryLoadWallet} title="Retry loading your wallet"
+                            >Try loading Wallet</Button
+                        >
+                    </div>
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
                         <Button
