@@ -69,7 +69,6 @@
         NDKSubscription,
         type NDKEvent,
     } from '@nostr-dev-kit/ndk';
-    import { privateKeyFromSeedWords } from 'nostr-tools/nip06';
 
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
@@ -210,8 +209,8 @@
         decryptedSecret?: string;
         restoreMethod?: RestoreMethod;
     }) {
-        // Get decrypted seed from a modal prompt where user enters passphrase
-        // User can dismiss modal in which case decryptedSeed is undefined
+        // Get decrypted secret from a modal prompt where user enters passphrase
+        // User can dismiss modal in which case decryptedSecret is undefined
         const { decryptedSecret, restoreMethod } = res;
 
         if (!decryptedSecret) {
@@ -248,8 +247,6 @@
         restoreMethod: RestoreMethod
     ): string | undefined {
         switch (restoreMethod) {
-            case RestoreMethod.Seed:
-                return privateKeyFromSeedWords(decryptedSecret);
             case RestoreMethod.Nsec:
                 return privateKeyFromNsec(decryptedSecret);
             default:
@@ -414,7 +411,8 @@
 
     function configureBasics() {
         localStorage.debug = '*';
-        const mode = getModeUserPrefers() || document.documentElement.getAttribute('data-mode') || 'light';
+        const mode =
+            getModeUserPrefers() || document.documentElement.getAttribute('data-mode') || 'light';
         document.documentElement.setAttribute('data-mode', mode);
         setModeUserPrefers(mode);
 
@@ -478,7 +476,7 @@
 
         try {
             await $ndk.connect(2500);
-        } catch(e){
+        } catch (e) {
             console.warn('NDK initial connect error:', e);
         } finally {
             if (!$loggedIn) {
@@ -498,7 +496,6 @@
         if (allBids) allBids.empty();
         if (allServices) allServices.empty();
         if (allOrders) allOrders.empty();
-
 
         if (myJobs) myJobs.empty();
         if (myBids) myBids.empty();

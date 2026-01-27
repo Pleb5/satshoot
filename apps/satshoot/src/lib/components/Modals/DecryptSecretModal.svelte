@@ -40,21 +40,15 @@
         statusMessage = 'Decrypting...';
         try {
             let restoreMethod: RestoreMethod | undefined = undefined;
-            const encryptedSeed: string | null = localStorage.getItem('nostr-seedwords');
             const encryptedNsec: string | null = localStorage.getItem('nostr-nsec');
             const salt: string | null = localStorage.getItem('nostr-npub');
 
-            // Restore method depends on the local storage key(nostr-seedwords/nsec)
-            if (encryptedSeed) {
-                restoreMethod = RestoreMethod.Seed;
-            } else if (encryptedNsec) {
-                restoreMethod = RestoreMethod.Nsec;
-            }
+            // Restore method depends on the local storage key(nsec)
 
-            if (!encryptedSeed && !encryptedNsec) {
+            if (!encryptedNsec) {
                 throw new DataLoadError(
                     'Could not fetch encrypted secret from local storage!',
-                    'tried: nostr-seedwords, nostr-nsec'
+                    'tried: nostr-nsec'
                 );
             }
             if (!salt) {
@@ -107,7 +101,7 @@
 
             // Start worker in background and wait for decryption result in onmessage
             cryptWorker.postMessage({
-                encrpytedSecret: encryptedSeed ?? encryptedNsec,
+                encrpytedSecret: encryptedNsec,
                 passphrase: passphrase,
                 salt: salt,
             });
@@ -128,8 +122,8 @@
     let showPassword: boolean = $state(false);
 </script>
 
-<ModalWrapper bind:isOpen title="Decrypt Local Seed">
-    <h4 class="mt-2">Found Seed in browser local storage, provide passphrase to load it:</h4>
+<ModalWrapper bind:isOpen title="Decrypt Local Secret">
+    <h4 class="mt-2">Found Secret in browser local storage, provide passphrase to load it:</h4>
     <div class="flex justify-between items-center m-4 gap-3">
         <input
             class="input"
