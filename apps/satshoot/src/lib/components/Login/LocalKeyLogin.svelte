@@ -64,8 +64,6 @@
     });
 
     let backupFile = $state<File | null>(null);
-    let fileUploadSuccessful = $state(false);
-    let autoSubmitBackupFile = $state(false);
     let loginInProgress = $state(false);
     let nsecForLocalKey = $state('');
     let passphrase = $state('');
@@ -160,24 +158,7 @@
         return true;
     };
 
-    const validatePassphraseSilently = () => {
-        if (!passphrase && !confirmPassphrase) return true;
-        if (passphrase.length < 14) return false;
-        if (confirmPassphrase !== passphrase) return false;
-        return true;
-    };
 
-    $effect(() => {
-        if (!isOpen) return;
-        if (!autoSubmitBackupFile) return;
-        if (activeTabForLocalKeyLogin !== LocalKeyLoginTabs.BackupFile) return;
-        if (!backupFile) return;
-        if (loginInProgress) return;
-        if (!validatePassphraseSilently()) return;
-
-        autoSubmitBackupFile = false;
-        void loginWithBackupFile();
-    });
 
     async function loginWithSecret(
         secret: string,
@@ -255,8 +236,6 @@
 
     function handleFileAccept({ files }: FileAcceptDetails) {
         backupFile = files[0];
-        fileUploadSuccessful = true;
-        autoSubmitBackupFile = true;
     }
 
     function handleFileReject({ files }: FileRejectDetails) {
