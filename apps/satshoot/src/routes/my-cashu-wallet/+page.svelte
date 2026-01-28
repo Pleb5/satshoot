@@ -50,6 +50,7 @@
     import MnemonicSeedGenerationModal from '$lib/components/Modals/MnemonicSeedGenerationModal.svelte';
     import MnemonicSeedRecoverModal from '$lib/components/Modals/MnemonicSeedRecoverModal.svelte';
     import TooltipIcon from '$lib/components/Icons/TooltipIcon.svelte';
+    import { onDestroy } from 'svelte';
     import { Popover } from '@skeletonlabs/skeleton-svelte';
 
     enum Tab {
@@ -76,6 +77,9 @@
     let cleaningWallet = $state(false);
     let toastTriggered = false;
     let walletRelayUnavailable = $state(false);
+    let balanceListenerWallet: NDKCashuWallet | null = null;
+    let balanceUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+    let pendingBalanceUpdate: NDKCashuWallet | null = null;
 
     let selectedTab = $state(Tab.Mints);
 
@@ -92,34 +96,59 @@
 
     const walletRelays = $derived($userCashuInfo?.relays ?? []);
 
+    onDestroy(() => {
+        if (balanceUpdateTimer) {
+            clearTimeout(balanceUpdateTimer);
+        }
+        pendingBalanceUpdate = null;
+    });
+
     $effect(() => {
         if (!$wallet) {
             tryLoadWallet();
             return;
         }
+
+        updateWalletBalances($wallet);
+
+        if (balanceListenerWallet !== $wallet) {
+            balanceListenerWallet = $wallet;
+            const handleWalletUpdate = () => {
+                handleWalletBalanceUpdate(balanceListenerWallet!);
+            };
+            balanceListenerWallet.on('balance_updated', handleWalletUpdate);
+            balanceListenerWallet.on('ready', handleWalletUpdate);
+        }
+
+        if ($walletStatus === NDKWalletStatus.READY && pendingBalanceUpdate) {
+            scheduleWalletBalanceUpdate(pendingBalanceUpdate);
+        }
+
         if ($wallet && $userCashuInfo) {
             checkLegacyWallet();
 
             checkP2PK();
-
-            mintBalances = $wallet.mintBalances;
-
-            walletBalance = getBalanceStr($wallet);
 
             const walletRelayUrls = $userCashuInfo.relays ?? [];
             const activeWalletRelays = $wallet.relaySet?.relayUrls ?? [];
             walletRelayUnavailable =
                 walletRelayUrls.length > 0 &&
                 !activeWalletRelays.some((relay) => walletRelayUrls.includes(relay));
-
-            $wallet.on('balance_updated', () => {
-                mintBalances = $wallet!.mintBalances;
-                walletBalance = getBalanceStr($wallet!);
-            });
         } else if (!$userCashuInfo) {
             reFetchCashuInfo();
         }
     });
+
+    const ndkInstance = $derived($ndk as any);
+    const relaySetFactory = $derived(NDKRelaySet as any);
+    const walletInitSafe = (walletInit as any) as (
+        wallet: NDKCashuWallet,
+        mintList: NDKCashuMintList,
+        ndk: any,
+        user: typeof $currentUser,
+        oldWallet?: NDKCashuWallet
+    ) => Promise<boolean>;
+    const createWalletSafe = (NDKCashuWallet as any) as typeof NDKCashuWallet;
 
     const checkLegacyWallet = async () => {
         if (!$wallet || !$userCashuInfo) return;
@@ -135,7 +164,7 @@
                     label: 'Switch',
                     onClick: () => {
                         respondedToAction = true;
-                        migrateCashuWallet($ndk)
+                        migrateCashuWallet(ndkInstance as any)
                             .then(() => {
                                 toaster.success({
                                     title: `Successfully migrated Wallet`,
@@ -214,7 +243,7 @@
 
         const cashuInfo = await getCashuPaymentInfo($currentUser.pubkey, true);
         if (cashuInfo) {
-            walletInit($wallet, cashuInfo as NDKCashuMintList, $ndk, $currentUser);
+            walletInitSafe($wallet, cashuInfo as NDKCashuMintList, ndkInstance, $currentUser);
             return;
         } else {
             tryCreateCashuInfo();
@@ -233,7 +262,8 @@
                 onClick: async () => {
                     respondedToAction = true;
 
-                    const ndkMintList = new NDKCashuMintList($wallet!.ndk);
+                    const ndkMintList = new NDKCashuMintList(ndkInstance);
+
                     let relays = DEFAULTRELAYURLS;
                     if ($wallet?.relaySet?.relayUrls) {
                         relays = $wallet.relaySet.relayUrls;
@@ -244,7 +274,7 @@
                     ndkMintList.p2pk = $wallet!.p2pk;
                     try {
                         await broadcastEvent($ndk, ndkMintList, { replaceable: true });
-                        walletInit($wallet!, ndkMintList, $ndk, $currentUser!);
+                        walletInitSafe($wallet!, ndkMintList, ndkInstance, $currentUser!);
 
                         toaster.success({
                             title: `Successfully published Cashu Info`,
@@ -277,9 +307,34 @@
         return balanceStr;
     }
 
+    function updateWalletBalances(activeWallet: NDKCashuWallet) {
+        mintBalances = activeWallet.mintBalances;
+        walletBalance = getBalanceStr(activeWallet);
+    }
+
+    function scheduleWalletBalanceUpdate(activeWallet: NDKCashuWallet) {
+        pendingBalanceUpdate = activeWallet;
+        if (balanceUpdateTimer) {
+            clearTimeout(balanceUpdateTimer);
+        }
+        balanceUpdateTimer = setTimeout(() => {
+            if (pendingBalanceUpdate) {
+                updateWalletBalances(pendingBalanceUpdate);
+                pendingBalanceUpdate = null;
+            }
+            balanceUpdateTimer = null;
+        }, 600);
+    }
+
+    function handleWalletBalanceUpdate(activeWallet: NDKCashuWallet) {
+        if ($walletStatus === NDKWalletStatus.READY) {
+            scheduleWalletBalanceUpdate(activeWallet);
+        }
+    }
+
     function createWallet(seedWords: string[]) {
         const bip39seed = deriveSeedKey(seedWords.join(' '));
-        tempWallet = new NDKCashuWallet($ndk, bip39seed);
+        tempWallet = new createWalletSafe(ndkInstance, bip39seed);
         if ($wallet) {
             tempWallet.event = $wallet.event;
             tempWallet.privkeys = $wallet.privkeys;
@@ -326,9 +381,9 @@
                 }
             }
 
-            newWallet.relaySet = NDKRelaySet.fromRelayUrls(mintRelays, $ndk);
+            newWallet.relaySet = relaySetFactory.fromRelayUrls(mintRelays, ndkInstance);
 
-            const cashuInfo = new NDKCashuMintList($ndk);
+            const cashuInfo = new NDKCashuMintList(ndkInstance);
             cashuInfo.p2pk = newWallet._p2pk;
             cashuInfo.relays = mintRelays;
             cashuInfo.mints = newWallet.mints;
@@ -336,10 +391,10 @@
             await broadcastEvent($ndk, cashuInfo, { replaceable: true });
 
             const walletMigration = !!$wallet;
-            const deterministicTransfer = await walletInit(
+            const deterministicTransfer = await walletInitSafe(
                 newWallet,
                 cashuInfo,
-                $ndk,
+                ndkInstance,
                 $currentUser!,
                 $wallet ?? undefined
             );
@@ -389,6 +444,7 @@
             });
             if ($wallet) {
                 $wallet = $wallet;
+                updateWalletBalances($wallet);
             }
         } else if ($loggedIn) {
             console.error('Error: User not found!');
@@ -470,7 +526,10 @@
             if (relayUrl) {
                 $userCashuInfo.relays = [...$userCashuInfo.relays, editedData];
                 if ($wallet!.relaySet) {
-                    $wallet!.relaySet = NDKRelaySet.fromRelayUrls($userCashuInfo.relays, $ndk);
+                    $wallet!.relaySet = relaySetFactory.fromRelayUrls(
+                        $userCashuInfo.relays,
+                        ndkInstance
+                    );
                 }
 
                 await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
@@ -501,7 +560,10 @@
             $userCashuInfo.relays = $userCashuInfo.relays.filter((url: string) => url !== relay);
 
             if ($wallet?.relaySet?.relays) {
-                $wallet.relaySet = NDKRelaySet.fromRelayUrls($userCashuInfo.relays, $ndk);
+                $wallet.relaySet = relaySetFactory.fromRelayUrls(
+                    $userCashuInfo.relays,
+                    ndkInstance
+                );
             }
 
             await broadcastEvent($ndk, $userCashuInfo, { replaceable: true });
@@ -802,7 +864,9 @@
                                             <!--     > -->
                                             <!--     </i> -->
                                         </div>
-                                        <PieChart dataset={mintBalances} />
+                                        <div class="w-full flex justify-center">
+                                            <PieChart dataset={mintBalances} />
+                                        </div>
                                         <WithdrawEcash cashuWallet={$wallet} />
                                         <DepositEcash cashuWallet={$wallet} />
                                         <div

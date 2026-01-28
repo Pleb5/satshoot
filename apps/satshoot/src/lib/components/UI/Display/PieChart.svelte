@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy } from 'svelte';
+    import { browser } from '$app/environment';
     import { abbreviateNumber } from '$lib/utils/misc';
     import { Chart, ArcElement, Tooltip, Legend, PieController } from 'chart.js';
     import ChartDataLabels from 'chartjs-plugin-datalabels';
@@ -14,7 +15,7 @@
     let { dataset = {} }: Props = $props();
     let canvas = $state<HTMLCanvasElement>();
     let chartInstance = $state<Chart>();
-    let mode = $state(getModeUserPrefers() || 'light');
+    let mode = $state('light');
 
     let isDark = $derived(mode === 'dark');
 
@@ -84,36 +85,33 @@
     }));
 
     $effect(() => {
-        if (!canvas) return;
+        if (browser) {
+            mode = getModeUserPrefers() || 'light';
+        }
+    });
+
+    $effect(() => {
+        if (!browser || !canvas) return;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Initialize or update chart
         if (!chartInstance) {
-            // Initial creation
             chartInstance = new Chart(ctx, {
                 type: 'pie',
                 data: chartData,
                 options: options as any,
                 plugins: [ChartDataLabels],
             });
-        } else {
-            // Only update if data actually changed
-            if (JSON.stringify(chartInstance.data) !== JSON.stringify(chartData)) {
-                chartInstance.data = chartData;
-                chartInstance.update();
-            }
-
-            // Only update options if theme changed
-            if (
-                chartInstance.options.plugins?.legend?.labels?.color !==
-                options.plugins.legend.labels.color
-            ) {
-                chartInstance.options = options as any;
-                chartInstance.update();
-            }
+            return;
         }
+
+        if (JSON.stringify(chartInstance.data) !== JSON.stringify(chartData)) {
+            chartInstance.data = chartData;
+        }
+
+        chartInstance.options = options as any;
+        chartInstance.update();
     });
 
     onDestroy(() => {
