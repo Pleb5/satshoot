@@ -9,6 +9,7 @@
     } from '$lib/stores/user';
     import Button from '../UI/Buttons/Button.svelte';
     import { get } from 'svelte/store';
+    import { toaster } from '$lib/stores/toaster';
 
     import { getRoboHashPicture, shortenTextWithEllipsesInMiddle } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
@@ -45,6 +46,7 @@
         VERTEX_PROFILE_SEARCH_SORT,
         VERTEX_PROFILE_SEARCH_TIMEOUT_MS,
     } from '$lib/services/vertex/vertex-profile-search';
+    import { VERTEX_PRICING_URL } from '$lib/services/vertex/vertex-reputation';
     
     interface Props {
         onRestoreLogin: () => void;
@@ -82,6 +84,7 @@
         Array<{ pubkey: Hexpubkey; profile: NDKUserProfile | null }>
     >([]);
     let profileNameError = $state(false);
+    let profileNameNeedsCredits = $state(false);
 
     let debounceTimer = $state<NodeJS.Timeout | null>(null);
     let previousSearchInput = $state('');
@@ -160,6 +163,7 @@
         profileNameHasSearched = false;
         profileNameResults = [];
         profileNameError = false;
+        profileNameNeedsCredits = false;
         profileNameSearchRequestId += 1;
     }
 
@@ -180,6 +184,7 @@
         profileNameHasSearched = true;
         searchingProfileNames = true;
         profileNameError = false;
+        profileNameNeedsCredits = false;
         profileNameResults = [];
 
         const requestId = profileNameSearchRequestId + 1;
@@ -240,7 +245,17 @@
         } catch (error) {
             if (profileNameSearchRequestId === requestId) {
                 console.error('Error searching profiles by name:', error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                const needsCreditsAction = errorMessage.toLowerCase().includes('credits');
+                profileNameNeedsCredits = needsCreditsAction;
                 profileNameError = true;
+
+                if (!needsCreditsAction) {
+                    toaster.error({
+                        title: 'Vertex profile search failed',
+                        description: errorMessage,
+                    });
+                }
             }
         } finally {
             if (profileNameSearchRequestId === requestId) {
@@ -635,11 +650,29 @@
                                                         <ProgressRing size={8} />
                                                         <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching profiles...</span>
                                                     </div>
-                                                {:else if profileNameError}
-                                                    <div class="text-center py-4 text-gray-500 dark:text-gray-400">
-                                                        <i class="bx bx-user-x text-2xl mb-2"></i>
-                                                        <p class="text-sm">Profile Search Failed</p>
-                                                    </div>
+                                            {:else if profileNameError}
+                                                <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                                                    <i class="bx bx-user-x text-2xl mb-2"></i>
+                                                    <p class="text-sm">Profile Search Failed</p>
+                                                    {#if profileNameNeedsCredits}
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                            not enough credits
+                                                        </p>
+                                                        <button
+                                                            type="button"
+                                                            class="mt-3 w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 hover:bg-gray-100 dark:hover:bg-gray-900 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors"
+                                                            onclick={() =>
+                                                                window.open(
+                                                                    VERTEX_PRICING_URL,
+                                                                    '_blank',
+                                                                    'noopener,noreferrer'
+                                                                )}
+                                                        >
+                                                            Add Credits
+                                                        </button>
+                                                    {/if}
+                                                </div>
+
                                                 {:else if profileNameHasSearched && profileNameResults.length === 0}
                                                     <div class="text-center py-4 text-gray-500 dark:text-gray-400">
                                                         <i class="bx bx-search-alt text-2xl mb-2"></i>
@@ -839,6 +872,23 @@
                                                 <div class="text-center py-4 text-gray-500 dark:text-gray-400">
                                                     <i class="bx bx-user-x text-2xl mb-2"></i>
                                                     <p class="text-sm">Profile Search Failed</p>
+                                                    {#if profileNameNeedsCredits}
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                            not enough credits
+                                                        </p>
+                                                        <button
+                                                            type="button"
+                                                            class="mt-3 w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 hover:bg-gray-100 dark:hover:bg-gray-900 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors"
+                                                            onclick={() =>
+                                                                window.open(
+                                                                    VERTEX_PRICING_URL,
+                                                                    '_blank',
+                                                                    'noopener,noreferrer'
+                                                                )}
+                                                        >
+                                                            Add Credits
+                                                        </button>
+                                                    {/if}
                                                 </div>
                                             {:else if profileNameHasSearched && profileNameResults.length === 0}
                                                 <div class="text-center py-4 text-gray-500 dark:text-gray-400">
