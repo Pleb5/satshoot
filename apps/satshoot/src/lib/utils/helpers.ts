@@ -193,8 +193,7 @@ async function fetchCashuEventsFromRelays(
         const events = await Promise.race([
           ndk.fetchEvents(
             filter,
-            { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY },
-            relaySet
+            { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY, relaySet }
           ),
           timeoutPromise,
         ]);

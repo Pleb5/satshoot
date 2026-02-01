@@ -266,7 +266,7 @@
 
                     let relays = DEFAULTRELAYURLS;
                     if ($wallet?.relaySet?.relayUrls) {
-                        relays = $wallet.relaySet.relayUrls;
+                        relays = filterBlockedRelayUrls($wallet.relaySet.relayUrls);
                     }
 
                     ndkMintList.relays = relays;

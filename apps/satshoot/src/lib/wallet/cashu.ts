@@ -45,8 +45,8 @@ export async function getCashuMintRecommendations(
         cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
         closeOnEose: true,
         groupable: false,
-      },
-      relaySet
+        relaySet,
+      }
     ),
     RECOMMENDATION_FETCH_TIMEOUT_MS
   );
