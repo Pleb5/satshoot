@@ -75,7 +75,6 @@
     let walletBalance = $state('0');
     let mints = $derived($wallet?.mints);
     let cleaningWallet = $state(false);
-    let walletRelayUnavailable = $state(false);
     let balanceListenerWallet: NDKCashuWallet | null = null;
     let balanceUpdateTimer: ReturnType<typeof setTimeout> | null = null;
     let pendingBalanceUpdate: NDKCashuWallet | null = null;
@@ -104,13 +103,6 @@
 
     let initialized = $state(false);
     $effect(() => {
-        // if (!$wallet) {
-        //     if ($walletStatus !== NDKWalletStatus.LOADING) {
-        //         tryLoadWallet();
-        //     }
-        //     return;
-        // }
-
         if ($wallet && !initialized) {
             initialized = true;
             updateWalletBalances($wallet);
@@ -130,12 +122,6 @@
 
             if ($wallet && $userCashuInfo) {
                 checkP2PK();
-
-                const walletRelayUrls = $userCashuInfo.relays ?? [];
-                const activeWalletRelays = $wallet.relaySet?.relayUrls ?? [];
-                walletRelayUnavailable =
-                    walletRelayUrls.length > 0 &&
-                    !activeWalletRelays.some((relay) => walletRelayUrls.includes(relay));
             } else if (!$userCashuInfo) {
                 reFetchCashuInfo();
             }
@@ -637,15 +623,6 @@
                         </Button>
                     </Card>
                 {/if}
-                {#if walletRelayUnavailable}
-                    <Card
-                        classes="bg-warning-500 dark:bg-warning-700 hidden max-[768px]:flex relative"
-                    >
-                        <p class="font-[600] text-white">
-                            Wallet relays are unavailable. We are using app relays temporarily.
-                        </p>
-                    </Card>
-                {/if}
                 {#if $walletStatus === NDKWalletStatus.INITIAL || $walletStatus === NDKWalletStatus.LOADING}
                     <!-- Placeholder Section for desktop view -->
 
@@ -871,16 +848,6 @@
                                         >
                                             <i class="bx bx-x"> </i>
                                         </Button>
-                                    </Card>
-                                {/if}
-                                {#if walletRelayUnavailable}
-                                    <Card
-                                        classes="bg-warning-500 dark:bg-warning-700 relative max-[768px]:hidden"
-                                    >
-                                        <p class="font-[600] text-white">
-                                            Wallet relays are unavailable. We are using app relays
-                                            temporarily.
-                                        </p>
                                     </Card>
                                 {/if}
                             </div>

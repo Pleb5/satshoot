@@ -118,7 +118,7 @@ export async function initializeUser(ndk: NDKSvelte) {
 }
 
 const WALLET_DECRYPT_TIMEOUT_MS = 2000;
-const WALLET_DECRYPT_TIMEOUT_REMOTE_MS = 8000;
+const WALLET_DECRYPT_TIMEOUT_REMOTE_MS = 5000;
 const WALLET_INIT_TIMEOUT = 5000;
 let walletDecryptToastShownGlobal = false;
 const WALLET_INIT_LOG_PREFIX = "[wallet:init]";
@@ -273,6 +273,36 @@ export async function fetchAndInitWallet(
     timeoutMs: decryptTimeoutMs,
   });
 
+
+  console.warn('Start deterministic info decryption: ', deterministicWalletEvent)
+
+  let decryptedDeterministicInfo: string | undefined;
+  if (ndk.signer) {
+    decryptedDeterministicInfo = await withTimeout(
+      deterministicWalletEvent.decrypt().then(() => deterministicWalletEvent.content),
+      15000,
+      `Deterministic wallet decrypt`
+    );
+  }
+
+  if (!decryptedDeterministicInfo) {
+    console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic Decrypt failed`, {
+    });
+    if (!walletDecryptToastShownGlobal) {
+      walletDecryptToastShownGlobal = true;
+      toaster.error({
+        title: 'Could not decrypt deterministic info. Check your signer connection.',
+      });
+    }
+    walletDecryptFailed.set(true)
+    walletStatus.set(NDKWalletStatus.FAILED);
+    return
+  }
+
+  console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic Decrypt success`, {
+  });
+
+
   let directDecrypt: string | undefined;
   if (ndk.signer) {
     directDecrypt = await withTimeout(
@@ -307,10 +337,12 @@ export async function fetchAndInitWallet(
     pubkey: cashuWalletEvent.pubkey,
   });
 
+
   const walletFromEvent = await NDKCashuWallet.from(
     cashuWalletEvent,
     deterministicWalletEvent,
-    directDecrypt
+    directDecrypt,
+    decryptedDeterministicInfo
   );
 
   if (!walletFromEvent) {
