@@ -151,8 +151,10 @@ export class LightningPaymentService {
             try {
                 const subscription = get(ndk).subscribe(
                     filter,
-                    { cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY },
-                    NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key)!, get(ndk))
+                    {
+                        cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+                        relaySet: NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key)!, get(ndk)),
+                    }
                 );
 
                 subscription.on('event', async (event) => {
