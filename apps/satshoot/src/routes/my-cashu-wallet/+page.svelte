@@ -75,7 +75,6 @@
     let walletBalance = $state('0');
     let mints = $derived($wallet?.mints);
     let cleaningWallet = $state(false);
-    let toastTriggered = false;
     let walletRelayUnavailable = $state(false);
     let balanceListenerWallet: NDKCashuWallet | null = null;
     let balanceUpdateTimer: ReturnType<typeof setTimeout> | null = null;
@@ -103,90 +102,56 @@
         pendingBalanceUpdate = null;
     });
 
+    let initialized = $state(false);
     $effect(() => {
-        if (!$wallet) {
-            tryLoadWallet();
-            return;
-        }
+        // if (!$wallet) {
+        //     if ($walletStatus !== NDKWalletStatus.LOADING) {
+        //         tryLoadWallet();
+        //     }
+        //     return;
+        // }
 
-        updateWalletBalances($wallet);
+        if ($wallet && !initialized) {
+            initialized = true;
+            updateWalletBalances($wallet);
 
-        if (balanceListenerWallet !== $wallet) {
-            balanceListenerWallet = $wallet;
-            const handleWalletUpdate = () => {
-                handleWalletBalanceUpdate(balanceListenerWallet!);
-            };
-            balanceListenerWallet.on('balance_updated', handleWalletUpdate);
-            balanceListenerWallet.on('ready', handleWalletUpdate);
-        }
+            if (balanceListenerWallet !== $wallet) {
+                balanceListenerWallet = $wallet;
+                const handleWalletUpdate = () => {
+                    handleWalletBalanceUpdate(balanceListenerWallet!);
+                };
+                balanceListenerWallet.on('balance_updated', handleWalletUpdate);
+                balanceListenerWallet.on('ready', handleWalletUpdate);
+            }
 
-        if ($walletStatus === NDKWalletStatus.READY && pendingBalanceUpdate) {
-            scheduleWalletBalanceUpdate(pendingBalanceUpdate);
-        }
+            if ($walletStatus === NDKWalletStatus.READY && pendingBalanceUpdate) {
+                scheduleWalletBalanceUpdate(pendingBalanceUpdate);
+            }
 
-        if ($wallet && $userCashuInfo) {
-            checkLegacyWallet();
+            if ($wallet && $userCashuInfo) {
+                checkP2PK();
 
-            checkP2PK();
-
-            const walletRelayUrls = $userCashuInfo.relays ?? [];
-            const activeWalletRelays = $wallet.relaySet?.relayUrls ?? [];
-            walletRelayUnavailable =
-                walletRelayUrls.length > 0 &&
-                !activeWalletRelays.some((relay) => walletRelayUrls.includes(relay));
-        } else if (!$userCashuInfo) {
-            reFetchCashuInfo();
+                const walletRelayUrls = $userCashuInfo.relays ?? [];
+                const activeWalletRelays = $wallet.relaySet?.relayUrls ?? [];
+                walletRelayUnavailable =
+                    walletRelayUrls.length > 0 &&
+                    !activeWalletRelays.some((relay) => walletRelayUrls.includes(relay));
+            } else if (!$userCashuInfo) {
+                reFetchCashuInfo();
+            }
         }
     });
 
     const ndkInstance = $derived($ndk as any);
     const relaySetFactory = $derived(NDKRelaySet as any);
-    const walletInitSafe = (walletInit as any) as (
+    const walletInitSafe = walletInit as any as (
         wallet: NDKCashuWallet,
         mintList: NDKCashuMintList,
         ndk: any,
         user: typeof $currentUser,
         oldWallet?: NDKCashuWallet
     ) => Promise<boolean>;
-    const createWalletSafe = (NDKCashuWallet as any) as typeof NDKCashuWallet;
-
-    const checkLegacyWallet = async () => {
-        if (!$wallet || !$userCashuInfo) return;
-
-        let respondedToAction = false;
-
-        if ($wallet.event?.kind === NDKKind.LegacyCashuWallet && !toastTriggered) {
-            toastTriggered = true;
-            toaster.warning({
-                title: 'You are using a legacy Nostr Wallet. Switch to new?',
-                duration: 60_000,
-                action: {
-                    label: 'Switch',
-                    onClick: () => {
-                        respondedToAction = true;
-                        migrateCashuWallet(ndkInstance as any)
-                            .then(() => {
-                                toaster.success({
-                                    title: `Successfully migrated Wallet`,
-                                });
-                            })
-                            .catch((err) => {
-                                toaster.error({
-                                    title: `Failed to migrate Wallet!\n ${err}`,
-                                });
-                            });
-                    },
-                },
-                onStatusChange: (res) => {
-                    if (res.status === 'dismissing' && !respondedToAction) {
-                        toaster.warning({
-                            title: `You'll continue using legacy Wallet!`,
-                        });
-                    }
-                },
-            });
-        }
-    };
+    const createWalletSafe = NDKCashuWallet as any as typeof NDKCashuWallet;
 
     const checkP2PK = async () => {
         if (!$wallet || !$userCashuInfo) return;
@@ -266,7 +231,7 @@
 
                     let relays = DEFAULTRELAYURLS;
                     if ($wallet?.relaySet?.relayUrls) {
-                        relays = filterBlockedRelayUrls($wallet.relaySet.relayUrls);
+                        relays = $wallet.relaySet.relayUrls;
                     }
 
                     ndkMintList.relays = relays;
@@ -336,7 +301,6 @@
         const bip39seed = deriveSeedKey(seedWords.join(' '));
         tempWallet = new createWalletSafe(ndkInstance, bip39seed);
         if ($wallet) {
-            tempWallet.event = $wallet.event;
             tempWallet.privkeys = $wallet.privkeys;
             tempWallet._p2pk = $wallet._p2pk;
             tempWallet.signer = $wallet.signer;
@@ -413,18 +377,20 @@
                 relaySetUrls: newWallet.relaySet?.relayUrls ?? [],
             });
             const signerPubkey = await $ndk.signer?.user()?.then((u) => u.pubkey);
-            const publishResult = await Promise.race([
-                newWallet.publish(),
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Wallet publish timed out')), 8000)
-                ),
-            ]);
+            const publishResult = await newWallet.publish();
             console.info('Wallet publish done', {
                 publishResult,
                 signerPubkey,
                 walletPubkey: newWallet.event?.pubkey,
                 counters: Object.entries(newWallet.state.getDeterministicCountersSnapshot()),
             });
+
+            if (!publishResult || publishResult.size === 0) {
+                toaster.warning({
+                    title: 'Wallet publish did not receive relay acknowledgements. It will retry in the background.',
+                    duration: 60000,
+                });
+            }
 
             toaster.success({
                 title: `Nostr Wallet created!`,
@@ -438,10 +404,11 @@
     }
 
     async function tryLoadWallet() {
+        if ($walletStatus === NDKWalletStatus.LOADING) {
+            return;
+        }
         if ($currentUser) {
-            await fetchAndInitWallet($currentUser, $ndk, {
-                fetchLegacyWallet: true,
-            });
+            await fetchAndInitWallet($currentUser, $ndk);
             if ($wallet) {
                 $wallet = $wallet;
                 updateWalletBalances($wallet);
@@ -732,19 +699,17 @@
                             </div>
                         </section>
                     {/each}
-                {:else if $walletDecryptFailed}
-                    <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
-                        <Card classes="bg-warning-500">
-                            <p class="font-[600] text-white">
-                                Could not decrypt wallet. Check your signer connection and try
-                                again.
-                            </p>
-                        </Card>
-                        <Button onClick={tryLoadWallet} title="Retry loading your wallet"
-                            >Try loading Wallet</Button
-                        >
-                    </div>
                 {:else if $walletStatus === NDKWalletStatus.FAILED}
+                    {#if $walletDecryptFailed}
+                        <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
+                            <Card classes="bg-warning-500">
+                                <p class="font-[600] text-white">
+                                    Could not decrypt wallet. Check your signer connection and try
+                                    again.
+                                </p>
+                            </Card>
+                        </div>
+                    {/if}
                     <div class="flex flex-col sm:flex-row sm:justify-center gap-4">
                         <Button
                             onClick={() => (showMnemonicSeedGenerationModal = true)}

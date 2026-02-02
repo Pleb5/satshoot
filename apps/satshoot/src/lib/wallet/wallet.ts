@@ -1,7 +1,7 @@
 import { NDKCashuMintList, NDKUser } from '@nostr-dev-kit/ndk';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 import { NDKCashuWallet, NDKNutzapMonitor, NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { getEncodedTokenV4, type Proof } from '@cashu/cashu-ts';
 
 export const wallet = writable<NDKCashuWallet | null>(null);
@@ -10,6 +10,8 @@ export let ndkNutzapMonitor: NDKNutzapMonitor | null = null;
 
 export const walletStatus = writable<NDKWalletStatus>(NDKWalletStatus.INITIAL);
 export const walletDecryptFailed = writable(false);
+
+const WALLET_READY_TIMEOUT_MS = 8000;
 
 export async function walletInit(
   ndkWallet: NDKCashuWallet,
@@ -30,7 +32,9 @@ export async function walletInit(
   wallet.set(ndkWallet);
   userCashuInfo.set(mintList);
 
+  let walletReadyTimeoutId: ReturnType<typeof setTimeout> | undefined;
   ndkWallet.on('ready', async () => {
+    if (walletReadyTimeoutId) clearTimeout(walletReadyTimeoutId);
     walletStatus.set(NDKWalletStatus.READY);
 
     ndkNutzapMonitor = new NDKNutzapMonitor(ndk, user, { mintList });
@@ -41,6 +45,13 @@ export async function walletInit(
       opts: { skipVerification: true },
     });
   });
+
+  walletReadyTimeoutId = setTimeout(() => {
+    if (get(walletStatus) !== NDKWalletStatus.READY) {
+      console.warn('Wallet ready timed out, continuing with limited data.');
+      walletStatus.set(NDKWalletStatus.READY);
+    }
+  }, WALLET_READY_TIMEOUT_MS);
 
   try {
     ndkWallet.start({ subId: 'wallet', pubkey: user.pubkey });
