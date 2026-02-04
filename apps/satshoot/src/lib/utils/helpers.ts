@@ -280,7 +280,7 @@ export async function fetchAndInitWallet(
   if (ndk.signer) {
     decryptedDeterministicInfo = await withTimeout(
       deterministicWalletEvent.decrypt().then(() => deterministicWalletEvent.content),
-      15000,
+      5000,
       `Deterministic wallet decrypt`
     );
   }
