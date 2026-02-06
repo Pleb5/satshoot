@@ -133,54 +133,61 @@ export class CashuPaymentService {
             [UserEnum.Sponsored, false]
         ]);
 
-        const freelancerPaymentPromise = freelancerShareMillisats ? this.processCashuPayment(
-            UserEnum.Freelancer,
-            this.freelancerPubkey,
-            freelancerShareMillisats
-        ) : undefined;
+        const tasks: Array<{
+            index: number;
+            userType: UserEnum;
+            pubkey: string;
+            amountMillisats: number;
+        }> = [];
 
-        const satshootPaymentPromise = satshootSumMillisats ? this.processCashuPayment(
-            UserEnum.Satshoot,
-            SatShootPubkey,
-            satshootSumMillisats
-        ) : undefined;
+        if (freelancerShareMillisats) {
+            tasks.push({
+                index: 0,
+                userType: UserEnum.Freelancer,
+                pubkey: this.freelancerPubkey,
+                amountMillisats: freelancerShareMillisats
+            });
+        }
 
-        let sponsoredPubkey: string | undefined = undefined;
+        if (satshootSumMillisats) {
+            tasks.push({
+                index: 1,
+                userType: UserEnum.Satshoot,
+                pubkey: SatShootPubkey,
+                amountMillisats: satshootSumMillisats
+            });
+        }
+
         if (sponsoredSumMillisats > 0) {
-            const decodingResult = this.secondaryEntity instanceof BidEvent ? nip19.decode(this.secondaryEntity.sponsoredNpub)
+            const decodingResult = this.secondaryEntity instanceof BidEvent
+                ? nip19.decode(this.secondaryEntity.sponsoredNpub)
                 : nip19.decode((this.primaryEntity as ServiceEvent).sponsoredNpub);
             if (decodingResult.type === "npub") {
-                sponsoredPubkey = decodingResult.data;
+                tasks.push({
+                    index: 2,
+                    userType: UserEnum.Sponsored,
+                    pubkey: decodingResult.data,
+                    amountMillisats: sponsoredSumMillisats
+                });
             } else {
                 throw new Error('Expecting an npub but got something else!');
             }
         }
-        const sponsoredPaymentPromise = sponsoredSumMillisats && sponsoredPubkey ? this.processCashuPayment(
-            UserEnum.Sponsored,
-            sponsoredPubkey,
-            sponsoredSumMillisats
-        ) : undefined;
 
-        const results = await Promise.allSettled([
-            freelancerPaymentPromise,
-            satshootPaymentPromise,
-            sponsoredPaymentPromise
-        ]);
-
-        results.forEach((result, index) => {
-            if (result.status === 'fulfilled') {
-                if (index === 0) {
-                    paid.set(UserEnum.Freelancer, true);
-                } else if (index === 1) {
-                    paid.set(UserEnum.Satshoot, true);
-                } else {
-                    paid.set(UserEnum.Sponsored, true);
-                }
-            } else {
-                // Error will be handled by the caller
-                throw result.reason;
+        const errors: Array<{ index: number; error: unknown }> = [];
+        for (const task of tasks) {
+            try {
+                await this.processCashuPayment(task.userType, task.pubkey, task.amountMillisats);
+                paid.set(task.userType, true);
+            } catch (error) {
+                errors.push({ index: task.index, error });
             }
-        });
+        }
+
+        if (errors.length > 0) {
+            errors.sort((a, b) => a.index - b.index);
+            throw errors[0].error;
+        }
 
         return paid;
     }
