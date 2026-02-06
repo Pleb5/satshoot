@@ -686,7 +686,7 @@
         'transition ease duration-[0.3s] px-[10px] py-[5px] ' +
         'bg-black-50 focus:bg-black-100 outline-[0px] focus:outline-[0px] border-[2px] ' +
         'border-black-100 dark:border-white-100 focus:border-blue-500 rounded-[6px] ' +
-        'w-full text-lg sm:text-xl';
+        'w-full text-lg sm:text-xl placeholder:text-black-400 dark:placeholder:text-white-400';
 </script>
 
 {#snippet firstForm()}
@@ -864,7 +864,7 @@
             </div>
             <div class="w-full flex flex-row items-center relative">
                 <Input
-                    classes={'text-lg sm:text-xl'}
+                    classes={'text-lg sm:text-xl placeholder:text-black-400 dark:placeholder:text-white-400'}
                     type="number"
                     step="1"
                     min="0"
@@ -913,7 +913,7 @@
                 </div>
                 <div class="w-full flex flex-row items-center relative">
                     <Input
-                        classes={'text-lg sm:text-xl'}
+                        classes={'text-lg sm:text-xl placeholder:text-black-400 dark:placeholder:text-white-400'}
                         type="number"
                         step="1"
                         min="0"

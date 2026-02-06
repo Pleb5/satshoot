@@ -303,6 +303,9 @@
 
     const selectOptionClasses =
         'bg-white dark:bg-brightGray transition-all ease duration-[0.2s] w-[100%] rounded-[4px] px-[8px] py-[4px] hover:bg-blue-500 hover:text-white';
+
+    const numericPlaceholderClasses =
+        'placeholder:text-black-400 dark:placeholder:text-white-400';
 </script>
 
 <ModalWrapper bind:isOpen title="Create Bid">
@@ -339,6 +342,7 @@
                             min="0"
                             placeholder={pricingMethod === Pricing.Hourly ? '50,000' : '1,000,000'}
                             bind:value={amount}
+                            classes={numericPlaceholderClasses}
                             fullWidth
                         />
                         <span
@@ -364,6 +368,7 @@
                             max="100"
                             placeholder="1%"
                             bind:value={pledgeSplit}
+                            classes={numericPlaceholderClasses}
                             fullWidth
                         />
                         <span
@@ -429,6 +434,7 @@
                             max="100"
                             placeholder="20%"
                             bind:value={sponsoringSplit}
+                            classes={numericPlaceholderClasses}
                             fullWidth
                         />
                         <span
