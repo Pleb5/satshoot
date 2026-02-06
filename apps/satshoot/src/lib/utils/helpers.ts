@@ -274,7 +274,7 @@ export async function fetchAndInitWallet(
   });
 
 
-  console.warn('Start deterministic info decryption: ', deterministicWalletEvent)
+  console.warn('Start deterministic info decryption: ')
 
   let decryptedDeterministicInfo: string | undefined;
   if (ndk.signer) {
