@@ -51,13 +51,12 @@
         if (!normalizedPr || withdrawing) return;
 
         withdrawing = true;
+        const warningsStartIndex = cashuWallet.warnings?.length ?? 0;
         try {
             let withdrawnSats: number | undefined;
             try {
                 withdrawnSats = new Invoice({ pr: normalizedPr }).satoshi;
             } catch {}
-
-            const warningsStartIndex = cashuWallet.warnings?.length ?? 0;
             const confirmation = await cashuWallet.lnPay({ pr: normalizedPr });
             if (!confirmation) {
                 const warnings = (cashuWallet.warnings ?? [])
@@ -66,6 +65,18 @@
                     .filter(Boolean);
                 const details = warnings.length > 0 ? warnings.join('\n') : undefined;
                 throw new Error(details ?? 'Payment failed (insufficient balance or mint error)');
+            }
+
+            const warnings = (cashuWallet.warnings ?? [])
+                .slice(warningsStartIndex)
+                .map((warning) => warning.msg)
+                .filter(Boolean);
+            const repairWarnings = warnings.filter((warning) => /auto-repair/i.test(warning));
+            if (repairWarnings.length > 0) {
+                toaster.warning({
+                    title: repairWarnings.join('\n'),
+                    duration: 15000,
+                });
             }
 
             toaster.success({
@@ -77,6 +88,17 @@
             pr = '';
         } catch (error) {
             console.error('An error occurred in withdraw', error);
+            const warnings = (cashuWallet.warnings ?? [])
+                .slice(warningsStartIndex)
+                .map((warning) => warning.msg)
+                .filter(Boolean);
+            const repairWarnings = warnings.filter((warning) => /auto-repair/i.test(warning));
+            if (repairWarnings.length > 0) {
+                toaster.warning({
+                    title: repairWarnings.join('\n'),
+                    duration: 15000,
+                });
+            }
             toaster.error({
                 title: `Failed to withdraw: ${formatWithdrawError(error)}`,
                 duration: 60000, // 1 min
