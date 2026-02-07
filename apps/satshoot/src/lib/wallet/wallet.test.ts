@@ -5,6 +5,7 @@ import { get } from 'svelte/store';
 
 import { wallet, walletInit, walletStatus } from './wallet';
 import { DEFAULTRELAYURLS } from '$lib/stores/session';
+import currentUser from '$lib/stores/user';
 
 describe('walletStatus', () => {
   test('should be `INITIAL` by default', () => {
@@ -22,6 +23,7 @@ describe('walletInit', () => {
   it('should initialize the wallet and update the store', async () => {
     const ndk = new NDKSvelte();
     const user = await NDKPrivateKeySigner.generate().user();
+    currentUser.set(user);
 
     const newWallet = new NDKCashuWallet(ndk);
     await newWallet.getP2pk();
@@ -33,11 +35,13 @@ describe('walletInit', () => {
     cashuInfo.relays = DEFAULTRELAYURLS;
     cashuInfo.mints = newWallet.mints;
 
-    walletInit(newWallet, cashuInfo, ndk, user);
+    await walletInit(newWallet, cashuInfo, ndk, user);
 
     // Validate the `wallet` store
     const $wallet = get(wallet);
     expect($wallet).toBeDefined();
     expect($wallet).toBeInstanceOf(NDKCashuWallet);
+
+    currentUser.set(null);
   });
 });

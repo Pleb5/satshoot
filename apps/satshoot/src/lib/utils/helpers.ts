@@ -51,6 +51,7 @@ import { connected } from '../stores/network';
 import { retriesLeft, retryDelay, maxRetryAttempts } from '../stores/network';
 import {
   ndkNutzapMonitor,
+  userCashuInfo,
   wallet,
   walletDecryptFailed,
   walletInit,
@@ -191,185 +192,212 @@ export async function fetchAndInitWallet(
   user: NDKUser,
   ndk: NDKSvelte,
 ) {
-
-  walletStatus.set(NDKWalletStatus.LOADING);
-
-  console.warn(`${WALLET_INIT_LOG_PREFIX} Start`, {
-    pubkey: user.pubkey,
-    signerType: ndk.signer?.constructor?.name ?? 'unknown',
-    signerEncryption: await ndk.signer?.encryptionEnabled?.(),
-  });
-
-  let walletRelays = DEFAULTRELAYURLS;
-  let userOutboxRelays: string[] = [];
-
-  const userRelays = await fetchUserOutboxRelays(ndk, user.pubkey, 2000);
-  if (userRelays) {
-    userOutboxRelays = NDKRelayList.from(userRelays).writeRelayUrls;
-    walletRelays = [...walletRelays, ...userOutboxRelays];
-  }
-  console.warn(`${WALLET_INIT_LOG_PREFIX} Resolved relays`, {
-    userOutboxRelays,
-    walletRelays,
-  });
-
-  const kindsArr = [
-    NDKKind.CashuWallet,
-    NDKKind.CashuMintList,
-    DeterministicCashuWalletInfoKind,
-  ];
-
-  const filter = {
-    kinds: kindsArr,
-    authors: [user.pubkey],
+  const initPubkey = user.pubkey;
+  const isStale = () => {
+    const activeUser = get(currentUser);
+    return !activeUser || activeUser.pubkey !== initPubkey;
   };
 
-  const cashuEvents = await fetchCashuEventsFromRelays(ndk, filter, walletRelays);
+  if (isStale()) return;
 
-  filterMalformedCashuEvents(cashuEvents);
+  walletDecryptFailed.set(false);
 
-  console.warn(`${WALLET_INIT_LOG_PREFIX} Cashu events loaded`, {
-    count: cashuEvents.size,
-    events: cashuEvents,
-  });
-
-  const eventsByKind = new Map<number, NDKEvent[]>();
-  for (const event of cashuEvents) {
-    const existing = eventsByKind.get(event.kind) ?? [];
-    existing.push(event);
-    eventsByKind.set(event.kind, existing);
-  }
-
-  const cashuWalletEvents = sortEventsByCreatedAtDesc(
-    [...(eventsByKind.get(NDKKind.CashuWallet) ?? [])]
-  );
-  const deterministicWalletEvents = sortEventsByCreatedAtDesc(
-    [...(eventsByKind.get(DeterministicCashuWalletInfoKind) ?? [])]
-  );
-  const mintListEvents = sortEventsByCreatedAtDesc(
-    [...(eventsByKind.get(NDKKind.CashuMintList) ?? [])]
-  );
-
-  const cashuWalletEvent = cashuWalletEvents[0];
-  const cashuMintListEvent = mintListEvents[0];
-  const cashuMintList = cashuMintListEvent
-    ? NDKCashuMintList.from(cashuMintListEvent)
-    : undefined;
-
-  if (!cashuMintList) {
-    toaster.error({
-      title: 'Could not fetch Cashu mint list',
+  walletStatus.set(NDKWalletStatus.LOADING);
+  try {
+    console.warn(`${WALLET_INIT_LOG_PREFIX} Start`, {
+      pubkey: user.pubkey,
+      signerType: ndk.signer?.constructor?.name ?? 'unknown',
+      signerEncryption: await ndk.signer?.encryptionEnabled?.(),
     });
-    walletStatus.set(NDKWalletStatus.FAILED)
-    return
-  }
 
-  const decryptTimeoutMs = getDecryptTimeoutMs(ndk);
-  const deterministicWalletEvent = deterministicWalletEvents[0]
+    let walletRelays = DEFAULTRELAYURLS;
+    let userOutboxRelays: string[] = [];
 
-  console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic event selected`, {
-    hasEvent: Boolean(deterministicWalletEvent),
-    latestCreatedAt: deterministicWalletEvent?.created_at ?? 0,
-    timeoutMs: decryptTimeoutMs,
-  });
-
-
-  console.warn('Start deterministic info decryption: ')
-
-  let decryptedDeterministicInfo: string | undefined;
-  if (ndk.signer) {
-    decryptedDeterministicInfo = await withTimeout(
-      deterministicWalletEvent.decrypt().then(() => deterministicWalletEvent.content),
-      5000,
-      `Deterministic wallet decrypt`
-    );
-  }
-
-  if (!decryptedDeterministicInfo) {
-    console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic Decrypt failed`, {
-    });
-    if (!walletDecryptToastShownGlobal) {
-      walletDecryptToastShownGlobal = true;
-      toaster.error({
-        title: 'Could not decrypt deterministic info. Check your signer connection.',
-      });
+    const userRelays = await fetchUserOutboxRelays(ndk, user.pubkey, 2000);
+    if (isStale()) return;
+    if (userRelays) {
+      userOutboxRelays = NDKRelayList.from(userRelays).writeRelayUrls;
+      walletRelays = [...walletRelays, ...userOutboxRelays];
     }
-    walletDecryptFailed.set(true)
-    walletStatus.set(NDKWalletStatus.FAILED);
-    return
-  }
+    console.warn(`${WALLET_INIT_LOG_PREFIX} Resolved relays`, {
+      userOutboxRelays,
+      walletRelays,
+    });
 
-  console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic Decrypt success`, {
-  });
+    const kindsArr = [
+      NDKKind.CashuWallet,
+      NDKKind.CashuMintList,
+      DeterministicCashuWalletInfoKind,
+    ];
 
+    const filter = {
+      kinds: kindsArr,
+      authors: [user.pubkey],
+    };
 
-  let directDecrypt: string | undefined;
-  if (ndk.signer) {
-    directDecrypt = await withTimeout(
-      ndk.signer.decrypt(
-        ndk.getUser({ pubkey: cashuWalletEvent.pubkey }),
-        cashuWalletEvent.content,
-        'nip44'
-      ),
-      decryptTimeoutMs,
-      `Cashu wallet decrypt`
+    const cashuEvents = await fetchCashuEventsFromRelays(ndk, filter, walletRelays);
+    if (isStale()) return;
+
+    filterMalformedCashuEvents(cashuEvents);
+
+    console.warn(`${WALLET_INIT_LOG_PREFIX} Cashu events loaded`, {
+      count: cashuEvents.size,
+      events: cashuEvents,
+    });
+
+    const eventsByKind = new Map<number, NDKEvent[]>();
+    for (const event of cashuEvents) {
+      const existing = eventsByKind.get(event.kind) ?? [];
+      existing.push(event);
+      eventsByKind.set(event.kind, existing);
+    }
+
+    const cashuWalletEvents = sortEventsByCreatedAtDesc(
+      [...(eventsByKind.get(NDKKind.CashuWallet) ?? [])]
     );
-  }
+    const deterministicWalletEvents = sortEventsByCreatedAtDesc(
+      [...(eventsByKind.get(DeterministicCashuWalletInfoKind) ?? [])]
+    );
+    const mintListEvents = sortEventsByCreatedAtDesc(
+      [...(eventsByKind.get(NDKKind.CashuMintList) ?? [])]
+    );
 
-  if (!directDecrypt) {
-    console.warn(`${WALLET_INIT_LOG_PREFIX} Decrypt failed`, {
+    const cashuWalletEvent = cashuWalletEvents[0];
+    const deterministicWalletEvent = deterministicWalletEvents[0];
+    const cashuMintListEvent = mintListEvents[0];
+    const cashuMintList = cashuMintListEvent
+      ? NDKCashuMintList.from(cashuMintListEvent)
+      : undefined;
+
+    if (isStale()) return;
+
+    if (!cashuMintList) {
+      if (!cashuWalletEvent && !deterministicWalletEvent) {
+        walletStatus.set(NDKWalletStatus.FAILED)
+        return
+      }
+      toaster.error({
+        title: 'Could not fetch Cashu mint list',
+      });
+      walletStatus.set(NDKWalletStatus.FAILED)
+      return
+    }
+
+    const decryptTimeoutMs = getDecryptTimeoutMs(ndk);
+
+    console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic event selected`, {
+      hasEvent: Boolean(deterministicWalletEvent),
+      latestCreatedAt: deterministicWalletEvent?.created_at ?? 0,
+      timeoutMs: decryptTimeoutMs,
+    });
+
+
+    console.warn('Start deterministic info decryption: ')
+
+    let decryptedDeterministicInfo: string | undefined;
+    if (ndk.signer) {
+      decryptedDeterministicInfo = await withTimeout(
+        deterministicWalletEvent.decrypt().then(() => deterministicWalletEvent.content),
+        5000,
+        `Deterministic wallet decrypt`
+      );
+    }
+    if (isStale()) return;
+
+    if (!decryptedDeterministicInfo) {
+      console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic Decrypt failed`, {
+      });
+      if (!walletDecryptToastShownGlobal) {
+        walletDecryptToastShownGlobal = true;
+        toaster.error({
+          title: 'Could not decrypt deterministic info. Check your signer connection.',
+        });
+      }
+      walletDecryptFailed.set(true)
+      walletStatus.set(NDKWalletStatus.FAILED);
+      return
+    }
+
+    console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic Decrypt success`, {
+    });
+
+
+    let directDecrypt: string | undefined;
+    if (ndk.signer) {
+      directDecrypt = await withTimeout(
+        ndk.signer.decrypt(
+          ndk.getUser({ pubkey: cashuWalletEvent.pubkey }),
+          cashuWalletEvent.content,
+          'nip44'
+        ),
+        decryptTimeoutMs,
+        `Cashu wallet decrypt`
+      );
+    }
+    if (isStale()) return;
+
+    if (!directDecrypt) {
+      console.warn(`${WALLET_INIT_LOG_PREFIX} Decrypt failed`, {
+        kind: cashuWalletEvent.kind,
+        pubkey: cashuWalletEvent.pubkey,
+      });
+      if (!walletDecryptToastShownGlobal) {
+        walletDecryptToastShownGlobal = true;
+        toaster.error({
+          title: 'Could not decrypt wallet. Check your signer connection.',
+        });
+      }
+      walletDecryptFailed.set(true)
+      walletStatus.set(NDKWalletStatus.FAILED);
+      return
+    }
+
+    console.warn(`${WALLET_INIT_LOG_PREFIX} Decrypt success`, {
       kind: cashuWalletEvent.kind,
       pubkey: cashuWalletEvent.pubkey,
     });
-    if (!walletDecryptToastShownGlobal) {
-      walletDecryptToastShownGlobal = true;
+
+
+    const walletFromEvent = await NDKCashuWallet.from(
+      cashuWalletEvent,
+      deterministicWalletEvent,
+      directDecrypt,
+      decryptedDeterministicInfo
+    );
+    if (isStale()) return;
+
+    if (!walletFromEvent) {
       toaster.error({
-        title: 'Could not decrypt wallet. Check your signer connection.',
+        title: 'Wallet corrupted! Try to create a new one.',
       });
+      walletStatus.set(NDKWalletStatus.FAILED);
+      return
     }
-    walletDecryptFailed.set(true)
-    walletStatus.set(NDKWalletStatus.FAILED);
-    return
-  }
 
-  console.warn(`${WALLET_INIT_LOG_PREFIX} Decrypt success`, {
-    kind: cashuWalletEvent.kind,
-    pubkey: cashuWalletEvent.pubkey,
-  });
-
-
-  const walletFromEvent = await NDKCashuWallet.from(
-    cashuWalletEvent,
-    deterministicWalletEvent,
-    directDecrypt,
-    decryptedDeterministicInfo
-  );
-
-  if (!walletFromEvent) {
-    toaster.error({
-      title: 'Wallet corrupted! Try to create a new one.',
+    console.warn(`${WALLET_INIT_LOG_PREFIX} Wallet constructed`, {
+      kind: cashuWalletEvent.kind,
+      pubkey: cashuWalletEvent.pubkey,
     });
-    walletStatus.set(NDKWalletStatus.FAILED);
-    return
-  }
 
-  console.warn(`${WALLET_INIT_LOG_PREFIX} Wallet constructed`, {
-    kind: cashuWalletEvent.kind,
-    pubkey: cashuWalletEvent.pubkey,
-  });
+    console.warn(`${WALLET_INIT_LOG_PREFIX} Wallet init start`, {
+    });
 
-  console.warn(`${WALLET_INIT_LOG_PREFIX} Wallet init start`, {
-  });
-
-  const initiated = await withTimeout(
-    walletInit(walletFromEvent, cashuMintList, ndk, user),
-    WALLET_INIT_TIMEOUT,
-    "Wallet init"
-  )
-  if (initiated) {
-    walletStatus.set(NDKWalletStatus.READY);
-  } else {
-    walletStatus.set(NDKWalletStatus.FAILED)
+    const initiated = await withTimeout(
+      walletInit(walletFromEvent, cashuMintList, ndk, user),
+      WALLET_INIT_TIMEOUT,
+      "Wallet init"
+    )
+    if (isStale()) return;
+    if (initiated) {
+      walletStatus.set(NDKWalletStatus.READY);
+    } else {
+      walletStatus.set(NDKWalletStatus.FAILED)
+    }
+  } catch (error) {
+    if (!isStale()) {
+      console.warn(`${WALLET_INIT_LOG_PREFIX} Wallet init failed`, error);
+      walletStatus.set(NDKWalletStatus.FAILED);
+    }
   }
 }
 
@@ -435,6 +463,10 @@ export function logout() {
   notifications.set([]);
 
   wallet.set(null);
+  userCashuInfo.set(null);
+  walletStatus.set(NDKWalletStatus.INITIAL);
+  walletDecryptFailed.set(false);
+  walletDecryptToastShownGlobal = false;
 
   if (ndkNutzapMonitor) {
     ndkNutzapMonitor.stop();

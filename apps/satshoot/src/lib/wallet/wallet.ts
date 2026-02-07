@@ -4,6 +4,8 @@ import { NDKCashuWallet, NDKNutzapMonitor, NDKWalletStatus } from '@nostr-dev-ki
 import { get, writable } from 'svelte/store';
 import { getEncodedTokenV4, type Proof } from '@cashu/cashu-ts';
 
+import currentUser from '$lib/stores/user';
+
 export const wallet = writable<NDKCashuWallet | null>(null);
 export let userCashuInfo = writable<NDKCashuMintList | null>(null);
 export let ndkNutzapMonitor: NDKNutzapMonitor | null = null;
@@ -20,13 +22,23 @@ export async function walletInit(
   user: NDKUser,
   oldNDKWallet?: NDKCashuWallet
 ): Promise<boolean> {
+  const initPubkey = user.pubkey;
+  const isStale = () => {
+    const activeUser = get(currentUser);
+    return !activeUser || activeUser.pubkey !== initPubkey;
+  };
+
+  if (isStale()) return false;
+
   if (!ndkWallet._p2pk) {
     await ndkWallet.getP2pk();
+    if (isStale()) return false;
   }
 
   let deterministicTransfer = false;
   if (oldNDKWallet) {
     deterministicTransfer = await transferAllFundsTo(oldNDKWallet, ndkWallet);
+    if (isStale()) return false;
   }
 
   wallet.set(ndkWallet);
@@ -34,6 +46,7 @@ export async function walletInit(
 
   let walletReadyTimeoutId: ReturnType<typeof setTimeout> | undefined;
   ndkWallet.on('ready', async () => {
+    if (isStale()) return;
     if (walletReadyTimeoutId) clearTimeout(walletReadyTimeoutId);
     walletStatus.set(NDKWalletStatus.READY);
 
@@ -47,6 +60,7 @@ export async function walletInit(
   });
 
   walletReadyTimeoutId = setTimeout(() => {
+    if (isStale()) return;
     if (get(walletStatus) !== NDKWalletStatus.READY) {
       console.warn('Wallet ready timed out, continuing with limited data.');
       walletStatus.set(NDKWalletStatus.READY);
@@ -56,8 +70,10 @@ export async function walletInit(
   try {
     ndkWallet.start({ subId: 'wallet', pubkey: user.pubkey });
   } catch (error) {
-    console.warn('Failed to start wallet relay subscriptions.', error);
-    walletStatus.set(NDKWalletStatus.READY);
+    if (!isStale()) {
+      console.warn('Failed to start wallet relay subscriptions.', error);
+      walletStatus.set(NDKWalletStatus.READY);
+    }
   }
 
   return deterministicTransfer;

@@ -54,8 +54,9 @@
     import { sendNotification } from '$lib/stores/notifications';
     import { allReviews, clientReviews, freelancerReviews } from '$lib/stores/reviews';
     import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
+    import { walletStatus } from '$lib/wallet/wallet';
 
-    import { checkRelayConnections, initializeUser, logout } from '$lib/utils/helpers';
+    import { checkRelayConnections, fetchAndInitWallet, initializeUser, logout } from '$lib/utils/helpers';
 
     import { wotUpdateFailed } from '$lib/stores/wot';
 
@@ -69,6 +70,7 @@
         NDKSubscription,
         type NDKEvent,
     } from '@nostr-dev-kit/ndk';
+    import { NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 
     import { privateKeyFromNsec } from '$lib/utils/nip19';
 
@@ -148,6 +150,19 @@
                         window.location.reload();
                     },
                 },
+            });
+        }
+    });
+
+    $effect(() => {
+        if (
+            !$onBoarding &&
+            $loggedIn &&
+            $currentUser &&
+            $walletStatus === NDKWalletStatus.INITIAL
+        ) {
+            fetchAndInitWallet($currentUser, $ndk).catch((error) => {
+                console.warn('[wallet:init] Wallet init failed after onboarding', error);
             });
         }
     });
