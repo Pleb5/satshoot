@@ -17,6 +17,7 @@ const createMockNDKEvent = (kind: NDKKind, amount: number, signatureVerified = t
     ({
         kind,
         signatureVerified,
+        verifySignature: () => signatureVerified,
     }) as unknown as NDKEvent;
 
 describe('calculateTotalAmount', () => {
@@ -41,7 +42,7 @@ describe('calculateTotalAmount', () => {
 
     it('calculates total amount from nutzap events in sats', () => {
         (NDKNutzap.from as any).mockImplementation(() => ({
-            amount: 2000, // msats
+            amount: 2000, // sats
         }));
 
         const events = [
@@ -50,7 +51,7 @@ describe('calculateTotalAmount', () => {
         ];
 
         const total = calculateTotalAmount(events);
-        expect(total).toBe(4); // 2 + 2 sats
+        expect(total).toBe(4000); // 2000 + 2000 sats
         expect(NDKNutzap.from).toHaveBeenCalledTimes(2);
     });
 
@@ -74,7 +75,7 @@ describe('calculateTotalAmount', () => {
         ];
 
         const total = calculateTotalAmount(events);
-        expect(total).toBe(3); // 1 + 2 sats
+        expect(total).toBe(2001); // 1 + 2000 sats
     });
 });
 

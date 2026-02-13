@@ -28,6 +28,9 @@ export class PledgesService {
     private involvedBids: BidEvent[] = [];
     private involvedServiceEvents: ServiceEvent[] = [];
     private involvedOrderEvents: OrderEvent[] = [];
+    private lastEvents: NDKEvent[] = [];
+    private lastContextKey = '';
+    private started = false;
 
     // Reactive state
     pledges = $state(0);
@@ -47,17 +50,13 @@ export class PledgesService {
         this.pledgesStore = ndkInstance.storeSubscribe(this.pledgesFilter, {
             autoStart: false,
             cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+            closeOnEose: false,
+            groupable: false,
         });
 
         this.pledgesStore.subscribe((ndkEvents) => {
-            this.pledges = this.calculatePledges(
-                ndkEvents,
-                this.involvedJobEvents,
-                this.involvedBids,
-                this.involvedServiceEvents,
-                this.involvedOrderEvents,
-                this.user
-            );
+            this.lastEvents = ndkEvents;
+            this.recalculatePledges();
         });
     }
 
@@ -72,6 +71,38 @@ export class PledgesService {
         involvedServiceEvents: ServiceEvent[],
         involvedOrderEvents: OrderEvent[]
     ) {
+        this.updateContext(
+            involvedJobs,
+            involvedJobEvents,
+            involvedBids,
+            involvedOrders,
+            involvedServiceEvents,
+            involvedOrderEvents
+        );
+    }
+
+    updateContext(
+        involvedJobs: string[],
+        involvedJobEvents: JobEvent[],
+        involvedBids: BidEvent[],
+        involvedOrders: string[],
+        involvedServiceEvents: ServiceEvent[],
+        involvedOrderEvents: OrderEvent[]
+    ) {
+        const nextJobs = Array.from(new Set(involvedJobs));
+        const nextOrders = Array.from(new Set(involvedOrders));
+        const nextContextKey = this.buildContextKey(
+            nextJobs,
+            nextOrders,
+            involvedJobEvents,
+            involvedBids,
+            involvedServiceEvents,
+            involvedOrderEvents
+        );
+
+        if (nextContextKey === this.lastContextKey) return;
+        this.lastContextKey = nextContextKey;
+
         this.involvedJobEvents = involvedJobEvents;
         this.involvedBids = involvedBids;
 
@@ -79,14 +110,51 @@ export class PledgesService {
         this.involvedOrderEvents = involvedOrderEvents;
 
         // Update filter for pledges on bids
-        this.pledgesFilter[0]['#a'] = involvedJobs;
+        this.pledgesFilter[0]['#a'] = nextJobs;
         this.pledgesFilter[0]['#p'] = [SatShootPubkey];
 
         // Update filter for pledges on orders
-        this.pledgesFilter[1]['#a'] = involvedOrders;
+        this.pledgesFilter[1]['#a'] = nextOrders;
         this.pledgesFilter[1]['#p'] = [SatShootPubkey];
 
-        this.pledgesStore.startSubscription();
+        if (this.pledgesStore.changeFilters) {
+            this.pledgesStore.changeFilters(this.pledgesFilter);
+        }
+
+        if (!this.started) {
+            this.pledgesStore.startSubscription();
+            this.started = true;
+        }
+
+        this.recalculatePledges();
+    }
+
+    private buildContextKey(
+        involvedJobs: string[],
+        involvedOrders: string[],
+        jobEvents: JobEvent[],
+        bids: BidEvent[],
+        services: ServiceEvent[],
+        orders: OrderEvent[]
+    ): string {
+        const jobKey = [...involvedJobs].sort().join('|');
+        const orderKey = [...involvedOrders].sort().join('|');
+        const jobEventKey = jobEvents.map((job) => job.jobAddress).sort().join('|');
+        const bidKey = bids.map((bid) => bid.bidAddress).sort().join('|');
+        const serviceKey = services.map((service) => service.serviceAddress).sort().join('|');
+        const orderEventKey = orders.map((order) => order.orderAddress).sort().join('|');
+        return [jobKey, orderKey, jobEventKey, bidKey, serviceKey, orderEventKey].join('::');
+    }
+
+    private recalculatePledges() {
+        this.pledges = this.calculatePledges(
+            this.lastEvents,
+            this.involvedJobEvents,
+            this.involvedBids,
+            this.involvedServiceEvents,
+            this.involvedOrderEvents,
+            this.user
+        );
     }
 
     /**
@@ -154,7 +222,7 @@ export class PledgesService {
         } else if (zap.kind === NDKKind.Nutzap) {
             // Extract the nutzap and return the amount in sats
             const nutzap = NDKNutzap.from(zap);
-            return nutzap?.amount ? Math.round(nutzap.amount / 1000) : 0;
+            return nutzap?.amount ? Math.round(nutzap.amount) : 0;
         }
         return 0;
     }

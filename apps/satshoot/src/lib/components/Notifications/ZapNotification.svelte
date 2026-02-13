@@ -3,6 +3,7 @@
     import ndk from '$lib/stores/session';
     import {
         NDKKind,
+        NDKNutzap,
         zapInvoiceFromEvent,
         type NDKEvent,
         type NDKFilter,
@@ -56,9 +57,9 @@
         if (notification.kind === NDKKind.Zap && zapInvoice?.amount) {
             amount = Math.round(zapInvoice.amount / 1000);
         } else if (notification.kind === NDKKind.Nutzap) {
-            const nutZapAmount = notification.tagValue('amount');
-            if (nutZapAmount) {
-                amount = parseInt(nutZapAmount);
+            const nutzap = await NDKNutzap.from(notification);
+            if (nutzap?.amount) {
+                amount = Math.round(nutzap.amount);
             }
         }
 

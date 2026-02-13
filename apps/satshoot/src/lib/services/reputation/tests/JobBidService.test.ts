@@ -29,7 +29,7 @@ vi.mock('$lib/stores/session', () => ({
 
 vi.mock('$lib/stores/wot', () => ({
     wot: {
-        subscribe: vi.fn(),
+        subscribe: vi.fn(() => () => {}),
         set: vi.fn(),
         update: vi.fn(),
         has: vi.fn(),
@@ -37,8 +37,17 @@ vi.mock('$lib/stores/wot', () => ({
 }));
 
 // Mock NDK instance
+const mockNDKStore = {
+    startSubscription: vi.fn(),
+    subscribe: vi.fn(() => () => {}),
+    changeFilters: vi.fn(),
+    empty: vi.fn(),
+    unsubscribe: vi.fn(),
+};
+
 const mockNDKInstance = {
     fetchEvents: vi.fn().mockResolvedValue([]),
+    storeSubscribe: vi.fn(() => mockNDKStore),
 };
 
 // Mock WoT store
@@ -47,14 +56,18 @@ const mockWotStore = {
 };
 
 // Mock svelte/store get function
-vi.mock('svelte/store', () => ({
-    get: vi.fn((store) => {
-        if (store === mockNDKInstance || store.fetchEvents) {
-            return mockNDKInstance;
-        }
-        return mockWotStore;
-    }),
-}));
+vi.mock('svelte/store', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('svelte/store')>();
+    return {
+        ...actual,
+        get: vi.fn((store) => {
+            if (store === mockNDKInstance || store.fetchEvents) {
+                return mockNDKInstance;
+            }
+            return mockWotStore;
+        }),
+    };
+});
 
 vi.mock('@nostr-dev-kit/ndk', async () => {
     const actual = await vi.importActual('@nostr-dev-kit/ndk');
@@ -113,6 +126,7 @@ const createMockBidEvent = ({
     pubkey?: string;
 }) => ({
     id,
+    bidAddress: `bid-address-${id}`,
     tagAddress: () => `bid-address-${id}`,
     referencedJobAddress,
     pubkey,
@@ -397,6 +411,8 @@ describe('JobBidService', () => {
             expect(result).toHaveProperty('involvedBids');
             expect(result).toHaveProperty('winningBidsOfUser');
             expect(result).toHaveProperty('winningBidsForUser');
+            expect(result).toHaveProperty('winningBidAddressesOfUser');
+            expect(result).toHaveProperty('winningBidAddressesForUser');
             expect(result).toHaveProperty('involvedJobs');
 
             // Verify types
@@ -404,6 +420,8 @@ describe('JobBidService', () => {
             expect(Array.isArray(result.involvedBids)).toBe(true);
             expect(Array.isArray(result.winningBidsOfUser)).toBe(true);
             expect(Array.isArray(result.winningBidsForUser)).toBe(true);
+            expect(Array.isArray(result.winningBidAddressesOfUser)).toBe(true);
+            expect(Array.isArray(result.winningBidAddressesForUser)).toBe(true);
             expect(Array.isArray(result.involvedJobs)).toBe(true);
         });
 
@@ -443,11 +461,9 @@ describe('JobBidService', () => {
 
             const result = await service.initialize();
 
-            // Should have duplicate job addresses in the array
-            expect(result.involvedJobs).toHaveLength(2);
-            expect(result.involvedJobs.filter((addr) => addr === 'same-job-address')).toHaveLength(
-                2
-            );
+            // Should de-duplicate job addresses in the array
+            expect(result.involvedJobs).toHaveLength(1);
+            expect(result.involvedJobs).toEqual(['same-job-address']);
         });
 
         it('should verify event processing calls JobEvent.from and BidEvent.from', async () => {

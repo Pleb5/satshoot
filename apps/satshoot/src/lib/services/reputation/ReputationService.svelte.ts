@@ -1,11 +1,13 @@
 import { aggregateClientRatings, aggregateFreelancerRatings } from '$lib/stores/reviews';
 import type { Hexpubkey } from '@nostr-dev-kit/ndk';
 import type { ReputationData } from './types';
+import type { JobBidContext, ServiceOrderContext } from './types';
 import { EarningsService } from './EarningsService.svelte';
 import { PaymentsService } from './PaymentsService.svelte';
 import { PledgesService } from './PledgesService.svelte';
 import { JobBidService } from './JobBidService.svelte';
 import { ServiceOrderService } from './ServiceOrderService.svelte';
+import type { Unsubscriber } from 'svelte/store';
 
 /**
  * Main service for handling user reputation data including financial metrics and reviews
@@ -25,6 +27,9 @@ export class ReputationService {
     private jobBidService: JobBidService;
     private serviceOrderService: ServiceOrderService;
     private user: Hexpubkey;
+    private jobContext?: JobBidContext;
+    private serviceContext?: ServiceOrderContext;
+    private contextUnsubs: Unsubscriber[] = [];
 
     constructor(user: Hexpubkey) {
         this.user = user;
@@ -64,23 +69,13 @@ export class ReputationService {
             // Fetch service and order context
             const serviceContext = await this.serviceOrderService.initialize();
 
+            this.jobContext = jobContext;
+            this.serviceContext = serviceContext;
+
             // Initialize individual services
-            this.earningsService.initialize(
-                jobContext.winningBidsOfUser,
-                serviceContext.confirmOrders
-            );
-            this.paymentsService.initialize(
-                jobContext.winningBidsForUser,
-                serviceContext.ordersOfUser
-            );
-            this.pledgesService.initialize(
-                jobContext.involvedJobs,
-                jobContext.involvedJobEvents,
-                jobContext.involvedBids,
-                serviceContext.involvedOrders,
-                serviceContext.involvedServiceEvents,
-                serviceContext.involvedOrderEvents
-            );
+            this.applyContexts();
+
+            this.attachContextSubscriptions();
 
             this.clientAverage = aggregateClientRatings(this.user).average;
             this.freelancerAverage = aggregateFreelancerRatings(this.user).average;
@@ -90,6 +85,47 @@ export class ReputationService {
         } catch (error) {
             console.error('Failed to initialize reputation service:', error);
         }
+    }
+
+    private applyContexts() {
+        if (!this.jobContext || !this.serviceContext) return;
+
+        this.earningsService.updateContext(
+            this.jobContext.winningBidsOfUser,
+            this.jobContext.winningBidAddressesOfUser,
+            this.serviceContext.confirmOrders
+        );
+        this.paymentsService.updateContext(
+            this.jobContext.winningBidsForUser,
+            this.jobContext.winningBidAddressesForUser,
+            this.serviceContext.ordersOfUser
+        );
+        this.pledgesService.updateContext(
+            this.jobContext.involvedJobs,
+            this.jobContext.involvedJobEvents,
+            this.jobContext.involvedBids,
+            this.serviceContext.involvedOrders,
+            this.serviceContext.involvedServiceEvents,
+            this.serviceContext.involvedOrderEvents
+        );
+    }
+
+    private attachContextSubscriptions() {
+        if (this.contextUnsubs.length > 0) return;
+
+        this.contextUnsubs.push(
+            this.jobBidService.subscribe((context) => {
+                this.jobContext = context;
+                this.applyContexts();
+            })
+        );
+
+        this.contextUnsubs.push(
+            this.serviceOrderService.subscribe((context) => {
+                this.serviceContext = context;
+                this.applyContexts();
+            })
+        );
     }
 
     /**
@@ -160,5 +196,9 @@ export class ReputationService {
         this.earningsService.destroy();
         this.paymentsService.destroy();
         this.pledgesService.destroy();
+        this.jobBidService.destroy();
+        this.serviceOrderService.destroy();
+        this.contextUnsubs.forEach((unsub) => unsub());
+        this.contextUnsubs = [];
     }
 }

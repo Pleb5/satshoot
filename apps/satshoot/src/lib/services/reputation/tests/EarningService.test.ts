@@ -88,10 +88,15 @@ describe('EarningsService', () => {
                     {
                         kinds: [NDKKind.Zap, NDKKind.Nutzap],
                     },
+                    {
+                        kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                    },
                 ],
                 {
                     autoStart: false,
                     cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+                    closeOnEose: false,
+                    groupable: false,
                 }
             );
         });
@@ -126,9 +131,10 @@ describe('EarningsService', () => {
 
         it('should update filter with user and winning bids', () => {
             const winningBids = ['bid1', 'bid2', 'bid3'];
+            const winningBidAddresses = ['bid-address-1', 'bid-address-2', 'bid-address-3'];
             const confirmOrders = ['order1', 'order2'];
 
-            earningsService.initialize(winningBids, confirmOrders);
+            earningsService.initialize(winningBids, winningBidAddresses, confirmOrders);
 
             // Access the private earningsFilter through the instance
             const filterAccess = earningsService as any;
@@ -136,20 +142,23 @@ describe('EarningsService', () => {
             expect(filterAccess.earningsFilter[0]['#p']).toEqual([testUser]);
             expect(filterAccess.earningsFilter[0]['#e']).toEqual(winningBids);
             expect(filterAccess.earningsFilter[1]['#p']).toEqual([testUser]);
-            expect(filterAccess.earningsFilter[1]['#a']).toEqual(confirmOrders);
+            expect(filterAccess.earningsFilter[1]['#a']).toEqual(winningBidAddresses);
+            expect(filterAccess.earningsFilter[2]['#p']).toEqual([testUser]);
+            expect(filterAccess.earningsFilter[2]['#a']).toEqual(confirmOrders);
         });
 
         it('should start subscription after updating filters', () => {
             const winningBids = ['bid1'];
+            const winningBidAddresses = ['bid-address-1'];
             const confirmOrders = ['order1'];
 
-            earningsService.initialize(winningBids, confirmOrders);
+            earningsService.initialize(winningBids, winningBidAddresses, confirmOrders);
 
             expect(mockNDKStore.startSubscription).toHaveBeenCalled();
         });
 
         it('should handle empty arrays', () => {
-            earningsService.initialize([], []);
+            earningsService.initialize([], [], []);
 
             const filterAccess = earningsService as any;
 
@@ -157,6 +166,8 @@ describe('EarningsService', () => {
             expect(filterAccess.earningsFilter[0]['#e']).toEqual([]);
             expect(filterAccess.earningsFilter[1]['#p']).toEqual([testUser]);
             expect(filterAccess.earningsFilter[1]['#a']).toEqual([]);
+            expect(filterAccess.earningsFilter[2]['#p']).toEqual([testUser]);
+            expect(filterAccess.earningsFilter[2]['#a']).toEqual([]);
             expect(mockNDKStore.startSubscription).toHaveBeenCalled();
         });
     });
@@ -273,6 +284,7 @@ describe('EarningsService', () => {
     describe('Integration Tests', () => {
         it('should work with full initialize and earnings cycle', () => {
             const winningBids = ['bid1', 'bid2'];
+            const winningBidAddresses = ['bid-address-1', 'bid-address-2'];
             const confirmOrders = ['order1'];
             const mockEvents = [
                 { kind: NDKKind.Zap, signatureVerified: true } as NDKEvent,
@@ -280,7 +292,7 @@ describe('EarningsService', () => {
             ];
 
             earningsService = new EarningsService(testUser);
-            earningsService.initialize(winningBids, confirmOrders);
+            earningsService.initialize(winningBids, winningBidAddresses, confirmOrders);
 
             (calculateTotalAmount as any).mockReturnValue(350);
             mockSubscribeCallback(mockEvents);
@@ -297,7 +309,7 @@ describe('EarningsService', () => {
             expect(earningsService.getEarnings()).toBe(0);
 
             // Initialize
-            earningsService.initialize(['bid1'], ['order1']);
+            earningsService.initialize(['bid1'], ['bid-address-1'], ['order1']);
             expect(earningsService.getEarnings()).toBe(0);
 
             // Update earnings

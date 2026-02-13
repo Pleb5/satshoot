@@ -50,6 +50,9 @@ export async function walletInit(
     if (walletReadyTimeoutId) clearTimeout(walletReadyTimeoutId);
     walletStatus.set(NDKWalletStatus.READY);
 
+    if (ndkNutzapMonitor) {
+      ndkNutzapMonitor.stop();
+    }
     ndkNutzapMonitor = new NDKNutzapMonitor(ndk, user, { mintList });
     ndkNutzapMonitor.wallet = ndkWallet;
 

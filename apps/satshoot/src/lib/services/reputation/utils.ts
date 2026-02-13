@@ -9,7 +9,8 @@ import { NDKKind, zapInvoiceFromEvent, NDKNutzap, type NDKEvent } from '@nostr-d
  */
 export function calculateTotalAmount(events: NDKEvent[]): number {
     return events.reduce((total, zap) => {
-        if (zap.signatureVerified) {
+        const isVerified = zap.signatureVerified === true ? true : zap.verifySignature(true);
+        if (isVerified) {
             if (zap.kind === NDKKind.Zap) {
                 const zapInvoice = zapInvoiceFromEvent(zap);
                 if (zapInvoice?.amount) {
@@ -18,7 +19,7 @@ export function calculateTotalAmount(events: NDKEvent[]): number {
             } else if (zap.kind === NDKKind.Nutzap) {
                 const nutzap = NDKNutzap.from(zap);
                 if (nutzap?.amount) {
-                    return total + Math.round(nutzap.amount / 1000);
+                    return total + Math.round(nutzap.amount);
                 }
             }
         }

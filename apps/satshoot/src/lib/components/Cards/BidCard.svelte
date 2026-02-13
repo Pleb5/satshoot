@@ -12,7 +12,9 @@
     import currentUser from '$lib/stores/user';
     import { insertThousandSeparator } from '$lib/utils/misc';
     import {
+        NDKSubscriptionCacheUsage,
         NDKUser,
+        type NDKFilter,
         type NDKUserProfile,
     } from '@nostr-dev-kit/ndk';
     import { formatDate, formatDistanceToNow } from 'date-fns';
@@ -59,9 +61,8 @@
     let satshootPaid = $derived(satshootPaymentStore?.totalPaid ?? null);
     let sponsoredNpubPaid = $derived(sponsoredNpubPaymentStore?.totalPaid ?? null);
 
-    const jobFilter = {
+    const jobFilter: NDKFilter = {
         kinds: [ExtendedNDKKind.FreelanceJob],
-        '#d': [bid.referencedJobAddress.split(':')[2]],
     };
     const jobStore = $ndk.storeSubscribe<JobEvent>(
         jobFilter,
@@ -70,12 +71,21 @@
             closeOnEose: false,
             groupable: true,
             groupableDelay: 1000,
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
         },
         JobEvent
     );
 
+    let jobStoreStarted = $state(false);
+
     const job = $derived.by(() => {
-        return $jobStore[0] ?? null;
+        if ($jobStore.length === 0) return null;
+        return $jobStore.reduce((latest, current) => {
+            if (!latest) return current;
+            const latestCreated = latest.created_at ?? 0;
+            const currentCreated = current.created_at ?? 0;
+            return currentCreated >= latestCreated ? current : latest;
+        }, $jobStore[0]);
     });
 
     const winner = $derived(!!job && job.acceptedBidAddress === bid.bidAddress);
@@ -127,10 +137,38 @@
 
     let initialized = $state(false);
     $effect(() => {
-        if ($sessionInitialized && !initialized) {
-            initialized = true;
+        if (!$sessionInitialized || initialized) return;
+        initialized = true;
+    });
 
+    $effect(() => {
+        if (!initialized) return;
+
+        const parts = bid.referencedJobAddress?.split(':') ?? [];
+        const author = parts[1];
+        const dTag = parts[2];
+
+        if (!dTag) {
+            jobStore.empty();
+            jobStore.unsubscribe?.();
+            jobStoreStarted = false;
+            return;
+        }
+
+        jobFilter['#d'] = [dTag];
+        if (author) {
+            jobFilter.authors = [author];
+        } else {
+            delete jobFilter.authors;
+        }
+
+        if (jobStore.changeFilters) {
+            jobStore.changeFilters([jobFilter]);
+        }
+
+        if (!jobStoreStarted) {
             jobStore.startSubscription();
+            jobStoreStarted = true;
         }
     });
 
@@ -140,14 +178,14 @@
         if (job && !jobBasedSetupDone) {
             jobBasedSetupDone = true;
             jobPoster = $ndk.getUser({ pubkey: job.pubkey });
-            startPaymentSubs();
+            startPaymentSubs(job as JobEvent);
         }
     });
 
-    const startPaymentSubs = () => {
-        const freelancerFilters = createPaymentFilters(bid, job, 'freelancer');
-        const satshootFilters = createPaymentFilters(bid, job, 'satshoot');
-        const sponsoredNpubFilters = createPaymentFilters(bid, job, 'sponsored');
+    const startPaymentSubs = (jobEvent: JobEvent) => {
+        const freelancerFilters = createPaymentFilters(bid, jobEvent, 'freelancer');
+        const satshootFilters = createPaymentFilters(bid, jobEvent, 'satshoot');
+        const sponsoredNpubFilters = createPaymentFilters(bid, jobEvent, 'sponsored');
 
         freelancerPaymentStore = createPaymentStore(freelancerFilters);
         satshootPaymentStore = createPaymentStore(satshootFilters);
@@ -159,13 +197,17 @@
     };
 
     function goToChat() {
+        if (!job) return;
         const url = new URL('/messages/' + job.encode(), window.location.origin);
         url.searchParams.append(SELECTED_QUERY_PARAM, bid.pubkey);
         goto(url.toString());
     }
 
     onDestroy(() => {
-        if (jobStore) jobStore.unsubscribe();
+        if (jobStore) {
+            jobStore.unsubscribe?.();
+            jobStore.empty();
+        }
         if (freelancerPaymentStore) freelancerPaymentStore.paymentStore.unsubscribe();
         if (satshootPaymentStore) satshootPaymentStore.paymentStore.unsubscribe();
         if (sponsoredNpubPaymentStore) sponsoredNpubPaymentStore.paymentStore.unsubscribe();

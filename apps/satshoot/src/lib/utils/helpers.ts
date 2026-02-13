@@ -14,6 +14,7 @@ import {
   NDKList,
   NDKRelay,
   type NDKFilter,
+  type NDKLnUrlData,
   NDKNip46Signer,
 } from '@nostr-dev-kit/ndk';
 import ndk, {
@@ -283,6 +284,14 @@ export async function fetchAndInitWallet(
       return
     }
 
+    if (!cashuWalletEvent) {
+      toaster.error({
+        title: 'Could not fetch Cashu wallet event',
+      });
+      walletStatus.set(NDKWalletStatus.FAILED);
+      return;
+    }
+
     const decryptTimeoutMs = getDecryptTimeoutMs(ndk);
 
     console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic event selected`, {
@@ -295,7 +304,7 @@ export async function fetchAndInitWallet(
     console.warn('Start deterministic info decryption: ')
 
     let decryptedDeterministicInfo: string | undefined;
-    if (ndk.signer) {
+    if (deterministicWalletEvent && ndk.signer) {
       decryptedDeterministicInfo = await withTimeout(
         deterministicWalletEvent.decrypt().then(() => deterministicWalletEvent.content),
         5000,
@@ -304,7 +313,7 @@ export async function fetchAndInitWallet(
     }
     if (isStale()) return;
 
-    if (!decryptedDeterministicInfo) {
+    if (deterministicWalletEvent && !decryptedDeterministicInfo) {
       console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic Decrypt failed`, {
       });
       if (!walletDecryptToastShownGlobal) {
@@ -314,8 +323,7 @@ export async function fetchAndInitWallet(
         });
       }
       walletDecryptFailed.set(true)
-      walletStatus.set(NDKWalletStatus.FAILED);
-      return
+      console.warn(`${WALLET_INIT_LOG_PREFIX} Continuing without deterministic info`);
     }
 
     console.warn(`${WALLET_INIT_LOG_PREFIX} Deterministic Decrypt success`, {
@@ -713,6 +721,7 @@ export async function broadcastEvent(
 
 export async function checkRelayConnections() {
   const $ndk = get(ndk);
+  const wasConnected = get(connected);
 
   const anyConnectedRelays = $ndk.pool.stats().connected !== 0;
   console.log('Checking relay connections');
@@ -737,12 +746,97 @@ export async function checkRelayConnections() {
     // We are sufficiently connected
     connected.set(true);
     retriesLeft.set(maxRetryAttempts);
+    if (!wasConnected) {
+      restartCoreSubscriptions();
+    }
   }
 }
 
-export async function getZapConfiguration(pubkey: string, lightningAddress?: string) {
+function restartCoreSubscriptions() {
+  const hasUser = Boolean(get(currentUser));
+
+  if (hasUser) {
+    myMuteList.startSubscription();
+    myJobs.startSubscription();
+    myBids.startSubscription();
+    myServices.startSubscription();
+    myOrders.startSubscription();
+  }
+
+  allJobs.startSubscription();
+  allBids.startSubscription();
+  allServices.startSubscription();
+  allOrders.startSubscription();
+
+  messageStore.startSubscription();
+  allReviews.startSubscription();
+  allReceivedZaps.startSubscription();
+}
+
+type ZapConfigFetchPolicy = 'relay-first' | 'cache-first' | 'relay-only';
+
+type ZapConfigOptions = {
+  fetchPolicy?: ZapConfigFetchPolicy;
+  relayTimeoutMs?: number;
+  onRevalidated?: (config: NDKLnUrlData | null) => void;
+};
+
+async function resolveZapSpecFromProfile(
+  pubkey: string,
+  profile: { lud06?: string; lud16?: string },
+  ndkInstance: NDK
+): Promise<NDKLnUrlData | null> {
+  if (!profile.lud16) return null;
+
+  try {
+    const lnurlSpec = await getNip57ZapSpecFromLud(
+      {
+        lud06: profile.lud06,
+        lud16: profile.lud16,
+      },
+      ndkInstance
+    );
+
+    return lnurlSpec ?? null;
+  } catch (err) {
+    console.error(`An error occurred in getZapConfiguration for ${pubkey}`, err);
+    console.error('Try to parse lud06 as lud16 as last resort..');
+    try {
+      const lnurlSpec = await getNip57ZapSpecFromLud(
+        { lud06: undefined, lud16: profile.lud06 },
+        ndkInstance
+      );
+
+      return lnurlSpec ?? null;
+    } catch (fallbackError) {
+      console.error(
+        `Tried to parse lud06 as lud16 but error occurred again for ${pubkey}`,
+        fallbackError
+      );
+      return null;
+    }
+  }
+}
+
+async function resolveZapSpecFromMetadataEvent(
+  pubkey: string,
+  metadataEvent: NDKEvent | null,
+  ndkInstance: NDK
+): Promise<NDKLnUrlData | null> {
+  if (!metadataEvent) return null;
+  const profile = profileFromEvent(metadataEvent);
+  return resolveZapSpecFromProfile(pubkey, profile, ndkInstance);
+}
+
+export async function getZapConfiguration(
+  pubkey: string,
+  lightningAddress?: string,
+  options: ZapConfigOptions = {}
+) {
   const $ndk = get(ndk);
   const trimmedAddress = lightningAddress?.trim();
+  const fetchPolicy = options.fetchPolicy ?? 'cache-first';
+  const relayTimeoutMs = options.relayTimeoutMs ?? 4000;
 
   if (trimmedAddress) {
     const isLnurl = trimmedAddress.toLowerCase().startsWith('lnurl');
@@ -768,57 +862,46 @@ export async function getZapConfiguration(pubkey: string, lightningAddress?: str
     authors: [pubkey],
   };
 
-  const metadataRelays = [...$ndk.outboxPool!.connectedRelays(), ...$ndk.pool!.connectedRelays()];
+  const metadataRelays = [
+    ...$ndk.outboxPool!.connectedRelays(),
+    ...$ndk.pool!.connectedRelays(),
+  ];
+
+  if (fetchPolicy === 'cache-first') {
+    const cachedEvent = await fetchEventFromRelaysFirst($ndk, metadataFilter, {
+      relayTimeoutMS: relayTimeoutMs,
+      fallbackToCache: false,
+      cacheOnly: true,
+    });
+
+    const cachedSpec = await resolveZapSpecFromMetadataEvent(pubkey, cachedEvent, $ndk);
+
+    const revalidate = async () => {
+      const freshEvent = await fetchEventFromRelaysFirst($ndk, metadataFilter, {
+        relayTimeoutMS: relayTimeoutMs,
+        fallbackToCache: false,
+        explicitRelays: metadataRelays,
+      });
+      const freshSpec = await resolveZapSpecFromMetadataEvent(pubkey, freshEvent, $ndk);
+      options.onRevalidated?.(freshSpec);
+      return freshSpec;
+    };
+
+    if (cachedSpec) {
+      void revalidate();
+      return cachedSpec;
+    }
+
+    return revalidate();
+  }
 
   const metadataEvent = await fetchEventFromRelaysFirst($ndk, metadataFilter, {
-    relayTimeoutMS: 4000,
-    fallbackToCache: true,
+    relayTimeoutMS: relayTimeoutMs,
+    fallbackToCache: fetchPolicy === 'relay-first',
     explicitRelays: metadataRelays,
   });
 
-  if (!metadataEvent) return null;
-
-  const profile = profileFromEvent(metadataEvent);
-
-  if (!profile.lud16) return null;
-
-  try {
-    const lnurlSpec = await getNip57ZapSpecFromLud(
-      {
-        lud06: profile.lud06,
-        lud16: profile.lud16,
-      },
-      $ndk
-    );
-
-    if (!lnurlSpec) {
-      return null;
-    }
-
-    return lnurlSpec;
-  } catch (err) {
-    console.error(`An error occurred in getZapConfiguration for ${pubkey}`, err);
-    console.error('Try to parse lud06 as lud16 as last resort..');
-    try {
-      // try if lud06 is actually a lud16
-      const lnurlSpec = await getNip57ZapSpecFromLud(
-        { lud06: undefined, lud16: profile.lud06 },
-        $ndk
-      );
-
-      if (!lnurlSpec) {
-        return null;
-      }
-
-      return lnurlSpec;
-    } catch (err) {
-      console.error(
-        `Tried to parse lud06 as lud16 but error occurred again for ${pubkey}`,
-        err
-      );
-      return null;
-    }
-  }
+  return resolveZapSpecFromMetadataEvent(pubkey, metadataEvent, $ndk);
 }
 
 export async function getCashuPaymentInfo(

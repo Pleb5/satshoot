@@ -130,7 +130,7 @@ describe('PledgesService', () => {
     it('should calculate pledge sum from nutzap event', () => {
         (NDKNutzap.from as any).mockReturnValue({ amount: 2000 });
         const sum = service['calculatePledgeSum'](createMockNDKEvent({ kind: NDKKind.Nutzap }));
-        expect(sum).toBe(2);
+        expect(sum).toBe(2000);
     });
 
     it('should return 0 for unsupported kind', () => {

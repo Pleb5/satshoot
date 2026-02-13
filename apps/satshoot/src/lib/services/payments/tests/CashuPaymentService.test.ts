@@ -70,7 +70,7 @@ describe('CashuPaymentService', () => {
         expect(processSpy).toHaveBeenCalledWith(UserEnum.Freelancer, 'freelancer-pubkey', 1000);
 
         first.resolve();
-        await Promise.resolve();
+        await new Promise((resolve) => setTimeout(resolve, 0));
 
         expect(processSpy).toHaveBeenCalledTimes(2);
         expect(processSpy.mock.calls[1][0]).toBe(UserEnum.Satshoot);

@@ -23,6 +23,8 @@ export interface JobBidContext {
     involvedBids: BidEvent[];
     winningBidsOfUser: string[];
     winningBidsForUser: string[];
+    winningBidAddressesOfUser: string[];
+    winningBidAddressesForUser: string[];
     involvedJobs: string[];
 }
 

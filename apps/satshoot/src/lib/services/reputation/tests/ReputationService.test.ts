@@ -6,6 +6,7 @@ import { generateSecretKey, getPublicKey } from 'nostr-tools';
 vi.mock('../EarningsService.svelte', () => ({
     EarningsService: vi.fn().mockImplementation(() => ({
         initialize: vi.fn(),
+        updateContext: vi.fn(),
         getEarnings: vi.fn().mockReturnValue(100),
         destroy: vi.fn(),
     })),
@@ -14,6 +15,7 @@ vi.mock('../EarningsService.svelte', () => ({
 vi.mock('../PaymentsService.svelte', () => ({
     PaymentsService: vi.fn().mockImplementation(() => ({
         initialize: vi.fn(),
+        updateContext: vi.fn(),
         getPayments: vi.fn().mockReturnValue(200),
         destroy: vi.fn(),
     })),
@@ -22,6 +24,7 @@ vi.mock('../PaymentsService.svelte', () => ({
 vi.mock('../PledgesService.svelte', () => ({
     PledgesService: vi.fn().mockImplementation(() => ({
         initialize: vi.fn(),
+        updateContext: vi.fn(),
         getPledges: vi.fn().mockReturnValue(300),
         destroy: vi.fn(),
     })),
@@ -35,7 +38,11 @@ vi.mock('../JobBidService.svelte', () => ({
             involvedBids: [],
             winningBidsOfUser: [],
             winningBidsForUser: [],
+            winningBidAddressesOfUser: [],
+            winningBidAddressesForUser: [],
         }),
+        subscribe: vi.fn().mockReturnValue(() => {}),
+        destroy: vi.fn(),
     })),
 }));
 
@@ -48,6 +55,8 @@ vi.mock('../ServiceOrderService.svelte', () => ({
             confirmOrders: [],
             ordersOfUser: [],
         }),
+        subscribe: vi.fn().mockReturnValue(() => {}),
+        destroy: vi.fn(),
     })),
 }));
 
@@ -119,11 +128,15 @@ describe('ReputationService', () => {
         const destroySpy1 = vi.spyOn(service['earningsService'], 'destroy');
         const destroySpy2 = vi.spyOn(service['paymentsService'], 'destroy');
         const destroySpy3 = vi.spyOn(service['pledgesService'], 'destroy');
+        const destroySpy4 = vi.spyOn(service['jobBidService'], 'destroy');
+        const destroySpy5 = vi.spyOn(service['serviceOrderService'], 'destroy');
 
         service.destroy();
 
         expect(destroySpy1).toHaveBeenCalled();
         expect(destroySpy2).toHaveBeenCalled();
         expect(destroySpy3).toHaveBeenCalled();
+        expect(destroySpy4).toHaveBeenCalled();
+        expect(destroySpy5).toHaveBeenCalled();
     });
 });

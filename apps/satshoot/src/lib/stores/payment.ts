@@ -4,6 +4,7 @@ import ndk from '$lib/stores/session';
 import {
     NDKKind,
     NDKNutzap,
+    NDKSubscriptionCacheUsage,
     zapInvoiceFromEvent,
     type NDKEvent,
     type NDKFilter,
@@ -120,13 +121,12 @@ export const createPaymentStore = (filters: NDKFilter[]): PaymentStore => {
                   groupable: true,
                   groupableDelay: 1500,
                   autoStart: false,
+                  cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
               })
             : createEmptyPaymentEventStore();
 
-    const $wot = get(wot);
-
     // Derived store to calculate totalPaid
-    const totalPaid = derived(paymentStore, ($paymentStore) => {
+    const totalPaid = derived([paymentStore, wot], ([$paymentStore, $wot]) => {
         let total = 0;
         $paymentStore.forEach((zap: NDKEvent) => {
             if (zap.verifySignature(true)) {

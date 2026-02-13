@@ -204,6 +204,7 @@ export class LightningPaymentService {
     sponsoredSumMillisats: number,
     lightningAddressOverrides: LightningAddressOverrides = {}
   ): Promise<Map<UserEnum, boolean>> {
+    const ndkInstance = get(ndk);
     const zapRequestRelays = new Map<UserEnum, string[]>();
     const invoices = new Map<UserEnum, InvoiceDetails>();
     const paid = new Map<UserEnum, boolean>([
@@ -281,21 +282,27 @@ export class LightningPaymentService {
         throw new Error('Missing zapper pubkey for zap receipt subscription');
       }
 
+      const receiptSince = Math.floor(Date.now() / 1000) - 60;
       const filter = {
         kinds: [NDKKind.Zap],
-        limit: 0,
         '#p': [invoice.receiver],
-        '#P': [invoice.zapper],
+        since: receiptSince,
       };
 
+      const receiptRelayUrls = this.getZapReceiptRelayUrls(
+        zapRequestRelays.get(key),
+        ndkInstance
+      );
+
       try {
-        const subscription = get(ndk).subscribe(
-          filter,
-          {
-            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-            relaySet: NDKRelaySet.fromRelayUrls(zapRequestRelays.get(key)!, get(ndk)),
-          }
-        );
+        const relaySet = receiptRelayUrls.length
+          ? NDKRelaySet.fromRelayUrls(receiptRelayUrls, ndkInstance)
+          : undefined;
+
+        const subscription = get(ndk).subscribe(filter, {
+          cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+          relaySet,
+        });
 
         subscription.on('event', async (event) => {
           if (event.tagValue('bolt11') === invoice.paymentRequest && !paid.get(key)) {
@@ -331,6 +338,17 @@ export class LightningPaymentService {
     return paid;
   }
 
+  private getZapReceiptRelayUrls(relays: string[] | undefined, ndkInstance: NDK): string[] {
+    const urls = new Set<string>(relays ?? []);
+    const connectedPoolRelays = ndkInstance.pool?.connectedRelays?.() ?? [];
+    const connectedOutboxRelays = ndkInstance.outboxPool?.connectedRelays?.() ?? [];
+
+    connectedPoolRelays.forEach((relay) => urls.add(relay.url));
+    connectedOutboxRelays.forEach((relay) => urls.add(relay.url));
+
+    return Array.from(urls);
+  }
+
   /**
    * Fetch payment information for a user
    */
@@ -343,7 +361,9 @@ export class LightningPaymentService {
     event: NDKEvent,
     lightningAddressOverride?: string
   ) {
-    const zapConfig = await getZapConfiguration(pubkey, lightningAddressOverride);
+    const zapConfig = await getZapConfiguration(pubkey, lightningAddressOverride, {
+      fetchPolicy: 'relay-only',
+    });
         if (zapConfig) {
             const { ndkInstance, signer, payerPubkey } = await this.getPayerContext();
             const zapSigner = this.createZapSigner(ndkInstance, signer, payerPubkey);

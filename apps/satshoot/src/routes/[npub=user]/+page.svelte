@@ -11,7 +11,7 @@
     import ndk from '$lib/stores/session';
     import currentUser, { userMode } from '$lib/stores/user';
     import { sessionInitialized } from '$lib/stores/session';
-    import { type NDKFilter } from '@nostr-dev-kit/ndk';
+    import { NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
     import { onDestroy } from 'svelte';
     import { debounce } from '$lib/utils/misc';
@@ -32,13 +32,22 @@
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
-    let npub = page.params.npub as `npub1${string}`;
-    let pubkey = nip19.decode(npub).data as string;
-    let user = $ndk.getUser({ npub: npub });
+    let npub = $derived(page.params.npub as `npub1${string}`);
+    let pubkey = $derived.by(() => {
+        try {
+            return nip19.decode(npub).data as string;
+        } catch {
+            return '';
+        }
+    });
+    let user = $derived($ndk.getUser({ npub: npub }));
 
     // Subscription setup
     const subOptions = {
         autoStart: false,
+        closeOnEose: false,
+        groupable: false,
+        cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
     };
 
     // Jobs subscriptions
@@ -74,12 +83,27 @@
     );
 
     // D-Tags for related subscriptions
-    const dTagOfJobs = $derived(
-        $allBidsOfUser.map((bid) => bid.referencedJobAddress.split(':')[2])
-    );
-    const dTagOfServices = $derived(
-        $allOrdersOfUser.map((order) => order.referencedServiceAddress.split(':')[2])
-    );
+    const extractDTag = (address?: string) => {
+        if (!address) return undefined;
+        const parts = address.split(':');
+        return parts.length >= 3 ? parts[2] : undefined;
+    };
+
+    const unique = <T,>(items: T[]) => Array.from(new Set(items));
+
+    const dTagOfJobs = $derived.by(() => {
+        const tags = $allBidsOfUser
+            .map((bid) => extractDTag(bid.referencedJobAddress))
+            .filter((tag): tag is string => Boolean(tag));
+        return unique(tags);
+    });
+
+    const dTagOfServices = $derived.by(() => {
+        const tags = $allOrdersOfUser
+            .map((order) => extractDTag(order.referencedServiceAddress))
+            .filter((tag): tag is string => Boolean(tag));
+        return unique(tags);
+    });
 
     // Applied jobs subscription (jobs on which user has made bids)
     const appliedJobsFilter: NDKFilter = {
@@ -92,6 +116,7 @@
             closeOnEose: false,
             groupable: true,
             groupableDelay: 1000,
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
         },
         JobEvent
     );
@@ -107,9 +132,67 @@
             closeOnEose: false,
             groupable: true,
             groupableDelay: 1000,
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
         },
         ServiceEvent
     );
+
+    let appliedJobsStarted = $state(false);
+    let appliedServicesStarted = $state(false);
+    let lastAppliedJobsKey = $state('');
+    let lastAppliedServicesKey = $state('');
+
+    const dedupeById = <T extends { id?: string }>(events: T[]) => {
+        const seen = new Set<string>();
+        return events.filter((event) => {
+            if (!event.id) return true;
+            if (seen.has(event.id)) return false;
+            seen.add(event.id);
+            return true;
+        });
+    };
+
+    const dedupeLatestJobs = (events: JobEvent[]) => {
+        const byAddress = new Map<string, JobEvent>();
+        events.forEach((event) => {
+            const address = event.jobAddress;
+            const existing = byAddress.get(address);
+            const createdAt = event.created_at ?? 0;
+            const existingCreatedAt = existing?.created_at ?? 0;
+            if (!existing || createdAt >= existingCreatedAt) {
+                byAddress.set(address, event);
+            }
+        });
+        return Array.from(byAddress.values());
+    };
+
+    const dedupeLatestServices = (events: ServiceEvent[]) => {
+        const byAddress = new Map<string, ServiceEvent>();
+        events.forEach((event) => {
+            const address = event.serviceAddress;
+            const existing = byAddress.get(address);
+            const createdAt = event.created_at ?? 0;
+            const existingCreatedAt = existing?.created_at ?? 0;
+            if (!existing || createdAt >= existingCreatedAt) {
+                byAddress.set(address, event);
+            }
+        });
+        return Array.from(byAddress.values());
+    };
+
+    const dedupeLatestOrders = (events: OrderEvent[]) => {
+        const byAddress = new Map<string, OrderEvent>();
+        events.forEach((event) => {
+            const address = event.orderAddress;
+            const existing = byAddress.get(address);
+            const createdAt = event.created_at ?? 0;
+            const existingCreatedAt = existing?.created_at ?? 0;
+            if (!existing || createdAt >= existingCreatedAt) {
+                byAddress.set(address, event);
+            }
+        });
+        return Array.from(byAddress.values());
+    };
 
     let debouncedUserJobs = $state<JobEvent[]>([]);
     let debouncedUserBids = $state<BidEvent[]>([]);
@@ -123,7 +206,7 @@
         if (timer) clearTimeout(timer);
 
         timer = setTimeout(() => {
-            debouncedUserJobs = [...jobs];
+            debouncedUserJobs = dedupeLatestJobs(jobs);
         }, 300);
 
         return () => {
@@ -138,7 +221,7 @@
         if (timer) clearTimeout(timer);
 
         timer = setTimeout(() => {
-            debouncedUserBids = [...bids];
+            debouncedUserBids = dedupeById(bids);
         }, 300);
 
         return () => {
@@ -153,7 +236,7 @@
         if (timer) clearTimeout(timer);
 
         timer = setTimeout(() => {
-            debouncedUserServices = [...services];
+            debouncedUserServices = dedupeLatestServices(services);
         }, 300);
 
         return () => {
@@ -168,7 +251,7 @@
         if (timer) clearTimeout(timer);
 
         timer = setTimeout(() => {
-            debouncedUserOrders = [...orders];
+            debouncedUserOrders = dedupeLatestOrders(orders);
         }, 300);
 
         return () => {
@@ -176,27 +259,59 @@
         };
     });
 
+    const updateAppliedJobs = debounce((tags: string[]) => {
+        const nextKey = tags.slice().sort().join('|');
+        if (nextKey === lastAppliedJobsKey) return;
+        lastAppliedJobsKey = nextKey;
+
+        if (tags.length === 0) {
+            appliedJobs.empty();
+            appliedJobs.unsubscribe?.();
+            appliedJobsStarted = false;
+            return;
+        }
+
+        appliedJobsFilter['#d'] = tags;
+        if (appliedJobs.changeFilters) {
+            appliedJobs.changeFilters([appliedJobsFilter]);
+        }
+        if (!appliedJobsStarted) {
+            appliedJobs.startSubscription();
+            appliedJobsStarted = true;
+        }
+    }, 800);
+
+    const updateAppliedServices = debounce((tags: string[]) => {
+        const nextKey = tags.slice().sort().join('|');
+        if (nextKey === lastAppliedServicesKey) return;
+        lastAppliedServicesKey = nextKey;
+
+        if (tags.length === 0) {
+            appliedServices.empty();
+            appliedServices.unsubscribe?.();
+            appliedServicesStarted = false;
+            return;
+        }
+
+        appliedServicesFilter['#d'] = tags;
+        if (appliedServices.changeFilters) {
+            appliedServices.changeFilters([appliedServicesFilter]);
+        }
+        if (!appliedServicesStarted) {
+            appliedServices.startSubscription();
+            appliedServicesStarted = true;
+        }
+    }, 800);
+
     // Update applied jobs filter when tag list changes
-    $effect(
-        debounce(() => {
-            if (dTagOfJobs.length > 0) {
-                appliedJobs.subscription?.stop();
-                appliedJobsFilter['#d'] = dTagOfJobs;
-                appliedJobs.startSubscription();
-            }
-        }, 800)
-    );
+    $effect(() => {
+        updateAppliedJobs(dTagOfJobs);
+    });
 
     // Update applied services filter when tag list changes
-    $effect(
-        debounce(() => {
-            if (dTagOfServices.length > 0) {
-                appliedServices.subscription?.stop();
-                appliedServicesFilter['#d'] = dTagOfServices;
-                appliedServices.startSubscription();
-            }
-        }, 800)
-    );
+    $effect(() => {
+        updateAppliedServices(dTagOfServices);
+    });
 
     // Create search functions for each data type
     const searchJobs = createSearchFunction<JobEvent>({
@@ -230,9 +345,11 @@
     });
 
     // Create a bid status filter function with access to applied jobs
-    const bidStatusFilter = $derived(createBidStatusFilter($appliedJobs));
+    const bidStatusFilter = $derived.by(() => createBidStatusFilter(dedupeLatestJobs($appliedJobs)));
     // Create an order status filter with access to applied services
-    const orderStatusFilter = $derived(createOrderStatusFilter($appliedServices));
+    const orderStatusFilter = $derived.by(() =>
+        createOrderStatusFilter(dedupeLatestServices($appliedServices))
+    );
 
     // Create filtered data using our utility functions
     const filteredJobs = $derived.by(() => {
@@ -288,20 +405,39 @@
     });
 
     // Initialization
-    let initialized = $state(false);
+    let initializedPubkey = $state<string | null>(null);
     $effect(() => {
-        if (pubkey && $sessionInitialized && !initialized) {
-            initialized = true;
-            allJobsFilter.authors = [pubkey];
-            allBidsFilter.authors = [pubkey];
-            allServicesFilter.authors = [pubkey];
-            allOrdersFilter.authors = [pubkey];
+        if (!pubkey || !$sessionInitialized) return;
+        if (initializedPubkey === pubkey) return;
+        initializedPubkey = pubkey;
 
-            allJobsOfUser.startSubscription();
-            allBidsOfUser.startSubscription();
-            allServicesOfUser.startSubscription();
-            allOrdersOfUser.startSubscription();
-        }
+        lastAppliedJobsKey = '';
+        lastAppliedServicesKey = '';
+
+        allJobsFilter.authors = [pubkey];
+        allBidsFilter.authors = [pubkey];
+        allServicesFilter.authors = [pubkey];
+        allOrdersFilter.authors = [pubkey];
+
+        allJobsOfUser.unsubscribe?.();
+        allBidsOfUser.unsubscribe?.();
+        allServicesOfUser.unsubscribe?.();
+        allOrdersOfUser.unsubscribe?.();
+
+        allJobsOfUser.empty?.();
+        allBidsOfUser.empty?.();
+        allServicesOfUser.empty?.();
+        allOrdersOfUser.empty?.();
+
+        allJobsOfUser.changeFilters?.([allJobsFilter]);
+        allBidsOfUser.changeFilters?.([allBidsFilter]);
+        allServicesOfUser.changeFilters?.([allServicesFilter]);
+        allOrdersOfUser.changeFilters?.([allOrdersFilter]);
+
+        allJobsOfUser.startSubscription();
+        allBidsOfUser.startSubscription();
+        allServicesOfUser.startSubscription();
+        allOrdersOfUser.startSubscription();
     });
 
     // Handle scrolling to the jobs and bids section
@@ -322,6 +458,13 @@
 
     // Cleanup on component destruction
     onDestroy(() => {
+        allJobsOfUser?.unsubscribe?.();
+        allBidsOfUser?.unsubscribe?.();
+        allServicesOfUser?.unsubscribe?.();
+        allOrdersOfUser?.unsubscribe?.();
+        appliedJobs?.unsubscribe?.();
+        appliedServices?.unsubscribe?.();
+
         allJobsOfUser?.empty?.();
         allBidsOfUser?.empty?.();
         allServicesOfUser?.empty?.();

@@ -1,7 +1,7 @@
 import { get, derived } from 'svelte/store';
 import ndk from '$lib/stores/session';
 
-import { NDKKind, type NDKFilter, type NDKEvent } from '@nostr-dev-kit/ndk';
+import { NDKKind, NDKSubscriptionCacheUsage, type NDKFilter, type NDKEvent } from '@nostr-dev-kit/ndk';
 import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 // The p-tag of the filter gets assigned when user is initialized
@@ -13,6 +13,7 @@ export const allReceivedZaps = get(ndk).storeSubscribe(allReceivedZapsFilter, {
     closeOnEose: false,
     groupable: false,
     autoStart: false,
+    cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
 });
 
 export const filteredReceivedZaps = derived([allReceivedZaps], ([$allReceivedZaps]) => {

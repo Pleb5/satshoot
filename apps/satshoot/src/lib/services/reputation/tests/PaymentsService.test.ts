@@ -88,10 +88,15 @@ describe('PaymentsService', () => {
                     {
                         kinds: [NDKKind.Zap, NDKKind.Nutzap],
                     },
+                    {
+                        kinds: [NDKKind.Zap, NDKKind.Nutzap],
+                    },
                 ],
                 {
                     autoStart: false,
                     cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
+                    closeOnEose: false,
+                    groupable: false,
                 }
             );
         });
@@ -108,14 +113,15 @@ describe('PaymentsService', () => {
             expect((paymentsService as any).user).toBe(testUser);
         });
 
-        it('should initialize payments filter as array with two objects', () => {
+        it('should initialize payments filter as array with three objects', () => {
             paymentsService = new PaymentsService(testUser);
 
             const filterAccess = paymentsService as any;
             expect(Array.isArray(filterAccess.paymentsFilter)).toBe(true);
-            expect(filterAccess.paymentsFilter).toHaveLength(2);
+            expect(filterAccess.paymentsFilter).toHaveLength(3);
             expect(filterAccess.paymentsFilter[0].kinds).toEqual([NDKKind.Zap, NDKKind.Nutzap]);
             expect(filterAccess.paymentsFilter[1].kinds).toEqual([NDKKind.Zap, NDKKind.Nutzap]);
+            expect(filterAccess.paymentsFilter[2].kinds).toEqual([NDKKind.Zap, NDKKind.Nutzap]);
         });
 
         it('should calculate payments when store updates', () => {
@@ -142,41 +148,46 @@ describe('PaymentsService', () => {
 
         it('should update filter with winning bids for user jobs', () => {
             const winningBidsForUser = ['bid1', 'bid2', 'bid3'];
+            const winningBidAddressesForUser = ['bid-address-1', 'bid-address-2', 'bid-address-3'];
             const ordersOfUser = ['order1', 'order2'];
 
-            paymentsService.initialize(winningBidsForUser, ordersOfUser);
+            paymentsService.initialize(winningBidsForUser, winningBidAddressesForUser, ordersOfUser);
 
             // Access the private paymentsFilter through the instance
             const filterAccess = paymentsService as any;
 
             expect(filterAccess.paymentsFilter[0]['#e']).toEqual(winningBidsForUser);
-            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(ordersOfUser);
+            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(winningBidAddressesForUser);
+            expect(filterAccess.paymentsFilter[2]['#a']).toEqual(ordersOfUser);
         });
 
         it('should start subscription after updating filters', () => {
             const winningBidsForUser = ['bid1'];
+            const winningBidAddressesForUser = ['bid-address-1'];
             const ordersOfUser = ['order1'];
 
-            paymentsService.initialize(winningBidsForUser, ordersOfUser);
+            paymentsService.initialize(winningBidsForUser, winningBidAddressesForUser, ordersOfUser);
 
             expect(mockNDKStore.startSubscription).toHaveBeenCalled();
         });
 
         it('should handle empty arrays', () => {
-            paymentsService.initialize([], []);
+            paymentsService.initialize([], [], []);
 
             const filterAccess = paymentsService as any;
 
             expect(filterAccess.paymentsFilter[0]['#e']).toEqual([]);
             expect(filterAccess.paymentsFilter[1]['#a']).toEqual([]);
+            expect(filterAccess.paymentsFilter[2]['#a']).toEqual([]);
             expect(mockNDKStore.startSubscription).toHaveBeenCalled();
         });
 
         it('should properly set both filter types', () => {
             const winningBidsForUser = ['bid1', 'bid2'];
+            const winningBidAddressesForUser = ['bid-address-1', 'bid-address-2'];
             const ordersOfUser = ['order1', 'order2', 'order3'];
 
-            paymentsService.initialize(winningBidsForUser, ordersOfUser);
+            paymentsService.initialize(winningBidsForUser, winningBidAddressesForUser, ordersOfUser);
 
             const filterAccess = paymentsService as any;
 
@@ -184,21 +195,27 @@ describe('PaymentsService', () => {
             expect(filterAccess.paymentsFilter[0]['#e']).toEqual(winningBidsForUser);
             expect(filterAccess.paymentsFilter[0]['#a']).toBeUndefined();
 
-            // Second filter should have orders
-            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(ordersOfUser);
+            // Second filter should have bid addresses
+            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(winningBidAddressesForUser);
             expect(filterAccess.paymentsFilter[1]['#e']).toBeUndefined();
+
+            // Third filter should have orders
+            expect(filterAccess.paymentsFilter[2]['#a']).toEqual(ordersOfUser);
+            expect(filterAccess.paymentsFilter[2]['#e']).toBeUndefined();
         });
 
         it('should handle single item arrays', () => {
             const winningBidsForUser = ['single-bid'];
+            const winningBidAddressesForUser = ['bid-address-single'];
             const ordersOfUser = ['single-order'];
 
-            paymentsService.initialize(winningBidsForUser, ordersOfUser);
+            paymentsService.initialize(winningBidsForUser, winningBidAddressesForUser, ordersOfUser);
 
             const filterAccess = paymentsService as any;
 
             expect(filterAccess.paymentsFilter[0]['#e']).toEqual(['single-bid']);
-            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(['single-order']);
+            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(['bid-address-single']);
+            expect(filterAccess.paymentsFilter[2]['#a']).toEqual(['single-order']);
         });
     });
 
@@ -377,6 +394,7 @@ describe('PaymentsService', () => {
     describe('Integration Tests', () => {
         it('should work with full initialize and payments cycle', () => {
             const winningBidsForUser = ['bid1', 'bid2'];
+            const winningBidAddressesForUser = ['bid-address-1', 'bid-address-2'];
             const ordersOfUser = ['order1'];
             const mockEvents = [
                 { kind: NDKKind.Zap, signatureVerified: true } as NDKEvent,
@@ -384,7 +402,11 @@ describe('PaymentsService', () => {
             ];
 
             paymentsService = new PaymentsService(testUser);
-            paymentsService.initialize(winningBidsForUser, ordersOfUser);
+            paymentsService.initialize(
+                winningBidsForUser,
+                winningBidAddressesForUser,
+                ordersOfUser
+            );
 
             (calculateTotalAmount as any).mockReturnValue(650);
             mockSubscribeCallback(mockEvents);
@@ -401,7 +423,7 @@ describe('PaymentsService', () => {
             expect(paymentsService.getPayments()).toBe(0);
 
             // Initialize
-            paymentsService.initialize(['bid1'], ['order1']);
+            paymentsService.initialize(['bid1'], ['bid-address-1'], ['order1']);
             expect(paymentsService.getPayments()).toBe(0);
 
             // Update payments
@@ -418,18 +440,24 @@ describe('PaymentsService', () => {
             paymentsService = new PaymentsService(testUser);
 
             // First initialize
-            paymentsService.initialize(['bid1'], ['order1']);
+            paymentsService.initialize(['bid1'], ['bid-address-1'], ['order1']);
             const filterAccess1 = paymentsService as any;
             expect(filterAccess1.paymentsFilter[0]['#e']).toEqual(['bid1']);
-            expect(filterAccess1.paymentsFilter[1]['#a']).toEqual(['order1']);
+            expect(filterAccess1.paymentsFilter[1]['#a']).toEqual(['bid-address-1']);
+            expect(filterAccess1.paymentsFilter[2]['#a']).toEqual(['order1']);
 
             // Second initialize should overwrite
-            paymentsService.initialize(['bid2', 'bid3'], ['order2']);
+            paymentsService.initialize(
+                ['bid2', 'bid3'],
+                ['bid-address-2', 'bid-address-3'],
+                ['order2']
+            );
             const filterAccess2 = paymentsService as any;
             expect(filterAccess2.paymentsFilter[0]['#e']).toEqual(['bid2', 'bid3']);
-            expect(filterAccess2.paymentsFilter[1]['#a']).toEqual(['order2']);
+            expect(filterAccess2.paymentsFilter[1]['#a']).toEqual(['bid-address-2', 'bid-address-3']);
+            expect(filterAccess2.paymentsFilter[2]['#a']).toEqual(['order2']);
 
-            expect(mockNDKStore.startSubscription).toHaveBeenCalledTimes(2);
+            expect(mockNDKStore.startSubscription).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -438,9 +466,10 @@ describe('PaymentsService', () => {
             paymentsService = new PaymentsService(testUser);
 
             const winningBids = ['bid1', 'bid2'];
+            const winningBidAddresses = ['bid-address-1', 'bid-address-2'];
             const orders = ['order1', 'order2'];
 
-            paymentsService.initialize(winningBids, orders);
+            paymentsService.initialize(winningBids, winningBidAddresses, orders);
 
             const filterAccess = paymentsService as any;
 
@@ -448,13 +477,18 @@ describe('PaymentsService', () => {
             expect(filterAccess.paymentsFilter[0]['#e']).toEqual(winningBids);
             expect(filterAccess.paymentsFilter[0]['#a']).toBeUndefined();
 
-            // Second filter should only have #a (orders)
-            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(orders);
+            // Second filter should only have #a (winning bid addresses)
+            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(winningBidAddresses);
             expect(filterAccess.paymentsFilter[1]['#e']).toBeUndefined();
+
+            // Third filter should only have #a (orders)
+            expect(filterAccess.paymentsFilter[2]['#a']).toEqual(orders);
+            expect(filterAccess.paymentsFilter[2]['#e']).toBeUndefined();
 
             // Both should have the same kinds
             expect(filterAccess.paymentsFilter[0].kinds).toEqual([NDKKind.Zap, NDKKind.Nutzap]);
             expect(filterAccess.paymentsFilter[1].kinds).toEqual([NDKKind.Zap, NDKKind.Nutzap]);
+            expect(filterAccess.paymentsFilter[2].kinds).toEqual([NDKKind.Zap, NDKKind.Nutzap]);
         });
 
         it('should not modify original filter structure', () => {
@@ -463,12 +497,14 @@ describe('PaymentsService', () => {
             const originalFilterAccess = paymentsService as any;
             const originalFilter0 = { ...originalFilterAccess.paymentsFilter[0] };
             const originalFilter1 = { ...originalFilterAccess.paymentsFilter[1] };
+            const originalFilter2 = { ...originalFilterAccess.paymentsFilter[2] };
 
-            paymentsService.initialize(['bid1'], ['order1']);
+            paymentsService.initialize(['bid1'], ['bid-address-1'], ['order1']);
 
             // Filters should still have the same kinds
             expect(originalFilterAccess.paymentsFilter[0].kinds).toEqual(originalFilter0.kinds);
             expect(originalFilterAccess.paymentsFilter[1].kinds).toEqual(originalFilter1.kinds);
+            expect(originalFilterAccess.paymentsFilter[2].kinds).toEqual(originalFilter2.kinds);
         });
     });
 
@@ -477,28 +513,35 @@ describe('PaymentsService', () => {
             paymentsService = new PaymentsService(testUser);
 
             const longBidsArray = Array.from({ length: 1000 }, (_, i) => `bid${i}`);
+            const longBidAddressesArray = Array.from(
+                { length: 1000 },
+                (_, i) => `bid-address-${i}`
+            );
             const longOrdersArray = Array.from({ length: 1000 }, (_, i) => `order${i}`);
 
             expect(() => {
-                paymentsService.initialize(longBidsArray, longOrdersArray);
+                paymentsService.initialize(longBidsArray, longBidAddressesArray, longOrdersArray);
             }).not.toThrow();
 
             const filterAccess = paymentsService as any;
             expect(filterAccess.paymentsFilter[0]['#e']).toHaveLength(1000);
             expect(filterAccess.paymentsFilter[1]['#a']).toHaveLength(1000);
+            expect(filterAccess.paymentsFilter[2]['#a']).toHaveLength(1000);
         });
 
         it('should handle special characters in bid and order IDs', () => {
             paymentsService = new PaymentsService(testUser);
 
             const specialBids = ['bid-with-dashes', 'bid_with_underscores', 'bid.with.dots'];
+            const specialBidAddresses = ['bid-address-1', 'bid-address-2', 'bid-address-3'];
             const specialOrders = ['order@with@symbols', 'order#with#hash', 'order%with%percent'];
 
-            paymentsService.initialize(specialBids, specialOrders);
+            paymentsService.initialize(specialBids, specialBidAddresses, specialOrders);
 
             const filterAccess = paymentsService as any;
             expect(filterAccess.paymentsFilter[0]['#e']).toEqual(specialBids);
-            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(specialOrders);
+            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(specialBidAddresses);
+            expect(filterAccess.paymentsFilter[2]['#a']).toEqual(specialOrders);
         });
 
         it('should handle mixed data types in arrays (defensive programming)', () => {
@@ -506,13 +549,15 @@ describe('PaymentsService', () => {
 
             // Even though TypeScript should prevent this, test defensive behavior
             const mixedBids = ['valid-bid', '', 'another-bid'] as string[];
+            const mixedBidAddresses = ['bid-address-1', '', 'bid-address-2'] as string[];
             const mixedOrders = ['valid-order', '', 'another-order'] as string[];
 
-            paymentsService.initialize(mixedBids, mixedOrders);
+            paymentsService.initialize(mixedBids, mixedBidAddresses, mixedOrders);
 
             const filterAccess = paymentsService as any;
-            expect(filterAccess.paymentsFilter[0]['#e']).toEqual(mixedBids);
-            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(mixedOrders);
+            expect(filterAccess.paymentsFilter[0]['#e']).toEqual(['valid-bid', 'another-bid']);
+            expect(filterAccess.paymentsFilter[1]['#a']).toEqual(['bid-address-1', 'bid-address-2']);
+            expect(filterAccess.paymentsFilter[2]['#a']).toEqual(['valid-order', 'another-order']);
         });
     });
 });

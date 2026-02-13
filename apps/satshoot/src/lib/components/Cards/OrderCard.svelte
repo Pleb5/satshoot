@@ -1,7 +1,12 @@
 <script lang="ts">
     import { OrderEvent, OrderStatus } from '$lib/events/OrderEvent';
     import { ReviewType } from '$lib/events/ReviewEvent';
-    import { NDKSubscriptionCacheUsage, NDKUser, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+    import {
+        NDKSubscriptionCacheUsage,
+        NDKUser,
+        type NDKFilter,
+        type NDKUserProfile,
+    } from '@nostr-dev-kit/ndk';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import ExpandableText from '../UI/Display/ExpandableText.svelte';
@@ -43,9 +48,8 @@
         return servicePosterProfile?.name ?? servicePoster!.npub.substring(0, 8);
     });
 
-    const serviceFilter = {
+    const serviceFilter: NDKFilter = {
         kinds: [ExtendedNDKKind.FreelanceService],
-        '#d': [order.referencedServiceAddress.split(':')[2]],
     };
 
     const serviceStore = $ndk.storeSubscribe<ServiceEvent>(
@@ -55,16 +59,19 @@
             closeOnEose: false,
             groupable: true,
             groupableDelay: 1000,
+            cacheUsage: NDKSubscriptionCacheUsage.PARALLEL,
         },
         ServiceEvent
     );
 
     const service = $derived.by(() => {
-        if ($serviceStore.length > 0) {
-            return $serviceStore[0];
-        }
-
-        return null;
+        if ($serviceStore.length === 0) return null;
+        return $serviceStore.reduce((latest, current) => {
+            if (!latest) return current;
+            const latestCreated = latest.created_at ?? 0;
+            const currentCreated = current.created_at ?? 0;
+            return currentCreated >= latestCreated ? current : latest;
+        }, $serviceStore[0]);
     });
 
     const myService = $derived(
@@ -100,10 +107,40 @@
     );
 
     let initialized = $state(false);
+    let serviceStoreStarted = $state(false);
     $effect(() => {
-        if ($sessionInitialized && !initialized) {
-            initialized = true;
+        if (!$sessionInitialized || initialized) return;
+        initialized = true;
+    });
+
+    $effect(() => {
+        if (!initialized) return;
+
+        const parts = order.referencedServiceAddress?.split(':') ?? [];
+        const author = parts[1];
+        const dTag = parts[2];
+
+        if (!dTag) {
+            serviceStore.empty();
+            serviceStore.unsubscribe?.();
+            serviceStoreStarted = false;
+            return;
+        }
+
+        serviceFilter['#d'] = [dTag];
+        if (author) {
+            serviceFilter.authors = [author];
+        } else {
+            delete serviceFilter.authors;
+        }
+
+        if (serviceStore.changeFilters) {
+            serviceStore.changeFilters([serviceFilter]);
+        }
+
+        if (!serviceStoreStarted) {
             serviceStore.startSubscription();
+            serviceStoreStarted = true;
         }
     });
 
@@ -121,7 +158,10 @@
     };
 
     onDestroy(() => {
-        if (serviceStore) serviceStore.empty();
+        if (serviceStore) {
+            serviceStore.unsubscribe?.();
+            serviceStore.empty();
+        }
     });
 
     async function handleAcceptOrder() {

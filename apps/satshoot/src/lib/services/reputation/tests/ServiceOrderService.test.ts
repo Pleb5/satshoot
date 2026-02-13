@@ -7,8 +7,17 @@ import { OrderEvent } from '$lib/events/OrderEvent';
 import { ExtendedNDKKind } from '$lib/types/ndkKind';
 
 // Mock dependencies
+const mockNDKStore = {
+    startSubscription: vi.fn(),
+    subscribe: vi.fn(() => () => {}),
+    changeFilters: vi.fn(),
+    empty: vi.fn(),
+    unsubscribe: vi.fn(),
+};
+
 const mockNDKInstance = {
     fetchEvents: vi.fn().mockResolvedValue(new Set()),
+    storeSubscribe: vi.fn(() => mockNDKStore),
 };
 
 const mockWotStore = {
@@ -27,28 +36,32 @@ vi.mock('$lib/stores/session', () => ({
 
 vi.mock('$lib/stores/wot', () => ({
     wot: {
-        subscribe: vi.fn(),
+        subscribe: vi.fn(() => () => {}),
         set: vi.fn(),
         update: vi.fn(),
     },
 }));
 
 // Mock svelte/store get function
-vi.mock('svelte/store', () => ({
-    get: vi.fn((store) => {
-        if (store?.fetchEvents) {
-            return mockNDKInstance;
-        }
-        return mockWotStore;
-    }),
-}));
+vi.mock('svelte/store', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('svelte/store')>();
+    return {
+        ...actual,
+        get: vi.fn((store) => {
+            if (store?.fetchEvents) {
+                return mockNDKInstance;
+            }
+            return mockWotStore;
+        }),
+    };
+});
 
 // Mock event classes
 vi.mock('$lib/events/ServiceEvent', () => ({
     ServiceEvent: {
         from: vi.fn((event) => ({
             serviceAddress: event.tagAddress(),
-            orders: [],
+            orders: event.tags?.filter((tag) => tag[0] === 'a').map((tag) => tag[1]) ?? [],
             pubkey: event.pubkey,
         })),
     },
@@ -104,6 +117,15 @@ describe('ServiceOrderService', () => {
         // Reset mock implementations
         mockNDKInstance.fetchEvents.mockResolvedValue(new Set());
         mockWotStore.has.mockReturnValue(true);
+        (ServiceEvent.from as any).mockImplementation((event) => ({
+            serviceAddress: event.tagAddress(),
+            orders: event.tags?.filter((tag) => tag[0] === 'a').map((tag) => tag[1]) ?? [],
+            pubkey: event.pubkey,
+        }));
+        (OrderEvent.from as any).mockImplementation((event) => ({
+            orderAddress: event.tagAddress(),
+            pubkey: event.pubkey,
+        }));
     });
 
     describe('constructor', () => {
@@ -261,12 +283,14 @@ describe('ServiceOrderService', () => {
                 id: 'service-1',
                 kind: ExtendedNDKKind.FreelanceService,
                 pubkey: testUser,
+                tags: [['d', 'service-1']],
             });
 
             const service2 = createMockNDKEvent({
                 id: 'service-2',
                 kind: ExtendedNDKKind.FreelanceService,
                 pubkey: testUser,
+                tags: [['d', 'service-2']],
             });
 
             // Orders on user services
@@ -274,7 +298,7 @@ describe('ServiceOrderService', () => {
                 id: 'order-1',
                 kind: ExtendedNDKKind.FreelanceOrder,
                 pubkey: otherUser,
-                tags: [['a', service1.tagAddress()]],
+                tags: [['d', 'order-1'], ['a', service1.tagAddress()]],
             });
 
             // User orders
@@ -282,6 +306,7 @@ describe('ServiceOrderService', () => {
                 id: 'user-order',
                 kind: ExtendedNDKKind.FreelanceOrder,
                 pubkey: testUser,
+                tags: [['d', 'user-order']],
             });
 
             // Service for user order
@@ -289,8 +314,10 @@ describe('ServiceOrderService', () => {
                 id: 'service-for-order',
                 kind: ExtendedNDKKind.FreelanceService,
                 pubkey: otherUser,
-                tags: [['a', userOrder.tagAddress()]],
+                tags: [['d', 'service-for-order'], ['a', userOrder.tagAddress()]],
             });
+
+            service1.tags.push(['a', order1.tagAddress()]);
 
             mockNDKInstance.fetchEvents
                 .mockResolvedValueOnce(new Set([service1, service2])) // userServices

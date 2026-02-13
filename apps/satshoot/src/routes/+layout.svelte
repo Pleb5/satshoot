@@ -19,7 +19,7 @@
     import { Dexie } from 'dexie';
 
     import { updated, pollUpdated } from '$lib/stores/app-updated';
-    import { online, retriesLeft } from '$lib/stores/network';
+    import { connected, online, retriesLeft } from '$lib/stores/network';
     import currentUser, {
         currentUserFreelanceFollows,
         loggedIn,
@@ -115,6 +115,9 @@
     let { children }: Props = $props();
 
     let showDecryptSecretModal = $state(false);
+    let lastWalletRetryAt = 0;
+
+    const WALLET_RETRY_COOLDOWN_MS = 15000;
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(
@@ -163,6 +166,23 @@
         ) {
             fetchAndInitWallet($currentUser, $ndk).catch((error) => {
                 console.warn('[wallet:init] Wallet init failed after onboarding', error);
+            });
+        }
+    });
+
+    $effect(() => {
+        if (
+            !$onBoarding &&
+            $loggedIn &&
+            $currentUser &&
+            $connected &&
+            $walletStatus === NDKWalletStatus.FAILED
+        ) {
+            const now = Date.now();
+            if (now - lastWalletRetryAt < WALLET_RETRY_COOLDOWN_MS) return;
+            lastWalletRetryAt = now;
+            fetchAndInitWallet($currentUser, $ndk).catch((error) => {
+                console.warn('[wallet:init] Wallet retry failed after reconnect', error);
             });
         }
     });
