@@ -26,8 +26,8 @@ const config = {
         adapter: adapter(
             // ---------------- For build ------------------
             {
-                pages: 'build/htdocs',
-                assets: 'build/htdocs',
+                pages: '../../build/htdocs',
+                assets: '../../build/htdocs',
                 // For SPA this is important. If a dynamic route is requested on a static site,
                 // a fallback page is the response which svelte recognizes on the client-side
                 // and tries to do client-side dynamic routing. Hosting provider specific option.
