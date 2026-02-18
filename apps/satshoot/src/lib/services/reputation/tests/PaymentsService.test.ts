@@ -457,7 +457,7 @@ describe('PaymentsService', () => {
             expect(filterAccess2.paymentsFilter[1]['#a']).toEqual(['bid-address-2', 'bid-address-3']);
             expect(filterAccess2.paymentsFilter[2]['#a']).toEqual(['order2']);
 
-            expect(mockNDKStore.startSubscription).toHaveBeenCalledTimes(1);
+            expect(mockNDKStore.startSubscription).toHaveBeenCalledTimes(2);
         });
     });
 

@@ -84,14 +84,9 @@ export class PaymentsService {
         // Update filter with orders of user
         this.paymentsFilter[2]['#a'] = nextOrders;
 
-        if (this.paymentsStore.changeFilters) {
-            this.paymentsStore.changeFilters(this.paymentsFilter);
-        }
-
-        if (!this.started) {
-            this.paymentsStore.startSubscription();
-            this.started = true;
-        }
+        this.paymentsStore.changeFilters?.(this.paymentsFilter);
+        this.paymentsStore.startSubscription();
+        this.started = true;
     }
 
     private buildContextKey(

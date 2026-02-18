@@ -315,13 +315,9 @@ export class ServiceOrderService {
             return;
         }
         this.ordersOnUserServicesFilter[0]['#a'] = serviceAddresses;
-        if (this.ordersOnUserServicesStore.changeFilters) {
-            this.ordersOnUserServicesStore.changeFilters(this.ordersOnUserServicesFilter);
-        }
-        if (!this.ordersOnUserServicesStarted) {
-            this.ordersOnUserServicesStore.startSubscription();
-            this.ordersOnUserServicesStarted = true;
-        }
+        this.ordersOnUserServicesStore.changeFilters?.(this.ordersOnUserServicesFilter);
+        this.ordersOnUserServicesStore.startSubscription();
+        this.ordersOnUserServicesStarted = true;
     }
 
     private updateServicesForUserOrdersFilter(userOrders: OrderEvent[]) {
@@ -339,13 +335,9 @@ export class ServiceOrderService {
             return;
         }
         this.servicesForUserOrdersFilter[0]['#a'] = orderAddresses;
-        if (this.servicesForUserOrdersStore.changeFilters) {
-            this.servicesForUserOrdersStore.changeFilters(this.servicesForUserOrdersFilter);
-        }
-        if (!this.servicesForUserOrdersStarted) {
-            this.servicesForUserOrdersStore.startSubscription();
-            this.servicesForUserOrdersStarted = true;
-        }
+        this.servicesForUserOrdersStore.changeFilters?.(this.servicesForUserOrdersFilter);
+        this.servicesForUserOrdersStore.startSubscription();
+        this.servicesForUserOrdersStarted = true;
     }
 
     private recomputeContext() {

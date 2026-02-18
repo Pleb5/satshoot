@@ -339,13 +339,9 @@ export class JobBidService {
             return;
         }
         this.jobsForUserBidsFilter[0]['#a'] = bidAddresses;
-        if (this.jobsForUserBidsStore.changeFilters) {
-            this.jobsForUserBidsStore.changeFilters(this.jobsForUserBidsFilter);
-        }
-        if (!this.jobsForUserBidsStarted) {
-            this.jobsForUserBidsStore.startSubscription();
-            this.jobsForUserBidsStarted = true;
-        }
+        this.jobsForUserBidsStore.changeFilters?.(this.jobsForUserBidsFilter);
+        this.jobsForUserBidsStore.startSubscription();
+        this.jobsForUserBidsStarted = true;
     }
 
     private updateBidsOnUserJobsFilter(userJobs: JobEvent[]) {
@@ -363,13 +359,9 @@ export class JobBidService {
             return;
         }
         this.bidsOnUserJobsFilter[0]['#a'] = jobAddresses;
-        if (this.bidsOnUserJobsStore.changeFilters) {
-            this.bidsOnUserJobsStore.changeFilters(this.bidsOnUserJobsFilter);
-        }
-        if (!this.bidsOnUserJobsStarted) {
-            this.bidsOnUserJobsStore.startSubscription();
-            this.bidsOnUserJobsStarted = true;
-        }
+        this.bidsOnUserJobsStore.changeFilters?.(this.bidsOnUserJobsFilter);
+        this.bidsOnUserJobsStore.startSubscription();
+        this.bidsOnUserJobsStarted = true;
     }
 
     private recomputeContext() {

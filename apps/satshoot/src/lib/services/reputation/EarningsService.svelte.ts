@@ -86,14 +86,9 @@ export class EarningsService {
         this.earningsFilter[2]['#p'] = [this.user];
         this.earningsFilter[2]['#a'] = nextOrders;
 
-        if (this.earningsStore.changeFilters) {
-            this.earningsStore.changeFilters(this.earningsFilter);
-        }
-
-        if (!this.started) {
-            this.earningsStore.startSubscription();
-            this.started = true;
-        }
+        this.earningsStore.changeFilters?.(this.earningsFilter);
+        this.earningsStore.startSubscription();
+        this.started = true;
     }
 
     private buildContextKey(

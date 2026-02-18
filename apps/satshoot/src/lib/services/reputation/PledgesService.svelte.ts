@@ -117,14 +117,9 @@ export class PledgesService {
         this.pledgesFilter[1]['#a'] = nextOrders;
         this.pledgesFilter[1]['#p'] = [SatShootPubkey];
 
-        if (this.pledgesStore.changeFilters) {
-            this.pledgesStore.changeFilters(this.pledgesFilter);
-        }
-
-        if (!this.started) {
-            this.pledgesStore.startSubscription();
-            this.started = true;
-        }
+        this.pledgesStore.changeFilters?.(this.pledgesFilter);
+        this.pledgesStore.startSubscription();
+        this.started = true;
 
         this.recalculatePledges();
     }

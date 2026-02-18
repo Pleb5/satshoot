@@ -272,13 +272,9 @@
         }
 
         appliedJobsFilter['#d'] = tags;
-        if (appliedJobs.changeFilters) {
-            appliedJobs.changeFilters([appliedJobsFilter]);
-        }
-        if (!appliedJobsStarted) {
-            appliedJobs.startSubscription();
-            appliedJobsStarted = true;
-        }
+        appliedJobs.changeFilters?.([appliedJobsFilter]);
+        appliedJobs.startSubscription();
+        appliedJobsStarted = true;
     }, 800);
 
     const updateAppliedServices = debounce((tags: string[]) => {
@@ -294,13 +290,9 @@
         }
 
         appliedServicesFilter['#d'] = tags;
-        if (appliedServices.changeFilters) {
-            appliedServices.changeFilters([appliedServicesFilter]);
-        }
-        if (!appliedServicesStarted) {
-            appliedServices.startSubscription();
-            appliedServicesStarted = true;
-        }
+        appliedServices.changeFilters?.([appliedServicesFilter]);
+        appliedServices.startSubscription();
+        appliedServicesStarted = true;
     }, 800);
 
     // Update applied jobs filter when tag list changes
