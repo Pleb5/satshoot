@@ -13,6 +13,7 @@
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import { ReputationService } from '$lib/services/reputation';
     import { sessionInitialized } from '$lib/stores/session';
+    import AssertionMetrics from '../UI/Display/AssertionMetrics.svelte';
 
     interface Props {
         user: Hexpubkey;
@@ -72,6 +73,9 @@
 
     // Financial data from service - now reactive
     let financialItems = $derived(reputationService.financialItems);
+
+    // Assertion data
+    const assertionData = $derived(reputationService.assertionData);
 
     let showReviewSummaryAsFreelancer = $state(false);
     let showReviewSummaryAsClient = $state(false);
@@ -185,6 +189,11 @@
                     </div>
                 {/each}
             </div>
+            
+            <!-- Assertion Metrics from Trusted Providers -->
+            {#if reputationService.isInitialized}
+                <AssertionMetrics assertions={assertionData} />
+            {/if}
         </div>
     </Card>
 {/if}

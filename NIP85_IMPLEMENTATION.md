@@ -306,25 +306,92 @@ Assertion events are signed by service providers:
 - Cross-reference with multiple providers
 - Users can audit provider reliability over time
 
+## Usage Examples
+
+### For Users
+
+**Step 1: Configure Providers**
+1. Go to Settings > General
+2. Click "Configure" next to "Trusted Assertion Providers"
+3. Select capability (e.g., "User - Rank")
+4. Check providers you trust (they're ranked by WoT usage)
+5. Click "Save Configuration"
+
+**Step 2: View Assertion Data**
+1. Visit any user profile
+2. Scroll to the Reputation section
+3. See "Trusted Provider Metrics" card with:
+   - WoT Rank (0-100 with progress bar)
+   - Followers count
+   - Zaps received/sent
+   - Post count
+   - Number of providers used
+
+### For Developers
+
+**Fetching User Assertions:**
+```typescript
+import { AssertionService } from '$lib/services/assertions/AssertionService.svelte';
+import { get } from 'svelte/store';
+import ndk from '$lib/stores/session';
+import { selectedProviders } from '$lib/stores/assertions';
+
+const service = new AssertionService(get(ndk));
+const providers = get(selectedProviders);
+const assertions = await service.fetchUserAssertions(userPubkey, providers);
+
+// Aggregate median rank
+const rank = service.getTrustedValue(assertions, 'rank');
+console.log(`Trusted WoT rank: ${rank}/100`);
+```
+
+**Creating Custom Assertions (for Provider Developers):**
+```typescript
+import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
+
+// Publish a user rank assertion
+const assertion = new NDKEvent(ndk);
+assertion.kind = 30382; // User Assertion
+assertion.tags = [
+    ['d', userPubkey], // Subject pubkey
+    ['rank', '85'],     // 0-100 score
+    ['followers', '1234'],
+    ['zap_amt_recd', '50000'],
+];
+assertion.content = '';
+await assertion.publish();
+```
+
 ## Testing
 
 ### Manual Testing Checklist
 
-- [ ] Open Settings > General
-- [ ] Click "Configure" for Trusted Providers
-- [ ] Verify modal opens
-- [ ] Check loading state appears
-- [ ] Select different capabilities from dropdown
-- [ ] Verify providers list updates
-- [ ] Check providers are ranked by usage count
-- [ ] Select/deselect providers
-- [ ] Verify selection count updates
-- [ ] Click Save
-- [ ] Verify success toast
-- [ ] Refresh page
-- [ ] Verify count shows in settings
-- [ ] Reopen modal
-- [ ] Verify selections persisted
+**Provider Configuration:**
+- [x] Open Settings > General
+- [x] Click "Configure" for Trusted Providers
+- [x] Verify modal opens
+- [x] Check loading state appears
+- [x] Select different capabilities from dropdown
+- [x] Verify providers list updates
+- [x] Check providers are ranked by usage count
+- [x] Select/deselect providers
+- [x] Verify selection count updates
+- [x] Click Save
+- [x] Verify success toast
+- [x] Refresh page
+- [x] Verify count shows in settings
+- [x] Reopen modal
+- [x] Verify selections persisted
+
+**Assertion Display:**
+- [x] Visit user profile with configured providers
+- [x] Verify "Trusted Provider Metrics" card appears
+- [x] Check WoT rank displays with progress bar
+- [x] Verify follower count formatting
+- [x] Check zap amounts display correctly
+- [x] Verify provider count badge
+- [x] Test tooltip on question mark icon
+- [x] Check visual styling and hover effects
 
 ### Edge Cases
 
@@ -346,22 +413,32 @@ Assertion events are signed by service providers:
 ```
 src/lib/
 ├── services/
-│   └── assertions/
-│       ├── types.ts                            # TypeScript interfaces
-│       └── AssertionProviderConfig.svelte.ts  # Main service class
+│   ├── assertions/
+│   │   ├── types.ts                            # TypeScript interfaces
+│   │   ├── AssertionProviderConfig.svelte.ts  # Provider config service
+│   │   ├── AssertionService.svelte.ts         # Assertion fetching service
+│   │   └── AssertionCache.ts                  # IndexedDB caching layer
+│   └── reputation/
+│       ├── types.ts                            # Updated with AssertionData
+│       └── ReputationService.svelte.ts         # Integrated assertions
 ├── stores/
-│   └── assertions.ts                          # State management
+│   └── assertions.ts                           # State management
 ├── components/
-│   └── Modals/
-│       └── TrustedProvidersModal.svelte       # UI component
+│   ├── Modals/
+│   │   └── TrustedProvidersModal.svelte        # Provider selection modal
+│   ├── Cards/
+│   │   └── ReputationCard.svelte               # Updated with assertions
+│   └── UI/
+│       └── Display/
+│           └── AssertionMetrics.svelte         # Assertion display component
 └── types/
-    └── ndkKind.ts                             # Event kind constants
+    └── ndkKind.ts                              # Event kind constants
 
 src/routes/
-├── +layout.svelte                             # Modal instantiation
+├── +layout.svelte                              # Modal instantiation
 └── settings/
     └── general/
-        └── +page.svelte                       # Settings UI
+        └── +page.svelte                        # Settings UI
 ```
 
 ## Configuration Examples
@@ -400,18 +477,36 @@ src/routes/
 }
 ```
 
-## Next Steps
+## ✅ Completed Implementation
 
-To fully utilize NIP-85 in SatShoot:
+The NIP-85 implementation is now **fully functional**! Here's what's working:
 
-1. **Create AssertionService** to fetch actual assertion events
-2. **Integrate with ReputationService** to display assertion data
-3. **Add UI components** to show assertion metrics on profiles
-4. **Implement caching** for assertion events
-5. **Add assertion refresh** logic
-6. **Consider running** a SatShoot-native assertion provider
-7. **Implement NIP-44 encryption** for private configurations
-8. **Add provider verification** and reputation tracking
+### ✅ Core Features Implemented
+
+1. **✅ AssertionService** - Fetches and parses assertion events (30382, 30383, 30384, 30385)
+2. **✅ ReputationService Integration** - Automatically loads assertions when user has configured providers
+3. **✅ UI Components** - `AssertionMetrics.svelte` displays assertion data on user profiles
+4. **✅ Caching System** - IndexedDB-based cache with 1-hour TTL for performance
+5. **✅ Provider Configuration** - Full UI for discovering and selecting trusted providers
+6. **✅ Data Aggregation** - Median-based aggregation across multiple providers for reliability
+
+### How It Works
+
+1. **User configures providers** in Settings > General
+2. **System fetches assertions** when viewing profiles
+3. **Data is cached** for 1 hour to reduce network requests
+4. **Metrics are displayed** on ReputationCard with visual indicators
+5. **Multiple providers** provide redundancy and reliability
+
+## Next Steps (Future Enhancements)
+
+1. **Run a SatShoot-native assertion provider** for the freelancing community
+2. **Implement NIP-44 encryption** for private provider configurations
+3. **Add provider verification** and reliability tracking
+4. **Assertion refresh UI** - Manual refresh button for latest data
+5. **Provider ratings** - Let users rate provider accuracy
+6. **Event-level assertions** - Show assertions on individual jobs/services
+7. **Advanced filtering** - Filter marketplace by assertion scores
 
 ## Resources
 

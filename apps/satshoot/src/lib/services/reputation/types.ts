@@ -3,6 +3,7 @@ import type { JobEvent } from '$lib/events/JobEvent';
 import type { BidEvent } from '$lib/events/BidEvent';
 import type { ServiceEvent } from '$lib/events/ServiceEvent';
 import type { OrderEvent } from '$lib/events/OrderEvent';
+import type { UserAssertion } from '$lib/services/assertions/types';
 
 export interface FinancialData {
     earnings: number;
@@ -10,11 +11,21 @@ export interface FinancialData {
     pledges: number;
 }
 
+export interface AssertionData {
+    rank?: number;
+    followers?: number;
+    zapAmtRecd?: number;
+    zapAmtSent?: number;
+    postCnt?: number;
+    providerCount: number;
+}
+
 export interface ReputationData {
     financial: FinancialData;
     clientAverage: number;
     freelancerAverage: number;
     overallAverage: number;
+    assertions?: AssertionData;
     isInitialized: boolean;
 }
 
