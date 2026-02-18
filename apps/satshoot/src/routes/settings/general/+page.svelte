@@ -13,6 +13,15 @@
 
     import { nsecEncode } from 'nostr-tools/nip19';
     import { UserMode, userMode } from '$lib/stores/user';
+    import {
+        showTrustedProvidersModal,
+        loadWoTProviderConfigs,
+        loadUserProviderConfig,
+        selectedProviders,
+        loadingProviders,
+    } from '$lib/stores/assertions';
+    import { onMount } from 'svelte';
+    import currentUser from '$lib/stores/user';
 
     let showClearCacheModal = $state(false);
     let nsec = $state('');
@@ -73,7 +82,27 @@
         'You to BE seen by OTHERS</strong>. And of course, you trust ' +
         'people that SatShoot trusts which has tradeoffs.' +
         '</div>';
-</script>
+
+    let trustedProvidersTooltip =
+        '<div>' +
+        'Configure trusted assertion providers (NIP-85) for reputation calculations. ' +
+        'Providers are ranked by usage in your Web of Trust. ' +
+        'This allows you to offload complex reputation computations to trusted services.' +
+        '</div>';
+
+    onMount(async () => {
+        if ($currentUser) {
+            // Load user's existing provider config
+            await loadUserProviderConfig();
+        }
+    });
+
+    async function openTrustedProvidersModal() {
+        // Load WoT provider configs before opening modal
+        await loadWoTProviderConfigs();
+        showTrustedProvidersModal.set(true);
+    }
+
 
 <div class="w-full flex flex-col gap-[15px] overflow-y-auto">
     <div class="w-full flex flex-col gap-[15px] p-2">
@@ -144,6 +173,29 @@
                     class="appearance-none h-[20px] w-[20px] border-[1px] border-black-200 dark:border-white-200 rounded-[4px] checked:bg-blue-500 checked:border-white peer"
                     bind:checked={$browserNotificationsEnabled}
                 />
+            </div>
+        </div>
+        <div class="w-full flex flex-row gap-[10px] items-center">
+            <div class="flex flex-row gap-2 grow-1">
+                <label class="font-[500]">
+                    Trusted Assertion Providers
+                </label>
+                <QuestionIcon
+                    extraClasses="w-6 h-6 text-lg *:pointer-events-none text-center"
+                    placement="top"
+                    popUpText={trustedProvidersTooltip}
+                />
+            </div>
+
+            <div class="flex flex-row gap-2 items-center">
+                {#if $selectedProviders.length > 0}
+                    <span class="text-sm text-gray-600 dark:text-gray-400">
+                        {$selectedProviders.length} configured
+                    </span>
+                {/if}
+                <Button onClick={openTrustedProvidersModal} disabled={$loadingProviders}>
+                    {$loadingProviders ? 'Loading...' : 'Configure'}
+                </Button>
             </div>
         </div>
         {#if $sessionPK}

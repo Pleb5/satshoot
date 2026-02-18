@@ -107,6 +107,7 @@
     import LoginModal from '$lib/components/Modals/LoginModal.svelte';
     import LogoutModal from '$lib/components/Modals/LogoutModal.svelte';
     import DecentralizedDiscoveryModal from '$lib/components/Modals/DecentralizedDiscoveryModal.svelte';
+    import TrustedProvidersModal from '$lib/components/Modals/TrustedProvidersModal.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -845,3 +846,6 @@
 
 <!-- Decentralized Discovery Modal -->
 <DecentralizedDiscoveryModal bind:isOpen={$showDecentralizedDiscoveryModal} />
+
+<!-- Trusted Providers Modal -->
+<TrustedProvidersModal />

@@ -7,4 +7,10 @@ export const ExtendedNDKKind = {
     FreelanceBid: 32768 as NDKKind,
     Review: 1986 as NDKKind,
     KindScopedFollow: 967 as NDKKind,
+    // NIP-85 Trusted Assertions
+    TrustedProviderConfig: 10040 as NDKKind,
+    UserAssertion: 30382 as NDKKind,
+    EventAssertion: 30383 as NDKKind,
+    AddressableAssertion: 30384 as NDKKind,
+    ExternalAssertion: 30385 as NDKKind,
 };
