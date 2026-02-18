@@ -719,15 +719,28 @@ export async function broadcastEvent(
   }
 }
 
-export async function checkRelayConnections() {
+export async function checkRelayConnections(
+  options: { forceReconnect?: boolean } = {}
+) {
   const $ndk = get(ndk);
   const wasConnected = get(connected);
 
-  const anyConnectedRelays = $ndk.pool.stats().connected !== 0;
-  console.log('Checking relay connections');
-  console.log(`Connected relays: ${$ndk.pool.stats().connected}`);
+  const poolConnected = $ndk.pool?.stats().connected ?? 0;
+  const outboxConnected = $ndk.outboxPool?.stats().connected ?? 0;
+  const anyConnectedRelays = poolConnected + outboxConnected > 0;
+  const forceReconnect = options.forceReconnect === true;
 
-  if (!anyConnectedRelays) {
+  console.log('Checking relay connections', {
+    poolConnected,
+    outboxConnected,
+    forceReconnect,
+  });
+
+  if (forceReconnect) {
+    retriesLeft.set(maxRetryAttempts);
+  }
+
+  if (!anyConnectedRelays || forceReconnect) {
     connected.set(false);
     let $retriesLeft = get(retriesLeft);
     if ($retriesLeft > 0) {
@@ -740,7 +753,7 @@ export async function checkRelayConnections() {
       // After retryDelay X retriesLeft amount of time is elapsed
       // retry process is concluded and either we reconnected or
       // user needs to fix network and  possibly reload page
-      setTimeout(checkRelayConnections, retryDelay);
+      setTimeout(() => checkRelayConnections(), retryDelay);
     }
   } else {
     // We are sufficiently connected
@@ -750,6 +763,10 @@ export async function checkRelayConnections() {
       restartCoreSubscriptions();
     }
   }
+}
+
+export async function forceRelayReconnect() {
+  return checkRelayConnections({ forceReconnect: true });
 }
 
 function restartCoreSubscriptions() {

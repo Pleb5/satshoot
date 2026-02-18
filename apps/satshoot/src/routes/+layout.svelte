@@ -19,7 +19,7 @@
     import { Dexie } from 'dexie';
 
     import { updated, pollUpdated } from '$lib/stores/app-updated';
-    import { connected, online, retriesLeft } from '$lib/stores/network';
+    import { connected, maxRetryAttempts, online, retriesLeft, retryDelay } from '$lib/stores/network';
     import currentUser, {
         currentUserFreelanceFollows,
         loggedIn,
@@ -56,7 +56,12 @@
     import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
     import { walletStatus } from '$lib/wallet/wallet';
 
-    import { checkRelayConnections, fetchAndInitWallet, initializeUser, logout } from '$lib/utils/helpers';
+    import {
+        checkRelayConnections,
+        fetchAndInitWallet,
+        initializeUser,
+        logout,
+    } from '$lib/utils/helpers';
 
     import { wotUpdateFailed } from '$lib/stores/wot';
 
@@ -117,8 +122,14 @@
 
     let showDecryptSecretModal = $state(false);
     let lastWalletRetryAt = 0;
+    let lastHiddenAt = 0;
+    let lastResumeHandledAt = 0;
+    let nip46RestoreInFlight = false;
+    let nip46RestoreAttemptId = 0;
 
     const WALLET_RETRY_COOLDOWN_MS = 15000;
+    const NIP46_RESUME_THRESHOLD_MS = 5 * 60 * 1000;
+    const RESUME_DEBOUNCE_MS = 1000;
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(
@@ -292,6 +303,7 @@
 
     function setupNip46Timeout() {
         return setTimeout(() => {
+            if ($loginMethod !== LoginMethod.Nip46 || !$loggingIn) return;
             if (!$ndk.signer) {
                 toaster.warning({
                     title: 'Bunker connection took too long!',
@@ -318,6 +330,7 @@
     }
 
     async function handleNip46Login() {
+        if (nip46RestoreInFlight) return;
         const signerPayload = localStorage.getItem('nip46SignerPayload');
 
         if (!signerPayload) {
@@ -325,6 +338,13 @@
             $loggingIn = false;
             return;
         }
+
+        nip46RestoreInFlight = true;
+        const restoreAttemptId = ++nip46RestoreAttemptId;
+        const isRestoreStale = () =>
+            restoreAttemptId !== nip46RestoreAttemptId ||
+            $loginMethod !== LoginMethod.Nip46 ||
+            localStorage.getItem('nip46SignerPayload') !== signerPayload;
 
         const timeoutId = setupNip46Timeout();
 
@@ -339,6 +359,8 @@
                 throw new Error('No relay URLs found in signer payload');
             }
 
+            if (isRestoreStale()) return;
+
             // Create a fresh ndk instance for restoration
             const remoteSignerNDK = new NDK({
                 enableOutboxModel: false,
@@ -348,41 +370,37 @@
 
             // Connect to relays first
             console.log('Connecting to bunker relays...');
-            await remoteSignerNDK.connect();
+            remoteSignerNDK.connect().catch((error) => {
+                console.warn('Remote signer relay connect error:', error);
+            });
 
             // Wait for relay connections with better event handling
-            console.log('Waiting for relay connections to stabilize...');
+            console.log('Waiting for bunker relays to connect...');
             let attempts = 0;
-            const maxAttempts = 10;
 
-            while (attempts < maxAttempts) {
+            while (!isRestoreStale()) {
                 const connectedRelays = remoteSignerNDK.pool.connectedRelays();
-                console.log(
-                    `Attempt ${attempts + 1}: Connected bunker relays: ${connectedRelays.length}`
-                );
-
                 if (connectedRelays.length > 0) {
                     console.log('At least one relay connected, proceeding with restoration');
                     break;
                 }
 
+                attempts += 1;
+                if (attempts % 10 === 0) {
+                    console.log(`Waiting for bunker relays... attempts: ${attempts}`);
+                }
+
                 await new Promise((resolve) => setTimeout(resolve, 500));
-                attempts++;
             }
 
-            const finalConnectedRelays = remoteSignerNDK.pool.connectedRelays();
-            console.log('Final connected bunker relays:', finalConnectedRelays.length);
+            if (isRestoreStale()) return;
 
-            if (finalConnectedRelays.length === 0) {
-                throw new Error(
-                    'No remote signer relays connected after multiple attempts. Check your internet connection and relay availability.'
-                );
-            }
-
-            // Use NDK's built-in restoration method with timeout
+            // Use NDK's built-in restoration method
             console.log('Attempting signer restoration with payload...');
 
             const restoredSigner = await NDKNip46Signer.fromPayload(signerPayload, remoteSignerNDK);
+
+            if (isRestoreStale()) return;
 
             // remove secret from restored signer, we don't need it
             // it was only needed for login not for the restoration process
@@ -391,6 +409,8 @@
             console.log('Testing restored signer connection...');
 
             const user = await restoredSigner.blockUntilReady();
+
+            if (isRestoreStale()) return;
 
             if (!user.npub) {
                 throw new Error('Failed to restore remote signer session - no user returned');
@@ -422,12 +442,15 @@
                 }
             }
 
-            showNip46Error(errorMessage);
-
-            $loggingIn = false;
+            if (!isRestoreStale()) {
+                showNip46Error(errorMessage);
+            }
         } finally {
             clearTimeout(timeoutId);
-            $loggingIn = false;
+            if (restoreAttemptId === nip46RestoreAttemptId) {
+                nip46RestoreInFlight = false;
+                $loggingIn = false;
+            }
         }
     }
 
@@ -443,6 +466,28 @@
         toaster.error({
             title: message,
         });
+    }
+
+    async function handleAppResume() {
+        const now = Date.now();
+        if (now - lastResumeHandledAt < RESUME_DEBOUNCE_MS) return;
+        lastResumeHandledAt = now;
+
+        const hiddenDuration = lastHiddenAt ? now - lastHiddenAt : 0;
+        const longBreak = hiddenDuration >= NIP46_RESUME_THRESHOLD_MS;
+
+        if (longBreak) {
+            retriesLeft.set(maxRetryAttempts);
+            $ndk.connect(retryDelay).catch((error) => {
+                console.warn('NDK resume connect error:', error);
+            });
+        }
+
+        await checkRelayConnections();
+
+        if (longBreak && $loginMethod === LoginMethod.Nip46 && !$loggedIn && !$loggingIn) {
+            await restoreLogin();
+        }
     }
 
     function configureBasics() {
@@ -475,7 +520,24 @@
         // We need to check relay connections on regaining focus,
         // especially on mobile where user can put app in the background
         window.addEventListener('focus', () => {
-            checkRelayConnections();
+            handleAppResume();
+        });
+
+        window.addEventListener('pageshow', () => {
+            handleAppResume();
+        });
+
+        window.addEventListener('pagehide', () => {
+            lastHiddenAt = Date.now();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                lastHiddenAt = Date.now();
+                return;
+            }
+
+            handleAppResume();
         });
 
         window.onunhandledrejection = async (event: PromiseRejectionEvent) => {
