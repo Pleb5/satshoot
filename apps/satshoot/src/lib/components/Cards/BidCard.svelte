@@ -77,6 +77,7 @@
     );
 
     let jobStoreStarted = $state(false);
+    let jobFilterKey = $state<string | null>(null);
 
     const job = $derived.by(() => {
         if ($jobStore.length === 0) return null;
@@ -152,8 +153,13 @@
             jobStore.empty();
             jobStore.unsubscribe?.();
             jobStoreStarted = false;
+            jobFilterKey = null;
             return;
         }
+
+        const nextFilterKey = `${author ?? ''}:${dTag}`;
+        if (jobStoreStarted && jobFilterKey === nextFilterKey) return;
+        jobFilterKey = nextFilterKey;
 
         jobFilter['#d'] = [dTag];
         if (author) {
@@ -162,14 +168,9 @@
             delete jobFilter.authors;
         }
 
-        if (jobStore.changeFilters) {
-            jobStore.changeFilters([jobFilter]);
-        }
-
-        if (!jobStoreStarted) {
-            jobStore.startSubscription();
-            jobStoreStarted = true;
-        }
+        jobStore.changeFilters?.([jobFilter]);
+        jobStore.startSubscription();
+        jobStoreStarted = true;
     });
 
     let jobPoster = $state<NDKUser | null>(null);

@@ -108,6 +108,7 @@
 
     let initialized = $state(false);
     let serviceStoreStarted = $state(false);
+    let serviceFilterKey = $state<string | null>(null);
     $effect(() => {
         if (!$sessionInitialized || initialized) return;
         initialized = true;
@@ -124,8 +125,13 @@
             serviceStore.empty();
             serviceStore.unsubscribe?.();
             serviceStoreStarted = false;
+            serviceFilterKey = null;
             return;
         }
+
+        const nextFilterKey = `${author ?? ''}:${dTag}`;
+        if (serviceStoreStarted && serviceFilterKey === nextFilterKey) return;
+        serviceFilterKey = nextFilterKey;
 
         serviceFilter['#d'] = [dTag];
         if (author) {
@@ -134,14 +140,9 @@
             delete serviceFilter.authors;
         }
 
-        if (serviceStore.changeFilters) {
-            serviceStore.changeFilters([serviceFilter]);
-        }
-
-        if (!serviceStoreStarted) {
-            serviceStore.startSubscription();
-            serviceStoreStarted = true;
-        }
+        serviceStore.changeFilters?.([serviceFilter]);
+        serviceStore.startSubscription();
+        serviceStoreStarted = true;
     });
 
     $effect(() => {
