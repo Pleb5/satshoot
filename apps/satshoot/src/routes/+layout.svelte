@@ -485,7 +485,12 @@
 
         await checkRelayConnections();
 
-        if (longBreak && $loginMethod === LoginMethod.Nip46 && !$loggedIn && !$loggingIn) {
+        if (
+            longBreak &&
+            $loginMethod === LoginMethod.Nip46 &&
+            !$loggingIn &&
+            !nip46RestoreInFlight
+        ) {
             await restoreLogin();
         }
     }
