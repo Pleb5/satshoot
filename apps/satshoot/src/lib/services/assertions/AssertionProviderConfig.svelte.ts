@@ -37,14 +37,16 @@ export class AssertionProviderConfig {
             const [kindTag, serviceKey, relayHint] = tag;
             if (!kindTag || !serviceKey || !relayHint) return;
 
-            // Parse kind:tag format
+            // Only accept kind:tag format (e.g., "30382:rank")
+            if (!/^\d+:.+/.test(kindTag)) return;
+
             const parts = kindTag.split(':');
             if (parts.length !== 2) return;
 
-            const kind = parseInt(parts[0] as string);
+            const kind = parseInt(parts[0] as string, 10);
             const tagName = parts[1] as string;
 
-            if (isNaN(kind)) return;
+            if (isNaN(kind) || !tagName) return;
 
             providers.push({
                 kindTag,

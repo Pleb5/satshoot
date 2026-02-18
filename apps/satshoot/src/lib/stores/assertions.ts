@@ -4,10 +4,7 @@ import ndk from './session';
 import currentUser from './user';
 import { wot } from './wot';
 import type { Hexpubkey } from '@nostr-dev-kit/ndk';
-import {
-    AssertionProviderConfig,
-    NIP85_PROVIDER_CONFIG_KIND,
-} from '$lib/services/assertions/AssertionProviderConfig.svelte';
+import { AssertionProviderConfig } from '$lib/services/assertions/AssertionProviderConfig.svelte';
 import type { TrustedProvider, ProviderInfo, RankedProvider } from '$lib/services/assertions/types';
 
 /**

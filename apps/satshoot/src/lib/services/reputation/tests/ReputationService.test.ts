@@ -65,6 +65,27 @@ vi.mock('$lib/stores/reviews', () => ({
     aggregateFreelancerRatings: vi.fn().mockReturnValue({ average: 3.5 }),
 }));
 
+vi.mock('$lib/stores/assertions', () => ({
+    selectedProviders: {
+        subscribe: vi.fn((cb: any) => {
+            cb([]);
+            return () => {};
+        }),
+        set: vi.fn(),
+    },
+}));
+
+vi.mock('$lib/stores/session', () => ({
+    default: { subscribe: vi.fn((cb: any) => { cb(null); return () => {}; }) },
+}));
+
+vi.mock('$lib/services/assertions/AssertionService.svelte', () => ({
+    AssertionService: vi.fn().mockImplementation(() => ({
+        fetchUserAssertions: vi.fn().mockResolvedValue(new Map([['p', { rank: 10 }]])),
+        getTrustedValue: vi.fn().mockReturnValue(10),
+    })),
+}));
+
 describe('ReputationService', () => {
     let service: ReputationService;
     const user: Hexpubkey = getPublicKey(generateSecretKey());
@@ -80,6 +101,45 @@ describe('ReputationService', () => {
         expect(service.clientAverage).toBe(4.5);
         expect(service.freelancerAverage).toBe(3.5);
         expect(service.overallAverage).toBe(4.0);
+    });
+
+    it('should initialize assertions when providers are configured', async () => {
+        const { selectedProviders } = await vi.importMock('$lib/stores/assertions');
+        selectedProviders.subscribe = (cb: any) => {
+            cb([
+                {
+                    kindTag: '30382:rank',
+                    serviceKey: 'servicekey',
+                    relayHint: 'wss://relay',
+                    kind: 30382,
+                    tag: 'rank',
+                },
+            ]);
+            return () => {};
+        };
+
+        const { default: ndk } = await vi.importMock('$lib/stores/session');
+        ndk.subscribe = (cb: any) => {
+            cb({});
+            return () => {};
+        };
+
+        await service.initialize();
+
+        expect(service.assertionData?.rank).toBe(10);
+        expect(service.assertionData?.providerCount).toBe(1);
+    });
+
+    it('should clear assertion data when no providers configured', async () => {
+        const { selectedProviders } = await vi.importMock('$lib/stores/assertions');
+        selectedProviders.subscribe = (cb: any) => {
+            cb([]);
+            return () => {};
+        };
+
+        await service.initialize();
+
+        expect(service.assertionData).toBeUndefined();
     });
 
     it('should handle missing averages correctly', () => {

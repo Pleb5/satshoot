@@ -27,6 +27,12 @@ export class AssertionService {
         this.useCache = useCache;
     }
 
+    private parseNumberValue(value: string | undefined): number | null {
+        if (value === undefined || value === '') return null;
+        const numValue = Number(value);
+        return Number.isNaN(numValue) ? null : numValue;
+    }
+
     /**
      * Parse a user assertion event (kind 30382)
      */
@@ -42,60 +48,61 @@ export class AssertionService {
             // Parse all available tags
             event.tags.forEach((tag: NDKTag) => {
                 const [name, value] = tag;
-                if (!name || !value) return;
+                if (!name) return;
 
-                const numValue = parseInt(value);
+                const numValue = this.parseNumberValue(value);
 
                 switch (name) {
                     case 'rank':
-                        if (!isNaN(numValue)) assertion.rank = numValue;
+                        if (numValue !== null) assertion.rank = numValue;
                         break;
                     case 'followers':
-                        if (!isNaN(numValue)) assertion.followers = numValue;
+                        if (numValue !== null) assertion.followers = numValue;
                         break;
                     case 'first_created_at':
-                        if (!isNaN(numValue)) assertion.firstCreatedAt = numValue;
+                        if (numValue !== null) assertion.firstCreatedAt = numValue;
                         break;
                     case 'post_cnt':
-                        if (!isNaN(numValue)) assertion.postCnt = numValue;
+                        if (numValue !== null) assertion.postCnt = numValue;
                         break;
                     case 'reply_cnt':
-                        if (!isNaN(numValue)) assertion.replyCnt = numValue;
+                        if (numValue !== null) assertion.replyCnt = numValue;
                         break;
                     case 'reactions_cnt':
-                        if (!isNaN(numValue)) assertion.reactionsCnt = numValue;
+                        if (numValue !== null) assertion.reactionsCnt = numValue;
                         break;
                     case 'zap_amt_recd':
-                        if (!isNaN(numValue)) assertion.zapAmtRecd = numValue;
+                        if (numValue !== null) assertion.zapAmtRecd = numValue;
                         break;
                     case 'zap_amt_sent':
-                        if (!isNaN(numValue)) assertion.zapAmtSent = numValue;
+                        if (numValue !== null) assertion.zapAmtSent = numValue;
                         break;
                     case 'zap_cnt_recd':
-                        if (!isNaN(numValue)) assertion.zapCntRecd = numValue;
+                        if (numValue !== null) assertion.zapCntRecd = numValue;
                         break;
                     case 'zap_cnt_sent':
-                        if (!isNaN(numValue)) assertion.zapCntSent = numValue;
+                        if (numValue !== null) assertion.zapCntSent = numValue;
                         break;
                     case 'zap_avg_amt_day_recd':
-                        if (!isNaN(numValue)) assertion.zapAvgAmtDayRecd = numValue;
+                        if (numValue !== null) assertion.zapAvgAmtDayRecd = numValue;
                         break;
                     case 'zap_avg_amt_day_sent':
-                        if (!isNaN(numValue)) assertion.zapAvgAmtDaySent = numValue;
+                        if (numValue !== null) assertion.zapAvgAmtDaySent = numValue;
                         break;
                     case 'reports_cnt_recd':
-                        if (!isNaN(numValue)) assertion.reportsCntRecd = numValue;
+                        if (numValue !== null) assertion.reportsCntRecd = numValue;
                         break;
                     case 'reports_cnt_sent':
-                        if (!isNaN(numValue)) assertion.reportsCntSent = numValue;
+                        if (numValue !== null) assertion.reportsCntSent = numValue;
                         break;
                     case 'active_hours_start':
-                        if (!isNaN(numValue)) assertion.activeHoursStart = numValue;
+                        if (numValue !== null) assertion.activeHoursStart = numValue;
                         break;
                     case 'active_hours_end':
-                        if (!isNaN(numValue)) assertion.activeHoursEnd = numValue;
+                        if (numValue !== null) assertion.activeHoursEnd = numValue;
                         break;
                     case 't':
+                        if (value === undefined || value === '') return;
                         if (!assertion.commonTopics) assertion.commonTopics = [];
                         assertion.commonTopics.push(value);
                         break;
@@ -123,10 +130,10 @@ export class AssertionService {
 
             event.tags.forEach((tag: NDKTag) => {
                 const [name, value] = tag;
-                if (!name || !value) return;
+                if (!name) return;
 
-                const numValue = parseInt(value);
-                if (isNaN(numValue)) return;
+                const numValue = this.parseNumberValue(value);
+                if (numValue === null) return;
 
                 switch (name) {
                     case 'rank':
@@ -174,10 +181,10 @@ export class AssertionService {
 
             event.tags.forEach((tag: NDKTag) => {
                 const [name, value] = tag;
-                if (!name || !value) return;
+                if (!name) return;
 
-                const numValue = parseInt(value);
-                if (isNaN(numValue)) return;
+                const numValue = this.parseNumberValue(value);
+                if (numValue === null) return;
 
                 switch (name) {
                     case 'rank':
@@ -225,10 +232,10 @@ export class AssertionService {
 
             event.tags.forEach((tag: NDKTag) => {
                 const [name, value] = tag;
-                if (!name || !value) return;
+                if (!name) return;
 
-                const numValue = parseInt(value);
-                if (isNaN(numValue)) return;
+                const numValue = this.parseNumberValue(value);
+                if (numValue === null) return;
 
                 switch (name) {
                     case 'rank':
@@ -338,6 +345,21 @@ export class AssertionService {
 
         for (const provider of eventProviders) {
             try {
+                const key = `${provider.serviceKey}:${provider.tag}`;
+
+                if (this.useCache) {
+                    const cached = await assertionCache.getEventAssertion(
+                        eventId,
+                        provider.serviceKey,
+                        provider.tag
+                    );
+
+                    if (cached) {
+                        assertions.set(key, cached);
+                        continue;
+                    }
+                }
+
                 const filter: NDKFilter = {
                     kinds: [NIP85_EVENT_ASSERTION_KIND],
                     authors: [provider.serviceKey],
@@ -352,8 +374,16 @@ export class AssertionService {
                 events.forEach((event) => {
                     const assertion = this.parseEventAssertion(event);
                     if (assertion) {
-                        const key = `${provider.serviceKey}:${provider.tag}`;
                         assertions.set(key, assertion);
+
+                        if (this.useCache) {
+                            assertionCache.setEventAssertion(
+                                eventId,
+                                provider.serviceKey,
+                                provider.tag,
+                                assertion
+                            );
+                        }
                     }
                 });
             } catch (error) {
@@ -383,6 +413,21 @@ export class AssertionService {
 
         for (const provider of addressableProviders) {
             try {
+                const key = `${provider.serviceKey}:${provider.tag}`;
+
+                if (this.useCache) {
+                    const cached = await assertionCache.getAddressableAssertion(
+                        address,
+                        provider.serviceKey,
+                        provider.tag
+                    );
+
+                    if (cached) {
+                        assertions.set(key, cached);
+                        continue;
+                    }
+                }
+
                 const filter: NDKFilter = {
                     kinds: [NIP85_ADDRESSABLE_ASSERTION_KIND],
                     authors: [provider.serviceKey],
@@ -397,8 +442,16 @@ export class AssertionService {
                 events.forEach((event) => {
                     const assertion = this.parseAddressableAssertion(event);
                     if (assertion) {
-                        const key = `${provider.serviceKey}:${provider.tag}`;
                         assertions.set(key, assertion);
+
+                        if (this.useCache) {
+                            assertionCache.setAddressableAssertion(
+                                address,
+                                provider.serviceKey,
+                                provider.tag,
+                                assertion
+                            );
+                        }
                     }
                 });
             } catch (error) {
