@@ -32,7 +32,24 @@
         showClearCacheModal = true;
     }
 
+    const browserNotifsToastKey = 'satshoot:browser-notifs-toasted';
     let browserNotifsToastTriggered = false;
+
+    function hasShownBrowserNotifsToast(): boolean {
+        if (!browser) {
+            return false;
+        }
+
+        return sessionStorage.getItem(browserNotifsToastKey) === '1';
+    }
+
+    function markBrowserNotifsToastShown(): void {
+        if (!browser) {
+            return;
+        }
+
+        sessionStorage.setItem(browserNotifsToastKey, '1');
+    }
     $effect(() => {
         if (browser && Number($browserNotificationsEnabled) >= 0) {
             // If there is no permission for notifications yet, ask for it
@@ -41,8 +58,9 @@
                 Notification.requestPermission().then((permission: NotificationPermission) => {
                     if (permission !== 'granted') {
                         browserNotificationsEnabled.set(false);
-                        if (!browserNotifsToastTriggered) {
+                        if (!browserNotifsToastTriggered && !hasShownBrowserNotifsToast()) {
                             browserNotifsToastTriggered = true;
+                            markBrowserNotifsToastShown();
                             toaster.info({
                                 title: 'Notifications Settings are Disabled in the Browser!',
                                 description:
