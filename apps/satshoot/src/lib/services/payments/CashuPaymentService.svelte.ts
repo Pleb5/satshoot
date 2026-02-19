@@ -229,6 +229,10 @@ export class CashuPaymentService {
         // Process the payment
         cashuInfo.allowIntramintFallback = false;
 
+        const p2pk = {
+            locktime: new Date().getMilliseconds() + 14 * 24 * 60 * 60 * 1000, // TODO (rodant): 2 weeks, allow setting in UI
+            refundKeys: [walletInstance.p2pk]
+        };
         const cashuResult = await walletInstance
             .cashuPay({
                 ...cashuInfo,
@@ -238,7 +242,7 @@ export class CashuPaymentService {
                 amount: amountMillisats,
                 unit: 'msat',
                 comment: 'satshoot',
-            })
+            }, p2pk)
             .catch((err) => {
                 throw new Error(`Failed to pay: ${err?.message || err}`);
             });
