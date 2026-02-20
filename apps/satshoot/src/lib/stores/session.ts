@@ -32,7 +32,11 @@ export const BOOTSTRAPOUTBOXRELAYS = [
   'wss://nos.lol/',
 ];
 
-export const NOSTRCONNECTRELAYURLS = ['wss://relay.nsec.app'];
+export const NOSTRCONNECTRELAYURLS = [
+  'wss://relay.damus.io',
+  'wss://nos.lol',
+  'wss://relay.nsec.app',
+];
 
 export const blastrUrl = 'wss://sendit.nosflare.com';
 

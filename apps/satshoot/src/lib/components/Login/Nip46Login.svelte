@@ -37,6 +37,32 @@
     // NostrConnect signer instance
     let nostrConnectSigner: NDKNip46Signer | null = null;
 
+    const NOSTRCONNECT_CONNECT_TIMEOUT_MS = 60_000;
+
+    function normalizeRelayUrls(relays: string[]): string[] {
+        const seen = new Set<string>();
+        const normalized: string[] = [];
+
+        relays.forEach((relay) => {
+            const trimmed = relay.trim();
+            if (!trimmed || seen.has(trimmed)) return;
+            seen.add(trimmed);
+            normalized.push(trimmed);
+        });
+
+        return normalized;
+    }
+
+    function buildNostrConnectUri(baseUri: string, relayUrls: string[]): string {
+        if (!baseUri || relayUrls.length === 0) return baseUri;
+
+        const [base, query = ''] = baseUri.split('?');
+        const params = new URLSearchParams(query);
+        params.delete('relay');
+        relayUrls.forEach((relay) => params.append('relay', relay));
+        return `${base}?${params.toString()}`;
+    }
+
     // Auto-initialize NostrConnect when component opens
     $effect(() => {
         if (isOpen && !nostrConnectSigner) {
@@ -189,16 +215,21 @@
             statusColor = 'text-blue-600 dark:text-blue-400';
             await tick();
 
+            const relayUrls = normalizeRelayUrls(NOSTRCONNECTRELAYURLS);
+            if (relayUrls.length === 0) {
+                throw new Error('No NostrConnect relays configured');
+            }
+
             const ndkInstance = new NDK({
-                explicitRelayUrls: NOSTRCONNECTRELAYURLS,
+                explicitRelayUrls: relayUrls,
             });
-            await ndkInstance.connect();
 
             // Create NostrConnect signer using the latest NDK API
-            nostrConnectSigner = NDKNip46Signer.nostrconnect(
+            nostrConnectSigner = new NDKNip46Signer(
                 ndkInstance,
-                NOSTRCONNECTRELAYURLS[0], // Use first relay
-                undefined, // Generate new local signer
+                undefined,
+                undefined,
+                relayUrls,
                 {
                     name: 'SatShoot',
                     url: window.location.origin,
@@ -208,11 +239,16 @@
             );
 
             // Get the NostrConnect URI for QR code display
-            nostrConnectUri = nostrConnectSigner.nostrConnectUri || '';
+            const baseUri = nostrConnectSigner.nostrConnectUri || '';
+            nostrConnectUri = buildNostrConnectUri(baseUri, relayUrls);
 
             if (!nostrConnectUri) {
                 throw new Error('Failed to generate connection URI');
             }
+
+            ndkInstance.connect(2000).catch((error) => {
+                console.warn('NostrConnect relay connect error:', error);
+            });
 
             // Wait for connection
             await waitForNostrConnect();
@@ -241,15 +277,20 @@
         try {
             statusMessage = 'Waiting for connection...';
             statusColor = 'text-yellow-600 dark:text-yellow-400';
-            await tick();
 
             // Use the new NDK method to wait for NostrConnect connection
-            const user = await nostrConnectSigner.blockUntilReadyNostrConnect();
+            const waitPromise = nostrConnectSigner.blockUntilReadyNostrConnect();
+            const timeoutId = setTimeout(() => {
+                statusMessage = 'Still waiting for connection...';
+                statusColor = 'text-yellow-600 dark:text-yellow-400';
+            }, NOSTRCONNECT_CONNECT_TIMEOUT_MS);
+            await tick();
+            const resolvedUser = await waitPromise;
+            clearTimeout(timeoutId);
 
-            if (user && nostrConnectSigner.bunkerPubkey) {
+            if (resolvedUser && nostrConnectSigner.bunkerPubkey) {
                 statusMessage = 'Connection successful!';
                 statusColor = 'text-green-600 dark:text-green-400';
-
                 $ndk.signer = nostrConnectSigner;
                 console.log('NostrConnect user logged in');
 
@@ -275,6 +316,8 @@
             }
         } catch (error) {
             console.error('NostrConnect connection failed:', error);
+
+            nostrConnectSigner?.stop();
 
             let errorMessage = 'Unknown error occurred';
             if (error instanceof Error) {
