@@ -45,6 +45,26 @@ export function parseSecretFromBunkerUrl(token: string): string | undefined {
     return secret;
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+}
+
+export function sanitizeNip46SignerPayload(signerPayload: string): string | null {
+    try {
+        const parsedPayload: unknown = JSON.parse(signerPayload);
+        if (!isObjectRecord(parsedPayload)) return null;
+
+        const nestedPayload = parsedPayload.payload;
+        if (isObjectRecord(nestedPayload) && 'secret' in nestedPayload) {
+            delete nestedPayload.secret;
+        }
+
+        return JSON.stringify(parsedPayload);
+    } catch {
+        return null;
+    }
+}
+
 export function validateSingleSeedWord(seedWord: string): boolean {
     return wordlist.includes(seedWord);
 }

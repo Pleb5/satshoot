@@ -81,7 +81,9 @@ vi.mock('$lib/stores/session', () => ({
 
 vi.mock('$lib/services/assertions/AssertionService.svelte', () => ({
     AssertionService: vi.fn().mockImplementation(() => ({
-        fetchUserAssertions: vi.fn().mockResolvedValue(new Map([['p', { rank: 10 }]])),
+        fetchUserAssertions: vi.fn().mockResolvedValue(
+            new Map([['servicekey:rank', { rank: 10 }]])
+        ),
         getTrustedValue: vi.fn().mockReturnValue(10),
     })),
 }));

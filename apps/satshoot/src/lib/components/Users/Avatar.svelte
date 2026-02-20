@@ -10,6 +10,7 @@
         showWoT?: boolean;
         trusted?: boolean;
         size?: 'tiny' | 'small' | 'medium' | 'large' | undefined;
+        sizeClasses?: string;
         type?: 'square' | 'circle';
         classes?: string;
         showNameOnClick?: boolean;
@@ -21,6 +22,7 @@
         showWoT = true,
         trusted = $bindable(),
         size = undefined,
+        sizeClasses = '',
         type = 'circle',
         classes = '',
         showNameOnClick = false,
@@ -28,6 +30,7 @@
 
     let showName = $state(false);
     let avatarRef: HTMLDivElement | null = null;
+    let lastFetchedPubkey = $state<string | undefined>(undefined);
 
     const sizeClass = $derived.by(() => {
         switch (size) {
@@ -45,6 +48,7 @@
     });
 
     const shapeClass = $derived(type === 'square' ? 'rounded-sm' : 'rounded-full');
+    const finalSizeClass = $derived(sizeClasses?.trim() ? sizeClasses : sizeClass);
     const displayName = $derived.by(() => {
         if (!pubkey) return '';
         return (
@@ -57,10 +61,12 @@
     let wotClasses = $state('border-white');
 
     $effect(() => {
-        if (!userProfile && pubkey) {
-            const user = $ndk.getUser({ pubkey });
-            fetchUserProfile(user);
-        }
+        if (!pubkey) return;
+        if (lastFetchedPubkey === pubkey) return;
+
+        const user = $ndk.getUser({ pubkey });
+        fetchUserProfile(user);
+        lastFetchedPubkey = pubkey;
     });
 
     const fetchUserProfile = async (user: NDKUser) => {
@@ -127,7 +133,7 @@
 
 {#if pubkey}
     <div
-        class="flex-none {sizeClass} {shapeClass} {showNameOnClick ? 'relative' : ''}"
+        class="flex-none {finalSizeClass} {shapeClass} {showNameOnClick ? 'relative' : ''}"
         role={showNameOnClick ? 'button' : undefined}
         tabindex={showNameOnClick ? 0 : undefined}
         on:click={toggleName}
@@ -137,7 +143,7 @@
         <img
             alt="user avatar"
             src={userProfile?.picture || getRoboHashPicture(pubkey)}
-            class="object-cover {baseClasses} {sizeClass} {shapeClass} {wotClasses} {classes}"
+            class="object-cover {baseClasses} {finalSizeClass} {shapeClass} {wotClasses} {classes}"
         />
         {#if showNameOnClick && showName}
             <div

@@ -9,7 +9,8 @@ import { JobBidService } from './JobBidService.svelte';
 import { ServiceOrderService } from './ServiceOrderService.svelte';
 import type { Unsubscriber } from 'svelte/store';
 import { AssertionService } from '$lib/services/assertions/AssertionService.svelte';
-import type { UserAssertion } from '$lib/services/assertions/types';
+import { NIP85_USER_ASSERTION_KIND } from '$lib/services/assertions/AssertionProviderConfig.svelte';
+import type { TrustedProvider, UserAssertion } from '$lib/services/assertions/types';
 import { get } from 'svelte/store';
 import { selectedProviders } from '$lib/stores/assertions';
 import ndk from '$lib/stores/session';
@@ -105,66 +106,107 @@ export class ReputationService {
         try {
             const providers = get(selectedProviders);
 
-            if (providers.length === 0) {
+            const userProviders = providers.filter(
+                (provider) => provider.kind === NIP85_USER_ASSERTION_KIND
+            );
+
+            if (userProviders.length === 0) {
                 // No providers configured
                 this.assertionData = undefined;
+                this.userAssertions = undefined;
                 return;
             }
 
-            const $ndk = get(ndk);
-            if (!$ndk) {
+            const ndkStore = get(ndk);
+            if (!ndkStore) {
                 console.warn('NDK not available for assertions');
+                this.assertionData = undefined;
+                this.userAssertions = undefined;
                 return;
             }
 
-            this.assertionService = new AssertionService($ndk);
+            this.assertionService = new AssertionService(ndkStore);
 
             // Fetch assertions from configured providers
             this.userAssertions = await this.assertionService.fetchUserAssertions(
                 this.user,
-                providers
+                userProviders
             );
 
             // Aggregate assertion data
-            this.assertionData = this.aggregateAssertions(this.userAssertions);
+            this.assertionData = this.aggregateAssertions(this.userAssertions, userProviders);
         } catch (error) {
             console.warn('Failed to initialize assertions:', error);
             this.assertionData = undefined;
+            this.userAssertions = undefined;
         }
     }
 
     /**
      * Aggregate user assertions into displayable data
      */
-    private aggregateAssertions(assertions: Map<string, UserAssertion>): AssertionData {
+    private aggregateAssertions(
+        assertions: Map<string, UserAssertion>,
+        providers: TrustedProvider[]
+    ): AssertionData {
         if (!this.assertionService || assertions.size === 0) {
             return { providerCount: 0 };
         }
 
         const data: AssertionData = {
-            providerCount: assertions.size,
+            providerCount: this.getProviderCount(assertions),
         };
 
-        // Aggregate rank (use median/trusted value)
-        const rank = this.assertionService.getTrustedValue(assertions, 'rank');
-        if (rank !== null) data.rank = rank;
+        const providersByTag = new Map<string, TrustedProvider[]>();
+        providers.forEach((provider) => {
+            const list = providersByTag.get(provider.tag) ?? [];
+            list.push(provider);
+            providersByTag.set(provider.tag, list);
+        });
 
-        // Aggregate followers (use median/trusted value)
-        const followers = this.assertionService.getTrustedValue(assertions, 'followers');
-        if (followers !== null) data.followers = followers;
+        const getSingleProviderAssertion = (tag: string): UserAssertion | null => {
+            const list = providersByTag.get(tag) ?? [];
+            if (list.length !== 1) return null;
+            const provider = list[0];
+            const key = `${provider.serviceKey}:${provider.tag}`;
+            return assertions.get(key) ?? null;
+        };
 
-        // Aggregate zap amounts (use median/trusted value)
-        const zapAmtRecd = this.assertionService.getTrustedValue(assertions, 'zapAmtRecd');
-        if (zapAmtRecd !== null) data.zapAmtRecd = zapAmtRecd;
+        const rankAssertion = getSingleProviderAssertion('rank');
+        if (rankAssertion?.rank !== undefined) data.rank = rankAssertion.rank;
 
-        const zapAmtSent = this.assertionService.getTrustedValue(assertions, 'zapAmtSent');
-        if (zapAmtSent !== null) data.zapAmtSent = zapAmtSent;
+        const followerAssertion = getSingleProviderAssertion('followers');
+        if (followerAssertion?.followers !== undefined) data.followers = followerAssertion.followers;
 
-        // Aggregate post count
-        const postCnt = this.assertionService.getTrustedValue(assertions, 'postCnt');
-        if (postCnt !== null) data.postCnt = postCnt;
+        const zapAmtRecdAssertion = getSingleProviderAssertion('zap_amt_recd');
+        if (zapAmtRecdAssertion?.zapAmtRecd !== undefined) {
+            data.zapAmtRecd = zapAmtRecdAssertion.zapAmtRecd;
+        }
+
+        const zapAmtSentAssertion = getSingleProviderAssertion('zap_amt_sent');
+        if (zapAmtSentAssertion?.zapAmtSent !== undefined) {
+            data.zapAmtSent = zapAmtSentAssertion.zapAmtSent;
+        }
+
+        const postCntAssertion = getSingleProviderAssertion('post_cnt');
+        if (postCntAssertion?.postCnt !== undefined) data.postCnt = postCntAssertion.postCnt;
 
         return data;
+    }
+
+    private getProviderCount(assertions: Map<string, UserAssertion>): number {
+        const providers = new Set<string>();
+
+        assertions.forEach((_, key) => {
+            const separatorIndex = key.indexOf(':');
+            const serviceKey = separatorIndex === -1 ? key : key.slice(0, separatorIndex);
+
+            if (serviceKey) {
+                providers.add(serviceKey);
+            }
+        });
+
+        return providers.size;
     }
 
     private applyContexts() {

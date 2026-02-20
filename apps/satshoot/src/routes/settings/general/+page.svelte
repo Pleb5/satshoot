@@ -116,11 +116,11 @@
     });
 
     async function openTrustedProvidersModal() {
-        // Load WoT provider configs before opening modal
-        await loadWoTProviderConfigs();
         showTrustedProvidersModal.set(true);
+        await loadWoTProviderConfigs();
     }
 
+</script>
 
 <div class="w-full flex flex-col gap-[15px] overflow-y-auto">
     <div class="w-full flex flex-col gap-[15px] p-2">
@@ -128,6 +128,21 @@
             <label class="grow-1 font-[500]" for="toggle-dark-mode"> Theme </label>
 
             <LightSwitch />
+        </div>
+        <div class="w-full flex flex-row gap-[10px] items-center">
+            <div class="flex flex-row gap-[5px] grow-1">
+                <label class="font-[500]" for="browser-notifications-enabled">
+                    Browser Notifications
+                </label>
+            </div>
+            <div class="flex flex-row justify-center items-center relative">
+                <input
+                    id="browser-notifications-enabled"
+                    type="checkbox"
+                    class="appearance-none h-[20px] w-[20px] border-[1px] border-black-200 dark:border-white-200 rounded-[4px] checked:bg-blue-500 checked:border-white peer"
+                    bind:checked={$browserNotificationsEnabled}
+                />
+            </div>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">
             <label class="grow-1 font-[500]" for="user-mode-switch">User Mode</label>
@@ -176,21 +191,6 @@
                 <i
                     class="bx bx-check hidden peer-checked:block absolute pointer-events-none text-white"
                 ></i>
-            </div>
-        </div>
-        <div class="w-full flex flex-row gap-[10px] items-center">
-            <div class="flex flex-row gap-[5px] grow-1">
-                <label class="font-[500]" for="browser-notifications-enabled">
-                    Browser Notifications
-                </label>
-            </div>
-            <div class="flex flex-row justify-center items-center relative">
-                <input
-                    id="browser-notifications-enabled"
-                    type="checkbox"
-                    class="appearance-none h-[20px] w-[20px] border-[1px] border-black-200 dark:border-white-200 rounded-[4px] checked:bg-blue-500 checked:border-white peer"
-                    bind:checked={$browserNotificationsEnabled}
-                />
             </div>
         </div>
         <div class="w-full flex flex-row gap-[10px] items-center">

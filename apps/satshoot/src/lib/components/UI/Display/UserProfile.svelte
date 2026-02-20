@@ -9,10 +9,12 @@
 
     interface Props {
         pubkey: Hexpubkey;
+        userProfile?: NDKUserProfile | null;
         showLNAddress?: boolean;
         showNip05?: boolean;
         layout?: 'horizontal' | 'stacked';
         avatarSize?: 'tiny' | 'small' | 'medium' | 'large';
+        avatarClasses?: string;
         compact?: boolean;
         nameScrollable?: boolean;
         nameClickable?: boolean;
@@ -20,31 +22,57 @@
 
     let {
         pubkey = $bindable(),
+        userProfile = $bindable(),
         showLNAddress = false,
         showNip05 = true,
         layout = 'horizontal',
         avatarSize,
+        avatarClasses = '',
         compact = false,
         nameScrollable = false,
         nameClickable = true,
     }: Props = $props();
 
-    let npub = $derived(nip19.npubEncode(pubkey));
+    let npub = $derived.by(() => {
+        try {
+            return nip19.npubEncode(pubkey);
+        } catch (error) {
+            console.warn('Failed to encode npub for user profile', error);
+            return pubkey;
+        }
+    });
     let profileLink = $derived('/' + npub);
 
-    let userProfile = $state<NDKUserProfile | null>(null);
+    let lastPubkey = $state(pubkey);
+
+    $effect(() => {
+        if (pubkey !== lastPubkey) {
+            userProfile = null;
+            lastPubkey = pubkey;
+        }
+    });
 
 </script>
 
 {#if layout === 'stacked'}
     <div class="w-full flex flex-col items-start gap-[6px] p-[5px]">
         {#if nameClickable}
-            <a href={profileLink}>
-                <Avatar {pubkey} bind:userProfile size={avatarSize ?? 'small'} />
-            </a>
-        {:else}
-            <Avatar {pubkey} bind:userProfile size={avatarSize ?? 'small'} />
-        {/if}
+                <a href={profileLink}>
+                    <Avatar
+                        {pubkey}
+                        bind:userProfile
+                        size={avatarSize ?? 'small'}
+                        sizeClasses={avatarClasses}
+                    />
+                </a>
+            {:else}
+                <Avatar
+                    {pubkey}
+                    bind:userProfile
+                    size={avatarSize ?? 'small'}
+                    sizeClasses={avatarClasses}
+                />
+            {/if}
         <div class="w-full min-w-0 text-left">
             {#if nameClickable}
                 <a href={profileLink} class="font-[600] break-words text-left leading-tight">
@@ -78,11 +106,11 @@
         <div class="flex flex-col shrink-0">
             {#if nameClickable}
                 <a href={profileLink}>
-                    <Avatar {pubkey} bind:userProfile size={avatarSize} />
-                </a>
-            {:else}
-                <Avatar {pubkey} bind:userProfile size={avatarSize} />
-            {/if}
+                <Avatar {pubkey} bind:userProfile size={avatarSize} sizeClasses={avatarClasses} />
+            </a>
+        {:else}
+            <Avatar {pubkey} bind:userProfile size={avatarSize} sizeClasses={avatarClasses} />
+        {/if}
         </div>
         <div class="flex flex-col min-w-0 {userProfile?.nip05 ? '' : 'justify-center'}">
             <div class="grid grid-cols-1 min-w-0">

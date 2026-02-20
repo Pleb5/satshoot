@@ -1,5 +1,11 @@
 import type NDK from '@nostr-dev-kit/ndk';
-import { NDKEvent, NDKKind, type Hexpubkey, type NDKFilter } from '@nostr-dev-kit/ndk';
+import {
+    NDKEvent,
+    NDKKind,
+    NDKRelaySet,
+    type Hexpubkey,
+    type NDKFilter,
+} from '@nostr-dev-kit/ndk';
 import type { TrustedProvider, ProviderInfo, RankedProvider } from './types';
 
 /**
@@ -25,13 +31,40 @@ export class AssertionProviderConfig {
         this.ndk = ndk;
     }
 
+    private buildRelaySet(): NDKRelaySet | undefined {
+        const relayUrls: string[] = [];
+
+        if (this.ndk.pool) {
+            relayUrls.push(...this.ndk.pool.urls());
+        }
+
+        if (this.ndk.outboxPool) {
+            relayUrls.push(...this.ndk.outboxPool.urls());
+        }
+
+        const uniqueRelays = Array.from(new Set(relayUrls));
+
+        if (uniqueRelays.length === 0) return undefined;
+
+        try {
+            return NDKRelaySet.fromRelayUrls(uniqueRelays, this.ndk);
+        } catch (error) {
+            console.warn('Failed to build relay set for provider configs:', error);
+            return undefined;
+        }
+    }
+
     /**
      * Parse a kind 10040 event to extract provider configurations
      */
     parseProviderEvent(event: NDKEvent): TrustedProvider[] {
+        return this.parseProviderTags(event.tags as string[][]);
+    }
+
+    private parseProviderTags(tags: string[][]): TrustedProvider[] {
         const providers: TrustedProvider[] = [];
 
-        event.tags.forEach((tag) => {
+        tags.forEach((tag) => {
             if (tag.length < 3) return;
 
             const [kindTag, serviceKey, relayHint] = tag;
@@ -71,10 +104,21 @@ export class AssertionProviderConfig {
             authors: pubkeys,
         };
 
-        const events = await this.ndk.fetchEvents(filter, {
-            closeOnEose: true,
-            groupable: false,
-        });
+        const relaySet = this.buildRelaySet();
+
+        const events = relaySet
+            ? await this.ndk.fetchEvents(
+                  filter,
+                  {
+                      closeOnEose: true,
+                      groupable: false,
+                  },
+                  relaySet
+              )
+            : await this.ndk.fetchEvents(filter, {
+                  closeOnEose: true,
+                  groupable: false,
+              });
 
         const configMap = new Map<Hexpubkey, TrustedProvider[]>();
 
@@ -134,10 +178,21 @@ export class AssertionProviderConfig {
             authors: serviceKeys,
         };
 
-        const events = await this.ndk.fetchEvents(filter, {
-            closeOnEose: true,
-            groupable: true,
-        });
+        const relaySet = this.buildRelaySet();
+
+        const events = relaySet
+            ? await this.ndk.fetchEvents(
+                  filter,
+                  {
+                      closeOnEose: true,
+                      groupable: true,
+                  },
+                  relaySet
+              )
+            : await this.ndk.fetchEvents(filter, {
+                  closeOnEose: true,
+                  groupable: true,
+              });
 
         const metadataMap = new Map<Hexpubkey, NDKEvent>();
 
@@ -242,15 +297,44 @@ export class AssertionProviderConfig {
         event.kind = NIP85_PROVIDER_CONFIG_KIND as NDKKind;
 
         if (encrypt) {
-            // TODO: Implement NIP-44 encryption
-            // For now, throw an error
-            throw new Error('Encrypted provider config not yet implemented');
+            const signer = this.ndk.signer as
+                | {
+                      user: () => Promise<unknown>;
+                      encrypt?: (user: unknown, payload: string) => Promise<string> | string;
+                      nip44Encrypt?: (user: unknown, payload: string) => Promise<string> | string;
+                  }
+                | undefined;
+            if (!signer) {
+                throw new Error('Signer not available for NIP-44 encryption');
+            }
+
+            const user = await signer.user();
+            if (!user) {
+                throw new Error('Signer user not available for NIP-44 encryption');
+            }
+
+            const payload = JSON.stringify(
+                providers.map((provider) => [
+                    provider.kindTag,
+                    provider.serviceKey,
+                    provider.relayHint,
+                ])
+            );
+
+            const encrypted = signer.nip44Encrypt
+                ? await signer.nip44Encrypt(user, payload)
+                : await signer.encrypt?.(user, payload);
+            if (!encrypted) {
+                throw new Error('Failed to encrypt provider config with NIP-44');
+            }
+
+            event.tags = [];
+            event.content = encrypted;
         } else {
             // Public tags
             event.tags = providers.map((p) => [p.kindTag, p.serviceKey, p.relayHint]);
+            event.content = '';
         }
-
-        event.content = '';
 
         await event.publish();
 
@@ -267,14 +351,75 @@ export class AssertionProviderConfig {
             limit: 1,
         };
 
-        const events = await this.ndk.fetchEvents(filter, {
-            closeOnEose: true,
-            groupable: false,
-        });
+        const relaySet = this.buildRelaySet();
+
+        const events = relaySet
+            ? await this.ndk.fetchEvents(
+                  filter,
+                  {
+                      closeOnEose: true,
+                      groupable: false,
+                  },
+                  relaySet
+              )
+            : await this.ndk.fetchEvents(filter, {
+                  closeOnEose: true,
+                  groupable: false,
+              });
 
         if (events.size === 0) return [];
 
         const event = Array.from(events)[0];
-        return this.parseProviderEvent(event as NDKEvent);
+        console.log('[nip85] fetched provider config event', {
+            id: event?.id,
+            pubkey: event?.pubkey,
+            created_at: event?.created_at,
+            tags: event?.tags,
+            content: event?.content,
+        });
+
+        if (event?.tags?.length) {
+            return this.parseProviderEvent(event as NDKEvent);
+        }
+
+        if (!event?.content) return [];
+
+        try {
+            const signer = this.ndk.signer as
+                | {
+                      user: () => Promise<unknown>;
+                      decrypt?: (user: unknown, payload: string) => Promise<string> | string;
+                      nip44Decrypt?: (user: unknown, payload: string) => Promise<string> | string;
+                  }
+                | undefined;
+            if (!signer) {
+                throw new Error('Signer not available to decrypt provider config');
+            }
+
+            const user = await signer.user();
+            if (!user) {
+                throw new Error('Signer user not available to decrypt provider config');
+            }
+
+            const decrypted = signer.nip44Decrypt
+                ? await signer.nip44Decrypt(user, event.content)
+                : await signer.decrypt?.(user, event.content);
+            if (!decrypted) {
+                throw new Error('Failed to decrypt provider config with NIP-44');
+            }
+
+            const parsed = JSON.parse(decrypted);
+            if (!Array.isArray(parsed)) return [];
+
+            const tags = parsed.filter(
+                (tag: unknown): tag is string[] =>
+                    Array.isArray(tag) && tag.every((value) => typeof value === 'string')
+            );
+
+            return this.parseProviderTags(tags);
+        } catch (error) {
+            console.warn('Failed to decrypt provider config', error);
+            return [];
+        }
     }
 }

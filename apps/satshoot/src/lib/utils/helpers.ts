@@ -428,6 +428,8 @@ export function logout() {
   localStorage.removeItem('jobTabStore');
   localStorage.removeItem('bidTabStore');
   localStorage.removeItem('notificationsEnabled');
+  localStorage.removeItem('nip85EncryptProviderConfig');
+  localStorage.removeItem('nip85ProviderTagVerification');
   localStorage.removeItem('serviceWorkerRegFailed');
   localStorage.removeItem('useSatShootWoT');
   localStorage.removeItem('networkWoTScores');

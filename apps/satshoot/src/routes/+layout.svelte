@@ -55,12 +55,12 @@
     import { allReviews, clientReviews, freelancerReviews } from '$lib/stores/reviews';
     import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
     import { walletStatus } from '$lib/wallet/wallet';
+    import { loadUserProviderConfig } from '$lib/stores/assertions';
 
     import {
         checkRelayConnections,
         fetchAndInitWallet,
         initializeUser,
-        logout,
     } from '$lib/utils/helpers';
 
     import { wotUpdateFailed } from '$lib/stores/wot';
@@ -78,6 +78,7 @@
     import { NDKWalletStatus } from '@nostr-dev-kit/ndk-wallet';
 
     import { privateKeyFromNsec } from '$lib/utils/nip19';
+    import { sanitizeNip46SignerPayload } from '$lib/utils/login';
 
     import { page } from '$app/state';
 
@@ -126,6 +127,7 @@
     let lastResumeHandledAt = 0;
     let nip46RestoreInFlight = false;
     let nip46RestoreAttemptId = 0;
+    let providerConfigLoaded = $state(false);
 
     const WALLET_RETRY_COOLDOWN_MS = 15000;
     const NIP46_RESUME_THRESHOLD_MS = 5 * 60 * 1000;
@@ -180,6 +182,23 @@
                 console.warn('[wallet:init] Wallet init failed after onboarding', error);
             });
         }
+    });
+
+    $effect(() => {
+        if (!$loggedIn) {
+            providerConfigLoaded = false;
+            return;
+        }
+
+        if (!$sessionInitialized || !$currentUser || !$ndk) return;
+        if (!$ndk.signer) return;
+        if (providerConfigLoaded) return;
+
+        providerConfigLoaded = true;
+        loadUserProviderConfig().catch((error) => {
+            providerConfigLoaded = false;
+            console.warn('Failed to load trusted provider config:', error);
+        });
     });
 
     $effect(() => {
@@ -301,26 +320,6 @@
         }
     }
 
-    function setupNip46Timeout() {
-        return setTimeout(() => {
-            if ($loginMethod !== LoginMethod.Nip46 || !$loggingIn) return;
-            if (!$ndk.signer) {
-                toaster.warning({
-                    title: 'Bunker connection took too long!',
-                    description: 'Fix or Remove Bunker Connection!',
-                    duration: 60000, // 1 min
-                    action: {
-                        label: 'Logout',
-                        onClick: () => {
-                            $loggingIn = false;
-                            logout();
-                        },
-                    },
-                });
-            }
-        }, 20000);
-    }
-
     function showNip46Error(error: any) {
         toaster.error({
             title: 'Could not restore remote signer session!',
@@ -329,24 +328,129 @@
         });
     }
 
+    function cancelNip46Restore(reason: string) {
+        nip46RestoreAttemptId += 1;
+        nip46RestoreInFlight = false;
+        $loggingIn = false;
+        console.warn('Cancelled NIP-46 restore attempt', { reason });
+    }
+
+    function getNip46PayloadInfo(payloadString: string) {
+        try {
+            const parsedPayload = JSON.parse(payloadString);
+            const payload = parsedPayload?.payload;
+            const relayUrls = Array.isArray(payload?.relayUrls) ? payload.relayUrls : [];
+
+            return {
+                hasSecret: Boolean(payload?.secret),
+                hasBunkerPubkey: Boolean(payload?.bunkerPubkey),
+                hasUserPubkey: Boolean(payload?.userPubkey),
+                relayCount: relayUrls.length,
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    function attachNip46RestoreTelemetry(signer: NDKNip46Signer, restoreAttemptId: number) {
+        const rpc = signer.rpc as any;
+        if (
+            !rpc ||
+            typeof rpc.sendRequest !== 'function' ||
+            typeof rpc.on !== 'function' ||
+            typeof rpc.off !== 'function'
+        ) {
+            console.warn('[nip46:telemetry] RPC does not support instrumentation', {
+                restoreAttemptId,
+            });
+            return () => {};
+        }
+
+        const originalSendRequest = rpc.sendRequest.bind(rpc);
+
+        rpc.sendRequest = async (
+            remotePubkey: string,
+            method: string,
+            params: string[] = [],
+            kind = 24133,
+            cb?: (response: any) => void
+        ) => {
+            const paramsCount = Array.isArray(params) ? params.length : 0;
+            const connectHasSecretParam =
+                method === 'connect' && paramsCount > 1 && Boolean(params[1]);
+
+            console.log('[nip46:telemetry] rpc.sendRequest', {
+                restoreAttemptId,
+                method,
+                kind,
+                paramsCount,
+                connectHasSecretParam,
+                remotePubkeyPrefix: remotePubkey?.slice(0, 8),
+            });
+
+            return originalSendRequest(remotePubkey, method, params, kind, (response: any) => {
+                console.log('[nip46:telemetry] rpc.sendRequest.callback', {
+                    restoreAttemptId,
+                    method,
+                    result: response?.result,
+                    hasError: Boolean(response?.error),
+                    error: response?.error,
+                });
+                cb?.(response);
+            });
+        };
+
+        const onResponse = (response: any) => {
+            console.log('[nip46:telemetry] rpc.response', {
+                restoreAttemptId,
+                result: response?.result,
+                hasError: Boolean(response?.error),
+                error: response?.error,
+            });
+        };
+
+        rpc.on('response', onResponse);
+
+        return () => {
+            rpc.sendRequest = originalSendRequest;
+            rpc.off('response', onResponse);
+        };
+    }
+
     async function handleNip46Login() {
         if (nip46RestoreInFlight) return;
-        const signerPayload = localStorage.getItem('nip46SignerPayload');
+        const storedSignerPayload = localStorage.getItem('nip46SignerPayload');
 
-        if (!signerPayload) {
+        if (!storedSignerPayload) {
             console.log('No nip46SignerPayload found in localStorage');
             $loggingIn = false;
             return;
         }
 
+        const signerPayload = sanitizeNip46SignerPayload(storedSignerPayload);
+        if (!signerPayload) {
+            showNip46Error('Stored bunker payload is invalid. Please reconnect your bunker.');
+            $loggingIn = false;
+            return;
+        }
+        const storedPayloadInfo = getNip46PayloadInfo(storedSignerPayload);
+        const sanitizedPayloadInfo = getNip46PayloadInfo(signerPayload);
+        console.log('[nip46:telemetry] payload', {
+            storedPayloadInfo,
+            sanitizedPayloadInfo,
+            payloadWasSanitized: signerPayload !== storedSignerPayload,
+        });
+        if (signerPayload !== storedSignerPayload) {
+            localStorage.setItem('nip46SignerPayload', signerPayload);
+        }
+
         nip46RestoreInFlight = true;
         const restoreAttemptId = ++nip46RestoreAttemptId;
+        let detachNip46Telemetry: (() => void) | undefined;
         const isRestoreStale = () =>
             restoreAttemptId !== nip46RestoreAttemptId ||
             $loginMethod !== LoginMethod.Nip46 ||
             localStorage.getItem('nip46SignerPayload') !== signerPayload;
-
-        const timeoutId = setupNip46Timeout();
 
         try {
             console.log('Attempting remote signer restoration...');
@@ -387,6 +491,9 @@
 
                 attempts += 1;
                 if (attempts % 10 === 0) {
+                    remoteSignerNDK.connect().catch((error) => {
+                        console.warn('Remote signer relay reconnect error:', error);
+                    });
                     console.log(`Waiting for bunker relays... attempts: ${attempts}`);
                 }
 
@@ -399,12 +506,25 @@
             console.log('Attempting signer restoration with payload...');
 
             const restoredSigner = await NDKNip46Signer.fromPayload(signerPayload, remoteSignerNDK);
+            detachNip46Telemetry = attachNip46RestoreTelemetry(restoredSigner, restoreAttemptId);
 
             if (isRestoreStale()) return;
+
+            console.log('[nip46:telemetry] restoredSigner.beforeSecretClear', {
+                restoreAttemptId,
+                hasSecret: Boolean(restoredSigner.secret),
+                hasBunkerPubkey: Boolean(restoredSigner.bunkerPubkey),
+                hasUserPubkey: Boolean(restoredSigner.userPubkey),
+                relayCount: restoredSigner.relayUrls?.length ?? 0,
+            });
 
             // remove secret from restored signer, we don't need it
             // it was only needed for login not for the restoration process
             restoredSigner.secret = null;
+            console.log('[nip46:telemetry] restoredSigner.afterSecretClear', {
+                restoreAttemptId,
+                hasSecret: Boolean(restoredSigner.secret),
+            });
 
             console.log('Testing restored signer connection...');
 
@@ -446,7 +566,7 @@
                 showNip46Error(errorMessage);
             }
         } finally {
-            clearTimeout(timeoutId);
+            detachNip46Telemetry?.();
             if (restoreAttemptId === nip46RestoreAttemptId) {
                 nip46RestoreInFlight = false;
                 $loggingIn = false;
@@ -477,6 +597,9 @@
         const longBreak = hiddenDuration >= NIP46_RESUME_THRESHOLD_MS;
 
         if (longBreak) {
+            if (nip46RestoreInFlight) {
+                cancelNip46Restore('resume');
+            }
             retriesLeft.set(maxRetryAttempts);
             $ndk.connect(retryDelay).catch((error) => {
                 console.warn('NDK resume connect error:', error);

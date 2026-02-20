@@ -17,6 +17,18 @@ export interface AssertionData {
     zapAmtRecd?: number;
     zapAmtSent?: number;
     postCnt?: number;
+    replyCnt?: number;
+    reactionsCnt?: number;
+    zapCntRecd?: number;
+    zapCntSent?: number;
+    zapAvgAmtDayRecd?: number;
+    zapAvgAmtDaySent?: number;
+    reportsCntRecd?: number;
+    reportsCntSent?: number;
+    firstCreatedAt?: number;
+    activeHoursStart?: number;
+    activeHoursEnd?: number;
+    commonTopics?: string[];
     providerCount: number;
 }
 

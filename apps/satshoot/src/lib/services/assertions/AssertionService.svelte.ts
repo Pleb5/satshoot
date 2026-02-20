@@ -1,5 +1,11 @@
 import type NDK from '@nostr-dev-kit/ndk';
-import { NDKEvent, type Hexpubkey, type NDKFilter, type NDKTag } from '@nostr-dev-kit/ndk';
+import {
+    NDKEvent,
+    NDKRelaySet,
+    type Hexpubkey,
+    type NDKFilter,
+    type NDKTag,
+} from '@nostr-dev-kit/ndk';
 import type {
     TrustedProvider,
     UserAssertion,
@@ -21,16 +27,126 @@ import { assertionCache } from './AssertionCache';
 export class AssertionService {
     private ndk: NDK;
     private useCache: boolean;
+    private logEvents = false;
 
     constructor(ndk: NDK, useCache = true) {
         this.ndk = ndk;
         this.useCache = useCache;
     }
 
+    setLogEvents(enabled: boolean) {
+        this.logEvents = enabled;
+    }
+
     private parseNumberValue(value: string | undefined): number | null {
         if (value === undefined || value === '') return null;
         const numValue = Number(value);
         return Number.isNaN(numValue) ? null : numValue;
+    }
+
+    private buildRelaySet(relayHints: string[]): NDKRelaySet | undefined {
+        const relayUrls = relayHints
+            .map((hint) => hint?.trim())
+            .filter((hint): hint is string => Boolean(hint));
+        const uniqueRelayUrls = Array.from(new Set(relayUrls));
+
+        if (uniqueRelayUrls.length === 0) return undefined;
+
+        try {
+            return NDKRelaySet.fromRelayUrls(uniqueRelayUrls, this.ndk);
+        } catch (error) {
+            console.warn('Failed to build relay set for assertions:', error);
+            return undefined;
+        }
+    }
+
+    private getLatestEvent(events: Set<NDKEvent>): NDKEvent | null {
+        let latestEvent: NDKEvent | null = null;
+
+        events.forEach((event) => {
+            const createdAt = event.created_at ?? 0;
+            if (!latestEvent || createdAt > (latestEvent.created_at ?? 0)) {
+                latestEvent = event;
+            }
+        });
+
+        return latestEvent;
+    }
+
+    private async fetchAssertionEvents(
+        filter: NDKFilter,
+        relaySet?: NDKRelaySet
+    ): Promise<Set<NDKEvent>> {
+        const options = {
+            closeOnEose: true,
+            groupable: false,
+        };
+
+        if (relaySet) {
+            return this.ndk.fetchEvents(filter, options, relaySet);
+        }
+
+        return this.ndk.fetchEvents(filter, options);
+    }
+
+    private async getCachedUserAssertionForProvider(
+        pubkey: Hexpubkey,
+        serviceKey: Hexpubkey,
+        providers: TrustedProvider[]
+    ): Promise<UserAssertion | null> {
+        for (const provider of providers) {
+            const cached = await assertionCache.getUserAssertion(
+                pubkey,
+                serviceKey,
+                provider.tag
+            );
+
+            if (cached) {
+                return cached;
+            }
+        }
+
+        return null;
+    }
+
+    private async getCachedEventAssertionForProvider(
+        eventId: string,
+        serviceKey: Hexpubkey,
+        providers: TrustedProvider[]
+    ): Promise<EventAssertion | null> {
+        for (const provider of providers) {
+            const cached = await assertionCache.getEventAssertion(
+                eventId,
+                serviceKey,
+                provider.tag
+            );
+
+            if (cached) {
+                return cached;
+            }
+        }
+
+        return null;
+    }
+
+    private async getCachedAddressableAssertionForProvider(
+        address: string,
+        serviceKey: Hexpubkey,
+        providers: TrustedProvider[]
+    ): Promise<AddressableAssertion | null> {
+        for (const provider of providers) {
+            const cached = await assertionCache.getAddressableAssertion(
+                address,
+                serviceKey,
+                provider.tag
+            );
+
+            if (cached) {
+                return cached;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -105,6 +221,13 @@ export class AssertionService {
                         if (value === undefined || value === '') return;
                         if (!assertion.commonTopics) assertion.commonTopics = [];
                         assertion.commonTopics.push(value);
+                        break;
+                    case 'd':
+                        break;
+                    default:
+                        if (value === undefined || value === '') return;
+                        if (!assertion.extraMetrics) assertion.extraMetrics = {};
+                        assertion.extraMetrics[name] = numValue !== null ? numValue : value;
                         break;
                 }
             });
@@ -262,8 +385,15 @@ export class AssertionService {
      */
     async fetchUserAssertions(
         pubkey: Hexpubkey,
-        providers: TrustedProvider[]
+        providers: TrustedProvider[],
+        logEvents = false
     ): Promise<Map<string, UserAssertion>> {
+        const globalScope = globalThis as typeof globalThis & {
+            __NIP85_LOG__?: boolean;
+        };
+        const shouldLog = logEvents || this.logEvents || globalScope.__NIP85_LOG__ === true;
+        const shouldSkipCache = shouldLog;
+
         // Filter providers for user assertions
         const userProviders = providers.filter((p) => p.kind === NIP85_USER_ASSERTION_KIND);
 
@@ -272,56 +402,110 @@ export class AssertionService {
         }
 
         const assertions = new Map<string, UserAssertion>();
+        const providersByServiceKey = new Map<Hexpubkey, TrustedProvider[]>();
 
-        // Fetch from each provider
-        for (const provider of userProviders) {
+        userProviders.forEach((provider) => {
+            const existing = providersByServiceKey.get(provider.serviceKey) ?? [];
+            existing.push(provider);
+            providersByServiceKey.set(provider.serviceKey, existing);
+        });
+
+        for (const [serviceKey, serviceProviders] of providersByServiceKey) {
             try {
-                const key = `${provider.serviceKey}:${provider.tag}`;
-
-                // Check cache first
-                if (this.useCache) {
-                    const cached = await assertionCache.getUserAssertion(
+                let cachedAssertion: UserAssertion | null = null;
+                if (this.useCache && !shouldSkipCache) {
+                    cachedAssertion = await this.getCachedUserAssertionForProvider(
                         pubkey,
-                        provider.serviceKey,
-                        provider.tag
+                        serviceKey,
+                        serviceProviders
                     );
-
-                    if (cached) {
-                        assertions.set(key, cached);
-                        continue;
-                    }
                 }
 
-                // Fetch from network
-                const filter: NDKFilter = {
-                    kinds: [NIP85_USER_ASSERTION_KIND],
-                    authors: [provider.serviceKey],
-                    '#d': [pubkey],
-                };
+                if (cachedAssertion) {
+                    serviceProviders.forEach((provider) => {
+                        const key = `${serviceKey}:${provider.tag}`;
+                        assertions.set(key, cachedAssertion);
 
-                const events = await this.ndk.fetchEvents(filter, {
-                    closeOnEose: true,
-                    groupable: false,
-                });
-
-                events.forEach((event) => {
-                    const assertion = this.parseUserAssertion(event);
-                    if (assertion) {
-                        assertions.set(key, assertion);
-
-                        // Cache the assertion
                         if (this.useCache) {
                             assertionCache.setUserAssertion(
                                 pubkey,
-                                provider.serviceKey,
+                                serviceKey,
                                 provider.tag,
-                                assertion
+                                cachedAssertion
                             );
                         }
+                    });
+                    continue;
+                }
+
+                const relayUrls = Array.from(
+                    new Set(
+                        serviceProviders
+                            .map((provider) => provider.relayHint?.trim())
+                            .filter((hint): hint is string => Boolean(hint))
+                    )
+                );
+                const relaySet = this.buildRelaySet(relayUrls);
+                const filter: NDKFilter = {
+                    kinds: [NIP85_USER_ASSERTION_KIND],
+                    authors: [serviceKey],
+                    '#d': [pubkey],
+                };
+
+                if (shouldLog) {
+                    console.warn('[nip85] fetching user assertions', {
+                        provider: serviceKey,
+                        target: pubkey,
+                        filter,
+                        relayUrls: relayUrls.length > 0 ? relayUrls : 'ndk default relays',
+                    });
+                }
+
+                const events = await this.fetchAssertionEvents(filter, relaySet);
+                const latestEvent = this.getLatestEvent(events);
+
+                if (!latestEvent) {
+                    if (shouldLog) {
+                        console.warn('[nip85] no user assertion events found', {
+                            provider: serviceKey,
+                            target: pubkey,
+                            eventCount: events.size,
+                        });
+                    }
+                    continue;
+                }
+
+                if (shouldLog) {
+                    console.warn('[nip85] fetched user assertion event', {
+                        provider: serviceKey,
+                        target: pubkey,
+                        id: latestEvent.id,
+                        created_at: latestEvent.created_at,
+                        tags: latestEvent.tags,
+                        content: latestEvent.content,
+                    });
+                }
+
+                const assertion = this.parseUserAssertion(latestEvent);
+                if (!assertion) {
+                    continue;
+                }
+
+                serviceProviders.forEach((provider) => {
+                    const key = `${serviceKey}:${provider.tag}`;
+                    assertions.set(key, assertion);
+
+                    if (this.useCache) {
+                        assertionCache.setUserAssertion(
+                            pubkey,
+                            serviceKey,
+                            provider.tag,
+                            assertion
+                        );
                     }
                 });
             } catch (error) {
-                console.warn(`Failed to fetch from provider ${provider.serviceKey}:`, error);
+                console.warn(`Failed to fetch from provider ${serviceKey}:`, error);
             }
         }
 
@@ -342,52 +526,78 @@ export class AssertionService {
         }
 
         const assertions = new Map<string, EventAssertion>();
+        const providersByServiceKey = new Map<Hexpubkey, TrustedProvider[]>();
 
-        for (const provider of eventProviders) {
+        eventProviders.forEach((provider) => {
+            const existing = providersByServiceKey.get(provider.serviceKey) ?? [];
+            existing.push(provider);
+            providersByServiceKey.set(provider.serviceKey, existing);
+        });
+
+        for (const [serviceKey, serviceProviders] of providersByServiceKey) {
             try {
-                const key = `${provider.serviceKey}:${provider.tag}`;
-
+                let cachedAssertion: EventAssertion | null = null;
                 if (this.useCache) {
-                    const cached = await assertionCache.getEventAssertion(
+                    cachedAssertion = await this.getCachedEventAssertionForProvider(
                         eventId,
-                        provider.serviceKey,
-                        provider.tag
+                        serviceKey,
+                        serviceProviders
                     );
-
-                    if (cached) {
-                        assertions.set(key, cached);
-                        continue;
-                    }
                 }
 
-                const filter: NDKFilter = {
-                    kinds: [NIP85_EVENT_ASSERTION_KIND],
-                    authors: [provider.serviceKey],
-                    '#d': [eventId],
-                };
-
-                const events = await this.ndk.fetchEvents(filter, {
-                    closeOnEose: true,
-                    groupable: false,
-                });
-
-                events.forEach((event) => {
-                    const assertion = this.parseEventAssertion(event);
-                    if (assertion) {
-                        assertions.set(key, assertion);
+                if (cachedAssertion) {
+                    serviceProviders.forEach((provider) => {
+                        const key = `${serviceKey}:${provider.tag}`;
+                        assertions.set(key, cachedAssertion);
 
                         if (this.useCache) {
                             assertionCache.setEventAssertion(
                                 eventId,
-                                provider.serviceKey,
+                                serviceKey,
                                 provider.tag,
-                                assertion
+                                cachedAssertion
                             );
                         }
+                    });
+                    continue;
+                }
+
+                const relaySet = this.buildRelaySet(
+                    serviceProviders.map((provider) => provider.relayHint)
+                );
+                const filter: NDKFilter = {
+                    kinds: [NIP85_EVENT_ASSERTION_KIND],
+                    authors: [serviceKey],
+                    '#d': [eventId],
+                };
+
+                const events = await this.fetchAssertionEvents(filter, relaySet);
+                const latestEvent = this.getLatestEvent(events);
+
+                if (!latestEvent) {
+                    continue;
+                }
+
+                const assertion = this.parseEventAssertion(latestEvent);
+                if (!assertion) {
+                    continue;
+                }
+
+                serviceProviders.forEach((provider) => {
+                    const key = `${serviceKey}:${provider.tag}`;
+                    assertions.set(key, assertion);
+
+                    if (this.useCache) {
+                        assertionCache.setEventAssertion(
+                            eventId,
+                            serviceKey,
+                            provider.tag,
+                            assertion
+                        );
                     }
                 });
             } catch (error) {
-                console.warn(`Failed to fetch from provider ${provider.serviceKey}:`, error);
+                console.warn(`Failed to fetch from provider ${serviceKey}:`, error);
             }
         }
 
@@ -410,52 +620,78 @@ export class AssertionService {
         }
 
         const assertions = new Map<string, AddressableAssertion>();
+        const providersByServiceKey = new Map<Hexpubkey, TrustedProvider[]>();
 
-        for (const provider of addressableProviders) {
+        addressableProviders.forEach((provider) => {
+            const existing = providersByServiceKey.get(provider.serviceKey) ?? [];
+            existing.push(provider);
+            providersByServiceKey.set(provider.serviceKey, existing);
+        });
+
+        for (const [serviceKey, serviceProviders] of providersByServiceKey) {
             try {
-                const key = `${provider.serviceKey}:${provider.tag}`;
-
+                let cachedAssertion: AddressableAssertion | null = null;
                 if (this.useCache) {
-                    const cached = await assertionCache.getAddressableAssertion(
+                    cachedAssertion = await this.getCachedAddressableAssertionForProvider(
                         address,
-                        provider.serviceKey,
-                        provider.tag
+                        serviceKey,
+                        serviceProviders
                     );
-
-                    if (cached) {
-                        assertions.set(key, cached);
-                        continue;
-                    }
                 }
 
-                const filter: NDKFilter = {
-                    kinds: [NIP85_ADDRESSABLE_ASSERTION_KIND],
-                    authors: [provider.serviceKey],
-                    '#d': [address],
-                };
-
-                const events = await this.ndk.fetchEvents(filter, {
-                    closeOnEose: true,
-                    groupable: false,
-                });
-
-                events.forEach((event) => {
-                    const assertion = this.parseAddressableAssertion(event);
-                    if (assertion) {
-                        assertions.set(key, assertion);
+                if (cachedAssertion) {
+                    serviceProviders.forEach((provider) => {
+                        const key = `${serviceKey}:${provider.tag}`;
+                        assertions.set(key, cachedAssertion);
 
                         if (this.useCache) {
                             assertionCache.setAddressableAssertion(
                                 address,
-                                provider.serviceKey,
+                                serviceKey,
                                 provider.tag,
-                                assertion
+                                cachedAssertion
                             );
                         }
+                    });
+                    continue;
+                }
+
+                const relaySet = this.buildRelaySet(
+                    serviceProviders.map((provider) => provider.relayHint)
+                );
+                const filter: NDKFilter = {
+                    kinds: [NIP85_ADDRESSABLE_ASSERTION_KIND],
+                    authors: [serviceKey],
+                    '#d': [address],
+                };
+
+                const events = await this.fetchAssertionEvents(filter, relaySet);
+                const latestEvent = this.getLatestEvent(events);
+
+                if (!latestEvent) {
+                    continue;
+                }
+
+                const assertion = this.parseAddressableAssertion(latestEvent);
+                if (!assertion) {
+                    continue;
+                }
+
+                serviceProviders.forEach((provider) => {
+                    const key = `${serviceKey}:${provider.tag}`;
+                    assertions.set(key, assertion);
+
+                    if (this.useCache) {
+                        assertionCache.setAddressableAssertion(
+                            address,
+                            serviceKey,
+                            provider.tag,
+                            assertion
+                        );
                     }
                 });
             } catch (error) {
-                console.warn(`Failed to fetch from provider ${provider.serviceKey}:`, error);
+                console.warn(`Failed to fetch from provider ${serviceKey}:`, error);
             }
         }
 

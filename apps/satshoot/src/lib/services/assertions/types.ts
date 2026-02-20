@@ -24,6 +24,7 @@ export interface UserAssertion {
     commonTopics?: string[];
     activeHoursStart?: number;
     activeHoursEnd?: number;
+    extraMetrics?: Record<string, number | string>;
 }
 
 // Kind 30383: Event Assertions

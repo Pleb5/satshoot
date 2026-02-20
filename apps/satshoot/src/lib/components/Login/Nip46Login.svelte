@@ -4,7 +4,11 @@
     import ndk, { bunkerNDK, LoginMethod, NOSTRCONNECTRELAYURLS } from '$lib/stores/session';
     import { loginMethod, UserMode, userMode } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
-    import { parseRelaysFromBunkerUrl, parseRemotePubkeyFromBunkerUrl } from '$lib/utils/login';
+    import {
+        parseRelaysFromBunkerUrl,
+        parseRemotePubkeyFromBunkerUrl,
+        sanitizeNip46SignerPayload,
+    } from '$lib/utils/login';
     import { nip46SignerPerms } from '$lib/utils/misc';
     import NDK, { NDKNip46Signer, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 
@@ -137,7 +141,11 @@
                 loginMethod.set(LoginMethod.Nip46);
 
                 // Store connection info for persistence using NDK's built-in serialization
-                localStorage.setItem('nip46SignerPayload', remoteSigner.toPayload());
+                const signerPayload = sanitizeNip46SignerPayload(remoteSigner.toPayload());
+                if (!signerPayload) {
+                    throw new Error('Failed to persist bunker session payload');
+                }
+                localStorage.setItem('nip46SignerPayload', signerPayload);
 
                 toaster.success({
                     title: 'Bunker Connection Successful!',
@@ -248,7 +256,11 @@
                 loginMethod.set(LoginMethod.Nip46);
 
                 // Store connection info for persistence using NDK's built-in serialization
-                localStorage.setItem('nip46SignerPayload', nostrConnectSigner.toPayload());
+                const signerPayload = sanitizeNip46SignerPayload(nostrConnectSigner.toPayload());
+                if (!signerPayload) {
+                    throw new Error('Failed to persist NostrConnect session payload');
+                }
+                localStorage.setItem('nip46SignerPayload', signerPayload);
 
                 toaster.success({
                     title: 'NostrConnect connection successful!',
