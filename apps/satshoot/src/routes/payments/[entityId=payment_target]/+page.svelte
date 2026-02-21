@@ -335,6 +335,11 @@
         'bg-black-50 focus:bg-black-100 outline-[0px] focus:outline-[0px] border-[2px] ' +
         'border-black-100 dark:border-white-100 focus:border-blue-500 rounded-[6px] ' +
         'w-full text-lg sm:text-xl';
+    const paymentButtonBaseClasses =
+        'min-w-[120px] flex-1 sm:flex-initial max-sm:text-sm ' +
+        'max-sm:p-[5px_10px] max-sm:gap-[6px]';
+    const lightningButtonClasses = `${paymentButtonBaseClasses} sm:w-[200px]`;
+    const cashuButtonClasses = `${paymentButtonBaseClasses} sm:w-[250px]`;
 </script>
 
 <div class="w-full flex flex-col justify-center items-center py-[25px] text-lg sm:text-xl">
@@ -496,7 +501,7 @@
                             <div class="flex flex-row flex-wrap justify-center gap-[5px] py-[10px]">
                                 <Button
                                     grow
-                                    classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial"
+                                    classes={lightningButtonClasses}
                                     onClick={openPaymentConfirmation(UserEnum.Freelancer, 'LN')}
                                     disabled={paying || !paymentManager.payment.amount}
                                 >
@@ -516,7 +521,7 @@
                                 {#if hasSenderEcashSetup}
                                     <Button
                                         grow
-                                        classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial"
+                                        classes={cashuButtonClasses}
                                         onClick={openPaymentConfirmation(
                                             UserEnum.Freelancer,
                                             'Cashu'
@@ -595,7 +600,7 @@
                             <div class="flex flex-row flex-wrap justify-center gap-[5px] py-[10px]">
                                 <Button
                                     grow
-                                    classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial"
+                                    classes={lightningButtonClasses}
                                     onClick={openPaymentConfirmation(UserEnum.Satshoot, 'LN')}
                                     disabled={paying || !paymentManager.payment.satshootAmount}
                                 >
@@ -615,7 +620,7 @@
                                 {#if hasSenderEcashSetup}
                                     <Button
                                         grow
-                                        classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial"
+                                        classes={cashuButtonClasses}
                                         onClick={openPaymentConfirmation(
                                             UserEnum.Satshoot,
                                             'Cashu'
@@ -697,7 +702,7 @@
                                 >
                                     <Button
                                         grow
-                                        classes="min-w-[150px] sm:w-[200px] flex-1 sm:flex-initial"
+                                        classes={lightningButtonClasses}
                                         onClick={openPaymentConfirmation(UserEnum.Sponsored, 'LN')}
                                         disabled={paying || !paymentManager.payment.sponsoredAmount}
                                     >
@@ -717,7 +722,7 @@
                                     {#if hasSenderEcashSetup}
                                         <Button
                                             grow
-                                            classes="min-w-[150px] sm:w-[250px] flex-1 sm:flex-initial"
+                                            classes={cashuButtonClasses}
                                             onClick={openPaymentConfirmation(
                                                 UserEnum.Sponsored,
                                                 'Cashu'
