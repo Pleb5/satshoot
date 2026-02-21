@@ -807,7 +807,7 @@
                             {@const providers = selectedUserProvidersByTag.get(tag) ?? []}
                             <div class="flex flex-col gap-2">
                                 <div class="flex items-center justify-between text-sm text-black-700 dark:text-white-200">
-                                    <span class="underline underline-offset-2">
+                                    <span class="underline underline-offset-2 dark:text-primary-300">
                                         {getTagLabel(tag)}
                                     </span>
                                     <span>{providers.length} selected</span>
@@ -869,7 +869,7 @@
                                                     <span class="text-black-600 dark:text-white-200">
                                                         {' '}Available:
                                                     </span>
-                                                    <span class="text-black-700 dark:text-white-200">
+                                                    <span class="text-black-700 dark:text-primary-300">
                                                         {availableTags.join(', ')}
                                                     </span>
                                                 </span>
@@ -905,7 +905,7 @@
                                         {@const tag = metric[0]}
                                         {@const value = metric[1]}
                                         <div class="flex items-center justify-between gap-2">
-                                            <span class="text-sm text-black-700 dark:text-white-200 underline underline-offset-2">
+                                            <span class="text-sm text-black-700 dark:text-primary-300 underline underline-offset-2">
                                                 {getTagLabel(tag)}
                                             </span>
                                             <span

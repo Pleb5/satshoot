@@ -418,7 +418,7 @@
                         {/each}
                     </select>
                     <div
-                        class="pointer-events-none absolute inset-y-0 left-0 right-8 flex items-center px-2 text-black-700 dark:text-white-200 z-10"
+                        class="pointer-events-none absolute inset-y-0 left-0 right-8 flex items-center px-2 text-black-700 dark:text-primary-300 z-10"
                     >
                         <span class="block w-full overflow-x-auto whitespace-nowrap scrollbar-hide sm:max-w-[620px]">
                             {selectedCapabilityLabel}
@@ -440,7 +440,7 @@
                                 {getCapabilityDisplayName(selectedCapability)}
                             </span>
                         </div>
-                        <span class="text-sm text-gray-500 shrink-0 ml-4">
+                        <span class="text-sm text-primary-600 dark:text-primary-300 shrink-0 ml-4">
                             {selectedProviderCount} selected
                         </span>
                     </div>
@@ -470,7 +470,9 @@
                 class="flex items-center justify-between p-3 rounded bg-gray-50 dark:bg-gray-800"
             >
                 <span class="text-sm font-medium">Selected providers:</span>
-                <span class="text-sm font-bold">{$selectedProviders.length}</span>
+                <span class="text-sm font-bold text-primary-600 dark:text-primary-300">
+                    {$selectedProviders.length}
+                </span>
             </div>
 
             <div class="flex items-center justify-between p-3 rounded bg-gray-50 dark:bg-gray-800">
@@ -504,9 +506,18 @@
                         {isVerifying ? 'Verifying...' : 'Verify providers'}
                     </Button>
                 </div>
-                <div class="text-xs text-gray-500">
-                    {verificationSummary.verified} verified • {verificationSummary.missing} missing •
-                    {verificationSummary.noData} no data • {verificationSummary.unverified} unverified
+                <div class="text-xs">
+                    <span class="text-emerald-600">
+                        {verificationSummary.verified} verified
+                    </span>
+                    <span class="text-black-400 dark:text-white-400"> • </span>
+                    <span class="text-amber-600">{verificationSummary.missing} missing</span>
+                    <span class="text-black-400 dark:text-white-400"> • </span>
+                    <span class="text-amber-600">{verificationSummary.noData} no data</span>
+                    <span class="text-black-400 dark:text-white-400"> • </span>
+                    <span class="text-amber-600">
+                        {verificationSummary.unverified} unverified
+                    </span>
                 </div>
                 {#if verificationSummary.missing > 0}
                     <div class="text-xs text-amber-600">

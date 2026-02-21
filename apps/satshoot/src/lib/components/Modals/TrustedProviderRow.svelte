@@ -134,7 +134,7 @@
                         {#each availableTags as tag}
                             <button
                                 type="button"
-                                class="underline text-black-700 dark:text-white-200"
+                                class="underline text-black-700 dark:text-primary-300"
                                 onclick={() => onSwitchTag?.(tag)}
                             >
                                 {tag}
