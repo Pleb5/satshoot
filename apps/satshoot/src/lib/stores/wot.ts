@@ -206,6 +206,110 @@ export const wot = derived(
     }
 );
 
+function getDeviceMemoryGb(): number | undefined {
+    if (typeof navigator === 'undefined') return undefined;
+
+    const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+
+    if (typeof deviceMemory !== 'number') return undefined;
+
+    return deviceMemory;
+}
+
+function resolveWoTSampleCap(totalWot: number): number {
+    const deviceMemory = getDeviceMemoryGb();
+    let cap = 2500;
+
+    if (deviceMemory !== undefined) {
+        if (deviceMemory <= 2) {
+            cap = 1200;
+        } else if (deviceMemory <= 4) {
+            cap = 2000;
+        } else if (deviceMemory <= 6) {
+            cap = 3000;
+        } else if (deviceMemory <= 8) {
+            cap = 4000;
+        } else {
+            cap = 5000;
+        }
+    }
+
+    return Math.min(cap, totalWot);
+}
+
+function reservoirSample<T>(
+    source: Iterable<T>,
+    sampleSize: number,
+    exclude: Set<T>
+): T[] {
+    if (sampleSize <= 0) return [];
+
+    const sample: T[] = [];
+    let seen = 0;
+
+    for (const item of source) {
+        if (exclude.has(item)) continue;
+
+        seen += 1;
+
+        if (sample.length < sampleSize) {
+            sample.push(item);
+            continue;
+        }
+
+        const idx = Math.floor(Math.random() * seen);
+        if (idx < sampleSize) {
+            sample[idx] = item;
+        }
+    }
+
+    return sample;
+}
+
+export const getSampledWoTPubkeys = (): Hexpubkey[] => {
+    const wotSet = get(wot);
+    const totalWot = wotSet.size;
+
+    if (totalWot === 0) return [];
+
+    const cap = resolveWoTSampleCap(totalWot);
+    if (totalWot <= cap) {
+        return Array.from(wotSet);
+    }
+
+    const selected = new Set<Hexpubkey>();
+    const user = get(currentUser);
+
+    if (user?.pubkey && wotSet.has(user.pubkey)) {
+        selected.add(user.pubkey);
+    }
+
+    if (get(useSatShootWoT) && wotSet.has(SatShootPubkey)) {
+        selected.add(SatShootPubkey);
+    }
+
+    const remainingCap = Math.max(cap - selected.size, 0);
+    if (remainingCap === 0) return Array.from(selected);
+
+    const scores = get(networkWoTScores);
+    const rankedEntries = Array.from(scores.entries()).filter(([pubkey]) => wotSet.has(pubkey));
+    rankedEntries.sort((a, b) => b[1] - a[1]);
+
+    const topTarget = Math.min(Math.floor(remainingCap * 0.8), rankedEntries.length);
+    const targetSize = selected.size + topTarget;
+
+    for (const [pubkey] of rankedEntries) {
+        if (selected.size >= targetSize) break;
+        selected.add(pubkey);
+    }
+
+    const randomTarget = Math.min(cap - selected.size, remainingCap);
+    const randomSample = reservoirSample(wotSet, randomTarget, selected);
+    randomSample.forEach((pubkey) => selected.add(pubkey));
+
+    return Array.from(selected);
+};
+
 export const wotFilteredJobs = derived([allJobs, wot], ([$allJobs, $wot]) => {
     return $allJobs.filter((job: JobEvent) => $wot.has(job.pubkey));
 });

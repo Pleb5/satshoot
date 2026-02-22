@@ -6,7 +6,7 @@ import ndk, {
     discoveredRelays as sessionDiscoveredRelays,
 } from './session';
 import currentUser from './user';
-import { wot } from './wot';
+import { getSampledWoTPubkeys } from './wot';
 import type { Hexpubkey, NDKEvent } from '@nostr-dev-kit/ndk';
 import { NDKRelaySet } from '@nostr-dev-kit/ndk';
 import {
@@ -136,7 +136,7 @@ export const availableCapabilities: Readable<Set<string>> = derived(
 export async function loadWoTProviderConfigs(): Promise<void> {
     const $ndk = get(ndk);
     const $currentUser = get(currentUser);
-    const $wot = get(wot);
+    const wotPubkeys = getSampledWoTPubkeys();
     const cachedRelays = get(sessionDiscoveredRelays);
 
     if (!$ndk || !$currentUser) {
@@ -150,13 +150,11 @@ export async function loadWoTProviderConfigs(): Promise<void> {
         ...INITIAL_PROVIDER_DISCOVERY_STATE,
         status: 'running',
         step: 1,
-        totalUsers: $wot.size,
+        totalUsers: wotPubkeys.length,
     });
 
     try {
         const service = new AssertionProviderConfig($ndk);
-        const wotPubkeys = Array.from($wot);
-
         console.log('[nip85] Loading trusted providers from WoT');
 
         if (wotPubkeys.length === 0) {

@@ -350,7 +350,7 @@
                     <p class="text-sm text-center text-gray-500 dark:text-gray-400">
                         Batch {$providerDiscoveryState.currentBatch}/{$providerDiscoveryState.totalBatches}
                         • Found relays for {$providerDiscoveryState.fetchedUsers}/{$providerDiscoveryState.totalUsers}
-                        users
+                        sample set
                     </p>
                 {/if}
 

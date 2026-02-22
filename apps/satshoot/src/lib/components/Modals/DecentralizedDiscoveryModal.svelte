@@ -2,7 +2,7 @@
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import ndk, { BLACKLISTED_RELAYS, discoveredRelays as sessionDiscoveredRelays } from '$lib/stores/session';
-    import { wot } from '$lib/stores/wot';
+    import { getSampledWoTPubkeys } from '$lib/stores/wot';
     import { toaster } from '$lib/stores/toaster';
     import { calculateRelaySet } from '$lib/utils/outboxRelays';
     interface Props {
@@ -32,7 +32,7 @@
             // Step 1: Fetch relay lists from WoT
             currentStep = 1;
 
-            const wotPubkeys = Array.from($wot);
+            const wotPubkeys = getSampledWoTPubkeys();
 
             if (wotPubkeys.length === 0) {
                 throw new Error('No pubkeys in Web of Trust');
@@ -154,7 +154,7 @@
                 {#if currentStep === 1 && totalUsers > 0}
                     <p class="text-sm text-center text-surface-600 dark:text-surface-400">
                         Batch {currentBatch}/{totalBatches} • Found relays for {fetchedUsers}/{totalUsers}
-                        users
+                        sample set
                     </p>
                 {/if}
 
