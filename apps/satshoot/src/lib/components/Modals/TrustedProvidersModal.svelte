@@ -37,7 +37,10 @@
         userProviderConfigLoaded: Readable<boolean>;
         providerTagVerification: Writable<Map<Hexpubkey, ProviderTagVerification>>;
         providerConfigsByKey: Readable<Map<string, TrustedProvider>>;
-        verifyProviderTags: (targetPubkey: Hexpubkey, providers: TrustedProvider[]) => Promise<void>;
+        verifyProviderTags: (
+            targetPubkey: Hexpubkey,
+            providers: TrustedProvider[]
+        ) => Promise<void>;
     };
     const providerTagVerification = assertionStoresAny.providerTagVerification;
     const providerConfigsByKey = assertionStoresAny.providerConfigsByKey;
@@ -53,7 +56,6 @@
     let verifyError = $state<string | null>(null);
     let initialSelectedProviderKeys = $state<Set<string>>(new Set());
     let initialSelectionCaptured = $state(false);
-
 
     const encryptTooltip =
         '<div>' +
@@ -181,7 +183,7 @@
             await discoverExtraCapabilities();
         } catch (error) {
             toaster.error({
-                title: 'Extra tag discovery failed',
+                title: 'Extra capabilities discovery failed',
                 description: error instanceof Error ? error.message : undefined,
             });
         }
@@ -246,7 +248,8 @@
     });
     const selectedProviderCount = $derived.by(() => {
         if (!selectedCapability) return 0;
-        return $selectedProviders.filter((provider) => provider.kindTag === selectedCapability).length;
+        return $selectedProviders.filter((provider) => provider.kindTag === selectedCapability)
+            .length;
     });
 
     const isDiscovering = $derived($extraCapabilityDiscoveryState.status === 'running');
@@ -255,15 +258,15 @@
         const state = $extraCapabilityDiscoveryState;
         const extraCount = discoveredCapabilitiesArray.length;
         if (state.status === 'running') {
-            return `Discovering extra tags: ${state.scannedProviders}/${state.totalProviders} providers`;
+            return `Discovering extra capabilities: ${state.scannedProviders}/${state.totalProviders} providers`;
         }
         if (state.status === 'error') {
-            return state.error ?? 'Extra tag discovery failed.';
+            return state.error ?? 'Extra capabilities discovery failed.';
         }
         if (extraCount > 0) {
-            return `Discovered ${extraCount} extra tags`;
+            return `Discovered ${extraCount} extra capabilities`;
         }
-        return 'No extra tags discovered yet.';
+        return 'No extra capabilities discovered yet.';
     });
 
     const extraDiscoveryStatusClass = $derived.by(() => {
@@ -401,9 +404,7 @@
                     {/each}
                 </div>
 
-                {#if $providerDiscoveryState.step === 1 &&
-                    $providerDiscoveryState.totalUsers > 0 &&
-                    !usedCachedRelays}
+                {#if $providerDiscoveryState.step === 1 && $providerDiscoveryState.totalUsers > 0 && !usedCachedRelays}
                     <p class="text-sm text-center text-gray-500 dark:text-gray-400">
                         Batch {$providerDiscoveryState.currentBatch}/{$providerDiscoveryState.totalBatches}
                         • Found relays for {$providerDiscoveryState.fetchedUsers}/{$providerDiscoveryState.totalUsers}
@@ -465,7 +466,7 @@
                     {/if}
                 </span>
                 <Button variant="outlined" onClick={handleDiscoverExtras} disabled={isDiscovering}>
-                    {isDiscovering ? 'Discovering...' : 'Discover extra tags'}
+                    {isDiscovering ? 'Discovering...' : 'Discover extra capabilities'}
                 </Button>
             </div>
 
@@ -502,7 +503,9 @@
                     <div
                         class="pointer-events-none absolute inset-y-0 left-0 right-8 flex items-center px-2 text-black-700 dark:text-primary-300 z-10"
                     >
-                        <span class="block w-full overflow-x-auto whitespace-nowrap scrollbar-hide sm:max-w-[620px]">
+                        <span
+                            class="block w-full overflow-x-auto whitespace-nowrap scrollbar-hide sm:max-w-[620px]"
+                        >
                             {selectedCapabilityLabel}
                         </span>
                     </div>
@@ -527,7 +530,9 @@
                         </span>
                     </div>
 
-                    <div class="flex flex-col gap-[8px] max-h-[400px] overflow-y-auto scrollbar-hide">
+                    <div
+                        class="flex flex-col gap-[8px] max-h-[400px] overflow-y-auto scrollbar-hide"
+                    >
                         {#each rankedProviders as provider (getProviderKey(provider))}
                             {@const providerKey = getProviderKey(provider)}
                             <TrustedProviderRow
@@ -548,9 +553,7 @@
             {/if}
 
             <!-- Summary -->
-            <div
-                class="flex items-center justify-between p-3 rounded bg-gray-50 dark:bg-gray-800"
-            >
+            <div class="flex items-center justify-between p-3 rounded bg-gray-50 dark:bg-gray-800">
                 <span class="text-sm font-medium">Selected providers:</span>
                 <span class="text-sm font-bold text-primary-600 dark:text-primary-300">
                     {$selectedProviders.length}
@@ -610,9 +613,7 @@
                         Some providers returned no data during verification.
                     </div>
                 {:else if verificationSummary.error > 0}
-                    <div class="text-xs text-amber-600">
-                        Some providers failed verification.
-                    </div>
+                    <div class="text-xs text-amber-600">Some providers failed verification.</div>
                 {:else if verificationSummary.unverified > 0}
                     <div class="text-xs text-amber-600">
                         Some providers are unverified. Run verification to confirm tags.
