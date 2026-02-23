@@ -95,9 +95,9 @@
     const reputationBlockWrapperClasses =
         'transition ease duration-[0.3s] flex flex-col cursor-pointer w-full gap-[5px] hover:text-white p-[10px] rounded-[4px] hover:bg-blue-500 hover:shadow-soft group';
     const satsWrapperClasses =
-        'transition ease duration-[0.3s] w-full flex flex-row flex-wrap gap-[10px] justify-between items-center rounded-[4px] px-[10px] py-[5px] hover:bg-blue-500 group';
+        'transition ease duration-[0.3s] w-full flex flex-row flex-wrap gap-[10px] justify-between items-center rounded-[4px] px-[10px] py-[5px] bg-blue-500 text-white';
     const boltIconWrapperClasses =
-        'flex flex-row gap-[5px] items-center flex-wrap grow-[1] group-hover:border-r-[1px] group-hover:border-r-white-200 group-hover:text-white';
+        'flex flex-row gap-[5px] items-center flex-wrap grow-[1] border-r-[1px] border-r-white-200 text-white';
 </script>
 
 {#if !forUserCard}
@@ -172,9 +172,7 @@
                 {#each financialItems as { title, label, amount }}
                     <div {title} class={satsWrapperClasses}>
                         <p class={boltIconWrapperClasses}>
-                            <i
-                                class="bx bxs-bolt text-black-500 dark:text-white-500 group-hover:text-yellow-500"
-                            ></i>
+                            <i class="bx bxs-bolt text-yellow-500"></i>
                             {label}
                         </p>
                         {#if !reputationService.isInitialized}
@@ -182,7 +180,7 @@
                                 class="placeholder bg-primary-300-600-token animate-pulse w-12"
                             ></div>
                         {:else}
-                            <p class="group-hover:text-white">
+                            <p class="text-white">
                                 {abbreviateNumber(amount) + ' sats'}
                             </p>
                         {/if}
