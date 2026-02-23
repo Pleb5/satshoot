@@ -1,6 +1,6 @@
 import type { Hexpubkey } from '@nostr-dev-kit/ndk';
 import { get } from 'svelte/store';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
     mockAllJobs,
@@ -101,7 +101,7 @@ vi.mock('../stores/user', () => ({
     followsUpdated: mockFollowsUpdated,
 }));
 
-import { myMuteList, networkWoTScores, minWot, useSatShootWoT, wot } from './wot';
+import { getSampledWoTPubkeys, myMuteList, networkWoTScores, minWot, useSatShootWoT, wot } from './wot';
 import currentUser from '../stores/user';
 import { allBids, allJobs, allOrders, allServices } from './freelance-eventstores';
 
@@ -123,6 +123,10 @@ describe('wot store', () => {
         allOrders.set([]);
         allServices.set([]);
         myMuteList.set([]);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
     });
 
     it('adds counterparties from current user deals', () => {
@@ -235,5 +239,61 @@ describe('wot store', () => {
 
         expect(result.has('active-freelancer')).toBe(true);
         expect(result.has('muted-freelancer')).toBe(false);
+    });
+
+    it('returns full WoT when under the sample cap', () => {
+        vi.stubGlobal('navigator', { deviceMemory: 2 });
+
+        networkWoTScores.set(
+            new Map([
+                ['score-1', 5],
+                ['score-2', 6],
+            ])
+        );
+        mockCurrentUserFreelanceFollows.set(new Set(['freelance-a']));
+        mockFreelanceFollowNetwork.set(new Set(['network-a']));
+
+        const sampled = getSampledWoTPubkeys();
+        const wotSet = get(wot);
+
+        expect(sampled.length).toBe(wotSet.size);
+        wotSet.forEach((pubkey) => {
+            expect(sampled).toContain(pubkey);
+        });
+    });
+
+    it('prioritizes freelance and deal links in the sampled set', () => {
+        vi.stubGlobal('navigator', { deviceMemory: 2 });
+        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+        const scores = new Map<Hexpubkey, number>();
+        for (let i = 0; i < 1200; i += 1) {
+            scores.set(`score-${i}`, 10);
+        }
+        networkWoTScores.set(scores);
+
+        mockCurrentUserFreelanceFollows.set(new Set(['priority-freelance']));
+        mockFreelanceFollowNetwork.set(new Set(['priority-network']));
+        allBids.set([
+            {
+                pubkey: 'priority-deal',
+                bidAddress: 'bid-1',
+            } as any,
+        ]);
+        allJobs.set([
+            {
+                pubkey: 'user-a',
+                acceptedBidAddress: 'bid-1',
+            } as any,
+        ]);
+
+        const sampled = getSampledWoTPubkeys();
+
+        expect(sampled).toHaveLength(1200);
+        expect(sampled).toEqual(
+            expect.arrayContaining(['priority-freelance', 'priority-network', 'priority-deal'])
+        );
+
+        randomSpy.mockRestore();
     });
 });

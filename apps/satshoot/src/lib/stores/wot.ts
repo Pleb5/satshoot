@@ -266,6 +266,82 @@ function reservoirSample<T>(
     return sample;
 }
 
+function getDealLinkedPubkeys(currentUserPubkey?: Hexpubkey): Set<Hexpubkey> {
+    if (!currentUserPubkey) return new Set();
+
+    const $allBids = get(allBids);
+    const $allJobs = get(allJobs);
+    const $allOrders = get(allOrders);
+    const $allServices = get(allServices);
+
+    if ($allJobs.length === 0 && $allOrders.length === 0) {
+        return new Set();
+    }
+
+    const bidByAddress = new Map<string, BidEvent>();
+    $allBids.forEach((bid) => {
+        bidByAddress.set(bid.bidAddress, bid);
+    });
+
+    const serviceByAddress = new Map<string, ServiceEvent>();
+    $allServices.forEach((service) => {
+        serviceByAddress.set(service.serviceAddress, service);
+    });
+
+    const dealPairs: Array<[Hexpubkey, Hexpubkey]> = [];
+    const addDealPair = (left?: Hexpubkey, right?: Hexpubkey) => {
+        if (!left || !right || left === right) return;
+        dealPairs.push([left, right]);
+    };
+
+    $allJobs.forEach((job) => {
+        const acceptedBid = job.acceptedBidAddress
+            ? bidByAddress.get(job.acceptedBidAddress)
+            : undefined;
+        addDealPair(job.pubkey, acceptedBid?.pubkey);
+    });
+
+    $allOrders.forEach((order) => {
+        const service = order.referencedServiceAddress
+            ? serviceByAddress.get(order.referencedServiceAddress)
+            : undefined;
+        addDealPair(order.pubkey, service?.pubkey);
+    });
+
+    if (dealPairs.length === 0) return new Set();
+
+    const directDealPartners = new Set<Hexpubkey>();
+    dealPairs.forEach(([left, right]) => {
+        if (left === currentUserPubkey) {
+            directDealPartners.add(right);
+            return;
+        }
+
+        if (right === currentUserPubkey) {
+            directDealPartners.add(left);
+        }
+    });
+
+    if (directDealPartners.size === 0) return new Set();
+
+    const dealLinks = new Set<Hexpubkey>();
+    directDealPartners.forEach((partner) => {
+        dealLinks.add(partner);
+    });
+
+    dealPairs.forEach(([left, right]) => {
+        if (directDealPartners.has(left)) {
+            dealLinks.add(right);
+        }
+
+        if (directDealPartners.has(right)) {
+            dealLinks.add(left);
+        }
+    });
+
+    return dealLinks;
+}
+
 export const getSampledWoTPubkeys = (): Hexpubkey[] => {
     const wotSet = get(wot);
     const totalWot = wotSet.size;
@@ -288,22 +364,38 @@ export const getSampledWoTPubkeys = (): Hexpubkey[] => {
         selected.add(SatShootPubkey);
     }
 
+    const primaryTarget = Math.min(Math.floor(cap * 0.8), cap);
+    const primaryTargetSize = Math.max(primaryTarget, selected.size);
     const remainingCap = Math.max(cap - selected.size, 0);
+
     if (remainingCap === 0) return Array.from(selected);
 
-    const scores = get(networkWoTScores);
-    const rankedEntries = Array.from(scores.entries()).filter(([pubkey]) => wotSet.has(pubkey));
-    rankedEntries.sort((a, b) => b[1] - a[1]);
+    const addPriorityPubkeys = (candidates: Iterable<Hexpubkey>) => {
+        if (selected.size >= primaryTargetSize) return;
 
-    const topTarget = Math.min(Math.floor(remainingCap * 0.8), rankedEntries.length);
-    const targetSize = selected.size + topTarget;
+        for (const pubkey of candidates) {
+            if (selected.size >= primaryTargetSize) break;
+            if (!wotSet.has(pubkey)) continue;
+            selected.add(pubkey);
+        }
+    };
 
-    for (const [pubkey] of rankedEntries) {
-        if (selected.size >= targetSize) break;
-        selected.add(pubkey);
+    addPriorityPubkeys(get(currentUserFreelanceFollows));
+    addPriorityPubkeys(get(freelanceFollowNetwork));
+    addPriorityPubkeys(getDealLinkedPubkeys(user?.pubkey));
+
+    if (selected.size < primaryTargetSize) {
+        const scores = get(networkWoTScores);
+        const rankedEntries = Array.from(scores.entries()).filter(([pubkey]) => wotSet.has(pubkey));
+        rankedEntries.sort((a, b) => b[1] - a[1]);
+
+        for (const [pubkey] of rankedEntries) {
+            if (selected.size >= primaryTargetSize) break;
+            selected.add(pubkey);
+        }
     }
 
-    const randomTarget = Math.min(cap - selected.size, remainingCap);
+    const randomTarget = Math.max(cap - selected.size, 0);
     const randomSample = reservoirSample(wotSet, randomTarget, selected);
     randomSample.forEach((pubkey) => selected.add(pubkey));
 
