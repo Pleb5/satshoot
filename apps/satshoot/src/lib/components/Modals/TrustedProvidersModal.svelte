@@ -6,7 +6,10 @@
     import {
         showTrustedProvidersModal,
         availableCapabilities,
-        getRankedProvidersForCapability,
+        discoveredCapabilities,
+        discoverExtraCapabilities,
+        extraCapabilityDiscoveryState,
+        getProvidersForCapability,
         selectedProviders,
         toggleProviderSelection,
         isProviderSelected,
@@ -85,7 +88,7 @@
     // Load providers for selected capability
     $effect(() => {
         if (selectedCapability) {
-            const providers = getRankedProvidersForCapability(selectedCapability);
+            const providers: RankedProvider[] = getProvidersForCapability(selectedCapability);
 
             if (initialSelectionCaptured && initialSelectedProviderKeys.size > 0) {
                 const selectedFirst = providers.filter((provider) =>
@@ -172,6 +175,18 @@
         }
     }
 
+    async function handleDiscoverExtras() {
+        if ($extraCapabilityDiscoveryState.status === 'running') return;
+        try {
+            await discoverExtraCapabilities();
+        } catch (error) {
+            toaster.error({
+                title: 'Extra tag discovery failed',
+                description: error instanceof Error ? error.message : undefined,
+            });
+        }
+    }
+
     function getProviderKey(provider: RankedProvider): string {
         return `${provider.provider.serviceKey}:${provider.provider.kindTag}`;
     }
@@ -201,20 +216,62 @@
         return recommenders ? Array.from(recommenders) : [];
     }
 
-    // Get capabilities array for iteration
-    $effect(() => {
-        if ($availableCapabilities.size > 0 && !selectedCapability) {
-            const first = Array.from($availableCapabilities)[0];
-            if (first) {
-                selectedCapability = first;
-            }
-        }
+    const popularCapabilitiesArray = $derived.by(() => {
+        const list = Array.from($availableCapabilities) as string[];
+        return list.sort((a, b) =>
+            getCapabilityDisplayName(a).localeCompare(getCapabilityDisplayName(b))
+        );
     });
 
-    const capabilitiesArray = $derived(Array.from($availableCapabilities));
+    const discoveredCapabilitiesArray = $derived.by(() => {
+        const list = (Array.from($discoveredCapabilities) as string[]).filter(
+            (capability) => !$availableCapabilities.has(capability)
+        );
+        return list.sort((a, b) =>
+            getCapabilityDisplayName(a).localeCompare(getCapabilityDisplayName(b))
+        );
+    });
+
+    const hasCapabilities = $derived(
+        popularCapabilitiesArray.length > 0 || discoveredCapabilitiesArray.length > 0
+    );
+
+    // Get capabilities array for iteration
+    $effect(() => {
+        if (selectedCapability) return;
+        const first = popularCapabilitiesArray[0] ?? discoveredCapabilitiesArray[0];
+        if (first) {
+            selectedCapability = first;
+        }
+    });
     const selectedProviderCount = $derived.by(() => {
         if (!selectedCapability) return 0;
         return $selectedProviders.filter((provider) => provider.kindTag === selectedCapability).length;
+    });
+
+    const isDiscovering = $derived($extraCapabilityDiscoveryState.status === 'running');
+
+    const extraDiscoveryStatusText = $derived.by(() => {
+        const state = $extraCapabilityDiscoveryState;
+        const extraCount = discoveredCapabilitiesArray.length;
+        if (state.status === 'running') {
+            return `Discovering extra tags: ${state.scannedProviders}/${state.totalProviders} providers`;
+        }
+        if (state.status === 'error') {
+            return state.error ?? 'Extra tag discovery failed.';
+        }
+        if (extraCount > 0) {
+            return `Discovered ${extraCount} extra tags`;
+        }
+        return 'No extra tags discovered yet.';
+    });
+
+    const extraDiscoveryStatusClass = $derived.by(() => {
+        if ($extraCapabilityDiscoveryState.status === 'error') return 'text-red-500';
+        if ($extraCapabilityDiscoveryState.status === 'running') {
+            return 'text-primary-600 dark:text-primary-300';
+        }
+        return 'text-gray-500 dark:text-gray-400';
     });
 
     const verificationSummary = $derived.by(() => {
@@ -392,7 +449,7 @@
                     {$providerDiscoveryState.error ?? 'Check your relay connections and try again.'}
                 </p>
             </div>
-        {:else if capabilitiesArray.length === 0}
+        {:else if !hasCapabilities}
             <div class="flex flex-col items-center justify-center p-8 gap-2">
                 <p class="text-gray-500">No providers found in your Web of Trust.</p>
                 <p class="text-sm text-gray-400">
@@ -400,6 +457,18 @@
                 </p>
             </div>
         {:else}
+            <div class="flex items-center justify-between text-xs">
+                <span class={extraDiscoveryStatusClass}>
+                    {extraDiscoveryStatusText}
+                    {#if $extraCapabilityDiscoveryState.errors > 0}
+                        {' '}• {$extraCapabilityDiscoveryState.errors} errors
+                    {/if}
+                </span>
+                <Button variant="outlined" onClick={handleDiscoverExtras} disabled={isDiscovering}>
+                    {isDiscovering ? 'Discovering...' : 'Discover extra tags'}
+                </Button>
+            </div>
+
             <!-- Capability selector -->
             <div class="flex flex-col gap-[5px]">
                 <label for="capability-select" class="text-sm font-medium">
@@ -411,11 +480,24 @@
                         bind:value={selectedCapability}
                         class="input p-2 rounded border border-black-100 dark:border-white-100 relative z-0"
                     >
-                        {#each capabilitiesArray as capability}
-                            <option value={capability} class="whitespace-nowrap">
-                                {getCapabilityDisplayName(capability)}
-                            </option>
-                        {/each}
+                        {#if popularCapabilitiesArray.length > 0}
+                            <optgroup label="Popular (WoT)">
+                                {#each popularCapabilitiesArray as capability}
+                                    <option value={capability} class="whitespace-nowrap">
+                                        {getCapabilityDisplayName(capability)}
+                                    </option>
+                                {/each}
+                            </optgroup>
+                        {/if}
+                        {#if discoveredCapabilitiesArray.length > 0}
+                            <optgroup label="Discovered (not used yet)">
+                                {#each discoveredCapabilitiesArray as capability}
+                                    <option value={capability} class="whitespace-nowrap">
+                                        {getCapabilityDisplayName(capability)}
+                                    </option>
+                                {/each}
+                            </optgroup>
+                        {/if}
                     </select>
                     <div
                         class="pointer-events-none absolute inset-y-0 left-0 right-8 flex items-center px-2 text-black-700 dark:text-primary-300 z-10"

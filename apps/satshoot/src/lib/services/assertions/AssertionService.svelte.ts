@@ -239,6 +239,19 @@ export class AssertionService {
         }
     }
 
+    private extractTagNames(event: NDKEvent): string[] {
+        const tags = new Set<string>();
+
+        event.tags.forEach((tag: NDKTag) => {
+            const [name, value] = tag;
+            if (!name || name === 'd') return;
+            if (value === undefined || value === '') return;
+            tags.add(name);
+        });
+
+        return Array.from(tags);
+    }
+
     /**
      * Parse an event assertion (kind 30383)
      */
@@ -510,6 +523,93 @@ export class AssertionService {
         }
 
         return assertions;
+    }
+
+    /**
+     * Fetch the latest user assertion for a provider (any target)
+     */
+    async fetchLatestUserAssertionForProvider(
+        serviceKey: Hexpubkey,
+        relayHints: string[],
+        logEvents = false
+    ): Promise<UserAssertion | null> {
+        try {
+            const relaySet = this.buildRelaySet(relayHints);
+            const filter: NDKFilter = {
+                kinds: [NIP85_USER_ASSERTION_KIND],
+                authors: [serviceKey],
+            };
+
+            const events = await this.fetchAssertionEvents(filter, relaySet);
+            const latestEvent = this.getLatestEvent(events);
+            if (!latestEvent) {
+                if (logEvents) {
+                    console.warn('[nip85] discovery no user assertion event', {
+                        provider: serviceKey,
+                        relayHints: relayHints.length > 0 ? relayHints : 'ndk default relays',
+                        eventCount: events.size,
+                    });
+                }
+                return null;
+            }
+
+            if (logEvents) {
+                const tagNames = Array.from(
+                    new Set(
+                        latestEvent.tags
+                            .map((tag) => tag[0])
+                            .filter((name): name is string => Boolean(name && name !== 'd'))
+                    )
+                );
+                console.warn('[nip85] discovery latest event', {
+                    provider: serviceKey,
+                    id: latestEvent.id,
+                    created_at: latestEvent.created_at,
+                    relayHints: relayHints.length > 0 ? relayHints : 'ndk default relays',
+                    tagNames,
+                    tags: latestEvent.tags,
+                });
+            }
+
+            return this.parseUserAssertion(latestEvent);
+        } catch (error) {
+            console.warn(`Failed to fetch latest user assertion for ${serviceKey}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Fetch tag names from the most recent user assertions for a provider
+     */
+    async fetchRecentUserAssertionTagSummaryForProvider(
+        serviceKey: Hexpubkey,
+        relayHints: string[],
+        limit = 10
+    ): Promise<{ tags: Set<string>; events: { id: string; created_at?: number; tagNames: string[] }[] }> {
+        const relaySet = this.buildRelaySet(relayHints);
+        const filter: NDKFilter = {
+            kinds: [NIP85_USER_ASSERTION_KIND],
+            authors: [serviceKey],
+            limit,
+        };
+
+        const events = await this.fetchAssertionEvents(filter, relaySet);
+        const eventList = Array.from(events).sort(
+            (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
+        );
+        const recentEvents = eventList.slice(0, limit);
+        const tags = new Set<string>();
+        const summaries = recentEvents.map((event) => {
+            const tagNames = this.extractTagNames(event);
+            tagNames.forEach((tag) => tags.add(tag));
+            return {
+                id: event.id ?? 'unknown',
+                created_at: event.created_at,
+                tagNames,
+            };
+        });
+
+        return { tags, events: summaries };
     }
 
     /**

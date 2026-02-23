@@ -14,8 +14,14 @@ import {
     NIP85_PROVIDER_CONFIG_KIND,
     NIP85_USER_ASSERTION_KIND,
 } from '$lib/services/assertions/AssertionProviderConfig.svelte';
-import type { TrustedProvider, ProviderInfo, RankedProvider } from '$lib/services/assertions/types';
+import { AssertionService } from '$lib/services/assertions/AssertionService.svelte';
+import type {
+    TrustedProvider,
+    ProviderInfo,
+    RankedProvider,
+} from '$lib/services/assertions/types';
 import { calculateRelaySet } from '$lib/utils/outboxRelays';
+import { withTimeout } from '$lib/utils/helpers';
 import { getMapSerializer } from '$lib/utils/misc';
 
 /**
@@ -77,6 +83,32 @@ export const providerDiscoveryState: Writable<ProviderDiscoveryState> = writable
     INITIAL_PROVIDER_DISCOVERY_STATE
 );
 
+export type ExtraCapabilityDiscoveryState = {
+    status: 'idle' | 'running' | 'done' | 'error';
+    totalProviders: number;
+    scannedProviders: number;
+    discoveredCapabilities: number;
+    errors: number;
+    lastRun?: number;
+    error?: string;
+};
+
+const INITIAL_EXTRA_CAPABILITY_DISCOVERY_STATE: ExtraCapabilityDiscoveryState = {
+    status: 'idle',
+    totalProviders: 0,
+    scannedProviders: 0,
+    discoveredCapabilities: 0,
+    errors: 0,
+};
+
+export const extraCapabilityDiscoveryState: Writable<ExtraCapabilityDiscoveryState> = writable(
+    INITIAL_EXTRA_CAPABILITY_DISCOVERY_STATE
+);
+
+export const discoveredProviderCapabilities: Writable<Map<Hexpubkey, Set<string>>> = writable(
+    new Map()
+);
+
 /**
  * Modal state
  */
@@ -129,6 +161,20 @@ export const availableCapabilities: Readable<Set<string>> = derived(
         return capabilities;
     }
 );
+
+export const discoveredCapabilities: Readable<Set<string>> = derived(
+    [discoveredProviderCapabilities],
+    ([$discoveredProviderCapabilities]) => {
+        const capabilities = new Set<string>();
+        $discoveredProviderCapabilities.forEach((tags) => {
+            tags.forEach((kindTag) => capabilities.add(kindTag));
+        });
+        return capabilities;
+    }
+);
+
+const PROVIDER_DISCOVERY_TIMEOUT_MS = 2000;
+const DISCOVERY_EVENT_LIMIT = 10;
 
 /**
  * Load provider configurations from Web of Trust
@@ -298,6 +344,181 @@ export async function loadWoTProviderConfigs(): Promise<void> {
 }
 
 /**
+ * Discover extra user-assertion capabilities from providers
+ */
+export async function discoverExtraCapabilities(): Promise<void> {
+    const $ndk = get(ndk);
+    const $wotProviderConfigs = get(wotProviderConfigs);
+    const currentState = get(extraCapabilityDiscoveryState);
+
+    if (currentState.status === 'running') {
+        return;
+    }
+
+    if (!$ndk) {
+        extraCapabilityDiscoveryState.set({
+            ...INITIAL_EXTRA_CAPABILITY_DISCOVERY_STATE,
+            status: 'error',
+            error: 'NDK not ready',
+        });
+        return;
+    }
+
+    if ($wotProviderConfigs.size === 0) {
+        extraCapabilityDiscoveryState.set({
+            ...INITIAL_EXTRA_CAPABILITY_DISCOVERY_STATE,
+            status: 'done',
+        });
+        return;
+    }
+
+    const providerTargets = new Map<Hexpubkey, { relayHints: Set<string> }>();
+
+    $wotProviderConfigs.forEach((providers) => {
+        providers.forEach((provider) => {
+            if (provider.kind !== NIP85_USER_ASSERTION_KIND) return;
+
+            const relayHint = provider.relayHint?.trim();
+            const existing = providerTargets.get(provider.serviceKey);
+            if (!existing) {
+                const relayHints = new Set<string>();
+                if (relayHint) relayHints.add(relayHint);
+                providerTargets.set(provider.serviceKey, { relayHints });
+                return;
+            }
+
+            if (relayHint) {
+                existing.relayHints.add(relayHint);
+            }
+        });
+    });
+
+    const totalProviders = providerTargets.size;
+    if (totalProviders === 0) {
+        extraCapabilityDiscoveryState.set({
+            ...INITIAL_EXTRA_CAPABILITY_DISCOVERY_STATE,
+            status: 'done',
+        });
+        return;
+    }
+
+    const discovered = new Map(get(discoveredProviderCapabilities));
+    extraCapabilityDiscoveryState.set({
+        status: 'running',
+        totalProviders,
+        scannedProviders: 0,
+        discoveredCapabilities: countDiscoveredCapabilities(discovered),
+        errors: 0,
+        lastRun: Date.now(),
+    });
+
+    let scanned = 0;
+    let errors = 0;
+
+    try {
+        const service = new AssertionService($ndk);
+        const $providerInfoMap = get(providerInfoMap);
+
+        for (const [serviceKey, entry] of providerTargets) {
+            try {
+                const relayHints = Array.from(entry.relayHints);
+                const summary = await withTimeout(
+                    service.fetchRecentUserAssertionTagSummaryForProvider(
+                        serviceKey,
+                        relayHints,
+                        DISCOVERY_EVENT_LIMIT
+                    ),
+                    PROVIDER_DISCOVERY_TIMEOUT_MS,
+                    `Provider tag discovery (${serviceKey})`
+                );
+
+                if (!summary) {
+                    errors += 1;
+                    continue;
+                }
+
+                if (summary.tags.size > 0) {
+                    const existing = discovered.get(serviceKey) ?? new Set<string>();
+                    summary.tags.forEach((tag) => existing.add(`${NIP85_USER_ASSERTION_KIND}:${tag}`));
+                    discovered.set(serviceKey, existing);
+                }
+
+                const recommendedTagSet = new Set<string>();
+                const providerInfo = $providerInfoMap.get(serviceKey);
+                if (providerInfo) {
+                    providerInfo.capabilities.forEach((_, kindTag) => {
+                        if (!kindTag.startsWith(`${NIP85_USER_ASSERTION_KIND}:`)) return;
+                        const [, tag] = kindTag.split(':');
+                        if (tag) recommendedTagSet.add(tag);
+                    });
+                }
+
+                const eventStatuses = summary.events.map((event) => {
+                    const tagStatus = event.tagNames.map((tag) => ({
+                        tag,
+                        status: recommendedTagSet.has(tag) ? 'recommended' : 'new',
+                    }));
+                    return {
+                        id: event.id,
+                        created_at: event.created_at,
+                        newTags: tagStatus.filter((item) => item.status === 'new').map((item) => item.tag),
+                        recommendedTagsSeen: tagStatus
+                            .filter((item) => item.status === 'recommended')
+                            .map((item) => item.tag),
+                        tagStatus,
+                    };
+                });
+
+                const summaryTagStatus = Array.from(summary.tags).map((tag) => ({
+                    tag,
+                    status: recommendedTagSet.has(tag) ? 'recommended' : 'new',
+                }));
+
+                console.warn('[nip85] discovery tag status', {
+                    provider: serviceKey,
+                    relayHints,
+                    recommendedTags: Array.from(recommendedTagSet),
+                    summaryTags: Array.from(summary.tags),
+                    summaryTagStatus,
+                    events: eventStatuses,
+                });
+            } catch (error) {
+                errors += 1;
+                console.warn('Failed to discover tags from provider:', error);
+            }
+
+            scanned += 1;
+            extraCapabilityDiscoveryState.update((state) => ({
+                ...state,
+                scannedProviders: scanned,
+                discoveredCapabilities: countDiscoveredCapabilities(discovered),
+                errors,
+            }));
+        }
+
+        discoveredProviderCapabilities.set(discovered);
+        extraCapabilityDiscoveryState.set({
+            status: 'done',
+            totalProviders,
+            scannedProviders: scanned,
+            discoveredCapabilities: countDiscoveredCapabilities(discovered),
+            errors,
+            lastRun: Date.now(),
+        });
+    } catch (error) {
+        extraCapabilityDiscoveryState.set({
+            status: 'error',
+            totalProviders,
+            scannedProviders: scanned,
+            discoveredCapabilities: countDiscoveredCapabilities(discovered),
+            errors: errors + 1,
+            lastRun: Date.now(),
+            error: error instanceof Error ? error.message : 'Discovery failed',
+        });
+    }
+}
+
+/**
  * Load user's selected providers
  */
 export async function loadUserProviderConfig(): Promise<void> {
@@ -367,6 +588,16 @@ function extractAssertionTags(event: NDKEvent): string[] {
     });
 
     return Array.from(tags);
+}
+
+function countDiscoveredCapabilities(
+    discovered: Map<Hexpubkey, Set<string>>
+): number {
+    const capabilities = new Set<string>();
+    discovered.forEach((tags) => {
+        tags.forEach((kindTag) => capabilities.add(kindTag));
+    });
+    return capabilities.size;
 }
 
 export async function verifyProviderTags(
@@ -442,10 +673,55 @@ export async function verifyProviderTags(
 /**
  * Get ranked providers for a specific kind:tag
  */
-export function getRankedProvidersForCapability(kindTag: string): RankedProvider[] {
+export function getProvidersForCapability(kindTag: string): RankedProvider[] {
     const $providerInfoMap = get(providerInfoMap);
+    const $discoveredProviderCapabilities = get(discoveredProviderCapabilities);
     const service = new AssertionProviderConfig(get(ndk));
-    return service.getRankedProvidersForKindTag(kindTag, $providerInfoMap);
+    const ranked = service.getRankedProvidersForKindTag(kindTag, $providerInfoMap);
+    const existingServiceKeys = new Set(ranked.map((entry) => entry.provider.serviceKey));
+
+    const [kind, tag] = kindTag.split(':');
+    const kindValue = Number.parseInt(kind, 10);
+    if (!Number.isNaN(kindValue) && tag) {
+        $discoveredProviderCapabilities.forEach((capabilities, serviceKey) => {
+            if (!capabilities.has(kindTag)) return;
+            if (existingServiceKeys.has(serviceKey)) return;
+
+            const info = $providerInfoMap.get(serviceKey);
+            if (!info) return;
+
+            ranked.push({
+                provider: {
+                    kindTag,
+                    serviceKey,
+                    relayHint: info.relayHint,
+                    kind: kindValue,
+                    tag,
+                },
+                usageCount: 0,
+                name: info.name,
+                about: info.about,
+                picture: info.picture,
+                website: info.website,
+            });
+        });
+    }
+
+    ranked.sort((a, b) => {
+        if (a.usageCount !== b.usageCount) return b.usageCount - a.usageCount;
+        const aLabel = a.name ?? a.provider.serviceKey;
+        const bLabel = b.name ?? b.provider.serviceKey;
+        return aLabel.localeCompare(bLabel);
+    });
+
+    return ranked;
+}
+
+/**
+ * Backwards-compatible helper
+ */
+export function getRankedProvidersForCapability(kindTag: string): RankedProvider[] {
+    return getProvidersForCapability(kindTag);
 }
 
 /**

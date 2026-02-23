@@ -125,7 +125,7 @@ const WALLET_INIT_TIMEOUT = 5000;
 let walletDecryptToastShownGlobal = false;
 const WALLET_INIT_LOG_PREFIX = "[wallet:init]";
 
-async function withTimeout<T>(
+export async function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
   label: string
