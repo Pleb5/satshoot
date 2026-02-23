@@ -135,10 +135,13 @@ async function fetchEventsWithTimeout(
 }
 
 function getConnectedRelaySet(ndk: NDK) {
-  const relays = Array.from(ndk.pool?.relays?.values() ?? []);
-  const relayUrls = relays
-    .filter((relay) => ('connected' in relay ? relay.connected : true))
-    .map((relay) => relay.url);
+  const poolRelays = Array.from(ndk.pool?.relays?.values() ?? []);
+  const outboxRelays = Array.from(ndk.outboxPool?.relays?.values() ?? []);
+  const relayUrls = Array.from(new Set(
+    [...poolRelays, ...outboxRelays]
+      .map((relay) => relay.url)
+      .filter((url) => url.length > 0)
+  ));
 
   if (relayUrls.length === 0) return undefined;
 

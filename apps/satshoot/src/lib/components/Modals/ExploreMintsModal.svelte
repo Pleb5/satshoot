@@ -1,13 +1,17 @@
 <script lang="ts">
-    import ndk from '$lib/stores/session';
+    import ndk, {
+        BLACKLISTED_RELAYS,
+        discoveredRelays as sessionDiscoveredRelays,
+    } from '$lib/stores/session';
     import {
         NDKCashuWallet,
         type MintUrl,
     } from '@nostr-dev-kit/ndk-wallet';
 
     import CashuMintListItem from '$lib/components/Mints/Item.svelte';
-    import { wot } from '$lib/stores/wot';
+    import { getSampledWoTPubkeys, wot } from '$lib/stores/wot';
     import { getCashuMintRecommendations } from '$lib/wallet/cashu';
+    import { calculateRelaySet } from '$lib/utils/outboxRelays';
     import Button from '../UI/Buttons/Button.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
     import { toaster } from '$lib/stores/toaster';
@@ -37,6 +41,33 @@
             >
     );
 
+    const sanitizeRelayUrls = (relays: string[]) =>
+        relays
+            .map((relay) => relay.trim())
+            .filter((relay) => relay.length > 0)
+            .filter((relay) => !BLACKLISTED_RELAYS.has(relay));
+
+    async function resolveRecommendationRelaySet(): Promise<void> {
+        let relayUrls = sanitizeRelayUrls($sessionDiscoveredRelays);
+
+        if (relayUrls.length === 0) {
+            const wotPubkeys = getSampledWoTPubkeys();
+            if (wotPubkeys.length > 0) {
+                const discovered = await calculateRelaySet(wotPubkeys, $ndk);
+                relayUrls = sanitizeRelayUrls(discovered);
+
+                if (relayUrls.length > 0) {
+                    sessionDiscoveredRelays.set(relayUrls.slice(0, 5));
+                }
+            }
+        }
+
+        relayUrls.forEach((relayUrl) => {
+            $ndk.addExplicitRelay(relayUrl, undefined, true);
+        });
+
+    }
+
     $effect(() => {
         if (cashuWallet) {
             selectedMints = [...cashuWallet.mints];
@@ -57,11 +88,13 @@
         recommendationsLoading = true;
 
         const wotSnapshot = new Set($wot);
-        getCashuMintRecommendations($ndk, wotSnapshot)
-            .then((res) => {
+
+        (async () => {
+            try {
+                await resolveRecommendationRelaySet();
+                const res = await getCashuMintRecommendations($ndk, wotSnapshot);
                 recommendations = res as Record<MintUrl, MintRecommendationUsage>;
-            })
-            .catch((err) => {
+            } catch (err) {
                 console.error(`An error occurred in getting cashu mint recommendations`, err);
                 recommendationsError =
                     'Unable to load mint recommendations from your Web of Trust. Please try again.';
@@ -69,10 +102,10 @@
                     title: 'An error occurred in getting cashu mint recommendations',
                     duration: 60000, // 1 min
                 });
-            })
-            .finally(() => {
+            } finally {
                 recommendationsLoading = false;
-            });
+            }
+        })();
     });
 
     function toggleMintSelection(mintUrl: MintUrl, isSelected: boolean) {
@@ -98,7 +131,7 @@
                     Fetching mint recommendations from your Web of Trust.
                 </p>
                 <p class="text-xs text-black-300 dark:text-white-300">
-                    Using connected relays and cached data. This usually takes a few seconds.
+                    Using Web of Trust relays (cached when available). First run may take longer.
                 </p>
             </div>
         {:else if recommendationsError}
