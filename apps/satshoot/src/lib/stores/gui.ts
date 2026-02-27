@@ -36,6 +36,7 @@ export const bidFilter = persisted('bidFilter', {
 export enum NotificationTabs {
     Follows,
     Zaps,
+    NutzapsPayments,
     Jobs,
     Services,
     Messages,

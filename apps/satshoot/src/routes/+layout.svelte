@@ -54,6 +54,7 @@
     import { sendNotification } from '$lib/stores/notifications';
     import { allReviews, clientReviews, freelancerReviews } from '$lib/stores/reviews';
     import { allReceivedZaps, filteredReceivedZaps } from '$lib/stores/zaps';
+    import { filteredSentNutzaps } from '$lib/stores/sent-nutzaps';
     import { walletStatus } from '$lib/wallet/wallet';
     import { loadUserProviderConfig } from '$lib/stores/assertions';
 
@@ -114,7 +115,6 @@
     import LogoutModal from '$lib/components/Modals/LogoutModal.svelte';
     import DecentralizedDiscoveryModal from '$lib/components/Modals/DecentralizedDiscoveryModal.svelte';
     import TrustedProvidersModal from '$lib/components/Modals/TrustedProvidersModal.svelte';
-
     interface Props {
         children?: import('svelte').Snippet;
     }
@@ -943,6 +943,14 @@
         if ($filteredReceivedZaps && $currentUser) {
             $filteredReceivedZaps.forEach((zap: NDKEvent) => {
                 sendNotification(zap);
+            });
+        }
+    });
+
+    $effect(() => {
+        if ($filteredSentNutzaps && $currentUser) {
+            $filteredSentNutzaps.forEach((tx: NDKEvent) => {
+                sendNotification(tx);
             });
         }
     });
