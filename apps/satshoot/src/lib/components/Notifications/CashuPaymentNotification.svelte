@@ -20,6 +20,8 @@
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
     import Avatar from '../Users/Avatar.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import { wallet } from '$lib/wallet/wallet';
 
     interface Props {
         notification: NDKEvent;
@@ -42,6 +44,10 @@
     let job: JobEvent | null = $state(null);
     let service: ServiceEvent | null = $state(null);
 
+    let locktime: number = $state(-1);
+    let claimableByUser = $state(false);
+    const currentMillis = new Date().getTime();
+
     function nutzapFromEvent(notification: NDKEvent): NDKNutzap {
         if (notification.kind === NDKKind.Nutzap) {
             const nutzap = NDKNutzap.from(notification);
@@ -51,6 +57,32 @@
     }
 
     onMount(async () => {
+        // Initialize the p2pk property
+        await $wallet?.getP2pk();
+
+        // Initialize state for claiming proofs
+        const proof = nutzap.proofs.length ? nutzap.proofs[0] : undefined;
+        if (proof && proof.secret.startsWith('[')) {
+            const secret = JSON.parse(proof.secret);
+            if (Array.isArray(secret) && secret.length === 2 && secret[0] === "P2PK") {
+                const secretObj = secret[1];
+                if ("tags" in secretObj) {
+                    for (const tag of secretObj.tags) {
+                        if (tag[0] === "locktime") {
+                            locktime = Number.parseInt(tag[1]);
+                            //console.log("Locktime: " + locktime);
+                        }
+                        if (tag[0] === "refund") {
+                            const refundKey = (tag[1] as string).slice(2);
+                            const pubkey = $wallet?._p2pk;
+                            claimableByUser = refundKey === pubkey;
+                            //console.log("Tags: " + JSON.stringify(secretObj.tags));
+                        }
+                    }
+                }
+            }
+        }
+
         // Event
         let dTag: string | undefined;
         let zappedKind: number = -1;
@@ -145,6 +177,17 @@
 
         return classes;
     });
+
+    async function onClaimNutzap() {
+        const privateKey = $wallet?.privkeys.get($wallet._p2pk!)?.privateKey;
+        if (!privateKey) {
+            console.error("Invalid wallet state: get find private key!");
+            return;
+        }
+        await $wallet?.redeemNutzaps([nutzap], privateKey, { mint: nutzap.mint, proofs: nutzap.proofs });
+        // TODO (rodant): Show a notification to  the user.
+        console.log("nutzap redeemed!");
+    }
 </script>
 
 <Card
@@ -186,5 +229,11 @@
                 {/if}
             </div>
         </div>
+        {#if claimableByUser}
+            <Button variant="text" classes="p-[5px] text-white hover:bg-blue-600" disabled={!!(locktime && locktime < currentMillis)} onClick={onClaimNutzap}>
+                <i class="bx bx-clock bx-sm"></i>
+                Claim eCash
+            </Button>
+        {/if}
     </div>
 </Card>

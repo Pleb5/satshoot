@@ -125,7 +125,8 @@ export class CashuPaymentService {
     async processPayment(
         freelancerShareMillisats: number,
         satshootSumMillisats: number,
-        sponsoredSumMillisats: number
+        sponsoredSumMillisats: number,
+        lockDays?: number
     ): Promise<Map<UserEnum, boolean>> {
         const paid = new Map<UserEnum, boolean>([
             [UserEnum.Freelancer, false],
@@ -177,7 +178,7 @@ export class CashuPaymentService {
         const errors: Array<{ index: number; error: unknown }> = [];
         for (const task of tasks) {
             try {
-                await this.processCashuPayment(task.userType, task.pubkey, task.amountMillisats);
+                await this.processCashuPayment(task.userType, task.pubkey, task.amountMillisats, lockDays);
                 paid.set(task.userType, true);
             } catch (error) {
                 errors.push({ index: task.index, error });
@@ -198,7 +199,8 @@ export class CashuPaymentService {
     private async processCashuPayment(
         userType: UserEnum,
         pubkey: string,
-        amountMillisats: number
+        amountMillisats: number,
+        lockDays?: number
     ): Promise<void> {
         if (amountMillisats === 0) return;
 
@@ -229,10 +231,13 @@ export class CashuPaymentService {
         // Process the payment
         cashuInfo.allowIntramintFallback = false;
 
-        const p2pk = {
-            locktime: new Date().getMilliseconds() + 14 * 24 * 60 * 60 * 1000, // TODO (rodant): 2 weeks, allow setting in UI
-            refundKeys: [walletInstance.p2pk]
-        };
+        const oneDayMillis = 24 * 60 * 60 * 1000;
+        const locktime = lockDays ? new Date().getTime() + lockDays * 1000 : 0; //TODO (rodant): use oneDayMillis instead
+        const p2pk = locktime ?
+            {
+                locktime,
+                refundKeys: [await walletInstance.getP2pk()]
+            } : undefined;
         const cashuResult = await walletInstance
             .cashuPay({
                 ...cashuInfo,
