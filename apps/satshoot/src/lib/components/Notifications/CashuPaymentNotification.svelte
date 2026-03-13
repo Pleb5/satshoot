@@ -22,6 +22,7 @@
     import Avatar from '../Users/Avatar.svelte';
     import Button from '../UI/Buttons/Button.svelte';
     import { wallet } from '$lib/wallet/wallet';
+    import { CheckStateEnum } from '@cashu/cashu-ts';
 
     interface Props {
         notification: NDKEvent;
@@ -70,13 +71,15 @@
                     for (const tag of secretObj.tags) {
                         if (tag[0] === "locktime") {
                             locktime = Number.parseInt(tag[1]);
-                            //console.log("Locktime: " + locktime);
                         }
                         if (tag[0] === "refund") {
                             const refundKey = (tag[1] as string).slice(2);
                             const pubkey = $wallet?._p2pk;
-                            claimableByUser = refundKey === pubkey;
-                            //console.log("Tags: " + JSON.stringify(secretObj.tags));
+                            if (refundKey === pubkey) {
+                                const cashuWallet = await $wallet?.getCashuWallet(nutzap.mint, $wallet.bip39seed)!;
+                                const proofStates = await cashuWallet.checkProofsStates(nutzap.proofs);
+                                claimableByUser = proofStates.filter(ps => ps.state === CheckStateEnum.UNSPENT).length > 0;
+                            }
                         }
                     }
                 }
@@ -230,7 +233,7 @@
             </div>
         </div>
         {#if claimableByUser}
-            <Button variant="text" classes="p-[5px] text-white hover:bg-blue-600" disabled={!!(locktime && locktime < currentMillis)} onClick={onClaimNutzap}>
+            <Button variant="text" classes="p-[5px] text-white hover:bg-blue-600" disabled={!(locktime && locktime < currentMillis)} onClick={onClaimNutzap}>
                 <i class="bx bx-clock bx-sm"></i>
                 Claim eCash
             </Button>
