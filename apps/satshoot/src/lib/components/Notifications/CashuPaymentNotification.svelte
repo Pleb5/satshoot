@@ -45,9 +45,9 @@
     let job: JobEvent | null = $state(null);
     let service: ServiceEvent | null = $state(null);
 
-    let locktime: number = $state(-1);
+    let locktime: number = $state(Number.POSITIVE_INFINITY);
     let claimableByUser = $state(false);
-    const currentMillis = new Date().getTime();
+    let currentSeconds = $state(Number.NEGATIVE_INFINITY);
 
     function nutzapFromEvent(notification: NDKEvent): NDKNutzap {
         if (notification.kind === NDKKind.Nutzap) {
@@ -60,31 +60,6 @@
     onMount(async () => {
         // Initialize the p2pk property
         await $wallet?.getP2pk();
-
-        // Initialize state for claiming proofs
-        const proof = nutzap.proofs.length ? nutzap.proofs[0] : undefined;
-        if (proof && proof.secret.startsWith('[')) {
-            const secret = JSON.parse(proof.secret);
-            if (Array.isArray(secret) && secret.length === 2 && secret[0] === "P2PK") {
-                const secretObj = secret[1];
-                if ("tags" in secretObj) {
-                    for (const tag of secretObj.tags) {
-                        if (tag[0] === "locktime") {
-                            locktime = Number.parseInt(tag[1]);
-                        }
-                        if (tag[0] === "refund") {
-                            const refundKey = (tag[1] as string).slice(2);
-                            const pubkey = $wallet?._p2pk;
-                            if (refundKey === pubkey) {
-                                const cashuWallet = await $wallet?.getCashuWallet(nutzap.mint, $wallet.bip39seed)!;
-                                const proofStates = await cashuWallet.checkProofsStates(nutzap.proofs);
-                                claimableByUser = proofStates.filter(ps => ps.state === CheckStateEnum.UNSPENT).length > 0;
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         // Event
         let dTag: string | undefined;
@@ -128,6 +103,42 @@
                         });
                         if (serviceEvent) {
                             service = ServiceEvent.from(serviceEvent);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    $effect(async () => {
+        currentSeconds = Math.floor(Date.now() / 1000);
+
+        // Initialize state for claiming proofs
+        const proof = nutzap.proofs.length ? nutzap.proofs[0] : undefined;
+        if (proof && proof.secret.startsWith('[')) {
+            const secret = JSON.parse(proof.secret);
+            if (Array.isArray(secret) && secret.length === 2 && secret[0] === "P2PK") {
+                const secretObj = secret[1];
+                if ("tags" in secretObj) {
+                    for (const tag of secretObj.tags) {
+                        if (tag[0] === "locktime") {
+                            locktime = Number.parseInt(tag[1]);
+                        }
+                        if (tag[0] === "refund") {
+                            const refundKey = (tag[1] as string).slice(2);
+                            const pubkey = $wallet?._p2pk;
+                            if (refundKey === pubkey) {
+                                const cashuWallet = await $wallet?.getCashuWallet(nutzap.mint, $wallet.bip39seed)!;
+                                const proofStates = await cashuWallet.checkProofsStates(nutzap.proofs);
+                                claimableByUser = proofStates.filter(ps => {
+                                    if (ps.state === CheckStateEnum.UNSPENT) {
+                                        console.log("=> Nutzap: " + nutzap.id);
+                                        console.log(`locktime: ${locktime}`);
+                                        console.log("Current Time in Seconds: " + currentSeconds);
+                                    }
+                                    return ps.state === CheckStateEnum.UNSPENT
+                                }).length > 0;
+                            }
                         }
                     }
                 }
@@ -233,7 +244,7 @@
             </div>
         </div>
         {#if claimableByUser}
-            <Button variant="text" classes="p-[5px] text-white hover:bg-blue-600" disabled={!(locktime && locktime < currentMillis)} onClick={onClaimNutzap}>
+            <Button variant="text" classes="p-[5px] text-white hover:bg-blue-600" disabled={!(locktime && locktime < currentSeconds)} onClick={onClaimNutzap}>
                 <i class="bx bx-clock bx-sm"></i>
                 Claim eCash
             </Button>
