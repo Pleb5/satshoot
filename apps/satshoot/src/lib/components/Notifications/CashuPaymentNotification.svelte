@@ -23,6 +23,8 @@
     import Button from '../UI/Buttons/Button.svelte';
     import { wallet } from '$lib/wallet/wallet';
     import { CheckStateEnum } from '@cashu/cashu-ts';
+    import { toaster } from '$lib/stores/toaster';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     interface Props {
         notification: NDKEvent;
@@ -48,6 +50,7 @@
     let locktime: number = $state(Number.POSITIVE_INFINITY);
     let claimableByUser = $state(false);
     let currentSeconds = $state(Number.NEGATIVE_INFINITY);
+    let claiming = $state(false);
 
     function nutzapFromEvent(notification: NDKEvent): NDKNutzap {
         if (notification.kind === NDKKind.Nutzap) {
@@ -193,14 +196,34 @@
     });
 
     async function onClaimNutzap() {
+        claiming = true;
         const privateKey = $wallet?.privkeys.get($wallet._p2pk!)?.privateKey;
         if (!privateKey) {
+            claiming = false;
+            toaster.error({
+                title: "An unexpected error occurred!",
+                duration: 3000,
+            });
             console.error("Invalid wallet state: get find private key!");
             return;
         }
-        await $wallet?.redeemNutzaps([nutzap], privateKey, { mint: nutzap.mint, proofs: nutzap.proofs });
-        // TODO (rodant): Show a notification to  the user.
-        console.log("nutzap redeemed!");
+        try {
+            await $wallet?.redeemNutzaps([nutzap], privateKey, { mint: nutzap.mint, proofs: nutzap.proofs });
+            claimableByUser = false;
+            toaster.success({
+                title: "Payment redeemed",
+                duration: 3000,
+            });
+            console.info("nutzap redeemed!");
+        } catch(e) {
+            toaster.error({
+                title: "Claiming the nutzap failed",
+                duration: 3000,
+            });
+            console.error("Error redeeming nutzap: " + e);
+        } finally {
+            claiming = false;
+        }
     }
 </script>
 
@@ -244,9 +267,13 @@
             </div>
         </div>
         {#if claimableByUser}
-            <Button variant="text" classes="p-[5px] text-white hover:bg-blue-600" disabled={!(locktime && locktime < currentSeconds)} onClick={onClaimNutzap}>
-                <i class="bx bx-clock bx-sm"></i>
-                Claim eCash
+            <Button variant="contained" classes="max-h-[36px] self-center" disabled={!(locktime && locktime < currentSeconds)} onClick={onClaimNutzap}>
+                {#if claiming}
+                    <ProgressRing color="white" />
+                {:else}
+                    <i class="bx bx-clock bx-xsm"></i>
+                    Claim
+                {/if}
             </Button>
         {/if}
     </div>
