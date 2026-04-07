@@ -22,6 +22,8 @@
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
     import Avatar from '../Users/Avatar.svelte';
+    import currentUser from '$lib/stores/user';
+    import TooltipIcon from '../Icons/TooltipIcon.svelte';
 
     interface Props {
         notification: NDKEvent;
@@ -51,6 +53,7 @@
     let zappedOrder: OrderEvent | null = $state(null);
     let job: JobEvent | null = $state(null);
     let service: ServiceEvent | null = $state(null);
+    let redeemedByCurrentUser = $state(true);
 
     onMount(async () => {
         // Amount
@@ -60,6 +63,18 @@
             const nutzap = await NDKNutzap.from(notification);
             if (nutzap?.amount) {
                 amount = Math.round(nutzap.amount);
+                const secret = nutzap.proofs[0].secret;
+                const secretObj = JSON.parse(secret);
+                if (Array.isArray(secretObj) && secretObj[1].tags.length) {
+                    const filter: NDKFilter = {
+                        kinds: [NDKKind.CashuWalletTx],
+                        '#e': [nutzap.id]
+                    };
+                    const event = await $ndk.fetchEvent(filter);
+                    if (event && event.pubkey !== $currentUser?.pubkey) {
+                        redeemedByCurrentUser = false;
+                    }
+                }
             }
         }
 
@@ -195,6 +210,9 @@
                     </a>
                 {:else}
                     <div class="w-32 placeholder animate-pulse bg-blue-600"></div>
+                {/if}
+                {#if !redeemedByCurrentUser}
+                    <TooltipIcon iconClasses="bx bx-alert-triangle bx-xsm text-yellow-200" popUpText="Your redemption timeout expired and the funds got claimed back by the payer."></TooltipIcon>
                 {/if}
             </div>
         </div>
