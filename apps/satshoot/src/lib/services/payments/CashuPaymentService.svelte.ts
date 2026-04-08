@@ -232,7 +232,7 @@ export class CashuPaymentService {
         cashuInfo.allowIntramintFallback = false;
 
         const oneDayMillis = 24 * 60 * 60 * 1000;
-        const locktime = Math.floor((lockDays ? Date.now() + lockDays * 60 * 1000 : 0) / 1000); //TODO (rodant): use oneDayMillis instead
+        const locktime = Math.floor((lockDays ? Date.now() + lockDays * oneDayMillis : 0) / 1000);
         const p2pk = locktime ?
             {
                 pubkey: cashuInfo.p2pk!,
