@@ -133,14 +133,7 @@
                             if (refundKey === pubkey) {
                                 const cashuWallet = await $wallet?.getCashuWallet(nutzap.mint, $wallet.bip39seed)!;
                                 const proofStates = await cashuWallet.checkProofsStates(nutzap.proofs);
-                                claimableByUser = proofStates.filter(ps => {
-                                    if (ps.state === CheckStateEnum.UNSPENT) {
-                                        console.log("=> Nutzap: " + nutzap.id);
-                                        console.log(`locktime: ${locktime}`);
-                                        console.log("Current Time in Seconds: " + currentSeconds);
-                                    }
-                                    return ps.state === CheckStateEnum.UNSPENT
-                                }).length > 0;
+                                claimableByUser = proofStates.filter(ps => ps.state === CheckStateEnum.UNSPENT).length > 0;
                             }
                         }
                     }
