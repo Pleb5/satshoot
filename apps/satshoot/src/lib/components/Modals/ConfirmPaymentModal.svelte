@@ -30,7 +30,7 @@
     let defaultLightningAddress = $state('');
     let hasManualLightningAddress = $state(false);
     let claimable = $state(false);
-    let lockDays = $state(0);
+    let lockDays = $state(14);
 
     $effect(() => {
         if (!isOpen || !payeePubkey || paymentMethod !== 'LN') return;
