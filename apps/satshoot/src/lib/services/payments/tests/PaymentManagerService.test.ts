@@ -144,7 +144,8 @@ describe('PaymentManagerService', () => {
             expect(mockLightningService.processPayment).toHaveBeenCalledWith(
                 100000, // freelancerShareMillisats
                 10000,  // satshootSumMillisats
-                5000    // sponsoredSumMillisats
+                5000,    // sponsoredSumMillisats
+                undefined
             );
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
 
@@ -166,7 +167,8 @@ describe('PaymentManagerService', () => {
             expect(mockLightningService.processPayment).toHaveBeenCalledWith(
                 100000, // freelancerShareMillisats
                 0,      // satshootSumMillisats (zeroed)
-                0       // sponsoredSumMillisats (zeroed)
+                0,       // sponsoredSumMillisats (zeroed)
+                undefined
             );
 
             // Only freelancer toast should be shown
@@ -194,7 +196,8 @@ describe('PaymentManagerService', () => {
             expect(mockLightningService.processPayment).toHaveBeenCalledWith(
                 0,      // freelancerShareMillisats (zeroed)
                 10000,  // satshootSumMillisats
-                0       // sponsoredSumMillisats (zeroed)
+                0,       // sponsoredSumMillisats (zeroed)
+                undefined
             );
 
             // Only satshoot toast should be shown
@@ -222,7 +225,8 @@ describe('PaymentManagerService', () => {
             expect(mockLightningService.processPayment).toHaveBeenCalledWith(
                 0,     // freelancerShareMillisats (zeroed)
                 0,     // satshootSumMillisats (zeroed)
-                5000   // sponsoredSumMillisats
+                5000,   // sponsoredSumMillisats
+                undefined
             );
 
             // Only sponsored toast should be shown
@@ -250,7 +254,7 @@ describe('PaymentManagerService', () => {
 
             // Verify - all payments attempted
             expect(mockLightningService.processPayment).toHaveBeenCalledWith(
-                100000, 10000, 5000
+                100000, 10000, 5000, undefined
             );
 
             // Toast service should be called for all payments with appropriate status
@@ -380,7 +384,8 @@ describe('PaymentManagerService', () => {
             expect(mockCashuService.processPayment).toHaveBeenCalledWith(
                 100000, // freelancerShareMillisats
                 10000,  // satshootSumMillisats
-                5000    // sponsoredSumMillisats
+                5000,    // sponsoredSumMillisats
+                undefined
             );
             expect(mockPaymentService.resetPaymentState).toHaveBeenCalledOnce();
 
@@ -402,7 +407,8 @@ describe('PaymentManagerService', () => {
             expect(mockCashuService.processPayment).toHaveBeenCalledWith(
                 100000, // freelancerShareMillisats
                 0,      // satshootSumMillisats (zeroed)
-                0       // sponsoredSumMillisats (zeroed)
+                0,       // sponsoredSumMillisats (zeroed)
+                undefined
             );
 
             // Only freelancer toast should be shown
@@ -430,7 +436,8 @@ describe('PaymentManagerService', () => {
             expect(mockCashuService.processPayment).toHaveBeenCalledWith(
                 0,      // freelancerShareMillisats (zeroed)
                 10000,  // satshootSumMillisats
-                0       // sponsoredSumMillisats (zeroed)
+                0,       // sponsoredSumMillisats (zeroed)
+                undefined
             );
 
             // Only satshoot toast should be shown
@@ -458,7 +465,8 @@ describe('PaymentManagerService', () => {
             expect(mockCashuService.processPayment).toHaveBeenCalledWith(
                 0,     // freelancerShareMillisats (zeroed)
                 0,     // satshootSumMillisats (zeroed)
-                5000   // sponsoredSumMillisats
+                5000,   // sponsoredSumMillisats
+                undefined
             );
 
             // Only sponsored toast should be shown
@@ -575,7 +583,7 @@ describe('PaymentManagerService', () => {
 
             // Verify all payments attempted
             expect(mockCashuService.processPayment).toHaveBeenCalledWith(
-                100000, 10000, 5000
+                100000, 10000, 5000, undefined
             );
 
             // Toast service should handle mixed results
