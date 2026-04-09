@@ -88,6 +88,13 @@ export interface RankedProvider {
     website?: string;
 }
 
+export interface ProviderWebsiteRecommendation {
+    website: string;
+    usageCount: number;
+    serviceKeys: Hexpubkey[];
+    capabilityCount: number;
+}
+
 /**
  * Aggregated provider info by service key
  */

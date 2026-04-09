@@ -6,7 +6,12 @@ import {
     type Hexpubkey,
     type NDKFilter,
 } from '@nostr-dev-kit/ndk';
-import type { TrustedProvider, ProviderInfo, RankedProvider } from './types';
+import type {
+    TrustedProvider,
+    ProviderInfo,
+    RankedProvider,
+    ProviderWebsiteRecommendation,
+} from './types';
 
 /**
  * NIP-85 Kind for Provider Configuration
@@ -20,6 +25,90 @@ export const NIP85_USER_ASSERTION_KIND = 30382;
 export const NIP85_EVENT_ASSERTION_KIND = 30383;
 export const NIP85_ADDRESSABLE_ASSERTION_KIND = 30384;
 export const NIP85_EXTERNAL_ASSERTION_KIND = 30385;
+
+export function normalizeProviderWebsite(value: string | undefined): string {
+    const raw = (value ?? '').trim();
+
+    if (!raw) return '';
+
+    const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+    try {
+        const url = new URL(withScheme);
+        const hostname = url.hostname.toLowerCase().replace(/^www\./, '');
+        const pathname = url.pathname.replace(/\/+$/, '');
+
+        if (!hostname) return '';
+
+        return `${url.protocol}//${hostname}${pathname}`;
+    } catch {
+        return '';
+    }
+}
+
+export function displayProviderWebsite(value: string | undefined): string {
+    const normalized = normalizeProviderWebsite(value);
+
+    if (!normalized) return '';
+
+    try {
+        const url = new URL(normalized);
+        return `${url.hostname}${url.pathname === '/' ? '' : url.pathname}`;
+    } catch {
+        return normalized;
+    }
+}
+
+export function aggregateProviderWebsiteRecommendations(
+    providerConfigs: Map<Hexpubkey, TrustedProvider[]>,
+    providerInfoMap: Map<Hexpubkey, ProviderInfo>
+): ProviderWebsiteRecommendation[] {
+    const websiteMap = new Map<
+        string,
+        {
+            recommenders: Set<Hexpubkey>;
+            serviceKeys: Set<Hexpubkey>;
+            capabilities: Set<string>;
+        }
+    >();
+
+    providerConfigs.forEach((providers, recommender) => {
+        const seenWebsites = new Set<string>();
+
+        providers.forEach((provider) => {
+            const website = normalizeProviderWebsite(providerInfoMap.get(provider.serviceKey)?.website);
+            if (!website) return;
+
+            const existing = websiteMap.get(website) ?? {
+                recommenders: new Set<Hexpubkey>(),
+                serviceKeys: new Set<Hexpubkey>(),
+                capabilities: new Set<string>(),
+            };
+
+            existing.serviceKeys.add(provider.serviceKey);
+            existing.capabilities.add(provider.kindTag);
+
+            if (!seenWebsites.has(website)) {
+                existing.recommenders.add(recommender);
+                seenWebsites.add(website);
+            }
+
+            websiteMap.set(website, existing);
+        });
+    });
+
+    return Array.from(websiteMap.entries())
+        .map(([website, aggregate]) => ({
+            website,
+            usageCount: aggregate.recommenders.size,
+            serviceKeys: Array.from(aggregate.serviceKeys).sort((a, b) => a.localeCompare(b)),
+            capabilityCount: aggregate.capabilities.size,
+        }))
+        .sort((a, b) => {
+            if (a.usageCount !== b.usageCount) return b.usageCount - a.usageCount;
+            return a.website.localeCompare(b.website);
+        });
+}
 
 /**
  * Service to manage NIP-85 Trusted Assertion Provider configurations
@@ -222,7 +311,7 @@ export class AssertionProviderConfig {
                 info.name = profile.name;
                 info.about = profile.about;
                 info.picture = profile.picture;
-                info.website = profile.website;
+                info.website = normalizeProviderWebsite(profile.website);
             } catch (e) {
                 console.warn('Failed to parse provider metadata', e);
             }

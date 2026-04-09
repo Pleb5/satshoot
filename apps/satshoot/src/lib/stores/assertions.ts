@@ -13,12 +13,14 @@ import {
     AssertionProviderConfig,
     NIP85_PROVIDER_CONFIG_KIND,
     NIP85_USER_ASSERTION_KIND,
+    aggregateProviderWebsiteRecommendations,
 } from '$lib/services/assertions/AssertionProviderConfig.svelte';
 import { AssertionService } from '$lib/services/assertions/AssertionService.svelte';
 import type {
     TrustedProvider,
     ProviderInfo,
     RankedProvider,
+    ProviderWebsiteRecommendation,
 } from '$lib/services/assertions/types';
 import { calculateRelaySet } from '$lib/utils/outboxRelays';
 import { withTimeout } from '$lib/utils/helpers';
@@ -144,6 +146,12 @@ export const providerConfigsByKey: Readable<Map<string, TrustedProvider>> = deri
         });
         return map;
     }
+);
+
+export const providerWebsiteRecommendations: Readable<ProviderWebsiteRecommendation[]> = derived(
+    [wotProviderConfigs, providerInfoMap],
+    ([$wotProviderConfigs, $providerInfoMap]) =>
+        aggregateProviderWebsiteRecommendations($wotProviderConfigs, $providerInfoMap)
 );
 
 /**
@@ -323,6 +331,14 @@ export async function loadWoTProviderConfigs(): Promise<void> {
 
         // Aggregate provider usage
         const aggregated = service.aggregateProviderUsage(configs);
+
+        try {
+            const serviceKeys = Array.from(aggregated.keys());
+            const metadataMap = await service.fetchProviderMetadata(serviceKeys);
+            service.enrichWithMetadata(aggregated, metadataMap);
+        } catch (error) {
+            console.warn('Failed to enrich provider metadata:', error);
+        }
 
         providerInfoMap.set(aggregated);
         providersLoaded.set(true);

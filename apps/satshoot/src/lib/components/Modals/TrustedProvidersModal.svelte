@@ -10,6 +10,7 @@
         discoverExtraCapabilities,
         extraCapabilityDiscoveryState,
         getProvidersForCapability,
+        providerWebsiteRecommendations,
         selectedProviders,
         toggleProviderSelection,
         isProviderSelected,
@@ -24,7 +25,10 @@
     import type { Hexpubkey } from '@nostr-dev-kit/ndk';
     import { toaster } from '$lib/stores/toaster';
     import currentUser from '$lib/stores/user';
-    import { NIP85_USER_ASSERTION_KIND } from '$lib/services/assertions/AssertionProviderConfig.svelte';
+    import {
+        NIP85_USER_ASSERTION_KIND,
+        displayProviderWebsite,
+    } from '$lib/services/assertions/AssertionProviderConfig.svelte';
     import type { Writable, Readable } from 'svelte/store';
 
     type ProviderTagVerification = {
@@ -62,6 +66,8 @@
         'Encrypting hides your provider choices. ' +
         'Publishing unencrypted helps other users discover trusted providers.' +
         '</div>';
+    const endorsementWarningText =
+        "Endorsed scores may be personalized to the endorser's viewpoint";
 
     // Bind modal state
     $effect(() => {
@@ -469,6 +475,63 @@
                     {isDiscovering ? 'Discovering...' : 'Discover extra capabilities'}
                 </Button>
             </div>
+
+            <div
+                class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+            >
+                {endorsementWarningText}
+            </div>
+
+            {#if $providerWebsiteRecommendations.length > 0}
+                <div class="flex flex-col gap-[10px]">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-sm font-medium">Provider websites</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                            {$providerWebsiteRecommendations.length} discovered
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-[8px] max-h-[180px] overflow-y-auto scrollbar-hide">
+                        {#each $providerWebsiteRecommendations as websiteRecommendation (websiteRecommendation.website)}
+                            <div
+                                class="flex flex-col gap-3 rounded border border-black-100 bg-gray-50 p-3 dark:border-white-100 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                                <div class="min-w-0">
+                                    <a
+                                        href={websiteRecommendation.website}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={websiteRecommendation.website}
+                                        class="block truncate text-sm font-medium text-primary-600 hover:underline dark:text-primary-300"
+                                    >
+                                        {displayProviderWebsite(websiteRecommendation.website)}
+                                    </a>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        {websiteRecommendation.website}
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2 text-xs sm:justify-end">
+                                    <span class="rounded-full bg-primary-50 px-2 py-0.5 text-primary-600 dark:bg-primary-900/20 dark:text-primary-300">
+                                        {websiteRecommendation.usageCount}{' '}
+                                        {websiteRecommendation.usageCount === 1 ? 'user' : 'users'}
+                                    </span>
+                                    <span class="rounded-full bg-gray-200 px-2 py-0.5 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                                        {websiteRecommendation.serviceKeys.length}{' '}
+                                        {websiteRecommendation.serviceKeys.length === 1 ? 'key' : 'keys'}
+                                    </span>
+                                    <span class="rounded-full bg-gray-200 px-2 py-0.5 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                                        {websiteRecommendation.capabilityCount}{' '}
+                                        {websiteRecommendation.capabilityCount === 1
+                                            ? 'capability'
+                                            : 'capabilities'}
+                                    </span>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
 
             <!-- Capability selector -->
             <div class="flex flex-col gap-[5px]">
