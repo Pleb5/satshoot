@@ -88,7 +88,7 @@
     let payConfirmPubkey = $state('');
     let payConfirmMethod = $state<'LN' | 'Cashu'>('LN');
     let payAmount = $state(0);
-    let payFunc = $state(async (_lightningAddress?: string) => {});
+    let payFunc = $state(async (_lightningAddress?: string, _lockDays?: number) => {});
 
     $effect(() => {
         if ($sessionInitialized && !initialized) {
@@ -302,7 +302,7 @@
     }
 
     function payWithLN(payeeType: UserEnum) {
-        return async (lightningAddress?: string) => {
+        return async (lightningAddress?: string, _lockDays?: number) => {
             if (!paymentManager) return;
             const trimmedAddress = lightningAddress?.trim();
             const overrides = trimmedAddress ? { [payeeType]: trimmedAddress } : undefined;
@@ -311,9 +311,9 @@
     }
 
     function payWithCashu(payeeType: UserEnum) {
-        return async (_lightningAddress?: string) => {
+        return async (_lightningAddress?: string, lockDays?: number) => {
             if (!paymentManager) return;
-            await paymentManager.payWithCashu(payeeType);
+            await paymentManager.payWithCashu(payeeType, lockDays);
         };
     }
 

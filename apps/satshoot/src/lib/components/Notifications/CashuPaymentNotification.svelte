@@ -4,11 +4,9 @@
     import {
         NDKKind,
         NDKNutzap,
-        zapInvoiceFromEvent,
         type NDKEvent,
         type NDKFilter,
-        type NDKUserProfile,
-        type NDKZapInvoice,
+        type NDKUserProfile
     } from '@nostr-dev-kit/ndk';
     import { onMount } from 'svelte';
     import { JobEvent } from '$lib/events/JobEvent';
@@ -22,8 +20,11 @@
     import { ServiceEvent } from '$lib/events/ServiceEvent';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
     import Avatar from '../Users/Avatar.svelte';
-    import currentUser from '$lib/stores/user';
-    import TooltipIcon from '../Icons/TooltipIcon.svelte';
+    import Button from '../UI/Buttons/Button.svelte';
+    import { wallet } from '$lib/wallet/wallet';
+    import { CheckStateEnum } from '@cashu/cashu-ts';
+    import { toaster } from '$lib/stores/toaster';
+    import ProgressRing from '../UI/Display/ProgressRing.svelte';
 
     interface Props {
         notification: NDKEvent;
@@ -33,56 +34,41 @@
 
     let searchQuery = $derived(page.url.searchParams.get('searchQuery'));
 
-    const zapInvoice: NDKZapInvoice | null = zapInvoiceFromEvent(notification);
+    const nutzap = nutzapFromEvent(notification);
 
-    // This could be derived from the deal pubkey that the zap refers to as well
-    const lnZapperPubkey: string | undefined =
-        notification.tagValue('P') ?? zapInvoice?.zappee ?? notification.pubkey;
+    const zappee = nutzap?.recipient;
+    let zappeeProfile = $state<NDKUserProfile | null>();
+    let zappeeName = $derived(zappeeProfile?.name ?? zappee?.npub.substring(0, 8));
 
-    const zapper =
-        notification.kind === NDKKind.Zap
-            ? $ndk.getUser({ pubkey: lnZapperPubkey })
-            : $ndk.getUser({ pubkey: notification.pubkey });
-
-    let zapperProfile = $state<NDKUserProfile | null>()
-    let zapperName = $derived(zapperProfile?.name ?? zapper.npub.substring(0, 8));
-
-    let amount: number | null = $state(null);
+    const amount = nutzap.amount ?? 0;
 
     let zappedBid: BidEvent | null = $state(null);
     let zappedOrder: OrderEvent | null = $state(null);
     let job: JobEvent | null = $state(null);
     let service: ServiceEvent | null = $state(null);
-    let redeemedByCurrentUser = $state(true);
+
+    let locktime: number = $state(Number.POSITIVE_INFINITY);
+    let claimableByUser = $state(false);
+    let currentSeconds = $state(Number.NEGATIVE_INFINITY);
+    let claiming = $state(false);
+
+    function nutzapFromEvent(notification: NDKEvent): NDKNutzap {
+        if (notification.kind === NDKKind.Nutzap) {
+            const nutzap = NDKNutzap.from(notification);
+            if (nutzap) return nutzap;
+        }
+        throw new Error("Invalid argument, notification event isn't an NDKNutzap!");
+    }
 
     onMount(async () => {
-        // Amount
-        if (notification.kind === NDKKind.Zap && zapInvoice?.amount) {
-            amount = Math.round(zapInvoice.amount / 1000);
-        } else if (notification.kind === NDKKind.Nutzap) {
-            const nutzap = await NDKNutzap.from(notification);
-            if (nutzap?.amount) {
-                amount = Math.round(nutzap.amount);
-                const secret = nutzap.proofs[0].secret;
-                const secretObj = JSON.parse(secret);
-                if (Array.isArray(secretObj) && secretObj[1].tags.length) {
-                    const filter: NDKFilter = {
-                        kinds: [NDKKind.CashuWalletTx],
-                        '#e': [nutzap.id]
-                    };
-                    const event = await $ndk.fetchEvent(filter);
-                    if (event && event.pubkey !== $currentUser?.pubkey) {
-                        redeemedByCurrentUser = false;
-                    }
-                }
-            }
-        }
+        // Initialize the p2pk property
+        await $wallet?.getP2pk();
 
         // Event
         let dTag: string | undefined;
         let zappedKind: number = -1;
 
-        const atag = notification.tagValue('a');
+        const atag = nutzap.tagValue('a');
         if (atag) {
             dTag = atag.split(':')[2];
             zappedKind = parseInt(atag.split(':')[0]);
@@ -127,12 +113,41 @@
         }
     });
 
+    $effect(async () => {
+        currentSeconds = Math.floor(Date.now() / 1000);
+
+        // Initialize state for claiming proofs
+        const proof = nutzap.proofs.length ? nutzap.proofs[0] : undefined;
+        if (proof && proof.secret.startsWith('[')) {
+            const secret = JSON.parse(proof.secret);
+            if (Array.isArray(secret) && secret.length === 2 && secret[0] === "P2PK") {
+                const secretObj = secret[1];
+                if ("tags" in secretObj) {
+                    for (const tag of secretObj.tags) {
+                        if (tag[0] === "locktime") {
+                            locktime = Number.parseInt(tag[1]);
+                        }
+                        if (tag[0] === "refund") {
+                            const refundKey = (tag[1] as string).slice(2);
+                            const pubkey = $wallet?._p2pk;
+                            if (refundKey === pubkey) {
+                                const cashuWallet = await $wallet?.getCashuWallet(nutzap.mint, $wallet.bip39seed)!;
+                                const proofStates = await cashuWallet.checkProofsStates(nutzap.proofs);
+                                claimableByUser = proofStates.filter(ps => ps.state === CheckStateEnum.UNSPENT).length > 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+
     const display = $derived.by(() => {
         if (searchQuery && searchQuery.length > 0) {
             const dataToSearch = [
                 {
-                    npub: zapper.npub,
-                    name: zapperName,
+                    npub: zappee.npub,
+                    name: zappeeName,
                     job: job?.title,
                 },
             ];
@@ -165,34 +180,65 @@
     });
 
     const classes = $derived.by(() => {
-        let classes = $readNotifications.has(notification.id) ? 'bg-black-50' : 'font-bold';
+        let classes = $readNotifications.has(nutzap.id) ? 'bg-black-50' : 'font-bold';
         if (!display) {
             classes += ' hidden';
         }
 
         return classes;
     });
+
+    async function onClaimNutzap() {
+        claiming = true;
+        const privateKey = $wallet?.privkeys.get($wallet._p2pk!)?.privateKey;
+        if (!privateKey) {
+            claiming = false;
+            toaster.error({
+                title: "An unexpected error occurred!",
+                duration: 3000,
+            });
+            console.error("Invalid wallet state: get find private key!");
+            return;
+        }
+        try {
+            await $wallet?.redeemNutzaps([nutzap], privateKey, { mint: nutzap.mint, proofs: nutzap.proofs });
+            claimableByUser = false;
+            toaster.success({
+                title: "Payment redeemed",
+                duration: 3000,
+            });
+            console.info("nutzap redeemed!");
+        } catch(e) {
+            toaster.error({
+                title: "Claiming the nutzap failed",
+                duration: 3000,
+            });
+            console.error("Error redeeming nutzap: " + e);
+        } finally {
+            claiming = false;
+        }
+    }
 </script>
 
 <Card
     {classes}
     actAsButton
     onClick={() => {
-        if (!$readNotifications.has(notification.id)) {
-            readNotifications.update((notifications) => notifications.add(notification.id));
+        if (!$readNotifications.has(nutzap.id)) {
+            readNotifications.update((notifications) => notifications.add(nutzap.id));
         }
     }}
 >
-    <NotificationTimestamp ndkEvent={notification} />
+    <NotificationTimestamp ndkEvent={nutzap} />
     <div class="w-full flex flex-row gap-[15px]">
-        <a href={'/' + zapper.npub} class="shrink-0">
-            <Avatar pubkey={zapper.pubkey} bind:userProfile={zapperProfile}/>
+        <a href={'/' + zappee.npub} class="shrink-0">
+            <Avatar pubkey={zappee.pubkey} bind:userProfile={zappeeProfile}/>
         </a>
         <div class="flex-1 min-w-0 flex flex-col">
-            <p class="truncate max-w-full">{zapperName}</p>
+            <p class="truncate max-w-full">{zappeeName}</p>
             <div class="flex flex-row gap-[5px] flex-wrap w-full">
                 <p>
-                    Has zapped you {(amount ? insertThousandSeparator(amount) : '?') + ' sats'}
+                    You nutzapped {(amount ? insertThousandSeparator(amount) : '?') + ' sats'}
                 </p>
                 {#if job}
                     <a
@@ -211,10 +257,17 @@
                 {:else}
                     <div class="w-32 placeholder animate-pulse bg-blue-600"></div>
                 {/if}
-                {#if !redeemedByCurrentUser}
-                    <TooltipIcon iconClasses="bx bx-alert-triangle bx-xsm text-yellow-200" popUpText="Your redemption timeout expired and the funds got claimed back by the payer."></TooltipIcon>
-                {/if}
             </div>
         </div>
+        {#if claimableByUser}
+            <Button variant="contained" classes="max-h-[36px] self-center" disabled={!(locktime && locktime < currentSeconds)} onClick={onClaimNutzap}>
+                {#if claiming}
+                    <ProgressRing color="white" />
+                {:else}
+                    <i class="bx bx-clock bx-xsm"></i>
+                    Claim
+                {/if}
+            </Button>
+        {/if}
     </div>
 </Card>

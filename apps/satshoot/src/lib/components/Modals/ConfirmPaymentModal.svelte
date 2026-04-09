@@ -8,13 +8,14 @@
     import Input from '../UI/Inputs/input.svelte';
     import UserProfile from '../UI/Display/UserProfile.svelte';
     import ModalWrapper from '../UI/ModalWrapper.svelte';
+    import Checkbox from '../UI/Inputs/Checkbox.svelte';
 
     interface Props {
         isOpen: boolean;
         payeePubkey: string;
         amount: number;
         paymentMethod: 'LN' | 'Cashu';
-        onConfirm: (lightningAddress?: string) => Promise<void>; // Callback function to invoke on confirmation
+        onConfirm: (lightningAddress?: string, lockDays?: number) => Promise<void>; // Callback function to invoke on confirmation
     }
 
     let {
@@ -28,6 +29,8 @@
     let lightningAddress = $state('');
     let defaultLightningAddress = $state('');
     let hasManualLightningAddress = $state(false);
+    let claimable = $state(false);
+    let lockDays = $state(14);
 
     $effect(() => {
         if (!isOpen || !payeePubkey || paymentMethod !== 'LN') return;
@@ -70,7 +73,7 @@
         try {
             isOpen = false;
             const trimmedAddress = lightningAddress.trim();
-            await onConfirm(trimmedAddress ? trimmedAddress : undefined); // Invoke the parent's callback function
+            await onConfirm(trimmedAddress ? trimmedAddress : undefined, lockDays && claimable ? lockDays : undefined); // Invoke the parent's callback function
         } catch (e) {
             toaster.error({
                 title: 'Error: ' + e,
@@ -103,6 +106,13 @@
                         onInput={handleLightningAddressInput}
                         fullWidth
                     />
+                </div>
+            {/if}
+            {#if paymentMethod === "Cashu"}
+                <div class="flex flex-row gap-[10px]">
+                    <Checkbox id="claimable-checkbox" label="Claimable after" bind:checked={claimable}/>
+                    <Input id="lock-days" type="number" min={1} max={90} bind:value={lockDays} disabled={!claimable}/>
+                    <label for="lock-days" class="p-[5px]">days</label>
                 </div>
             {/if}
         </div>

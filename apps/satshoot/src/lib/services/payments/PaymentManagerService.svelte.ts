@@ -129,15 +129,16 @@ export class PaymentManagerService {
      * Process Cashu payment.
      * 
      * @payeeType if specified, the payment goes only to the given payee type. Otherwise all parties get paid.
+     * @param lockDays number of days after which the funds are claimable by the payer too.
      */
-    async payWithCashu(payeeType: UserEnum | void): Promise<void> {
-        return this.payWith(this.cashuService)(payeeType);
+    async payWithCashu(payeeType: UserEnum | void, lockDays?: number): Promise<void> {
+        return this.payWith(this.cashuService)(payeeType, undefined, lockDays);
     }
 
     private payWith(
         paymentMethod: LightningPaymentService | CashuPaymentService
-    ): (payeeType: UserEnum | void, lightningAddressOverrides?: LightningAddressOverrides) => Promise<void> {
-        return (async (payeeType, lightningAddressOverrides) => {
+    ): (payeeType: UserEnum | void, lightningAddressOverrides?: LightningAddressOverrides, lockDays?: number) => Promise<void> {
+        return (async (payeeType, lightningAddressOverrides, lockDays) => {
             try {
                 const paymentData = await this.paymentService.initializePayment();
                 if (!paymentData) return;
@@ -173,7 +174,8 @@ export class PaymentManagerService {
                         : await paymentMethod.processPayment(
                               freelancerShareMillisats,
                               satshootSumMillisats,
-                              sponsoredSumMillisats
+                              sponsoredSumMillisats,
+                              lockDays
                           );
 
                 this.handlePaymentResults(paid, freelancerShareMillisats, satshootSumMillisats, sponsoredSumMillisats);

@@ -103,10 +103,20 @@ export const reviewNotifications = derived([notifications], ([$notifications]) =
     return reviews;
 });
 
-export const receivedZapsNotifications = derived([notifications], ([$notifications]) => {
+export const receivedZapsNotifications = derived([notifications, currentUser], ([$notifications, $currentUser]) => {
     // Check for zap kinds and if zap has an 'a' tag referring to an Bid
     const filteredEvents = $notifications.filter((notification: NDKEvent) => {
-        return notification.kind === NDKKind.Zap || notification.kind === NDKKind.Nutzap;
+        return (notification.kind === NDKKind.Zap || notification.kind === NDKKind.Nutzap) && notification.tagValue('p') === $currentUser?.pubkey;
+    });
+
+    orderEventsChronologically(filteredEvents);
+
+    return filteredEvents;
+});
+
+export const sentNutzapsNotifications = derived([notifications, currentUser], ([$notifications, $currentUser]) => {
+    const filteredEvents = $notifications.filter((notification: NDKEvent) => {
+        return notification.kind === NDKKind.Nutzap && notification.pubkey === $currentUser?.pubkey;
     });
 
     orderEventsChronologically(filteredEvents);

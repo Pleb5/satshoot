@@ -67,7 +67,7 @@ describe('CashuPaymentService', () => {
 
         await Promise.resolve();
         expect(processSpy).toHaveBeenCalledTimes(1);
-        expect(processSpy).toHaveBeenCalledWith(UserEnum.Freelancer, 'freelancer-pubkey', 1000);
+        expect(processSpy).toHaveBeenCalledWith(UserEnum.Freelancer, 'freelancer-pubkey', 1000, undefined);
 
         first.resolve();
         await new Promise((resolve) => setTimeout(resolve, 0));

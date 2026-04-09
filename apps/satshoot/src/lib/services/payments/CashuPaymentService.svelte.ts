@@ -125,7 +125,8 @@ export class CashuPaymentService {
     async processPayment(
         freelancerShareMillisats: number,
         satshootSumMillisats: number,
-        sponsoredSumMillisats: number
+        sponsoredSumMillisats: number,
+        lockDays?: number
     ): Promise<Map<UserEnum, boolean>> {
         const paid = new Map<UserEnum, boolean>([
             [UserEnum.Freelancer, false],
@@ -177,7 +178,7 @@ export class CashuPaymentService {
         const errors: Array<{ index: number; error: unknown }> = [];
         for (const task of tasks) {
             try {
-                await this.processCashuPayment(task.userType, task.pubkey, task.amountMillisats);
+                await this.processCashuPayment(task.userType, task.pubkey, task.amountMillisats, lockDays);
                 paid.set(task.userType, true);
             } catch (error) {
                 errors.push({ index: task.index, error });
@@ -198,7 +199,8 @@ export class CashuPaymentService {
     private async processCashuPayment(
         userType: UserEnum,
         pubkey: string,
-        amountMillisats: number
+        amountMillisats: number,
+        lockDays?: number
     ): Promise<void> {
         if (amountMillisats === 0) return;
 
@@ -229,6 +231,14 @@ export class CashuPaymentService {
         // Process the payment
         cashuInfo.allowIntramintFallback = false;
 
+        const oneDayMillis = 24 * 60 * 60 * 1000;
+        const locktime = Math.floor((lockDays ? Date.now() + lockDays * oneDayMillis : 0) / 1000);
+        const p2pk = locktime ?
+            {
+                pubkey: cashuInfo.p2pk!,
+                locktime,
+                refundKeys: [await walletInstance.getP2pk()]
+            } : undefined;
         const cashuResult = await walletInstance
             .cashuPay({
                 ...cashuInfo,
@@ -238,7 +248,7 @@ export class CashuPaymentService {
                 amount: amountMillisats,
                 unit: 'msat',
                 comment: 'satshoot',
-            })
+            }, p2pk)
             .catch((err) => {
                 throw new Error(`Failed to pay: ${err?.message || err}`);
             });

@@ -29,6 +29,7 @@ import { loggedIn, loggingIn, loginMethod, followsUpdated } from '../stores/user
 import { loadWot, myMuteList, myMuteListFilter, networkWoTScores } from '../stores/wot';
 import { allReviews } from '$lib/stores/reviews';
 import { allReceivedZapsFilter, allReceivedZaps } from '$lib/stores/zaps';
+import { allSentNutzaps, allSentNutzapsFilter } from '$lib/stores/sent-nutzaps';
 import { messageStore, sentMessageFilter, receivedMessageFilter } from '$lib/stores/messages';
 import {
   allJobs,
@@ -109,11 +110,13 @@ export async function initializeUser(ndk: NDKSvelte) {
     receivedMessageFilter['#p']! = [user.pubkey];
     sentMessageFilter['authors'] = [user.pubkey];
     allReceivedZapsFilter['#p']! = [user.pubkey];
+    allSentNutzapsFilter['authors'] = [user.pubkey];
 
     // Start message and review subs after successful wot and follow recalc
     messageStore.startSubscription();
     allReviews.startSubscription();
     allReceivedZaps.startSubscription();
+    allSentNutzaps.startSubscription();
   } catch (e) {
     console.log('Could not initialize User. Reason: ', e);
   }

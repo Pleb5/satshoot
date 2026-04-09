@@ -9,18 +9,19 @@
     import {
         followNotifications,
         messageNotifications,
-        browserNotificationsEnabled,
         readNotifications,
         receivedZapsNotifications,
         reviewNotifications,
         jobNotifications,
         serviceNotifications,
+        sentNutzapsNotifications,
     } from '$lib/stores/notifications';
-    import currentUser, { UserMode, userMode } from '$lib/stores/user';
+    import currentUser from '$lib/stores/user';
     import { checkRelayConnections } from '$lib/utils/helpers';
     import { onMount } from 'svelte';
     import ServiceNotification from '$lib/components/Notifications/ServiceNotification.svelte';
     import { selectedNotificationTab, NotificationTabs } from '$lib/stores/gui';
+    import CashuPaymentNotification from '$lib/components/Notifications/CashuPaymentNotification.svelte';
 
     let previousTab = $state<NotificationTabs | null>(null);
 
@@ -44,6 +45,14 @@
             case NotificationTabs.Zaps:
                 readNotifications.update((notifications) => {
                     $receivedZapsNotifications.forEach((notificationEvent) => {
+                        notifications.add(notificationEvent.id);
+                    });
+                    return notifications;
+                });
+                break;
+            case NotificationTabs.NutzapsPayments:
+                readNotifications.update((notifications) => {
+                    $sentNutzapsNotifications.forEach((notificationEvent) => {
                         notifications.add(notificationEvent.id);
                     });
                     return notifications;
@@ -104,6 +113,14 @@
             ).length,
         },
         {
+            id: NotificationTabs.NutzapsPayments,
+            label: 'Cashu Payments',
+            icon: 'bolt',
+            notificationCount: $sentNutzapsNotifications.filter(
+                (notification) => !$readNotifications.has(notification.id)
+            ).length,
+        },
+        {
             id: NotificationTabs.Jobs,
             label: 'Jobs',
             icon: 'briefcase',
@@ -156,6 +173,11 @@
                             <NotificationsList
                                 notifications={$receivedZapsNotifications}
                                 NotificationComponent={ZapNotification}
+                            />
+                        {:else if $selectedNotificationTab === NotificationTabs.NutzapsPayments}
+                            <NotificationsList
+                                notifications={$sentNutzapsNotifications}
+                                NotificationComponent={CashuPaymentNotification}
                             />
                         {:else if $selectedNotificationTab === NotificationTabs.Jobs}
                             <NotificationsList
