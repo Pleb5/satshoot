@@ -1,0 +1,18 @@
+{
+    "id": "satshoot-repo",
+    "kind": 31990,
+    "name": "SatShoot Repo Jobs",
+    "description": "Create repo-bound freelance jobs from Nostr Git issues and track their status inside Budabit.",
+    "author": "SatShoot",
+    "homepage": "https://satshoot.com",
+    "version": "0.1.0",
+    "permissions": ["nostr:publish", "ui:toast"],
+    "entrypoint": "http://localhost:5173/repo-jobs?embed=budabit",
+    "icon": "Briefcase",
+    "sha256": "",
+    "slot": {
+        "type": "repo-tab",
+        "label": "SatShoot",
+        "path": "satshoot"
+    }
+}

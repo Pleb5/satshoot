@@ -1,5 +1,10 @@
 <!doctype html>
-<html lang="en" data-theme="wintry" data-mode="light" class="bg-[#EDEDED] dark:bg-[#1f2937] flex flex-col scroll-smooth font-archivo">
+<html
+    lang="en"
+    data-theme="wintry"
+    data-mode="light"
+    class="bg-[#EDEDED] dark:bg-[#1f2937] flex flex-col scroll-smooth font-archivo"
+>
     <head>
         <meta charset="utf-8" />
         <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
@@ -18,6 +23,37 @@
             } catch {}
         </script>
 
+        <script>
+            try {
+                if (window.parent !== window) {
+                    window.__satshootBudabitMessageBuffer =
+                        window.__satshootBudabitMessageBuffer || [];
+
+                    window.addEventListener('message', (event) => {
+                        const data = event && event.data;
+                        if (!data || typeof data !== 'object') return;
+                        if (data.type !== 'event') return;
+                        if (
+                            data.action !== 'context:update' &&
+                            data.action !== 'context:repoUpdate'
+                        )
+                            return;
+
+                        window.__satshootBudabitMessageBuffer.push({
+                            action: data.action,
+                            payload: data.payload,
+                            origin: event.origin,
+                            receivedAt: Date.now(),
+                        });
+
+                        if (window.__satshootBudabitMessageBuffer.length > 12) {
+                            window.__satshootBudabitMessageBuffer.shift();
+                        }
+                    });
+                }
+            } catch {}
+        </script>
+
         <link
             rel="preload"
             href="%sveltekit.assets%/fonts/Inter-VariableFont_slnt,wght.ttf"
@@ -32,14 +68,13 @@
             rel="stylesheet"
         />
         <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-        <link href='https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css' rel='stylesheet'>
+        <link href="https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css" rel="stylesheet" />
 
         <!-- For PWA -->
         <link rel="manifest" href="/manifest.webmanifest" />
     </head>
 
     <body
-        
         style="font-family: 'Archivo'"
         class="bg-transparent flex flex-col items-center grow relative tracking-wide text-[16px] leading-[1.5] break-words text-[#535353] dark:bg-[#1f2937] dark:text-white"
     >

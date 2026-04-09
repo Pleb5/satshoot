@@ -2,6 +2,7 @@
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
     import ndk from '$lib/stores/session';
     import { NDKSubscriptionCacheUsage, type NDKFilter } from '@nostr-dev-kit/ndk';
+    import { page } from '$app/state';
     import Button from '../UI/Buttons/Button.svelte';
     import Card from '../UI/Card.svelte';
     import Author from './Author.svelte';
@@ -10,6 +11,7 @@
     import JobBids from './JobBids.svelte';
     import { wot } from '$lib/stores/wot';
     import { ExtendedNDKKind } from '$lib/types/ndkKind';
+    import { withEmbedMode } from '$lib/extensions/budabit';
 
     enum Tabs {
         JobDescription,
@@ -29,6 +31,8 @@
     let selectedTab = $state(Tabs.JobDescription);
 
     const bech32ID = $derived(job.encode());
+    const embedMode = $derived(page.url.searchParams.get('embed'));
+    const jobHref = $derived(withEmbedMode('/' + bech32ID + '/', embedMode));
 
     $effect(() => {
         if (!showBidsDetail || job?.status !== JobStatus.New) return;
@@ -103,7 +107,7 @@
         </div>
     </div>
     <div class="w-full flex flex-row gap-[0px] border-t-[1px_solid_rgba(0,0,0,0.11)]">
-        <Button href={'/' + bech32ID + '/'} variant="text" classes="rounded-[0]" fullWidth>
+        <Button href={jobHref} variant="text" classes="rounded-[0]" fullWidth>
             <i class="bx bxs-show"></i>
         </Button>
     </div>

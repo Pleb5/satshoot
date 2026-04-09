@@ -95,6 +95,13 @@
     import type { BidEvent } from '$lib/events/BidEvent';
     import type { ReviewEvent } from '$lib/events/ReviewEvent';
     import { JobStatus, type JobEvent } from '$lib/events/JobEvent';
+    import {
+        createBudabitContextFromRepo,
+        extensionContext,
+        mergeBudabitContexts,
+        parseBudabitRepoContextFromReferrer,
+    } from '$lib/extensions/budabit';
+    import { ExtensionHostBridge, extensionHostBridge } from '$lib/extensions/host-bridge';
 
     import { onDestroy, onMount, tick } from 'svelte';
     import SidebarLeft from '$lib/components/layout/SidebarLeft.svelte';
@@ -133,14 +140,102 @@
     const NIP46_RESUME_THRESHOLD_MS = 5 * 60 * 1000;
     const RESUME_DEBOUNCE_MS = 1000;
 
-    const displayNav = $derived($loggedIn);
+    const budabitEmbed = $derived(page.url.searchParams.get('embed') === 'budabit');
+    const displayNav = $derived($loggedIn && !budabitEmbed);
     const hideBottomNav = $derived(
         page.route.id === '/messages/[jobId=event]' ||
             page.route.id === '/messages/[serviceId=service]'
     );
-    const displayFooter = $derived(displayNav && !hideBottomNav);
+    const displayFooter = $derived(displayNav && !hideBottomNav && !budabitEmbed);
     let footerHeight = $state(0);
     let followSubscription = $state<NDKSubscription>();
+
+    function applyBudabitContextUpdate(payload: unknown) {
+        if (!payload || typeof payload !== 'object') return;
+        extensionContext.update((current) => mergeBudabitContexts(current, payload as any));
+    }
+
+    function applyBudabitRepoUpdate(payload: unknown) {
+        if (!payload || typeof payload !== 'object') return;
+
+        const nextRepo = payload as {
+            pubkey?: string;
+            name?: string;
+            naddr?: string;
+            relays?: string[];
+        };
+
+        const repoContext = createBudabitContextFromRepo({
+            repoPubkey: nextRepo.pubkey,
+            repoName: nextRepo.name,
+            repoNaddr: nextRepo.naddr,
+            repoRelays: nextRepo.relays,
+        });
+
+        extensionContext.update((current) => mergeBudabitContexts(current, repoContext));
+    }
+
+    $effect(() => {
+        if (!budabitEmbed || typeof window === 'undefined' || window.parent === window) {
+            extensionContext.set(null);
+            extensionHostBridge.set(null);
+            return;
+        }
+
+        extensionContext.update((current) =>
+            mergeBudabitContexts(current, parseBudabitRepoContextFromReferrer(document.referrer))
+        );
+
+        const bridge = new ExtensionHostBridge(window.parent, '*');
+        extensionHostBridge.set(bridge);
+
+        const offContextUpdate = bridge.onEvent('context:update', (payload) => {
+            applyBudabitContextUpdate(payload);
+        });
+
+        const offRepoUpdate = bridge.onEvent('context:repoUpdate', (payload) => {
+            applyBudabitRepoUpdate(payload);
+        });
+
+        const bufferedMessages = ((window as any).__satshootBudabitMessageBuffer || []) as Array<{
+            action?: string;
+            payload?: unknown;
+        }>;
+
+        bufferedMessages.forEach(({ action, payload }) => {
+            if (action === 'context:update') applyBudabitContextUpdate(payload);
+            if (action === 'context:repoUpdate') applyBudabitRepoUpdate(payload);
+        });
+
+        bridge
+            .request('context:getRepo')
+            .then((payload) => {
+                if (!payload || typeof payload !== 'object') return;
+
+                const repoContext = (payload as { repoContext?: any }).repoContext;
+                if (!repoContext) return;
+
+                extensionContext.update((current) =>
+                    mergeBudabitContexts(current, createBudabitContextFromRepo({
+                        repoPubkey: repoContext.pubkey,
+                        repoName: repoContext.name,
+                        repoNaddr: repoContext.naddr,
+                        repoRelays: repoContext.relays,
+                    }))
+                );
+            })
+            .catch((error) => {
+                console.warn('Failed to request Budabit repo context:', error);
+            });
+
+        return () => {
+            offContextUpdate();
+            offRepoUpdate();
+            bridge.destroy();
+            extensionHostBridge.update((current) => (current === bridge ? null : current));
+            extensionContext.set(null);
+        };
+    });
 
     $effect(() => {
         if ($retriesLeft === 0) {
@@ -969,11 +1064,13 @@
     });
 </script>
 
+<svelte:body class:budabit-embed-body={budabitEmbed} />
+
 <Toaster classes="z-1100" {toaster}></Toaster>
 
 <!-- layout structure -->
-<div class="w-full h-full flex flex-col">
-    {#if !$onBoarding}
+<div class="w-full flex flex-col {budabitEmbed ? 'min-h-full' : 'h-full min-h-0'}">
+    {#if !$onBoarding && !budabitEmbed}
         <header
             class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
             aria-label="Main header"
@@ -988,10 +1085,16 @@
     {/if}
 
     <!-- Content Area -->
-    <div class="flex-auto w-full h-full flex {!$onBoarding ? 'mt-[65px]' : ''}">
+    <div
+        class="flex-auto w-full flex {!$onBoarding && !budabitEmbed ? 'mt-[65px]' : ''} {budabitEmbed
+            ? 'min-h-full'
+            : 'h-full min-h-0'}"
+    >
         <!-- Main Content  -->
         <main
-            class="{!$onBoarding && displayNav ? 'sm:ml-[96px]' : ''} flex-1"
+            class="{!$onBoarding && displayNav ? 'sm:ml-[96px]' : ''} flex-1 {budabitEmbed
+                ? 'overflow-visible'
+                : 'min-h-0'}"
             aria-label="Main content"
         >
             {@render children?.()}

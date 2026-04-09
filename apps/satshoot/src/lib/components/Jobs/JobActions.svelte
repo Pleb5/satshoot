@@ -9,10 +9,12 @@
     import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
     import { jobToEdit } from '$lib/stores/job-to-edit';
     import { goto } from '$app/navigation';
+    import { page } from '$app/state';
     import ReviewModal from '../Notifications/ReviewModal.svelte';
     import ReviewClientModal from '../Modals/ReviewClientModal.svelte';
     import CloseEntityModal from '../Modals/CloseEntityModal.svelte';
     import SELECTED_QUERY_PARAM from '$lib/services/messages';
+    import { withEmbedMode } from '$lib/extensions/budabit';
 
     interface Props {
         job: JobEvent;
@@ -26,6 +28,7 @@
     let showCloseJobModal = $state(false);
     let showReviewClientModal = $state(false);
     let showReviewModal = $state(false);
+    const embedMode = $derived(page.url.searchParams.get('embed'));
 
     // Derived states
     const bech32ID = $derived(job.encode());
@@ -66,7 +69,7 @@
         if (job) {
             $jobToEdit = job;
 
-            goto('/post-job');
+            goto(withEmbedMode('/post-job', embedMode));
         }
     }
 
@@ -76,19 +79,18 @@
 
     function goToPay() {
         if (winnerBid) {
-            const url = new URL('/payments/' + winnerBid.encode(), window.location.origin);
-            goto(url.toString());
+            goto(withEmbedMode('/payments/' + winnerBid.encode(), embedMode));
         }
     }
 
     function goToChat() {
-        const url = new URL('/messages/' + bech32ID, window.location.origin);
+        const url = new URL(withEmbedMode('/messages/' + bech32ID, embedMode), window.location.origin);
         if ($currentUser && $currentUser.pubkey !== job.pubkey) {
             url.searchParams.append(SELECTED_QUERY_PARAM, job.pubkey);
         } else if (job.winnerFreelancer) {
             url.searchParams.append(SELECTED_QUERY_PARAM, job.winnerFreelancer);
         }
-        goto(url.toString());
+        goto(url.pathname + url.search + url.hash);
     }
 
     function handleReviewClient() {

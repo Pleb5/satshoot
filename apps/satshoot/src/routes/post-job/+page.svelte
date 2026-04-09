@@ -15,7 +15,7 @@
     } from '$lib/utils/helpers';
 
     import { JobEvent, JobStatus } from '$lib/events/JobEvent';
-    import { NDKPrivateKeySigner, NDKUser, type NDKTag } from '@nostr-dev-kit/ndk';
+    import { NDKPrivateKeySigner, NDKUser } from '@nostr-dev-kit/ndk';
 
     import { jobToEdit } from '$lib/stores/job-to-edit';
 
@@ -38,6 +38,15 @@
     import ShareEventModal from '$lib/components/Modals/ShareEventModal.svelte';
     import { nip19 } from 'nostr-tools';
     import { showLoginModal } from '$lib/stores/modals';
+    import {
+        buildDraftFromExistingJob,
+        buildUnsignedJobEvent,
+        extensionContext,
+        getEditableJobTags,
+        repoJobDraft,
+        withEmbedMode,
+    } from '$lib/extensions/budabit';
+    import { extensionHostBridge } from '$lib/extensions/host-bridge';
 
     class AccountPublishError extends Error {
         constructor(message: string) {
@@ -75,11 +84,32 @@
     let job = $state<JobEvent>(new JobEvent($ndk));
 
     let step = $state(1);
+    const embedMode = $derived(page.url.searchParams.get('embed'));
+    const budabitEmbed = $derived(embedMode === 'budabit');
+    const repoBoundDraft = $derived.by(() => {
+        if ($repoJobDraft) return $repoJobDraft;
+        if ($jobToEdit) return buildDraftFromExistingJob($jobToEdit, $extensionContext, embedMode);
+        return null;
+    });
+    const canPublishViaHost = $derived(
+        budabitEmbed && !!$extensionHostBridge && !!$extensionContext?.userPubkey
+    );
+    const waitingForBudabitSigner = $derived(budabitEmbed && !canPublishViaHost);
 
     let firstJob = $derived(
-        $onBoarding === true || page.url.searchParams.get('state') === 'letsgo'
+        !budabitEmbed && ($onBoarding === true || page.url.searchParams.get('state') === 'letsgo')
     );
-    const allowPostJob = $derived(firstJob || (!!$currentUser && $loggedIn));
+    const allowPostJob = $derived(
+        budabitEmbed ? canPublishViaHost : firstJob || (!!$currentUser && $loggedIn)
+    );
+    const loginActionLabel = $derived(budabitEmbed ? 'Waiting for Budabit Signer' : 'Log in To Post');
+    const budabitSignerHelp = $derived.by(() => {
+        if (!budabitEmbed) return '';
+        if ($extensionContext?.repo?.repoName) {
+            return 'Budabit repo context is loaded, but the current Budabit user pubkey has not arrived yet. Reload the repo tab if this stays stuck.';
+        }
+        return 'Waiting for Budabit to provide repo context and signer access.';
+    });
 
     const { titleValid, titleState } = $derived.by(() => {
         if (titleText.length < minTitleLength) {
@@ -161,10 +191,11 @@
         if ($jobToEdit) {
             titleText = $jobToEdit.title;
             descriptionText = $jobToEdit.description;
-            $jobToEdit.tTags.forEach((tag: NDKTag) => {
-                tagList.push((tag as string[])[1]);
-            });
-            tagList = tagList;
+            tagList = getEditableJobTags($jobToEdit.tags);
+        } else if ($repoJobDraft) {
+            titleText = $repoJobDraft.title;
+            descriptionText = $repoJobDraft.description;
+            tagList = [...$repoJobDraft.tags];
         }
         checkRelayConnections();
     });
@@ -225,6 +256,14 @@
     }
 
     const finalize = async () => {
+        if (budabitEmbed && !canPublishViaHost) {
+            toaster.error({
+                title: 'Budabit signer not ready yet.',
+                description: budabitSignerHelp,
+            });
+            return;
+        }
+
         if (!validateJob()) return;
 
         posting = true;
@@ -291,27 +330,65 @@
         }
     };
 
+    const postToHostBridge = async (
+        unsignedEvent: ReturnType<typeof buildUnsignedJobEvent>
+    ): Promise<void> => {
+        if (!$extensionHostBridge) {
+            throw new Error('Budabit host bridge is not available.');
+        }
+
+        const relays = Array.from(
+            new Set([
+                ...($extensionContext?.repo?.repoRelays || []),
+                ...($extensionContext?.relays || []),
+            ]),
+        );
+
+        const payload = relays.length > 0 ? { event: unsignedEvent, relays } : unsignedEvent;
+        const result = await $extensionHostBridge.request('nostr:publish', payload);
+
+        if (result && typeof result === 'object' && 'error' in result && typeof result.error === 'string') {
+            throw new Error(result.error);
+        }
+
+        await $extensionHostBridge
+            .request('ui:toast', {
+                message: $jobToEdit ? 'Updated SatShoot repo job' : 'Created SatShoot repo job',
+                type: 'success',
+            })
+            .catch(() => {
+                // pass
+            });
+    };
+
     async function postJob() {
         try {
-            job.title = titleText;
-            job.description = descriptionText;
-            job.status = JobStatus.New;
-            tagList.forEach((tag) => {
-                job!.tags.push(['t', tag]);
+            const existingDTag = ($jobToEdit?.tagValue('d') as string | undefined) || undefined;
+            const unsignedEvent = buildUnsignedJobEvent({
+                title: titleText,
+                description: descriptionText,
+                manualTags: tagList,
+                repoDraft: repoBoundDraft,
+                existingDTag,
+                pubkey: canPublishViaHost ? $extensionContext?.userPubkey : undefined,
             });
-            // Generate 'd' tag and tags from description hashtags
-            // only if we are not editing but creating a new job
-            if (!$jobToEdit) {
-                job.generateTags();
-                const timestamp = Math.floor(Date.now() / 1000);
-                job.created_at = timestamp;
-                job.publishedAt = timestamp;
+
+            const nextJob = new JobEvent($ndk);
+            nextJob.title = titleText;
+            nextJob.description = descriptionText;
+            nextJob.status = JobStatus.New;
+            nextJob.tags = unsignedEvent.tags.map(tag => [...tag]);
+            nextJob.created_at = unsignedEvent.created_at;
+            nextJob.pubkey = unsignedEvent.pubkey || nextJob.pubkey;
+
+            if (canPublishViaHost) {
+                await postToHostBridge(unsignedEvent);
             } else {
-                job.removeTag('d');
-                job.tags.push(['d', $jobToEdit.tagValue('d') as string]);
+                await nextJob.publishReplaceable();
             }
 
-            await job.publishReplaceable();
+            job = nextJob;
+            $repoJobDraft = null;
 
             // Navigate to profile page
             $profileTabStore = ProfilePageTabs.Jobs;
@@ -368,6 +445,13 @@
         '</div>' +
         '</div>';
 
+    const publishButtonLabel = $derived.by(() => {
+        if (budabitEmbed && repoBoundDraft) return 'Post Repo Job via Budabit';
+        if (budabitEmbed) return 'Post via Budabit';
+        if (repoBoundDraft) return 'Post Repo Job';
+        return 'Post on the Free Market';
+    });
+
     const copyLinkTooltip =
         '<div>' +
         '<div class="">' +
@@ -419,12 +503,50 @@
                         </div>
                     {:else}
                         <h2 class="text-[40px] font-[500] text-center">
-                            {$jobToEdit ? 'Edit' : 'New'} Job Post
+                            {repoBoundDraft ? ($jobToEdit ? 'Edit Repo Job' : 'New Repo Job') : $jobToEdit ? 'Edit' : 'New'} Job Post
                         </h2>
                     {/if}
                 </div>
                 {#if step === 1}
                     <Card classes="gap-[15px] w-[95vw] sm:w-[60vw]">
+                        {#if repoBoundDraft}
+                            <div class="grid gap-[10px] rounded-[8px] bg-black-50 p-[12px] dark:bg-black-100 sm:grid-cols-2">
+                                <div class="flex flex-col gap-[4px]">
+                                    <span class="text-[12px] font-[700] uppercase tracking-[0.08em] text-black-300 dark:text-white-300">
+                                        Repo Context
+                                    </span>
+                                    <span class="font-[600]">{repoBoundDraft.repoName || 'Repo-bound SatShoot job'}</span>
+                                </div>
+                                <div class="flex flex-col gap-[4px]">
+                                    <span class="text-[12px] font-[700] uppercase tracking-[0.08em] text-black-300 dark:text-white-300">
+                                        Source
+                                    </span>
+                                    <span class="font-[600]">
+                                        {repoBoundDraft.issueSubject || 'Custom repo job draft'}
+                                    </span>
+                                </div>
+                            </div>
+                        {/if}
+
+                        {#if budabitEmbed}
+                            <div class="rounded-[8px] border border-black-100 bg-black-50 p-[12px] dark:border-white-100 dark:bg-black-100">
+                                <p class="text-[12px] font-[700] uppercase tracking-[0.08em] text-black-300 dark:text-white-300">
+                                    Signing Mode
+                                </p>
+                                <p class="mt-[4px] text-[14px] font-[700] text-black-500 dark:text-white">
+                                    {canPublishViaHost ? 'Budabit signer ready' : 'Budabit signer required'}
+                                </p>
+                                <p class="mt-[4px] text-[12px] text-black-300 dark:text-white-300">
+                                    Repo jobs posted inside Budabit always publish with the Budabit signer, not the local SatShoot session.
+                                </p>
+                                {#if waitingForBudabitSigner}
+                                    <p class="mt-[6px] text-[12px] text-yellow-700 dark:text-yellow-300">
+                                        {budabitSignerHelp}
+                                    </p>
+                                {/if}
+                            </div>
+                        {/if}
+
                         <div class="flex flex-col gap-[5px]">
                             <div class="flex gap-x-2 items-center">
                                 <label class="m-[0px] text-lg sm:text-xl" for="tile">
@@ -570,15 +692,39 @@
                         <Button
                             classes="mt-4"
                             onClick={() =>
-                                goto(new URL(`/${job!.encode()}`, window.location.origin))}
+                                goto(withEmbedMode(`/${job!.encode()}`, embedMode))}
                         >
                             View Job
                         </Button>
+                        {#if repoBoundDraft || embedMode === 'budabit'}
+                            <Button
+                                variant="outlined"
+                                classes="mt-2"
+                                onClick={() => goto(withEmbedMode('/repo-jobs', embedMode))}
+                            >
+                                Back to Repo Jobs
+                            </Button>
+                        {/if}
                     </div>
                 {/if}
                 <div class="w-full flex flex-row justify-center mt-[10px]">
                     {#if !allowPostJob}
-                        <Button onClick={handleLogin}>Log in To Post</Button>
+                        {#if budabitEmbed}
+                            <div class="flex w-full flex-col gap-3 sm:max-w-[60vw]">
+                                <Button disabled>{loginActionLabel}</Button>
+                                <p class="text-center text-[12px] text-black-300 dark:text-white-300">
+                                    {budabitSignerHelp}
+                                </p>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => goto(withEmbedMode('/repo-jobs', embedMode))}
+                                >
+                                    Back to Repo Jobs
+                                </Button>
+                            </div>
+                        {:else}
+                            <Button onClick={handleLogin}>{loginActionLabel}</Button>
+                        {/if}
                     {:else}
                         <div class="flex flex-col sm:max-w-[60vw] w-full gap-4">
                             <div class="w-full sm:max-w-[60vw] flex gap-x-4 justify-between">
@@ -605,11 +751,22 @@
                                         {:else if jobPostFailed || accountPostFailed}
                                             <span>Try again</span>
                                         {:else}
-                                            <span>Post on the Free Market</span>
+                                            <span>{publishButtonLabel}</span>
                                         {/if}
                                     </Button>
                                 {/if}
                             </div>
+                            {#if repoBoundDraft && !firstJob}
+                                <div class="w-full sm:max-w-[60vw] flex gap-x-4">
+                                    <Button
+                                        grow
+                                        variant="outlined"
+                                        onClick={() => goto(withEmbedMode('/repo-jobs', embedMode))}
+                                    >
+                                        Back to Repo Jobs
+                                    </Button>
+                                </div>
+                            {/if}
                             {#if firstJob}
                                 <div class="w-full sm:max-w-[60vw] flex gap-x-4">
                                     <Button grow variant="outlined" onClick={handleSkip}>
